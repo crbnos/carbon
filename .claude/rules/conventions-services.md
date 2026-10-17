@@ -84,7 +84,7 @@ export const cancelJob = defineServiceFn({
   an operation only when it is safe with nothing but its input: the API runs
   the gate and `run`, nothing the route does around the call.
 - **Enforced**: `route-action-shape` (`@carbon/checks`) fails a new client,
-  Kysely or `serverFns` write in an ERP route; `service-fn-file` fails
+  Kysely or `invokePosting` write in an ERP route; `service-fn-file` fails
   anything but service functions in `{module}.server.ts`.
 
 ## Building blocks: `{module}.service.ts`

@@ -66,31 +66,30 @@ Server-only. It may import `.server` packages (`@carbon/auth/client.server`,
 imports it (the `no-server-code-in-client` check), so it carries no bundle cost.
 A function a component calls lives in `<module>.utils.ts` instead.
 
-## A server function ported from `@carbon/server-functions`
+## A posting ported from the deleted `@carbon/server-functions`
 
-The package is being dissolved into the modules (plan Phase 5). A ported
-function keeps its logic as is:
+The package was dissolved into the modules (plan Phase 5) and deleted. A ported
+function kept its logic as is:
 
 - Its body becomes a building block in `<module>.service.ts`:
   `export async function <name>(ctx: ServiceContext, raw)`, whose first line
   parses the function's own input schema (exported beside it). `ctx.db` is
   `ctx.asSystem.pg`, `ctx.companyId` is `ctx.company.id`, `ctx.userId` is
   `ctx.auditUserId`.
-- The operation that runs it calls `settle(ctx, "<server-fn-name>", () =>
+- The operation that runs it calls `settle(ctx, "<posting-name>", () =>
   service.<name>(ctx, input))` (`@carbon/api/service-tools.server`). A body
   throws with messages written for the person (673 plain `Error`s); `settle`
-  turns a throw into a refusal by `defineServerFn`'s rules, so the message and
+  turns a throw into a refusal by the rules the package's `defineServerFn` used, so the message and
   status a caller sees do not change. A plain `run` would withhold them.
-- A caller that read the `{ data, error }` `invoke` returned (a fallback
+- A caller that read the `{ data, error }` the package's `invoke` returned (a fallback
   message, the error's `status` or `body`) calls `invokePosting(ctx, "<name>",
   input, service.<name>)` (`~/modules/shared/shared.service`) instead: the same
   shape and the same `ServerFnError`. An older building block that holds `db`,
   `companyId` and `userId` passes those in place of `ctx`; with `{ as: rule }`
-  it checks the caller behind `client` first, as `serverFns.as` did.
+  it checks the caller behind `client` first.
 - The operation keeps the function's permission exactly: a `<name>Permission`
   constant beside the body, passed as `as`. `apps/erp/test/posting-permissions.test.ts`
-  pins them, as the package's `permissions-manifest` snapshot still does for the
-  10 functions left in it. The function leaves the package's registry (`src/invoke.ts`).
+  pins them.
 - Its live-database tests move to `apps/erp/test/database/`, on the fixtures in
   `apps/erp/test/database/fixtures/` (`always-post.ts`, whose `service` is a
   system `ServiceContext`).

@@ -44,7 +44,7 @@ what syncs follows from the statuses each path already filters on.
   the cutover: invoices, memos, charges, reimbursements, payments, movements, and the
   depreciation, scrap disposal and revenue recognition runs. The reset deleted those journals
   and their sync records, not the provider's copy, and the rows cannot tell which documents
-  had one. So `insertProvisionalJournals` (`legacy/write.ts`) calls `keepOutOfProviderSync`
+  had one. So `insertProvisionalJournals` (`accounting.service.ts`) calls `keepOutOfProviderSync`
   for EVERY journal it writes: for each journal and each accounting integration of the company
   (active or not), it inserts an `Excluded` `journalEntry` `push-to-accounting` operation with
   `errorCode` `CUTOVER_REBUILT` (`CUTOVER_REBUILT_SYNC_CODE`) and idempotency key
@@ -552,7 +552,7 @@ pushed charge still shows which merchant the spend was at.
 
 **Ramp inbound financial records are staged transactionally.** Charges and bills
 advisory-lock a company/Ramp id and atomically stage their Draft header, lines, supporting
-rows, and mapping before calling the posting server function; ambiguous responses require a
+rows, and mapping before calling the posting; ambiguous responses require a
 tenant-scoped reread proving `Posted`. Single-PO bills preserve exact covered-line provenance
 and quantity, while multi-PO bills remain standalone instead of choosing an arbitrary order.
 Mapped card Drafts refresh their header and coding from validated Ramp input atomically;
@@ -565,7 +565,7 @@ Bill payments and reimbursements follow the same rule.
 `syncRampBillPayment` in `ramp-sync-payment.ts`. `stageRampPaymentDraft` writes or resumes
 the Draft `payment`, `invoiceSettlement`, and Ramp mapping in one Kysely transaction while
 preserving the stored source-FX snapshot; `createOrResumeRampPayment` posts and accepts an
-ambiguous server-function response only when a tenant-scoped reread shows the payment is
+ambiguous posting response only when a tenant-scoped reread shows the payment is
 Posted. Card-backed bill payments are confirmed without an AP payment because the card
 transaction already represents the cash movement.
 The explicit card set includes `ONE_TIME_CARD_DELIVERY`; only documented bank rails enter

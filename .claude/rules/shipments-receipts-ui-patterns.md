@@ -2,7 +2,7 @@
 paths:
   - apps/erp/app/modules/inventory/ui/{Shipments,Receipts}/**
   - apps/erp/app/routes/x+/{shipment,receipt}+/**
-  - packages/server-functions/src/create/**
+  - apps/erp/app/modules/shared/shared.service.ts
   - apps/erp/app/modules/inventory/inventory.{server,service}.ts
 ---
 
@@ -21,10 +21,10 @@ Every action below makes ONE call to an operation in
 `api.inventory.receipt.*` through `carbon(request)`); the logic described here lives in that
 operation, so the API and MCP run the same checks. The route only parses the form.
 
-- `new.tsx` — **action only** (`shipment.create` / `receipt.create`). Creates the doc by calling the **`create` server function**
-  (`create(ServerFnContext.system({ db, companyId, userId }), { type, locationId, ...sourceIds })`),
+- `new.tsx` — **action only** (`shipment.create` / `receipt.create`). Creates the doc by calling the **`create` posting**
+  (`invokeCreate(ctx, { type, locationId, ...sourceIds })`, which runs `createDocument` in `shared.service.ts`),
   then `throw redirect(path.to.shipmentDetails(id))`. There is **no `upsert` on create** — the
-  server function allocates the human ID and copies source-document lines. For the
+  posting allocates the human ID and copies source-document lines. For the
   `'Rental Agreement'` source it first redirects to the agreement's existing Draft (one Draft
   rental shipment and one Draft rental receipt per agreement, enforced by the partial unique
   indexes `shipment_oneOpenDraftPerRentalAgreement_idx` / `receipt_oneOpenDraftPerRentalAgreement_idx`),
@@ -154,7 +154,7 @@ the service-role client + Kysely `db.transaction()`, and branch on `sourceDocume
 - **post-shipment** handles `Rental Agreement` (puts each ticked unit On Rent on the delivery
   date; no `itemLedger`, `costLedger` or journal), `Sales Order`, `Purchase Order`, `Outbound Transfer`,
   `Sales Return Order` (return-to-customer), and `Purchase Return Order` (supplier return,
-  Cr Inventory / Dr GR/IR; the `create` server function seeds the shipment's tracked entities from
+  Cr Inventory / Dr GR/IR; the `create` posting seeds the shipment's tracked entities from
   `purchaseReturnOrderLineTrackedEntity`, and this path **splits** a batch when the returned
   quantity is less than the entity's — same `buildBatchSplitRecords` mechanism as SO). SO path: COGS
   `journalLine`s via `calculateCOGS` + `costLedger`, negative `itemLedger`, advances SO line
@@ -175,7 +175,7 @@ attaches automatic `journalLineDimension` rows — item, item posting group
 built index-parallel to the journal lines, gated by the company group's configured
 `dimension` rows. post-shipment and post-receipt carry them on each built line
 (`dimensions`, by entity type) and write them with `journalLineDimensionRows`
-(`src/lib/journal-line-dimensions.ts`). The journalLine insert must
+(`shared.service.ts`). The journalLine insert must
 `.returning(["id"])` so dimension #i binds to line #i. The **void** cases copy the
 original lines' dimensions onto the reversing lines (read `journalLineDimension` by
 `journalLineId`, re-attach by position) so a void mirrors the posting. `post-memo`
@@ -193,7 +193,7 @@ applies.
 ## Gotchas
 
 - **`Pending` is a transient posting state**, not a workflow stage. The action sets it before the
-  server-function call and the action reverts it to `Draft` on failure.
+  posting call and the action reverts it to `Draft` on failure.
 - Status enums are only `Draft / Pending / Posted` in the base migrations; `Voided` was added later
   (`20250828142122_void-shipment.sql`, `20260422100000_receipt-status-voided.sql`). Read newest first.
 - The `sourceDocument` enums list many values (Sales/Purchase Invoice, Return Orders, Manufacturing

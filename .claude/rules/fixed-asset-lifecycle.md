@@ -9,7 +9,7 @@ paths:
   - "packages/database/supabase/migrations/*asset-transfer*"
   - "packages/database/supabase/migrations/*job-to-asset*"
   - "apps/erp/app/modules/accounting/accounting.service.ts"
-  - "packages/server-functions/src/lib/asset-transfer.ts"
+  - "apps/erp/app/modules/shared/shared.service.ts"
   - "apps/erp/app/modules/sales/sales.service.ts"
   - "apps/erp/app/modules/purchasing/purchasing.service.ts"
   - "packages/database/supabase/migrations/*rental-agreements*"
@@ -231,7 +231,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   row (`sourceType 'Manual'`, `journalId`) so a later capitalization sweeps it.
 - Calc utils: `accounting.utils.ts` — `acquisitionLines()`,
   `buildDepreciationLines()`, `getNextPeriodEnd()`, MACRS data.
-- Shared line builders: `packages/server-functions/src/lib/asset-transfer.ts` —
+- Shared line builders: `apps/erp/app/modules/shared/shared.service.ts` —
   `buildCapitalizationLines` (Dr asset / Cr the account the value came from) and
   `buildReturnToInventoryLines` (Dr inventory NBV / Dr accumulated depreciation
   when non-zero / Cr asset at cost); every amount `round()`ed, every set
@@ -421,7 +421,7 @@ from the server function, with its zod contract and pure helpers). One `fixedAss
 document per call, created and Posted in ONE transaction; the function's permissions are keyed by
 `type`: `create: accounting` for capitalize / return / attachJob /
 capitalizeCip, `update: accounting` for `adjustCost`, and a `capitalize`
-that carries an entered `cost` additionally `authorize`s `update:
+that carries an entered `cost` additionally requires `update:
 accounting` (recosting puts a number of the user's own on the books); business failures are 400
 `InvalidInputError`s with the message the app shows, a record the
 caller's company does not own is a 404. Every action writes its journal for every
@@ -446,7 +446,7 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   inventory at a cost…"); a unit whose carrying cost rounds to 0 takes the
   entered `cost` instead and the journal credits `offsetAccountId` (description
   `Capitalized Cost`; always required, an active non-group account
-  of the company group — `getOffsetAccount`, `lib/offset-account.ts`, which
+  of the company group — `getOffsetAccount`, `shared.service.ts`, which
   returns the account's class so `buildCapitalizationLines` signs the credit
   by it: Retained Earnings is Equity, credited +x); with neither it is REFUSED —
   "<serial> has no cost in inventory… Enter what it cost, or set a unit
@@ -504,7 +504,7 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   in the transaction). Posts Dr class `assetAccountId` / Cr `offsetAccountId`
   (description `Capitalized Cost`). The offset account is always required:
   the validator types it optional, but `getOffsetAccount`
-  (`lib/offset-account.ts`) refuses a missing one and anything but an active
+  (`shared.service.ts`) refuses a missing one and anything but an active
   posting account of the company group. `acquisitionCost += amount`, and the status from
   `statusAfterCostAdjustment` (Fully Depreciated → Active when NBV is above
   residual again). Fills an unset asset location from `locationId` (the
@@ -545,7 +545,7 @@ live rental line**: `post-asset-transfer` `returnToInventory` checks for a
 transaction and throws "Asset <id> is on rent|reserved on rental agreement
 <RA…>; return it from the agreement first". The fleet table hides the
 Return to Inventory menu item for On Rent and Reserved rows, and Take Out of
-Service for On Rent rows; the server function and the route stay the gates.
+Service for On Rent rows; `postAssetTransfer` and the route stay the gates.
 
 **Sales-type leases dispose the fleet asset.** A line classified **`Sale`**
 (a sales-type lease) at activation (`post-rental-agreement` `commenceSalesTypeLines`) is sold to the

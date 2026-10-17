@@ -62,7 +62,7 @@ Deliberate gaps, so nobody reads a zero as "no work happened":
 
 | Path | Why | What would fix it |
 |---|---|---|
-| `scrap_reported` from the MES floor (`apps/mes/app/routes/x+/scrap.tsx`) | The `productionQuantity` row is created inside the `issue` server function (`packages/server-functions/src/issue/index.ts`) and its id is never returned to the route, so there is no key that makes one posting distinct. Keying on the operation would under-count a shift's repeat postings. | Return the inserted id from the `issue` function. |
+| `scrap_reported` from the MES floor (`apps/mes/app/routes/x+/scrap.tsx`) | The `productionQuantity` row is created inside the `issue` posting (`issueMaterial`, `apps/erp/app/modules/inventory/inventory.service.ts`) and its id is never returned to the route, so there is no key that makes one posting distinct. Keying on the operation would under-count a shift's repeat postings. | Return the inserted id from the `issue` function. |
 | `production_quantity_reported` serial and batch branches | Same function, same reason. The untracked branch goes through `insertProductionQuantity` and *is* covered. | As above. |
 | ~~`job_completed` via the automatic path~~ | Covered. `sync_finish_job_operation` runs inside the same transaction as the operation status flip, so `finishJobOperation` reads the job back and emits `path: "auto"` when it flipped. Keyed on `jobId`, so it collapses with the manual route. | — |
 | `quote_accepted` from the customer portal | Covered, but anonymous — `actorId` is deliberately null for a customer's own acceptance. | Nothing; this is correct. |

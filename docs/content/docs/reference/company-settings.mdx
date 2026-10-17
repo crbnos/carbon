@@ -101,7 +101,7 @@ Billing needs company ownership *and* a Cloud environment; self-hosted editions 
 The company has no `accountingCutoverDate`, so its journals are Provisional and no report counts them. Set up accounting from Settings → Accounting. Journals dated on or after the cutover date become Posted; earlier ones become "Before cutover" and the opening journal replaces them.
 
 ### "… documents posted before Carbon kept journals have no journal."
-The warning on Settings → Accounting. `hasLegacyDocuments` found posted documents dated on or after `accountingCutoverDate` with no journal. **Write missing journals** runs the `journal-legacy-documents` server function, which writes them in one transaction and refuses all of them if one falls in a Closed or Locked period. A payment against such a document fails with "Target is missing its original control account" until it runs.
+The warning on Settings → Accounting. `hasLegacyDocuments` found posted documents dated on or after `accountingCutoverDate` with no journal. **Write missing journals** runs the `journal-legacy-documents` posting, which writes them in one transaction and refuses all of them if one falls in a Closed or Locked period. A payment against such a document fails with "Target is missing its original control account" until it runs.
 
 ### My theme changed but a colleague still sees the old one
 Theme is per-user (a cookie), not per-company. Document templates carry a separate theme setting.

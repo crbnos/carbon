@@ -28,8 +28,8 @@ in the migrations — **newest wins**; core tables created in
   `ReviewersList`, `AssociatedItemsList`, `IssueAssociations`, `IssuesTable`
   (see `ui/Issue/index.ts`). Plus `ui/IssueTypes/`, `ui/IssueWorkflows/`,
   `ui/RequiredActions/`, `ui/Actions/`.
-- Task creation server function: `packages/server-functions/src/create/index.ts`,
-  case `"nonConformanceTasks"`.
+- Task creation: `createDocument` (`apps/erp/app/modules/shared/shared.service.ts`,
+  the `create` posting), case `"nonConformanceTasks"`.
 
 ## Status enums (verified in `quality.models.ts` + migrations)
 
@@ -117,7 +117,7 @@ Task status writes go to `path.to.issueTaskStatus` → `setIssueTaskStatus`;
 ## Required actions & system action types
 
 Issues carry `requiredActionIds TEXT[]` (IDs into `nonConformanceRequiredAction`).
-The `create` server function inserts one `nonConformanceActionTask` per id (1-indexed
+The `create` posting inserts one `nonConformanceActionTask` per id (1-indexed
 `sortOrder`). `nonConformanceRequiredAction.systemType` (enum
 `nonConformanceSystemActionType`, added `20260313000001`):
 `Containment`, `Corrective`, `Preventive`, `Verification`, `Communication`. System
@@ -127,7 +127,7 @@ or change `systemType`); unique per `(companyId, systemType)`. Custom actions ha
 
 ## Approvals / MRB / reviewers
 
-`approvalRequirements nonConformanceApproval[]` → the server function inserts a
+`approvalRequirements nonConformanceApproval[]` → the posting inserts a
 `nonConformanceApprovalTask` per requirement. When `MRB` is newly required it
 seeds two `nonConformanceReviewer` rows (`title: "Engineering"`, `"Quality"`);
 removing MRB deletes the reviewers; existing reviewers are left untouched.

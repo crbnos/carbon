@@ -20,7 +20,7 @@ a transaction. Imports are idempotent via the `externalIntegrationMapping` table
    **enum mappings** (e.g. CSV `"B"` → `"Buy"`) and creatable lookups/forms.
 3. **Submit** — form POSTs to `/x/shared/import/$tableId`.
 4. **Route action** validates, then calls the `importCsv` service.
-5. **Server function** downloads the CSV, maps, classifies each row, and writes in a transaction.
+5. **`importCsvTable`** downloads the CSV, maps, classifies each row, and writes in a transaction.
 
 ## Frontend (`apps/erp/app/components/ImportCSVModal/`)
 
@@ -62,7 +62,7 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 > **Every field in `fieldMappings[table]` must also be declared in `importSchemas[table]`.**
 > The route builds `columnMappings` from the zod parse result, and a zod object strips
 > keys it does not declare — so a field the wizard offers but the schema omits is mapped
-> by the user, submitted, and silently dropped before the server function sees it. That is
+> by the user, submitted, and silently dropped before `importCsvTable` sees it. That is
 > what made every CSV-imported item land at revision `"0"` while the wizard marked the
 > Revision column required. `apps/erp/app/modules/shared/imports.models.test.ts` asserts
 > the invariant per table; add the field to BOTH maps when adding one.
@@ -79,7 +79,7 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 `department` → `people`; `itemPostingGroup`, `fixedAsset` → `accounting`.
 
 An import's permission is the one its table's **RLS INSERT policy** requires, not
-the one that opens its list page. The server function writes through a service-role
+the one that opens its list page. `importCsvTable` writes through a service-role
 Kysely connection that bypasses RLS, so `importPermissions` is the only
 authorization on a bulk import — taking it from the page gate would let a user
 create rows the database itself would refuse. `itemPostingGroup` is where the two
@@ -167,10 +167,10 @@ per-row decision is `classifyStockRow` (tested by `shared.classify-stock-row.tes
   runtime's wall clock and rolled back. The importer instead plans every row in
   memory and writes one statement per table per 500-row chunk (`INSERT_CHUNK_SIZE`).
   The rows are byte-for-byte what `bookAdjustment` writes because **both call the
-  same pure builders** in `packages/server-functions/src/lib/plan-adjustment.ts` — `buildItemLedgerRow`,
+  same pure builders** in `shared.service.ts` — `buildItemLedgerRow`,
   `buildCostLedgerRow`, `buildAdjustmentJournalLines`, `buildJournalLineDimensions`,
   `toJournalLineDocumentType` — and the same open-layer query (`loadOpenCostLayers`
-  in `packages/server-functions/src/lib/post-adjustment.ts`, which takes a list of item ids and chunks its
+  in `shared.service.ts`, which takes a list of item ids and chunks its
   applied-child lookup over the layer ids, since open layers per item are
   unbounded). Do not fork a row shape or an arithmetic step into the importer:
   a column added to a builder must reach both paths at once, which is the whole
@@ -182,11 +182,11 @@ per-row decision is `classifyStockRow` (tested by `shared.classify-stock-row.tes
   returns `["id", "journalLineReference"]` and the pair is grouped by the
   reference the importer generated per movement.
 - **The plan itself is pure and tested.** `planStockRows` in
-  `packages/server-functions/src/lib/plan-adjustment.ts` takes the file's rows plus the item costs and open
+  `shared.service.ts` takes the file's rows plus the item costs and open
   layers and returns, per row, `{ carriesValue, cost, postsJournal }` — the
   per-item grouping, the cost replay, the scatter back onto source rows and the
   journal filter. The transaction body only inserts what it returns.
-  `packages/server-functions/src/lib/plan-adjustment.test.ts` covers mixed items, repeated rows for one item,
+  `apps/erp/test/database/lib/plan-adjustment.test.ts` covers mixed items, repeated rows for one item,
   valuing against open layers, a zero-cost item (a layer, no journal) and a
   Non-Inventory / zero-quantity row. A row's journal depends only on its cost,
   never on the cutover: `postsJournal = cost !== 0`.
@@ -199,7 +199,7 @@ per-row decision is `classifyStockRow` (tested by `shared.classify-stock-row.tes
   by the rounding and the drift is scaled by the next row's quantity (a 1-unit row at
   ⅓ stores 0.33333, and a following 1000-unit row books 333.33, not 333.33333).
   Hoisting one unit cost per item would therefore change what is written. Pinned by
-  `packages/server-functions/src/lib/plan-adjustment.test.ts`, which asserts the plan equals booking the rows
+  `apps/erp/test/database/lib/plan-adjustment.test.ts`, which asserts the plan equals booking the rows
   one at a time for all four costing methods.
 - No Unique ID column and no `externalIntegrationMapping` writes. Business rules
   (`evaluateLinesForSurface`) that the single-record adjustment route runs are NOT
@@ -275,7 +275,7 @@ importCsvTable, { as: importCsvTablePermission })`.
 
 ## The import (`importCsvTable`, `shared.service.ts`)
 
-Ported from `importCsvTable` (`shared.service.ts`, ported from the `import-csv` server function). Its input is `importCsvInput` (table enum,
+Ported from the `import-csv` server function. Its input is `importCsvInput` (table enum,
 `filePath`, `columnMappings`, optional `enumMappings`).
 
 - `importCsv` checks the caller against `importCsvTablePermission`, `{ by: "table", rules }`: `update` on
@@ -317,20 +317,20 @@ See `.claude/rules/accounting-sync-handlers.md` for the full `externalIntegratio
 
 ## Gotchas
 
-- **`fixture` is orphaned** — registered in `fieldMappings`, `importPermissions` and the server
-  function's enum, but `Fixture` was dropped from the app's item-type enum
+- **`fixture` is orphaned** — registered in `fieldMappings`, `importPermissions` and `importCsvInput`'s
+  enum, but `Fixture` was dropped from the app's item-type enum
   (`items.models.ts`) and there is no Fixtures list page, so nothing surfaces it.
 - **`fixedAsset`** has models/permissions (`fieldMappings`, `importPermissions`) but is
-  **confirmed absent** from the server function's `table` enum, so the server function
+  **confirmed absent** from `importCsvInput`'s `table` enum, so `importCsvTable`
   **rejects it** — the zod `table` enum fails to parse and it errors out (effectively
   "Table not found in the list of supported tables"). fixedAsset CSV import is not wired.
 - **Item custom fields are not populated on import** — the item insert paths write
   `customFields: {}` (empty object) rather than mapping any CSV columns into custom fields.
-- Client parses CSV with **PapaParse** for the mapping preview; the server function re-parses
+- Client parses CSV with **PapaParse** for the mapping preview; `importCsvTable` re-parses
   the stored file independently (with a permissive fallback) — don't assume identical behavior.
-- `enumMappings` crosses the route boundary as a JSON string; the service/server function expect
+- `enumMappings` crosses the route boundary as a JSON string; the service and `importCsvTable` expect
   the parsed object.
-- The server function transaction uses Kysely and bypasses RLS; authorization is the route's
-  `requirePermissions` plus the server function's `permissions` check on the same permissions.
+- `importCsvTable`'s transaction uses Kysely and bypasses RLS; authorization is the route's
+  `requirePermissions` plus the `importCsvTablePermission` check on the same permissions.
 - Row-level failures are returned in `errors[]` with `{ row, reason }`; only a thrown
   exception produces a 500.

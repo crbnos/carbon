@@ -122,7 +122,7 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 - Edit a posted document. `isMemoLocked` / `isPaymentLocked` / `isReimbursementLocked` are all
   "anything but Draft"; posting and voiding go through the `post-sales-invoice`,
   `post-purchase-invoice`, `post-memo`, `post-payment`, `post-charge`, `post-reimbursement`
-  server functions — never a direct status write.
+  postings — never a direct status write.
 - Delete a purchase invoice, or one of its lines, with a plain delete when it may carry Lease
   lines: `leasePayment.purchaseInvoiceLineId` has no FK, so the payment row stays Invoiced and
   is never billed again. `deleteDraftPurchaseInvoice` / `deleteDraftPurchaseInvoiceLine` call
@@ -235,7 +235,7 @@ How they behave:
 - `postPurchaseInvoice` claims Draft or Pending, posts, then updates purchase prices when the
   company does so on invoice post. A failed post or price update sets the invoice back to
   Draft (after the post has committed, for the price update: a known gap).
-- The posting and voiding operations return the server function's own refusal message.
+- The posting and voiding operations return the posting's own refusal message.
 - A failure after the main write (seeding a payment's applications, applying or posting a
   reimbursement payout, the lines of an adjusting entry) keeps the write and returns
   `warning`.
@@ -266,4 +266,4 @@ How they behave:
   and reimbursements reach Xero / QuickBooks / Rillet
 - `.claude/rules/ramp-integration.md` — where `charge` and `reimbursement` rows come from
 - `.claude/rules/conventions-forms.md` — `ValidatedForm` + zod + route-action shape
-- `packages/server-functions/AGENTS.md` — the `post-*` server functions these routes call
+- `.claude/rules/module-files.md` — the `post-*` postings these routes call (building blocks in `invoicing.service.ts`)

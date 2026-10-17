@@ -144,7 +144,7 @@ Phase-7 write) and throws on failure.
    "salesOrder"`, `id?` (required for non-company), `companyId`, `userId`.
    Computation engine is
    `packages/database/src/mrp-engine.ts` (`explodeBom(...)`, `@carbon/database/mrp-engine`),
-   also used by get-method (`@carbon/server-functions`).
+   also used by `getMethod` (`production.service.ts`).
 
    - **Periods**: generates/fetches weekly `period` rows 72 weeks forward from
      today on the company's clock (`WEEKS_TO_FORECAST = 18 * 4`, `"Week"`
@@ -621,7 +621,7 @@ never offered a Cancel, Defer or Expedite.
   the target dates, one UPDATE of due date + priority via the pure
   `nextJobPriority`), then the route sends ONE `schedule-inputs-changed`
   event for the batch (a "reorder" event re-stamps the whole company whatever
-  its job id). Increase / Decrease / Cancel on jobs call server functions
+  its job id). Increase / Decrease / Cancel on jobs call postings
   with their own transactions, so they stay per job — grouped by job, three
   jobs at a time (`async.map`), each claimed right before its own change.
   The claim and release inside a transaction live in

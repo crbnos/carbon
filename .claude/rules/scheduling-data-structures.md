@@ -241,7 +241,7 @@ resolves the job's `locationId` first, takes the caller's `db` handle and
 dynamic-imports `@carbon/planning`), `releaseJobs` (`production.server.ts`, once per
 location after every status flip), `scanKanban` (`inventory.server.ts`, a Make card's
 auto-release), `api+/schedule.ts`, and the jobs task `tasks/recalculate.ts`. The
-expedite what-if uses `runExpediteWhatIf`. `reschedule` (`packages/server-functions/src/reschedule/`)
+expedite what-if uses `runExpediteWhatIf`. `rescheduleJob` (`production.service.ts`, the `reschedule` posting)
 is a separate per-job backward re-plan, not a whole-location regen.
 
 ## Engine pipeline (`scheduling-engine.ts` `run()`)

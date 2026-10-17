@@ -12,16 +12,16 @@
   - [x] Wave 3: resources, settings, users/account/people, shared/documents/workflows/integrations (merged)
   - [x] Publish only what routes use: 201 legacy tools that no route calls are unpublished
   - [x] Single-function tools: a codemod turns each route-called legacy tool into a leaf (below)
-- [ ] Phase 5 — Dissolve `packages/server-functions`
+- [x] Phase 5 — Dissolve `packages/server-functions` (package deleted in `d956b0be11`)
   - [x] The pattern: a function's body becomes a building block in `<module>.service.ts`; `settle` or `invokePosting` runs it with the function's own error rules (`.claude/rules/module-files.md`)
   - [x] 39 functions ported: `close-job`, `assign-serial-numbers`, `preview-serial-unit-costs`, `recost-serial-unit`, `post-asset-transfer`, `preview-asset-capitalization`, `seed-company`, `finalize-supplier-quote`, `finalize-purchasing-rfq`, `post-inventory-count`, `post-nonconformance`, `apply-account-import`, `post-stock-transfer`, `import-csv`, `correct-stock-movement`, `sync`, `get-method`, `convert`, `kanban-replenish`, `update-purchased-prices`, `create-rental-invoices`, and in one batch the posting cluster: `post-sales-invoice`, `post-purchase-invoice`, `post-memo`, `post-payment`, `post-receipt`, `post-shipment`, `post-charge`, `post-reimbursement`, `post-rental-agreement`, `post-customer-contract`, `create-contract-invoices`, `post-lease`, `create-lease-invoices`, `activate-accounting`, `journal-legacy-documents` and the three revenue-run functions
   - [x] Their live tests run from `apps/erp/test/database/`
   - [x] Every function only the ERP, jobs and ee call is ported; the postings registry runs only ported bodies
   - [x] The seam for jobs and ee (steps 2 and 3): `@carbon/api/postings.server`. The ERP registers 12 postings at start; jobs and ee call `posting(name, handles, input)`
-  - [ ] The 10 functions of the MES closure stay until Phase 6 (step 5): `batch-operations`, `create`, `issue`, `post-inventory-adjustment`, `post-maintenance-event`, `post-picking`, `post-production-event`, `recalculate`, `reschedule`, `trigger-rework`
-  - [x] `route-action-shape` also flags `invokePosting` in a route. `server-fn-authorizes-caller` and the `serverFns` pattern stay while the 10 MES functions are in the package
-  - [ ] The shared `lib` helpers move when the MES functions do: they import them, and a package cannot import the ERP
-- [ ] Phase 6 — MES calls ERP's API (auth design needs approval first)
+  - [x] The 10 functions of the MES closure are ported with Phase 6: `batch-operations`, `create`, `issue`, `post-inventory-adjustment`, `post-maintenance-event`, `post-picking`, `post-production-event`, `recalculate`, `reschedule`, `trigger-rework`
+  - [x] `route-action-shape` flags `invokePosting` and `invokeCreate` in a route. The `server-fn-authorizes-caller` check and the `serverFns` pattern are deleted with the package
+  - [x] The shared `lib` helpers are in `shared.service.ts`
+- [x] Phase 6 — MES calls the ERP's postings over signed HTTP calls (design approved 2026-10-17; `.ai/plans/2026-10-17-mes-calls-erp-postings.md`). Verification against the local stack is still open there
 - [ ] Phase 7 — Clean up
   - [x] Module layout: `<module>.server.ts` operations, `<module>.service.ts` building blocks, no barrels; flat names `<module>_<function>`; `account` merged into `users`
   - [x] Legacy pipeline deleted (dispatcher, registry, service-file parser, validator registry, `sql-effects`, blocked/exposure lists, aliases)

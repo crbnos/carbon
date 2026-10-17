@@ -93,7 +93,7 @@ Spec: `.ai/specs/2026-10-06-kanban-internal-replenishment-level.md`.
 - Fires **strictly below** the level (`isBelowReplenishmentLevel`, `@carbon/database/stock-transfer`).
   One level signal = one transfer of `n × quantity`, `n = ceil((level − projected) / quantity)`
   (`levelReplenishmentQuantity`), so the level is reached in one signal. A scan moves one `quantity`.
-  Kanbans sharing an item and To bin share supply within a call (`addedInbound` in the server function).
+  Kanbans sharing an item and To bin share supply within a call (`addedInbound` in `replenishKanban`).
 - The open transfer counts as supply, so a second signal for the same shortfall writes nothing, and
   the pick moves stock from "inbound" to "on-hand" without changing the projected quantity.
 - Three wake paths, all sending `carbon/kanban.level-check` `{ companyId, kanbanIds }` and only for
@@ -105,7 +105,7 @@ Spec: `.ai/specs/2026-10-06-kanban-internal-replenishment-level.md`.
   Both trigger bodies return early under `app.sync_in_progress` (seeds, restores, test fixtures).
   All three need the Vault secret `inngest_event_url`.
 - `kanbanLevelCheckFunction` (`functions/tasks/kanban-level-check.ts`, concurrency 1 per company, no
-  `debounce`) calls `kanban-replenish` with `mode: "level"` (`"system"` permission; `kanbanIds` required). The server function locks the kanbans
+  `debounce`) calls `kanban-replenish` with `mode: "level"` (`"system"` permission; `kanbanIds` required). `replenishKanban` locks the kanbans
   `FOR UPDATE` in id order and re-reads the projected quantity inside its transaction, so a stale or
   duplicate event is a no-op. `createdBy` is `"system"` on this path.
 - A kanban replenishment is a stock transfer with `kanbanId` set: the stock transfers list has a

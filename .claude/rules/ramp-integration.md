@@ -972,7 +972,7 @@ race.
 - **void**: only from Posted. First, before any write, `voidCharge`
   (`accounting.service.ts`) refuses a charge dated before the company's accounting
   cutover (`postingDate ?? transactionDate`) through `refuseVoidBeforeCutover`
-  (`@carbon/server-functions/lib/cutover-void`) with `CHARGE_VOID_BEFORE_CUTOVER_ERROR`: "This charge is from before
+  (`shared.service.ts`) with `CHARGE_VOID_BEFORE_CUTOVER_ERROR`: "This charge is from before
   your accounting cutover. Record a journal entry to correct it instead." The enable
   superseded that journal and opened its balances in the opening journal, so a reversal would
   undo nothing. A company with no cutover passes. `voidReimbursement`

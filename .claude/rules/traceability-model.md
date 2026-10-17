@@ -63,7 +63,7 @@ RLS: SELECT/INSERT gated on `get_companies_with_employee_role()`; UPDATE/DELETE 
 
 ## How genealogy edges are written
 
-Edges are created in **server functions** (`packages/server-functions/src/`)
+Edges are created in **postings** (the ERP modules' service files)
 and MES services — NOT a single `post-production`:
 
 - `post-picking`, `post-receipt`, `post-shipment`, `post-stock-transfer`, `issue`,
@@ -74,7 +74,7 @@ and MES services — NOT a single `post-production`:
   `jobOperationScrap` scraps the serial being made — `type: 'Scrap'` activity,
   entity → `Scrapped`, then **spawns the next serial** (same `getNextSerialNumbers`
   path as `jobOperationSerialComplete`) and reopens the make method's Done ops
-  (`issue/scrap-replacement.ts`) so the replacement runs the full routing. `issue`
+  (`applyScrapReplacement`, `inventory.service.ts`) so the replacement runs the full routing. `issue`
   case `scrapTrackedEntity` scraps a subcomponent, branching on entity **state**:
   an `Available` part posts a `Scrap` (`Negative Adjmt.`) `itemLedger` at its
   on-hand bin (`quantityIssued` untouched); a `Consumed` part posts Dr scrap /
@@ -248,7 +248,7 @@ with the lot it just emptied.
 `@carbon/utils` `pick-guards.ts` returns the NEW running total (never a
 replacement) or throws a typed `PickGuardError` — `already-picked`,
 `over-pick`, or `empty-pick` (a quantity that rounds to zero). Its `status = 400`
-survives `defineServerFn`'s error mapping, so the caller gets a **400**, never a
+survives the postings' error mapping (`toServerFnError`, `@carbon/api/errors`), so the caller gets a **400**, never a
 500, and both apps show its message with `getErrorMessage(error, fallback)`
 (`@carbon/utils`). It is only correct under a row lock: `post-picking` locks
 the `pickingListLine` in every handler and the source lot in the batch pick,
@@ -257,7 +257,7 @@ the entity BEFORE its repeat-scan guard — two concurrent scans would otherwise
 both read "not on this transfer" and both post a Transfer pair).
 `resolveStockTransferPickForward` (`inventory.models.ts`) is the route-side
 pre-check that mirrors the same rounding so the two cannot disagree; the lock
-is what makes the server function authoritative.
+is what makes the posting authoritative.
 
 **The drain rule is not only a TypeScript concern.** `update_receipt_line_batch_tracking`
 upserted a receipt lot with `ON CONFLICT … DO UPDATE SET "quantity" = EXCLUDED."quantity"`

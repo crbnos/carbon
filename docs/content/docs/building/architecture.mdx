@@ -362,24 +362,29 @@ statement instead of querying in a loop. A Node process shares one pool of 16 co
 Inside a transaction, use only the provided `trx` handle; requesting another connection through `db` can deadlock
 until timeout.
 
-**4. Server functions** are the privileged, multi-step writes shared by the ERP, the
-MES, the public API and background jobs. There are about thirty in
-`packages/server-functions/src/`, one directory each, and they own the genuinely heavy
+**4. Postings** are the privileged, multi-step writes shared by the ERP, the
+MES, the public API and background jobs. There are about fifty, each a building block
+in its ERP module's service file (`postShipment` in `apps/erp/app/modules/inventory/inventory.service.ts`,
+for example), and they own the genuinely heavy
 writes: posting a shipment or an invoice to the general ledger, issuing material,
-converting a quote, CSV import. Each is built with `defineServerFn`, which validates the
-input, checks the caller's permission, runs, and returns `{ data, error }` instead of
-throwing. Call one like any other function:
+converting a quote, CSV import. Each validates its input and runs once the caller's permission
+(its `<name>Permission` rule) is checked, and `invokePosting` returns `{ data, error }` instead of
+throwing. An operation calls one like this:
 
 ```ts
-import { serverFns } from "@carbon/server-functions";
+import * as inventory from "~/modules/inventory/inventory.service";
+import { invokePosting } from "~/modules/shared/shared.service";
 
-const { data, error } = await serverFns
-  .system({ db: getDatabaseClient(), companyId, userId })
-  .invoke("post-shipment", { type: "post", shipmentId });
+const { data, error } = await invokePosting(
+  ctx,
+  "post-shipment",
+  { type: "post", shipmentId },
+  inventory.postShipment
+);
 ```
 
-Server functions run large Kysely transactions and are callable from anywhere on the server: a route action, the
-MES, a background job, or the public API.
+Postings run large Kysely transactions and are callable from anywhere on the server: an operation, the
+MES (over HTTP, `erpPosting`), a background job (`posting` from `@carbon/api/postings.server`), or the public API.
 
 Keep function code thin and perform set-based work in Postgres. Use Inngest for work that runs for minutes and the
 Rust service for compute-intensive CAD geometry. MRP [[11]](#g11) and production scheduling live in
@@ -442,7 +447,7 @@ type PurchaseOrderRow = Database["public"]["Tables"]["purchaseOrder"]["Row"];
 
 Run `pnpm run generate:types` after pulling or creating migrations and before typechecking. Do not edit generated types directly.
 
-**Database logic** enforces invariants across ERP, MES, server functions, background jobs, the public API, and direct SQL. Examples:
+**Database logic** enforces invariants across ERP, MES, postings, background jobs, the public API, and direct SQL. Examples:
 
 - `update_picking_list_status()` is a trigger that recomputes a picking list's header
   status whenever one of its lines changes. Written from four different places;
@@ -560,7 +565,6 @@ database credentials. Redis stores job state and result pointers and is required
 | --------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `react`         | The design system. **Check here before writing any UI.**                                                         |
 | `database`      | Generated types, migrations, edge functions, database clients.                                                   |
-| `server-functions` | Privileged, transactional writes (posting, issuing, converting) shared by the apps, the API and jobs.         |
 | `planning`      | MRP and the finite scheduler.                                                                                    |
 | `auth`          | Login, sessions, `requirePermissions`, API keys, permission caching.                                             |
 | `form`          | `ValidatedForm`, field components, zod helpers.                                                                  |

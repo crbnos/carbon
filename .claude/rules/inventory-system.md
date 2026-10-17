@@ -28,8 +28,8 @@ Key service functions (verified):
   (args `{ location_id, company_id }`, `count: "exact"`); supports search + generic filters.
 - `getItemLedgerPage` — paginated item-ledger history for an item at a location.
 - `insertManualInventoryAdjustment` — thin wrapper over the **`post-inventory-adjustment`
-  server function** (MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
-  The server function owns positive/negative/set-quantity **plus Scrap/Unscrap**
+  posting** (`postInventoryAdjustment`, `inventory.service.ts`; MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
+  The posting owns positive/negative/set-quantity **plus Scrap/Unscrap**
   (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`) resolution, tracked-entity storage-unit
   transfers, expiry override, batch/serial assignment — and, in one Kysely transaction, maintains
   `costLedger` layers (consume via `calculateCOGS` on decreases, new layer at current cost on
@@ -37,24 +37,24 @@ Key service functions (verified):
   `accountDefault.inventoryAdjustmentVarianceAccount`) for every company — Provisional before the
   accounting cutover, Posted after it.
   `post-inventory-count` books its variances through the same shared core
-  (`packages/server-functions/src/lib/post-adjustment.ts`). Storage-unit transfers post no GL.
+  (`bookAdjustment`, `shared.service.ts`). Storage-unit transfers post no GL.
   **Serial units are costed by specific identification.** `costLedger.trackedEntityId`
   (migration `20261006220601`) stamps a layer booked for ONE serial unit — every layer
   `bookAdjustment` writes for a `Serial` item (a fixed asset returned to stock at NBV, a
   sales-type lease residual, an unscrap, a positive adjustment). `calculateCOGS` takes
   optional `trackedEntityIds` and orders FIFO / LIFO layers through
-  `orderLayersForConsumption` (`packages/server-functions/src/lib/cost-layer-order.ts`): the leaving unit's own layer
+  `orderLayersForConsumption` (`@carbon/database/cost-relief`): the leaving unit's own layer
   first, then unstamped layers, then another unit's stamped layer as the last resort (so
   nothing else eats a returned unit's value). Callers passing the ids: `bookAdjustment`
   decreases, the three `post-shipment` COGS calls (`leavingTrackedEntityIds` over the
   shipment's ledger rows) and `issue`'s `createMaterialWipEntries`. Receipt and job-output
   layers cover many units and stay unstamped, so a received serial is still FIFO-costed.
-  Pinned by `lib/cost-layer-order.test.ts` and the database test
-  `lib/calculate-cogs.test.ts`.
+  Pinned by `apps/erp/test/database/lib/cost-layer-order.test.ts` and the database test
+  `apps/erp/test/database/lib/calculate-cogs.test.ts`.
   **Serial unit cost and Recost.** `previewSerialUnitCosts` (`inventory.service.ts`,
   ported from the `preview-serial-unit-costs` server function; `{ itemId,
   locationId? }`, `view: accounting`) values every on-hand serial of an item
-  with the pure `serialUnitCost` (`@carbon/server-functions/lib/serial-unit-cost`): calculateCOGS's
+  with the pure `serialUnitCost` (`shared.service.ts`): calculateCOGS's
   arithmetic for a quantity of one (own layer, then unstamped, with price
   correction children; Standard / Average at the item cost), from one read of
   the item's layers. ERP: the `inventory.getSerialUnitCosts` operation → cached `api+/items.$itemId.serial-costs.ts`
@@ -69,7 +69,7 @@ Key service functions (verified):
   `costLedgerType 'Revaluation'` (the only writer of that type; no
   `itemLedger` row — nothing moves); posts an `'Inventory
   Adjustment'` journal (Provisional before the accounting cutover) of the difference, inventory account vs the offset
-  account (`getOffsetAccount`, `lib/offset-account.ts`, signed by the offset
+  account (`getOffsetAccount`, `shared.service.ts`, signed by the offset
   account's own class via `buildOffsetLines`). The valuation report's FIFO /
   LIFO layer average moves by exactly the difference, so the tie-out holds. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
@@ -80,7 +80,7 @@ Key service functions (verified):
   quantity; partial batch scrap splits per the identity-flip convention).
   **Unscrap** (Oracle Return-from-Scrap) restores a `Scrapped` entity to
   `Available` at the **original scrapped cost** (resolved from the scrap
-  movement's `costLedger` via `resolve-unscrap-cost.ts`) and bin, linked by
+  movement's `costLedger` via `resolveUnscrapUnitCost`, `inventory.service.ts`) and bin, linked by
   `correctionOfItemLedgerId`; ERP UI = the Unscrap row action on the tracked-
   entities table (`UnscrapModal`, no location and **no scrap reason** submitted —
   both resolved server-side; the reason is inherited from the original scrap
@@ -95,7 +95,7 @@ Key service functions (verified):
   `getEntityDimensionValues`/`getEntityValuesByIds` (accounting.service.ts), so adding a
   scrap reason immediately makes it a selectable/taggable dimension value with no sync step.
   A tag is only written when the entity type has an **active** `dimension` row — a scrap
-  posting's ScrapReason `extraDimension` is dropped in `post-adjustment.ts` if the dimension
+  posting's ScrapReason `extraDimension` is dropped in `shared.service.ts` if the dimension
   was deleted/deactivated for that company group.
 - `correctStockMovement` — wraps the **`postStockMovementCorrection`** (`inventory.service.ts`, ported from the `correct-stock-movement` server function): fixes any
   posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
