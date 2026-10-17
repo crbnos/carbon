@@ -8,7 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { insertNote, noteValidator } from "~/modules/shared";
+import { noteValidator } from "~/modules/shared/shared.models";
+import { insertNote } from "~/modules/shared/shared.service";
 import { requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {

@@ -16,10 +16,10 @@ import {
   getRentalShipmentLines,
   getShipment,
   getShipmentLines,
-  getShipmentRelatedItems,
-  getShipmentTracking,
-  type RentalShipmentLine
-} from "~/modules/inventory";
+  getShipmentRelatedItems
+} from "~/modules/inventory/inventory.service";
+import { getShipmentTracking } from "~/modules/inventory/inventory.utils";
+import type { RentalShipmentLine } from "~/modules/inventory/types";
 import {
   ShipmentDocuments,
   ShipmentHeader

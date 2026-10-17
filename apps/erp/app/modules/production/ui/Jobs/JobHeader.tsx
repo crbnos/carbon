@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { Hidden, NumberControlled, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -29,6 +30,7 @@ import {
   Spinner,
   SplitButton,
   Status,
+  toast,
   useDisclosure,
   useMount,
   useViewport,
@@ -83,11 +85,14 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import type { action as cancelAction } from "~/routes/x+/job+/$jobId.cancel";
+import type { action as completeAction } from "~/routes/x+/job+/$jobId.complete";
+import type { action as statusAction } from "~/routes/x+/job+/$jobId.status";
 import { useSuppliers } from "~/stores";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import { isJobLocked, jobCompleteValidator } from "../../production.models";
-import { getJobMethodTree } from "../../production.service";
+import { getJobMethodTree } from "../../production.utils";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 import {
@@ -97,6 +102,7 @@ import {
   type JobReceiptSnapshot
 } from "./job-complete-logic";
 import { makeMethodsMissingOperations } from "./job-release-logic";
+import { type JobRelease, useJobRelease } from "./useJobRelease";
 
 const JobHeader = () => {
   const navigate = useNavigate();
@@ -144,7 +150,23 @@ const JobHeader = () => {
     unbatchedBatchableOperations?: number;
   }>(path.to.job(jobId));
 
-  const statusFetcher = useFetcher<{}>();
+  const statusFetcher = useAction<typeof statusAction>({
+    onSuccess: () => toast.success(t`Updated job status`)
+  });
+  const complete = useAction<typeof completeAction>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      toast.success(t`Job completed successfully`);
+      if (data.warning) toast.error(data.warning);
+    }
+  });
+  const release = useJobRelease();
+  const cancel = useAction<typeof cancelAction>({
+    onSuccess: ({ data }) => {
+      toast.success(t`Job cancelled`);
+      if (data?.warning) toast.error(data.warning);
+    }
+  });
   const expediteFetcher = useFetcher<{
     expedite: {
       projectedCompletionAt: string | null;
@@ -173,6 +195,7 @@ const JobHeader = () => {
   const currentValue = getOptionFromPath(jobId);
 
   const markAsPlanned = () => {
+    if (status === "Planned") return;
     statusFetcher.submit(
       {
         status: "Planned"
@@ -460,13 +483,11 @@ const JobHeader = () => {
             <RecordAction slot={isReleasable ? "primary" : "overflow"}>
               <SplitButton
                 onClick={releaseModal.onOpen}
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Ready"
-                }
+                isLoading={release.isPending}
                 isDisabled={
                   !isReleasable ||
                   statusFetcher.state !== "idle" ||
+                  release.isPending ||
                   !permissions.can("update", "production") ||
                   (routeData?.job?.quantity === 0 &&
                     routeData?.job?.scrapQuantity === 0)
@@ -488,10 +509,7 @@ const JobHeader = () => {
             <RecordAction slot={isReleasable ? "overflow" : "primary"}>
               <Button
                 onClick={completeModal.onOpen}
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formAction === path.to.jobComplete(jobId)
-                }
+                isLoading={complete.isPending}
                 isDisabled={
                   ["Completed", "Cancelled"].includes(status ?? "") ||
                   statusFetcher.state !== "idle" ||
@@ -506,13 +524,11 @@ const JobHeader = () => {
             <RecordAction slot="overflow">
               <Button
                 onClick={cancelModal.onOpen}
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Cancelled"
-                }
+                isLoading={cancel.isPending}
                 isDisabled={
                   ["Cancelled", "Completed"].includes(status ?? "") ||
                   statusFetcher.state !== "idle" ||
+                  cancel.isPending ||
                   !permissions.can("update", "production")
                 }
                 leftIcon={<LuCircleStop />}
@@ -528,21 +544,21 @@ const JobHeader = () => {
         <JobStartModal
           job={routeData?.job}
           onClose={releaseModal.onClose}
-          fetcher={statusFetcher}
+          release={release}
         />
       )}
       {cancelModal.isOpen && (
         <JobCancelModal
           job={routeData?.job}
           onClose={cancelModal.onClose}
-          fetcher={statusFetcher}
+          cancel={cancel}
         />
       )}
       {completeModal.isOpen && (
         <JobCompleteModal
           job={routeData?.job}
           onClose={completeModal.onClose}
-          fetcher={statusFetcher}
+          fetcher={complete}
         />
       )}
       {expediteModal.isOpen && (
@@ -615,10 +631,10 @@ const getExplorePath = (jobId: string, type: string) => {
 export function JobStartModal({
   job,
   onClose,
-  fetcher
+  release
 }: {
   job?: Job;
-  fetcher: FetcherWithComponents<{}>;
+  release: JobRelease;
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
@@ -1095,37 +1111,25 @@ export function JobStartModal({
               <Button variant="secondary" onClick={onClose}>
                 <Trans>Cancel</Trans>
               </Button>
-              <fetcher.Form
-                onSubmit={onClose}
-                method="post"
-                action={`${path.to.jobStatus(job.id!)}?schedule=1`}
+              <Button
+                isLoading={release.isPending}
+                isDisabled={
+                  release.isPending ||
+                  missingOperationAssemblies.length > 0 ||
+                  !eachOutsideOperationHasASupplier
+                }
+                onClick={() => {
+                  release.submit(job.id!, {
+                    purchaseOrdersBySupplierId:
+                      selectedPurchaseOrdersBySupplierId,
+                    supplierProcessByOperationId:
+                      selectedSupplierProcessByOperationId
+                  });
+                  onClose();
+                }}
               >
-                <input type="hidden" name="status" value="Ready" />
-                <input
-                  type="hidden"
-                  name="selectedPurchaseOrdersBySupplierId"
-                  value={JSON.stringify(selectedPurchaseOrdersBySupplierId)}
-                />
-                <input
-                  type="hidden"
-                  name="selectedSupplierProcessByOperationId"
-                  value={JSON.stringify(selectedSupplierProcessByOperationId)}
-                />
-                <Button
-                  isLoading={
-                    fetcher.state !== "idle" &&
-                    fetcher.formData?.get("status") === "Ready"
-                  }
-                  isDisabled={
-                    fetcher.state !== "idle" ||
-                    missingOperationAssemblies.length > 0 ||
-                    !eachOutsideOperationHasASupplier
-                  }
-                  type="submit"
-                >
-                  <Trans>Release Job</Trans>
-                </Button>
-              </fetcher.Form>
+                <Trans>Release Job</Trans>
+              </Button>
             </ModalFooter>
           </>
         )}
@@ -1137,10 +1141,10 @@ export function JobStartModal({
 function JobCancelModal({
   job,
   onClose,
-  fetcher
+  cancel
 }: {
   job?: Job;
-  fetcher: FetcherWithComponents<{}>;
+  cancel: ReturnType<typeof useAction<typeof cancelAction>>;
   onClose: () => void;
 }) {
   if (!job) return null;
@@ -1170,16 +1174,20 @@ function JobCancelModal({
           <Button variant="secondary" onClick={onClose}>
             <Trans>Don't Cancel</Trans>
           </Button>
-          <fetcher.Form
-            onSubmit={onClose}
-            method="post"
-            action={path.to.jobStatus(job.id!)}
+          <Button
+            variant="destructive"
+            isLoading={cancel.isPending}
+            isDisabled={cancel.isPending}
+            onClick={() => {
+              cancel.submit(null, {
+                method: "post",
+                action: path.to.jobCancel(job.id!)
+              });
+              onClose();
+            }}
           >
-            <input type="hidden" name="status" value="Cancelled" />
-            <Button variant="destructive" type="submit">
-              <Trans>Cancel Job</Trans>
-            </Button>
-          </fetcher.Form>
+            <Trans>Cancel Job</Trans>
+          </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -1311,7 +1319,7 @@ function JobCompleteModal({
   fetcher
 }: {
   job?: Job;
-  fetcher: FetcherWithComponents<{}>;
+  fetcher: FetcherWithComponents<unknown>;
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();

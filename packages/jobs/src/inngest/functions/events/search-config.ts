@@ -112,8 +112,7 @@ export const SEARCH_ENTITY_CONFIGS: Record<string, SearchEntityConfig> = {
         Service: "/x/service/",
         Tool: "/x/tool/",
         Consumable: "/x/consumable/",
-        Material: "/x/material/",
-        Fixture: "/x/fixture/"
+        Material: "/x/material/"
       };
       return (typeLinks[r.type] || "/x/part/") + r.id;
     },
@@ -251,7 +250,7 @@ export const SEARCH_ENTITY_CONFIGS: Record<string, SearchEntityConfig> = {
     entityType: "salesRfq",
     getTitle: (r) => r.rfqId,
     getDescription: (r) => r.customerName || "",
-    getLink: (r) => `/x/rfq/${r.id}`,
+    getLink: (r) => `/x/sales-rfq/${r.id}`,
     getTags: (r) => [r.status].filter(Boolean),
     getMetadata: (r) => ({
       customerId: r.customerId,

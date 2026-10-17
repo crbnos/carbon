@@ -43,7 +43,7 @@ import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useCompanySettings, useRouteData } from "~/hooks";
 import { useResolved } from "~/hooks/useResolved";
-import { methodType } from "~/modules/shared";
+import { methodType } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/items+/update";
 import { useSuppliers } from "~/stores";
 import type { ListItem } from "~/types";
@@ -54,7 +54,7 @@ import {
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
-import type { UnreleasedChangeOrderItem } from "../../items.server";
+import type { UnreleasedChangeOrderItem } from "../../items.service";
 import type {
   ItemFile,
   MakeMethod,

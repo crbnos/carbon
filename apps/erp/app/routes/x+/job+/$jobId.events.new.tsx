@@ -2,24 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { serverFns } from "@carbon/server-functions";
-import { redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
-import {
-  getJob,
-  getJobOperations,
-  isJobLocked,
-  productionEventValidator,
-  upsertProductionEvent
-} from "~/modules/production";
+import { useLoaderData } from "react-router";
+import { productionEventValidator } from "~/modules/production/production.models";
+import { getJobOperations } from "~/modules/production/production.service";
 import { ProductionEventForm } from "~/modules/production/ui/Jobs";
-import { getDatabaseClient } from "~/services/database.server";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -42,83 +33,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { operationOptions };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "production"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(productionEventValidator).request(args, {
+    params: ["jobId"]
   });
-
-  const { jobId } = params;
-  if (!jobId) {
-    throw notFound("jobId not found");
-  }
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "production"
-  });
-  const job = await getJob(viewClient, jobId);
-  await requireUnlocked({
-    request,
-    isLocked: isJobLocked(job.data?.status),
-    redirectTo: path.to.job(jobId),
-    message: "Cannot modify a locked job. Reopen it first."
-  });
-
-  const formData = await request.formData();
-  const modal = formData.get("type") === "modal";
-
-  const validation = await validator(productionEventValidator).validate(
-    formData
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.production.createProductionEvent(input.data);
+  const postingError = result.data?.postingError;
+  return respond(
+    args.request,
+    postingError
+      ? {
+          error: {
+            message: `Production event created, but no journal entry was posted: ${postingError}`
+          }
+        }
+      : result
+  ).redirect(
+    result.error
+      ? `${new URL(args.request.url).pathname}?${getParams(args.request)}`
+      : `${path.to.jobProductionEvents(input.params.jobId)}?${getParams(args.request)}`,
+    { message: "Production event created" }
   );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const insert = await upsertProductionEvent(client, {
-    ...d,
-    companyId,
-    createdBy: userId
-  });
-  if (insert.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(insert.error, "Failed to insert production event")
-      )
-    );
-  }
-
-  let postingError: string | null = null;
-  if (d.endTime) {
-    const posting = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("post-production-event", { productionEventId: insert.data.id });
-    if (posting.error) {
-      postingError = posting.error.message || "unknown error";
-    } else if (posting.data.success === false) {
-      postingError = posting.data.reason ?? "unknown reason";
-    }
-  }
-
-  return modal
-    ? data(insert, { status: 201 })
-    : redirect(
-        `${path.to.jobProductionEvents(jobId)}?${getParams(request)}`,
-        await flash(
-          request,
-          postingError
-            ? error(
-                postingError,
-                `Production event created, but no journal entry was posted: ${postingError}`
-              )
-            : success("Production event created")
-        )
-      );
 }
 
 export default function NewProductionEventRoute() {

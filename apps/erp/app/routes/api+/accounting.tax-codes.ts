@@ -6,9 +6,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { cachedClientLoader } from "@carbon/query/cache";
 import { chargedTaxPercent, datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getTaxCodesList } from "~/modules/accounting";
+import { getTaxCodesList } from "~/modules/accounting/accounting.service";
 import { toTaxCodeInput } from "~/modules/accounting/accounting.utils";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});

@@ -31,7 +31,7 @@ import {
   TextArea
 } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
-import { customerItemRentalRateValidator } from "~/modules/sales";
+import { customerItemRentalRateValidator } from "~/modules/sales/sales.models";
 import { path } from "~/utils/path";
 
 type Scope = "customer" | "customerType";

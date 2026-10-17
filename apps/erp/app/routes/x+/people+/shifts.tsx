@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getShifts } from "~/modules/people";
+import { getShifts } from "~/modules/people/people.service";
 import { ShiftsTable } from "~/modules/people/ui/Shifts";
 import { getLocations } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";

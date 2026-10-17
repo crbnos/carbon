@@ -18,11 +18,14 @@ import { Plural, Trans } from "@lingui/react/macro";
 import { LuInfo } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getTaxCodesList } from "~/modules/accounting";
-import type { SupplierReportContactsBySupplierId } from "~/modules/purchasing";
-import { getSupplierReportContacts, getSuppliers } from "~/modules/purchasing";
+import { getTaxCodesList } from "~/modules/accounting/accounting.service";
+import {
+  getSupplierReportContacts,
+  getSuppliers
+} from "~/modules/purchasing/purchasing.service";
+import type { SupplierReportContactsBySupplierId } from "~/modules/purchasing/types";
 import { SuppliersTable } from "~/modules/purchasing/ui/Supplier";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

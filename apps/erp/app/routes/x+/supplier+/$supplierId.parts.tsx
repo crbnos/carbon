@@ -9,7 +9,7 @@ import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getSupplierPartsBySupplier } from "~/modules/items";
+import { getSupplierPartsBySupplier } from "~/modules/items/items.service";
 import SupplierParts from "~/modules/purchasing/ui/Supplier/SupplierParts";
 import { path } from "~/utils/path";
 

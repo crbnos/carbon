@@ -10,10 +10,8 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  itemPostingGroupValidator,
-  upsertItemPostingGroup
-} from "~/modules/items";
+import { itemPostingGroupValidator } from "~/modules/items/items.models";
+import { upsertItemPostingGroup } from "~/modules/items/items.service";
 import { ItemPostingGroupForm } from "~/modules/items/ui/ItemPostingGroups";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";

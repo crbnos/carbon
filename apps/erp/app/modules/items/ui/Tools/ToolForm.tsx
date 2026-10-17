@@ -88,7 +88,8 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
   const { carbon } = useCarbon();
   const { upload, runUpload } = useModelUpload();
   const {
-    company: { id: companyId }
+    company: { id: companyId },
+    id: userId
   } = useUser();
 
   const modelUpload = async (file: File) => {
@@ -102,20 +103,25 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
     const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
 
     // Resumable (TUS) upload — a standard buffered upload times out on multi-GB
-    // CAD files. Runs in parallel with the record insert.
-    const [{ error: uploadError }, recordInsert] = await Promise.all([
-      runUpload({ bucket: TEMP_STAGING_BUCKET, path: fileName, file }),
-      carbon.from("modelUpload").insert({
-        id: modelId,
-        modelPath: fileName,
-        size: file.size,
-        name: file.name,
-        companyId: companyId,
-        createdBy: "system"
-      })
-    ]);
+    // CAD files. The record goes in after it: inserting it starts the
+    // optimise, which reads the file.
+    const { error: uploadError } = await runUpload({
+      bucket: TEMP_STAGING_BUCKET,
+      path: fileName,
+      file
+    });
+    const recordInsert = uploadError
+      ? null
+      : await carbon.from("modelUpload").insert({
+          id: modelId,
+          modelPath: fileName,
+          size: file.size,
+          name: file.name,
+          companyId: companyId,
+          createdBy: userId
+        });
 
-    if (uploadError || recordInsert.error) {
+    if (uploadError || !recordInsert || recordInsert.error) {
       toast.error(t`Failed to upload model`);
     } else {
       setModelUploadId(modelId);

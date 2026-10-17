@@ -15,7 +15,7 @@ import {
   UpgradeOverlayTitle,
   UpgradeOverlayUpgradeButton
 } from "~/components/UpgradeOverlay";
-import type { ApiKey } from "~/modules/settings";
+import type { ApiKey } from "~/modules/settings/types";
 import ApiKeysTable from "./ApiKeysTable";
 
 const mockApiKeys: ApiKey[] = [

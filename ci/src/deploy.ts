@@ -59,6 +59,9 @@ export type Workspace = {
   onshape_client_id: string | null;
   onshape_client_secret: string | null;
   onshape_oauth_redirect_url: string | null;
+  onshape_v2_client_id: string | null;
+  onshape_v2_client_secret: string | null;
+  onshape_v2_oauth_redirect_url: string | null;
   openai_api_key: string | null;
   posthog_api_host: string | null;
   posthog_project_public_key: string | null;
@@ -146,6 +149,9 @@ async function deploy(): Promise<void> {
         onshape_client_id,
         onshape_client_secret,
         onshape_oauth_redirect_url,
+        onshape_v2_client_id,
+        onshape_v2_client_secret,
+        onshape_v2_oauth_redirect_url,
         openai_api_key,
         posthog_api_host,
         posthog_project_public_key,
@@ -310,6 +316,10 @@ async function deploy(): Promise<void> {
           ONSHAPE_CLIENT_ID: onshape_client_id ?? undefined,
           ONSHAPE_CLIENT_SECRET: onshape_client_secret ?? undefined,
           ONSHAPE_OAUTH_REDIRECT_URL: onshape_oauth_redirect_url ?? undefined,
+          ONSHAPE_V2_CLIENT_ID: onshape_v2_client_id ?? undefined,
+          ONSHAPE_V2_CLIENT_SECRET: onshape_v2_client_secret ?? undefined,
+          ONSHAPE_V2_OAUTH_REDIRECT_URL:
+            onshape_v2_oauth_redirect_url ?? undefined,
           OPENAI_API_KEY: openai_api_key,
           POSTHOG_API_HOST: posthog_api_host ?? undefined,
           POSTHOG_PROJECT_PUBLIC_KEY: posthog_project_public_key ?? undefined,

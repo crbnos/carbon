@@ -33,7 +33,7 @@ import {
   memoValidator,
   resolveMemoTaxAmounts,
   type StoredMemoTax
-} from "~/modules/invoicing";
+} from "~/modules/invoicing/invoicing.models";
 
 type MemoFormValues = z.infer<typeof memoValidator>;
 

@@ -2,21 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
-import {
-  getTaxAuthoritiesList,
-  taxCodeValidator,
-  upsertTaxCode
-} from "~/modules/accounting";
+import { useLoaderData } from "react-router";
+import { taxCodeValidator } from "~/modules/accounting/accounting.models";
+import { getTaxAuthoritiesList } from "~/modules/accounting/accounting.service";
 import { TaxCodeForm } from "~/modules/accounting/ui/Tax";
-import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -31,45 +25,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, companyGroupId, userId } = await requirePermissions(
-    request,
-    {
-      create: "accounting"
-    }
-  );
-
-  const formData = await request.formData();
-  const validation = await validator(taxCodeValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, components, ...taxCode } = validation.data;
-
-  const insertTaxCode = await upsertTaxCode(getDatabaseClient(), {
-    companyId,
-    companyGroupId,
-    userId,
-    taxCode,
-    components
-  });
-
-  if (insertTaxCode.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(insertTaxCode.error, "Failed to create tax code")
-      )
-    );
-  }
-
-  throw redirect(
-    `${path.to.taxCodes}?${getParams(request)}`,
-    await flash(request, success("Tax code created"))
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(taxCodeValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id: _id, ...taxCode } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.accounting.createTaxCode(taxCode);
+  return respond(args.request, result).redirect(
+    `${path.to.taxCodes}?${getParams(args.request)}`,
+    { message: "Tax code created" }
   );
 }
 

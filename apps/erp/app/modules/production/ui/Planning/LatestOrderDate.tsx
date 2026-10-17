@@ -8,8 +8,8 @@ import { parseDate } from "@internationalized/date";
 import { Plural, Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { memo } from "react";
-import type { ProductionPlanningItem } from "~/modules/production";
-import type { PurchasingPlanningItem } from "~/modules/purchasing";
+import type { ProductionPlanningItem } from "~/modules/production/types";
+import type { PurchasingPlanningItem } from "~/modules/purchasing/types";
 
 type PlanningRow = ProductionPlanningItem | PurchasingPlanningItem;
 

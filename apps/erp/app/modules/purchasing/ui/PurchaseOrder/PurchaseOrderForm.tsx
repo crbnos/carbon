@@ -40,7 +40,7 @@ import {
 import {
   purchaseOrderTypeType,
   purchaseOrderValidator
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.models";
 import { path } from "~/utils/path";
 import { isPurchaseOrderLocked } from "../../purchasing.models";
 

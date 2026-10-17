@@ -2,19 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
-import {
-  getTaxRegistration,
-  taxRegistrationValidator,
-  upsertTaxRegistration
-} from "~/modules/accounting";
+import { useLoaderData } from "react-router";
+import { taxRegistrationValidator } from "~/modules/accounting/accounting.models";
+import { getTaxRegistration } from "~/modules/accounting/accounting.service";
 import { TaxRegistrationForm } from "~/modules/accounting/ui/Tax";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -35,44 +31,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "accounting"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(taxRegistrationValidator).request(args, {
+    params: ["taxRegistrationId"]
   });
-
-  const formData = await request.formData();
-  const validation = await validator(taxRegistrationValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...d } = validation.data;
-  if (!id) throw new Error("id not found");
-
-  const updateTaxRegistration = await upsertTaxRegistration(client, {
-    id,
-    ...d,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.accounting.updateTaxRegistration({
+    ...input.data,
+    id: input.params.taxRegistrationId,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  if (updateTaxRegistration.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(updateTaxRegistration.error, "Failed to update tax registration")
-      )
-    );
-  }
-
-  throw redirect(
-    `${path.to.taxRegistrations}?${getParams(request)}`,
-    await flash(request, success("Updated tax registration"))
+  return respond(args.request, result).redirect(
+    `${path.to.taxRegistrations}?${getParams(args.request)}`,
+    { message: "Updated tax registration" }
   );
 }
 

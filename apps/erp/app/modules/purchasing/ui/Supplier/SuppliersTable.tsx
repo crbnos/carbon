@@ -58,11 +58,11 @@ import { useTaxCodes } from "~/components/Form/TaxCode";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCompanySettings, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import { supplierStatusType } from "~/modules/purchasing/purchasing.models";
 import type {
   Supplier,
   SupplierReportContactsBySupplierId
-} from "~/modules/purchasing";
-import { supplierStatusType } from "~/modules/purchasing";
+} from "~/modules/purchasing/types";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
 import type { action } from "~/routes/x+/supplier+/update";
 import { usePeople } from "~/stores";

@@ -23,7 +23,6 @@ import {
   getChangeNoticeDiff,
   getChangeNoticeRequiredActionsList,
   getChangeNoticeTypesList,
-  getConfigurationParameters,
   getConfigurationRules,
   getItemFiles,
   getItemManufacturing,
@@ -34,19 +33,20 @@ import {
   getPart,
   getPartUsedIn,
   getPickMethods,
+  getRevisionLock,
   getSupplierParts
-} from "~/modules/items";
-import { getRevisionLock } from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
+import { getConfigurationParameters } from "~/modules/items/items.utils";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import {
   ChangeNoticeExplorer,
   ChangeNoticeHeader,
   ChangeNoticeProperties
 } from "~/modules/items/ui/ChangeNotice";
-import { getIssue, getIssues } from "~/modules/quality";
-import { getLocationsList } from "~/modules/resources";
-import type { MethodItemType, MethodType } from "~/modules/shared";
-import { getTagsList } from "~/modules/shared";
+import { getIssue, getIssues } from "~/modules/quality/quality.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getTagsList } from "~/modules/shared/shared.service";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

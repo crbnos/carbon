@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -9,6 +10,7 @@ import {
   DropdownMenuItem,
   Input,
   MENU_ITEM_SHORTCUTS,
+  toast,
   useDisclosure,
   useViewport
 } from "@carbon/react";
@@ -23,7 +25,8 @@ import { Confirm } from "~/components/Modals";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
+import type { action as reconvertAction } from "~/routes/x+/assembly+/$id.model.invalidate";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type {
@@ -202,7 +205,12 @@ const AssemblyInstructionHeader = () => {
   const permissions = usePermissions();
   const { toggleExplorer, toggleProperties } = usePanels();
   const deleteDisclosure = useDisclosure();
-  const invalidateFetcher = useFetcher<{ success: boolean }>();
+  const invalidateFetcher = useAction<typeof reconvertAction>({
+    onSuccess: () =>
+      toast.success(
+        t`Model cache invalidated; re-converting from the source file`
+      )
+  });
   const { onNewVersion, isCreatingVersion } = useNewVersion();
   const canCreate = permissions.can("create", "production");
 

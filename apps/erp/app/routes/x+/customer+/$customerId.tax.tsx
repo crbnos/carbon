@@ -9,15 +9,15 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { suggestTaxCodes } from "~/modules/accounting";
+import { suggestTaxCodes } from "~/modules/accounting/accounting.service";
+import { customerTaxValidator } from "~/modules/sales/sales.models";
 import {
-  customerTaxValidator,
   getCustomerLocation,
   getCustomerLocations,
   getCustomerShipping,
   getCustomerTax,
   updateCustomerTax
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { CustomerTaxForm } from "~/modules/sales/ui/Customer";
 import { path } from "~/utils/path";
 

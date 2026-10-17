@@ -2,37 +2,34 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { Menubar, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items";
 import {
-  getItemManufacturing,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId,
   itemManufacturingValidator,
-  toolValidator,
-  upsertItemManufacturing,
-  upsertTool
-} from "~/modules/items";
+  toolValidator
+} from "~/modules/items/items.models";
 import {
   getItemChangeNoticeDataOnce,
+  getItemManufacturing,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
+  getMethodMaterialsByMakeMethod,
+  getMethodOperationsByMakeMethodId,
   getRevisionLock
-} from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
+import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items/types";
 import {
   ChangeNoticeDraftLockReason,
   getChangeNoticeDraftLock,
@@ -49,14 +46,10 @@ import {
   MakeMethodTools
 } from "~/modules/items/ui/Item";
 import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm";
-import { replanAfterItemChange } from "~/modules/production/production.server";
-import type { MethodItemType, MethodType } from "~/modules/shared";
-import { getTagsList } from "~/modules/shared";
-import { getDatabaseClient } from "~/services/database.server";
+import { getTagsList } from "~/modules/shared/shared.service";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "itemid-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -149,85 +142,44 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+// The details form, and the manufacturing card (`intent=manufacturing`).
+const intentForm = z.object({ intent: zfd.text(z.string().optional()) });
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(intentForm).request(args, {
+    params: ["itemId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { itemId } = input.params;
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
 
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === "manufacturing") {
+  if (input.data.intent === "manufacturing") {
     const validation = await validator(itemManufacturingValidator).validate(
       formData
     );
-
-    if (validation.error) {
-      logger.error(validation.error);
-      return validationError(validation.error);
-    }
-
-    const updateToolManufacturing = await upsertItemManufacturing(client, {
+    if (validation.error) return validationError(validation.error);
+    const result = await api.items.updateItemManufacturing({
       ...validation.data,
       itemId,
-      updatedBy: userId,
       customFields: setCustomFields(formData)
     });
-    if (updateToolManufacturing.error) {
-      throw redirect(
-        path.to.tool(itemId),
-        await flash(
-          request,
-          error(
-            updateToolManufacturing.error,
-            "Failed to update tool manufacturing"
-          )
-        )
-      );
-    }
-
-    // The planning pages list MRP's suggestions; re-plan so they follow the
-    // new settings now, not at the next scheduled run.
-    await replanAfterItemChange(getDatabaseClient(), {
-      itemId,
-      companyId,
-      userId
+    return respond(args.request, result).redirect(path.to.toolDetails(itemId), {
+      message: "Updated tool manufacturing",
+      onError: path.to.tool(itemId)
     });
-
-    throw redirect(
-      path.to.toolDetails(itemId),
-      await flash(request, success("Updated tool manufacturing"))
-    );
   }
 
   const validation = await validator(toolValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const updateTool = await upsertTool(client, {
+  if (validation.error) return validationError(validation.error);
+  const result = await api.items.updateTool({
     ...validation.data,
     id: itemId,
-    companyId,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
+    customFields: setCustomFields(formData)
   });
-  if (updateTool.error) {
-    throw redirect(
-      path.to.tool(itemId),
-      await flash(request, error(updateTool.error, "Failed to update tool"))
-    );
-  }
-
-  throw redirect(
-    path.to.tool(itemId),
-    await flash(request, success("Updated tool"))
-  );
+  return respond(args.request, result).redirect(path.to.tool(itemId), {
+    message: "Updated tool"
+  });
 }
 
 export default function ToolDetailsRoute() {

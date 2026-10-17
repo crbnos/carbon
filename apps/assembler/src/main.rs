@@ -439,6 +439,9 @@ async fn worker_events(
 
     match state.jobs.internal_active(&job_id).await.as_deref() {
         Some("pending") => {
+            // Take the job before the long download and admission wait, so a
+            // second delivery in that window sees it as taken.
+            state.jobs.set_status(&job_id, "starting").await;
             if let Err(m) = run::spawn_from_spec(&state, &job_id, &action, &spec) {
                 state.jobs.set_error(&job_id, "invalid_input", m.clone()).await;
                 return Err(ApiError::invalid(m));
@@ -565,6 +568,7 @@ async fn create_optimize(
             let meta = optional_meta(&req);
             state.jobs.set_pending(&job_id, "optimize", meta, submit_urls.clone(), callback_url.clone()).await;
             eprintln!("[{job_id}] optimize queued (format={format})");
+            let (compact, thumbnail) = optimize_ingest(&req);
             actions::optimize::spawn(
                 &state,
                 &job_id,
@@ -573,6 +577,8 @@ async fn create_optimize(
                     format,
                     glb_path: req["output"]["path"].as_str().map(str::to_string),
                     opts,
+                    compact,
+                    thumbnail,
                 },
             );
         }
@@ -794,6 +800,27 @@ async fn create_thumbnail(
         }
     }
     respond(&state, &headers, &job_id, "thumbnail", sync).await
+}
+
+/// The ingest outputs an optimize may also write: `compact: { path? }` (the
+/// retained raw's compact form, output `raw`) and `thumbnail: { path?, size?,
+/// direction? }` (output `thumbnail`). Shared by the HTTP body and the run-job
+/// spec.
+pub fn optimize_ingest(
+    req: &Value,
+) -> (Option<Option<String>>, Option<actions::optimize::ThumbnailOut>) {
+    let compact = req["compact"]
+        .is_object()
+        .then(|| req["compact"]["path"].as_str().map(str::to_string));
+    let thumbnail = req["thumbnail"].is_object().then(|| {
+        let t = thumbnail_req("", &req["thumbnail"]);
+        actions::optimize::ThumbnailOut {
+            path: t.path,
+            size: t.size,
+            direction: t.direction,
+        }
+    });
+    (compact, thumbnail)
 }
 
 /// `output: { path?, size?, direction? }` — shared by the HTTP body and the

@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getTaxAuthorities } from "~/modules/accounting";
+import { getTaxAuthorities } from "~/modules/accounting/accounting.service";
 import { TaxAuthoritiesTable } from "~/modules/accounting/ui/Tax";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

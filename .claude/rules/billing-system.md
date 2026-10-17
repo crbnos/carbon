@@ -96,7 +96,7 @@ OAuth-connector and `carbon-key` auth paths (`api+/mcp+/_index.ts`).
 + hidden nav); the runtime approval engine (`$supplierId.approval`, request/approve/reject)
 stays ungated — a Community company just has no rules to trigger it. `BACKUPS` gates the
 company backup/restore feature, but through `canManageBackups`
-(`~/modules/settings/backups.server`) = `canAccessBackups(email) ||
+(`~/modules/settings/settings.service`) = `canAccessBackups(email) ||
 companyHasFeature(BACKUPS)` — i.e. Business/Enterprise customers get it AND internal staff
 / local dev keep the escape hatch. Demo Data (`x+/settings+/demo-data`) stays internal /
 local-dev only via the plain `canAccessBackups`.
@@ -111,9 +111,9 @@ claims/employee-type translators — lives once in **`@carbon/ee/permissions.ser
 no longer carries its own copy). Console-operator provisioning is `@carbon/ee/console.server`
 (`updateConsoleSetting`); the authoring UI is `.ee.tsx` in the app (it can't move
 to the package — it imports `~/components/Form` etc.).
-The community primitives it does NOT include — `setUserPermissions` (invite merge)
-and `makePermissionsFromEmployeeType` (invite snapshot) — stay in the app's
-`users.server.ts`. Community/Starter ships "everyone is an admin": you can add
+The community primitives it does NOT include — the invite permission merge and
+`makePermissionsFromEmployeeType` (invite snapshot) — stay in the app's
+`users.service.ts`. Community/Starter ships "everyone is an admin": you can add
 users (every invite defaults to the seeded `Admin` employee type) but not author
 roles. Enforcement (`requirePermissions`, RLS, `get_claims`) is unaffected and
 stays in every edition.
@@ -237,8 +237,9 @@ whom it deleted.
     documents then fails, and is logged and skipped. So does the last company in a group,
     because its group's system accounts refuse deletion and the group would be stranded.
   - BEFORE the transaction, `removeCompanyFiles` drains and deletes the per-company
-    bucket (already missing counts as done) and legacy files under `private/<companyId>/`
-    (listed strictly, so a listing error is a failure). Never inside it: storage deletes
+    bucket (already missing counts as done), legacy files under `private/<companyId>/` and
+    legacy audit-log archives under `private/audit-logs/<companyId>/` (listed strictly, so a
+    listing error is a failure). Never inside it: storage deletes
     its object rows on its own connection, `delete_orphaned_documents` then deletes the
     matching `document` rows, and when the open purge transaction has already deleted
     those rows storage waits on it until it times out (HTTP 544) and the purge rolls

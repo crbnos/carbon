@@ -11,17 +11,19 @@ import { redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { resolvePurchaseLineTax } from "~/modules/accounting/accounting.server";
+import { resolvePurchaseLineTax } from "~/modules/accounting/accounting.service";
 import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
-import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
+import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
+import {
+  isPurchaseOrderLocked,
+  purchaseOrderLineValidator
+} from "~/modules/purchasing/purchasing.models";
 import {
   getPurchaseOrder,
-  isPurchaseOrderLocked,
-  purchaseOrderLineValidator,
   upsertPurchaseOrderLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

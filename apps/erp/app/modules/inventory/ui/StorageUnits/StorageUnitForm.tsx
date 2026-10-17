@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   FormControl,
@@ -21,7 +22,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { PrintButton } from "~/components";
 import {
@@ -33,7 +33,7 @@ import {
   WorkCenter
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { storageUnitValidator } from "~/modules/inventory";
+import { storageUnitValidator } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 import { StorageUnitParentSelect } from "./StorageUnitParentSelect";
 
@@ -57,7 +57,13 @@ const StorageUnitForm = ({
   onClose,
   inheritedWorkCenter
 }: StorageUnitFormProps) => {
-  const fetcher = useFetcher<{}>();
+  // A modal closes once the unit exists, so the picker that opened it can
+  // select it; an error is toasted and the form stays.
+  const fetcher = useAction({
+    onSuccess: () => {
+      if (type === "modal") onClose?.();
+    }
+  });
   const { t } = useLingui();
 
   const permissions = usePermissions();
@@ -111,11 +117,6 @@ const StorageUnitForm = ({
             }
             defaultValues={initialValues}
             fetcher={fetcher}
-            onSubmit={() => {
-              if (type === "modal") {
-                onClose?.();
-              }
-            }}
             className="flex flex-col h-full"
           >
             <ModalDrawerHeader

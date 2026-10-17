@@ -8,7 +8,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { Enumerable } from "~/components/Enumerable";
-import type { getDepartmentsList } from "~/modules/people";
+import type { getDepartmentsList } from "~/modules/people/people.service";
 import DepartmentForm from "~/modules/people/ui/Departments/DepartmentForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

@@ -30,7 +30,7 @@ import {
 } from "~/components/Form";
 import AddressAutocomplete from "~/components/Form/AddressAutocomplete";
 import { usePermissions } from "~/hooks";
-import { locationValidator } from "~/modules/resources";
+import { locationValidator } from "~/modules/resources/resources.models";
 import { path } from "~/utils/path";
 
 type LocationFormProps = {

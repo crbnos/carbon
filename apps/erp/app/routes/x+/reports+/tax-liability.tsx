@@ -14,9 +14,12 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { Table } from "~/components";
 import { useCurrencyFormatter, useUrlParams } from "~/hooks";
-import type { TaxLiabilityRow } from "~/modules/accounting";
-import { getTaxAuthoritiesList, getTaxLiability } from "~/modules/accounting";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import type { TaxLiabilityRow } from "~/modules/accounting/accounting.service";
+import {
+  getTaxAuthoritiesList,
+  getTaxLiability
+} from "~/modules/accounting/accounting.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

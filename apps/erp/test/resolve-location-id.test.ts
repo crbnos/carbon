@@ -4,7 +4,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-import { resolveLocationId } from "~/modules/shared/location.server";
+import { resolveLocationId } from "~/modules/shared/shared.service";
 
 /**
  * `resolveLocationId` returns the location id that five `bypassRls: true`
@@ -90,14 +90,16 @@ vi.mock("@carbon/content/glossary", () => ({
 // The defaults path goes through `getUserDefaults`, which reads a different
 // table via a different shape; stub it so these cases exercise only the
 // scoping decision.
-vi.mock("~/modules/users/users.server", () => ({
+vi.mock("~/modules/users/users.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getUserDefaults: async () => ({
     data: { locationId: DEFAULT_LOCATION },
     error: null
   })
 }));
 
-vi.mock("~/modules/resources", () => ({
+vi.mock("~/modules/resources/resources.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getLocationsList: async () => ({
     data: [{ id: DEFAULT_LOCATION }],
     error: null

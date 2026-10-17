@@ -8,15 +8,17 @@ import { getLogger } from "@carbon/logger";
 import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  getLease,
   type LeaseDetailField,
   leaseDetailFields,
   leaseDetailsValidator,
   leaseValidator,
-  resolveLeaseDates,
+  resolveLeaseDates
+} from "~/modules/purchasing/purchasing.models";
+import {
+  getLease,
+  updateDraftLease,
   updateLeaseDetails
-} from "~/modules/purchasing";
-import { updateDraftLease } from "~/modules/purchasing/purchasing.server";
+} from "~/modules/purchasing/purchasing.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "lease-update");

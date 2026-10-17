@@ -2,161 +2,37 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { getAppUrl } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
-  actionTaskEntities,
-  actionTaskParentId,
   actionTaskPermissions,
   isActionTaskEntityType
 } from "@carbon/ee/action-task-entity";
+import { getLinearClient } from "@carbon/ee/linear.server";
+import { validator } from "@carbon/form";
+import type { ActionFunctionArgs, LoaderFunction } from "react-router";
 import {
-  getLinearClient,
-  linkActionToLinearIssue,
-  unlinkActionFromLinearIssue
-} from "@carbon/ee/linear.server";
-import { getLogger } from "@carbon/logger";
-import type { ActionFunction, LoaderFunction } from "react-router";
-import { data } from "react-router";
-import { requireChangeNoticeEditable } from "~/modules/items/items.server";
-import { getActionTaskWithParent } from "~/modules/shared/shared.server";
-
-const logger = getLogger("erp", "integrations-linear-issue-link");
+  linkLinearIssue,
+  unlinkLinearIssue
+} from "~/modules/shared/shared.server";
 
 const linear = getLinearClient();
 
-export const action: ActionFunction = async ({ request }) => {
-  try {
-    const form = await request.formData();
-
-    const actionId = form.get("actionId") as string;
-    const entityType = form.get("entityType") as string | null;
-
-    if (!actionId) {
-      return { success: false, message: "Missing required fields: actionId" };
-    }
-
-    if (!isActionTaskEntityType(entityType)) {
-      return { success: false, message: "Invalid entityType" };
-    }
-
-    const { companyId, client } = await requirePermissions(
-      request,
-      actionTaskPermissions(entityType)
-    );
-
-    if (entityType === "changeOrderActionTask") {
-      const task = await getActionTaskWithParent(
-        client,
-        entityType,
-        actionId,
-        companyId
-      );
-
-      const locked = task.parentId
-        ? await requireChangeNoticeEditable(client, {
-            changeNoticeId: task.parentId,
-            companyId,
-            scope: "workflow"
-          })
-        : { error: { message: "Could not find change notice" } };
-
-      if (locked) {
-        return { success: false, message: locked.error.message };
-      }
-    }
-
-    switch (request.method) {
-      case "POST": {
-        const issueId = form.get("issueId") as string;
-
-        if (!issueId) {
-          return {
-            success: false,
-            message: "Missing required fields: issueId"
-          };
-        }
-
-        const [carbonIssue, issue] = await Promise.all([
-          getActionTaskWithParent(client, entityType, actionId, companyId),
-          linear.getIssueById(companyId, issueId)
-        ]);
-
-        if (!issue) {
-          return { success: false, message: "Issue not found" };
-        }
-
-        const email = issue.assignee?.email ?? "";
-
-        const assignee = await client
-          .from("user")
-          .select("id")
-          .eq("email", email)
-          .single();
-
-        const linked = await linkActionToLinearIssue(client, companyId, {
-          entityType,
-          actionId,
-          issue,
-          assignee: assignee.data ? assignee.data.id : null
-        });
-
-        if (!linked || linked.data?.length === 0) {
-          return { success: false, message: "Failed to link issue" };
-        }
-
-        const parentId = actionTaskParentId(linked.data, entityType) ?? "";
-
-        const url =
-          getAppUrl() +
-          `${actionTaskEntities[entityType].detailPath(parentId)}/details`;
-
-        await linear.createAttachmentLink(companyId, {
-          issueId: issue.id as string,
-          url,
-          title: `Linked Carbon Issue: ${carbonIssue.parentReadableId ?? ""}`
-        });
-
-        return { success: true, message: "Linked successfully" };
-      }
-
-      case "DELETE": {
-        // Unlink from Carbon's DB first
-        const unlinked = await unlinkActionFromLinearIssue(client, companyId, {
-          entityType,
-          actionId
-        });
-
-        if (unlinked.error) {
-          return { success: false, message: "Failed to unlink issue" };
-        }
-
-        // Best-effort: clean up attachment in Linear
-        try {
-          const parentId = actionTaskParentId(unlinked.data, entityType);
-
-          if (parentId) {
-            const [found] = await linear.listAttachments(companyId, parentId);
-
-            if (found) {
-              await linear.removeAttachment(companyId, found.id);
-            }
-          }
-        } catch (e) {
-          logger.error("Failed to clean up Linear attachment", { error: e });
-        }
-
-        return { success: true, message: "Unlinked successfully" };
-      }
-    }
-  } catch (error) {
-    logger.error("Linear issue link action error", { error: error });
-    return data(
-      { success: false, message: `Failed to process request` },
-      { status: 400 }
-    );
+// POST links an existing Linear issue, DELETE unlinks it.
+export async function action(args: ActionFunctionArgs) {
+  if (args.request.method === "DELETE") {
+    const input = await validator(unlinkLinearIssue.input).request(args, {
+      method: "DELETE"
+    });
+    if ("invalid" in input) return input.invalid;
+    const api = await carbon(args.request);
+    return api.shared.unlinkLinearIssue(input.data);
   }
-};
+  const input = await validator(linkLinearIssue.input).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.shared.linkLinearIssue(input.data);
+}
 
 export const loader: LoaderFunction = async ({ request }) => {
   const url = new URL(request.url);

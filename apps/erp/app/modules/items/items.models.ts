@@ -231,7 +231,9 @@ export const itemValidator = z.object({
 // Common storage / shelf-life refines. Shared across all item-type
 // validators. Default Storage Unit is optional for every type - users can
 // set it later via the pickMethod UI once they know where the item lives.
-const applyStorageAndShelfLifeRefines = <T extends z.ZodObject>(schema: T) => {
+export const applyStorageAndShelfLifeRefines = <T extends z.ZodObject>(
+  schema: T
+) => {
   const refined: z.ZodType<z.infer<T>, z.input<T>> = schema
     .refine(
       (data: z.infer<T>) =>
@@ -859,16 +861,17 @@ export const materialTypeValidator = z.object({
   code: z.string().trim().min(1, { message: "Code is required" }).max(10)
 });
 
-export const partValidator = applyStorageAndShelfLifeRefines(
-  itemValidator.merge(
-    z.object({
-      id: z.string().min(1, { message: "Part ID is required" }).max(255),
-      revision: z.string().min(1, { message: "Revision is required" }),
-      modelUploadId: zfd.text(z.string().optional()),
-      lotSize: zfd.numeric(z.number().min(0).optional())
-    })
-  )
+/** A part's fields before the storage and shelf-life rules (`partValidator`). */
+export const partFields = itemValidator.merge(
+  z.object({
+    id: z.string().min(1, { message: "Part ID is required" }).max(255),
+    revision: z.string().min(1, { message: "Revision is required" }),
+    modelUploadId: zfd.text(z.string().optional()),
+    lotSize: zfd.numeric(z.number().min(0).optional())
+  })
 );
+
+export const partValidator = applyStorageAndShelfLifeRefines(partFields);
 
 // Tracked-entity pick order surfaced on the item's per-location Inventory
 // card. 'Default' = the picker's smart order (expiring soonest, then oldest).
@@ -1014,19 +1017,34 @@ export const supplierPartValidator = z.object({
   supplierUnitPrice: zfd.numeric(z.number().min(0).optional())
 });
 
-export const toolValidator = applyStorageAndShelfLifeRefines(
-  itemValidator.merge(
-    z.object({
-      id: z.string().min(1, { message: "Tool ID is required" }).max(255),
-      revision: z.string().min(1, { message: "Revision is required" }),
-      modelUploadId: zfd.text(z.string().optional()),
-      unitOfMeasureCode: z
-        .string()
-        .min(1, { message: "Unit of Measure is required" }),
-      lotSize: zfd.numeric(z.number().min(0).optional())
-    })
-  )
+/** A supplier part's price breaks, per purchase unit in its currency. */
+export const supplierPartPriceBreaksValidator = z.array(
+  z.object({
+    quantity: z.number(),
+    supplierUnitPrice: z.number(),
+    leadTime: z.number().optional()
+  })
 );
+
+/** The supplier part drawer's post: the part, and its price breaks as JSON. */
+export const supplierPartFormValidator = supplierPartValidator.extend({
+  priceBreaks: zfd.json(supplierPartPriceBreaksValidator.optional())
+});
+
+/** A tool's fields before the storage and shelf-life rules (`toolValidator`). */
+export const toolFields = itemValidator.merge(
+  z.object({
+    id: z.string().min(1, { message: "Tool ID is required" }).max(255),
+    revision: z.string().min(1, { message: "Revision is required" }),
+    modelUploadId: zfd.text(z.string().optional()),
+    unitOfMeasureCode: z
+      .string()
+      .min(1, { message: "Unit of Measure is required" }),
+    lotSize: zfd.numeric(z.number().min(0).optional())
+  })
+);
+
+export const toolValidator = applyStorageAndShelfLifeRefines(toolFields);
 
 export const unitOfMeasureValidator = z.object({
   id: zfd.text(z.string().optional()),

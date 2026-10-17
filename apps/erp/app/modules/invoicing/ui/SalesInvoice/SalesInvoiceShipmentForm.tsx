@@ -30,9 +30,9 @@ import {
   Submit
 } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
-import type { SalesInvoice } from "~/modules/invoicing";
-import { salesInvoiceShipmentValidator } from "~/modules/invoicing";
-import { incoterms } from "~/modules/shared";
+import { salesInvoiceShipmentValidator } from "~/modules/invoicing/invoicing.models";
+import type { SalesInvoice } from "~/modules/invoicing/types";
+import { incoterms } from "~/modules/shared/shared.models";
 import type { action as recalculateTaxesAction } from "~/routes/x+/sales-invoice+/$invoiceId.recalculate-taxes";
 import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.shipment";
 import { path } from "~/utils/path";

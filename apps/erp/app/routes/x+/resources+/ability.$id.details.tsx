@@ -10,12 +10,10 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { Ability } from "~/modules/resources";
-import {
-  AbilityForm,
-  abilityRecertifyValidator,
-  updateAbility
-} from "~/modules/resources";
+import { abilityRecertifyValidator } from "~/modules/resources/resources.models";
+import { updateAbility } from "~/modules/resources/resources.service";
+import type { Ability } from "~/modules/resources/types";
+import { AbilityForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

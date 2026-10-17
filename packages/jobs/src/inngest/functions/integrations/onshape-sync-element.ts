@@ -9,6 +9,7 @@ import { join } from "node:path";
 import type { Database } from "@carbon/database";
 import type { OnshapeClient, OnshapeTranslation } from "@carbon/ee/onshape";
 import { getOnshapeClient } from "@carbon/ee/onshape";
+import type { OnshapeOAuthIntegrationId } from "@carbon/ee/onshape/integration-id";
 import { getFileSizeLimit } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -18,16 +19,15 @@ import {
   type OnshapeModelFile
 } from "./onshape-attach";
 
-// Export→download→attach for ONE released Onshape element. Wires the OnshapeClient
-// export methods (@carbon/ee) to the Carbon-side attach helper. Flow: create
-// translation -> poll to DONE -> download from resultDocumentId/
-// resultExternalDataIds -> attach. Poll-with-backoff (real completions take
-// seconds); no translation.complete webhook needed.
+// Export→download→attach for ONE Onshape element, released or in a workspace.
+// Wires the OnshapeClient export methods (@carbon/ee) to the Carbon-side attach
+// helper. Flow: create translation -> poll to DONE -> download from
+// resultDocumentId/resultExternalDataIds -> attach. Poll-with-backoff (real
+// completions take seconds); no translation.complete webhook needed.
 //
-// The caller (release-sync / backfill job) is responsible for turning a release
-// event into these inputs: resolve itemId by part number (readableIdWithRevision,
-// LINK-ONLY skip if none), and the documentId/versionId/elementId of the released
-// geometry, including the released partId and configuration. Individual-part
+// Callers (the release-sync and backfill jobs, and onshape-panel-sync) resolve
+// itemId and the documentId/version-or-workspace/elementId of the geometry,
+// including its partId and configuration. Individual-part
 // thumbnails come from that selected model after optimization; an element
 // thumbnail represents the entire Part Studio and must never be attached to it.
 
@@ -37,10 +37,15 @@ type DocumentSourceType = Database["public"]["Enums"]["documentSourceType"];
 export interface SyncOnshapeElementInput {
   companyId: string;
   userId: string; // Onshape integration installer (auth + audit)
+  // Omitted: the company's active sync connection.
+  integrationId?: OnshapeOAuthIntegrationId;
   itemId: string; // resolved Carbon item (caller guarantees it exists)
   sourceDocument: DocumentSourceType; // e.g. "Part"
   documentId: string;
-  versionId: string; // the released version
+  versionId: string; // released version, or workspace id when sourceWvm is "w"
+  sourceWvm?: "w" | "v"; // path segment for export/thumbnail calls; default "v"
+  // Workspace ids are mutable, so a Part Studio model id also hashes this.
+  sourceMicroversionId?: string;
   modelElementId: string; // released Part Studio OR Assembly element to export
   modelElementKind: "partstudio" | "assembly"; // from the revision's elementType (0/1)
   partId?: string | null; // REQUIRED for individual Part Studio releases
@@ -109,7 +114,7 @@ async function downloadTranslationBytes(
 // The one and only model export path: export GLTF from Onshape and stream it
 // to disk (a whole-vehicle export can be >1.5GB — it is never buffered in
 // memory). The raw export is attached as-is; the assembler pipeline
-// ("carbon/model-optimize", fired by the caller) turns it into the
+// ("carbon/model-optimize", started by the new model row) turns it into the
 // meshopt-compressed viewer GLB, so no local compression happens here. STEP
 // export was deliberately dropped: real assemblies produce multi-GB STEP
 // files, and Onshape stays the CAD system of record. Throws
@@ -142,7 +147,12 @@ async function exportRawGltfModel(
           input.documentId,
           input.versionId,
           input.modelElementId,
-          { formatName: "GLTF", storeInDocument: false, configuration }
+          {
+            formatName: "GLTF",
+            storeInDocument: false,
+            configuration,
+            wvm: input.sourceWvm ?? "v"
+          }
         )
       : await client.createPartStudioTranslation(
           input.documentId,
@@ -152,7 +162,8 @@ async function exportRawGltfModel(
             formatName: "GLTF",
             storeInDocument: false,
             configuration,
-            partIds: input.partId!
+            partIds: input.partId!,
+            wvm: input.sourceWvm ?? "v"
           }
         );
   const gltfDone = await waitForTranslation(client, gltfTranslation.id);
@@ -182,9 +193,11 @@ async function exportRawGltfModel(
     // Immutable generation: old optimizer/thumbnail/compact jobs can only
     // finish against their old model ID. Replays of this exact released source
     // share one ID; a different part/configuration cannot reuse its artifacts.
-    // Keep whole-assembly attachment behavior unchanged.
+    // A whole assembly, or a workspace part with no microversion, has no fixed
+    // source to name; the attach names it by its bytes instead.
     sourceId:
-      input.modelElementKind === "partstudio"
+      input.modelElementKind === "partstudio" &&
+      (input.sourceWvm !== "w" || input.sourceMicroversionId)
         ? `onshape-${createHash("sha256")
             .update(
               JSON.stringify([
@@ -195,7 +208,8 @@ async function exportRawGltfModel(
                 input.versionId,
                 input.modelElementId,
                 input.partId,
-                configuration ?? ""
+                configuration ?? "",
+                ...(input.sourceWvm === "w" ? [input.sourceMicroversionId] : [])
               ])
             )
             .digest("hex")
@@ -208,7 +222,12 @@ export async function syncOnshapeElementAssetsToItem(
   carbon: CarbonClient,
   input: SyncOnshapeElementInput
 ): Promise<AttachOnshapeAssetsResult & { thumbnailAttached: boolean }> {
-  const onshape = await getOnshapeClient(carbon, input.companyId, input.userId);
+  const onshape = await getOnshapeClient(
+    carbon,
+    input.companyId,
+    input.userId,
+    input.integrationId
+  );
   if (onshape.error || !onshape.client) {
     throw new Error(`getOnshapeClient failed: ${onshape.error ?? "no client"}`);
   }
@@ -217,8 +236,8 @@ export async function syncOnshapeElementAssetsToItem(
   const scratchDir = await mkdtemp(join(tmpdir(), "onshape-gltf-"));
   try {
     // Raw GLTF is the only model export (STEP was deliberately dropped — see
-    // exportRawGltfModel). The assembler pipeline does the compression; the
-    // caller fires "carbon/model-optimize" for the returned modelUploadId.
+    // exportRawGltfModel). The assembler pipeline does the compression; a new
+    // model row starts it.
     // Throws OnshapeAssetTooLargeError past the raw cap; callers treat that as
     // a permanent skip.
     const model = await exportRawGltfModel(client, input, scratchDir);
@@ -232,7 +251,11 @@ export async function syncOnshapeElementAssetsToItem(
         input.documentId,
         input.versionId,
         drawingElementId,
-        { formatName: "PDF", storeInDocument: false }
+        {
+          formatName: "PDF",
+          storeInDocument: false,
+          wvm: input.sourceWvm ?? "v"
+        }
       );
       const pdfDone = await waitForTranslation(client, pdfTranslation.id);
       const pdfBytes = await downloadTranslationBytes(
@@ -257,7 +280,7 @@ export async function syncOnshapeElementAssetsToItem(
 
     // The element-thumbnail endpoint cannot select a part or configuration.
     // Keep it only for unconfigured assemblies. All other thumbnails are
-    // generated from the selected model by the optimizer's completion event.
+    // rendered from the selected model by the optimise itself.
     let thumbnailAttached = false;
     if (
       attached.modelUploadId &&
@@ -268,7 +291,9 @@ export async function syncOnshapeElementAssetsToItem(
         const thumbnail = await client.getElementThumbnail(
           input.documentId,
           input.versionId,
-          input.modelElementId
+          input.modelElementId,
+          "300x300",
+          input.sourceWvm ?? "v"
         );
         await attachModelThumbnail(carbon, {
           companyId: input.companyId,
@@ -278,7 +303,7 @@ export async function syncOnshapeElementAssetsToItem(
         thumbnailAttached = true;
       } catch (thumbnailError) {
         console.warn(
-          `syncOnshapeElementAssetsToItem: Onshape thumbnail fetch failed for ${baseName}; falling back to the model-thumbnail job`,
+          `syncOnshapeElementAssetsToItem: Onshape thumbnail fetch failed for ${baseName}; the optimise renders one`,
           thumbnailError
         );
       }
@@ -293,12 +318,14 @@ export async function syncOnshapeElementAssetsToItem(
 export interface SyncOnshapeDrawingInput {
   companyId: string;
   userId: string; // Onshape integration installer (auth + audit)
+  integrationId?: OnshapeOAuthIntegrationId;
   itemId: string; // resolved Carbon item (the model this drawing documents)
   sourceDocument: DocumentSourceType; // e.g. "Part"
   documentId: string;
   versionId: string; // the released version
   drawingElementId: string; // the released DRAWING element to export as PDF
   assetBaseName?: string; // filename base (e.g. the model's readableIdWithRevision)
+  sourceWvm?: "w" | "v"; // path segment for the drawing translation; default "v"
 }
 
 // Export ONE released Onshape DRAWING element as a PDF and attach it as a document
@@ -311,7 +338,12 @@ export async function syncOnshapeDrawingAssetsToItem(
   carbon: CarbonClient,
   input: SyncOnshapeDrawingInput
 ): Promise<AttachOnshapeAssetsResult> {
-  const onshape = await getOnshapeClient(carbon, input.companyId, input.userId);
+  const onshape = await getOnshapeClient(
+    carbon,
+    input.companyId,
+    input.userId,
+    input.integrationId
+  );
   if (onshape.error || !onshape.client) {
     throw new Error(`getOnshapeClient failed: ${onshape.error ?? "no client"}`);
   }
@@ -321,7 +353,7 @@ export async function syncOnshapeDrawingAssetsToItem(
     input.documentId,
     input.versionId,
     input.drawingElementId,
-    { formatName: "PDF", storeInDocument: false }
+    { formatName: "PDF", storeInDocument: false, wvm: input.sourceWvm ?? "v" }
   );
   const pdfDone = await waitForTranslation(client, pdfTranslation.id);
   const pdfBytes = await downloadTranslationBytes(

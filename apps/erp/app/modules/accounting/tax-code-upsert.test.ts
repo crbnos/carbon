@@ -10,9 +10,11 @@ import { readFileSync } from "node:fs";
 import { sql } from "kysely";
 import { expect, it, vi } from "vitest";
 
-// accounting.service reaches the settings barrel and the glossary, whose
-// Lingui `msg` macros vitest does not transform. Nothing under test uses them.
-vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
+// accounting.service reaches the settings service and the glossary. Nothing
+// under test uses them.
+vi.mock("~/modules/settings/settings.service", () => ({
+  getNextSequence: vi.fn()
+}));
 vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
@@ -25,7 +27,7 @@ vi.mock("@carbon/content/glossary", () => ({
   terms: {}
 }));
 
-import { connectLocalTestDatabase } from "../../../../../packages/server-functions/src/local-database-test-fixture";
+import { connectLocalTestDatabase } from "../../../test/database/fixtures/local-database";
 import { upsertTaxCode } from "./accounting.service";
 
 const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];

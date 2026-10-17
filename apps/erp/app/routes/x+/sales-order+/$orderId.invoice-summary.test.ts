@@ -5,8 +5,8 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as sales from "~/modules/sales";
-import { getCompanySettings } from "~/modules/settings";
+import * as sales from "~/modules/sales/sales.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { loader } from "./$orderId";
 
 vi.mock("@carbon/auth", () => ({
@@ -32,7 +32,9 @@ vi.mock("~/modules/sales/ui/SalesOrder", () => ({
   SalesOrderHeader: () => null,
   SalesOrderProperties: () => null
 }));
-vi.mock("~/modules/settings", () => ({ getCompanySettings: vi.fn() }));
+vi.mock("~/modules/settings/settings.service", () => ({
+  getCompanySettings: vi.fn()
+}));
 vi.mock("~/utils/handle", () => ({
   detailBreadcrumb: () => undefined
 }));
@@ -45,14 +47,7 @@ vi.mock("~/utils/path", () => ({
     }
   }
 }));
-// The order's default tax is not what this test is about.
-vi.mock("~/modules/sales/sales.server", () => ({
-  resolveSalesDocumentTaxes: vi.fn().mockResolvedValue({
-    data: null,
-    error: null
-  })
-}));
-vi.mock("~/modules/sales", () => ({
+vi.mock("~/modules/sales/sales.service", () => ({
   getCustomer: vi.fn(),
   getOpportunity: vi.fn(),
   getOpportunityDocuments: vi.fn(),
@@ -62,7 +57,12 @@ vi.mock("~/modules/sales", () => ({
   getSalesOrderInvoicePaymentsByIds: vi.fn(),
   getSalesOrderInvoicesByIds: vi.fn(),
   getSalesOrderLines: vi.fn(),
-  getSalesOrderRelatedItems: vi.fn()
+  getSalesOrderRelatedItems: vi.fn(),
+  // The order's default tax is not what this test is about.
+  resolveSalesDocumentTaxes: vi.fn().mockResolvedValue({
+    data: null,
+    error: null
+  })
 }));
 
 const getSalesOrderInvoicePaymentsByIds = vi.mocked(

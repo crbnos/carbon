@@ -5,7 +5,7 @@
 import { Constants } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { months } from "~/modules/shared";
+import { months } from "~/modules/shared/shared.models";
 import {
   itemLedgerDocumentTypes,
   itemLedgerTypes

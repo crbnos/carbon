@@ -12,7 +12,7 @@ import { withLogContext } from "@carbon/logger/middleware.server";
 import { datetime, getRequestOrigin } from "@carbon/utils";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { ActionFunctionArgs } from "react-router";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import {
   authenticateApiKey,
   findOAuthToken,
@@ -24,7 +24,6 @@ import {
   isListOperation,
   operationsByName
 } from "../v1+/lib/operations.server";
-import { isMcpBlockedTool } from "./lib/mcp-blocked-tools";
 import toolMetadata from "./lib/tool-metadata.json";
 
 // One catalog search index for the process (built lazily on first query); the
@@ -183,7 +182,6 @@ export async function action({ request }: ActionFunctionArgs) {
             callOperation,
             operationsByName,
             isListOperation,
-            isMcpBlockedTool,
             catalogSearch,
             toolMetadata
           }

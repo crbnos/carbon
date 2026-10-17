@@ -38,6 +38,7 @@ import { useNavigate, useSearchParams, useSubmit } from "react-router";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
+import { usePeopleBoardFeedback } from "./usePeopleBoardFeedback";
 
 export type WeekOption = {
   start: string;
@@ -87,6 +88,7 @@ export function PeopleHeader({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const submit = useSubmit();
+  usePeopleBoardFeedback();
   const locations = useLocations();
 
   const [dateOpen, setDateOpen] = useState(false);

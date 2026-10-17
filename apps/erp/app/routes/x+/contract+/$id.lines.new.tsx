@@ -10,16 +10,16 @@ import { datetime, redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { resolveLineTaxes } from "~/modules/accounting";
+import { resolveLineTaxes } from "~/modules/accounting/accounting.service";
+import { customerContractLineValidator } from "~/modules/sales/sales.models";
 import {
-  customerContractLineValidator,
   getContract,
+  isItemTaxable,
   upsertContractLine
-} from "~/modules/sales";
-import { isItemTaxable } from "~/modules/sales/sales.server";
+} from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractLineForm } from "~/modules/sales/ui/Contracts";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 /** The tax a new line opens with: the contract's ship-to's or customer's

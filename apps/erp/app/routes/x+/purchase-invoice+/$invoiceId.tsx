@@ -11,14 +11,17 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import { getCurrencyByCode, resolveLineTaxes } from "~/modules/accounting";
+import {
+  getCurrencyByCode,
+  resolveLineTaxes
+} from "~/modules/accounting/accounting.service";
 import {
   getCompanyHasOpenCredits,
   getPurchaseInvoice,
   getPurchaseInvoiceDelivery,
-  getPurchaseInvoiceLines,
-  PurchaseInvoiceHeader
-} from "~/modules/invoicing";
+  getPurchaseInvoiceLines
+} from "~/modules/invoicing/invoicing.service";
+import { PurchaseInvoiceHeader } from "~/modules/invoicing/ui";
 import PurchaseInvoiceExplorer from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceExplorer";
 import PurchaseInvoiceProperties from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties";
 import {
@@ -26,7 +29,7 @@ import {
   getSupplierInteraction,
   getSupplierInteractionDocuments
 } from "~/modules/purchasing/purchasing.service";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path, requestReferrer } from "~/utils/path";
 

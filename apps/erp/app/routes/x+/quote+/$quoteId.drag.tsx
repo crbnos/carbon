@@ -2,322 +2,35 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { openai } from "@ai-sdk/openai";
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { storage, TEMP_STAGING_BUCKET } from "@carbon/files";
-import { supportedModelTypes } from "@carbon/files/cad";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { redirect } from "@carbon/utils";
-import { generateText, Output } from "ai";
-import { nanoid } from "nanoid";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
 import { z } from "zod";
-import { upsertPart } from "~/modules/items";
-import {
-  getQuote,
-  upsertQuoteLine,
-  upsertQuoteLineMethod
-} from "~/modules/sales";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { zfd } from "zod-form-data";
+import { attachQuoteFile } from "~/modules/sales/sales.server";
 import { path } from "~/utils/path";
 
-const quoteDragValidator = z.object({
-  id: z.string(),
-  name: z.string(),
-  size: z.number(),
-  path: z.string(),
-  lineId: z.string().optional()
+// The drop posts the dragged file as JSON in one field.
+const dropForm = z.object({
+  payload: zfd.json(attachQuoteFile.input.omit({ quoteId: true }))
 });
 
-const logger = getLogger("erp", "quote", "drag");
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "sales"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(dropForm).request(args, {
+    params: ["quoteId"]
   });
-
-  const { quoteId } = params;
-  if (!quoteId) throw new Error("Could not find quoteId");
-
-  const formData = await request.formData();
-  const payload = formData.get("payload");
-  if (!payload || typeof payload !== "string") {
-    throw new Error("Invalid payload");
-  }
-
-  const validation = quoteDragValidator.safeParse(JSON.parse(payload));
-  if (!validation.success) {
-    return data({ error: validation.error.flatten() }, { status: 400 });
-  }
-
-  const { name: fileName, path: documentPath, size, lineId } = validation.data;
-
-  // Lines and parts are created with the service role: the URL quote must
-  // belong to this company.
-  const serviceRole = getCarbonServiceRole();
-  await requireCompanyRecord(serviceRole, "quote", companyId, { id: quoteId });
-
-  const quote = await getQuote(serviceRole, quoteId);
-  if (quote.error || !quote.data) {
-    throw redirect(
-      path.to.quote(quoteId),
-      await flash(request, error(quote.error, "Failed to get quote details"))
-    );
-  }
-
-  let targetLineId = lineId;
-  let partId: string | undefined;
-  const partName = fileName.replace(/\.[^/.]+$/, "");
-
-  if (!targetLineId) {
-    // Only create a new part and quote line if lineId is not provided
-    // Extract filename without extension for the part name
-
-    let readableId = partName;
-    let revision = "0";
-    try {
-      const { output: parsedFilename } = await generateText({
-        model: openai("gpt-4o-mini"),
-        output: Output.object({
-          schema: z.object({
-            partId: z
-              .string()
-              .describe("The part identifier extracted from the filename"),
-            revision: z
-              .string()
-              .nullable()
-              .describe("The revision number if present, null if not found")
-          })
-        }),
-        prompt: `Extract the part ID and revision from this filename: "${partName}". The part ID should be the main identifier, and revision should be any version/revision indicator if present.`
-      });
-
-      readableId = parsedFilename.partId;
-      revision = parsedFilename.revision || "0";
-    } catch (error) {
-      logger.error("Failed to parse part filename", { error });
-    }
-
-    let suffix = 1;
-
-    // Check for uniqueness and append a suffix if necessary
-    while (true) {
-      const existingItem = await serviceRole
-        .from("item")
-        .select("id")
-        .eq("readableId", readableId)
-        .eq("revision", revision)
-        .eq("companyId", companyId)
-        .single();
-
-      if (existingItem.error || !existingItem.data) {
-        // readableId is unique, we can use it
-        break;
-      }
-
-      // If not unique, append or increment suffix
-      revision = `${revision} (${suffix})`;
-      suffix++;
-    }
-
-    const partData = {
-      id: readableId,
-      name: readableId,
-      defaultMethodType: "Make to Order" as const,
-      itemTrackingType: "Inventory" as const,
-      replenishmentSystem: "Make" as const,
-      revision,
-      unitOfMeasureCode: "EA",
-      shelfLifeCalculateFromBom: false,
-      companyId,
-      createdBy: userId
-    };
-
-    const part = await upsertPart(serviceRole, partData);
-    if (part.error || !part.data?.id) {
-      throw redirect(
-        path.to.quote(quoteId),
-        await flash(request, error(part.error, "Failed to create part"))
-      );
-    }
-
-    partId = part.data?.id;
-
-    const quoteLineData = {
-      quoteId,
-      itemId: partId ?? "",
-      status: "Not Started" as const,
-      estimatorId: userId,
-      description: partName,
-      methodType: "Make to Order" as const,
-      customerPartId: partName,
-      customerPartRevision: "",
-      unitOfMeasureCode: "EA",
-      taxPercent: 0,
-      quantity: [1],
-      companyId,
-      createdBy: userId
-    };
-
-    const createQuotationLine = await upsertQuoteLine(
-      serviceRole,
-      quoteLineData
-    );
-    if (createQuotationLine.error || !createQuotationLine.data) {
-      throw redirect(
-        path.to.quote(quoteId),
-        await flash(
-          request,
-          error(createQuotationLine.error, "Failed to create quote line.")
-        )
-      );
-    }
-
-    targetLineId = createQuotationLine.data.id;
-
-    // Create quote line method for Make items
-    const upsertMethod = await upsertQuoteLineMethod(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        quoteId,
-        quoteLineId: targetLineId,
-        itemId: partId ?? "",
-        configuration: undefined,
-        companyId,
-        userId
-      }
-    );
-
-    if (upsertMethod.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, targetLineId),
-        await flash(
-          request,
-          error(upsertMethod.error, "Failed to create quote line method.")
-        )
-      );
-    }
-  } else {
-    const existingLine = await serviceRole
-      .from("quoteLine")
-      .select("itemId")
-      .eq("id", targetLineId)
-      .eq("quoteId", quoteId)
-      .eq("companyId", companyId)
-      .single();
-
-    if (existingLine.error || !existingLine.data) {
-      throw redirect(
-        path.to.quote(quoteId),
-        await flash(
-          request,
-          error(existingLine.error, "Failed to find quote line")
-        )
-      );
-    }
-
-    partId = existingLine.data.itemId;
-  }
-
-  const extension = fileName.split(".").pop();
-  const is3DModel = extension && supportedModelTypes.includes(extension);
-  let newPath = "";
-
-  if (is3DModel) {
-    const modelId = nanoid();
-    const fileExtension = fileName.split(".").pop();
-    newPath = `${companyId}/models/${modelId}.${fileExtension}`;
-
-    // Create model record
-    const modelRecord = await client.from("modelUpload").insert({
-      id: modelId,
-      modelPath: newPath,
-      name: fileName,
-      size: size ?? 0,
-      companyId,
-      createdBy: userId
+  if ("invalid" in input) return input.invalid;
+  const { quoteId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.sales.attachQuoteFile({
+    ...input.data.payload,
+    quoteId
+  });
+  // Nothing reads a successful drop; a failure is shown on the quote.
+  if (result.error) {
+    return respond(args.request, result).redirect(path.to.quote(quoteId), {
+      message: ""
     });
-
-    if (modelRecord.error) {
-      logger.error("Failed to create model record", {
-        fileName,
-        error: modelRecord.error
-      });
-      return false;
-    }
-
-    // Link model to quote line and item (if partId exists)
-    const updates = [
-      client
-        .from("quoteLine")
-        .update({ modelUploadId: modelId })
-        .eq("id", targetLineId)
-    ];
-
-    if (partId && modelId) {
-      updates.push(
-        // @ts-expect-error
-        client.from("item").update({ modelUploadId: modelId }).eq("id", partId)
-      );
-    }
-
-    const [lineUpdate] = await Promise.all(updates);
-
-    if (lineUpdate.error) {
-      logger.error("Failed to link model to sales order line", {
-        error: lineUpdate.error
-      });
-    }
-
-    // Relocate the raw across buckets: attachments live in `private`, but raw
-    // models must land in `temp-staging` (2.5 GB) for the optimise/assembly jobs
-    // to read (Supabase has no cross-bucket move).
-    const raw = await storage(client).company(companyId).download(documentPath);
-    if (!raw.data) {
-      throw redirect(
-        path.to.quote(quoteId),
-        await flash(request, error(raw.error, "Failed to read model file"))
-      );
-    }
-    const staged = await client.storage
-      .from(TEMP_STAGING_BUCKET)
-      .upload(newPath, raw.data, { upsert: true });
-    if (staged.error) {
-      throw redirect(
-        path.to.quote(quoteId),
-        await flash(request, error(staged.error, "Failed to stage model file"))
-      );
-    }
-    await storage(client).company(companyId).remove([documentPath]);
-
-    // Thumbnail is generated by model-optimize on success (renders the GLB).
-    await trigger("model-optimize", {
-      modelUploadId: modelId,
-      companyId,
-      userId
-    });
-  } else {
-    newPath = `${companyId}/opportunity-line/${targetLineId}/${fileName}`;
-    // Move the file to the new path
-    const move = await storage(client)
-      .company(companyId)
-      .move(documentPath, newPath);
-
-    if (move.error) {
-      throw redirect(
-        path.to.quote(quoteId),
-        await flash(request, error(move.error, "Failed to move file"))
-      );
-    }
   }
-
-  return { success: true, quoteLineId: targetLineId };
+  return result;
 }

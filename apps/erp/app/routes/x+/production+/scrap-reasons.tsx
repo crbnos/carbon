@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getScrapReasons } from "~/modules/production";
+import { getScrapReasons } from "~/modules/production/production.service";
 import ScrapReasonsTable from "~/modules/production/ui/ScrapReasons/ScrapReasonsTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

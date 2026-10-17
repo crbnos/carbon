@@ -11,22 +11,22 @@ import { msg } from "@lingui/core/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import type { Chart } from "~/modules/accounting";
+import { financialReportParamsValidator } from "~/modules/accounting/accounting.models";
 import {
-  financialReportParamsValidator,
   getCompaniesInGroup,
+  getConsolidatedBalancesForReport,
   getFinancialStatementBalances,
   getFiscalYearSettings,
   translateCompanyBalances
-} from "~/modules/accounting";
-import { getConsolidatedBalancesForReport } from "~/modules/accounting/accounting.server";
+} from "~/modules/accounting/accounting.service";
+import type { Chart } from "~/modules/accounting/types";
 import {
   exportTrialBalance,
   ReportFilters,
   TrialBalanceTree
 } from "~/modules/accounting/ui/Reports";
-import { months } from "~/modules/shared";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { months } from "~/modules/shared/shared.models";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { revalidateIgnoringOffset } from "~/utils/revalidate";

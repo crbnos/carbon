@@ -10,11 +10,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getCompaniesInGroup,
+  getConsolidatedPeriodSeriesForReport,
   getFinancialStatementBalances,
   getFinancialStatementPeriodSeries,
   getFiscalYearSettings
-} from "~/modules/accounting";
-import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.server";
+} from "~/modules/accounting/accounting.service";
 import type { ChartPeriodSeries } from "~/modules/accounting/types";
 import { NET_INCOME_ACCOUNT_ID } from "~/modules/accounting/types";
 import { exportPeriodReport } from "~/modules/accounting/ui/Reports/exportReport";
@@ -22,7 +22,8 @@ import { loader } from "./balance-sheet";
 import { loader as incomeStatementLoader } from "./income-statement";
 import { loader as trialBalanceLoader } from "./trial-balance";
 
-vi.mock("@carbon/auth", () => ({
+vi.mock("@carbon/auth", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   error: (cause: unknown, message: string) => ({
     cause,
     message,
@@ -40,7 +41,10 @@ vi.mock("@carbon/react", () => ({ VStack: () => null }));
 vi.mock("@lingui/core/macro", () => ({
   msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
-vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
+vi.mock("~/modules/settings/settings.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  getNextSequence: vi.fn()
+}));
 vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
@@ -52,7 +56,8 @@ vi.mock("@carbon/content/glossary", () => ({
   termSlug: (term: string) => term,
   terms: {}
 }));
-vi.mock("~/modules/shared", () => ({
+vi.mock("~/modules/shared/shared.models", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   months: [
     "January",
     "February",
@@ -68,21 +73,22 @@ vi.mock("~/modules/shared", () => ({
     "December"
   ]
 }));
-vi.mock("~/modules/shared/timezone.server", () => ({
+vi.mock("~/modules/shared/shared.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getCompanyTimeZone: vi.fn(async () => "America/New_York")
 }));
-vi.mock("~/modules/accounting", async () => ({
-  ...(await import("~/modules/accounting/accounting.service")),
-  ...(await import("~/modules/accounting/accounting.models")),
+vi.mock("~/modules/accounting/accounting.service", async (actual) => ({
+  ...(await actual<object>()),
   getCompaniesInGroup: vi.fn(),
   getFinancialStatementPeriodSeries: vi.fn(),
   getFinancialStatementBalances: vi.fn(),
-  getFiscalYearSettings: vi.fn()
-}));
-vi.mock("~/modules/accounting/accounting.server", async () => ({
-  ...(await vi.importActual("~/modules/accounting/accounting.server")),
+  getFiscalYearSettings: vi.fn(),
   getConsolidatedPeriodSeriesForReport: vi.fn()
 }));
+// accounting.server's operations reach these modules; no report uses them.
+vi.mock("~/modules/sales/sales.service", () => ({}));
+vi.mock("~/modules/purchasing/purchasing.service", () => ({}));
+
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: vi.fn()
 }));

@@ -25,7 +25,7 @@ import { useMemo } from "react";
 import { LuMoveLeft, LuPhoneCall } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { Form, useFetcher, useLoaderData } from "react-router";
-import { getCompany, getPlans } from "~/modules/settings";
+import { getCompany, getPlans } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "plan");

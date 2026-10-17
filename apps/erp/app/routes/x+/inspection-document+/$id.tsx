@@ -21,10 +21,10 @@ import {
   getGaugeTypesList,
   getInspectionDocument,
   getInspectionFeatures
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import type { InspectionDocumentContent } from "~/modules/quality/types";
 import type { SamplingRule } from "~/modules/quality/ui/InspectionDocument/SamplingRuleModal";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

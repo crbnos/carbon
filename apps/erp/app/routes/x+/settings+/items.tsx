@@ -2,10 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Hidden, Select, Submit, ValidatedForm, validator } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -22,21 +24,18 @@ import {
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
-import { plmReleaseControl } from "~/modules/items";
+import { plmReleaseControl } from "~/modules/items/items.models";
 import {
-  getCompanySettings,
   plmReleaseControlValidator,
-  updateAllowLowercaseItemIdsSetting,
-  updateBomExplorerReadableIdSetting,
-  updateMaterialGeneratedIdsSetting,
-  updateMetricSettings,
-  updatePlmReleaseControlSetting
-} from "~/modules/settings";
+  settingsToggle
+} from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -62,83 +61,40 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { companySettings: companySettings.data };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// One form per card, told apart by its intent: each becomes the fields of
+// `settings.items.update` it saves (the operation drops `intent`).
+const itemsSettingsForm = z.discriminatedUnion("intent", [
+  settingsToggle("materialIds", "materialGeneratedIds"),
+  settingsToggle("materialUnits", "useMetric"),
+  settingsToggle("allowLowercaseItemIds", "allowLowercaseItemIds"),
+  settingsToggle("bomExplorerReadableId", "showBomExplorerReadableId"),
+  plmReleaseControlValidator.extend({ intent: z.literal("plmReleaseControl") })
+]);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  const enabled = formData.get("enabled") === "true";
-
-  switch (intent) {
-    case "materialIds": {
-      const result = await updateMaterialGeneratedIdsSetting(
-        client,
-        companyId,
-        enabled
-      );
-      if (result.error)
-        return { success: false, message: result.error.message };
-      return { success: true, message: "Material IDs setting updated" };
-    }
-
-    case "materialUnits": {
-      const result = await updateMetricSettings(client, companyId, enabled);
-      if (result.error)
-        return { success: false, message: result.error.message };
-      return { success: true, message: "Material units setting updated" };
-    }
-
-    case "allowLowercaseItemIds": {
-      const result = await updateAllowLowercaseItemIdsSetting(
-        client,
-        companyId,
-        enabled
-      );
-      if (result.error)
-        return { success: false, message: result.error.message };
-      return { success: true, message: "Item ID casing setting updated" };
-    }
-
-    case "bomExplorerReadableId": {
-      const result = await updateBomExplorerReadableIdSetting(
-        client,
-        companyId,
-        enabled
-      );
-      if (result.error)
-        return { success: false, message: result.error.message };
-      return { success: true, message: "BoM explorer setting updated" };
-    }
-
-    case "plmReleaseControl": {
-      const validation = await validator(plmReleaseControlValidator).validate(
-        formData
-      );
-      if (validation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const result = await updatePlmReleaseControlSetting(
-        client,
-        companyId,
-        validation.data.plmReleaseControl
-      );
-      if (result.error)
-        return { success: false, message: result.error.message };
-      return { success: true, message: "Release control setting updated" };
-    }
-  }
-
-  return { success: false, message: "Invalid form data" };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(itemsSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updateItemsSettings(input.data);
 }
 
 export default function ItemsSettingsRoute() {
   const { t } = useLingui();
   const { companySettings } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.materialGeneratedIds !== undefined)
+        toast.success(t`Material IDs setting updated`);
+      else if (data.useMetric !== undefined)
+        toast.success(t`Material units setting updated`);
+      else if (data.allowLowercaseItemIds !== undefined)
+        toast.success(t`Item ID casing setting updated`);
+      else if (data.showBomExplorerReadableId !== undefined)
+        toast.success(t`BoM explorer setting updated`);
+      else toast.success(t`Release control setting updated`);
+    }
+  });
 
   const releaseControlLabels: Record<
     (typeof plmReleaseControl)[number],
@@ -150,16 +106,6 @@ export default function ItemsSettingsRoute() {
   };
 
   const isToggling = fetcher.state !== "idle";
-
-  useEffect(() => {
-    if (fetcher.data?.success === true && fetcher?.data?.message) {
-      toast.success(fetcher.data.message);
-    }
-
-    if (fetcher.data?.success === false && fetcher?.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data?.message, fetcher.data?.success]);
 
   const handleMaterialIdsToggle = useCallback(
     (checked: boolean) => {

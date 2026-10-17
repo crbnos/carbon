@@ -38,11 +38,11 @@ import {
   usePermissions,
   useSupplierApprovalRequired
 } from "~/hooks";
-import type { Supplier } from "~/modules/purchasing";
 import {
   supplierApprovalValidator,
   supplierValidator
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.models";
+import type { Supplier } from "~/modules/purchasing/types";
 import { upsertIntoListStore, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 

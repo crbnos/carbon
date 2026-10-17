@@ -5,7 +5,7 @@
 import { useCarbon } from "@carbon/auth";
 import { convertKbToString, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
-import { useRevalidator } from "@carbon/query";
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
   CardHeader,
@@ -34,7 +34,6 @@ import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { LuBox, LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { useModelUpload, useUser } from "~/hooks";
 import type { ModelUpload } from "~/types";
 import type { ViewDirection } from "~/utils/model-thumbnail";
@@ -86,7 +85,7 @@ const CadModel = ({
   const revalidator = useRevalidator();
   const { upload, runUpload } = useModelUpload();
 
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction();
   const [file, setFile] = useState<File | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteModal = useDisclosure();

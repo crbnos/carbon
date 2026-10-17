@@ -7,7 +7,7 @@ import { Combobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useMemo } from "react";
 import { usePercentFormatter } from "~/hooks";
-import type { getTaxCodesList } from "~/modules/accounting";
+import type { getTaxCodesList } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 

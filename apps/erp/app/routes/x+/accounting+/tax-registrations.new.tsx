@@ -2,18 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data } from "react-router";
-import {
-  taxRegistrationValidator,
-  upsertTaxRegistration
-} from "~/modules/accounting";
+import { taxRegistrationValidator } from "~/modules/accounting/accounting.models";
 import { TaxRegistrationForm } from "~/modules/accounting/ui/Tax";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -26,47 +20,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return null;
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "accounting"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(taxRegistrationValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id: _id, ...taxRegistration } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.accounting.createTaxRegistration({
+    ...taxRegistration,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  const formData = await request.formData();
-  const modal = formData.get("type") === "modal";
-
-  const validation = await validator(taxRegistrationValidator).validate(
-    formData
+  // The modal form reads the result and closes itself.
+  if (input.formData?.get("type") === "modal") return result;
+  return respond(args.request, result).redirect(
+    `${path.to.taxRegistrations}?${getParams(args.request)}`,
+    { message: "Tax registration created" }
   );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...rest } = validation.data;
-
-  const insertTaxRegistration = await upsertTaxRegistration(client, {
-    ...rest,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
-  if (insertTaxRegistration.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(insertTaxRegistration.error, "Failed to insert tax registration")
-      )
-    );
-  }
-
-  return modal
-    ? data(insertTaxRegistration, { status: 201 })
-    : redirect(
-        `${path.to.taxRegistrations}?${getParams(request)}`,
-        await flash(request, success("Tax registration created"))
-      );
 }
 
 export default function NewTaxRegistrationRoute() {

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { useRevalidator } from "@carbon/query";
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
   Drawer,
@@ -21,14 +21,15 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
-import { Link, useFetcher } from "react-router";
+import { Link } from "react-router";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import type { PlanningAction, ProductionOrder } from "~/modules/production";
+import type { ProductionOrder } from "~/modules/production/production.models";
 import {
   isJobEditableFromPlanning,
   type jobStatus
 } from "~/modules/production/production.models";
+import type { PlanningAction } from "~/modules/production/types";
 import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   BeyondFenceButton,
@@ -112,9 +113,16 @@ export const ProductionPlanningOrderDrawer = memo(
     onClose,
     locationToday
   }: ProductionPlanningOrderDrawerProps) => {
-    const fetcher = useFetcher<typeof bulkUpdateAction>();
     const { revalidate } = useRevalidator();
     const { t } = useLingui();
+    // Order: a refusal is toasted by useAction.
+    const fetcher = useAction<typeof bulkUpdateAction>({
+      onSuccess: () => {
+        toast.success(t`Orders submitted`);
+        setOrders(row, []);
+        onClose();
+      }
+    });
     const { locale } = useLocale();
     const fenceLabel = timeFenceDate
       ? formatDate(timeFenceDate, undefined, locale)
@@ -267,20 +275,19 @@ export const ProductionPlanningOrderDrawer = memo(
             })
           });
           const result = (await response.json().catch(() => null)) as {
-            success?: boolean;
-            message?: string;
-            warning?: string;
+            data: { warning: string | null } | null;
+            error: { message: string } | null;
           } | null;
-          if (response.ok && result?.success) {
+          if (response.ok && result?.data) {
             // Saved, but a follow-up step failed: keep the new value and say so.
-            if (result.warning) toast.error(result.warning);
+            if (result.data.warning) toast.error(result.data.warning);
             // A plain fetch bypasses the router: refresh the grid row behind
             // the drawer, which otherwise shows the old value until the next
             // navigation.
             void revalidate();
             return true;
           }
-          toast.error(result?.message ?? t`Failed to update job`);
+          toast.error(result?.error?.message ?? t`Failed to update job`);
           return false;
         } catch {
           toast.error(t`Failed to update job`);
@@ -309,19 +316,18 @@ export const ProductionPlanningOrderDrawer = memo(
             })
           });
           const result = (await response.json().catch(() => null)) as {
-            success?: boolean;
-            message?: string;
-            warning?: string;
+            data: { warning: string | null } | null;
+            error: { message: string } | null;
           } | null;
-          if (response.ok && result?.success) {
-            if (result.warning) toast.error(result.warning);
+          if (response.ok && result?.data) {
+            if (result.data.warning) toast.error(result.data.warning);
             else toast.success(t`Planned job`);
             // MRP ran: the suggestions, the grid row and this list all moved
             onSuggestionsStale(row);
             setOpenJobsVersion((version) => version + 1);
             void revalidate();
           } else {
-            toast.error(result?.message ?? t`Failed to plan job`);
+            toast.error(result?.error?.message ?? t`Failed to plan job`);
           }
         } catch {
           toast.error(t`Failed to plan job`);
@@ -459,19 +465,6 @@ export const ProductionPlanningOrderDrawer = memo(
       },
       [fetcher, locationId, periods]
     );
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-    useEffect(() => {
-      if (fetcher.data?.success === false && fetcher?.data?.message) {
-        toast.error(fetcher.data.message);
-      }
-
-      if (fetcher.data?.success === true) {
-        toast.success(t`Orders submitted`);
-        setOrders(row, []);
-        onClose();
-      }
-    }, [fetcher.data?.success]);
 
     // Memoize drawer content
     const drawerContent = useMemo(

@@ -6,7 +6,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { upsertModulePreferences } from "~/modules/users/users.server";
+import { upsertModulePreferences } from "~/modules/users/users.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);

@@ -24,7 +24,7 @@ import { useFetcher } from "react-router";
 import { DateTime, MotionMoney } from "~/components";
 import { Hidden, Submit } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
-import { stripeCustomerChoiceValidator } from "~/modules/invoicing";
+import { stripeCustomerChoiceValidator } from "~/modules/invoicing/invoicing.models";
 import StripeCustomerPanel, {
   useStripeCustomerResolution
 } from "~/modules/invoicing/ui/SalesInvoice/StripeCustomerPanel";

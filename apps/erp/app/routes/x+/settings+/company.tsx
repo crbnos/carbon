@@ -2,10 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import {
   Button,
   Card,
@@ -22,20 +20,14 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuKeySquare, LuRocket } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
-import { data, Link } from "react-router";
+import { Link } from "react-router";
 import { AppBarActions } from "~/components/Layout/Mobile";
 import { SettingsPage } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
 import { useImplementationReopenItem } from "~/hooks/useImplementationNavItem";
-import type { Company as CompanyType } from "~/modules/settings";
-import {
-  CompanyForm,
-  companyValidator,
-  updateCompany,
-  updateCompanyWithBaseCurrencyChange
-} from "~/modules/settings";
-import { invalidateCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { companyValidator } from "~/modules/settings/settings.models";
+import type { Company as CompanyType } from "~/modules/settings/types";
+import { CompanyForm } from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -44,67 +36,14 @@ export const handle: Handle = {
   to: path.to.company
 };
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(companyValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.settings.updateCompanyDetails(input.data);
+  return respond(args.request, result).redirect(path.to.company, {
+    message: "Updated company"
   });
-  const formData = await request.formData();
-
-  const validation = await validator(companyValidator).validate(formData);
-  console.log(validation.error);
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const existing = await client
-    .from("company")
-    .select("baseCurrencyCode")
-    .eq("id", companyId)
-    .single();
-
-  const baseCurrencyChanged =
-    !!existing.data?.baseCurrencyCode &&
-    existing.data.baseCurrencyCode !== validation.data.baseCurrencyCode;
-
-  if (baseCurrencyChanged) {
-    // Overrides are denominated in the company's base currency — after a base
-    // change they'd silently resolve against the wrong anchor. Clear them in
-    // the SAME transaction as the base flip; market rates take over until the
-    // user re-pins.
-    try {
-      await updateCompanyWithBaseCurrencyChange(
-        getDatabaseClient(),
-        companyId,
-        {
-          ...validation.data,
-          updatedBy: userId
-        }
-      );
-    } catch (err) {
-      console.error(err);
-      return data(
-        {},
-        await flash(request, error(err, "Failed to update company"))
-      );
-    }
-  } else {
-    const update = await updateCompany(client, companyId, {
-      ...validation.data,
-      updatedBy: userId
-    });
-    console.log(update.error);
-    if (update.error)
-      return data(
-        {},
-        await flash(request, error(update.error, "Failed to update company"))
-      );
-  }
-
-  // company.timezone may have changed — drop the cached resolution.
-  await invalidateCompanyTimeZone(companyId);
-
-  return data({}, await flash(request, success("Updated company")));
 }
 
 export default function Company() {

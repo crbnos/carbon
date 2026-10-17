@@ -70,7 +70,7 @@ import { UnitOfMeasure } from "~/components/Form";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { useImageUpload, usePermissions, useRouteData } from "~/hooks";
-import { procedureStepType } from "~/modules/shared";
+import { procedureStepType } from "~/modules/shared/shared.models";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import {

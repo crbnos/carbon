@@ -24,7 +24,7 @@ import {
   TrackingTypeIcon
 } from "~/components";
 import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { getLinkToItemDetails } from "./ItemForm";
 
 /*

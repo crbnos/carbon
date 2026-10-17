@@ -2,16 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ServiceContext } from "@carbon/api/service-fn.server";
 import type { Database } from "@carbon/database";
-import { imageTransformErrorMessage, storage } from "@carbon/files";
+import {
+  getDocumentType,
+  imageTransformErrorMessage,
+  isUnsafeStoragePath,
+  storage
+} from "@carbon/files";
 import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getDocumentType } from "../shared/shared.service";
 import type {
   documentLabelsValidator,
   documentSourceTypes,
@@ -23,7 +29,6 @@ import {
   parseStagedUploadPath
 } from "./documents.models";
 
-/** @mcp delete */
 export async function deleteDocument(
   client: SupabaseClient<Database>,
   id: string
@@ -31,31 +36,6 @@ export async function deleteDocument(
   return client.from("document").delete().eq("id", id);
 }
 
-export async function deleteDocumentFavorite(
-  client: SupabaseClient<Database>,
-  id: string,
-  userId: string
-) {
-  return client
-    .from("documentFavorite")
-    .delete()
-    .eq("documentId", id)
-    .eq("userId", userId);
-}
-
-export async function deleteDocumentLabel(
-  client: SupabaseClient<Database>,
-  id: string,
-  label: string
-) {
-  return client
-    .from("documentLabel")
-    .delete()
-    .eq("documentId", id)
-    .eq("label", label);
-}
-
-/** @mcp read */
 export async function getDocument(
   client: SupabaseClient<Database>,
   documentId: string
@@ -63,7 +43,6 @@ export async function getDocument(
   return client.from("documents").select("*").eq("id", documentId).single();
 }
 
-/** @mcp read */
 export async function getDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -104,7 +83,6 @@ export async function getDocuments(
   return query;
 }
 
-/** @mcp read */
 export async function getDocumentExtensions(
   client: SupabaseClient<Database>,
   companyId: string
@@ -112,7 +90,6 @@ export async function getDocumentExtensions(
   return client.rpc("get_document_extensions", { company_id: companyId });
 }
 
-/** @mcp read */
 export async function getDocumentLabels(
   client: SupabaseClient<Database>,
   userId: string
@@ -120,27 +97,6 @@ export async function getDocumentLabels(
   return client.from("documentLabels").select("*").eq("userId", userId);
 }
 
-export async function insertDocumentFavorite(
-  client: SupabaseClient<Database>,
-  id: string,
-  userId: string
-) {
-  return client.from("documentFavorite").insert({ documentId: id, userId });
-}
-
-export async function insertDocumentLabel(
-  client: SupabaseClient<Database>,
-  id: string,
-  label: string,
-  companyId: string,
-  userId: string
-) {
-  return client
-    .from("documentLabel")
-    .insert({ documentId: id, label, companyId, userId });
-}
-
-/** @mcp update */
 export async function moveDocumentToTrash(
   client: SupabaseClient<Database>,
   id: string,
@@ -151,12 +107,11 @@ export async function moveDocumentToTrash(
     .update({
       active: false,
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", id);
 }
 
-/** @mcp action */
 export async function restoreDocument(
   client: SupabaseClient<Database>,
   id: string,
@@ -167,7 +122,7 @@ export async function restoreDocument(
     .update({
       active: true,
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", id);
 }
@@ -177,7 +132,6 @@ type SourceDocumentData = {
   sourceDocumentId?: string;
 };
 
-/** @mcp upsert */
 export async function upsertDocument(
   client: SupabaseClient<Database>,
   document:
@@ -212,7 +166,7 @@ export async function upsertDocument(
       sanitize({
         ...data,
         type,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
     )
     .eq("id", document.id);
@@ -231,7 +185,6 @@ export async function upsertDocument(
  * bytes to JPEG at the real path. The caller's flow is unchanged: PUT to the
  * signed URL, register the returned `path`, receive a `.jpg` document row.
  * Abandoned staged uploads are swept nightly.
- * @mcp create — part of the documented MCP signed-URL upload flow
  *       (packages/files/AGENTS.md): a non-browser caller mints a staged
  *       upload URL, then insertUploadedDocument converts and lands it.
  */
@@ -260,7 +213,6 @@ export async function createDocumentUploadUrl(
  * `document.size` column and the browser upload hooks. A path minted for a
  * HEIC name is a staged upload: the bytes are converted to JPEG and moved to
  * the real document path here, so the registered row is never HEIC.
- * @mcp create — part of the documented MCP signed-URL upload flow
  *       (packages/files/AGENTS.md): a non-browser caller mints a staged
  *       upload URL, then insertUploadedDocument converts and lands it.
  */
@@ -348,7 +300,6 @@ export async function insertUploadedDocument(
   });
 }
 
-/** @mcp update destructive */
 export async function updateDocumentFavorite(
   client: SupabaseClient<Database>,
   args: {
@@ -371,7 +322,6 @@ export async function updateDocumentFavorite(
   }
 }
 
-/** @mcp update destructive */
 export async function updateDocumentLabels(
   client: SupabaseClient<Database>,
   document: z.infer<typeof documentLabelsValidator> & {
@@ -399,7 +349,6 @@ export async function updateDocumentLabels(
     });
 }
 
-/** @mcp create */
 export async function insertDocumentExtraction(
   client: SupabaseClient<Database>,
   data: {
@@ -440,7 +389,7 @@ export async function insertDocumentExtraction(
         status: "failed",
         error: message,
         updatedBy: data.createdBy,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", result.data.id)
       .eq("companyId", result.data.companyId);
@@ -448,4 +397,30 @@ export async function insertDocumentExtraction(
   }
 
   return { data: result.data, error: null };
+}
+/** The model, read as the caller: a refusal unless it is the company's. */
+export async function findModel(ctx: ServiceContext, modelUploadId: string) {
+  const model = await ctx.asCaller.supabase
+    .from("modelUpload")
+    .select("id")
+    .eq("id", modelUploadId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (model.error) {
+    return ctx.error("internal", "Failed to read the model", model.error);
+  }
+  if (!model.data) return ctx.error("notFound", "Model not found");
+  return null;
+}
+
+/** A storage key the caller sent: refused unless it is a safe key in the company's folder. */
+export function refuseForeignPath(
+  ctx: ServiceContext,
+  path: string | undefined
+) {
+  if (path === undefined) return null;
+  if (path.startsWith(`${ctx.company.id}/`) && !isUnsafeStoragePath(path)) {
+    return null;
+  }
+  return ctx.error("validation", "The file must be in this company's storage");
 }

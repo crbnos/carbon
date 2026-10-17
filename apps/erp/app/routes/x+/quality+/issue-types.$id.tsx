@@ -10,12 +10,12 @@ import { useCloseRoute } from "@carbon/react";
 import { isUniqueViolation, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { issueTypeValidator } from "~/modules/quality/quality.models";
 import {
   getIssueType,
   getIssueTypeByName,
-  issueTypeValidator,
   upsertIssueType
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import IssueTypeForm from "~/modules/quality/ui/IssueTypes/IssueTypeForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

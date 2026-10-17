@@ -31,13 +31,13 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuArrowRight, LuLink, LuSearch, LuSparkles } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
 
 /**
@@ -172,7 +172,13 @@ export function AccountMapping({
   // session, saved together by the footer's Save.
   const [edits, setEdits] = useState<Record<string, string>>({});
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
-  const saveFetcher = useAction({ onSuccess: () => setEdits({}) });
+  const savedToast = useAccountMappingsSavedToast();
+  const saveFetcher = useAction({
+    onSuccess: ({ data }) => {
+      setEdits({});
+      if (data) savedToast(data.count);
+    }
+  });
 
   const chartById = useMemo(
     () => new Map(chart.map((account) => [account.id, account])),
@@ -559,6 +565,17 @@ function AccountMappingRow({
  * Confirm submits one bulk POST with repeated JSON-encoded `mappings`
  * fields (per the sync-operation `ids` precedent).
  */
+/** The toast for saved account mappings. */
+function useAccountMappingsSavedToast() {
+  const { t } = useLingui();
+  return (count: number) =>
+    toast.success(
+      count === 1
+        ? t`Saved account mapping`
+        : t`Saved ${count} account mappings`
+    );
+}
+
 function MatchByCodeDrawer({
   proposals,
   canUpdate,
@@ -568,7 +585,11 @@ function MatchByCodeDrawer({
   canUpdate: boolean;
   onClose: () => void;
 }) {
+  const savedToast = useAccountMappingsSavedToast();
   const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (data) savedToast(data.count);
+    },
     onSettled: () => {
       if (submittedRef.current) {
         onClose();
@@ -707,10 +728,14 @@ function AiSuggestModal({
   canUpdate: boolean;
   onClose: () => void;
 }) {
-  const suggestFetcher = useFetcher<{
-    proposals?: AccountMatchProposalRow[];
+  const savedToast = useAccountMappingsSavedToast();
+  const suggestFetcher = useAction<{
+    data: { proposals: AccountMatchProposalRow[] } | null;
   }>();
   const applyFetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (data) savedToast(data.count);
+    },
     onSettled: () => {
       if (appliedRef.current) {
         onClose();
@@ -721,7 +746,7 @@ function AiSuggestModal({
 
   const isSuggesting = suggestFetcher.state !== "idle";
   const isApplying = applyFetcher.state !== "idle";
-  const proposals = suggestFetcher.data?.proposals;
+  const proposals = suggestFetcher.data?.data?.proposals;
   const hasSuggested = proposals !== undefined;
 
   const suggest = () => {

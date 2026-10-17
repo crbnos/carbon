@@ -4,7 +4,7 @@
 
 import { Status } from "@carbon/react";
 import { PURCHASE_ORDER_STATUS_COLOR_MAP } from "@carbon/utils";
-import type { purchaseOrderStatusType } from "~/modules/purchasing";
+import type { purchaseOrderStatusType } from "~/modules/purchasing/purchasing.models";
 
 type PurchasingStatusProps = {
   status?: (typeof purchaseOrderStatusType)[number] | null;

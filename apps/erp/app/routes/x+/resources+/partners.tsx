@@ -12,9 +12,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getAbilitiesList,
-  getPartners,
-  PartnersTable
-} from "~/modules/resources";
+  getPartners
+} from "~/modules/resources/resources.service";
+import { PartnersTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

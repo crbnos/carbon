@@ -48,7 +48,7 @@ import { DateTime, Hyperlink, ItemThumbnail, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
-import type { PriceListRow } from "~/modules/sales";
+import type { PriceListRow } from "~/modules/sales/types";
 import { path } from "~/utils/path";
 import { DuplicatePriceListModal } from "./DuplicatePriceListModal";
 import { PriceListScopeEmpty } from "./PriceListScopeEmpty";

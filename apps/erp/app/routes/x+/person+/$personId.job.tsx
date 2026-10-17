@@ -2,21 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
-import {
-  employeeJobValidator,
-  getEmployeeJob,
-  updateEmployeeJob
-} from "~/modules/people";
+import { employeeJobValidator } from "~/modules/people/people.models";
+import { getEmployeeJob } from "~/modules/people/people.service";
 import { PersonJob } from "~/modules/people/ui/Person";
-import { notifyScheduleInputsChanged } from "~/modules/production";
-import { getDatabaseClient } from "~/services/database.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -41,44 +37,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "people"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(employeeJobValidator).request(args, {
+    params: ["personId"]
   });
-  const { personId } = params;
-  if (!personId) throw new Error("No person ID provided");
-
-  const formData = await request.formData();
-  const validation = await validator(employeeJobValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const updateJob = await updateEmployeeJob(getDatabaseClient(), personId, {
-    ...validation.data,
-    companyId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+  if ("invalid" in input) return input.invalid;
+  const { personId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.people.updatePersonJob({
+    ...input.data,
+    employeeId: personId,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-  if (updateJob.error) {
-    throw redirect(
-      path.to.personJob(personId),
-      await flash(request, error(updateJob.error, "Failed to update job"))
-    );
-  }
-
-  await notifyScheduleInputsChanged(
-    companyId,
-    "employee-shift",
-    "Shift assignment changed"
-  );
-
-  throw redirect(
-    path.to.personJob(personId),
-    await flash(request, success("Successfully updated job"))
-  );
+  return respond(args.request, result).redirect(path.to.personJob(personId), {
+    message: "Successfully updated job"
+  });
 }
 
 export default function PersonJobRoute() {

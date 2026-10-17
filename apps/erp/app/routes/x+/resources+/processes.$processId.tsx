@@ -2,24 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { BatchRules } from "@carbon/utils";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   batchRuleInitialValues,
-  ensureProcessAbility,
-  getProcess,
-  ProcessForm,
-  processValidator,
-  upsertProcess
-} from "~/modules/resources";
+  processValidator
+} from "~/modules/resources/resources.models";
+import { getProcess } from "~/modules/resources/resources.service";
+import { ProcessForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -45,105 +43,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(processValidator).request(args, {
+    params: ["processId"]
   });
-
-  const formData = await request.formData();
-  const modal = formData.get("type") === "modal";
-  const validation = await validator(processValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...d } = validation.data;
-  if (!id) throw notFound("Process ID was not found");
-
-  const existingProcess = await getProcess(client, id);
-  const previouslyRequiredAbility =
-    existingProcess.data?.requiresAbility ?? false;
-
-  const createProcess = await upsertProcess(client, {
-    id,
-    ...d,
-    companyId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.updateProcess({
+    ...input.data,
+    id: input.params.processId,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  if (createProcess.error) {
-    throw redirect(
-      path.to.processes,
-      await flash(
-        request,
-        error(createProcess.error, "Failed to create process.")
-      )
-    );
-  }
-
-  let abilityId: string | undefined;
-  if (d.requiresAbility) {
-    const abilityResult = await ensureProcessAbility(client, {
-      processId: id,
-      companyId,
-      userId
-    });
-    if (abilityResult.error) {
-      // Don't leave an unschedulable process behind: requiresAbility=true
-      // without its backing ability gates scheduling on a qualification
-      // nobody can hold
-      await client
-        .from("process")
-        .update({ requiresAbility: previouslyRequiredAbility })
-        .eq("id", id)
-        .eq("companyId", companyId);
-      throw redirect(
-        path.to.processes,
-        await flash(
-          request,
-          error(abilityResult.error, "Failed to create process ability.")
-        )
-      );
-    }
-    abilityId = abilityResult.data?.id;
-  } else if (previouslyRequiredAbility) {
-    const ability = await client
-      .from("ability")
-      .select("id")
-      .eq("processId", id)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    abilityId = ability.data?.id;
-  }
-
-  const requiresAbility = d.requiresAbility ?? false;
-  if (requiresAbility !== previouslyRequiredAbility) {
-    // A requiresAbility flip changes the operator gate for every job with an
-    // unfinished operation on this process, so the schedule must be recomputed.
-    // Prefer the process's ability for precise scoping (the "ability" kind
-    // resolves ability → process → affected jobs); fall back to a company-wide
-    // mark when the ability can't be resolved, so the notify NEVER silently
-    // no-ops — that gap is why a requiresAbility change could leave the forecast
-    // stale.
-    const reason = requiresAbility
-      ? `Process "${d.name}" now requires an ability`
-      : `Process "${d.name}" no longer requires an ability`;
-    if (abilityId) {
-      await notifyScheduleInputsChanged(
-        companyId,
-        "ability",
-        reason,
-        abilityId
-      );
-    } else {
-      await notifyScheduleInputsChanged(companyId, "reorder", reason);
-    }
-  }
-
-  return modal ? createProcess : redirect(path.to.processes);
+  // The modal form reads the result and closes itself.
+  if (input.formData?.get("type") === "modal") return result;
+  return respond(args.request, result).redirect(path.to.processes);
 }
 
 export default function ProcessRoute() {

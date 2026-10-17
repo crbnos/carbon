@@ -33,7 +33,9 @@
     "./mount/hooks.server": "./src/mount/hooks.server.ts",
     "./notifications": "./src/notifications/index.ts",
     "./onshape": "./src/onshape/lib/index.ts",
-    "./onshape.server": "./src/onshape/oauth.server.ts",
+    "./onshape.server": "./src/onshape/lib/index.server.ts",
+    "./onshape/integration-id": "./src/onshape/lib/integration-id.ts",
+    "./onshape/panel-session.server": "./src/onshape/panel/session.server.ts",
     "./paperless-parts": "./src/paperless-parts/lib/index.ts",
     "./permissions.server": "./src/permissions.server.ts",
     "./plan": "./src/plan.ts",
@@ -68,6 +70,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "catalog:",
+    "@carbon/api": "workspace:*",
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",
@@ -75,7 +78,6 @@
     "@carbon/kv": "workspace:*",
     "@carbon/lib": "workspace:*",
     "@carbon/logger": "workspace:*",
-    "@carbon/server-functions": "workspace:*",
     "@carbon/react": "workspace:*",
     "@carbon/stripe": "workspace:*",
     "@carbon/utils": "workspace:*",
@@ -108,7 +110,6 @@
     "zod-form-data": "catalog:"
   },
   "devDependencies": {
-    "@carbon/api": "workspace:*",
     "@carbon/config": "workspace:*",
     "@carbon/content": "workspace:*",
     "@logtape/logtape": "catalog:",

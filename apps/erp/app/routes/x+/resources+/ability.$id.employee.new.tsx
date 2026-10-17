@@ -2,79 +2,32 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
-import { data, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { notifyScheduleInputsChanged } from "~/modules/production";
-import type { Ability } from "~/modules/resources";
-import {
-  EmployeeAbilityForm,
-  employeeAbilityCellValidator,
-  resolveEmployeeAbilityExpiresAt,
-  upsertEmployeeAbilityCell
-} from "~/modules/resources";
+import { employeeAbilityCellValidator } from "~/modules/resources/resources.models";
+import type { Ability } from "~/modules/resources/types";
+import { EmployeeAbilityForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(employeeAbilityCellValidator).request(args, {
+    params: ["id"]
   });
-
-  const { id: abilityId } = params;
-  if (!abilityId) throw notFound("Invalid ability id");
-
-  const formData = await request.formData();
-  const validation = await validator(employeeAbilityCellValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { employeeId, lastTrainingDate, expiresAt } = validation.data;
-
-  const resolvedExpiresAt = await resolveEmployeeAbilityExpiresAt(
-    client,
-    abilityId,
-    lastTrainingDate ?? null,
-    expiresAt ?? null
-  );
-
-  const upsert = await upsertEmployeeAbilityCell(client, {
-    employeeId,
-    abilityId,
-    companyId,
-    lastTrainingDate: lastTrainingDate ?? null,
-    expiresAt: resolvedExpiresAt
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.addEmployeeAbility({
+    ...input.data,
+    abilityId: input.params.id
   });
-  if (upsert.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(upsert.error, "Failed to add employee to ability")
-      )
-    );
-  }
-
-  await notifyScheduleInputsChanged(
-    companyId,
-    "ability",
-    "Operator qualification added",
-    abilityId
-  );
-
-  throw redirect(
-    path.to.ability(abilityId),
-    await flash(request, success("Added employee to ability"))
+  // The drawer posts through a fetcher, which toasts a refusal.
+  if (result.error) return result;
+  return respond(args.request, result).redirect(
+    path.to.ability(input.params.id),
+    { message: "Added employee to ability" }
   );
 }
 

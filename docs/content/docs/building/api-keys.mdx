@@ -53,7 +53,7 @@ Data API writes bypass the service layer and do not recalculate derived values s
 
 ## Keys versus webhooks
 
-An **API key** authorizes requests to Carbon. A **[webhook](/docs/building/webhooks)** notifies your service when a subscribed record changes. They are independent: webhook payloads are not signed with an API key. A typical integration uses the webhook as a change notification, then fetches the current record with an API key.
+An **API key** authorizes requests to Carbon. A **[webhook](/docs/building/webhooks)** notifies your service when a subscribed record changes. They are independent: a webhook is signed with its own signing secret, never with an API key. A typical integration uses the webhook as a change notification, then fetches the current record with an API key.
 
 <Cards>
   <Card title="Webhooks" href="/docs/building/webhooks">

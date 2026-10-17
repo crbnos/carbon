@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { useAction } from "@carbon/query";
 import {
   Combobox,
   cn,
@@ -15,13 +16,13 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { Fragment, useMemo, useState } from "react";
 import { LuSearch, LuTriangleAlert } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import RulesUpgradeOverlay from "~/components/RulesUpgradeOverlay";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCompanyTimeZone } from "~/hooks/useCompanyTimeZone";
@@ -361,7 +362,9 @@ function OeeDeviceTableRow({
 }) {
   const { t } = useLingui();
   const companyTimeZone = useCompanyTimeZone();
-  const fetcher = useFetcher();
+  const fetcher = useAction({
+    onSuccess: () => toast.success(t`Saved device mapping`)
+  });
   const isSaving = fetcher.state !== "idle";
 
   // While a save is in flight show the pick; afterwards the loader's mapping

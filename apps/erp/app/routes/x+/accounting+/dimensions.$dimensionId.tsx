@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { dimensionValidator } from "~/modules/accounting/accounting.models";
 import {
-  dimensionValidator,
   getDimension,
   upsertDimension
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { DimensionForm } from "~/modules/accounting/ui/Dimensions";
 import { getParams, path } from "~/utils/path";
 

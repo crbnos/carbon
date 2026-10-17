@@ -5,6 +5,7 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -32,7 +33,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { motion } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   LuArrowLeft,
   LuChevronDown,
@@ -43,7 +44,7 @@ import {
   LuPackage,
   LuRedoDot
 } from "react-icons/lu";
-import { useFetcher, useFetchers, useParams } from "react-router";
+import { useFetchers, useParams } from "react-router";
 import type { z } from "zod";
 import { MethodIcon } from "~/components";
 import {
@@ -77,12 +78,14 @@ import {
   useUrlParams,
   useUser
 } from "~/hooks";
-import { ItemTrackingType } from "~/modules/items";
+import { ItemTrackingType } from "~/modules/items/items.models";
 import {
   MaterialRowDetails,
   MaterialRowTitle
 } from "~/modules/items/ui/Item/MethodRow";
-import type { MethodItemType, MethodType } from "~/modules/shared";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
+import type { action as updateMaterialAction } from "~/routes/x+/job+/methods+/$jobId.material.$id";
+import type { action as createMaterialAction } from "~/routes/x+/job+/methods+/$jobId.material.new";
 import type { Item as ItemType } from "~/stores";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -237,7 +240,7 @@ const JobBillOfMaterial = ({
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
 
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction();
   const permissions = usePermissions();
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
@@ -580,32 +583,25 @@ function MaterialForm({
   }>(path.to.job(jobId));
 
   const { carbon } = useCarbon();
-  const methodMaterialFetcher = useFetcher<{
-    id: string;
-    success: boolean;
-    message: string;
-  }>();
+  const isNew = !!temporaryItems[item.id];
+  const methodMaterialFetcher = useAction<
+    typeof createMaterialAction | typeof updateMaterialAction
+  >({
+    onSuccess: () => {
+      // The saved row replaces the temporary one when the page reloads.
+      setTemporaryItems((prev) => {
+        const { [item.id]: _, ...rest } = prev;
+        return rest;
+      });
+      toast.success(isNew ? t`Material created` : t`Material updated`);
+      onSubmit();
+    }
+  });
   const params = useParams();
   const { company } = useUser();
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
-
-  useEffect(() => {
-    // Remove from temporary items after successful submission
-    if (methodMaterialFetcher.data && methodMaterialFetcher.data.id) {
-      // Clear temporary item after successful save
-      setTemporaryItems((prev) => {
-        const { [item.id]: _, ...rest } = prev;
-        return rest;
-      });
-
-      if (methodMaterialFetcher.data?.success) {
-        toast.success(methodMaterialFetcher.data.message);
-      }
-      onSubmit();
-    }
-  }, [item.id, methodMaterialFetcher.data, setTemporaryItems, onSubmit]);
 
   const [itemType, setItemType] = useState<MethodItemType>(item.data.itemType);
   const [itemData, setItemData] = useState<{

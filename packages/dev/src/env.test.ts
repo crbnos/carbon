@@ -37,6 +37,9 @@ describe("renderEnv (portless disabled)", () => {
     expect(out).toContain("ERP_URL=http://localhost:54005");
     expect(out).toContain("MES_URL=http://localhost:54006");
     expect(out).toContain("SUPABASE_URL=http://localhost:54001");
+    expect(out).toContain(
+      "ONSHAPE_V2_OAUTH_REDIRECT_URL=http://localhost:54005/api/integrations/onshape-v2/oauth"
+    );
     expect(out).not.toContain("PORTLESS_TLD");
   });
 
@@ -110,6 +113,23 @@ describe("renderEnv (portless disabled)", () => {
   });
 });
 
+describe("ONSHAPE_V2_OAUTH_REDIRECT_URL #force", () => {
+  it("leaves a redirect URL pinned in .env to .env", () => {
+    const out = renderEnv({
+      slug: "s",
+      ports,
+      redisDb: 0,
+      jwt,
+      portless: false
+    });
+    const dotEnv =
+      'ONSHAPE_V2_OAUTH_REDIRECT_URL="https://tunnel.example/api/integrations/onshape-v2/oauth" #force';
+    expect(omitForcedKeys(out, dotEnv)).not.toContain(
+      "ONSHAPE_V2_OAUTH_REDIRECT_URL=http://localhost"
+    );
+  });
+});
+
 describe("renderEnv (portless enabled)", () => {
   it("emits portless hostnames for app and supabase", () => {
     const out = renderEnv({
@@ -124,6 +144,9 @@ describe("renderEnv (portless enabled)", () => {
     expect(out).toContain("ERP_URL=https://erp.feat-x.dev");
     expect(out).toContain("MES_URL=https://mes.feat-x.dev");
     expect(out).toContain("SUPABASE_URL=https://api.feat-x.dev");
+    expect(out).toContain(
+      "ONSHAPE_V2_OAUTH_REDIRECT_URL=https://erp.feat-x.dev/api/integrations/onshape-v2/oauth"
+    );
     expect(out).toContain("PORTLESS_TLD=dev");
   });
 

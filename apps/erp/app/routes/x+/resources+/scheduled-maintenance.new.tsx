@@ -2,21 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
+import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  maintenanceScheduleValidator,
-  upsertMaintenanceSchedule
-} from "~/modules/resources";
+import { maintenanceScheduleValidator } from "~/modules/resources/resources.models";
 import MaintenanceScheduleForm from "~/modules/resources/ui/MaintenanceSchedule/MaintenanceScheduleForm";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -31,60 +25,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "resources"
-  });
-
-  const formData = await request.formData();
-  const modal = formData.get("type") === "modal";
-
-  const validation = await validator(maintenanceScheduleValidator).validate(
-    formData
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(maintenanceScheduleValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.createMaintenanceSchedule(input.data);
+  // The modal form reads the result and closes itself.
+  if (input.formData?.get("type") === "modal") return result;
+  return respond(args.request, result).redirect(
+    `${path.to.maintenanceSchedules}?${getParams(args.request)}`,
+    {
+      message: "Maintenance schedule created",
+      onError:
+        requestReferrer(args.request) ??
+        `${path.to.maintenanceSchedules}?${getParams(args.request)}`
+    }
   );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const insertSchedule = await upsertMaintenanceSchedule(client, {
-    ...d,
-    companyId,
-    createdBy: userId
-  });
-
-  if (insertSchedule.error) {
-    return modal
-      ? insertSchedule
-      : redirect(
-          requestReferrer(request) ??
-            `${path.to.maintenanceSchedules}?${getParams(request)}`,
-          await flash(
-            request,
-            error(insertSchedule.error, "Failed to create maintenance schedule")
-          )
-        );
-  }
-
-  // Generate this schedule's dispatches + next-due date now, so it appears on
-  // the maintenance displays immediately instead of after the next nightly run.
-  if (insertSchedule.data?.id) {
-    await trigger("generate-maintenance", {
-      companyId,
-      scheduleId: insertSchedule.data.id
-    });
-  }
-
-  return modal
-    ? insertSchedule
-    : redirect(
-        `${path.to.maintenanceSchedules}?${getParams(request)}`,
-        await flash(request, success("Maintenance schedule created"))
-      );
 }
 
 export default function NewMaintenanceScheduleRoute() {

@@ -16,7 +16,7 @@ import {
   getCurrencyByCode,
   getExchangeRate,
   resolveLineTaxes
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import {
   getSiblingQuotesForQuote,
   getSupplier,
@@ -25,14 +25,14 @@ import {
   getSupplierQuote,
   getSupplierQuoteLinePricesByQuoteId,
   getSupplierQuoteLines
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import {
   SupplierQuoteHeader,
   SupplierQuoteProperties
 } from "~/modules/purchasing/ui/SupplierQuote";
 import SupplierQuoteExplorer from "~/modules/purchasing/ui/SupplierQuote/SupplierQuoteExplorer";
-import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

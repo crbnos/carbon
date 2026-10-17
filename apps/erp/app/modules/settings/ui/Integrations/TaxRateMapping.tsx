@@ -20,7 +20,8 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -370,6 +371,9 @@ function TaxCodeMappingRowForm({
   canUpdate: boolean;
 }) {
   const { t } = useLingui();
+  const fetcher = useAction({
+    onSuccess: () => toast.success(t`Saved tax code mapping`)
+  });
   const salesChoice = useDirectionChoice(sales, salesOptions, formatRate);
   const purchaseChoice = useDirectionChoice(
     purchase,
@@ -384,6 +388,7 @@ function TaxCodeMappingRowForm({
     <ValidatedForm
       validator={taxCodeMappingUpsertValidator}
       method="post"
+      fetcher={fetcher}
       defaultValues={{
         intent: "upsert-tax-code-mapping",
         taxCodeId: code.id,
@@ -463,7 +468,16 @@ function MatchByRateDrawer({
   canUpdate: boolean;
   onClose: () => void;
 }) {
+  const { t } = useLingui();
   const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      toast.success(
+        data.count === 1
+          ? t`Saved tax code mapping`
+          : t`Saved ${data.count} tax code mappings`
+      );
+    },
     onSettled: () => {
       if (submittedRef.current) {
         onClose();

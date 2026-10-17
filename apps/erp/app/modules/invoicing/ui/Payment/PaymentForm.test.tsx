@@ -148,7 +148,6 @@ vi.mock("~/hooks", async () => {
     useUser: () => ({ company: { baseCurrencyCode: "USD" } })
   };
 });
-vi.mock("~/modules/invoicing", () => import("../../invoicing.models"));
 
 import PaymentForm from "./PaymentForm";
 

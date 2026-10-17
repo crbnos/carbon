@@ -52,15 +52,26 @@ alternative deployment, not a replacement. Both build from the same root `Docker
 Every push to `main` runs `build-images.yml`, which builds or re-tags every image
 for the commit (`carbon/<image>:<sha>` in `vars.IMAGE_REGISTRY`). The deploy is a
 job of that same run, chained with `needs:` — there is no polling:
-- `apps` builds `carbon/erp` and `carbon/mes`; `services` builds `bootstrap`,
-  `edge-functions` and `assembler` with the same steps (a YAML anchor). Split so
-  the deploy needs only the app images: a failed assembler build does not hold
-  back a release.
-- `changes` diffs `github.event.before..sha` over `apps/erp`, `apps/mes`,
-  `packages`, `docs/content`; a new branch or force-push (no usable `before`)
-  counts as changed. A manual run of `build-images.yml` never deploys.
-- `deploy` (`needs: [apps, changes]`) calls `deploy.yml` (`workflow_call`,
-  `secrets: inherit`). A failed or cancelled app image skips it at once.
+- `apps` builds `carbon/erp` and `carbon/mes`; `services` builds `bootstrap` and
+  `edge-functions`; `assembler` builds `carbon/assembler` — all with the same steps
+  (a YAML anchor). Split so each deploy needs only its own images: a failed
+  assembler build does not hold back an app release.
+- `changes` diffs `github.event.before..sha` twice: over the app inputs
+  (`apps/erp`, `apps/mes`, `packages`, `docs/content`, …) for `deploy`, and over
+  `apps/assembler`, `crates` and the Cargo files for `assembler`. A new branch or
+  force-push (no usable `before`) counts as changed. A manual run of
+  `build-images.yml` never deploys.
+- `deploy` (`needs: [apps, changes]`) calls `deploy.yml` with `apps: true`;
+  `deploy-assembler` (`needs: [assembler, changes]`) calls it with
+  `assembler: true` (`workflow_call`, `secrets: inherit`). A failed or cancelled
+  image skips its deploy at once.
+- `deploy.yml`'s `assembler` job runs one leg per AWS account (prod with
+  `ASSEMBLER_AWS_*`, govcloud with `AWS_*`). A Lambda pulls only from a private
+  ECR repository in its own account, so each leg copies
+  `${IMAGE_REGISTRY}/carbon/assembler:<sha>` into its account's `carbon/assembler`
+  (pull and push, keeping one linux/amd64 manifest) and then runs
+  `pnpm --filter ci ci:assembler` (`ci/src/assembler.ts`, which deploys
+  `apps/assembler/sst.config.ts` for that account's workspaces).
 - Image concurrency is per image and per job (`build-images-<image>`), not per
   workflow, so a deploy still running does not hold up the next commit's builds.
 - The services pull `${IMAGE_REGISTRY}/carbon/<app>:${IMAGE_TAG}`. With

@@ -6,13 +6,8 @@
  * Company-private storage.
  *
  * Private files live in one bucket PER COMPANY (bucket id = companyId).
- * Object keys keep the legacy `${companyId}/...` first segment so paths
- * stored in the database stay valid and the legacy→company copy is same-key.
- *
- * The legacy shared `private` bucket is a read-only fallback: the one-off copy
- * (`scripts/one-off/migrate-private-buckets.ts`) moved what existed when it
- * ran, but files have landed there since. Every fallback lives in this file so
- * removing it later is a one-file change.
+ * Object keys keep the `${companyId}/...` first segment, so a stored path
+ * names its own bucket.
  *
  *   const { data, error } = await storage(client).company(companyId).download(path);
  *   await storage(client).company(companyId).upload(path, file, { upsert: true });
@@ -28,7 +23,13 @@ import {
   type TransformOptions
 } from "@supabase/storage-js";
 
-export const LEGACY_PRIVATE_BUCKET = "private";
+/**
+ * The URL segment `/file/preview/private/<path>` — a stored link format
+ * (rich text, inspection documents) that the preview routes serve from the
+ * caller's own company bucket. The shared `private` bucket it once named is
+ * no longer read.
+ */
+export const PRIVATE_PREVIEW_ALIAS = "private";
 // Ephemeral staging for uploads too big for a company bucket's per-object cap
 // (raw CAD, backup archives). 2.5 GB cap; stale objects are pruned by the
 // scheduled cleanup job. Object keys start with the companyId segment.
@@ -126,12 +127,9 @@ export function safeStorageFileName(name: string): string | null {
 type Bucket = ReturnType<StorageClient["from"]>;
 
 /**
- * A company's private bucket with the supabase `StorageFileApi` shape. Writes
- * go to the company bucket only; reads fall back to the legacy bucket; `list`
- * unions both and `remove` deletes from both. Every key must sit under
- * `${companyId}/` — under a service-role client that prefix is the only
- * tenant boundary on the shared legacy bucket, and a company bucket must never
- * hold a key that `getPrivateUrl` would resolve to another company's bucket.
+ * A company's private bucket with the supabase `StorageFileApi` shape. Every
+ * key must sit under `${companyId}/`: a company bucket must never hold a key
+ * that `getPrivateUrl` would resolve to another company's bucket.
  *
  * `list(folder)` returns EVERY entry directly inside the folder, sorted by
  * name, in the shape the old list endpoint used (a sub-folder is an entry with
@@ -277,7 +275,10 @@ async function listFolder(bucket: Bucket, prefix: string) {
     }
     cursor = data.nextCursor;
   } while (cursor);
-  return { data: toFileObjects(entries), error: null };
+  const files = toFileObjects(entries).sort((a, b) =>
+    a.name < b.name ? -1 : a.name > b.name ? 1 : 0
+  );
+  return { data: files, error: null };
 }
 
 export function storage(client: { storage: StorageClient }): CarbonStorage {
@@ -293,7 +294,6 @@ function companyBucket(
 ): CompanyBucket {
   const id = getCompanyPrivateBucket(companyId);
   const own = storage.from(id);
-  const legacy = storage.from(LEGACY_PRIVATE_BUCKET);
 
   // The prefix is only a boundary if the key cannot climb out of it. Storage
   // uses the key only up to the first `?` / `#` (the URL parser ends the path
@@ -316,17 +316,6 @@ function companyBucket(
       )
     });
 
-  // Company bucket first, legacy second; when both miss, the company bucket's
-  // error is the one reported since that is where the file belongs.
-  const withFallback = async <R extends { error: unknown }>(
-    read: (bucket: Bucket) => PromiseLike<R>
-  ) => {
-    const primary = await read(own);
-    if (!primary.error) return primary;
-    const fallback = await read(legacy);
-    return fallback.error ? primary : fallback;
-  };
-
   return {
     upload: (path, ...rest) =>
       owns(path) ? own.upload(path, ...rest) : refuse(path),
@@ -334,20 +323,8 @@ function companyBucket(
       owns(path) ? own.update(path, ...rest) : refuse(path),
     uploadToSignedUrl: (path, ...rest) =>
       owns(path) ? own.uploadToSignedUrl(path, ...rest) : refuse(path),
-    // A file that exists only in the legacy bucket is not found by a move
-    // within the company bucket. Retry it as a cross-bucket move OUT of
-    // legacy: `/object/move` takes a `destinationBucket`, so this stays one
-    // server-side operation. Honours an explicit destinationBucket.
-    move: async (from, to, options) => {
-      if (!owns(from, to)) return refuse(from, to);
-      const primary = await own.move(from, to, options);
-      if (!primary.error) return primary;
-      const fallback = await legacy.move(from, to, {
-        ...options,
-        destinationBucket: options?.destinationBucket ?? id
-      });
-      return fallback.error ? primary : fallback;
-    },
+    move: (from, to, options) =>
+      owns(from, to) ? own.move(from, to, options) : refuse(from, to),
     copy: (from, to, options) =>
       owns(from, to) ? own.copy(from, to, options) : refuse(from, to),
     createSignedUploadUrl: (path, options) =>
@@ -355,51 +332,22 @@ function companyBucket(
 
     exists: (path) =>
       owns(path)
-        ? withFallback((b) => b.exists(path))
+        ? own.exists(path)
         : refuse(path).then(({ error }) => ({ data: false, error })),
-    info: (path) =>
-      owns(path) ? withFallback((b) => b.info(path)) : refuse(path),
+    info: (path) => (owns(path) ? own.info(path) : refuse(path)),
     download: (path, options) =>
-      owns(path)
-        ? withFallback((b) => b.download(path, options))
-        : refuse(path),
+      owns(path) ? own.download(path, options) : refuse(path),
     createSignedUrl: (path, expiresIn, options) =>
-      owns(path)
-        ? withFallback((b) => b.createSignedUrl(path, expiresIn, options))
-        : refuse(path),
+      owns(path) ? own.createSignedUrl(path, expiresIn, options) : refuse(path),
 
-    list: async (folder) => {
-      if (!owns(folder)) return refuse(folder);
-      // The endpoint matches a plain key prefix, so without the trailing slash
-      // it would answer with the folder itself rather than what is inside it.
-      const prefix = `${folder.replace(/\/+$/, "")}/`;
-      const [primary, fallback] = await Promise.all([
-        listFolder(own, prefix),
-        listFolder(legacy, prefix)
-      ]);
-      if (primary.error && fallback.error) return primary;
-      // Union by name with the company copy winning: a file sits in either
-      // bucket, and after the copy script in both.
-      const byName = new Map((fallback.data ?? []).map((f) => [f.name, f]));
-      for (const f of primary.data ?? []) byName.set(f.name, f);
-      const files = [...byName.values()].sort((a, b) =>
-        a.name < b.name ? -1 : a.name > b.name ? 1 : 0
-      );
-      return { data: files, error: null };
-    },
+    list: (folder) =>
+      owns(folder)
+        ? // The endpoint matches a plain key prefix, so without the trailing
+          // slash it would answer with the folder itself rather than what is
+          // inside it.
+          listFolder(own, `${folder.replace(/\/+$/, "")}/`)
+        : refuse(folder),
 
-    remove: async (paths) => {
-      if (!owns(...paths)) return refuse(...paths);
-      const [primary, fallback] = await Promise.all([
-        own.remove(paths),
-        legacy.remove(paths)
-      ]);
-      // A miss is not an error (supabase returns an empty array), so any
-      // error is a real failure — and a file left behind in the legacy bucket
-      // would still be readable through the fallback.
-      if (primary.error) return primary;
-      if (fallback.error) return fallback;
-      return { data: [...primary.data, ...fallback.data], error: null };
-    }
+    remove: (paths) => (owns(...paths) ? own.remove(paths) : refuse(...paths))
   };
 }

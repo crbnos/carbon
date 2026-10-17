@@ -23,7 +23,9 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-use crate::{actions, build_state, config, optimize_opts, telemetry, thumbnail_req, AppState};
+use crate::{
+    actions, build_state, config, optimize_ingest, optimize_opts, telemetry, thumbnail_req, AppState,
+};
 
 /// Overall wall-clock ceiling for a one-shot job. Generous: ECS has no 15-min
 /// cap (that's exactly why the overflow path exists); Lambda's own timeout bounds
@@ -93,19 +95,24 @@ pub fn spawn_from_spec(
         .unwrap_or_default()
         .to_string();
     match action {
-        "optimize" => actions::optimize::spawn(
-            state,
-            job_id,
-            actions::optimize::OptimizeReq {
-                source_url,
-                format: spec["source"]["format"]
-                    .as_str()
-                    .unwrap_or("auto")
-                    .to_string(),
-                glb_path: spec["output"]["path"].as_str().map(str::to_string),
-                opts: optimize_opts(&spec["output"], &spec["quality"]),
-            },
-        ),
+        "optimize" => {
+            let (compact, thumbnail) = optimize_ingest(spec);
+            actions::optimize::spawn(
+                state,
+                job_id,
+                actions::optimize::OptimizeReq {
+                    source_url,
+                    format: spec["source"]["format"]
+                        .as_str()
+                        .unwrap_or("auto")
+                        .to_string(),
+                    glb_path: spec["output"]["path"].as_str().map(str::to_string),
+                    opts: optimize_opts(&spec["output"], &spec["quality"]),
+                    compact,
+                    thumbnail,
+                },
+            )
+        }
         "convert" => actions::convert::spawn(
             state,
             job_id,

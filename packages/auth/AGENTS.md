@@ -5,6 +5,7 @@ Authentication, RBAC, session management, Supabase client factories, API key aut
 ## Always
 
 - Gate loaders/actions with `requirePermissions(request, { view?, create?, update?, delete? })` — never construct Supabase clients directly in routes.
+- `requirePermissions` also returns `caller` (`"session"` or `"apiKey"`) and `permissions` (the session user's claims, or the key's scopes, per module). `serviceContext` (ERP) builds the service-function actor from them, so the gate in `defineServiceFn` checks the same grants this function read.
 - `requirePermissions` refuses customer and supplier portal sessions with a 403 (API keys are unaffected). `{}` used to admit them everywhere, and ~50 routes that then read with the service role were reachable by a portal account. Pass `allowPortalAccounts: true` ONLY on a route that acts on the user's own identity (onboarding, company switch, notification links, academy progress) — never on one that returns company data.
 - Use the factory from `@carbon/auth/client.server`: `getCarbon(accessToken)` for user-scoped (RLS), `getCarbonServiceRole()` for privileged server ops only.
 - Every server client built while a request is being handled is bound to it through `requestFetch()` (`lib/supabase/client.server.ts`): all of that request's clients share one limit of 8 calls in flight (a wait for a slot is a `supabase slot wait` span), and on a GET/HEAD request their reads (PostgREST GET/HEAD, storage reads) are cancelled when the request is. RPCs, table writes, auth and edge-function calls are never cancelled. Outside a request (jobs, scripts) `requestFetch()` is `undefined` and the client is unbound. A new client factory must pass `requestFetch()` too, or its calls escape both.
@@ -53,6 +54,12 @@ pnpm --filter @carbon/auth test
 
 SAML SSO lives in `@carbon/ee/sso.server` (Enterprise-gated), NOT here — auth
 only carries `AuthSession.ssoProviderId` and its preservation across refresh.
+
+The Onshape panel's bearer credential (the `cps_` iframe session) lives in
+`@carbon/ee/onshape/panel-session.server`, not here, with its own gate
+`requireOnshapePanelPermissions`. `requirePermissions` stays cookie and API key
+only. ee imports `getUserClaims`, `userHasVerifiedTotpFactor`,
+`getUserScopedClient` and `hasPermission` from auth, never the reverse.
 
 ## Cross-References
 

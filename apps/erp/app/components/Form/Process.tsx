@@ -7,10 +7,8 @@ import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import {
-  batchRuleInitialValues,
-  type getProcessesList
-} from "~/modules/resources";
+import { batchRuleInitialValues } from "~/modules/resources/resources.models";
+import type { getProcessesList } from "~/modules/resources/resources.service";
 import ProcessForm from "~/modules/resources/ui/Processes/ProcessForm";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";

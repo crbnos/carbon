@@ -8,7 +8,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import type { getFixedAssetClassesList } from "~/modules/accounting";
+import type { getFixedAssetClassesList } from "~/modules/accounting/accounting.service";
 import AssetClassForm from "~/modules/accounting/ui/FixedAssets/AssetClassForm";
 import type { loader as newAssetClassLoader } from "~/routes/x+/accounting+/asset-classes.new";
 import { path } from "~/utils/path";

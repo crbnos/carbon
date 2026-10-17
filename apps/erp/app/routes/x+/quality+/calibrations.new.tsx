@@ -14,11 +14,11 @@ import { nanoid } from "nanoid";
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
+import { gaugeCalibrationRecordValidator } from "~/modules/quality/quality.models";
 import {
-  gaugeCalibrationRecordValidator,
   getQualityFiles,
   upsertGaugeCalibrationRecord
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import GaugeCalibrationRecordForm from "~/modules/quality/ui/Calibrations/GaugeCalibrationRecordForm";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";

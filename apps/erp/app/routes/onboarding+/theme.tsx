@@ -35,8 +35,8 @@ import {
 } from "react-router";
 import { OnboardingCard, OnboardingCardContent } from "~/components";
 import { useOnboarding } from "~/hooks";
-import type { Theme as ThemeValue } from "~/modules/settings";
-import { themeValidator } from "~/modules/settings";
+import type { Theme as ThemeValue } from "~/modules/settings/settings.models";
+import { themeValidator } from "~/modules/settings/settings.models";
 import type { action as modeAction } from "~/root";
 import { getTheme, setTheme } from "~/services/theme.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";

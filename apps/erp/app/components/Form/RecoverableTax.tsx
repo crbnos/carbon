@@ -12,7 +12,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { useCallback, useMemo } from "react";
 import { useCurrencyFormatter } from "~/hooks";
-import type { getTaxCodesList } from "~/modules/accounting";
+import type { getTaxCodesList } from "~/modules/accounting/accounting.service";
 import { toTaxCodeInput } from "~/modules/accounting/accounting.utils";
 import { path } from "~/utils/path";
 

@@ -47,12 +47,12 @@ import type {
 } from "react-router";
 import { data, useFetcher, useLoaderData } from "react-router";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { reportPinValidator } from "~/modules/accounting/accounting.models";
 import {
   getReportPins,
   getReportViews,
-  reportPinValidator,
   upsertReportPin
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

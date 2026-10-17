@@ -8,10 +8,8 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
-import type {
-  getMaterialDimensionList,
-  MaterialDimension as MaterialDimensionType
-} from "~/modules/items";
+import type { getMaterialDimensionList } from "~/modules/items/items.service";
+import type { MaterialDimension as MaterialDimensionType } from "~/modules/items/types";
 import MaterialDimensionForm from "~/modules/items/ui/MaterialDimensions/MaterialDimensionForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

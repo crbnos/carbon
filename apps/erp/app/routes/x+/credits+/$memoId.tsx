@@ -11,17 +11,19 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
+import { memoValidator } from "~/modules/invoicing/invoicing.models";
 import {
   getMemo,
   getMemoApplications,
   getSettlementRelatedItems,
+  upsertMemo
+} from "~/modules/invoicing/invoicing.service";
+import {
   MemoApplicationsPanel,
   MemoDocuments,
   MemoForm,
-  MemoHeader,
-  memoValidator,
-  upsertMemo
-} from "~/modules/invoicing";
+  MemoHeader
+} from "~/modules/invoicing/ui";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

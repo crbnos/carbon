@@ -10,7 +10,7 @@ import { type Kysely, sql } from "kysely";
 import { listBucketFilesRecursive } from "../../../backups/storage";
 import {
   type Catalog,
-  STORAGE_BUCKET,
+  LEGACY_SHARED_BUCKET,
   wipeScopedData
 } from "../tasks/company-backup";
 
@@ -190,9 +190,18 @@ export async function removeCompanyFiles(
     failures.push({ part: "company bucket", error: bucketError });
   }
 
-  const legacyError = await drainFolder(serviceRole, STORAGE_BUCKET, companyId);
-  if (legacyError) {
-    failures.push({ part: "legacy private files", error: legacyError });
+  // The retired shared bucket held a company's files under `<companyId>/` and
+  // its audit-log archives under `audit-logs/<companyId>/`.
+  for (const [part, prefix] of [
+    ["legacy private files", companyId],
+    ["legacy audit-log archives", `audit-logs/${companyId}`]
+  ] as const) {
+    const legacyError = await drainFolder(
+      serviceRole,
+      LEGACY_SHARED_BUCKET,
+      prefix
+    );
+    if (legacyError) failures.push({ part, error: legacyError });
   }
 
   return failures;

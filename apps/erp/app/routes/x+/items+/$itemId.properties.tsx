@@ -4,6 +4,18 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
+import type { UnreleasedChangeOrderItem } from "~/modules/items/items.service";
+import {
+  getConsumable,
+  getItemFiles,
+  getMakeMethods,
+  getMaterial,
+  getPart,
+  getPickMethods,
+  getSupplierParts,
+  getTool,
+  getUnreleasedChangeOrderForItem
+} from "~/modules/items/items.service";
 import type {
   Consumable,
   ItemFile,
@@ -13,21 +25,9 @@ import type {
   PickMethod,
   SupplierPart,
   Tool
-} from "~/modules/items";
-import {
-  getConsumable,
-  getItemFiles,
-  getMakeMethods,
-  getMaterial,
-  getPart,
-  getPickMethods,
-  getSupplierParts,
-  getTool
-} from "~/modules/items";
-import type { UnreleasedChangeOrderItem } from "~/modules/items/items.server";
-import { getUnreleasedChangeOrderForItem } from "~/modules/items/items.server";
-import { getLocationsList } from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
+} from "~/modules/items/types";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getTagsList } from "~/modules/shared/shared.service";
 import type { ListItem } from "~/types";
 
 type CommonFields = {

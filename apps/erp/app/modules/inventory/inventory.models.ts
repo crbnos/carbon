@@ -185,6 +185,19 @@ export const serialUnitRecostValidator = z.object({
   postingDate: z.string().min(1, { message: "Posting date is required" })
 });
 
+// Exactly the types the post-inventory-adjustment server function accepts —
+// NOT itemLedgerTypes. That wider ledger enum leaked into the published API
+// schema here, so API/MCP callers were offered "Purchase" etc. and every such
+// call failed with the generic fallback message. Keep in sync with the server
+// function's payloadValidator.
+export const inventoryAdjustmentTypes = [
+  "Positive Adjmt.",
+  "Negative Adjmt.",
+  "Set Quantity",
+  "Scrap",
+  "Unscrap"
+] as const;
+
 export const inventoryAdjustmentValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item ID is required" }),
@@ -194,18 +207,7 @@ export const inventoryAdjustmentValidator = z
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     originalStorageUnitId: zfd.text(z.string().optional()),
-    // Exactly the types the post-inventory-adjustment server function accepts —
-    // NOT itemLedgerTypes. That wider ledger enum leaked into the published API
-    // schema here, so API/MCP callers were offered "Purchase" etc. and every
-    // such call failed with the generic fallback message. Keep in sync with
-    // the server function's payloadValidator.
-    adjustmentType: z.enum([
-      "Positive Adjmt.",
-      "Negative Adjmt.",
-      "Set Quantity",
-      "Scrap",
-      "Unscrap"
-    ]),
+    adjustmentType: z.enum(inventoryAdjustmentTypes),
     quantity: zfd.numeric(z.number()),
     trackedEntityId: zfd.text(z.string().optional()),
     readableId: zfd.text(z.string().optional()),
@@ -568,7 +570,6 @@ export const warehouseTransferValidator = z
     transferId: zfd.text(z.string().optional()),
     fromLocationId: z.string().min(1, { message: "From Location is required" }),
     toLocationId: z.string().min(1, { message: "To Location is required" }),
-    status: z.enum(warehouseTransferStatusType).optional(),
     transferDate: zfd.text(z.string().optional()),
     expectedReceiptDate: zfd.text(z.string().optional()),
     notes: zfd.text(z.string().optional()),
@@ -605,6 +606,20 @@ export const stockTransferStatusType = [
   "In Progress",
   "Completed"
 ] as const;
+
+/**
+ * The status a count must be in to move to `to`, and the refusal when it is
+ * not. Confirm takes a Draft to Pending, reopen a Pending back to Draft; only
+ * posting reaches Posted.
+ */
+export function inventoryCountStatusFrom(to: "Draft" | "Pending"): {
+  status: "Draft" | "Pending";
+  refusal: string;
+} {
+  return to === "Pending"
+    ? { status: "Draft", refusal: "Only a draft count can be confirmed" }
+    : { status: "Pending", refusal: "Only a pending count can be reopened" };
+}
 
 export function isStockTransferLocked(
   status: string | null | undefined
@@ -654,7 +669,6 @@ export const stockTransferLineValidator = z
         .number()
         .min(0, { message: "Quantity must be greater than or equal to 0" })
     ),
-    pickedQuantity: zfd.numeric(z.number().min(0).optional()),
     requiresBatchTracking: zfd.text(
       z.string().transform((val) => val === "true")
     ),
@@ -753,6 +767,42 @@ export function isPickingListLocked(
   return (
     status === "Completed" || status === "Partial" || status === "Cancelled"
   );
+}
+
+/**
+ * What finishing a picking list does, given its unresolved lines (neither
+ * fully picked, cancelled nor marked Short) and the company's
+ * incomplete-list policy: refuse (`error`), ask first (`warn`, until
+ * acknowledged), or finish — Partial when anything was left or short.
+ */
+export function finishPickingList({
+  unresolvedItemNames,
+  hasShort,
+  policy,
+  acknowledged
+}: {
+  unresolvedItemNames: string[];
+  hasShort: boolean;
+  policy: string | null;
+  acknowledged: boolean;
+}):
+  | { outcome: "refuse"; message: string }
+  | { outcome: "ask" }
+  | { outcome: "finish"; status: "Completed" | "Partial" } {
+  if (unresolvedItemNames.length > 0) {
+    if (policy === "error") {
+      return {
+        outcome: "refuse",
+        message: `Can't finish — still unpicked: ${unresolvedItemNames.join(", ")}`
+      };
+    }
+    if (!acknowledged) return { outcome: "ask" };
+  }
+  return {
+    outcome: "finish",
+    status:
+      unresolvedItemNames.length === 0 && !hasShort ? "Completed" : "Partial"
+  };
 }
 
 export const pickingListValidator = z.object({

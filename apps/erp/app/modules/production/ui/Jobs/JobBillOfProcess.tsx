@@ -152,13 +152,9 @@ import {
   OperationRowTitle
 } from "~/modules/items/ui/Item/MethodRow";
 import type {
-  OperationParameter,
-  OperationStep,
-  OperationStepSlide,
-  OperationTool,
   SlideAnnotation,
   SlideSize
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
 import {
   methodOperationOrders,
   operationParameterValidator,
@@ -166,9 +162,19 @@ import {
   operationToolValidator,
   operationTypes,
   procedureStepType
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
+import type {
+  OperationParameter,
+  OperationStep,
+  OperationStepSlide,
+  OperationTool
+} from "~/modules/shared/types";
+import type { action as syncAssemblyAction } from "~/routes/x+/assembly+/$id.sync-bop";
+import type { action as updateOperationAction } from "~/routes/x+/job+/methods+/$jobId.operation.$id";
+import type { action as createOperationAction } from "~/routes/x+/job+/methods+/$jobId.operation.new";
 import type { action as editJobOperationParameterAction } from "~/routes/x+/job+/methods+/operation.parameter.$id";
 import type { action as newJobOperationParameterAction } from "~/routes/x+/job+/methods+/operation.parameter.new";
+import type { action as syncProcedureAction } from "~/routes/x+/job+/methods+/operation.procedure.sync";
 import type { action as editJobOperationStepAction } from "~/routes/x+/job+/methods+/operation.step.$id";
 import type { action as editJobOperationToolAction } from "~/routes/x+/job+/methods+/operation.tool.$id";
 import type { action as newJobOperationToolAction } from "~/routes/x+/job+/methods+/operation.tool.new";
@@ -180,7 +186,7 @@ import {
   procedureSyncValidator,
   syncAssemblyToBopValidator
 } from "../../production.models";
-import { getProductionEventsPage } from "../../production.service";
+import { getProductionEventsPage } from "../../production.utils";
 import type { Job, JobOperation } from "../../types";
 import { JobOperationStatus, JobOperationTags } from "./JobOperationStatus";
 import { OperationDueDatePicker } from "./OperationDueDatePicker";
@@ -492,23 +498,13 @@ const JobBillOfProcess = ({
   const { t } = useLingui();
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { carbon, accessToken } = useCarbon();
-  const sortOrderFetcher = useFetcher<{}>();
-  const deleteOperationFetcher = useFetcher<{
-    success: boolean;
-    error?: string;
-  }>();
+  const sortOrderFetcher = useAction();
+  const deleteOperationFetcher = useAction();
   const permissions = usePermissions();
   const {
     id: userId,
     company: { id: companyId }
   } = useUser();
-
-  useEffect(() => {
-    const result = deleteOperationFetcher.data;
-    if (result && !result.success && result.error) {
-      toast.error(result.error);
-    }
-  }, [deleteOperationFetcher.data]);
 
   const [params] = useUrlParams();
   const selected = params.get("selectedOperation");
@@ -2801,28 +2797,23 @@ function OperationForm({
   const { company } = useUser();
   if (!jobId) throw new Error("jobId not found");
 
-  const fetcher = useFetcher<{
-    id: string;
-    success: boolean;
-    message: string;
-  }>();
-  const { carbon } = useCarbon();
-  const baseCurrency = company?.baseCurrencyCode ?? "USD";
-  const currencyDecimals = useCurrencyDecimals(baseCurrency);
-
-  useEffect(() => {
-    if (fetcher.data?.id) {
-      // Clear temporary item after successful save
+  const isNew = !!temporaryItems[item.id];
+  const fetcher = useAction<
+    typeof createOperationAction | typeof updateOperationAction
+  >({
+    onSuccess: () => {
+      // The saved row replaces the temporary one when the page reloads.
       setTemporaryItems((prev) => {
         const { [item.id]: _, ...rest } = prev;
         return rest;
       });
-      if (fetcher.data?.success) {
-        toast.success(fetcher.data.message);
-      }
+      toast.success(isNew ? t`Operation created` : t`Operation updated`);
       onSubmit();
     }
-  }, [item.id, fetcher.data, onSubmit, setTemporaryItems]);
+  });
+  const { carbon } = useCarbon();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const machineDisclosure = useDisclosure();
   const laborDisclosure = useDisclosure();
@@ -3741,12 +3732,8 @@ function ProcedureSyncModal({
   procedureId: string;
   onClose: () => void;
 }) {
-  const fetcher = useAction<{ success: boolean }>({
-    onSuccess: (data) => {
-      if (data?.success) {
-        onClose();
-      }
-    }
+  const fetcher = useAction<typeof syncProcedureAction>({
+    onSuccess: onClose
   });
   return (
     <Modal
@@ -3814,11 +3801,19 @@ function AssemblyStepsSyncModal({
   assemblyInstructionId: string;
   onClose: () => void;
 }) {
-  const fetcher = useAction<{ success: boolean }>({
-    onSuccess: (data) => {
-      if (data?.success) {
-        onClose();
+  const { t } = useLingui();
+  const fetcher = useAction<typeof syncAssemblyAction>({
+    onSuccess: ({ data }) => {
+      if (data) {
+        const synced = data.created + data.updated;
+        const summary = t`Synced ${synced} steps to the BOP (${data.created} new, ${data.updated} updated, ${data.deleted} removed, ${data.slidesSynced} slides, ${data.toolsLinked} tool links)`;
+        toast.success(
+          data.partsUnmatched > 0
+            ? `${summary} — ${t`${data.partsUnmatched} part links had no matching BOM line on the operation`}`
+            : summary
+        );
       }
+      onClose();
     }
   });
   return (

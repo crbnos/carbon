@@ -11,7 +11,10 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getIssues, getIssueTypesList } from "~/modules/quality";
+import {
+  getIssues,
+  getIssueTypesList
+} from "~/modules/quality/quality.service";
 import IssuesTable from "~/modules/quality/ui/Issue/IssuesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

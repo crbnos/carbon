@@ -4,6 +4,12 @@
 
 import { describe, expect, it, vi } from "vitest";
 
+// The operations in settings.server.ts reach the glossary, whose `msg` macro
+// only runs compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
+
 const bustApiKeyCache = vi.hoisted(() => vi.fn());
 const getCarbonServiceRole = vi.hoisted(() => vi.fn());
 
@@ -11,7 +17,8 @@ const getCarbonServiceRole = vi.hoisted(() => vi.fn());
 // none of that is under test here.
 vi.mock("@carbon/auth/auth.server", () => ({ bustApiKeyCache }));
 vi.mock("@carbon/auth/client.server", () => ({ getCarbonServiceRole }));
-vi.mock("@carbon/ee", () => ({
+vi.mock("@carbon/ee", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@carbon/ee")>()),
   getIntegrationConfigById: vi.fn(),
   resolveIntegrationSecrets: vi.fn(),
   splitSecrets: vi.fn()
@@ -20,7 +27,7 @@ vi.mock("@carbon/ee/hooks.server", () => ({
   getIntegrationServerHooks: vi.fn()
 }));
 
-import { invalidateApiKeyCache } from "./settings.server";
+import { invalidateApiKeyCache } from "./settings.service";
 
 /** Records the `.eq()` filters so the companyId scoping can be asserted. */
 function stubServiceRole(row: { keyHash: string } | null) {

@@ -2,39 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { z } from "zod";
-import { zfd } from "zod-form-data";
+import { setIssueActionDueDate } from "~/modules/quality/quality.server";
 
-const updateDueDateSchema = zfd.formData({
-  id: z.string(),
-  dueDate: z.string().optional()
-});
-
-export async function action({ request }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    update: "quality"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(setIssueActionDueDate.input).request(args, {
+    params: ["id"]
   });
-
-  const formData = await request.formData();
-  const validated = await validator(updateDueDateSchema).validate(formData);
-  if (validated.error) {
-    return data({ error: "Invalid form data" }, { status: 400 });
-  }
-
-  const { error } = await client
-    .from("nonConformanceActionTask")
-    .update({
-      dueDate: validated.data.dueDate || null
-    })
-    .eq("id", validated.data.id);
-
-  if (error) {
-    return data({ error: error.message }, { status: 400 });
-  }
-
-  return { success: true };
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.quality.setIssueActionDueDate({
+    ...input.data,
+    id: input.params.id
+  });
 }

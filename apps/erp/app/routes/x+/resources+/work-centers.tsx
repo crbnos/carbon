@@ -10,12 +10,12 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getDepartmentsList } from "~/modules/people";
+import { getDepartmentsList } from "~/modules/people/people.service";
 import {
   getLocationsList,
-  getWorkCenters,
-  WorkCentersTable
-} from "~/modules/resources";
+  getWorkCenters
+} from "~/modules/resources/resources.service";
+import { WorkCentersTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

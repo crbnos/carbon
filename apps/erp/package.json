@@ -28,7 +28,6 @@
     "@carbon/query": "workspace:*",
     "@carbon/react": "workspace:*",
     "@carbon/serve": "workspace:*",
-    "@carbon/server-functions": "workspace:*",
     "@carbon/stripe": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@carbon/viewer": "workspace:*",
@@ -154,6 +153,7 @@
     "@types/lodash.template": "4.5.3",
     "@types/nprogress": "0.2.3",
     "@types/papaparse": "5.5.2",
+    "@types/pg": "8.15.6",
     "@types/react": "catalog:",
     "@types/react-csv": "1.1.10",
     "@types/react-dom": "catalog:",
@@ -162,6 +162,7 @@
     "@vitejs/devtools-rolldown": "catalog:",
     "cross-env": "catalog:",
     "nodemon": "catalog:",
+    "pg": "8.20.0",
     "npm-run-all": "catalog:",
     "supabase": "catalog:",
     "tailwind-scrollbar": "catalog:",
@@ -184,5 +185,8 @@
     "typecheck": "react-router typegen && tsgo --noEmit",
     "typegen": "react-router typegen"
   },
-  "sideEffects": false
+  "sideEffects": [
+    "./app/modules/carbon.server.ts",
+    "./app/zod.client.ts"
+  ]
 }

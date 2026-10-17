@@ -14,12 +14,15 @@ import {
   useNavigate,
   useSearchParams
 } from "react-router";
-import type { AccountClass, AccountIncomeBalance } from "~/modules/accounting";
+import { groupAccountValidator } from "~/modules/accounting/accounting.models";
 import {
   getGroupAccounts,
-  groupAccountValidator,
   upsertAccount
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
+import type {
+  AccountClass,
+  AccountIncomeBalance
+} from "~/modules/accounting/types";
 import { GroupAccountForm } from "~/modules/accounting/ui/ChartOfAccounts";
 import { path } from "~/utils/path";
 

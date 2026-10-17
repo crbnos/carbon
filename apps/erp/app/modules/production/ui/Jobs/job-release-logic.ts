@@ -92,6 +92,8 @@ export function resolveOperationSupplier(
 // them; the job's own Release dialog is where they are fixed.
 export function jobReleaseProblems(job: {
   manufacturingBlocked: boolean;
+  nothingToMake?: boolean;
+  makeToAssetError?: string | null;
   missingAssemblies: { description: string }[];
   outsideOperationsWithoutSupplier: {
     description: string;
@@ -99,7 +101,9 @@ export function jobReleaseProblems(job: {
   }[];
 }): string[] {
   return [
+    ...(job.nothingToMake ? ["nothing to make"] : []),
     ...(job.manufacturingBlocked ? ["manufacturing is blocked"] : []),
+    ...(job.makeToAssetError ? [job.makeToAssetError] : []),
     ...(job.missingAssemblies.length > 0
       ? [
           `no operations on ${job.missingAssemblies

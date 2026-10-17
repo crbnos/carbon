@@ -15,7 +15,7 @@ import { Trans } from "@lingui/react/macro";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getTaxRegistrations } from "~/modules/accounting";
+import { getTaxRegistrations } from "~/modules/accounting/accounting.service";
 import { TaxRegistrationsTable } from "~/modules/accounting/ui/Tax";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

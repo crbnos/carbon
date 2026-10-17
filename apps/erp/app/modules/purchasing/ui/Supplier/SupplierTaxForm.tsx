@@ -32,7 +32,7 @@ import {
   TaxCode
 } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
-import { taxExemptionReasons } from "~/modules/shared";
+import { taxExemptionReasons } from "~/modules/shared/shared.models";
 import { supplierTaxValidator } from "../../purchasing.models";
 
 type SupplierTaxFormProps = {

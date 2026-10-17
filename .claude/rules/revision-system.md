@@ -62,7 +62,7 @@ the type-scoped `revisions` array.
   and purchasing setup onto it (next bullet), so a revision with default planning
   and no suppliers is never visible and a failure leaves no row holding the
   revision label. After the commit, if `replenishmentSystem !== "Buy"`, it calls
-  the `get-method` server function (`@carbon/server-functions/get-method`,
+  `getMethod` (`production.service.ts`, ported from the `get-method` server function) (`~/modules/production/production.service`,
   `type: "itemToItem"`) to copy the method/BOM from source to the new revision.
   That call runs its own transaction, so it cannot join this one: a failure is
   logged and the revision stands (the method can be copied again). Three callers, one behaviour: the New Revision
@@ -132,7 +132,7 @@ Make methods are independently **versioned** (`20250603011801_make-method-versio
   = `Draft | Active | Archived`. Unique `(itemId, version)`.
 - View `activeMakeMethods` ranks per `itemId`, preferring `status='Active'` then
   `version DESC` (excludes `Archived`) — picks the one current method per item.
-- `activateMethodVersion` (`items.service.ts`) calls the `convert` server function
+- `activateMethodVersion` (`items.service.ts`) calls `convertDocument` (`shared.service.ts`, ported from the `convert` server function)
   (`type: "methodVersionToActive"`). Route: `x+/items+/methods+/versions.activate.$id.tsx`.
 - `jobMakeMethod.version` / `quoteMakeMethod.version` denormalize the method version
   at job/quote creation. Don't conflate method `version` (per-item recipe) with item

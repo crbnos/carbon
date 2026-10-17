@@ -2,79 +2,42 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { warehouseTransferLineValidator } from "~/modules/inventory/inventory.models";
 import type {
   WarehouseTransfer,
   WarehouseTransferLine
-} from "~/modules/inventory";
-import {
-  getWarehouseTransfer,
-  isWarehouseTransferLocked,
-  upsertWarehouseTransferLine,
-  warehouseTransferLineValidator
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import { WarehouseTransferLineForm } from "~/modules/inventory/ui/WarehouseTransfers";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(warehouseTransferLineValidator).request(args, {
+    params: ["transferId"]
   });
-
-  const { transferId } = params;
-  if (!transferId) {
-    throw new Error("transferId not found");
-  }
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "inventory"
+  if ("invalid" in input) return input.invalid;
+  const { transferId } = input.params;
+  // The line's locations are the transfer's own.
+  const {
+    id: _id,
+    transferId: _transferId,
+    fromLocationId: _from,
+    toLocationId: _to,
+    ...line
+  } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.inventory.createWarehouseTransferLine({
+    transferId,
+    ...line
   });
-  const transfer = await getWarehouseTransfer(viewClient, transferId);
-  await requireUnlocked({
-    request,
-    isLocked: isWarehouseTransferLocked(transfer.data?.status),
-    redirectTo: path.to.warehouseTransfer(transferId),
-    message: "Cannot modify a locked warehouse transfer. Reopen it first."
-  });
-
-  const formData = await request.formData();
-  const validation = warehouseTransferLineValidator.safeParse(
-    Object.fromEntries(formData)
-  );
-
-  if (!validation.success) {
-    return {
-      success: false,
-      message: "Invalid form data"
-    };
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const createWarehouseTransferLine = await upsertWarehouseTransferLine(
-    client,
-    {
-      ...d,
-
-      companyId: companyId,
-      createdBy: userId
-    }
-  );
-
-  if (createWarehouseTransferLine.error) {
-    return {
-      success: false,
-      message: "Failed to create warehouse transfer line"
-    };
-  }
-
-  return redirect(path.to.warehouseTransfer(transferId));
+  // An error is toasted by the form's fetcher.
+  if (!result.data) return result;
+  throw redirect(path.to.warehouseTransfer(transferId));
 }
 
 export default function NewWarehouseTransferLineRoute() {

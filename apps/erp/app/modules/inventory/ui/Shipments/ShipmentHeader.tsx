@@ -18,7 +18,11 @@ import { DateTime, EmployeeAvatar, PrintButton } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ItemTracking, Shipment, ShipmentLine } from "~/modules/inventory";
+import type {
+  ItemTracking,
+  Shipment,
+  ShipmentLine
+} from "~/modules/inventory/types";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import { path } from "~/utils/path";
 import ShipmentPostModal from "./ShipmentPostModal";

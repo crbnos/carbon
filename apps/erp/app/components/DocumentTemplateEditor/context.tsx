@@ -14,7 +14,9 @@ import {
 } from "@carbon/documents/template";
 import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
+import { toast } from "@carbon/react";
 import { arrayMove } from "@dnd-kit/sortable";
+import { useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import {
   createContext,
@@ -343,12 +345,13 @@ export function DocumentTemplateProvider({
     store.setState({ sections: props.sections });
   }, [store, props.sections]);
 
-  const fetcher = useAction<{ success?: boolean }>({
-    onSuccess: (data) => {
-      if (savedRef.current && data?.success) {
-        savedRef.current = false;
-        store.getState().rebaseline();
-      }
+  const { t } = useLingui();
+  const fetcher = useAction({
+    onSuccess: () => {
+      if (!savedRef.current) return;
+      savedRef.current = false;
+      store.getState().rebaseline();
+      toast.success(t`Saved document layout`);
     }
   });
   const isSaving = fetcher.state !== "idle";
