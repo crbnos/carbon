@@ -1018,7 +1018,7 @@
     {"name":"purchasing_terminateLeaseLine","classification":"DESTRUCTIVE","schema":"cb77a6b7f416","response":"bb4487ea3e25","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_updateLeaseDetails","classification":"WRITE","schema":"58766088a3e6","response":"3797626bd17e","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_updatePlanningPurchaseOrderLine","classification":"WRITE","schema":"f9f036f80ca3","response":"2d9389fd413d","permission":"purchasing:update","paginates":false},
-    {"name":"purchasing_updatePurchaseOrder","classification":"WRITE","schema":"558a1bd9208b","response":"3797626bd17e","permission":"purchasing:update","paginates":false},
+    {"name":"purchasing_updatePurchaseOrder","classification":"WRITE","schema":"be711f3a1c77","response":"3797626bd17e","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_updatePurchaseOrderExchangeRate","classification":"WRITE","schema":"222e5249c015","response":"bcde375ebd4c","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_updatePurchaseOrderFavorite","classification":"DESTRUCTIVE","schema":"ff73dc321969","response":"bcde375ebd4c","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_updatePurchaseOrderLine","classification":"WRITE","schema":"dcf7f1d780b9","response":"3797626bd17e","permission":"purchasing:update","paginates":false},

@@ -1896,12 +1896,22 @@ export async function insertPurchaseOrder(
   return { data: { id: orderId, purchaseOrderId, exchangeRate }, error: null };
 }
 
+const PURCHASE_ORDER_HEADER_COLUMNS = [
+  "currencyCode",
+  "orderDate",
+  "supplierId",
+  "supplierContactId",
+  "supplierLocationId",
+  "supplierReference",
+  "purchaseOrderType",
+  "customFields"
+] as const;
+
 export async function updatePurchaseOrder(
   client: SupabaseClient<Database>,
   input: {
     id: string;
     updatedBy: string;
-    status?: (typeof purchaseOrderStatusType)[number];
     currencyCode?: string;
     orderDate?: string;
     supplierId?: string;
@@ -1916,7 +1926,16 @@ export async function updatePurchaseOrder(
   data: { id: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
 }> {
-  const { id, updatedBy, notes, ...updates } = input;
+  const { id, updatedBy, notes } = input;
+  // Only these columns, and only the ones sent: the status changes through
+  // finalize, reopen and close, never through a header edit.
+  const updates = Object.fromEntries(
+    PURCHASE_ORDER_HEADER_COLUMNS.filter((column) => column in input).map(
+      (column) => [column, input[column]]
+    )
+  ) as Partial<
+    Pick<typeof input, (typeof PURCHASE_ORDER_HEADER_COLUMNS)[number]>
+  >;
 
   let exchangeRate: number | undefined;
   let exchangeRateUpdatedAt: string | undefined;

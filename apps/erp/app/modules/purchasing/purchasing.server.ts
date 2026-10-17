@@ -5115,27 +5115,19 @@ export const insertPurchaseOrder = defineServiceFn({
 });
 
 /**
- * Update an existing purchase order - handles exchange rate updates when currency changes
+ * Update a purchase order's header.
+ *
+ * @remarks
+ * The supplier, its contact and location, the supplier reference, the type,
+ * the order date, the currency (its exchange rate is read again), internal
+ * notes and custom fields. Refused on a finalized order. The status changes
+ * only through finalize, reopen and close.
  *
  * @mcp
  */
 export const updatePurchaseOrder = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     id: z.string(),
-    status: z
-      .enum([
-        "Draft",
-        "Planned",
-        "Needs Approval",
-        "To Review",
-        "To Receive",
-        "To Receive and Invoice",
-        "To Invoice",
-        "Completed",
-        "Rejected",
-        "Closed"
-      ])
-      .optional(),
     currencyCode: z.string().optional(),
     orderDate: z.string().optional(),
     supplierId: z.string().optional(),
@@ -5144,16 +5136,37 @@ export const updatePurchaseOrder = defineServiceFn({
     supplierReference: z.string().optional(),
     purchaseOrderType: z.enum(["Purchase", "Outside Processing"]).optional(),
     notes: z.string().nullable().optional(),
-    customFields: z.unknown().optional()
+    customFields: z.record(z.string(), z.unknown()).optional()
   }),
   permission: { update: "purchasing" },
-  async run(ctx, input) {
+  async run(ctx, { customFields, ...input }) {
+    const current = await ctx.asCaller.supabase
+      .from("purchaseOrder")
+      .select("status")
+      .eq("id", input.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (current.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the purchase order",
+        current.error
+      );
+    }
+    if (!current.data) return ctx.error("notFound", "Purchase order not found");
+    if (isPurchaseOrderLocked(current.data.status)) {
+      return ctx.error(
+        "rule",
+        "Cannot modify a finalized purchase order. To make changes, please cancel this PO and create a new one."
+      );
+    }
     return envelope(
       ctx,
-      await service.updatePurchaseOrder(
-        ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
-      )
+      await service.updatePurchaseOrder(ctx.asCaller.supabase, {
+        ...input,
+        customFields: customFields as Json | undefined,
+        updatedBy: ctx.auditUserId
+      })
     );
   }
 });

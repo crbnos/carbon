@@ -31,7 +31,7 @@ const test = (name: string, fn: () => Promise<void>) =>
   it.skipIf(!client)(name, fn, 60_000);
 
 type Setup = {
-  status?: "Draft" | "Needs Approval";
+  status?: "Draft" | "Needs Approval" | "To Receive";
   /** The company's approval rule for purchase orders, from 0. */
   approver?: string | null;
   pendingRequest?: boolean;
@@ -406,6 +406,48 @@ test("a planning order skips approval only when the company allows it", async ()
     expect(await skipped.requests()).toEqual([]);
   } finally {
     await skipped.cleanup();
+  }
+});
+
+test("a header update writes only header fields, and not on a finalized order", async () => {
+  const draft = await fixture();
+  const header = (f: typeof draft) =>
+    f.db
+      .selectFrom("purchaseOrder")
+      .select(["status", "createdFromPlanning", "supplierReference"])
+      .where("id", "=", f.ids.order)
+      .executeTakeFirst();
+  try {
+    const result = await purchasing.updatePurchaseOrder(
+      draft.contextAs("system"),
+      {
+        id: draft.ids.order,
+        supplierReference: "REF-1",
+        // Not header fields: an API body cannot release or re-route an order.
+        status: "To Receive",
+        createdFromPlanning: true
+      } as never
+    );
+    expect(result.error).toBeNull();
+    expect(await header(draft)).toEqual({
+      status: "Draft",
+      createdFromPlanning: false,
+      supplierReference: "REF-1"
+    });
+  } finally {
+    await draft.cleanup();
+  }
+
+  const released = await fixture({ status: "To Receive" });
+  try {
+    const result = await purchasing.updatePurchaseOrder(
+      released.contextAs("system"),
+      { id: released.ids.order, supplierReference: "REF-2" }
+    );
+    expect(result.error).toMatchObject({ category: "rule" });
+    expect((await header(released))?.supplierReference).toBeNull();
+  } finally {
+    await released.cleanup();
   }
 });
 
