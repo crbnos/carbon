@@ -98,13 +98,20 @@ export const TAX_RECEIVED_POSTING_DESCRIPTION = "Tax Received";
  *  lines, because a provider receives that tax on the line itself. */
 export const TAX_PAID_POSTING_DESCRIPTION = "Tax Paid";
 
+/** The description of the credit for tax the company self-assesses on a
+ *  Reverse Charge code (owed to the authority, never to the supplier). Bill
+ *  costing (`@carbon/ee` document-costing) reads it to send such a bill
+ *  tax-neutral. */
+export const REVERSE_CHARGE_TAX_POSTING_DESCRIPTION = "Reverse Charge Tax";
+
 export type AccountingPostingRole =
   | "Receivables"
   | "Payables"
   | "ShippingRevenue"
   | "SalesRevenue"
   | "TaxReceived"
-  | "TaxPaid";
+  | "TaxPaid"
+  | "ReverseChargeTax";
 
 /** Roles come from the original journal, never a mutable account name or default. */
 export function classifyAccountingPostingRole(
@@ -125,6 +132,8 @@ export function classifyAccountingPostingRole(
       return "TaxReceived";
     case TAX_PAID_POSTING_DESCRIPTION:
       return "TaxPaid";
+    case REVERSE_CHARGE_TAX_POSTING_DESCRIPTION:
+      return "ReverseChargeTax";
     default:
       return null;
   }

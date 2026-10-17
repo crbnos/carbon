@@ -338,44 +338,69 @@ revenue, so it cannot mirror Carbon's posting. Spec:
     `loadAccountCodesById` (Xero) / `loadQboAccountRefsById` (QBO) /
     `loadRilletAccountCodesById` (Rillet).
   - **Bill tax.** The purchase posting splits each line's tax. The recoverable
-    share posts to Tax Paid. The non-recoverable share stays in cost.
-    `loadBillCostingLines` returns every leg, and flags each Tax Paid leg
-    `taxLeg: true` (role `"TaxPaid"` from `classifyAccountingPostingRole`).
-    It also returns the bill's `taxLedger` rows (`BillTaxLedgerRow`).
-    - `resolveCostingLineTax` ties each non-tax leg to one tax
-      (`{ taxCodeId, taxPercent, recoverableShare }`). The journal names no
-      invoice line, so it tries, in order:
+    share posts to Tax Paid. The non-recoverable share stays in cost, and so
+    does the line's share of the UNTAXED header freight
+    (`purchaseInvoiceDelivery.supplierShippingCost`, weighted on gross). A cost
+    leg is therefore net + non-recoverable tax + freight, and its taxable base
+    CANNOT be derived from its amount.
+    `loadBillCostingLines` returns every leg and flags each tax leg by its
+    posting role (`classifyAccountingPostingRole`): `"TaxPaid"` →
+    `taxLeg: true`; `"ReverseChargeTax"` (`REVERSE_CHARGE_TAX_POSTING_DESCRIPTION`,
+    the credit for self-assessed tax) → `reverseChargeLeg: true`. It also
+    returns the bill's `taxLedger` rows (`BillTaxLedgerRow`, base currency).
+    - `resolveCostingLineTax` ties each cost leg to one tax
+      (`{ taxCodeId, taxPercent }`). The journal names no invoice line, so it
+      tries, in order:
       1. the one tax every line of the bill shares;
       2. else the invoice lines of the leg's purchase-order line;
       3. else the direct (no PO) lines on the leg's account;
-      4. else `tax: null`. A provider that sends tax refuses the bill rather than guess.
-      `recoverableShare` = Σ`recoverableAmount` / Σ`taxAmount` of those lines' ledger rows.
-    - A provider that sends tax natively calls `splitBillTaxLegs` and passes the
-      `taxLegs` to `toTransactionCurrencyLines`. The check against the document
-      total still counts them; the remaining lines sum to the total less the tax.
-    - Per leg, at rate r and recoverable share s (grill 10; Xero
-      `splitXeroBillLeg`, QBO `splitQboPurchaseTax`). The leg amount L holds
-      the net plus the non-recoverable tax, so the net is L / (1 + r·(1 − s)):
-      1. Recoverable tax (r·s ≠ 0): line 1 is net × s at the mapped purchase
-         rate, with its share of the Tax Paid legs (`distributeRoundingResidual`,
-         so the shares sum to the posted Tax Paid exactly). Line 2 is the rest of
-         L on the same account at no tax (Xero `NONE`, QBO the company's
-         non-taxable code from `qboNonTaxableCode`). A fully recoverable leg is line 1 alone.
-      2. A code at 0% (zero-rated or exempt): the code's mapped rate with tax 0,
-         so the net reaches the return (UK box 7).
-      3. Tax folded into cost (r ≠ 0, s = 0), or no code and no tax: no tax, as before.
-    - A leg with `tax: null` on a bill with recoverable tax refuses with the
-      `UNMAPPED_TAX_CODES` Warning ("cannot be tied to one tax code").
-    - A bill with no Tax Paid leg and no coded leg (Xero: no zero-rated coded leg)
-      goes out **byte-identical** to before: every leg replays with no tax and the
-      tax catalog is never read (`toXeroBillCosting`, `qboBillCarriesTax`).
+      4. else `tax: null`.
+    - **One shared planner, `planBillTaxLines`** (`core/document-costing.ts`),
+      used by Xero and QBO. A provider does no tax maths of its own: Xero maps
+      each planned line to a `TaxType` (`buildXeroBillLineItems`), QBO to a
+      `TaxCodeRef` (`resolveQboPurchaseTaxLines`).
+      1. `billSendsTax` decides. No Tax Paid leg and no zero-rated coded leg:
+         every leg replays at no tax, **byte-identical** to before, and the tax
+         catalog is never read (`replayBillTaxNeutral`).
+      2. Otherwise the Tax Paid legs come out. Their converted total is
+         `toDocumentTaxTotal` (the legs summed, then converted ONCE; leg-by-leg
+         rounding drifts by up to half a unit per leg). `toTransactionCurrencyLines`
+         reconciles the cost legs against the same figure.
+      3. Each code's recoverable tax R is Σ`recoverableAmount` of its ledger
+         rows. The codes are converted with `distributeRoundingResidual`, so they
+         sum exactly to the Tax Paid total. A ledger that disagrees with Tax
+         Paid refuses.
+      4. `allocateRecoverableTax`: for a code at rate r, the recoverable net is
+         N = R / r at document decimals. N fills that code's legs of the same
+         sign, largest first, each up to its own amount. R is spread over the
+         pieces in proportion to their net (`distributeRoundingResidual`). Each
+         piece is a line at the mapped purchase rate with its tax. The rest of
+         the leg is a second line on the same account at no tax (Xero `NONE`, QBO
+         the company's non-taxable code from `qboNonTaxableCode`). The share
+         R / tax is never computed, so it is never rounded.
+      5. Every other leg is one line: a code at 0% (zero-rated or exempt) at its
+         mapped rate with tax 0, so the net reaches the return (UK box 7); tax
+         folded into cost (r ≠ 0, nothing recoverable), no code, or `tax: null`
+         at no tax.
+      Legs of a code that cannot absorb N (none tied to the code, or too small)
+      refuse with the `UNMAPPED_TAX_CODES` Warning. Every refusal is a
+      `JournalEntrySyncError` with `warning: true`, never a plain Error.
+    - **Reverse charge — Phase 1.** A bill with a Reverse Charge Tax leg sends
+      NO tax: every leg, the Tax Paid and Reverse Charge Tax legs included, is an
+      account line at no tax, as before bills carried tax. This keeps GL parity.
+      Provider reverse-charge rates are not mapped yet.
+      <!-- UNVERIFIED: how Xero (reverse-charge TaxTypes) and QBO (reverse-charge codes) take a reverse-charge bill natively; Phase 1 avoids them -->
+    - QBO's vendor credit reuses `allocateRecoverableTax` for a supplier memo's
+      single reason leg.
     - Xero sets `LineAmountTypes: "Exclusive"` only when a line carries a mapped
       `TaxType` (`hasXeroMappedTax`). QBO sends `GlobalTaxCalculation: "TaxExcluded"`
       and `TxnTaxDetail` (`buildQboTxnTaxDetail`) outside the US. A QBO US company
       has no purchase tax codes, so its bills replay as before and the Tax Paid
       legs stay account lines.
-    - **Rillet is unchanged.** It replays every leg, Tax Paid included, as an
-      account line with no `tax_rate`.
+    - Every tax resolves before `ensureDependencySynced`, so a refused bill
+      pushes no vendor.
+    - **Rillet is unchanged.** It replays every leg, Tax Paid and reverse-charge
+      legs included, as an account line with no `tax_rate`.
     <!-- UNVERIFIED: the taxed Xero and QBO bill payloads (two-line split, zero-rated leg, TxnTaxDetail) are pinned by unit tests only; no provider sandbox accepted them yet (plan Task 39) -->
 - **AR invoices are ACCOUNT-referenced, not item-referenced** (changed 2026-09-28).
   Every line carries a SYNTHETIC item standing for the posted revenue ACCOUNT —
@@ -525,7 +550,7 @@ revenue, so it cannot mirror Carbon's posting. Spec:
   create and OMITS the flag on update (Xero rejects untracking an item with
   stock/txns; a still-tracked remote logs a recorded warning to untrack
   manually). QBO items are Service/NonInventory (never Inventory).
-- **PO / SO / Quote are unchanged** — item-referenced, no GL constraint (QBO PO
+- **PO / SO / Quote stay item-referenced** — no GL constraint (QBO PO
   keeps `buildQboExpenseLines` / `ItemBasedExpenseLineDetail`). Their lines
   carry mapped tax (see "Tax-code mapping"). A QBO PO outside the US puts a
   `TaxCodeRef` on each line and sends `TxnTaxDetail` with

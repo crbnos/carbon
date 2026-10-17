@@ -20230,6 +20230,10 @@ msgstr "Selected: {selectedSum} / remaining after split: {0}"
 msgid "Self Managed"
 msgstr "Self Managed"
 
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Self-assessed rate today: <0>{0}</0>. Lines using this code are charged no tax."
+msgstr "Self-assessed rate today: <0>{0}</0>. Lines using this code are charged no tax."
+
 msgid "Self-Assessed Tax"
 msgstr "Self-Assessed Tax"
 

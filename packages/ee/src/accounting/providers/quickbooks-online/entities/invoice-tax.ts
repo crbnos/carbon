@@ -2,13 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import {
-  distributeRoundingResidual,
-  EPSILON,
-  round,
-  SCALE
-} from "@carbon/utils";
-import type { CostingLineTax } from "../../../core/document-costing";
+import { EPSILON, round, SCALE } from "@carbon/utils";
+import type { BillTaxLine } from "../../../core/document-costing";
 import { JournalEntrySyncError } from "../../../core/posting";
 import { resolveProviderTaxRate } from "../../../core/provider-tax";
 import type {
@@ -542,153 +537,48 @@ export function resolveQboInvoiceTax(args: {
   };
 }
 
-/** One purchase amount, before its tax is resolved. */
-export type QboPurchaseTaxSource = {
-  id: string;
-  /** Document currency. Includes the line's non-recoverable tax. */
-  amount: number;
-  tax: CostingLineTax | null | undefined;
-};
-
-/** One provider line of a purchase amount. */
+/** One QuickBooks line of a purchase document, from one planned line. */
 export type QboPurchaseTaxPart = {
-  sourceId: string;
-  amount: number;
+  line: BillTaxLine;
   codeRef: Qbo.Ref;
   rate: Qbo.TaxRate | null;
-  taxAmount: number;
 };
 
 /**
- * The QuickBooks lines of purchase amounts outside the US. QuickBooks takes
- * one tax code per line, so per amount L at rate r with recoverable share s:
- * - recoverable tax (r·s ≠ 0): the base is L / (1 + r·(1 − s)), since L holds
- *   the non-recoverable tax. Line 1 is base · s at the mapped code with the
- *   recoverable tax; line 2 is the rest of L at the company's non-taxable
- *   code (grill 10). A fully recoverable amount is line 1 alone.
- * - a code at 0% (zero-rated, exempt): its mapped code with no tax, so its net
- *   reaches the return.
- * - tax folded into cost (r ≠ 0, s = 0), or no tax and no code: the
- *   non-taxable code.
- * - tax that cannot be tied to one code: refused when the document has
- *   recoverable tax; otherwise it moves no tax, and takes the non-taxable code.
- * The recoverable tax of the lines sums exactly to `recoverableTax` (the
- * posted Tax Paid legs): each line takes at most one minor unit of the
- * residual.
+ * The QuickBooks tax code of each planned purchase line outside the US
+ * (`planBillTaxLines` / `allocateRecoverableTax` decide the amounts and the
+ * tax; this only names the codes):
+ * - a line with tax goes at its Carbon code's mapped purchase code
+ *   (`resolveQboLineTax`, which also checks the tax to one minor unit); a
+ *   zero-rated code keeps its rate with tax 0, so its net reaches the return;
+ * - a line with no tax goes at the company's non-taxable code.
  */
-export function splitQboPurchaseTax(args: {
+export function resolveQboPurchaseTaxLines(args: {
   documentId: string;
-  sources: ReadonlyArray<QboPurchaseTaxSource>;
-  /** Document currency. */
-  recoverableTax: number;
+  lines: readonly BillTaxLine[];
   decimalPlaces: number;
   catalog: QboInvoiceTaxCatalog;
   mappings: QboTaxCodeMappings;
 }): QboPurchaseTaxPart[] {
-  const { documentId, decimalPlaces } = args;
-  const unresolved = args.sources.filter((source) => !source.tax);
-  if (unresolved.length > 0 && args.recoverableTax !== 0) {
-    throw taxWarning(
-      `${unresolved.length} line(s) cannot be tied to one tax code of the invoice, so their recoverable tax cannot be sent`,
-      { documentId, lineIds: unresolved.map((source) => source.id) }
-    );
-  }
-  const plans = args.sources.map((source) => {
-    const tax = source.tax ?? null;
-    if (!tax)
-      return { source, tax, kind: "untaxed" as const, net: 0, exact: 0 };
-    const recoverableRate = tax.taxPercent * tax.recoverableShare;
-    const base =
-      source.amount / (1 + tax.taxPercent * (1 - tax.recoverableShare));
-    return {
-      source,
-      tax,
-      kind:
-        recoverableRate !== 0
-          ? ("recoverable" as const)
-          : tax.taxCodeId && tax.taxPercent === 0
-            ? ("zeroRated" as const)
-            : ("untaxed" as const),
-      net: round(base * tax.recoverableShare, decimalPlaces),
-      exact: base * recoverableRate
-    };
-  });
-  const recoverable = plans.filter((plan) => plan.kind === "recoverable");
-  if (recoverable.length === 0 && args.recoverableTax !== 0) {
-    throw taxWarning(
-      "the bill posted recoverable tax, but none of its lines has a recoverable tax code",
-      { documentId, recoverableTax: args.recoverableTax }
-    );
-  }
-  let taxes: number[];
-  try {
-    taxes = distributeRoundingResidual(
-      recoverable.map((plan) => plan.exact),
-      args.recoverableTax,
-      decimalPlaces
-    );
-  } catch {
-    throw taxWarning(
-      `the lines' recoverable tax does not reconcile to the ${args.recoverableTax} posted to Tax Paid`,
-      { documentId, recoverableTax: args.recoverableTax }
-    );
-  }
-  const taxBySource = new Map(
-    recoverable.map((plan, index) => [plan.source.id, taxes[index]!])
-  );
-
   let nonTaxable: Qbo.Ref | undefined;
-  const nonTaxableRef = () =>
-    (nonTaxable ??= {
-      value: qboNonTaxableCode(args.catalog, "purchase", documentId).Id
-    });
-  const mapped = (tax: CostingLineTax, netAmount: number, taxAmount: number) =>
-    resolveQboLineTax({
-      documentId,
+  return args.lines.map((line) => {
+    if (!line.tax) {
+      nonTaxable ??= {
+        value: qboNonTaxableCode(args.catalog, "purchase", args.documentId).Id
+      };
+      return { line, codeRef: nonTaxable, rate: null };
+    }
+    const match = resolveQboLineTax({
+      documentId: args.documentId,
       direction: "purchase",
-      taxCodeId: tax.taxCodeId,
-      taxPercent: tax.taxPercent,
-      netAmount,
-      taxAmount,
-      decimalPlaces,
+      taxCodeId: line.tax.taxCodeId,
+      taxPercent: line.tax.taxPercent,
+      netAmount: line.amount,
+      taxAmount: line.tax.taxAmount,
+      decimalPlaces: args.decimalPlaces,
       catalog: args.catalog,
       mappings: args.mappings
     });
-  const parts: QboPurchaseTaxPart[] = [];
-  for (const plan of plans) {
-    const { source } = plan;
-    if (plan.kind === "zeroRated") {
-      const match = mapped(plan.tax!, source.amount, 0);
-      parts.push({
-        sourceId: source.id,
-        amount: source.amount,
-        codeRef: { value: match.code.Id },
-        rate: match.rate,
-        taxAmount: 0
-      });
-      continue;
-    }
-    let rest = source.amount;
-    if (plan.kind === "recoverable") {
-      const taxAmount = taxBySource.get(source.id)!;
-      const match = mapped(plan.tax!, plan.net, taxAmount);
-      parts.push({
-        sourceId: source.id,
-        amount: plan.net,
-        codeRef: { value: match.code.Id },
-        rate: match.rate,
-        taxAmount
-      });
-      rest = round(source.amount - plan.net, decimalPlaces);
-      if (rest === 0) continue;
-    }
-    parts.push({
-      sourceId: source.id,
-      amount: rest,
-      codeRef: nonTaxableRef(),
-      rate: null,
-      taxAmount: 0
-    });
-  }
-  return parts;
+    return { line, codeRef: { value: match.code.Id }, rate: match.rate };
+  });
 }

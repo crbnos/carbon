@@ -3,6 +3,10 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it, vi } from "vitest";
+import type {
+  BillTaxLine,
+  CostingLine
+} from "../../../../core/document-costing";
 import type { SalesDocumentComponents } from "../../../../core/sales-document-components";
 import { buildTaxCodeMappingLookup } from "../../../../core/tax-mapping";
 import type { Qbo } from "../../models";
@@ -14,7 +18,7 @@ import {
   qboNonTaxableCode,
   qboTaxOptions,
   resolveQboInvoiceTax,
-  splitQboPurchaseTax
+  resolveQboPurchaseTaxLines
 } from "../invoice-tax";
 
 function document(): SalesDocumentComponents {
@@ -615,70 +619,49 @@ describe("qboNonTaxableCode", () => {
   });
 });
 
-describe("splitQboPurchaseTax", () => {
-  it("splits a partly recoverable amount into a taxed part and a non-taxable rest", () => {
-    // Net 1,000 at 20%, half recoverable: the posting put 1,100 (net plus the
-    // non-recoverable 100) on the cost account and 100 on Tax Paid.
-    expect(
-      splitQboPurchaseTax({
-        documentId: "bill",
-        sources: [
-          {
-            id: "leg",
-            amount: 1100,
-            tax: { taxCodeId: "tc_std", taxPercent: 0.2, recoverableShare: 0.5 }
-          }
-        ],
-        recoverableTax: 100,
-        decimalPlaces: 2,
-        catalog: gbCatalog(),
-        mappings: MAPPINGS
-      })
-    ).toEqual([
-      {
-        sourceId: "leg",
-        amount: 500,
-        codeRef: { value: "20S" },
-        rate: { Id: "r20p", RateValue: 20 },
-        taxAmount: 100
-      },
-      {
-        sourceId: "leg",
-        amount: 600,
-        codeRef: { value: "NOVAT" },
-        rate: null,
-        taxAmount: 0
-      }
-    ]);
+describe("resolveQboPurchaseTaxLines", () => {
+  const leg = (id: string, amount: number): CostingLine => ({
+    id,
+    accountId: "acc",
+    amount,
+    description: null,
+    tax: { taxCodeId: "tc_std", taxPercent: 0.2 }
   });
-
-  it("makes the lines' tax add up exactly to the posted Tax Paid legs", () => {
-    const parts = splitQboPurchaseTax({
+  const resolve = (lines: BillTaxLine[]) =>
+    resolveQboPurchaseTaxLines({
       documentId: "bill",
-      sources: ["a", "b", "c"].map((id) => ({
-        id,
-        amount: 10.01,
-        tax: { taxCodeId: "tc_std", taxPercent: 0.2, recoverableShare: 1 }
-      })),
-      recoverableTax: 6.01,
+      lines,
       decimalPlaces: 2,
       catalog: gbCatalog(),
       mappings: MAPPINGS
     });
-    expect(parts.map((part) => part.taxAmount)).toEqual([2.01, 2, 2]);
-    expect(parts.map((part) => part.amount)).toEqual([10.01, 10.01, 10.01]);
+
+  it("names the mapped code of a taxed line and the non-taxable code of the rest", () => {
+    const taxed: BillTaxLine = {
+      leg: leg("leg", 1100),
+      amount: 500,
+      tax: { taxCodeId: "tc_std", taxPercent: 0.2, taxAmount: 100 }
+    };
+    const rest: BillTaxLine = { leg: leg("leg", 1100), amount: 600, tax: null };
+    expect(resolve([taxed, rest])).toEqual([
+      {
+        line: taxed,
+        codeRef: { value: "20S" },
+        rate: { Id: "r20p", RateValue: 20 }
+      },
+      { line: rest, codeRef: { value: "NOVAT" }, rate: null }
+    ]);
   });
 
-  it("refuses a line whose tax cannot be tied to one code", () => {
+  it("refuses a line whose tax the mapped rate does not give", () => {
     expect(() =>
-      splitQboPurchaseTax({
-        documentId: "bill",
-        sources: [{ id: "leg", amount: 100, tax: null }],
-        recoverableTax: 20,
-        decimalPlaces: 2,
-        catalog: gbCatalog(),
-        mappings: MAPPINGS
-      })
+      resolve([
+        {
+          leg: leg("leg", 500),
+          amount: 500,
+          tax: { taxCodeId: "tc_std", taxPercent: 0.2, taxAmount: 90 }
+        }
+      ])
     ).toThrow(/UNMAPPED_TAX_CODES/);
   });
 });

@@ -20230,6 +20230,10 @@ msgstr "चयनित: {selectedSum} / विभाजन के बाद श
 msgid "Self Managed"
 msgstr "स्व प्रबंधित"
 
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Self-assessed rate today: <0>{0}</0>. Lines using this code are charged no tax."
+msgstr ""
+
 msgid "Self-Assessed Tax"
 msgstr "स्वयं-आकलित कर"
 

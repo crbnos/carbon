@@ -4,6 +4,7 @@
 
 import type { KyselyTx } from "@carbon/database/client";
 import { deriveRate, round } from "@carbon/utils";
+import { allocateRecoverableTax } from "../../../core/document-costing";
 import {
   createMappingService,
   type ExternalIntegrationMapping
@@ -39,7 +40,7 @@ import {
   type QboInvoiceTaxCatalog,
   type QboTaxCodeMappings,
   QboTaxContext,
-  splitQboPurchaseTax
+  resolveQboPurchaseTaxLines
 } from "./invoice-tax";
 import {
   buildQboDocNumberFields,
@@ -94,10 +95,10 @@ export type QboVendorCreditTax = {
 /**
  * The tax of a supplier memo with tax, outside the US. The posting moved only
  * the recoverable share of the tax through Tax Paid and left the rest in the
- * reason account, so the memo splits like a bill line (grill 10): the
- * recoverable part at the mapped purchase code with the recoverable tax, the
- * rest at the company's non-taxable code. `recoverableShare` is 0..1. Pure —
- * exported for tests.
+ * reason account, so the memo splits like a bill leg (`allocateRecoverableTax`):
+ * the recoverable net at the mapped purchase code with the recoverable tax,
+ * the rest at the company's non-taxable code. `recoverableShare` is 0..1. Pure
+ * — exported for tests.
  */
 export function resolveQboVendorCreditTax(args: {
   memo: QboMemoSource;
@@ -112,34 +113,41 @@ export function resolveQboVendorCreditTax(args: {
     memo.taxAmount * args.recoverableShare,
     decimalPlaces
   );
-  const parts = splitQboPurchaseTax({
-    documentId: memo.id,
-    sources: [
+  // The reason leg holds the net and the tax that is not recoverable.
+  const lines = allocateRecoverableTax({
+    document: { id: memo.id, label: `memo ${memo.memoId}` },
+    legs: [
       {
         id: memo.id,
+        accountId: null,
         amount: round(memo.amount - recoverableTax, decimalPlaces),
+        description: null,
         tax: {
           taxCodeId: memo.taxCodeId,
-          taxPercent: deriveRate(memo.taxAmount, netAmount),
-          recoverableShare: args.recoverableShare
+          taxPercent: deriveRate(memo.taxAmount, netAmount)
         }
       }
     ],
-    recoverableTax,
+    recoverableTaxByCode: new Map([[memo.taxCodeId, recoverableTax]]),
+    decimalPlaces
+  });
+  const parts = resolveQboPurchaseTaxLines({
+    documentId: memo.id,
+    lines,
     decimalPlaces,
     catalog: args.catalog,
     mappings: args.mappings
   });
   return {
     lines: parts.map((part) => ({
-      amount: part.amount,
+      amount: part.line.amount,
       taxCodeRef: part.codeRef
     })),
     txnTaxDetail: buildQboTxnTaxDetail(
       parts.map((part) => ({
         rate: part.rate,
-        netAmount: part.amount,
-        taxAmount: part.taxAmount
+        netAmount: part.line.amount,
+        taxAmount: part.line.tax?.taxAmount ?? 0
       })),
       decimalPlaces
     )

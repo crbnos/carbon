@@ -7,6 +7,7 @@ import {
   assertCurrencyDecimals,
   assertExchangeRate,
   classifyAccountingPostingRole,
+  distributeRoundingResidual,
   round,
   SCALE,
   toDocumentAmount
@@ -67,9 +68,12 @@ export type CostingLine = {
   /** journalLineDimension rows carried onto provider dimension refs. */
   dimensions?: JournalLineDimensionRef[];
   /** A recoverable-tax leg the posting debited to Tax Paid. A provider that
-   *  sends tax natively drops it (`splitBillTaxLegs`); one that does not
-   *  books it to that account like any other line. */
+   *  sends tax natively books it from the lines' tax (`planBillTaxLines`); one
+   *  that does not books it to that account like any other line. */
   taxLeg?: boolean;
+  /** The credit for tax self-assessed on a Reverse Charge code. A bill that
+   *  has one goes out tax-neutral (`billSendsTax`). */
+  reverseChargeLeg?: boolean;
   /** The tax of the invoice line(s) this leg came from; null when the leg
    *  cannot be tied to one tax (`resolveCostingLineTax`). Absent on charges. */
   tax?: CostingLineTax | null;
@@ -80,8 +84,6 @@ export type CostingLineTax = {
   taxCodeId: string | null;
   /** The line's rate, 0..1. */
   taxPercent: number;
-  /** Recoverable share of the line's tax, 0..1, from the tax ledger. */
-  recoverableShare: number;
 };
 
 /** A tax-ledger row of the bill's posting, base currency. */
@@ -350,8 +352,7 @@ export async function loadBillCostingLines(
       accountId: line.accountId,
       taxCodeId: line.taxCodeId,
       taxPercent: Number(line.taxPercent ?? 0)
-    })),
-    taxLedger
+    }))
   );
 
   const lines: CostingLine[] = costingRows.map((row) => {
@@ -360,7 +361,7 @@ export async function loadBillCostingLines(
       row.documentLineReference
     );
     const sourceItem = poLineId ? sourceItemByPoLine.get(poLineId) : undefined;
-    const taxLeg = classifyAccountingPostingRole(row.description) === "TaxPaid";
+    const role = classifyAccountingPostingRole(row.description);
 
     return {
       id: row.id,
@@ -369,14 +370,16 @@ export async function loadBillCostingLines(
       description: row.description ?? null,
       ...(sourceItem ? { sourceItem } : {}),
       ...(dimensions ? { dimensions } : {}),
-      ...(taxLeg
+      ...(role === "TaxPaid"
         ? { taxLeg: true, tax: null }
-        : {
-            tax: taxOf({
-              purchaseOrderLineId: poLineId,
-              accountId: row.accountId ?? null
+        : role === "ReverseChargeTax"
+          ? { reverseChargeLeg: true, tax: null }
+          : {
+              tax: taxOf({
+                purchaseOrderLineId: poLineId,
+                accountId: row.accountId ?? null
+              })
             })
-          })
     };
   });
 
@@ -412,32 +415,19 @@ type TaxSourceLine = {
  * provider that sends tax refuses the bill rather than guess.
  */
 export function resolveCostingLineTax(
-  invoiceLines: TaxSourceLine[],
-  taxLedger: BillTaxLedgerRow[]
+  invoiceLines: TaxSourceLine[]
 ): (leg: {
   purchaseOrderLineId: string | null;
   accountId: string | null;
 }) => CostingLineTax | null {
   const signature = (line: TaxSourceLine) =>
     `${line.taxCodeId ?? ""}:${round(line.taxPercent)}`;
-  const recoverableShare = (lineIds: string[]) => {
-    const rows = taxLedger.filter(
-      (row) => row.documentLineId && lineIds.includes(row.documentLineId)
-    );
-    const tax = rows.reduce((sum, row) => sum + row.taxAmount, 0);
-    const recoverable = rows.reduce(
-      (sum, row) => sum + row.recoverableAmount,
-      0
-    );
-    return tax === 0 ? 0 : round(recoverable / tax);
-  };
   const taxOfLines = (lines: TaxSourceLine[]): CostingLineTax | null => {
     if (lines.length === 0) return null;
     if (new Set(lines.map(signature)).size !== 1) return null;
     return {
       taxCodeId: lines[0]!.taxCodeId,
-      taxPercent: round(lines[0]!.taxPercent),
-      recoverableShare: recoverableShare(lines.map((line) => line.id))
+      taxPercent: round(lines[0]!.taxPercent)
     };
   };
 
@@ -462,20 +452,275 @@ export function resolveCostingLineTax(
   };
 }
 
+/** One provider line of a bill: part or all of one cost leg, in the bill's
+ *  currency, and the tax it carries. */
+export type BillTaxLine = {
+  /** The leg it comes from, in the bill's currency: account, label, dimensions. */
+  leg: CostingLine;
+  /** Net of `tax.taxAmount`. */
+  amount: number;
+  /** null: no tax (Xero `NONE`, QuickBooks the non-taxable code). A code at
+   *  0% carries `taxAmount` 0, so its net reaches the return. */
+  tax: (CostingLineTax & { taxAmount: number }) | null;
+};
+
+export type BillTaxPlan = {
+  /** False: every leg, Tax Paid and reverse-charge legs included, is one
+   *  line with no tax, exactly as before bills carried tax. */
+  sendsTax: boolean;
+  lines: BillTaxLine[];
+  /** Σ of the lines' tax: the Tax Paid legs in the bill's currency. */
+  recoverableTax: number;
+};
+
+type BillTaxCosting = Pick<
+  BillCostingResult,
+  "lines" | "taxLedger" | "exchangeRate" | "documentTotal" | "decimalPlaces"
+>;
+
+/** A leg whose code is zero-rated or exempt. */
+function isZeroRatedLeg(line: CostingLine): boolean {
+  return Boolean(line.tax?.taxCodeId) && line.tax?.taxPercent === 0;
+}
+
 /**
- * The costing a provider that sends tax natively replays: the Tax Paid legs
- * come out, since the provider books recoverable tax itself from each line's
- * tax rate. `documentTotal` is unchanged; pass `taxLegs` to
- * `toTransactionCurrencyLines` so it still reconciles.
+ * Does the bill send tax to a provider that books it natively: recoverable
+ * tax on Tax Paid legs, or a zero-rated coded leg whose net must reach the
+ * return? A bill with neither goes out as it always has.
+ *
+ * Phase 1: a bill with a reverse-charge leg never sends tax. The provider
+ * reverse-charge rates (Xero's reverse-charge TaxTypes, QuickBooks' reverse
+ * charge codes) are UNVERIFIED, so such a bill replays every leg, its Tax
+ * Paid and Reverse Charge Tax legs included, as account lines at no tax. That
+ * keeps the provider's GL equal to Carbon's.
  */
-export function splitBillTaxLegs(lines: CostingLine[]): {
-  lines: CostingLine[];
-  taxLegs: CostingLine[];
-} {
+export function billSendsTax(lines: readonly CostingLine[]): boolean {
+  if (lines.some((line) => line.reverseChargeLeg)) return false;
+  return lines.some((line) => line.taxLeg || isZeroRatedLeg(line));
+}
+
+/** Every leg as one line with no tax, in the bill's currency. */
+export function replayBillTaxNeutral(costing: BillTaxCosting): BillTaxLine[] {
+  return toTransactionCurrencyLines(costing.lines, costing).map((leg) => ({
+    leg,
+    amount: leg.amount,
+    tax: null
+  }));
+}
+
+/**
+ * The provider lines of a bill, for a provider that books tax natively
+ * (Xero, QuickBooks Online outside the US). A bill that does not send tax
+ * (`billSendsTax`) replays every leg at no tax. Otherwise the Tax Paid legs
+ * come out, and the lines carry that tax instead:
+ * - The recoverable tax of each tax code is read from the bill's tax ledger
+ *   and converted so the codes sum exactly to the converted Tax Paid legs.
+ *   It is never derived from a leg's amount, which also holds the
+ *   non-recoverable tax and the untaxed header freight.
+ * - `allocateRecoverableTax` puts each code's recoverable net on its legs.
+ *
+ * A data condition the plan cannot honour raises the retryable
+ * UNMAPPED_TAX_CODES Warning; nothing is pushed.
+ */
+export function planBillTaxLines(
+  costing: BillTaxCosting,
+  document: { id: string; label: string }
+): BillTaxPlan {
+  if (!billSendsTax(costing.lines)) {
+    return {
+      sendsTax: false,
+      lines: replayBillTaxNeutral(costing),
+      recoverableTax: 0
+    };
+  }
+  const { exchangeRate, decimalPlaces } = costing;
+  const taxLegs = costing.lines.filter((line) => line.taxLeg);
+  const legs = toTransactionCurrencyLines(
+    costing.lines.filter((line) => !line.taxLeg),
+    { ...costing, taxLegs }
+  );
+  const recoverableTax = toDocumentTaxTotal(
+    taxLegs,
+    exchangeRate,
+    decimalPlaces
+  );
+
+  // Base-currency recoverable tax per code, from the ledger.
+  const byCode = new Map<string | null, number>();
+  for (const row of costing.taxLedger ?? []) {
+    byCode.set(
+      row.taxCodeId,
+      (byCode.get(row.taxCodeId) ?? 0) + row.recoverableAmount
+    );
+  }
+  const codes = [...byCode].filter(([, amount]) => round(amount) !== 0);
+  if (codes.length === 0 && recoverableTax !== 0) {
+    throw billTaxWarning(
+      document,
+      `its ${recoverableTax} of recoverable tax has no tax ledger rows. Repost the invoice, then retry`,
+      { recoverableTax }
+    );
+  }
+  let converted: number[];
+  try {
+    converted = distributeRoundingResidual(
+      codes.map(([, amount]) => amount * exchangeRate),
+      recoverableTax,
+      decimalPlaces
+    );
+  } catch {
+    throw billTaxWarning(
+      document,
+      `the recoverable tax in its tax ledger does not add up to the ${recoverableTax} posted to Tax Paid. Repost the invoice, then retry`,
+      { recoverableTax }
+    );
+  }
+
   return {
-    lines: lines.filter((line) => !line.taxLeg),
-    taxLegs: lines.filter((line) => line.taxLeg)
+    sendsTax: true,
+    recoverableTax,
+    lines: allocateRecoverableTax({
+      document,
+      legs,
+      recoverableTaxByCode: new Map(
+        codes.map(([taxCodeId], index) => [taxCodeId, converted[index]!])
+      ),
+      decimalPlaces
+    })
   };
+}
+
+/**
+ * Puts each tax code's recoverable tax R on the legs that carry that code
+ * (the legs whose `tax` is that code; one rate r per code). Pure.
+ * - The recoverable net is N = R / r, at the document's decimals.
+ * - N fills the code's legs of the same sign as N, largest first, each up to
+ *   its own amount. R is spread over those pieces in proportion to their net
+ *   (`distributeRoundingResidual`), so the pieces' tax sums exactly to R.
+ * - Each piece is a line at the code's rate with its tax. The rest of the leg
+ *   is a second line on the same account at no tax.
+ * Every other leg is one line: at its code's rate with tax 0 when the code is
+ * zero-rated, else at no tax (tax folded into cost, no code, or a leg that
+ * cannot be tied to one tax). Lines keep the order of `legs`.
+ *
+ * Amounts are in the document's currency. A code the legs cannot absorb
+ * raises the retryable UNMAPPED_TAX_CODES Warning.
+ */
+export function allocateRecoverableTax(args: {
+  document: { id: string; label: string };
+  legs: readonly CostingLine[];
+  /** Document currency; codes with no recoverable tax may be left out. */
+  recoverableTaxByCode: ReadonlyMap<string | null, number>;
+  decimalPlaces: number;
+}): BillTaxLine[] {
+  const { document, decimalPlaces } = args;
+  const pieces = new Map<string, { amount: number; taxAmount: number }>();
+
+  for (const [taxCodeId, recoverable] of args.recoverableTaxByCode) {
+    if (recoverable === 0) continue;
+    const codeName = taxCodeId ?? "with no tax code";
+    const coded = args.legs.filter(
+      (leg) => leg.tax && leg.tax.taxCodeId === taxCodeId
+    );
+    const rates = [...new Set(coded.map((leg) => leg.tax!.taxPercent))];
+    if (rates.length !== 1 || rates[0] === 0) {
+      throw billTaxWarning(
+        document,
+        rates.length === 0
+          ? `no posted line can be tied to tax code ${codeName}, so its ${recoverable} of recoverable tax has no line to go on`
+          : `the lines of tax code ${codeName} carry ${rates.length > 1 ? "more than one rate" : "a 0% rate"}, so its ${recoverable} of recoverable tax cannot be placed`,
+        { taxCodeId, recoverableTax: recoverable }
+      );
+    }
+    const rate = rates[0]!;
+    const net = round(recoverable / rate, decimalPlaces);
+    const sign = Math.sign(net);
+    const candidates = coded
+      .filter((leg) => Math.sign(leg.amount) === sign)
+      .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+    let remaining = net;
+    const taken: Array<{ leg: CostingLine; amount: number }> = [];
+    for (const leg of candidates) {
+      if (remaining === 0) break;
+      const amount = sign * Math.min(Math.abs(leg.amount), Math.abs(remaining));
+      taken.push({ leg, amount });
+      remaining = round(remaining - amount, decimalPlaces);
+    }
+    if (remaining !== 0 || net === 0) {
+      throw billTaxWarning(
+        document,
+        `the lines of tax code ${codeName} total less than the ${net} its ${recoverable} of recoverable tax is charged on`,
+        { taxCodeId, recoverableTax: recoverable, recoverableNet: net }
+      );
+    }
+    const taxes = distributeRoundingResidual(
+      taken.map((piece) => (recoverable * piece.amount) / net),
+      recoverable,
+      decimalPlaces
+    );
+    taken.forEach((piece, index) => {
+      pieces.set(piece.leg.id, {
+        amount: piece.amount,
+        taxAmount: taxes[index]!
+      });
+    });
+  }
+
+  return args.legs.flatMap((leg): BillTaxLine[] => {
+    const piece = pieces.get(leg.id);
+    if (piece) {
+      const rest = round(leg.amount - piece.amount, decimalPlaces);
+      return [
+        {
+          leg,
+          amount: piece.amount,
+          tax: {
+            taxCodeId: leg.tax!.taxCodeId,
+            taxPercent: leg.tax!.taxPercent,
+            taxAmount: piece.taxAmount
+          }
+        },
+        ...(rest !== 0 ? [{ leg, amount: rest, tax: null }] : [])
+      ];
+    }
+    if (isZeroRatedLeg(leg)) {
+      return [
+        {
+          leg,
+          amount: leg.amount,
+          tax: { taxCodeId: leg.tax!.taxCodeId, taxPercent: 0, taxAmount: 0 }
+        }
+      ];
+    }
+    return [{ leg, amount: leg.amount, tax: null }];
+  });
+}
+
+function billTaxWarning(
+  document: { id: string; label: string },
+  reason: string,
+  metadata: Record<string, unknown>
+): JournalEntrySyncError {
+  return new JournalEntrySyncError({
+    errorCode: "UNMAPPED_TAX_CODES",
+    warning: true,
+    message: `Cannot sync ${document.label}: ${reason}.`,
+    metadata: { documentId: document.id, ...metadata }
+  });
+}
+
+/** The Tax Paid legs in the document's currency, converted once as a total
+ *  (`toTransactionCurrencyLines` reconciles the other lines against it). */
+export function toDocumentTaxTotal(
+  taxLegs: readonly CostingLine[],
+  exchangeRate: number,
+  decimalPlaces: number
+): number {
+  return toDocumentAmount(
+    taxLegs.reduce((sum, leg) => sum + leg.amount, 0),
+    exchangeRate,
+    decimalPlaces
+  );
 }
 
 export type ChargeCostingResult = BillCostingResult & {
@@ -681,9 +926,9 @@ export function toTransactionCurrencyLines(
     exchangeRate: number;
     documentTotal: number;
     decimalPlaces: number;
-    /** Legs left out of `lines` (`splitBillTaxLegs`). They take part in the
-     *  check against the document total; the lines then sum to the total
-     *  less their converted amount. */
+    /** Tax Paid legs left out of `lines` (`planBillTaxLines`). They take
+     *  part in the check against the document total; the lines then sum to
+     *  the total less their converted amount (`toDocumentTaxTotal`). */
     taxLegs?: CostingLine[];
   }
 ): CostingLine[] {
@@ -721,11 +966,7 @@ export function toTransactionCurrencyLines(
     ...line,
     amount: toDocumentAmount(line.amount, exchangeRate, decimalPlaces)
   }));
-  const convertedTax = taxLegs.reduce(
-    (sum, line) =>
-      sum + toDocumentAmount(line.amount, exchangeRate, decimalPlaces),
-    0
-  );
+  const convertedTax = toDocumentTaxTotal(taxLegs, exchangeRate, decimalPlaces);
   const residual = round(
     documentTotal -
       convertedTax -

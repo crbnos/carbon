@@ -29,7 +29,10 @@
 
 import type { Database } from "@carbon/database";
 import { journalReference } from "@carbon/database";
-import { TAX_PAID_POSTING_DESCRIPTION } from "@carbon/database/accounting-posting";
+import {
+  REVERSE_CHARGE_TAX_POSTING_DESCRIPTION,
+  TAX_PAID_POSTING_DESCRIPTION
+} from "@carbon/database/accounting-posting";
 import type { OptionalDefaultRole } from "@carbon/database/journal-posting-status";
 import { accountTypeFromClass } from "@carbon/database/ledger";
 import {
@@ -839,7 +842,7 @@ export function buildPurchaseInvoicePostingLines(
         push(
           {
             accountId: accounts.reverseChargeSalesTaxPayableAccount,
-            description: "Reverse Charge Tax",
+            description: REVERSE_CHARGE_TAX_POSTING_DESCRIPTION,
             amount: round(
               credit(
                 accountTypeFromClass(

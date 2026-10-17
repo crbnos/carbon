@@ -4,11 +4,14 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  allocateRecoverableTax,
   type BillTaxLedgerRow,
+  type BillTaxLine,
+  billSendsTax,
   type CostingLine,
   loadBillCostingLines,
+  planBillTaxLines,
   resolveCostingLineTax,
-  splitBillTaxLegs,
   toTransactionCurrencyLines
 } from "./document-costing";
 
@@ -540,44 +543,6 @@ describe("original bill control provenance", () => {
 });
 
 describe("bill tax", () => {
-  const ledger = (
-    documentLineId: string,
-    taxAmount: number,
-    recoverableAmount: number
-  ): BillTaxLedgerRow => ({
-    documentLineId,
-    taxCodeId: null,
-    taxCodeComponentId: null,
-    taxPercent: 0.2,
-    taxableAmount: taxAmount * 5,
-    taxAmount,
-    recoverableAmount
-  });
-
-  it("replays a recoverable line as its cost, with the Tax Paid leg beside it, and still reconciles", () => {
-    const lines: CostingLine[] = [
-      { id: "cost", accountId: "expense", amount: 1000, description: "Travel" },
-      {
-        id: "tax",
-        accountId: "tax-paid",
-        amount: 200,
-        description: "Tax Paid",
-        taxLeg: true,
-        tax: null
-      }
-    ];
-    const split = splitBillTaxLegs(lines);
-    expect(split.lines.map((line) => line.id)).toEqual(["cost"]);
-    expect(split.taxLegs.map((line) => line.id)).toEqual(["tax"]);
-    const converted = toTransactionCurrencyLines(split.lines, {
-      exchangeRate: 1,
-      documentTotal: 1200,
-      decimalPlaces: 2,
-      taxLegs: split.taxLegs
-    });
-    expect(converted.map((line) => line.amount)).toEqual([1000]);
-  });
-
   it("still refuses a cost gap once the tax legs are set aside", () => {
     expect(() =>
       toTransactionCurrencyLines(
@@ -592,6 +557,70 @@ describe("bill tax", () => {
         }
       )
     ).toThrow(/does not reconcile/);
+  });
+
+  it("flags the Tax Paid and Reverse Charge Tax legs by their posting role", async () => {
+    const result = await loadBillCostingLines(
+      makeDb({
+        purchaseInvoice: { currencyCode: "USD", exchangeRate: 1 },
+        purchaseInvoiceLine: [
+          {
+            quantity: 1,
+            supplierUnitPrice: 1000,
+            supplierShippingCost: 0,
+            supplierTaxAmount: 0
+          }
+        ],
+        journalLine: [
+          {
+            id: "cost",
+            accountId: "grir",
+            amount: 1000,
+            description: "GR/IR Clearing",
+            documentLineReference: null,
+            accountClass: "Asset"
+          },
+          {
+            id: "paid",
+            accountId: "tax-paid",
+            amount: 200,
+            description: "Tax Paid",
+            documentLineReference: null,
+            accountClass: "Asset"
+          },
+          {
+            id: "rc",
+            accountId: "rc",
+            amount: 200,
+            description: "Reverse Charge Tax",
+            documentLineReference: null,
+            accountClass: "Liability"
+          },
+          {
+            id: "ap",
+            accountId: "ap",
+            amount: 1000,
+            description: "Accounts Payable",
+            documentLineReference: null,
+            accountClass: "Liability"
+          }
+        ]
+      }),
+      { companyId: "company-1", billId: "pi_1" }
+    );
+    expect(
+      result.lines.map((line) => [
+        line.id,
+        line.amount,
+        line.taxLeg ?? false,
+        line.reverseChargeLeg ?? false
+      ])
+    ).toEqual([
+      ["cost", 1000, false, false],
+      ["paid", 200, true, false],
+      ["rc", -200, false, true]
+    ]);
+    expect(billSendsTax(result.lines)).toBe(false);
   });
 
   const lines = [
@@ -610,16 +639,12 @@ describe("bill tax", () => {
       taxPercent: 0
     }
   ];
-  const taxOf = resolveCostingLineTax(lines, [
-    ledger("po-line", 200, 150),
-    ledger("gl-line", 0, 0)
-  ]);
+  const taxOf = resolveCostingLineTax(lines);
 
-  it("ties a PO-backed leg to its purchase-order line's tax and recoverable share", () => {
+  it("ties a PO-backed leg to its purchase-order line's tax", () => {
     expect(taxOf({ purchaseOrderLineId: "po-1", accountId: "grni" })).toEqual({
       taxCodeId: "uk20",
-      taxPercent: 0.2,
-      recoverableShare: 0.75
+      taxPercent: 0.2
     });
   });
 
@@ -631,25 +656,278 @@ describe("bill tax", () => {
 
   it("leaves a leg it cannot tie to one tax unresolved", () => {
     expect(taxOf({ purchaseOrderLineId: null, accountId: "other" })).toBeNull();
-    const conflicting = resolveCostingLineTax(
-      [
-        { ...lines[1]!, id: "a" },
-        { ...lines[1]!, id: "b", taxCodeId: "uk20", taxPercent: 0.2 }
-      ],
-      []
-    );
+    const conflicting = resolveCostingLineTax([
+      { ...lines[1]!, id: "a" },
+      { ...lines[1]!, id: "b", taxCodeId: "uk20", taxPercent: 0.2 }
+    ]);
     expect(
       conflicting({ purchaseOrderLineId: null, accountId: "travel" })
     ).toBeNull();
   });
 
   it("gives every leg the bill's one tax when all lines share it", () => {
-    const one = resolveCostingLineTax(
-      [lines[0]!],
-      [ledger("po-line", 200, 200)]
-    );
+    const one = resolveCostingLineTax([lines[0]!]);
     expect(
       one({ purchaseOrderLineId: null, accountId: "variance" })
-    ).toMatchObject({ taxCodeId: "uk20", recoverableShare: 1 });
+    ).toMatchObject({ taxCodeId: "uk20", taxPercent: 0.2 });
+  });
+});
+
+/**
+ * `planBillTaxLines`: the recoverable tax of each code comes from the tax
+ * ledger, never from a leg's amount, which also holds the non-recoverable
+ * tax and the leg's share of the untaxed header freight.
+ */
+describe("planBillTaxLines", () => {
+  const document = { id: "pi_1", label: "bill PI-1" };
+  const leg = (
+    id: string,
+    amount: number,
+    tax: CostingLine["tax"] = { taxCodeId: "uk20", taxPercent: 0.2 }
+  ): CostingLine => ({
+    id,
+    accountId: `acct-${id}`,
+    amount,
+    description: id,
+    tax
+  });
+  const taxPaid = (id: string, amount: number): CostingLine => ({
+    id,
+    accountId: "tax-paid",
+    amount,
+    description: "Tax Paid",
+    taxLeg: true,
+    tax: null
+  });
+  const ledger = (
+    taxCodeId: string | null,
+    taxPercent: number,
+    taxAmount: number,
+    recoverableAmount: number
+  ): BillTaxLedgerRow => ({
+    documentLineId: "pil-1",
+    taxCodeId,
+    taxCodeComponentId: null,
+    taxPercent,
+    taxableAmount: 0,
+    taxAmount,
+    recoverableAmount
+  });
+  const plan = (
+    legs: CostingLine[],
+    taxLedger: BillTaxLedgerRow[],
+    documentTotal: number,
+    exchangeRate = 1
+  ) =>
+    planBillTaxLines(
+      { lines: legs, taxLedger, exchangeRate, documentTotal, decimalPlaces: 2 },
+      document
+    );
+  const summary = (lines: BillTaxLine[]) =>
+    lines.map((line) => [
+      line.leg.id,
+      line.amount,
+      line.tax?.taxCodeId ?? null,
+      line.tax?.taxAmount ?? null
+    ]);
+  const total = (result: ReturnType<typeof plan>) =>
+    result.lines.reduce(
+      (sum, line) => sum + line.amount + (line.tax?.taxAmount ?? 0),
+      0
+    );
+
+  it("taxes the net and leaves the header freight untaxed on a fully recoverable bill", () => {
+    // £1,000 at 20%, all recoverable, plus £50 of untaxed header freight.
+    const result = plan(
+      [leg("cost", 1050), taxPaid("paid", 200)],
+      [ledger("uk20", 0.2, 200, 200)],
+      1250
+    );
+    expect(result.sendsTax).toBe(true);
+    expect(result.recoverableTax).toBe(200);
+    expect(summary(result.lines)).toEqual([
+      ["cost", 1000, "uk20", 200],
+      ["cost", 50, null, null]
+    ]);
+    expect(total(result)).toBeCloseTo(1250, 6);
+  });
+
+  it("never rounds a share that does not terminate (GST 5% recoverable of 12%, $29,900.05)", () => {
+    const result = plan(
+      [
+        leg("cost", 31993.05583, { taxCodeId: "bc12", taxPercent: 0.12 }),
+        taxPaid("paid", 1495.00417)
+      ],
+      [
+        ledger("bc12", 0.05, 1495.00417, 1495.00417),
+        ledger("bc12", 0.07, 2093.00583, 0)
+      ],
+      33488.06
+    );
+    expect(summary(result.lines)).toEqual([
+      ["cost", 12458.33, "bc12", 1495],
+      ["cost", 19534.73, null, null]
+    ]);
+    expect(total(result)).toBeCloseTo(33488.06, 6);
+  });
+
+  it("taxes only the recoverable net of a 50% recoverable bill", () => {
+    // £1,000 at 20%, half recoverable, £50 freight: cost 1,150, Tax Paid 100.
+    const result = plan(
+      [leg("cost", 1150), taxPaid("paid", 100)],
+      [ledger("uk20", 0.2, 200, 100)],
+      1250
+    );
+    expect(summary(result.lines)).toEqual([
+      ["cost", 500, "uk20", 100],
+      ["cost", 650, null, null]
+    ]);
+  });
+
+  it("places each code's tax on its own legs on a bill spanning two codes", () => {
+    const result = plan(
+      [
+        leg("a", 1051.85185),
+        taxPaid("paid-a", 200),
+        leg("b", 418.14815, { taxCodeId: "uk5", taxPercent: 0.05 }),
+        taxPaid("paid-b", 20)
+      ],
+      [ledger("uk20", 0.2, 200, 200), ledger("uk5", 0.05, 20, 20)],
+      1690
+    );
+    expect(summary(result.lines)).toEqual([
+      ["a", 1000, "uk20", 200],
+      ["a", 51.85, null, null],
+      ["b", 400, "uk5", 20],
+      ["b", 18.15, null, null]
+    ]);
+    expect(result.recoverableTax).toBe(220);
+  });
+
+  it("fills a code's largest legs first, never past a leg's own amount", () => {
+    // 1,000 of net at 20% across a 700 leg and a 400 leg; a credit variance
+    // takes none of it.
+    const result = plan(
+      [
+        leg("small", 400),
+        leg("large", 700),
+        leg("ppv", -50),
+        taxPaid("paid", 200)
+      ],
+      [ledger("uk20", 0.2, 200, 200)],
+      1250
+    );
+    expect(summary(result.lines)).toEqual([
+      ["small", 300, "uk20", 60],
+      ["small", 100, null, null],
+      ["large", 700, "uk20", 140],
+      ["ppv", -50, null, null]
+    ]);
+  });
+
+  it("converts the Tax Paid legs once as a total, so many legs of one code still reconcile", () => {
+    // Ten lines of 10.00 tax at 12%, GST 5/12 recoverable: each Tax Paid leg
+    // is 4.16667. Rounded leg by leg they sum to 41.70; the posting is 41.67.
+    const legs = Array.from({ length: 10 }, (_, index) =>
+      leg(`cost-${index}`, 89.16667, { taxCodeId: "bc12", taxPercent: 0.12 })
+    );
+    const result = plan(
+      [...legs, ...legs.map((_, index) => taxPaid(`paid-${index}`, 4.16667))],
+      legs.map(() => ledger("bc12", 0.05, 4.16667, 4.16667)),
+      933.33
+    );
+    expect(result.recoverableTax).toBe(41.67);
+    expect(
+      result.lines.reduce((sum, line) => sum + (line.tax?.taxAmount ?? 0), 0)
+    ).toBeCloseTo(41.67, 6);
+    expect(total(result)).toBeCloseTo(933.33, 6);
+  });
+
+  it("sends a reverse-charge bill tax-neutral, its Tax Paid and reverse-charge legs included", () => {
+    const legs: CostingLine[] = [
+      leg("cost", 1000),
+      taxPaid("paid", 200),
+      {
+        id: "rc",
+        accountId: "rc",
+        amount: -200,
+        description: "Reverse Charge Tax",
+        reverseChargeLeg: true,
+        tax: null
+      }
+    ];
+    const result = plan(legs, [ledger("uk20", 0.2, 200, 200)], 1000);
+    expect(result.sendsTax).toBe(false);
+    expect(summary(result.lines)).toEqual([
+      ["cost", 1000, null, null],
+      ["paid", 200, null, null],
+      ["rc", -200, null, null]
+    ]);
+  });
+
+  it("replays an untaxed bill exactly as toTransactionCurrencyLines does", () => {
+    const legs = [
+      leg("cost", 1050, { taxCodeId: null, taxPercent: 0 }),
+      leg("ppv", -20, null)
+    ];
+    const result = plan(legs, [], 1133, 1.1);
+    expect(result.sendsTax).toBe(false);
+    expect(result.lines.every((line) => line.tax === null)).toBe(true);
+    expect(result.lines.map((line) => line.leg)).toEqual(
+      toTransactionCurrencyLines(legs, {
+        exchangeRate: 1.1,
+        documentTotal: 1133,
+        decimalPlaces: 2
+      })
+    );
+    expect(result.lines.map((line) => line.amount)).toEqual([1155, -22]);
+  });
+
+  it("refuses with the UNMAPPED_TAX_CODES Warning when the code's legs cannot absorb its net", () => {
+    expect(() =>
+      plan(
+        [leg("cost", 600), leg("other", 600, null), taxPaid("paid", 200)],
+        [ledger("uk20", 0.2, 200, 200)],
+        1400
+      )
+    ).toThrow(
+      expect.objectContaining({
+        failure: expect.objectContaining({
+          errorCode: "UNMAPPED_TAX_CODES",
+          warning: true
+        })
+      })
+    );
+  });
+
+  it("refuses with the UNMAPPED_TAX_CODES Warning when the ledger disagrees with Tax Paid", () => {
+    expect(() =>
+      plan(
+        [leg("cost", 1000), taxPaid("paid", 200)],
+        [ledger("uk20", 0.2, 200, 150)],
+        1200
+      )
+    ).toThrow(
+      expect.objectContaining({
+        failure: expect.objectContaining({
+          errorCode: "UNMAPPED_TAX_CODES",
+          warning: true
+        })
+      })
+    );
+  });
+
+  it("allocates a single leg the way a supplier memo splits", () => {
+    expect(
+      allocateRecoverableTax({
+        document,
+        legs: [leg("memo", 1100)],
+        recoverableTaxByCode: new Map([["uk20", 100]]),
+        decimalPlaces: 2
+      }).map((line) => [line.amount, line.tax?.taxAmount ?? null])
+    ).toEqual([
+      [500, 100],
+      [600, null]
+    ]);
   });
 });
