@@ -48,6 +48,40 @@ describe("stamp", () => {
     });
   });
 
+  it("overwrites every identity key a caller put at the top level, listed or not", () => {
+    expect(
+      stamp(
+        ctx,
+        {
+          companyId: "other",
+          companyGroupId: "other-group",
+          createdBy: "mallory",
+          updatedBy: "mallory",
+          userId: "target-user"
+        },
+        ["companyId"]
+      )
+    ).toEqual({
+      companyId: "company-1",
+      companyGroupId: "group-1",
+      createdBy: "user-1",
+      updatedBy: "user-1",
+      userId: "target-user"
+    });
+    expect(
+      stamp(ctx, { createdBy: "mallory" }, ["companyId", "updatedBy"], "update")
+    ).toEqual({ companyId: "company-1", updatedBy: "user-1" });
+  });
+
+  it("reads an update from fields that list only updatedBy, a create from only createdBy", () => {
+    expect(
+      stamp(ctx, { id: "x", createdBy: "mallory" }, ["companyId", "updatedBy"])
+    ).toEqual({ id: "x", companyId: "company-1", updatedBy: "user-1" });
+    expect(
+      stamp(ctx, { updatedBy: "mallory" }, ["companyId", "createdBy"])
+    ).toEqual({ companyId: "company-1", createdBy: "user-1" });
+  });
+
   it("overwrites an identity key a caller put one level down or in a row", () => {
     const value = stamp(
       ctx,
@@ -119,6 +153,29 @@ describe("serviceResult", () => {
       category: "rule",
       message: "Only a Draft can change"
     });
+  });
+
+  it("passes a message our own SQL raised through as a rule refusal", () => {
+    const raised = serviceResult(
+      ctx,
+      {
+        data: null,
+        error: {
+          code: "P0001",
+          details: null,
+          hint: null,
+          message: "Only open periods can be locked"
+        }
+      },
+      "envelope"
+    );
+    expect(raised).toMatchObject({
+      category: "rule",
+      message: "Only open periods can be locked"
+    });
+    expect(
+      category(serviceResult(ctx, { error: { code: "P0001" } }, "plain"))
+    ).toBe("internal");
   });
 
   it("reads a server function's refusal by its status", () => {
@@ -193,6 +250,20 @@ describe("settle", () => {
     expect(
       await refusal(new ServerFnError("Journal out of balance", 500))
     ).toEqual(internal);
+  });
+
+  it("withholds a database or network failure's text", async () => {
+    expect(
+      await refusal(
+        Object.assign(new Error("connect ECONNREFUSED 10.0.0.5:5432"), {
+          code: "ECONNREFUSED",
+          syscall: "connect"
+        })
+      )
+    ).toEqual({
+      category: "internal",
+      message: "The operation could not be completed."
+    });
   });
 
   it("withholds a data-layer error's text", async () => {

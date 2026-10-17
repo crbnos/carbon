@@ -209,7 +209,8 @@ class Context implements ServiceContext {
   readonly auditUserId: string;
   /**
    * Set on the context a service function's `run` receives. A call made from
-   * inside a service function was authorized by that function's gate.
+   * inside a service function was authorized by that function's gate (a
+   * system-only function is still checked).
    */
   readonly nested: boolean;
   private readonly handles: Handles;
@@ -333,7 +334,8 @@ export type ServiceFn<I extends z.ZodType, R> = {
  * as an `internal` error with the detail logged and withheld.
  *
  * Every entry call is checked against `permission` for its actor. A call made
- * from inside another service function's `run` is not checked again.
+ * from inside another service function's `run` is not checked again, except
+ * that a system-only function still admits only the system actor.
  */
 export function defineServiceFn<I extends z.ZodType, R>(definition: {
   input: I;
@@ -356,30 +358,33 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
       );
     }
 
-    const nested = ctx instanceof Context && ctx.nested;
-    if (!nested) {
-      let required: Permissions;
-      try {
-        required = resolvePermissions(definition.permission, parsed.data);
-      } catch (err) {
-        // A keyed rule with no entry for the value: bad input, not a 403.
-        return failed(
-          new CarbonError(
-            "validation",
-            err instanceof Error ? err.message : "Invalid input"
-          )
-        );
-      }
-      if (!allows(ctx.actor, ctx.company.id, required)) {
-        logger.warn("Service function refused: {actor}", {
-          actor: ctx.actor.type,
-          companyId: ctx.company.id,
-          required
-        });
-        return failed(
-          new CarbonError("forbidden", "You do not have permission to do this")
-        );
-      }
+    let required: Permissions;
+    try {
+      required = resolvePermissions(definition.permission, parsed.data);
+    } catch (err) {
+      // A keyed rule with no entry for the value: bad input, not a 403.
+      return failed(
+        new CarbonError(
+          "validation",
+          err instanceof Error ? err.message : "Invalid input"
+        )
+      );
+    }
+    // A nested call was authorized by the outer function's gate, but no gate
+    // admits anyone but the system to a system-only function.
+    const admitted =
+      ctx instanceof Context && ctx.nested
+        ? required !== "system" || ctx.actor.type === "system"
+        : allows(ctx.actor, ctx.company.id, required);
+    if (!admitted) {
+      logger.warn("Service function refused: {actor}", {
+        actor: ctx.actor.type,
+        companyId: ctx.company.id,
+        required
+      });
+      return failed(
+        new CarbonError("forbidden", "You do not have permission to do this")
+      );
     }
 
     try {

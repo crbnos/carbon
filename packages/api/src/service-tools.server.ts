@@ -7,7 +7,7 @@
 // as a service function's result, and settle a posting engine's throw.
 
 import { failSpan, inSpan } from "@carbon/logger/span";
-import { ServerFnError, toServerFnError } from "./errors";
+import { RAISED_EXCEPTION, ServerFnError, toServerFnError } from "./errors";
 import { SERVICE_RULE_ERROR_CODE } from "./rule-error";
 import type {
   CarbonError,
@@ -51,10 +51,15 @@ function overwriteIdentityKeys(ctx: ServiceContext, value: unknown): unknown {
  * from. `operation` picks the audit field of an upsert: a create gets
  * `createdBy` and loses `updatedBy`, an update the reverse (a service that
  * branches on `"createdBy" in` or `"updatedBy" in` takes the right branch).
+ * Without it, `fields` naming only `updatedBy` means an update and only
+ * `createdBy` a create.
  *
- * The input keeps unknown keys, so an identity key the caller put anywhere
- * one level down, or in a row of a list, is overwritten too: a payload cannot
- * name another company or forge who wrote it.
+ * The input keeps unknown keys, so an identity key (`companyId`,
+ * `companyGroupId`, `createdBy`, `updatedBy`) the caller put at the top level,
+ * one level down, or in a row of a list is overwritten too, listed in `fields`
+ * or not: a payload cannot name another company or forge who wrote it.
+ * `userId` is overwritten only when listed: some inputs name a target user
+ * with it.
  */
 export function stamp<T>(
   ctx: ServiceContext,
@@ -62,7 +67,7 @@ export function stamp<T>(
   fields: StampField[],
   operation?: "create" | "update"
 ): T {
-  if (!value || typeof value !== "object" || fields.length === 0) return value;
+  if (!value || typeof value !== "object") return value;
 
   if (Array.isArray(value)) {
     // A row of a list is spread into an INSERT: only createdBy is added (on a
@@ -80,14 +85,23 @@ export function stamp<T>(
   }
 
   const stamped: Record<string, unknown> = { ...(value as object) };
+  const sets = (field: StampField) =>
+    fields.includes(field) || field in stamped;
+  // Fields that name one audit column name the operation: an update must not
+  // rewrite a record's creator, nor a create its last editor.
+  operation ??= fields.includes("createdBy")
+    ? fields.includes("updatedBy")
+      ? undefined
+      : "create"
+    : fields.includes("updatedBy")
+      ? "update"
+      : undefined;
   if (operation === "update") delete stamped.createdBy;
-  else if (fields.includes("createdBy")) stamped.createdBy = ctx.auditUserId;
+  else if (sets("createdBy")) stamped.createdBy = ctx.auditUserId;
   if (operation === "create") delete stamped.updatedBy;
-  else if (fields.includes("updatedBy")) stamped.updatedBy = ctx.auditUserId;
-  if (fields.includes("companyId")) stamped.companyId = ctx.company.id;
-  if (fields.includes("companyGroupId")) {
-    stamped.companyGroupId = ctx.company.groupId;
-  }
+  else if (sets("updatedBy")) stamped.updatedBy = ctx.auditUserId;
+  if (sets("companyId")) stamped.companyId = ctx.company.id;
+  if (sets("companyGroupId")) stamped.companyGroupId = ctx.company.groupId;
   if (fields.includes("userId")) stamped.userId = ctx.auditUserId;
 
   for (const [key, nested] of Object.entries(stamped)) {
@@ -116,6 +130,15 @@ function serviceRefusal(ctx: ServiceContext, error: unknown): CarbonError {
   if (isRecord(error) && error.code === SERVICE_RULE_ERROR_CODE) {
     return ctx.error("rule", String(error.message));
   }
+  // A RAISE in our own SQL: its message was written for the person.
+  if (
+    isRecord(error) &&
+    error.code === RAISED_EXCEPTION &&
+    typeof error.message === "string" &&
+    error.message !== ""
+  ) {
+    return ctx.error("rule", error.message, error);
+  }
   const code = isRecord(error) ? String(error.code ?? "") : "";
   const known = DATABASE_REFUSALS[code];
   return known
@@ -133,6 +156,24 @@ const STATUS_CATEGORIES: Record<number, ErrorCategory> = {
   422: "rule",
   429: "rateLimited"
 };
+
+/**
+ * A server function's refusal as a `CarbonError`: its status picks the
+ * category. A message at 500 is a body's authored refusal (a plain throw,
+ * which `toServerFnError` keeps): the caller's to fix. Our own failures (a
+ * programming error, a thrown 5xx, the data layer, a server failure) arrive
+ * with none and are `internal`, with `fallback` as the message.
+ */
+export function serverFnRefusal(
+  ctx: ServiceContext,
+  error: { status: number; message: string },
+  fallback = "The operation could not be completed."
+): CarbonError {
+  const { status, message } = error;
+  const category =
+    STATUS_CATEGORIES[status] ?? (message ? "validation" : "internal");
+  return ctx.error(category, message || fallback, error);
+}
 
 /**
  * What the service returned, as the tool's result: its `data` (with the
@@ -155,17 +196,7 @@ export function serviceResult(
   if (!isRecord(result)) return result;
 
   if (result.error instanceof ServerFnError) {
-    const { status, message } = result.error;
-    // A message at 500 is a body's authored refusal (a plain throw, which
-    // `toServerFnError` keeps): the caller's to fix. Our own failures (a
-    // programming error, a thrown 5xx, the data layer) arrive with none.
-    const category =
-      STATUS_CATEGORIES[status] ?? (message ? "validation" : "internal");
-    return ctx.error(
-      category,
-      message || "The operation could not be completed.",
-      result.error
-    );
+    return serverFnRefusal(ctx, result.error);
   }
   if (result.error) return serviceRefusal(ctx, result.error);
 

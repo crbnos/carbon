@@ -32,7 +32,8 @@ const logger = getLogger("erp", "api", "authenticate");
  *
  * requirePermissions' carbon-key branch reads the `carbon-key` header, so the key
  * is presented that way regardless of how the caller sent it. Empty
- * required-permissions: the per-operation scope check lives in oRPC middleware.
+ * required-permissions: each operation's service function checks the key's
+ * scopes in its own gate.
  * The scope read hits the same 30s cache requirePermissions just warmed — a Redis
  * hit, not a second apiKey select.
  */

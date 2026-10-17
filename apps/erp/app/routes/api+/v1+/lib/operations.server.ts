@@ -3,11 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The operation catalog for the Carbon API v1 surface. Reads the generated MCP
-// manifest (tool-metadata.json) and shapes it for the oRPC router and the MCP/agent
-// bridges — a single source of truth for HTTP and MCP.
-//
-// (Decision 7's build-time relocation of this manifest into @carbon/api is deferred
-// to Docs Phase 2; see the plan. For now the committed manifest is the source.)
+// manifest (tool-metadata.json, gitignored build output of `pnpm generate:mcp`)
+// and shapes it for the oRPC router and the MCP/agent bridges — a single source
+// of truth for HTTP and MCP.
 
 import type { ManifestEntry } from "@carbon/api";
 import raw from "../../mcp+/lib/tool-metadata.json";
@@ -36,8 +34,7 @@ export function operationId(op: ManifestEntry): string {
   return op.name.slice(op.module.length + 1);
 }
 
-/** The operation's HTTP path: a service function's router path
- *  (`/production/job/cancel`), else `/{module}/{operationId}`. */
+/** The operation's HTTP path: `/{module}/{operationId}` (`/production/cancelJob`). */
 export function operationPath(op: ManifestEntry): `/${string}` {
   return `/${op.module}/${operationId(op)}`;
 }

@@ -9810,18 +9810,6 @@ msgid "Failed to create service: {0}"
 msgstr "सेवा बनाने में विफल: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create shipping method: {0}"
-msgstr "शिपिंग विधि बनाने में विफल: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create stock transfer line: {0}"
-msgstr "स्टॉक स्थानांतरण पंक्ति बनाने में विफल: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create storage type: {0}"
-msgstr "स्टोरेज प्रकार बनाने में विफल: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "आपूर्तिकर्ता बनाने में विफल: {0}"
 
@@ -10010,6 +9998,9 @@ msgstr "स्लाइड्स को सहेजने में विफ�
 
 msgid "Failed to save the change"
 msgstr "परिवर्तन को सहेजने में विफल"
+
+msgid "Failed to save the content"
+msgstr ""
 
 msgid "Failed to save the cost"
 msgstr "लागत सहेजने में विफल"
@@ -24896,6 +24887,9 @@ msgstr "इकाई मूल्य"
 
 msgid "Unit Price"
 msgstr "इकाई मूल्य"
+
+msgid "Unit recosted"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "यूनिट विक्रय मूल्य"

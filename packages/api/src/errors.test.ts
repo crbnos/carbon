@@ -81,6 +81,34 @@ describe("toServerFnError", () => {
     }
   });
 
+  it("withholds a database or network failure's text, as a 500 whatever the default", () => {
+    const connectionRefused = Object.assign(
+      new Error("connect ECONNREFUSED 10.0.0.5:5432"),
+      { code: "ECONNREFUSED", errno: -111, syscall: "connect" }
+    );
+    const noResult = Object.assign(new Error("no result"), { node: {} });
+    for (const thrown of [
+      connectionRefused,
+      new AggregateError([connectionRefused], ""),
+      new Error("timeout exceeded when trying to connect"),
+      new Error("Connection terminated unexpectedly"),
+      Object.assign(new Error("sorry, too many clients already"), {
+        code: "53300",
+        severity: "FATAL"
+      }),
+      noResult
+    ]) {
+      const error = toServerFnError("test", thrown, 400);
+      expect(error).toMatchObject({ message: "", status: 500 });
+    }
+    expect(
+      toServerFnError("test", new Error("Not enough stock"), 400)
+    ).toMatchObject({
+      message: "Not enough stock",
+      status: 400
+    });
+  });
+
   it("withholds the message of a thrown 5xx, keeping its status and body", () => {
     const thrown = new ServerFnError("Journal out of balance by 0.02", 500, {
       journalId: "j1"

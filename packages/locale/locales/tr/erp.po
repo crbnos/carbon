@@ -9810,18 +9810,6 @@ msgid "Failed to create service: {0}"
 msgstr "Hizmet oluşturma başarısız: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create shipping method: {0}"
-msgstr "Sevkiyat yöntemi oluşturulamadı: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create stock transfer line: {0}"
-msgstr "Stok transfer satırı oluşturulamadı: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create storage type: {0}"
-msgstr "Depolama türü oluşturulamadı: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Tedarikçi oluşturulamadı: {0}"
 
@@ -10010,6 +9998,9 @@ msgstr "Slayt kaydedilemedi"
 
 msgid "Failed to save the change"
 msgstr "Değişikliği kaydetme başarısız oldu"
+
+msgid "Failed to save the content"
+msgstr ""
 
 msgid "Failed to save the cost"
 msgstr "Maliyet kaydedilemedi"
@@ -24896,6 +24887,9 @@ msgstr "Birim fiyatı"
 
 msgid "Unit Price"
 msgstr "Birim Fiyatı"
+
+msgid "Unit recosted"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "Birim Satış Fiyatı"

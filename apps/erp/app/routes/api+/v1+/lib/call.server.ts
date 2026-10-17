@@ -8,6 +8,7 @@
 // included) via server-side call(), and folds the outcome into a { success, … }
 // envelope.
 
+import { getLogger } from "@carbon/logger";
 import { call, ORPCError } from "@orpc/server";
 import type { AuthedContext } from "./base.server";
 import {
@@ -20,6 +21,8 @@ import {
   formatValidationIssues,
   type StandardIssue
 } from "./validation-issues";
+
+const logger = getLogger("erp", "api", "call");
 
 export type CallResult =
   | { success: true; data: unknown; count?: number }
@@ -69,15 +72,27 @@ export async function callOperation(
       ...(result.count !== undefined ? { count: result.count } : {})
     };
   } catch (err) {
+    // Anything but an ORPCError is our own failure: its text (a stack frame,
+    // a connection string) is for the log, never the caller.
+    if (!(err instanceof ORPCError)) {
+      logger.error("Operation {name} threw", {
+        name,
+        companyId: context.companyId,
+        error: err
+      });
+      return {
+        success: false,
+        category: "internal",
+        error: "Function execution failed",
+        errorKind: "execution"
+      };
+    }
     // oRPC's input-validation failure says only "Input validation failed" —
     // useless to an agent that has to fix its own call. The issues ride along
     // in `err.data`, so name the fields and what's wrong with each.
-    const data =
-      err instanceof ORPCError
-        ? (err.data as
-            | { issues?: StandardIssue[]; category?: string }
-            | undefined)
-        : undefined;
+    const data = err.data as
+      | { issues?: StandardIssue[]; category?: string }
+      | undefined;
     const issues = data?.issues;
     return {
       success: false,
@@ -85,9 +100,7 @@ export async function callOperation(
       error:
         Array.isArray(issues) && issues.length > 0
           ? formatValidationIssues(issues)
-          : err instanceof Error
-            ? err.message
-            : "Function execution failed",
+          : err.message,
       errorKind: "execution"
     };
   }

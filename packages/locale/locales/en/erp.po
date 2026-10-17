@@ -9810,18 +9810,6 @@ msgid "Failed to create service: {0}"
 msgstr "Failed to create service: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create shipping method: {0}"
-msgstr "Failed to create shipping method: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create stock transfer line: {0}"
-msgstr "Failed to create stock transfer line: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create storage type: {0}"
-msgstr "Failed to create storage type: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Failed to create supplier: {0}"
 
@@ -10010,6 +9998,9 @@ msgstr "Failed to save slides"
 
 msgid "Failed to save the change"
 msgstr "Failed to save the change"
+
+msgid "Failed to save the content"
+msgstr "Failed to save the content"
 
 msgid "Failed to save the cost"
 msgstr "Failed to save the cost"
@@ -24896,6 +24887,9 @@ msgstr "Unit price"
 
 msgid "Unit Price"
 msgstr "Unit Price"
+
+msgid "Unit recosted"
+msgstr "Unit recosted"
 
 msgid "Unit Sale Price"
 msgstr "Unit Sale Price"

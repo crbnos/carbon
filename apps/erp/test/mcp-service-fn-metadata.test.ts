@@ -145,6 +145,83 @@ export const getJobs = defineServiceFn({
     });
   });
 
+  it("refuses a paged result whose rows are not a list", () => {
+    expect(() =>
+      toolsFor({
+        "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+/**
+ * Count jobs.
+ *
+ * @mcp
+ */
+export const countJobs = defineServiceFn({
+  input: null,
+  permission: { view: "production" },
+  async run(_ctx, input: { limit?: number }) {
+    return { rows: { id: "j1" }, count: 1 as number | null };
+  }
+});`,
+        "/m/router.ts": ROUTER
+      })
+    ).toThrow("a paged result's rows must be a list");
+  });
+
+  it("refuses @mcp read on a function whose permission names a write", () => {
+    const read = (permission: string) =>
+      toolsFor({
+        "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+/**
+ * Get API keys.
+ *
+ * @mcp read
+ */
+export const getKeys = defineServiceFn({
+  input: null,
+  permission: ${permission},
+  async run(_ctx, input: { id: string }) {
+    return null;
+  }
+});`,
+        "/m/router.ts": ROUTER
+      });
+    expect(() => read(`{ update: "users" }`)).toThrow(
+      "@mcp read on a function whose permission names update"
+    );
+    expect(read(`{ view: "users" }`)[0]?.classification).toBe("READ");
+  });
+
+  it("refuses a summary that was cut off", () => {
+    const tool = (summary: string) =>
+      toolsFor({
+        "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+/**
+ * ${summary}
+ *
+ * @mcp read
+ */
+export const getJob = defineServiceFn({
+  input: null,
+  permission: { view: "production" },
+  async run(_ctx, input: { id: string }) {
+    return null;
+  }
+});`,
+        "/m/router.ts": ROUTER
+      });
+    expect(() => tool("Get the job and the operations it…")).toThrow(
+      "the summary is cut off"
+    );
+    expect(() => tool("Get the job (with its `operations")).toThrow(
+      "the summary is cut off"
+    );
+    expect(tool("Get the job (with its `operations`).")[0]?.title).toBe(
+      "Get the job (with its `operations`)"
+    );
+  });
+
   it("reads a permission named by a constant", () => {
     const [recost] = toolsFor({
       "/m/production.ts": `

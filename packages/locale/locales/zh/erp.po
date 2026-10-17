@@ -9810,18 +9810,6 @@ msgid "Failed to create service: {0}"
 msgstr "创建服务失败：{0}"
 
 #. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create shipping method: {0}"
-msgstr "创建发货方式失败：{0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create stock transfer line: {0}"
-msgstr "创建库存调拨行失败：{0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create storage type: {0}"
-msgstr "创建存储类型失败：{0}"
-
-#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "创建供应商失败：{0}"
 
@@ -10010,6 +9998,9 @@ msgstr "保存幻灯片失败"
 
 msgid "Failed to save the change"
 msgstr "保存更改失败"
+
+msgid "Failed to save the content"
+msgstr ""
 
 msgid "Failed to save the cost"
 msgstr "保存成本失败"
@@ -24896,6 +24887,9 @@ msgstr "单价"
 
 msgid "Unit Price"
 msgstr "单价"
+
+msgid "Unit recosted"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "单位销售价格"

@@ -45,6 +45,68 @@ describe("function-redefinition-keeps-changes", () => {
     ).toEqual([]);
   });
 
+  it("tells an overload from the function it shares a name with", () => {
+    const overload = (args: string, body: string[]) =>
+      fn(body).replace("(p_job_id TEXT)", `(${args})`);
+    const SERIAL_OVERLOAD = [
+      "  v_serials := array_agg(p_serial ORDER BY p_serial);",
+      "  PERFORM receive_serials(p_job_id, v_serials);"
+    ];
+    expect(
+      findDroppedFunctionChanges([
+        { file: "20261001101010_first.sql", contents: fn(ORIGINAL) },
+        {
+          file: "20261009101010_overload.sql",
+          contents: overload(
+            "p_job_id TEXT, p_serial character varying(20) DEFAULT NULL",
+            SERIAL_OVERLOAD
+          )
+        },
+        {
+          file: "20261020101010_third.sql",
+          contents: overload("text", [...ORIGINAL, ...SERIAL])
+        }
+      ])
+    ).toEqual([]);
+    // The overload redefined from an older copy of itself is still caught.
+    const [finding] = findDroppedFunctionChanges([
+      {
+        file: "20261001101010_first.sql",
+        contents: overload("t TEXT, n int", ORIGINAL)
+      },
+      {
+        file: "20261009101010_always-post.sql",
+        contents: overload("t text, n INTEGER", ALWAYS_POST)
+      },
+      {
+        file: "20261020101010_third.sql",
+        contents: overload("IN t TEXT, n int4, OUT ok boolean", [
+          ...ORIGINAL,
+          ...SERIAL
+        ])
+      }
+    ]);
+    expect(finding?.message).toMatch(
+      /redefines public\.complete_job\(text, integer\)/
+    );
+  });
+
+  it("checks a function outside the public schema", () => {
+    const util = (body: string[]) =>
+      fn(body).replace("public.complete_job", "util.complete_job");
+    const [finding] = findDroppedFunctionChanges([
+      { file: "20261001101010_first.sql", contents: util(ORIGINAL) },
+      { file: "20261009101010_always-post.sql", contents: util(ALWAYS_POST) },
+      {
+        file: "20261020101010_third.sql",
+        contents: util([...ORIGINAL, ...SERIAL])
+      }
+    ]);
+    expect(finding?.snippet).toBe(
+      "util.complete_job drops 20261009101010_always-post.sql"
+    );
+  });
+
   it("leaves migrations from before it was added alone", () => {
     expect(
       findDroppedFunctionChanges(

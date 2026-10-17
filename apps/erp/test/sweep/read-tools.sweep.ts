@@ -34,11 +34,7 @@ import { scopesFromPermissions } from "~/routes/api+/v1+/lib/base.server";
 import { callOperation } from "~/routes/api+/v1+/lib/call.server";
 import { OPERATIONS } from "~/routes/api+/v1+/lib/operations.server";
 import { getDatabaseClient } from "~/services/database.server";
-import {
-  buildServiceAst,
-  type ParamFilter,
-  paramFilters
-} from "../../../../scripts/lib/service-ast";
+import { publishedParamFilters } from "../../../../scripts/lib/service-ast";
 import {
   type Column,
   consensusByName,
@@ -329,13 +325,7 @@ describe("every read tool, against real data", () => {
     const scopes = scopesFromPermissions(claims.permissions, companyId);
 
     const reads = OPERATIONS.filter((tool) => tool.classification === "READ");
-    const ast = buildServiceAst([...new Set(reads.map((tool) => tool.module))]);
-    const filtersByTool = new Map<string, ParamFilter[]>();
-    for (const module of ast.modules.values()) {
-      for (const fn of module.functions) {
-        filtersByTool.set(fn.toolName, paramFilters(fn.node));
-      }
-    }
+    const filtersByTool = publishedParamFilters();
     const columns = await sql<{ table: string; column: string; type: string }>`
       select table_name as "table", column_name as "column", udt_name as "type"
       from information_schema.columns where table_schema = 'public'`.execute(db);

@@ -32,16 +32,18 @@ Don't list individual tools in docs: they go stale. `search_tools` and
 `//#generate:mcp`). `postinstall` runs it for local development (skipped under
 `CI`; Vercel still runs it), and the `typecheck`, `build` and `test` of `erp` and
 `docs` depend on it. The task is cached on the inputs in `turbo.json`: the
-module sources, the app's `types` and `utils`, the generated DB types,
-`scripts/lib` and the package sources the modules' types reach.
-`apps/erp/test/mcp-manifest-cache-inputs.test.ts` fails when a models file
-imports something those inputs do not cover.
+module sources, the app's `types`, `utils` and `services`, the generated DB
+types, `scripts/lib` and the package sources the modules' types reach
+(`@carbon/ee` included: published inputs use its validators).
+`apps/erp/test/mcp-manifest-cache-inputs.test.ts` fails when a models file or a
+module's `<module>.server.ts` imports something those inputs do not cover.
 
 The committed record is `tool-manifest.digest.json`: one line per operation
 with its classification, permission, `paginates` and a hash of each schema, so
 a contract change is one visible line in review. `pnpm check:manifest`
 regenerates without the cache and fails when the digest is stale. Pre-commit
-regenerates it when a `*.service.ts` or a module `*.server.ts` is staged.
+(`scripts/git-hooks/pre-commit`) runs that check when a staged file falls under
+the same inputs; its path pattern mirrors the turbo list, so change both.
 
 Each entry (`ManifestEntry`, `@carbon/api`): `{ name, module, classification,
 title, description, permission, paginates, schema, responseSchema?, serviceFn }`.
@@ -60,7 +62,8 @@ any other value export in a server file fails generation.
   `.service.ts` is never a tool.
 - **Name**: `<module>_<constName>`; HTTP path `POST /api/v1/<module>/<constName>`.
   Renaming the const renames the public tool.
-- **Title and description**: the summary line is the title (required).
+- **Title and description**: the summary (the doc's first paragraph) is the
+  title (required), taken whole.
   The description is the summary sentence, then `@remarks`, then `@returns`.
   `@param name - text` becomes that input field's `description`, and naming a
   field the input does not have fails generation.
@@ -70,7 +73,9 @@ any other value export in a server file fails generation.
   gate is the only check. `"system"` and a keyed permission (`{ by, rules }`)
   cannot be published.
 - **Classification**: only `view` → READ; any `delete` → DESTRUCTIVE; else
-  WRITE. `@mcp read` forces READ (a read gated on `update`); `@mcp destructive`
+  WRITE. `@mcp read` forces READ, for a read gated on membership alone (`{}`);
+  on a permission that names `create`, `update` or `delete` it fails
+  generation, since a READ is offered as safe to run unasked. `@mcp destructive`
   forces DESTRUCTIVE.
 - **Input schema**: the TYPE of `run`'s input parameter, through
   `typeToJsonSchema` (`scripts/lib/response-schema.ts`). A field whose type
@@ -78,7 +83,8 @@ any other value export in a server file fails generation.
   move with the checker's type ids.
 - **Response schema**: `run`'s return type, with `Promise` and `{ data, error }`
   peeled off. A `paged` result (`{ rows, count }`, `@carbon/api/service-tools.server`)
-  is published as its rows with `paginates: true`.
+  is published as its rows with `paginates: true`; rows that are not a list
+  fail generation.
 
 Pinned by `apps/erp/test/mcp-service-fn-metadata.test.ts`. Permissions and
 classifications across the whole manifest are pinned by
@@ -207,8 +213,10 @@ callers get the exact data.
 `pnpm sweep:tools` (`apps/erp/test/sweep/`) runs every READ tool for real
 through `callOperation` (`authKind: "oauth"`, the user's own scopes) against a
 seeded company on a running local stack. Arguments are sampled from the
-company's rows (`paramFilters`, `scripts/lib/service-ast.ts`, tells which column
-a parameter is compared to); the few nothing can answer are in
+company's rows: `publishedParamFilters` (`scripts/lib/service-ast.ts`) reads each
+published leaf's `run`, and the building block it hands its input to
+(`service.getJob(client, input.id)`), for the column each input field is
+compared to, as a path into the tool's input; the few nothing can answer are in
 `read-tools.inputs.ts`. A `notFound` refusal counts as not-found, not a failure.
 It gates on `read-tools.baseline.json`, which stays empty unless a failure is
 knowingly accepted. Seed first (`pnpm db:seed:dev`). Not part of `pnpm test`.

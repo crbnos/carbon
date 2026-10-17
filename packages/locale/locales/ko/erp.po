@@ -9810,18 +9810,6 @@ msgid "Failed to create service: {0}"
 msgstr "서비스 생성 실패: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create shipping method: {0}"
-msgstr "배송 방법 생성 실패: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create stock transfer line: {0}"
-msgstr "재고 이송 라인 생성 실패: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create storage type: {0}"
-msgstr "저장 유형 생성 실패: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "공급업체 생성 실패: {0}"
 
@@ -10010,6 +9998,9 @@ msgstr "슬라이드 저장 실패"
 
 msgid "Failed to save the change"
 msgstr "변경 사항을 저장하지 못했습니다."
+
+msgid "Failed to save the content"
+msgstr ""
 
 msgid "Failed to save the cost"
 msgstr "원가 저장 실패"
@@ -24896,6 +24887,9 @@ msgstr "단가"
 
 msgid "Unit Price"
 msgstr "단가"
+
+msgid "Unit recosted"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "단위 판매가"

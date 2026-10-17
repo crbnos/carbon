@@ -197,6 +197,14 @@ export function leafDocs(leaf: ServiceFnLeaf): LeafDocs {
   if (mcp.length > 0 && !title) {
     throw new Error(`${where}: a published service function needs a summary`);
   }
+  // A summary someone cut short: it is the tool's title and description.
+  if (
+    /(…|\.\.\.)$/.test(title) ||
+    (title.match(/`/g)?.length ?? 0) % 2 === 1 ||
+    (title.match(/\(/g)?.length ?? 0) !== (title.match(/\)/g)?.length ?? 0)
+  ) {
+    throw new Error(`${where}: the summary is cut off: "${title}"`);
+  }
   const sentence = title ? `${title}.` : "";
   const parts = [sentence, remarks, returns ? `Returns ${returns}` : ""];
   return {
@@ -394,8 +402,21 @@ export function buildServiceFnTools(
       throw new Error(`${where}: a published leaf needs a module namespace`);
     }
     const { permission, actions } = leafPermission(leaf);
+    const writes = actions.filter((action) => action !== "view");
+    if (docs.read && writes.length > 0) {
+      // A READ tool is offered as safe to run unasked; a permission that
+      // names a write says the function may change something.
+      throw new Error(
+        `${where}: @mcp read on a function whose permission names ${writes.join(", ")}; drop "read" or gate it on view`
+      );
+    }
     const { input, response: returned } = schemasOf(leaf);
     const rows = pagedRows(returned);
+    if (rows && ![rows.type].flat().includes("array")) {
+      throw new Error(
+        `${where}: a paged result's rows must be a list, not ${JSON.stringify(rows.type ?? rows)}`
+      );
+    }
     const response = rows ?? returned;
     const properties = (input as { properties?: Record<string, JsonSchema> })
       .properties;

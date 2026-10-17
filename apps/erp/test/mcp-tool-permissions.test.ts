@@ -113,9 +113,33 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   // route requires purchasing_create or sales_create.
   accounting_purchaseFixedAsset: { module: "purchasing", actions: ["create"] },
   accounting_sellFixedAsset: { module: "sales", actions: ["create"] },
-  // A training's fields are edited on the people side: its route requires
-  // people_update.
-  resources_updateTrainingField: { module: "people", actions: ["update"] },
+  // Inventory value is an accounting figure: the valuation report requires
+  // accounting_view.
+  inventory_getInventoryValuation: { module: "accounting", actions: ["view"] },
+  inventory_getInventoryValuationTieOut: {
+    module: "accounting",
+    actions: ["view"]
+  },
+  // Storage types belong to the item master: their routes and the table's
+  // RLS are parts.
+  inventory_getStorageTypes: { module: "parts", actions: ["view"] },
+  inventory_getStorageType: { module: "parts", actions: ["view"] },
+  inventory_getStorageTypeUsage: { module: "parts", actions: ["view"] },
+  inventory_createStorageType: { module: "parts", actions: ["create"] },
+  inventory_updateStorageType: { module: "parts", actions: ["update"] },
+  inventory_deleteStorageTypeWithCascade: {
+    module: "parts",
+    actions: ["delete"]
+  },
+  // MRP: its route requires inventory_update.
+  production_runMRP: { module: "inventory", actions: ["update"] },
+  // A method's steps and Save Method need production AND the owning module
+  // (parts or sales), which the API cannot name as one module, so the
+  // function's own gate checks both.
+  production_updateMethodOperationStepOrder: { module: null, actions: [] },
+  production_updateQuoteOperationStepOrder: { module: null, actions: [] },
+  production_upsertMakeMethodFromJob: { module: null, actions: [] },
+  production_upsertMakeMethodFromJobMethod: { module: null, actions: [] },
   // Enrolling the company in the Implementation Hub: its route requires
   // settings_update.
   shared_enrollImplementationHub: { module: "settings", actions: ["update"] }

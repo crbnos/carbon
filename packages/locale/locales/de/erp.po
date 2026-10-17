@@ -9810,18 +9810,6 @@ msgid "Failed to create service: {0}"
 msgstr "Fehler beim Erstellen der Dienstleistung: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create shipping method: {0}"
-msgstr "Fehler beim Erstellen der Versandmethode: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create stock transfer line: {0}"
-msgstr "Umlagerungsposition konnte nicht erstellt werden: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create storage type: {0}"
-msgstr "Fehler beim Erstellen des Speichertyps: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Fehler beim Erstellen des Lieferanten: {0}"
 
@@ -10010,6 +9998,9 @@ msgstr "Folien konnten nicht gespeichert werden"
 
 msgid "Failed to save the change"
 msgstr "Fehler beim Speichern der Änderung"
+
+msgid "Failed to save the content"
+msgstr ""
 
 msgid "Failed to save the cost"
 msgstr "Kosten konnten nicht gespeichert werden"
@@ -24896,6 +24887,9 @@ msgstr "einzelpreis"
 
 msgid "Unit Price"
 msgstr "Einzelpreis"
+
+msgid "Unit recosted"
+msgstr ""
 
 msgid "Unit Sale Price"
 msgstr "Einheitlicher Verkaufspreis"

@@ -126,6 +126,20 @@ describe("the gate", () => {
       return inner(ctx, {});
     }
   });
+  const accountingDelete = defineServiceFn({
+    input: z.object({}),
+    permission: { delete: "accounting" },
+    async run() {
+      return "deleted";
+    }
+  });
+  const outerOfAccounting = defineServiceFn({
+    input: z.object({}),
+    permission: { view: "production" },
+    async run(ctx) {
+      return accountingDelete(ctx, {});
+    }
+  });
   const user = (permissions = {}): Actor => ({
     type: "user",
     userId: "user-1",
@@ -148,8 +162,21 @@ describe("the gate", () => {
   });
 
   it("does not check a call made from inside another service function", async () => {
-    const { data } = await outer(contextWith({}, user(productionView)), {});
-    expect(data).toEqual({ data: "inner", error: null });
+    const { data } = await outerOfAccounting(
+      contextWith({}, user(productionView)),
+      {}
+    );
+    expect(data).toEqual({ data: "deleted", error: null });
+  });
+
+  it("still refuses a nested system-only call to every caller but the system", async () => {
+    const asUser = await outer(contextWith({}, user(productionView)), {});
+    expect(asUser.data?.error?.category).toBe("forbidden");
+    const asSystem = await outer(
+      contextWith({}, { type: "system", onBehalfOf: "user-1" }),
+      {}
+    );
+    expect(asSystem.data).toEqual({ data: "inner", error: null });
   });
 
   it("requires company membership when nothing is named", async () => {

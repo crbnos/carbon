@@ -45,13 +45,58 @@ export class NotFoundError extends ServerFnError {
 
 /** SQLSTATE of a plpgsql `RAISE EXCEPTION`: a message our own SQL wrote for
  *  the person (e.g. "Job J000343 has 6 serial unit(s) left to receive…"). */
-const RAISED_EXCEPTION = "P0001";
+export const RAISED_EXCEPTION = "P0001";
 
-/** Structural only: an authored message naming a table is still shown. */
+/** SQLSTATE classes that are the server's failure, never the request's:
+ *  connection, transaction rollback (deadlock, serialization), insufficient
+ *  resources, operator intervention, system, internal. */
+const SERVER_SQLSTATE_CLASSES = new Set(["08", "40", "53", "57", "58", "XX"]);
+
+/** The plain `Error`s `pg` and `pg-pool` throw when the database cannot be
+ *  reached or stops answering. */
+const CONNECTION_FAILURES = new Set([
+  "timeout exceeded when trying to connect",
+  "timeout expired",
+  "Connection terminated",
+  "Connection terminated unexpectedly",
+  "Connection terminated due to connection timeout",
+  "Cannot use a pool after calling end on the pool",
+  "Client has encountered a connection error and is not queryable",
+  "Client was closed and is not queryable",
+  "Query read timeout",
+  "The server does not support SSL connections",
+  "There was an error establishing an SSL connection"
+]);
+
+/**
+ * A failure of the database or the network under it, not of the request: a
+ * Node system error (`connect ECONNREFUSED 10.0.0.5:5432`), a `pg` connection
+ * failure, a SQLSTATE of a server class, or Kysely's `NoResultError` (a
+ * `…OrThrow` read our code expected to find a row). Its text is for the log.
+ */
+export function isServerFailure(err: unknown): boolean {
+  if (err === null || typeof err !== "object") return false;
+  const e = err as Record<string, unknown>;
+  // Node's system errors (ECONNREFUSED, ETIMEDOUT, ENOTFOUND, …) name their syscall.
+  if (typeof e.syscall === "string") return true;
+  // A connect to every address of a host failing at once.
+  if (err instanceof AggregateError) return err.errors.some(isServerFailure);
+  if (typeof e.code === "string" && typeof e.severity === "string") {
+    return SERVER_SQLSTATE_CLASSES.has(e.code.slice(0, 2));
+  }
+  if (!(err instanceof Error)) return false;
+  // Kysely's NoResultError keeps the default name; its query node marks it.
+  if (err.message === "no result" && "node" in err) return true;
+  return CONNECTION_FAILURES.has(err.message);
+}
+
+/** Structural (plus `pg`'s fixed connection messages): an authored message
+ *  naming a table is still shown. */
 export function isDataLayerError(err: unknown): boolean {
   if (err === null || typeof err !== "object") return false;
   const e = err as Record<string, unknown>;
   if (e.code === RAISED_EXCEPTION) return false;
+  if (isServerFailure(err)) return true;
   // supabase-js PostgrestError: exactly these documented keys.
   if (
     typeof e.code === "string" &&
@@ -105,19 +150,24 @@ const PROGRAMMING_ERRORS = [TypeError, ReferenceError, RangeError, SyntaxError];
 /**
  * A failure that is ours keeps its status and loses its message (logged by
  * `toServerFnError`): a programming error, or a thrown status of 500 or
- * more. A plain `Error` with no status of its own is an authored refusal
- * and keeps its message at `defaultStatus`, as the engines rely on.
+ * more. A server failure ({@link isServerFailure}) is a 500 with no message,
+ * whatever `defaultStatus` says. Any other plain `Error` with no status of its
+ * own is an authored refusal and keeps its message at `defaultStatus`, as the
+ * engines rely on.
  */
 function toError(err: unknown, defaultStatus: number): ServerFnError {
   // The blanked error keeps the original as its `cause`: callers never see
-  // it, but an operator report (e.g. `classifyRepairFailure`) can.
+  // it, but the log and an operator's own report can.
   if (err instanceof ServerFnError) {
     return err.status >= 500 && err.message
       ? new ServerFnError("", err.status, err.body, { cause: err })
       : err;
   }
   if (isZodError(err)) return new InvalidInputError(summarizeIssues(err));
-  if (PROGRAMMING_ERRORS.some((type) => err instanceof type)) {
+  if (
+    PROGRAMMING_ERRORS.some((type) => err instanceof type) ||
+    isServerFailure(err)
+  ) {
     return new ServerFnError("", 500, {}, { cause: err });
   }
 
