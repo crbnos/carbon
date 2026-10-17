@@ -23631,6 +23631,9 @@ msgstr "この個の帳簿価額はあなたに表示されないため、その
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "購入、在庫、販売する単位"
 
+msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
+msgstr ""
+
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "米国の税務減価償却制度で、IRS固定資産分類表を使用し、帳簿的減価償却スケジュールと並行して別税務スケジュールとして実行されます。"
 

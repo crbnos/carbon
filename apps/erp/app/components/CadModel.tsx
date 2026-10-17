@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, TEMP_STAGING_BUCKET } from "@carbon/files";
+import { convertKbToString } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { useAction, useRevalidator } from "@carbon/query";
 import {
@@ -30,7 +30,6 @@ import { ModelPreview } from "@carbon/viewer/model-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { LuBox, LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
@@ -39,7 +38,8 @@ import type { ModelUpload } from "~/types";
 import type { ViewDirection } from "~/utils/model-thumbnail";
 import { regenerateModelThumbnail } from "~/utils/model-thumbnail";
 import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
-import { UploadProgress } from "./UploadProgress";
+import type { InterruptedUpload } from "~/utils/resumable-upload";
+import { InterruptedUploadNotice, UploadProgress } from "./UploadProgress";
 
 const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
 
@@ -83,7 +83,14 @@ const CadModel = ({
   const mode = useMode();
   const { carbon } = useCarbon();
   const revalidator = useRevalidator();
-  const { upload, runUpload } = useModelUpload();
+  // What the model is for, so an upload a reload cut off is offered back here.
+  const uploadScope =
+    Object.entries(metadata ?? {})
+      .filter(([, id]) => id)
+      .map(([key, id]) => `${key}:${id}`)
+      .join(",") || "cad";
+  const { upload, runUpload, interrupted, dismissInterrupted } =
+    useModelUpload(uploadScope);
 
   const fetcher = useAction();
   const [file, setFile] = useState<File | null>(null);
@@ -197,8 +204,6 @@ const CadModel = ({
     );
 
   const onFileChange = async (file: File | null) => {
-    const modelId = nanoid();
-
     setFile(file);
 
     if (file) {
@@ -206,19 +211,17 @@ const CadModel = ({
         toast.error("Failed to initialize carbon client");
         return;
       }
-      const fileExtension = file.name.split(".").pop();
-      const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
-
       // Raw CAD lands in `temp-staging` (2.5 GB cap) via a resumable (TUS) upload
       // — a standard buffered upload times out on multi-GB files. The
       // optimise/assembly jobs read it from there and write the gated artifacts
-      // (<=50 MB) to `private`.
+      // (<=50 MB) to `private`. The id and path are the upload's: a resumed
+      // upload keeps its own.
       const toastId = toast.loading(`Uploading ${file.name}…`);
-      const { error: uploadError } = await runUpload({
-        bucket: TEMP_STAGING_BUCKET,
-        path: fileName,
-        file
-      });
+      const {
+        error: uploadError,
+        modelId,
+        modelPath: fileName
+      } = await runUpload(file);
       if (uploadError) {
         toast.error("Failed to upload file to storage", { id: toastId });
         setFile(null);
@@ -432,6 +435,8 @@ const CadModel = ({
             isReadOnly={isReadOnly}
             titleExtras={titleExtras}
             onFileChange={onFileChange}
+            interrupted={interrupted}
+            onDismissInterrupted={dismissInterrupted}
           />
         );
       }}
@@ -448,6 +453,8 @@ type CadModelUploadProps = {
   className?: string;
   isReadOnly?: boolean;
   onFileChange: (file: File | null) => void;
+  interrupted?: InterruptedUpload | null;
+  onDismissInterrupted?: () => void;
 };
 
 const CadModelUpload = ({
@@ -456,7 +463,9 @@ const CadModelUpload = ({
   file,
   isReadOnly,
   className,
-  onFileChange
+  onFileChange,
+  interrupted,
+  onDismissInterrupted
 }: CadModelUploadProps) => {
   const hasFile = !!file;
   const { isPhone } = useViewport();
@@ -522,6 +531,15 @@ const CadModelUpload = ({
             </div>
           )}
         </div>
+        {!isReadOnly && interrupted && onDismissInterrupted && (
+          <div className="px-4 pb-3">
+            <InterruptedUploadNotice
+              name={interrupted.name}
+              percent={interrupted.percent}
+              onDismiss={onDismissInterrupted}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -594,6 +612,14 @@ const CadModelUpload = ({
               <p className="text-xs text-muted-foreground group-hover:text-foreground">
                 Supports {supportedModelTypes.join(", ")} files
               </p>
+              {interrupted && onDismissInterrupted && (
+                <InterruptedUploadNotice
+                  className="mt-4 max-w-md"
+                  name={interrupted.name}
+                  percent={interrupted.percent}
+                  onDismiss={onDismissInterrupted}
+                />
+              )}
             </>
           )}
         </div>
