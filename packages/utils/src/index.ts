@@ -7,6 +7,7 @@ export * from "@carbon/database/accounting-posting";
 export * from "@carbon/database/contract-schedule";
 export * from "@carbon/database/precision";
 export * from "@carbon/database/sales-posting-amounts";
+export * from "@carbon/database/tax-components";
 export * from "./accounting";
 export * from "./address";
 export * from "./arrays";

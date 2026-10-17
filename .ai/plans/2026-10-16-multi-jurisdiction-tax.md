@@ -20,11 +20,11 @@ Phase 1 ships as four pull requests, one per slice. Each slice leaves `main` gre
 ## Progress
 
 Slice A — Foundation
-- [ ] Task 1: Write the Phase 1 schema migration
-- [ ] Task 2: Add authz rules, event attachments and audit entries
-- [ ] Task 3: Apply the migration, regenerate types, ship the authz migration
-- [ ] Task 4: Follow the account-default renames through code, seed data and backups
-- [ ] Task 5: Write the pure tax-component helpers with tests
+- [x] Task 1: Write the Phase 1 schema migration
+- [x] Task 2: Add authz rules, event attachments and audit entries
+- [x] Task 3: Apply the migration, regenerate types, ship the authz migration
+- [x] Task 4: Follow the account-default renames through code, seed data and backups
+- [x] Task 5: Write the pure tax-component helpers with tests
 - [ ] Task 6: Add tax models and service functions, with the resolver
 - [ ] Task 7: Add the tax code API route and the `TaxCode` select
 - [ ] Task 8: Build the Tax Codes screens
