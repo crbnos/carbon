@@ -873,11 +873,9 @@ const SalesOrderLineForm = ({
                                 <Trans>Tax &amp; Additional Costs</Trans>
                               </Label>
                               <HStack>
-                                {(initialValues?.taxPercent ?? 0) > 0 && (
+                                {itemTaxPercent > 0 && (
                                   <Badge variant="red">
-                                    {percentFormatter.format(
-                                      initialValues?.taxPercent ?? 0
-                                    )}{" "}
+                                    {percentFormatter.format(itemTaxPercent)}{" "}
                                     <Trans>Tax</Trans>
                                   </Badge>
                                 )}

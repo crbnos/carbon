@@ -76,7 +76,8 @@ const PurchaseInvoicePostModal = ({
     } else if (fetcher.data?.success === false && fetcher.data?.message) {
       toast.error(fetcher.data.message);
     }
-  }, [fetcher.data?.success]);
+    // Each response is a new object, so a second failed post toasts again.
+  }, [fetcher.data]);
 
   return (
     <Modal

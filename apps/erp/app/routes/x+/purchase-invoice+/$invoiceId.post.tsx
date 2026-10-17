@@ -106,9 +106,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
         })
         .eq("id", invoiceId);
 
+      logger.error("Failed to post purchase invoice", {
+        companyId,
+        invoiceId,
+        error: posted.error
+      });
+      // A refusal the user can act on (a 4xx, such as a Reverse Charge line
+      // that still carries a tax amount) says what to fix; anything else
+      // stays generic.
       return {
         success: false,
-        message: "Failed to post purchase invoice"
+        message:
+          posted.error.status < 500 && posted.error.message
+            ? posted.error.message
+            : "Failed to post purchase invoice"
       };
     }
 
