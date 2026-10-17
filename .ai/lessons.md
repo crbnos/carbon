@@ -3869,3 +3869,43 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Before the module under test, load the service that makes the mocked call: `await import("../app/modules/<module>/<module>.service")`, with a comment that says why. If a mock does not intercept, check the import order first.
 
 **Applies to:** `apps/erp/test/*.test.ts`, `apps/erp/app/modules/**/*.test.ts` that mock `shared.service`.
+
+## An Inngest wait holds no concurrency slot, and a retry replays memoized steps
+
+**Context:** `runAssemblerJob` (`packages/jobs/src/inngest/functions/tasks/assembler-client.ts`) used to poll the assembler inside one `step.run` and throw when its budget ran out.
+
+**Problem:** Two assumptions were wrong. A comment said a waiting run holds a slot of the function's `concurrency`; `step.waitForEvent`, `step.sleep` and `step.invoke` hold none. And a throw outside a step does not redo the work: the retry replays every memoized step from its stored output, so the same check throws again with the same input.
+
+**Rule:** Wait with `step.waitForEvent` in slices, and poll once per slice in its own step. To retry the external work, do it in a new step (a resubmit with a new step id), never by throwing. Charge an action's time budget from when the service starts it, not from the submit.
+
+**Applies to:** any Inngest function that waits on an external service.
+
+## Check a column's default before you filter on NULL
+
+**Context:** The `queue_model_pipeline` handler first selected new models `WHERE "optimizeStatus" IS NULL`.
+
+**Problem:** `modelUpload.optimizeStatus` is `NOT NULL DEFAULT 'Idle'`, so the filter matched no row and the handler queued nothing. The insert succeeded and nothing failed.
+
+**Rule:** Read the column definition in the newest migration (or `\d` on the local database) before you write `IS NULL` against it. Test a new handler in a rolled-back transaction and assert the queued `net.http_request_queue` body.
+
+**Applies to:** SQL handlers, sweepers and views that pick rows by a status column.
+
+## An event sent at commit races every write the caller makes after the insert
+
+**Context:** New `modelUpload` rows start `model-optimize` from a statement handler, and pg_net sends the event when the transaction commits.
+
+**Problem:** The part and tool forms inserted the row and uploaded the file at the same time (`Promise.all`). The quote drop inserted the row, then staged the file. In both, the optimise could start before its file existed and fail as "file not found".
+
+**Rule:** When an insert starts a job, finish everything that job reads before the insert: stage the file, then insert the row. Keep a backstop for an event that is lost (the reaper resends the start once).
+
+**Applies to:** any table whose statement handler or interceptor sends an Inngest event.
+
+## A service-role job must check that a stored path belongs to the row's company
+
+**Context:** The model jobs found a raw file by the company named in `modelUpload.modelPath` and read storage as the service role.
+
+**Problem:** The forms insert `modelUpload` under RLS, and RLS does not check `modelPath`. So a row in one company could name another company's staged upload in the shared `temp-staging` bucket, and the optimise would copy that file into the first company's bucket.
+
+**Rule:** A job that reads storage as the service role takes the company from the row, never from the path, and refuses a path outside `${companyId}/` (`resolveModelSourceBucket`). Test it with a real object and a positive control, so the test fails when the guard goes.
+
+**Applies to:** `packages/jobs` storage reads keyed by a path a user can write.

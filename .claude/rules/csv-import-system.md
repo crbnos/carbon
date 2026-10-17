@@ -15,7 +15,8 @@ a transaction. Imports are idempotent via the `externalIntegrationMapping` table
 ## Flow
 
 1. **Upload** — `UploadCSV.tsx` parses the file client-side with **PapaParse** and uploads
-   it to the `private` Supabase bucket at `${companyId}/imports/${nanoid()}.csv`.
+   it to the company's own bucket (`storage(client).company(companyId)`) at
+   `${companyId}/imports/${nanoid()}.csv`.
 2. **Map** — `FieldMappings.tsx` lets the user map CSV columns → entity fields, plus per-field
    **enum mappings** (e.g. CSV `"B"` → `"Buy"`) and creatable lookups/forms.
 3. **Submit** — form POSTs to `/x/shared/import/$tableId`.
@@ -25,7 +26,7 @@ a transaction. Imports are idempotent via the `externalIntegrationMapping` table
 ## Frontend (`apps/erp/app/components/ImportCSVModal/`)
 
 - `ImportCSVModal.tsx` — modal orchestrating the wizard.
-- `UploadCSV.tsx` — drag-drop upload; PapaParse; uploads to `private` bucket (see path above).
+- `UploadCSV.tsx` — drag-drop upload; PapaParse; uploads to the company bucket (see path above).
 - `FieldMappings.tsx` — column/enum mapping UI; `enumMatch.ts` does fuzzy enum matching;
   `useCreateLookup.ts` creates missing lookup values inline.
 - `useCsvContext.tsx` — shared state (`file`, `filePath`, `fileColumns`, `firstRows`).
@@ -282,7 +283,7 @@ Ported from the `import-csv` server function. Its input is `importCsvInput` (tab
   `IMPORT_PERMISSIONS[table]`, plus `create` for tables in `IMPORT_REQUIRES_CREATE`. Both mirror `importPermissions` / `importRequiresCreate` in the
   models, so a new import type adds its table to both sides.
 - Refuses a `filePath` outside the `${companyId}/` prefix, then downloads it from the
-  company bucket, falling back to the legacy `private` bucket.
+  company bucket.
 - Parses with `parseCsv` (`@carbon/files/csv`, PapaParse), falling back to a custom
   `parsePermissiveCsv()` when a row's field count disagrees with the header.
 - Applies `columnMappings`, then `enumMappings` (unknown CSV value → the enum's `"Default"`);

@@ -194,8 +194,8 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   generated row types (`satisfies`), so a renamed/dropped column fails typecheck.
   Neither `db:check:backups` nor any other check detects an UNLISTED new column yet.
 - Asset transport: `copyAssetsToBackup` (server-side `storage.copy`
-  of `private/{companyId}/…` files into a backup's `assets/` folder) and
-  `restoreAssetsFromBackup` (copy them back to `private/`, rewriting paths +
+  of the company bucket's `{companyId}/…` files into a backup's `assets/` folder) and
+  `restoreAssetsFromBackup` (copy them back into the target company's bucket, rewriting paths +
   guarding every write to the target `{companyId}/` prefix). `removeStoragePrefix`
   recursively deletes a backup's asset folder, which is `backupAssetsDir(name)` =
   `exports/<name>/assets` — derived from the folder name, not from a file suffix.
@@ -203,11 +203,12 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   memory stays flat regardless of asset size.
 
 Buckets (important, two different things):
-- `STORAGE_BUCKET = "private"` — the **shared** bucket holding every company's
-  uploaded assets under a `{companyId}/` prefix.
-- The **per-company bucket named by `companyId`** holds one folder per backup
-  (`exports/<name>/` — its `manifest.json`, `tables/`, `assets/{companyId}/…`) and
-  pre-restore snapshots under the same prefix — see `client.storage.from(companyId)`.
+- The **per-company bucket named by `companyId`** holds the company's uploaded assets
+  under a `{companyId}/` prefix, one folder per backup (`exports/<name>/` — its
+  `manifest.json`, `tables/`, `assets/{companyId}/…`), and pre-restore snapshots under
+  the same prefix — see `client.storage.from(companyId)`.
+- `LEGACY_SHARED_BUCKET = "private"` — the retired shared bucket. Export, backup and
+  restore never read it; only the company purge still deletes what a company left there.
 - `TEMPLATE_BUCKET = "company-templates"`, `TEMPLATE_ASSET_PREFIX = "_templates"`.
 
 ## Export — `company-export.ts`
@@ -274,7 +275,7 @@ in-scope asset paths in `manifest.storage` and returns them; the job then
   intent → `dismissCompanyExportFailure` (service role — the table has no DELETE
   policy), and the next export's `upsertExportMarker` reuses the row.
 - **Asset cap** (`company-export.ts`): no per-file cap (the bucket already bounds
-  uploads — 120MB CAD, 50MB docs; the `private` bucket's own limit is the dev
+  uploads — 120MB CAD, 50MB docs; a company bucket's own limit is the dev
   `50MiB` global in `config.toml`), only a `MAX_STORAGE_TOTAL_BYTES = 1GiB` guard on
   the whole backup. Files are included greedily until the budget is hit; each is
   recorded in `manifest.storage` with `included: true|false`. The cap is storage-cost
@@ -491,7 +492,8 @@ Forward flow:
      `SECRET_TABLES` still carries its rows (e.g. `apiKeyRateLimit` → the stripped
      `apiKey`); they're ignored on load, so the preflight ignores them too.
 5. `restoreAssetsFromBackup` (outside the txn, non-transactional) copies the files
-   from the backup's `assets/` folder back to `private/<rewritten path>`,
+   from the backup's `assets/` folder back into the target company's bucket at the
+   rewritten path,
    server-side. It runs **before** the `ready` marker (step below) so the progress
    dialog only reports "complete" once data AND files are in place — but it never
    throws (per-file warnings), so a storage hiccup still can't fail a committed

@@ -239,7 +239,7 @@ bytes never pass through the model or the dispatch.
 - **Step 2:** `documents_insertUploadedDocument` registers the `document` row
   (`size` in KB; read/write groups default to the creating user).
 - Works on the OAuth path. An API key is not a Supabase JWT (`auth.uid()` is
-  null), so the `private` bucket's storage RLS refuses the mint.
+  null), so the company bucket's storage RLS refuses the mint.
 
 **CAD models** follow the same two steps with their own pair:
 `items_createModelUploadUrl` (`{ name }` → `{ signedUrl, token, path, modelId }`,

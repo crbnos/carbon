@@ -204,6 +204,11 @@ Built to sit as a small always-on pod beside other workloads.
   above the whole budget takes all of it and runs alone. Nothing is rejected.
   The reservation covers the compute only, not the download or the upload. CPU
   is bounded separately by the blocking pool (cores + 2).
+- **A waiting job is `pending`, not `running`.** Each action sets `running` only
+  after `admission.acquire` returns; the job API reports `pending` as `queued`.
+  `runAssemblerJob` (`@carbon/jobs`, `tasks/assembler-client.ts`) starts an
+  action's time budget at `running`, so time spent queued behind other jobs never
+  fails a job.
 - **The estimate is not a limit.** Nothing stops a job from using more than it
   was admitted for, and geometry can be far heavier than its file size: a
   5 MB plate with 1,200 drilled holes still peaks at 840 MB, thirteen times its
@@ -258,6 +263,23 @@ re-framed to fit the whole model, whatever the viewer's zoom or pan. The caller 
 lossless `convert` GLB). It replaced a headless-browser screenshot of the viewer
 page. A Draco-compressed GLB is refused (`thumbnail_failed`); textures and vertex
 colours are ignored in favour of the material colour.
+
+## Ingest (optimize with compact and thumbnail)
+
+A new model is processed by ONE `/v1/optimize` job, which reads the raw once.
+Two optional request fields add outputs:
+
+| Field | Output | What it writes |
+|---|---|---|
+| `compact: { path? }` | `raw` (`application/zstd`) | A STEP is converted to BinXCAF once; the optimiser tessellates from that xbf, and the xbf is compressed (`.xbf.zst`). A mesh source is compressed as it is. An xbf source needs nothing. |
+| `thumbnail: { path?, size?, direction? }` | `thumbnail` (`image/png`) | Rendered from the optimised GLB in memory, with the camera of `/v1/thumbnail`. |
+
+Neither extra can fail the job: a failed compaction or render becomes a warning
+and the output is left out. The caller is `@carbon/jobs` `tasks/model-optimize.ts`.
+It asks for `compact` only while the raw is still in `temp-staging`; without a
+`raw` output it copies the raw out of staging as it is. `/v1/compact` and
+`/v1/thumbnail` stay for the cases outside ingest: a raw left in staging with the
+assembler off, and a thumbnail from a captured camera direction.
 
 ## meshopt / Draco compression
 
