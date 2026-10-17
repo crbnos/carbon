@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { formatPercent } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_SUMMARY_OPTIONS,
@@ -29,7 +30,10 @@ export function SummaryBlock({
     salesInvoice,
     salesInvoiceShipment,
     currencyCode,
-    numberFormatter
+    numberFormatter,
+    taxSummary,
+    invoiceMessages,
+    locale
   } = data;
   const opts = { ...DEFAULT_SUMMARY_OPTIONS, ...block.options };
   const taxLabel = opts.taxLabel?.trim() || DEFAULT_SUMMARY_OPTIONS.taxLabel;
@@ -134,8 +138,27 @@ export function SummaryBlock({
           ) : null;
         })()}
 
-        {/* Taxes */}
-        {salesInvoiceLines.some((line) => (line.taxPercent ?? 0) > 0) ? (
+        {/* Taxes - one row per component and rate when there are several,
+            else the single row */}
+        {taxSummary.length > 1 ? (
+          taxSummary.map((entry) => (
+            <View
+              key={`${entry.name ?? ""}:${entry.rate}`}
+              style={[
+                tw("flex flex-row py-1.5 px-3 text-[9px]"),
+                { backgroundColor: "rgba(249, 250, 251, 0.6)" }
+              ]}
+            >
+              <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
+                {entry.name ?? taxLabel} {formatPercent(entry.rate, locale)} on{" "}
+                {numberFormatter.format(entry.base)} ({currencyCode})
+              </Text>
+              <Text style={tw("w-1/6 text-center text-gray-800")}>
+                {numberFormatter.format(entry.tax)}
+              </Text>
+            </View>
+          ))
+        ) : salesInvoiceLines.some((line) => (line.taxPercent ?? 0) > 0) ? (
           <View
             style={[
               tw("flex flex-row py-1.5 px-3 text-[9px]"),
@@ -165,6 +188,15 @@ export function SummaryBlock({
           </Text>
         </View>
       </View>
+
+      {/* VAT clauses of the lines' tax codes */}
+      {invoiceMessages.length > 0 ? (
+        <View style={tw("px-3 pt-1 text-[8px] text-gray-600")}>
+          {invoiceMessages.map((message) => (
+            <Text key={message}>{message}</Text>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }

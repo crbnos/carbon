@@ -61,7 +61,7 @@ Slice C — Provider mapping
 
 Slice D — Reporting and documents
 - [x] Task 35: Build the Tax Liability report
-- [ ] Task 36: Print the tax summary, VAT clause and registration on sales PDFs
+- [x] Task 36: Print the tax summary, VAT clause and registration on sales PDFs
 - [x] Task 37: Move customers and suppliers from a bare percent to tax codes
 - [ ] Task 38: Update docs, glossary, rules and AGENTS.md
 - [ ] Task 39: Verify Phase 1 in the browser

@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ReactNode } from "react";
 import { isValidElement } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { getMoneyFormatter } from "../../utils/shared";
 import type { TaxSummaryEntry } from "../../utils/tax-summary";
 
 // The block's only hook; a plain function lets the test call the block
@@ -27,10 +32,7 @@ function render(taxSummary: TaxSummaryEntry[], invoiceMessages: string[]) {
   const data = {
     locale: "en-US",
     currencyCode: "CAD",
-    numberFormatter: new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }),
+    numberFormatter: getMoneyFormatter("en-US", 2),
     salesInvoice: { exchangeRate: 1, totalTax: 144 },
     salesInvoiceShipment: { shippingCost: 0 },
     salesInvoiceLines: [

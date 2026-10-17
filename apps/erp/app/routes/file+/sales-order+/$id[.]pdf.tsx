@@ -10,9 +10,13 @@ import {
   templateShowsThumbnails,
   toDocumentTemplate
 } from "@carbon/documents/template";
+import {
+  TAX_CODE_SUMMARY_SELECT,
+  type TaxCodeSummaryRow
+} from "@carbon/documents/utils";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { getPreferenceHeaders } from "@carbon/utils";
+import { datetime, getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
@@ -164,6 +168,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     : null;
   const currencyDecimals = currencyRow?.data?.decimalPlaces ?? null;
 
+  // The codes the lines name, for the tax summary (one read).
+  const taxCodeIds = [
+    ...new Set(
+      (salesOrderLines.data ?? [])
+        .map((line) => line.taxCodeId)
+        .filter((taxCodeId): taxCodeId is string => Boolean(taxCodeId))
+    )
+  ];
+  const taxCodes =
+    taxCodeIds.length > 0
+      ? await client
+          .from("taxCode")
+          .select(TAX_CODE_SUMMARY_SELECT)
+          .eq("companyId", companyId)
+          .in("id", taxCodeIds)
+      : null;
+  if (taxCodes?.error) {
+    logger.error("Failed to load taxCodes", { error: taxCodes.error });
+  }
+  const taxDate =
+    salesOrder.data.orderDate ??
+    datetime.today(company.data.timezone ?? "UTC").toString();
+
   const stream = await renderToStream(
     <SalesOrderPDF
       company={company.data as any}
@@ -190,6 +217,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       thumbnails={thumbnails}
       template={templateConfig}
       sections={sections}
+      taxCodes={taxCodes?.data as TaxCodeSummaryRow[] | null | undefined}
+      taxDate={taxDate}
     />
   );
 

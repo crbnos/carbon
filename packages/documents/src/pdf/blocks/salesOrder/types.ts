@@ -14,6 +14,7 @@ import type {
   Company,
   CompanySettings
 } from "../../../types";
+import type { TaxSummaryEntry } from "../../../utils/tax-summary";
 
 export type SalesOrderLocations =
   Database["public"]["Views"]["salesOrderLocations"]["Row"] & {
@@ -42,6 +43,8 @@ export interface SalesOrderData {
   rateFormatter: Intl.NumberFormat;
   vars: Record<string, string>;
   headerOptions: HeaderOptions;
+  /** Tax per component and rate; printed in place of the tax row when two or more. */
+  taxSummary: TaxSummaryEntry[];
 }
 
 export type BlockRenderer = (args: {

@@ -85,7 +85,7 @@ export function lineTaxSummaryEntries(
   codes: ReadonlyMap<string, TaxSummaryCode>,
   date: string
 ): TaxSummaryEntry[] {
-  return lines.flatMap((line) => {
+  return lines.flatMap((line): TaxSummaryEntry[] => {
     const tax = line.base * line.taxPercent;
     const code = line.taxCodeId ? codes.get(line.taxCodeId) : undefined;
     const components = code ? effectiveComponents(code, date) : [];

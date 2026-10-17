@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import {
   buildTaxSummary,
@@ -5,6 +9,7 @@ import {
   lineTaxSummaryEntries,
   postedTaxSummaryEntries,
   resolveSellerRegistration,
+  salesInvoiceTaxSummaryLines,
   type TaxLedgerSummaryRow,
   type TaxSummaryCode
 } from "./tax-summary";
@@ -151,6 +156,45 @@ describe("lineTaxSummaryEntries", () => {
       { name: "GST", rate: 0.05, base: 1000, tax: 50 },
       { name: "PST", rate: 0.07, base: 1000, tax: 70 },
       { name: null, rate: 0.1, base: 100, tax: 10 }
+    ]);
+  });
+});
+
+describe("salesInvoiceTaxSummaryLines", () => {
+  it("adds a line's share of header shipping when its code taxes shipping", () => {
+    const codes = new Map<string, TaxSummaryCode>([
+      [
+        "vat",
+        {
+          id: "vat",
+          calculationType: "Normal",
+          taxesShipping: true,
+          invoiceMessage: null,
+          components: [component("vat", "VAT", 0.2)]
+        }
+      ]
+    ]);
+    const line = (id: string, unitPrice: number, taxCodeId: string | null) =>
+      ({
+        id,
+        invoiceLineType: "Part",
+        quantity: 1,
+        convertedUnitPrice: unitPrice,
+        discountPercent: 0,
+        convertedShippingCost: 0,
+        convertedAddOnCost: 0,
+        taxCodeId,
+        taxPercent: taxCodeId ? 0.2 : 0
+      }) as never;
+    expect(
+      salesInvoiceTaxSummaryLines(
+        [line("a", 300, "vat"), line("b", 100, null)],
+        100,
+        codes
+      )
+    ).toEqual([
+      { taxCodeId: "vat", taxPercent: 0.2, base: 375 },
+      { taxCodeId: null, taxPercent: 0, base: 100 }
     ]);
   });
 });
