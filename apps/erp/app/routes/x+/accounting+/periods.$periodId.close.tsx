@@ -55,6 +55,7 @@ import { EmployeeAvatar } from "~/components";
 import { useCurrencyFormatter } from "~/hooks";
 import type { PeriodCloseTaskView } from "~/modules/accounting/accounting.service";
 import {
+  existingDraftRunId,
   getAccountingPeriods,
   getPeriodCloseChecklist
 } from "~/modules/accounting/accounting.service";
@@ -153,16 +154,16 @@ export async function action(args: ActionFunctionArgs) {
       });
     }
     default: {
-      const result = await api.accounting.createRunForPeriod({
-        periodId,
-        run: RUN_OF_INTENT[intent]
-      });
-      if (result.error) return result;
-      const isDepreciation = result.data.run === "Depreciation";
+      const run = RUN_OF_INTENT[intent];
+      const result = await api.accounting.createRunForPeriod({ periodId, run });
+      // A Draft already holding the period opens instead, with the refusal.
+      const runId = result.data?.id ?? existingDraftRunId(result.error);
+      if (!runId) return result;
+      const isDepreciation = run === "Depreciation";
       return respond(args.request, result).redirect(
         isDepreciation
-          ? path.to.depreciationRun(result.data.id)
-          : path.to.revenueRecognitionRun(result.data.id),
+          ? path.to.depreciationRun(runId)
+          : path.to.revenueRecognitionRun(runId),
         { message: isDepreciation ? "Depreciation run created" : "Run created" }
       );
     }

@@ -276,7 +276,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
 `acquisitionCost`, `depreciationStartDate` (if unset), and flip `status`; a
 fifth (5, a lessee lease's purchase option) inserts the asset already Active:
 1. Manual: create asset (Draft), then `$fixedAssetId.register` action with
-   `fixedAssetRegisterValidator`, which calls `fixedAsset.register`
+   `fixedAssetRegisterValidator`, which calls `registerFixedAsset`
    (`accounting.server.ts`). For every company it
    posts an acquisition journal via `postAssetRegistration()` inside one
    Kysely transaction (Provisional before the accounting cutover, with no period
@@ -663,7 +663,7 @@ NBV** to a distinct non-operating line — never comingled with revenue. Carbon
 uses `gainOnDisposalAccountId` / `lossOnDisposalAccountId` for that gain/loss
 and `writeOffAccountId` as a **disposal clearing / holding account** in the
 two-step (ship → invoice) flow.
-1. Manual scrap: `$fixedAssetId.dispose` → `fixedAsset.dispose` (Active or
+1. Manual scrap: `$fixedAssetId.dispose` → `disposeFixedAsset` (Active or
    Fully Depreciated only) → `postDisposal()` (hardcodes
    `Scrapping`). NBV = `acquisitionCost − accumulatedDepreciation`; proceeds = 0,
    so the entire NBV is a loss. Posts Debit accumulated depreciation, **Debit

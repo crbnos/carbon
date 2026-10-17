@@ -22,6 +22,7 @@ import { NewRecordPage } from "~/components/NewRecordPage";
 import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
 import { paymentValidator } from "~/modules/invoicing/invoicing.models";
 import {
+  checkDepositDocument,
   getDepositDocuments,
   getPaymentCurrencyConfiguration,
   getSeedableOpenInvoices,
@@ -146,8 +147,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action(args: ActionFunctionArgs) {
+  const { client, companyId } = await requirePermissions(args.request, {
+    create: "invoicing"
+  });
   const input = await validator(paymentValidator).request(args);
   if ("invalid" in input) return input.invalid;
+  // `createPayment` refuses the same deposit; checked here too so only that
+  // refusal lands on the "Deposit for" field, and every other one is a toast.
+  const depositError = await checkDepositDocument(
+    client,
+    companyId,
+    input.data
+  );
+  if (depositError) {
+    return validationError({ fieldErrors: { depositDocument: depositError } });
+  }
   const formData = input.formData ?? new FormData();
   const api = await carbon(args.request);
   const result = await api.invoicing.createPayment({
@@ -160,12 +174,6 @@ export async function action(args: ActionFunctionArgs) {
       .map((id) => id.trim())
       .filter(Boolean)
   });
-  // A deposit the payment cannot name belongs on the "Deposit for" field.
-  if (result.error?.category === "validation") {
-    return validationError({
-      fieldErrors: { depositDocument: result.error.message }
-    });
-  }
   if (!result.data) {
     return respond(args.request, result).redirect(path.to.paymentNew);
   }

@@ -38,12 +38,20 @@ describe("a server function's refusal", () => {
     expect(refusal(403, "No").category).toBe("forbidden");
     expect(refusal(404, "Gone").category).toBe("notFound");
     expect(refusal(409, "Changed").category).toBe("conflict");
-    expect(refusal(500, "Boom").category).toBe("internal");
+    // A plain throw keeps its message at 500: an authored refusal, mapped as
+    // `settle` maps it.
+    expect(refusal(500, "Boom")).toMatchObject({
+      category: "validation",
+      message: "Boom"
+    });
   });
 
   it("falls back to the operation's message when the failure has none", () => {
     // A data-layer failure arrives with an empty message by design.
-    expect(refusal(500, "").message).toBe("Failed to void charge");
+    expect(refusal(500, "")).toMatchObject({
+      category: "internal",
+      message: "Failed to void charge"
+    });
   });
 });
 

@@ -5,6 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
+import { existingDraftRunId } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -13,8 +14,10 @@ export async function action(args: ActionFunctionArgs) {
   const { runId } = input.params;
   const api = await carbon(args.request);
   const result = await api.accounting.repeatRevenueRecognitionRun({ runId });
+  // A Draft already holding the next month opens instead.
+  const draftRunId = existingDraftRunId(result.error);
   return respond(args.request, result).redirect(
-    path.to.revenueRecognitionRun(result.data?.id ?? runId),
+    path.to.revenueRecognitionRun(result.data?.id ?? draftRunId ?? runId),
     { message: result.data ? `${result.data.readableId} created` : undefined }
   );
 }

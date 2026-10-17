@@ -65,12 +65,6 @@ import * as service from "./invoicing.service";
 
 const logger = getLogger("erp", "invoicing");
 
-// Documents a customer payment can be a deposit for — or a refund of: every
-// open sales order and Draft/Active rental agreement (a new deposit), plus
-// every document a posted deposit receipt already references (a refund of a
-// Closed agreement's deposit) and any ids the caller must keep listed. Loaded
-// company-wide with the customer on each row because the form's customer can
-// change before the payment is saved; the picker narrows to that customer.
 // --- Shared -------------------------------------------------------------------
 
 const customFieldValues = z.record(
@@ -3072,7 +3066,12 @@ export const getOpenPurchaseInvoicesForSupplier = defineServiceFn({
 });
 
 /**
- * Posted reimbursements an employee is still owed money on — the apply table's target list when a payment's payee is an employee, and the source of the balance t…
+ * Posted reimbursements an employee is still owed money on.
+ *
+ * @remarks
+ * The apply table's target list when a payment's payee is an employee, and the
+ * balance the Pay expense modal defaults to. A read only: posting a payment
+ * locks and checks the reimbursements again.
  *
  * @mcp read
  */

@@ -14,7 +14,10 @@ import { validator } from "@carbon/form";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { getRevenueRecognitionRuns } from "~/modules/accounting/accounting.service";
+import {
+  existingDraftRunId,
+  getRevenueRecognitionRuns
+} from "~/modules/accounting/accounting.service";
 import { getNextRevenueRecognitionPeriodEnd } from "~/modules/accounting/accounting.utils";
 import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
@@ -80,10 +83,16 @@ export async function createPeriodRun(args: ActionFunctionArgs, type: RunType) {
     type,
     periodEnd: input.data.periodEnd || undefined
   });
+  const draftRunId = existingDraftRunId(result.error);
   return respond(args.request, result).redirect(
     result.data
       ? path.to.revenueRecognitionRun(result.data.id)
       : RUN_PAGES[type].listPath,
-    { message: `${runLabelSentence(type)} created` }
+    {
+      message: `${runLabelSentence(type)} created`,
+      onError: draftRunId
+        ? path.to.revenueRecognitionRun(draftRunId)
+        : undefined
+    }
   );
 }

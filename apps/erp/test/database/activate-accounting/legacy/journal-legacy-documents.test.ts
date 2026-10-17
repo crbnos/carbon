@@ -14,7 +14,7 @@ import { LEGACY_DOCUMENT_FAMILIES } from "@carbon/database/legacy-documents";
 import { formatPeriodLabel } from "@carbon/utils";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { repairLegacyJournals as journalLegacyDocuments, findCompaniesWithLegacyDocuments, journalLegacyDocumentsForAllCompanies, activateAccounting } from "../../../../app/modules/accounting/accounting.service";
+import { repairLegacyJournals as journalLegacyDocuments, activateAccounting } from "../../../../app/modules/accounting/accounting.service";
 import { ACCOUNTING_NOT_STARTED } from "~/modules/shared/shared.service";
 import { databaseTest } from "../../fixtures/local-database";
 import { postPayment, postPurchaseInvoice } from "../../../../app/modules/invoicing/invoicing.service";
@@ -89,18 +89,6 @@ databaseTest(
         salesShipments: 1
       });
 
-      // The one-off script finds the company, to run as the enabling user.
-      expect(
-        (await findCompaniesWithLegacyDocuments(f.db)).find(
-          (company) => company.companyId === f.companyId
-        )
-      ).toEqual({
-        companyId: f.companyId,
-        cutoverDate: f.cutoverDate,
-        userId: USER,
-        counts: counted
-      });
-
       // A closed period refuses the whole call, and writes nothing.
       await setPeriodCloseStatus(f, "Closed");
       const refused = await invokePosting(handlesOf(f.ctx), "journal-legacy-documents", {}, journalLegacyDocuments);
@@ -109,22 +97,6 @@ databaseTest(
       );
       expect(await legacyDocumentCounts(f)).toEqual(counted);
       expect(await provisionalJournals(f)).toEqual([]);
-
-      // The one-off script skips the company over its closed period rather
-      // than failing the deploy, and still writes nothing.
-      expect(
-        await journalLegacyDocumentsForAllCompanies(f.db, {
-          dryRun: false,
-          companyIds: [f.companyId]
-        })
-      ).toEqual([
-        {
-          companyId: f.companyId,
-          status: "skipped",
-          reason: `The period ${formatPeriodLabel(f.cutoverDate)} is closed. Reopen it, then write the missing journals.`
-        }
-      ]);
-      expect(await legacyDocumentCounts(f)).toEqual(counted);
 
       // So does a Locked one.
       await setPeriodCloseStatus(f, "Locked");
@@ -215,12 +187,10 @@ databaseTest(
       );
       expect(await glBalance(f, "receivables")).toBeCloseTo(0, 6);
 
-      // Nothing is left to write, and the script no longer finds it.
-      expect(
-        (await findCompaniesWithLegacyDocuments(f.db)).map(
-          (company) => company.companyId
-        )
-      ).not.toContain(f.companyId);
+      // Nothing is left to write.
+      expect(await legacyDocumentCounts(f)).toEqual(
+        Object.fromEntries(LEGACY_DOCUMENT_FAMILIES.map((family) => [family, 0]))
+      );
       const again = unwrap(await invokePosting(handlesOf(f.ctx), "journal-legacy-documents", {}, journalLegacyDocuments));
       expect(again.legacyJournals).toEqual({
         ...Object.fromEntries(

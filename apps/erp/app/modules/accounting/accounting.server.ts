@@ -287,7 +287,7 @@ export const postDepreciationRun = defineServiceFn({
     } catch (err) {
       return err instanceof service.RunOutOfDateError
         ? ctx.error("conflict", err.message, err)
-        : ctx.error("internal", "Failed to post depreciation run", err);
+        : service.refusal(ctx, err, "Failed to post depreciation run");
     }
 
     return { id: depreciationRunId, readableId };
@@ -686,7 +686,7 @@ export const postRevenueRecognitionRun = defineServiceFn({
     } catch (err) {
       return err instanceof service.RunOutOfDateError
         ? ctx.error("conflict", err.message, err)
-        : ctx.error("internal", "Failed to post revenue recognition run", err);
+        : service.refusal(ctx, err, "Failed to post revenue recognition run");
     }
 
     return { id: runId };
@@ -1040,7 +1040,8 @@ export const createRunForPeriod = defineServiceFn({
     if (existingDraft.data) {
       return ctx.error(
         "conflict",
-        `${existingDraft.data.depreciationRunId} is already a draft for this period. Recalculate it instead.`
+        `${existingDraft.data.depreciationRunId} is already a draft for this period. Recalculate it instead.`,
+        { draftRunId: existingDraft.data.id }
       );
     }
 
@@ -1107,7 +1108,7 @@ export const closeTaskSkip = defineServiceFn({
  *
  * @remarks
  * Takes the next journal entry number. Add its lines and post it with
- * `journalEntry.save`.
+ * `saveJournalEntry`.
  *
  * @mcp
  */
@@ -1375,10 +1376,17 @@ export const purchaseFixedAsset = defineServiceFn({
       createdBy: ctx.auditUserId
     });
     if (line.error) {
+      // No order without its asset line: the caller would be left with an
+      // empty Draft it may not be allowed to delete.
+      const removed = await ctx.asSystem.supabase
+        .from("purchaseOrder")
+        .delete()
+        .eq("id", purchaseOrderId)
+        .eq("companyId", companyId);
       return ctx.error(
         "internal",
         "Failed to add the asset to the purchase order",
-        line.error
+        { line: line.error, cleanup: removed.error }
       );
     }
     return { purchaseOrderId };
@@ -1445,10 +1453,16 @@ export const sellFixedAsset = defineServiceFn({
       createdBy: ctx.auditUserId
     });
     if (line.error) {
+      // No order without its asset line, as `purchaseFixedAsset`.
+      const removed = await ctx.asSystem.supabase
+        .from("salesOrder")
+        .delete()
+        .eq("id", salesOrderId)
+        .eq("companyId", companyId);
       return ctx.error(
         "internal",
         "Failed to add the asset to the sales order",
-        line.error
+        { line: line.error, cleanup: removed.error }
       );
     }
     return { salesOrderId };
@@ -1464,7 +1478,7 @@ export const sellFixedAsset = defineServiceFn({
  * depreciation, Dr the class's loss on disposal account for the whole net
  * book value, Cr the asset account at cost. Records the disposal (no
  * proceeds) and sets the asset Disposed. A sale goes through a sales order
- * instead (`fixedAsset.sell`). Refused before the company's accounting
+ * instead (`sellFixedAsset`). Refused before the company's accounting
  * cutover.
  *
  * @mcp destructive
@@ -1541,7 +1555,7 @@ export const disposeFixedAsset = defineServiceFn({
         userId: ctx.auditUserId
       });
     } catch (err) {
-      return ctx.error("internal", "Failed to post asset disposal", err);
+      return service.refusal(ctx, err, "Failed to post asset disposal");
     }
     return { fixedAssetId };
   }
@@ -1899,9 +1913,8 @@ export const moveAccount = defineServiceFn({
  * becomes the chart row the template names, a Carbon account whose number
  * matches an unclaimed row becomes that row, and every other leaf is deleted
  * or merged. Refused once any company of the group has an accounting cutover,
- * and while the plan has an unresolved row.
- *
- * @mcp destructive
+ * and while the plan has an unresolved row. Not published: the import
+ * rewrites the whole group's chart, and runs from the import page only.
  */
 export const importChartOfAccounts = defineServiceFn({
   input: service.applyAccountImportInput,
@@ -1934,9 +1947,8 @@ export const importChartOfAccounts = defineServiceFn({
  * readiness check fails or Migration Clearing does not total zero. Posts the
  * opening balance journal the day before the cutover, turns Provisional
  * journals dated on or after it into Posted and those before it into
- * Superseded, journals legacy documents, and records the cutover.
- *
- * @mcp destructive
+ * Superseded, journals legacy documents, and records the cutover. Not
+ * published: the one-way enable runs from the activation wizard only.
  */
 export const enableAccountingCutover = defineServiceFn({
   input: z.object({ cutoverDate: z.string(), confirmation: z.string() }),
@@ -4602,7 +4614,9 @@ export const getRevenueRecognitionRunLines = defineServiceFn({
 });
 
 /**
- * The documents around a depreciation or revenue recognition run that its own row doesn't name: the accounting period its `periodEnd` falls in (the one posting r…
+ * The documents around a depreciation or revenue recognition run that its own
+ * row does not name: the accounting period its `periodEnd` falls in, and the
+ * journal entries it posted.
  *
  * @mcp read
  */
@@ -4690,7 +4704,15 @@ export const getLeaseNetInvestment = defineServiceFn({
 });
 
 /**
- * The lessee's Lease Liabilities report (spec §11, ASC 842-20-50): the balances, maturity analysis and weighted averages as of `asOf` (`summarizeLeaseLiabilities…
+ * The lessee's Lease Liabilities report (ASC 842-20-50) as of `asOf`.
+ *
+ * @remarks
+ * The balances, maturity analysis and weighted averages as of `asOf`, and the
+ * lease cost and cash paid for `[from, to]`. `from` defaults to the first day
+ * of the fiscal year `asOf` falls in, `to` to `asOf`. Cost reads the lease
+ * rows the lease run posted and the Lease lines of posted purchase invoices,
+ * both dated in the range. The lease tables need purchasing view: without it
+ * the report is empty.
  *
  * @mcp read
  */
@@ -4821,7 +4843,9 @@ export const getFixedAssetCipCosts = defineServiceFn({
 });
 
 /**
- * The capital tied up in a work center: every non-disposed asset assigned to it, with its net book value and — for straight-line assets — the depreciation it car…
+ * The capital tied up in a work center: every non-disposed asset assigned to
+ * it, with its net book value and, for a straight-line asset, the depreciation
+ * it carries each month.
  *
  * @mcp read
  */
@@ -4841,12 +4865,17 @@ export const getWorkCenterCapitalCost = defineServiceFn({
 });
 
 /**
- * Capitalize a unit, return an asset to inventory, attach a job to a CIP asset or capitalize a CIP asset — the `post-asset-transfer` server function, run as the…
+ * Capitalize a unit, return an asset to inventory, attach a job to a CIP
+ * asset, or capitalize a CIP asset.
+ *
+ * @remarks
+ * Runs as the caller: the caller needs the transfer's permission, and
+ * accounting update too when a capitalization enters its own cost.
  *
  * @mcp
  */
 export const invokeAssetTransfer = defineServiceFn({
-  input: z.unknown(),
+  input: service.postAssetTransferInput,
   permission: { update: "accounting" },
   async run(ctx, input) {
     return envelope(
@@ -4891,7 +4920,14 @@ export const getAccountingSyncTieOut = defineServiceFn({
 });
 
 /**
- * One tie-out cell plus its drill-down: the posted journals dated inside the cell's period with at least one line on the cell's account, each with the latest acc…
+ * One tie-out cell and its drill-down: the posted journals dated in the cell's
+ * period with a line on the cell's account, each with its latest sync
+ * disposition for the cell's integration.
+ *
+ * @remarks
+ * A reversal journal's disposition is read under the original journal's
+ * `<id>:reversal` entity id. Returns the newest journals only, up to a fixed
+ * limit.
  *
  * @mcp read
  */
