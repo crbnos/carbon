@@ -54,7 +54,7 @@ pnpm --filter @carbon/dev smoke       # real containers: slots, fresh migrate, u
   - **Dev servers** — they hold more than the containers (roughly 1 GB each). After `CRBN_APPS_IDLE_MINUTES` (default 120) `crbn up` aborts them (`spawnApps`' `signal`) and listens on their ports itself (`startWaker`). A request there cannot be handed over — the dev server needs that port — so a browser gets a page that polls and reloads, anything else a 503 with `x-crbn-waking`. Inngest polls and WebSocket upgrades (an open tab's Vite client probing for its server) do not wake it. That wake is about 40 s: the dev servers boot from cold.
   - Off for `--no-apps`, `--run`, `--borrow` (the owning `crbn up` does it) and `--no-hibernate`. Traffic that never reaches ERP/MES (`psql`, scripts on the API) does not count; `crbn migrate` and `crbn restore` wake a sleeping stack themselves (`wakeIfAsleep`). `crbn list` and `crbn status` show a hibernated stack.
 - **`crbn prune` also clears stale portless routes** (`findStaleAliases`): static aliases crbn registered whose port no live slot owns. `portless prune` only reaps routes that have a process.
-- **Env**: `env.ts` — `renderEnv()`, `writeEnv()`, `syncAppPortlessConfigs()`
+- **Env**: `env.ts` — `renderEnv()`, `writeEnv()`, `syncAppPortlessConfigs()`. URLs derived from the stack's ERP host (`ERP_URL`, `VERCEL_URL`, `INNGEST_SERVE_HOST`, `ONSHAPE_V2_OAUTH_REDIRECT_URL`) come from one `erpUrl`; a key a developer must keep fixed (a tunnel, a registered redirect URI) is pinned in `.env` with `#force`
 - **`--run` flag**: scopes stack lifetime to a command (for headless/CI builds); `--volumes` cleans up Docker volumes on teardown
 
 ## Cross-References

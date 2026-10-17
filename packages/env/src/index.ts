@@ -134,6 +134,13 @@ export const ITAR_RIDER_PDF_PATH = "https://carbon.ms/itar-rider.pdf";
 export const ONSHAPE_CLIENT_ID = getEnv("ONSHAPE_CLIENT_ID");
 export const ONSHAPE_CLIENT_SECRET = getEnv("ONSHAPE_CLIENT_SECRET");
 export const ONSHAPE_OAUTH_REDIRECT_URL = getEnv("ONSHAPE_OAUTH_REDIRECT_URL");
+// The panel (`onshape-v2`) is its own Onshape app: it shares no variable with
+// the sync integration above.
+export const ONSHAPE_V2_CLIENT_ID = getEnv("ONSHAPE_V2_CLIENT_ID");
+export const ONSHAPE_V2_CLIENT_SECRET = getEnv("ONSHAPE_V2_CLIENT_SECRET");
+export const ONSHAPE_V2_OAUTH_REDIRECT_URL = getEnv(
+  "ONSHAPE_V2_OAUTH_REDIRECT_URL"
+);
 // Path to the native gltfpack binary (github.com/zeux/meshoptimizer), used to
 // compress oversized Onshape GLTF exports into viewer-ready GLBs. Optional:
 // when unset (and gltfpack isn't on PATH), oversized models are skipped
@@ -360,6 +367,7 @@ export function getBrowserEnv() {
     MES_URL,
     NODE_ENV,
     ONSHAPE_CLIENT_ID,
+    ONSHAPE_V2_CLIENT_ID,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     QUICKBOOKS_CLIENT_ID,

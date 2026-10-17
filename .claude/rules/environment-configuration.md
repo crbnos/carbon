@@ -128,8 +128,12 @@ account notifications loader and the app shell loader (`pushPublicKey`), not
 `getBrowserEnv()` for the authorize URL; `RAMP_CLIENT_SECRET`, server-only for code
 exchange/token refresh), Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
 `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`, `SLACK_STATE_SECRET`,
-`SLACK_OAUTH_REDIRECT_URL`), OnShape (`ONSHAPE_CLIENT_ID/SECRET`,
-`ONSHAPE_OAUTH_REDIRECT_URL`), Xero, QuickBooks, Jira (each `*_CLIENT_ID/SECRET`,
+`SLACK_OAUTH_REDIRECT_URL`), Onshape (two Onshape apps, no shared variable:
+`ONSHAPE_CLIENT_ID/SECRET` + `ONSHAPE_OAUTH_REDIRECT_URL` for the `onshape` sync
+integration, `ONSHAPE_V2_CLIENT_ID/SECRET` + `ONSHAPE_V2_OAUTH_REDIRECT_URL` for the
+`onshape-v2` panel. `crbn up` writes `ONSHAPE_V2_OAUTH_REDIRECT_URL`
+into `.env.local` from the stack's `ERP_URL`, so each worktree host must be registered
+on the panel's Onshape app, or pinned in `.env` with `#force`), Xero, QuickBooks, Jira (each `*_CLIENT_ID/SECRET`,
 plus webhook/redirect/state secrets), `EXCHANGE_RATES_API_KEY`,
 `GOOGLE_PLACES_API_KEY`, AI keys `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`.
 
