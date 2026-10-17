@@ -5,7 +5,7 @@
 > Date: 2026-07-04
 > Tracking issue: crbnos/carbon#1055
 > Parent finding: `.ai/specs/2026-07-03-public-company-readiness.md` §GAP-D1
-> Builds on: `.ai/specs/2026-07-03-multi-jurisdiction-tax.md` (tax codes/components/authorities/registrations, `taxLedger`, `taxReturn` + layouts + settlement — this spec EXTENDS that machinery, never parallels it)
+> Builds on: `.ai/specs/2026-10-16-multi-jurisdiction-tax.md` (tax codes/components/authorities/registrations, `taxLedger`, `taxReturn` + layouts + settlement — this spec EXTENDS that machinery, never parallels it)
 > Research: `.ai/research/public-company-compliance.md` (§7 tax engine, §regulatory VAT/trade reporting, MTD reference)
 
 ## TLDR
@@ -29,7 +29,7 @@ Customers operate across Europe and the US (geography resolved in the readiness 
 - **Assignment**: `supplierTax.withholdingTaxCodeId` (the supplier tax table is the natural home). At purchase-invoice creation, the supplier's WHT code defaults onto every line (`purchaseInvoiceLine.withholdingTaxCodeId`, nullable); users clear it on lines it doesn't apply to (e.g. goods) — the tax spec's direct-assignment philosophy, no matrix.
 - **Treaty rates ride certificates**: `withholdingCertificate` rows per supplier (country, income type, treaty rate, validity window, certificate number + file). Effective rate at posting = the treaty rate of a certificate **valid on the posting date** matching the code's income type, else the component's domestic rate. Expired certificate ⇒ automatic fallback to domestic rate — the compliance-safe default.
 - **Posting** (in `post-purchase-invoice`): AP still credits **gross**; for each withheld line the poster adds Dr AP / Cr WHT liability for `whtBase × effectiveRate` (WHT base = line net amount, exclusive of VAT). The supplier's open payable is therefore **net** — payment flows need no change. One `taxLedger` row per withheld line with new source `'Withholding'` (additive `taxLedgerSource` value), snapshotting rate, treaty flag, certificate number, authority. VOID re-posting writes reversing rows, matching the existing pattern.
-- **Returns & certificates**: a WHT return is an ordinary `taxReturn` scoped to the WHT authority — finalize stamps the `'Withholding'` ledger rows, posts settlement (Dr WHT liability / Cr `taxSettlementAccount`), and offers the draft AP remittance invoice via the authority's linked supplier. New extract: per-supplier **WHT certificate PDF** (period, income type, gross, rate, withheld) from `packages/documents`, plus a CSV authority extract.
+- **Returns & certificates**: a WHT return is an ordinary `taxReturn` scoped to the WHT authority — finalize stamps the `'Withholding'` ledger rows, posts settlement (Dr WHT liability / Cr `taxPayableAccount`; the tax spec replaced `taxSettlementAccount` with `taxPayableAccount` and `taxReceivableAccount` on 2026-10-16), and offers the draft AP remittance invoice via the authority's linked supplier. New extract: per-supplier **WHT certificate PDF** (period, income type, gross, rate, withheld) from `packages/documents`, plus a CSV authority extract.
 
 ### 2. EC Sales List — extract over `taxLedger`
 
@@ -49,6 +49,7 @@ Customers operate across Europe and the US (geography resolved in the readiness 
 
 - **Integration**: `companyIntegration` entry "HMRC MTD VAT" (the Xero/Avalara precedent): OAuth 2.0 authorization-code flow against HMRC, encrypted token storage + refresh, sandbox/production environment switch, VRN taken from the UK `taxRegistration`.
 - **Endpoints**: retrieve VAT obligations (open/fulfilled period keys), submit return, view liabilities and payments. All calls send the mandatory **fraud-prevention headers** (`Gov-Client-Connection-Method: WEB_APP_VIA_SERVER`, device/user/timezone/vendor headers assembled server-side from the session).
+- **Who files** (added 2026-10-16, tax spec grill 11): the HMRC connector submits only returns that Carbon finalizes. If Xero or QuickBooks Online is connected with sync on, Carbon does not finalize returns, and the provider files with HMRC.
 - **Digital links**: the submission payload is built **only** from the finalized `taxReturn`'s UK-layout box totals — the submit UI displays the 9 boxes read-only with a declaration checkbox; no manual entry anywhere between `taxLedger` and HMRC. `taxReturn` gains `hmrcPeriodKey` (bound when the user matches the return to an open obligation), and `taxReturnStatus` gains `'Submitted'` (additive). The HMRC receipt (`formBundleNumber`, `chargeRefNumber`, processing date) is stored on the return; submitted returns cannot be reopened.
 - **Sandbox-tested**: the full obligation→submit→receipt cycle runs against HMRC's sandbox (with its `Gov-Test-Scenario` headers) as an acceptance gate before production credentials are requested.
 

@@ -4,7 +4,7 @@
 > Author: Claude (readiness finding GAP-D2)
 > Date: 2026-07-04
 > Tracking issue: crbnos/carbon#1054
-> Related: `.ai/specs/2026-07-04-avalara-integration-foundation.md` (#1061 — credentials/client), `.ai/specs/2026-07-04-gapless-numbering-legal-series.md` (#1038 — legal series), `.ai/specs/2026-07-03-multi-jurisdiction-tax.md` (registrations, tax summary, `invoiceMessage`), `.ai/specs/2026-07-03-public-company-readiness.md` (GAP-D2, SD-2)
+> Related: `.ai/specs/2026-07-04-avalara-integration-foundation.md` (#1061 — credentials/client), `.ai/specs/2026-07-04-gapless-numbering-legal-series.md` (#1038 — legal series), `.ai/specs/2026-10-16-multi-jurisdiction-tax.md` (registrations, tax summary, `invoiceMessage`), `.ai/specs/2026-07-03-public-company-readiness.md` (GAP-D2, SD-2)
 
 ## TLDR
 
