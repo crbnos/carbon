@@ -39,7 +39,7 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
   `packages/jobs/src/invoicing/stripe-invoice-lines.test.ts`
 - **Send a posted sales invoice**: `sendPostedSalesInvoiceViaStripe`
   (`send-sales-invoice.server.ts`) is the ONE send, shared by the ERP post operation
-  (`invoicing.salesInvoice.post`, `invoicing.server.ts`) and invoice automation
+  (`postSalesInvoice`, `invoicing.server.ts`) and invoice automation
   (`sendPostedInvoiceViaStripe` in `@carbon/jobs` `src/invoicing/automate-invoice.ts`,
   the `Post and Send via Stripe` mode). The caller resolves and links the Stripe
   customer first. The mapping write is injected as `linkStripeInvoice`, so this

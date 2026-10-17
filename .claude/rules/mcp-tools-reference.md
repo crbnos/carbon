@@ -64,11 +64,11 @@ any other value export in a server file fails generation.
   The description is the summary sentence, then `@remarks`, then `@returns`.
   `@param name - text` becomes that input field's `description`, and naming a
   field the input does not have fails generation.
-- **Permission**: read off the literal `permission`. One module →
-  `{ module, actions }`, which the API gate checks. Several modules, or `{}`
-  (company membership) → `{ module: null, actions: [] }`: the gate admits any
-  caller of the company and the function's own gate decides. `"system"` and a
-  keyed permission (`{ by, rules }`) cannot be published.
+- **Permission**: read off the literal `permission` and published in the
+  manifest. One module → `{ module, actions }`; several modules, or `{}`
+  (company membership) → `{ module: null, actions: [] }`. The function's own
+  gate is the only check. `"system"` and a keyed permission (`{ by, rules }`)
+  cannot be published.
 - **Classification**: only `view` → READ; any `delete` → DESTRUCTIVE; else
   WRITE. `@mcp read` forces READ (a read gated on `update`); `@mcp destructive`
   forces DESTRUCTIVE.
@@ -97,22 +97,22 @@ dispatcher. It looks the entry up, runs its oRPC procedure with server-side
 The procedure (`api+/v1+/lib/router.server.ts`) is the same one HTTP serves:
 
 1. `traced` names the span.
-2. `gate` (`base.server.ts`) checks the manifest permission against the
-   caller's scopes, for every `authKind`: an API key's scopes, an OAuth
-   connector's user's live permissions in the token's company
-   (`scopesFromPermissions`), or a workflow owner's permissions (`"session"`).
-3. `.input(jsonSchemaInput(meta.schema))` validates against the published
+2. `.input(jsonSchemaInput(meta.schema))` validates against the published
    schema. Unknown keys pass. `callOperation` turns validation issues into
    one message naming each field (`formatValidationIssues`, capped at 8).
-4. `runServiceFn` (`service-fn.server.ts`) builds a service context from the
-   caller and calls the const. The function's own permission gate runs again
-   here. The context's client is `scopedToCompany`: every update and delete
-   on a company table also filters by the caller's company, so an id from the
+   Validation runs before the permission check, so a malformed call gets a
+   400 before a 403.
+3. `runServiceFn` (`service-fn.server.ts`) builds a service context from the
+   caller and calls the const, whose permission gate is the one check for
+   every `authKind`: an API key's scopes, an OAuth connector's user's live
+   permissions in the token's company, or a workflow owner's permissions.
+   The context's client is `scopedToCompany`: every update and delete on a
+   company table also filters by the caller's company, so an id from the
    user's other company matches nothing.
-5. A refusal (`CarbonError`) becomes an `ORPCError` with the category's code and
+4. A refusal (`CarbonError`) becomes an `ORPCError` with the category's code and
    status, and `data.category`. The message is the function's own; a throw
    inside `run` arrives as `internal` with the cause logged, not returned.
-6. `shapeHttpBody`: a list (`isListOperation`, an array response schema) goes
+5. `shapeHttpBody`: a list (`isListOperation`, an array response schema) goes
    out as `{ results, count }`, anything else as the bare value.
    `callOperation` reverses it with `unshapeHttpBody`.
 
@@ -249,9 +249,7 @@ bytes never pass through the model or the dispatch.
   not a customer's saved workflow.
 - Publish a function only when it is safe with nothing but its input. The API
   runs the gate and `run`; nothing a route does around the call.
-- A function gated on several modules publishes `module: null`, so the API
-  gate admits any member of the company and the function's own gate decides.
-  The two gates must agree for a single-module function; they are built from
-  the same literal.
+- A function gated on several modules publishes `module: null` in the
+  manifest; its own gate decides, as for every function.
 - "Shelf" was renamed to **storage unit** (`inventory_*StorageUnit*`). "Shelf
   life" (`*ShelfLife*`) is a different, current concept.

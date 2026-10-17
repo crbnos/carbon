@@ -78,16 +78,22 @@ const { client, companyId, userId } = await requirePermissions(request, {
   denial**. It also handles the `carbon-key` API-key path (rate limiting, scope checks).
 - Pass `bypassRls: true` to get `getCarbonServiceRole()` instead (only honored for `employee` role).
 - `userId` is the effective user (respects console/impersonation); `sessionUserId` is the raw session user.
+- A migrated action calls `carbon(request)` (`@carbon/api/carbon.server`) instead. It runs
+  `requirePermissions(request, {})` and the service function gets its clients from its context
+  (`ctx.asCaller.supabase`, `ctx.asSystem.supabase`, `ctx.asSystem.pg`).
 
-## Service functions
+## Service functions and building blocks
 
-DB logic lives in service files, **not** in route handlers:
+DB logic lives in module files, **not** in route handlers:
 
-- ERP: `apps/erp/app/modules/{module}/{module}.service.ts`
+- ERP: the `defineServiceFn` operations in `apps/erp/app/modules/{module}/{module}.server.ts`,
+  and the building blocks they call in `{module}.service.ts` (see `module-files.md`)
 - MES: `apps/mes/app/services/{name}.service.ts`
 
-Each function takes the **client as its first argument** and returns the raw supabase `{ data, error }`
-(it does **not** throw). The route handler inspects `error` and converts it with `flash(request, error(...))`.
+A building block takes the **client as its first argument** and returns the raw supabase
+`{ data, error }` (it does **not** throw). The service function that calls it reads `error`
+(`envelope`, `plain`, … in `@carbon/api/service-tools.server`, or `ctx.error(...)`); a legacy
+route that calls it directly converts it with `flash(request, error(...))`.
 
 ```typescript
 import type { Database } from "@carbon/database";
@@ -238,6 +244,10 @@ from its context (`ctx.company.id`, `ctx.auditUserId`), never from the input. Th
 document id is an ordinary input field.
 
 ### Route handler example
+
+`x+/purchase-order+/$orderId.line-order.tsx` still calls the building block directly (the
+legacy shape). A migrated action calls the service function instead:
+`(await carbon(request)).purchasing.updatePurchaseOrderLineOrder({ purchaseOrderId, updates })`.
 
 ```typescript
 import { getDatabaseClient } from "~/services/database.server";

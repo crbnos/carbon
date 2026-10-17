@@ -111,10 +111,10 @@ Realtime-enabled. RLS gated on `printing_*` permissions (Printing module). Clean
 - **Manual route** `apps/{erp,mes}/app/routes/x+/print.tsx` (`path.to.manualPrint` = `/x/print`):
   validates `manualPrintValidator`, calls `trigger("print-job", ...)`.
 - **Settings** `apps/erp/app/routes/x+/settings+/printing.tsx` (`path.to.printingSettings`): printers CRUD
-  + test print, per-location assignment rows, through the `settings.printerRoute.save` / `.test` /
-  `.delete` and `settings.printing.assign` operations (`apps/erp/app/modules/settings/settings.server.ts`),
+  + test print, per-location assignment rows, through the `savePrinterRoute` / `testPrinterRoute` /
+  `removePrinterRoute` and `assignPrinter` service functions (`apps/erp/app/modules/settings/settings.server.ts`),
   which invalidate the Redis cache; deleting a route clears every assignment that named it. Print jobs
-  UI: `printing.jobs.tsx` (`path.to.printingSettingsJobs`) with reprint (`settings.printJob.reprint`,
+  UI: `printing.jobs.tsx` (`path.to.printingSettingsJobs`) with reprint (`reprintPrintJob`,
   origin `reprint`) + realtime.
 - **Label file routes** (interactive download, ERP) under `apps/erp/app/routes/file+/` — e.g.
   `stock-transfer+/$id.labels[.]{pdf,zpl}.tsx` (+ `labels.server.ts` `getStockTransferLabelItems`),

@@ -192,4 +192,4 @@ it.
 - Sales orders/invoices: `salesOrderLine` carries `pricingRuleId` + `priceTrace`
   (the trace propagates from the quote through `convert`; nothing writes
   `pricingRuleId`), but invoice lines do not. Quote→order
-  conversion goes through `convertDocument` (`shared.service.ts`, ported from `convertDocument` (`shared.service.ts`, ported from the `convert` server function)) (`convertQuoteToOrder`).
+  conversion goes through `convertDocument` (`shared.service.ts`, ported from the `convert` server function) (`convertQuoteToOrder`).

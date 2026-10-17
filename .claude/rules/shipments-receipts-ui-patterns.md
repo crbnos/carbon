@@ -2,7 +2,8 @@
 paths:
   - apps/erp/app/modules/inventory/ui/{Shipments,Receipts}/**
   - apps/erp/app/routes/x+/{shipment,receipt}+/**
-  - packages/server-functions/src/{post-shipment,post-receipt,create}/**
+  - packages/server-functions/src/create/**
+  - apps/erp/app/modules/inventory/inventory.{server,service}.ts
 ---
 
 # Shipments & Receipts UI + Posting Flow
@@ -119,39 +120,39 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   expect `On Hold` rather than `Available` when the shipment's source is a
   `Sales Return Order` (see `expectedEntityStatus` in `ShipmentLines.tsx`).
 
-## Posting flow (`$id.post.tsx` → `postShipment` / `postReceipt` → server function)
+## Posting flow (`$id.post.tsx` → `api.inventory.postShipment` / `postReceipt` → posting body)
 
-The operation (`inventory.shipment.post` / `inventory.receipt.post`): evaluates storage/sales
+The operation (`postShipment` / `postReceipt` in `inventory.server.ts`): evaluates storage/sales
 rules (`@carbon/ee/rules.server`) over the relevant surfaces — a blocking rule returns
 `{ violations, ruleNames }`, which the route hands to `useRuleViolations` — optimistically sets
 `status: "Pending"`, then
-`serverFns.system({ db: ctx.asSystem.pg, companyId, userId }).invoke("post-shipment" / "post-receipt", { type: "post", id })`.
+`invokePosting(ctx, "post-shipment" / "post-receipt", { type: "post", id, postingDate }, service.postShipment / service.postReceipt)`.
 On error it reverts status to `Draft`. May then auto-print and (sales shipment, before the post)
 save a packing slip PDF through `renderPackingSlip` (`inventory/packing-slip.pdf.tsx`, the
 same renderer `file+/shipment+/$id[.]pdf.tsx` serves); receipt may call
-`update-purchased-prices` when `updateLeadTimesOnReceipt` is set.
+`updatePurchasedPrices` (`purchasing.service.ts`) when `updateLeadTimesOnReceipt` is set.
 
-`post-receipt` and `post-shipment` (`packages/server-functions/src/`) take
+`postReceipt` and `postShipment` (`inventory.service.ts`, ported from the `post-receipt` and `post-shipment` server functions) take
 `{ type: "post" | "void", {receipt,shipment}Id, postingDate? }` (the context carries `companyId` / `userId`;
 `postingDate` is read only by the rental source, and `$id.post.tsx` passes it from the modal to the operation), run
 the service-role client + Kysely `db.transaction()`, and branch on `sourceDocument`:
 
 - **post-receipt** handles `Purchase Order`, `Inbound Transfer`, `Rental Agreement` (returns each
   ticked unit through `returnRentalUnit` and moves its `fixedAsset.locationId` to the receipt's
-  location; `post-receipt/rental-agreement.ts`), and `Sales Return Order`
+  location; `returnRentalUnit` in `sales.service.ts`), and `Sales Return Order`
   (customer RMA re-entry at original outbound cost, entities to On Hold). PO path: inserts `itemLedger`
   (entry types `Positive/Negative Adjmt.` by sign), GR/IR + inventory `journalLine`s for every
   company (the journal is Provisional before the accounting cutover, Posted after it), advances PO line `quantityReceived`/`receivedComplete` and PO `status`,
   flips tracked entities to `Available` (**`On Hold` if the item has a Receipt-usage inspection
   document assignment**), and
   creates one `inspection` lot per inspected line (see `inspection-system.md`).
-  The PO and sales return journal lines are built by the pure `post-receipt/posting-lines.ts`
-  (`purchaseReceiptLineCosts` values each PO line: shipping share, invoice-first
+  The PO and sales return journal lines are built by pure builders in `inventory.service.ts`
+  (`buildPurchaseReceiptJournalLines`, `buildSalesReturnReceiptJournalLines`; `purchaseReceiptLineCosts` values each PO line: shipping share, invoice-first
   claim; a negative line books what `calculateCOGS` relieved inside the transaction);
-  the legacy backfill (`activate-accounting/legacy/receipt.ts`) calls the same builders
+  the legacy backfill (`activateAccounting`, `accounting.service.ts`) calls the same builders
   with the stored cost rows.
 - **post-shipment** handles `Rental Agreement` (puts each ticked unit On Rent on the delivery
-  date; no `itemLedger`, `costLedger` or journal; `post-shipment/rental-agreement.ts`), `Sales Order`, `Purchase Order`, `Outbound Transfer`,
+  date; no `itemLedger`, `costLedger` or journal), `Sales Order`, `Purchase Order`, `Outbound Transfer`,
   `Sales Return Order` (return-to-customer), and `Purchase Return Order` (supplier return,
   Cr Inventory / Dr GR/IR; the `create` server function seeds the shipment's tracked entities from
   `purchaseReturnOrderLineTrackedEntity`, and this path **splits** a batch when the returned
@@ -164,8 +165,8 @@ the service-role client + Kysely `db.transaction()`, and branch on `sourceDocume
   with no stock anywhere refuses the post, and the void restores each unit to the bin its posting
   used.
   The shipment journal lines (SO pairs, fixed asset sale lines, return pairs) are built
-  by the pure `post-shipment/posting-lines.ts` from facts the posting gathers; the
-  accounting cutover's legacy backfill (`activate-accounting/legacy/shipment.ts`) calls
+  by pure builders in `inventory.service.ts` (`buildSalesShipmentJournal`, `buildReturnShipmentJournal`) from facts the posting gathers; the
+  accounting cutover's legacy backfill (`activateAccounting`, `accounting.service.ts`) calls
   the same builders with the stored cost rows.
 **GL dimensions on return journals.** Every return-flow journal (post-shipment
 `Sales Return Order` + `Purchase Return Order`, post-receipt `Sales Return Order`)

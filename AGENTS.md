@@ -32,7 +32,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Never use JavaScript `Date` for parsing, formatting, or arithmetic — use `@internationalized/date` + `@carbon/utils` `formatDate` (see `.claude/rules/date-handling.md`).
 - Never expose cross-tenant data or skip `companyId` scoping.
 - Never query inside a loop (N+1) — collect the ids and make one `.in()` call, an embed, or a view (see `.claude/rules/database-patterns.md`).
-- Never chain Supabase-client writes and call it a transaction — the client has none. Use a Kysely transaction (inside a server function when apps, the API or jobs share the write), or an RPC when it must also be callable through PostgREST.
+- Never chain Supabase-client writes and call it a transaction — the client has none. Use a Kysely transaction (`ctx.transaction` inside a service function, or a building block in `{module}.service.ts` that takes `db`), or an RPC when it must also be callable through PostgREST.
 - Never construct a DB connection/pool/Kysely client inside a `{module}.service.ts` — a building block takes `db: Kysely<KyselyDatabase>` as an argument; inside a service function that handle is `ctx.asSystem.pg`. Enforced by the `no-db-client-in-service` check (`@carbon/checks`).
 - Never hand-edit generated DB types (`@carbon/database` types).
 - Never name a field, column, enum or form label "Kind" (or `*Kind`). Name what the choice decides — `revenueType` (One-time / Recurring), `billingFrequency`, `entryType`. "Kind" tells the reader nothing (see `.claude/rules/conventions-database.md`).
@@ -88,7 +88,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
 | Account settings modal (ERP, MES, starter) | `packages/account/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
-| Server functions (privileged/transactional writes shared by apps and jobs) | `packages/server-functions/AGENTS.md` |
+| Service functions, building blocks, module files, postings for jobs and ee | `.claude/rules/module-files.md` + `.claude/rules/conventions-services.md` |
+| The 10 server functions left in `packages/server-functions` (the ones the MES calls), and its `lib/` posting helpers | `packages/server-functions/AGENTS.md` |
 | Adding a Deno edge function (embedding only) | `.claude/rules/workflow-edge-function.md` |
 | Adding event handlers | `.claude/rules/workflow-event-system.md` |
 | **UI & Forms** | |

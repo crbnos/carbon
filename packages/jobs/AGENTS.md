@@ -16,7 +16,7 @@ Server-only Inngest jobs for event draining, integrations, notifications, workfl
 
 - Adding an Inngest registration or changing event-queue concurrency/wake cadence.
 - Adding a handler type; the database `handlerType` constraint and queue dispatcher must change together.
-- Adding a workflow action/operation; declare its id, input, output, and permission in `packages/workflows/src/catalog/` before implementing it in `src/workflows/actions/`.
+- Adding a workflow action/operation; declare its id, input, output, and permission in `packages/ee/src/workflows/catalog/` before implementing it in `src/workflows/actions/`.
 - Changing Ramp family confirmation, cursor, payment, or reimbursement semantics; these are replay/idempotency contracts.
 
 ## Never

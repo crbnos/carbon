@@ -39,7 +39,7 @@ what syncs follows from the statuses each path already filters on.
   The enable's "Cutover recost" journals are inserted Provisional with the source document's
   `sourceType` and are promoted with the rest.
 - **Every rebuilt legacy journal is recorded `Excluded` (`CUTOVER_REBUILT`).** The legacy
-  backfill (enable step 1a, `activate-accounting/legacy/`) and its repair
+  backfill (enable step 1a, `journalLegacyDocuments` in `accounting.service.ts`) and its repair
   (`journal-legacy-documents`) write again the journals of legacy documents dated on or after
   the cutover: invoices, memos, charges, reimbursements, payments, movements, and the
   depreciation, scrap disposal and revenue recognition runs. The reset deleted those journals
@@ -421,7 +421,7 @@ revenue, so it cannot mirror Carbon's posting. Spec:
   Rillet invoice tests. Contract invoices (drafted by `create-contract-invoices`) are ordinary
   `Service` lines with a `discountPercent`, and no mapper treats them differently. But Carbon
   posts their revenue legs to Contract Assets / Deferred Revenue with `documentType 'Contract'`
-  / `documentId` = the contract (`post-sales-invoice/contract-posting.ts`), never to Sales, so
+  / `documentId` = the contract (`planContractInvoiceLine`, `invoicing.service.ts`), never to Sales, so
   the selection caveat of rental lines below applies to them too: a reader of an invoice's
   `documentType = 'Invoice'` journal lines never sees a contract revenue leg.
   <!-- UNVERIFIED: which account each provider books a contract invoice line to remotely -->

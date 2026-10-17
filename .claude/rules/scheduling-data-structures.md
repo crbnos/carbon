@@ -70,16 +70,17 @@ Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
   `priority`, no reschedule — the board header carries a tooltip: *"Reorders dispatch
   sequence and work center only — does not reschedule. Change dates on the Dates board."*)
   and `dates.tsx` (jobs-by-due-date Kanban; drag →
-  `dates.update.tsx` writes `job.dueDate` + `priority`, **then calls
-  `notifyScheduleInputsChanged(companyId, "reorder", …)`** — which only stamps the
+  `dates.update.tsx` → `api.production.moveScheduleJob`, which writes `job.dueDate` +
+  `priority`, **then calls `notifyScheduleInputsChanged(…, "reorder", …)`** — which only stamps the
   jobs schedule-outdated; the debounced wave regenerates the whole location. There
   is no immediate single-job path). `people.tsx` is the People
   page with a segmented view switcher (`?view=`): the People **board** (manning
   board: drag employees onto work-center columns per date; Unassigned column
   is `position: sticky` — needs `min-w-max` on the shared `BoardContainer`
   row and `MeasuringStrategy.Always` on the DndContext; mutations via
-  `people.update.tsx`, which fires
-  `notifyScheduleInputsChanged(companyId, "people", ..., workCenterId)` — a MOVE
+  `people.update.tsx`, which calls one people service function per `intent`
+  (`assignPerson`, `movePerson`, `markPersonAbsentRange`, … in `production.server.ts`);
+  each fires `notifyScheduleInputsChanged(…, "people", …, workCenterId)` — a MOVE
   notifies BOTH the destination and the source work center (via
   `movePeopleAssignment`'s `previousWorkCenterId`), so the station the person left
   re-plans too instead of keeping a stale booking), a
@@ -110,7 +111,7 @@ Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
   `PeopleColumn` (extracted from `PeopleBoard`), with the shift-hours/time ladders
   shared via `peopleShared.ts`; the Capacity view's demand/scheduled buckets are
   computed server-side by `buildPeopleCapacityBuckets`
-  (`modules/production/peopleCapacity.server.ts`).
+  (`modules/production/production.service.ts`).
 - **MES display** (`apps/mes/app/routes/x+/operations.tsx`): the "Schedule" page is
   a **Kanban** (columns = work centers, cards = operations sorted by `priority`),
   not a Gantt. Read-only re display; operators execute via `operation.$operationId.tsx`.
@@ -234,14 +235,12 @@ filter). The trigger is the one chokepoint every terminal path funnels through
 Completed); SECURITY DEFINER because a cancel only holds `production_update` while
 the DELETE policy needs `production_delete`.
 
-Other whole-location regen callers now run `runLocationSchedule(...)` IN-PROCESS
+Other whole-location regen callers run `runLocationSchedule(...)` IN-PROCESS
 (no edge invoke): `recalculateJobOperationDependencies` (`production.service.ts`,
-resolves the job's `locationId` first — it dynamic-imports `@carbon/planning`
-+ `@carbon/database/client` (via `getSchedulingDb`) and uses a lazy Node pool, because
-`production.service.ts` is also client-bundled and must not STATICALLY pull `pg`/`.server`
-code), `recalculate.ts`, `kanban.$id.tsx`, and `job/$jobId.status.tsx` (the last two are
-route actions, which CAN import `@carbon/planning` + `~/services/database.server`
-directly since React Router strips their server code from the client bundle). The
+resolves the job's `locationId` first, takes the caller's `db` handle and
+dynamic-imports `@carbon/planning`), `releaseJobs` (`production.server.ts`, once per
+location after every status flip), `scanKanban` (`inventory.server.ts`, a Make card's
+auto-release), `api+/schedule.ts`, and the jobs task `tasks/recalculate.ts`. The
 expedite what-if uses `runExpediteWhatIf`. `reschedule` (`packages/server-functions/src/reschedule/`)
 is a separate per-job backward re-plan, not a whole-location regen.
 
@@ -421,7 +420,7 @@ branch (reserve the pinned span, skip placement) was REMOVED with the dual-dates
 split, so a pinned op's `startDate`/`projectedCompletionAt` are re-projected every
 regen and may differ from its pin. The one exception is a pinned OUTSIDE-PROCESSING
 op, which skips placement and keeps its stored window (successors chain after the
-pinned end). Pins are set via `updateJobOperationDueDate` (`production.service.ts`,
+pinned end). Pins are set via `setJobOperationDueDate` (`production.server.ts`,
 sets `manuallyScheduled`) from `OperationDueDatePicker` on the BOP.
 
 ## Conflict detection

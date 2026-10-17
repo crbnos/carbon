@@ -35,8 +35,8 @@ Master data for all item types (Parts, Materials, Tools, Consumables, Services),
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/erp typecheck
-pnpm --filter @carbon/erp test
+pnpm exec turbo run typecheck --filter=erp --concurrency=1   # the package is "erp", not "@carbon/erp"
+pnpm --filter erp test
 ```
 
 ## Key Data Model
@@ -85,8 +85,8 @@ Each is a `defineServiceFn` const in `items.server.ts`. The route calls it as `a
 - `updateItemManufacturing` and `updateItemPlanning` (the four item types' planning tabs) save, then re-plan the item (`replanAfterItemChange`, `production.server.ts`); planning refuses a responsible employee who is not an active employee.
 - `setItemSupersession` (the part's own supersession), `addItemPredecessor` (written on the predecessor). Both return a loop as `rule`, which the planning route shows as a field error.
 - `createSupplierPart`, `updateSupplierPart` (with the drawer's price breaks, replaced in one transaction).
-- `copyMethod` (Get Method and Save Method, behind `checkRevisionLock`), `createMethodVersion`, `syncOnshapeMethod` (the Onshape panel's Sync, `api+/integrations.onshape.sync.ts`: `syncMakeMethod` (`items.service.ts`, ported from the `sync` server function) rewrites the bill of materials, then the item is mapped to its Onshape document). `deleteMethodOperation` (behind `checkRevisionLock`). `recalculateItemCost` (the costing card's Recalculate).
-- `createChangeNotice` (with the picked parts), `createChangeNoticeForItem`, `setChangeNoticeStatus` (the approval gate, the release through `applyChangeNotice`, the stage notifications), `decideChangeNoticeApproval`.
+- `copyMethod` (Get Method and Save Method, behind `checkRevisionLock`), `createMethodVersion`, `syncOnshapeMethod` (the Onshape panel's Sync, `api+/integrations.onshape.sync.ts`: `syncMakeMethod` (`items.service.ts`, ported from the `sync` server function) rewrites the bill of materials, then the item is mapped to its Onshape document). `deleteMethodOperation` (behind `checkRevisionLock`). Every other published bill of materials / process write holds the same lock its `methods+/` route checks: material, operation, parameter and tool create / update / delete and reorder (`checkRevisionLocks` checks both the row's own method and the one an update names; `checkRowMethodLocks` every method a reorder touches), `activateMethodVersion`; step, slide and step-link writes also need a Draft method (`methodStepRefusal`). `recalculateItemCost` (the costing card's Recalculate).
+- `createChangeNotice` (with the picked parts), `createChangeNoticeForItem`, `setChangeNoticeStatus` (the approval gate, the release through `applyChangeNotice`, the stage notifications), `decideChangeNoticeApproval`. The notice and child writes (`updateChangeNotice`, the affected-item and action-task operations) hold `requireChangeNoticeEditable` themselves: engineering scope for affected items and the narrative, workflow scope for action tasks and header fields; a child row addressed by its own id resolves its notice through `requireChangeNoticeChildEditable`.
 
 The building blocks they call are in `items.service.ts` (`upsertPart`, `upsertItemPlanning`, `upsertItemManufacturing`, `upsertItemSupersession`, `upsertSupplierPart`, `copyItem`, `copyMakeMethod`, `upsertMakeMethodVersion`, `insertChangeNotice`, `updateChangeNoticeStatus`, `cascadeItemTrackingType`, `updateItemMethodAndSourcing`). A building block is never a tool. Import other modules' code from the file that defines it (`*.service.ts`, `*.models.ts`).
 

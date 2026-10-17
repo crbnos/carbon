@@ -132,7 +132,7 @@ Make methods are independently **versioned** (`20250603011801_make-method-versio
   = `Draft | Active | Archived`. Unique `(itemId, version)`.
 - View `activeMakeMethods` ranks per `itemId`, preferring `status='Active'` then
   `version DESC` (excludes `Archived`) — picks the one current method per item.
-- `activateMethodVersion` (`items.service.ts`) calls `convertDocument` (`shared.service.ts`, ported from `convertDocument` (`shared.service.ts`, ported from the `convert` server function))
+- `activateMethodVersion` (`items.service.ts`) calls `convertDocument` (`shared.service.ts`, ported from the `convert` server function)
   (`type: "methodVersionToActive"`). Route: `x+/items+/methods+/versions.activate.$id.tsx`.
 - `jobMakeMethod.version` / `quoteMakeMethod.version` denormalize the method version
   at job/quote creation. Don't conflate method `version` (per-item recipe) with item

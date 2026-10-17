@@ -67,10 +67,10 @@ UPDATE → `quality_update`; DELETE → `quality_delete`.
   There is no combined score anywhere — UI shows the two ratings side by side.
 - Status is a free-set enum (`Open` → `In Review` → `Mitigating` → `Closed`/`Accepted`);
   `updateRiskStatus(client, riskId, status)` patches it. No state-machine enforcement.
-- `quality.risk.create` (`createRisk`, `quality.server.ts`; route `risks.new.tsx`
+- `createRisk` (`quality.server.ts`; route `risks.new.tsx`
   parses `severity`/`likelihood` from strings to ints) defaults `assignee` to the
   current user and fires a `notify` job (`NotificationEvent.RiskAssignment`) when
-  an assignee is set. `quality.risk.update` (`risks.$id.tsx`) notifies a new
+  an assignee is set. `updateRisk` (`risks.$id.tsx`) notifies a new
   assignee. `upsertRisk` is the bare row write and is not published.
 
 ## Code map (verified)
@@ -88,9 +88,9 @@ UPDATE → `quality_update`; DELETE → `quality_delete`.
   filtered by `source` + `sourceId`), `RiskRating.tsx`, `RiskStatus.tsx`,
   `RiskType.tsx`.
 - Routes `apps/erp/app/routes/x+/quality+/`: `risks.tsx` (list, `view: "quality"`),
-  `risks.new.tsx` (`quality.risk.create`: company membership, and the table's
+  `risks.new.tsx` (`createRisk`: company membership, and the table's
   employee-only INSERT policy — **not** `create: "quality"`; not published),
-  `risks.$id.tsx` (loader `view`, `quality.risk.update`: `update: "quality"`),
+  `risks.$id.tsx` (loader `view`, `updateRisk`: `update: "quality"`),
   `risks.delete.$id.tsx` (`delete: "quality"`).
 - Path helpers (`apps/erp/app/utils/path.ts`): `risks`, `risk(id)`, `newRisk`,
   `deleteRisk(id)`, plus `customerRisks(id)` / `supplierRisks(id)`.

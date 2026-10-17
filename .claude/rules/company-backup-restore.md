@@ -6,7 +6,7 @@ paths:
   - "packages/jobs/src/inngest/functions/tasks/company-import.ts"
   - "packages/jobs/src/inngest/functions/tasks/company-restore.ts"
   - "apps/erp/app/modules/settings/backups.service.ts"
-  - "apps/erp/app/modules/settings/backups.server.ts"
+  - "apps/erp/app/modules/settings/settings.service.ts"
   - "apps/erp/app/modules/settings/ui/Backups/**"
   - "apps/erp/app/routes/x+/settings+/backups.tsx"
   - "apps/erp/app/routes/api+/settings.backup-summary.ts"
@@ -28,13 +28,13 @@ is the replacement. Reader-facing docs: `docs/content/docs/platform/backups.mdx`
 User-facing rules of the feature: backups require `settings` update permission
 (no owner gate — the old `group.ownerId === userId` check was removed; the route
 sends `carbon/company-export` itself via `exportCompanyBackup` in
-`backups.server.ts`), exclude secrets, and a restore is
+`settings.service.ts`), exclude secrets, and a restore is
 reversible via an auto-snapshot.
 
 **Backups are a Business/Enterprise feature** (`BACKUPS` in `FEATURE_PLANS`), with
 an internal-staff / local-dev escape hatch. The authoritative gate is
 `canManageBackups(client, companyId, email)`
-(`apps/erp/app/modules/settings/backups.server.ts`) =
+(`apps/erp/app/modules/settings/settings.service.ts`) =
 `canAccessBackups(email) || companyHasFeature(client, companyId, { feature: "BACKUPS" })`.
 `canAccessBackups(email)` (`apps/erp/app/utils/backups.ts`) = `IS_LOCAL_DEV ||
 isInternalEmail(email)` stays a pure browser-safe predicate — the escape hatch, and the
@@ -292,7 +292,7 @@ downstream mechanism can do no more than say so.
 
 That is why there is **no stored verdict and no re-check job**: the Backups
 loader computes `reportBackupCompatibility` against the LIVE schema on every
-load (`getCompanyBackups` in `backups.server.ts`), so the badge cannot go
+load (`getCompanyBackups` in `settings.service.ts`), so the badge cannot go
 stale, and the hard refusal is `assertBackupImportable`, which runs against
 the live schema inside `company-restore.ts`. (Two earlier designs died here:
 a nightly re-check that alerted nobody and repaired nothing, and an
@@ -537,14 +537,15 @@ cleanup.
 
 ## ERP layer
 
-- `backups.service.ts` — per-company bucket ops: `exportCompanyBackup`,
+- `backups.service.ts` — per-company bucket ops:
   `listCompanyBackupFolders` (`from(companyId).list("exports")` folders, paged
   with a hard page cap; a folder is "ready" once `manifest.json` exists, else
   "pending"; returns each parsed `Manifest` for the server wrapper),
   `deleteCompanyBackup` (removes the whole `exports/<name>/` folder),
   `getCompanyRestoreRuns` (restore markers), `getCompanyExportRun` (the export
   marker: `status: "running" | "failed"`, `progress`, `startedAt`, `error`).
-- `backups.server.ts` — server-only. `getCompanyBackups` is the loader's list:
+- `settings.service.ts` (server-only) holds the rest. `canManageBackups` is the gate.
+  `exportCompanyBackup` sends `carbon/company-export`. `getCompanyBackups` is the loader's list:
   it reads the live catalog ONCE per load (`getCompanyTableCatalog` over
   `getDatabaseClient()`, via `@carbon/jobs/backups`), diffs every listed
   manifest with `reportBackupCompatibility`, attaches

@@ -2368,9 +2368,12 @@ Consumers across `@carbon/jobs`, `apps/erp` and tests needed the registry lookup
 the FULL server env at import time. So a plain `import … from "@carbon/ee"`
 fails in four distinct ways, each with a different symptom:
 
-1. **In a `*.service.ts`** — these are re-exported through the module barrel that
-   client components import, so they are browser-bundled. The build fails with
-   "server-only module referenced by client". (`accounting.service.ts` cannot use
+1. **In a `*.service.ts`** — these were re-exported through the module barrel that
+   client components import, so they were browser-bundled. The build fails with
+   "server-only module referenced by client". (The barrels are gone since
+   2026-10-16; a service file reaches the browser now only through a route
+   component that uses one of its values — see "A server-only value in a route
+   component, or a dropped side-effect import, fails only the production build".) (`accounting.service.ts` cannot use
    the registry at all; its id list stays hard-coded with a comment saying why.)
 2. **In a test** — `Error: INNGEST_SIGNING_KEY is not set` at import. Hit three
    times: a test importing the barrel directly, a test importing a module that
@@ -3749,3 +3752,16 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** copy a function's body from its NEWEST definition (`grep -l "FUNCTION <name>" migrations | tail -1`), then diff your body against that one before writing the migration. The `function-redefinition-keeps-changes` check fails a redefinition that drops lines its predecessor added. Run the SQL tests that call the function (`scripts/run-local-accounting-check.ts psql -f …`).
 
 **Applies to:** any migration with `CREATE OR REPLACE FUNCTION` on a function defined more than once, especially the long posting functions (`complete_job_to_inventory`, `backflush_job_materials`).
+
+## A server-only value in a route component, or a dropped side-effect import, fails only the production build
+
+**Context:** The service-function migration (2026-10-16) made every `<module>.service.ts` server-only: it may import server-only packages (`@carbon/auth/auth.server`, `@carbon/ee/*.server`, `@carbon/jobs`).
+
+**Problem:** Two mistakes passed typecheck, the tests and the dev server, and broke only `react-router build`:
+
+1. A route component used a value from a `.service.ts` (`LOCK_PERIOD_TASK_NAME` in a close-period component). React Router strips a route's loader and action from the client build, not its component, so the service file and its server-only imports entered the browser graph and the build failed.
+2. A bare side-effect import (`import "./modules/carbon.server"`, `import "./zod.client"`) in a package whose `package.json` sets `"sideEffects": false`, or does not list the file. The production bundler dropped the import, so every `carbon()` call threw in production and `z.config({ jitless: true })` never ran. The dev server does not tree-shake, so nothing showed it locally.
+
+**Rule:** A value the browser uses goes in `<module>.utils.ts` (or `models.ts` / `types.ts`), never in `.service.ts` or `.server.ts`. A file imported only for its side effects is listed in its package's `sideEffects` array. The `no-server-code-in-client` check (ERP components, hooks, `ui/`, client-safe module files and the browser half of routes) and the `side-effect-import-declared` check enforce both. Run `pnpm --filter erp build` before you call a change to imports or module files done.
+
+**Applies to:** ERP and MES modules and routes; every `package.json` that sets `sideEffects`.

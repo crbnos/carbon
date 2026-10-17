@@ -253,7 +253,7 @@ parent is an `errors` row. New rows get a DB-generated `xid()` id.
 ## Route (`apps/erp/app/routes/x+/shared+/import.$tableId.tsx`)
 
 Action only (no loader). It validates the form (`filePath`, `enumMappings` as JSON;
-every other field is a column mapping) and calls `shared.csvImport.run`
+every other field is a column mapping) and calls `importCsvFile` (`shared.server.ts`)
 (`importCsvFile` in `apps/erp/app/modules/shared/shared.server.ts`), which:
 1. Refuses a `table` that is not a key of `importPermissions`.
 2. Gates on `{ by: "table" }`: `update` on `importPermissions[table]`, plus `create` on
@@ -267,7 +267,7 @@ every other field is a column mapping) and calls `shared.csvImport.run`
    result's `data`.
 
 The lookup values an import creates on the fly (`api+/csv+/create-lookup.tsx`) are
-`shared.csvImport.createLookups`, gated on `create` of the lookup's module.
+`createImportLookups` (`shared.server.ts`), gated on `create` of the lookup's module.
 
 `importCsv` lives in `apps/erp/app/modules/shared/shared.service.ts` and is a thin wrapper:
 it calls `invokePosting({ client, db, companyId, userId }, "import-csv", args,

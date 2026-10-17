@@ -50,7 +50,7 @@ siblings in this directory — grep `.claude/rules/` by topic.
 3. **Audit**: include `createdBy`, `createdAt`, `updatedBy`, `updatedAt`.
 4. **RLS**: standardized policy names `SELECT` / `INSERT` / `UPDATE` / `DELETE`.
 5. **Forms**: `ValidatedForm` + zod validator + route action; validate with
-   `validator(schema).validate(formData)`, not `schema.parse()`.
+   `validator(schema).request(args, …)`, not `schema.parse()`.
 6. **Transactions**: Kysely for multi-row writes, not `Promise.all`.
 7. **Route actions**: validate, then one call through `carbon(request)`; return
    the result to a fetcher, or `respond(request, result).redirect(to, { message })`.

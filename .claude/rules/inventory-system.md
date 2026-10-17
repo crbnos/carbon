@@ -13,10 +13,12 @@ units, plus serial/batch/lot tracking, receipts/shipments, transfers, and pickin
 
 All inventory service code lives in a single module: `apps/erp/app/modules/inventory/`
 
-- `inventory.service.ts` — the one service file (~90+ exported functions, no `service/` subfolder)
+- `inventory.server.ts` — the module's `defineServiceFn` operations (see `.claude/rules/module-files.md`)
+- `inventory.service.ts` — the building blocks, including the traceability graph
+  (`fetchLineageSubgraph`, `fetchJobScopedLineage`, `toGraphData`)
 - `inventory.models.ts` — Zod validators + exported enums/helpers
-- `lineage.server.ts` — traceability/genealogy graph computation
-- `types.ts`, `index.ts`
+- `inventory.utils.ts` — browser-safe helpers
+- `supersession-pick.ts`, `types.ts`
 - `ui/` — feature folders: `Inventory/`, `Receipts/`, `Shipments/`, `StockTransfers/`,
   `WarehouseTransfers/`, `StorageUnits/`, `StorageTypes/`, `Kanbans/`, `PickingLists/`,
   `Batches/`, `ShippingMethods/`, `Traceability/`
@@ -50,7 +52,7 @@ Key service functions (verified):
   Pinned by `lib/cost-layer-order.test.ts` and the database test
   `lib/calculate-cogs.test.ts`.
   **Serial unit cost and Recost.** `previewSerialUnitCosts` (`inventory.service.ts`,
-  ported from `previewSerialUnitCosts` (`inventory.service.ts`, ported from the `preview-serial-unit-costs` server function); `{ itemId,
+  ported from the `preview-serial-unit-costs` server function; `{ itemId,
   locationId? }`, `view: accounting`) values every on-hand serial of an item
   with the pure `serialUnitCost` (`@carbon/server-functions/lib/serial-unit-cost`): calculateCOGS's
   arithmetic for a quantity of one (own layer, then unstamped, with price
@@ -95,7 +97,7 @@ Key service functions (verified):
   A tag is only written when the entity type has an **active** `dimension` row — a scrap
   posting's ScrapReason `extraDimension` is dropped in `post-adjustment.ts` if the dimension
   was deleted/deactivated for that company group.
-- `correctStockMovement` — wraps the **`postStockMovementCorrection`** (`inventory.service.ts`, ported from `postStockMovementCorrection` (`inventory.service.ts`, ported from `postStockMovementCorrection` (`inventory.service.ts`, ported from the `correct-stock-movement` server function))): fixes any
+- `correctStockMovement` — wraps the **`postStockMovementCorrection`** (`inventory.service.ts`, ported from the `correct-stock-movement` server function): fixes any
   posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
   correction root via `itemLedger.correctionOfItemLedgerId`, carrying the ORIGINAL's
   `postingDate` and posting its journal: after the accounting cutover into the period containing

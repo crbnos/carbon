@@ -176,7 +176,7 @@ RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/c
   station is its operation's `workCenterId`; **all receipts are one station**.
   No Gauge column on the no-document "Overall result" row.
 
-## Receipt → inspection flow (`post-receipt/index.ts`, server function)
+## Receipt → inspection flow (`postReceipt`, `inventory.service.ts`)
 
 `apps/erp/app/modules/inventory/inventory.service.ts`:
 1. Loads items (`id, itemTrackingType, replenishmentSystem`), company `samplingStandard`,

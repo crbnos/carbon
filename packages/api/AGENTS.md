@@ -52,18 +52,19 @@ pnpm run check:manifest        # digest current?
 |---------|----------|
 | `.` (index) | Manifest types: `ManifestEntry`, `ToolPermission`, `Classification`, `PermissionAction`, and `SERVICE_RULE_ERROR_CODE` (re-exports `./schema` too). Client-safe |
 | `./schema` | `jsonSchema()` pass-through Standard Schema wrapper, `CarbonJsonSchemaConverter` (OpenAPI generator plugin), `CARBON_VENDOR` |
-| `./service-fn.server` | `defineServiceFn`, `CarbonError`, `ERROR_STATUS`, `createServiceContext`, `ServiceContext`, `Result`, `RouteResult`, `toResult` |
+| `./service-fn.server` | `defineServiceFn`, `CarbonError`, `ERROR_STATUS`, `createServiceContext`, `ServiceContext`, `Result`, `RouteResult`, `toResult`. `ctx.transaction` rolls back on a returned refusal — a bare `CarbonError` or a composed service function's `{ data, error }` — and returns it as the error. A failure log names the input's keys, never its values |
 | `./carbon.server` | What a route calls: `carbon(request)` (the operations bound to the caller, typed through the app's `Register` augmentation), `respond(request, result).redirect(to, { message, onError })`, `registerCarbon` (the app's router and context, called once from `entry.server.tsx` via `apps/erp/app/modules/carbon.server.ts`), `bindServiceFns` / `Api` |
-| `./permissions` | `hasPermissions`, `permissionsFromClaims`, `resolvePermissions` and the `Permissions` / `PermissionRule` / `ModulePermissions` types. Pure; the `defineServiceFn` gate and `@carbon/server-functions`' `defineServerFn` both check by these rules |
+| `./permissions` | `hasPermissions`, `permissionsFromClaims`, `resolvePermissions` and the `Permissions` / `PermissionRule` / `ModulePermissions` types. A keyed rule refuses a value with no rule of its own (an inherited key included) as `InvalidInputError` (400) naming the field; the `defineServiceFn` gate and `@carbon/server-functions`' `defineServerFn` both check by these rules |
 | `./errors` | `ServerFnError`, `InvalidInputError`, `ForbiddenError`, `NotFoundError`, `isDataLayerError`, `toServerFnError` — the server functions' error classes, until that package is dissolved |
-| `./postings.server` | The postings `@carbon/jobs` and `@carbon/ee` call, which cannot import the app: `PostingContract` (each posting's input, and the result its callers read), `registerPostings` (the app's implementations, from `apps/erp/app/modules/postings.server.ts` through `carbon.server.ts`), `posting` / `postingOrThrow`. A posting answers `{ data, error }` with the `ServerFnError` it refused with, as `serverFns.invoke` did. A new caller adds its posting to the contract; the ERP's registration then fails to typecheck until it implements it |
-| `./service-tools.server` | What a single-function leaf does around the service it calls: `stamp` (the caller's identity on the payload) and the result readers `envelope`, `paged`, `plain`, `envelopes`, `flag`; for a body ported from `@carbon/server-functions`, `settle` (a throw becomes the `CarbonError` `defineServerFn` would have made) and `attempt` (the `{ data, error }` with the `ServerFnError` itself, as `invoke` returned it) |
+| `./postings.server` | The postings `@carbon/jobs` and `@carbon/ee` call, which cannot import the app: `PostingContract` (each posting's input, and the result its callers read), `registerPostings` (the app's implementations, from `apps/erp/app/modules/postings.server.ts` through `carbon.server.ts`), `posting` / `postingOrThrow`. A posting answers `{ data, error }` with the `ServerFnError` it refused with, as `serverFns.invoke` did. Handles without `companyGroupId` have it read from the company. A new caller adds its posting to the contract; the ERP's registration then fails to typecheck until it implements it |
+| `./service-tools.server` | What a single-function leaf does around the service it calls: `stamp` (the caller's identity on the payload) and the result readers `envelope`, `paged`, `plain`, `envelopes`, `flag`; for a body ported from `@carbon/server-functions`, `settle` (a throw becomes the `CarbonError` `defineServerFn` would have made) and `attempt` (the `{ data, error }` with the `ServerFnError` itself, as `invoke` returned it). A programming error (`TypeError` & co.) or a thrown status of 500 or more is `internal` with its message withheld and logged; a plain `Error` stays the caller's refusal with its message |
 
 ## Consumers
 
-- `apps/erp/app/routes/api+/v1+/lib/` — the oRPC router and gate read
-  `ManifestEntry` and build procedures with `jsonSchemaInput()` / `jsonSchema()`;
-  `service-fn.server.ts` calls the operation through `serviceFn.path`.
+- `apps/erp/app/routes/api+/v1+/lib/` — the oRPC router reads `ManifestEntry`
+  and builds procedures with `jsonSchemaInput()` / `jsonSchema()`;
+  `service-fn.server.ts` calls the operation through `serviceFn.path`, whose
+  own gate checks the caller (there is no separate scope gate).
 - `scripts/lib/service-fn-metadata.ts` + `scripts/lib/manifest-digest.ts` — the
   generator emits entries in this shape and hashes them for the digest.
 

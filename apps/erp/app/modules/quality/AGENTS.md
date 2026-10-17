@@ -35,8 +35,8 @@ Non-conformances (issues/NCRs), corrective/preventive actions (CAPAs), gauge man
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/erp typecheck
-pnpm --filter @carbon/erp test
+pnpm exec turbo run typecheck --filter=erp --concurrency=1   # the package is "erp", not "@carbon/erp"
+pnpm --filter erp test
 ```
 
 ## Key Data Model
@@ -90,7 +90,7 @@ The building blocks they call (`updateIssueStatus`, `updateIssueTaskStatus`, `up
 - `getInspection` / `getInspections` (status + source filters) / `getInspectionTrackedEntities` — inspections
 - `getInspectionSamplingPlans` / `getInspectionMeasurements` — per-inspection feature plans and grid readings
 - `getItemInspectionDocumentAssignments` / `upsertItemInspectionDocumentAssignment` — Receipt-usage document assignment
-- `upsertInspectionMeasurement` / `reconcileInspectionSamplingPlans` / `changeInspectionDocument` (`quality.service.ts`) — measurement recording, lazy plan resolution, document swap; `valuateMeasurement` (pure valuation) comes from `@carbon/database/quality`. The transactional engine lives in `@carbon/database/quality` (shared with the MES inspection routes); `quality.service.ts` curries the ERP Kysely singleton into those engine calls, and also holds the plan editor's server-only helpers (legacy save-payload translation, the balloon-region vision call)
+- `upsertInspectionMeasurement` / `reconcileInspectionSamplingPlans` / `changeInspectionDocument` (`quality.service.ts`) — measurement recording, lazy plan resolution, document swap; `valuateMeasurement` (pure valuation) comes from `@carbon/database/quality`. The transactional engine lives in `@carbon/database/quality` (shared with the MES inspection routes); the `quality.service.ts` wrappers take the caller's `db` (a route's `getDatabaseClient()`, a service function's `ctx.asSystem.pg`) and pass it to those engine calls, and also holds the plan editor's server-only helpers (legacy save-payload translation, the balloon-region vision call)
 - `getGauge` / `getGauges` / `getGaugeCalibrationRecords` — gauge management
 - `getRisk` / `getRisks` / `upsertRisk` / `updateRiskStatus` — risk register (`upsertRisk` is the bare write under `createRisk` / `updateRisk`)
 - `getQualityDocument` / `getQualityDocumentSteps` — versioned SOPs

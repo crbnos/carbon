@@ -12,25 +12,26 @@
 > need no ported code stay in `src/<name>/*-test-fixture.ts`; the rest are in
 > `apps/erp/test/database/fixtures/`.
 
-Server functions: privileged, multi-step writes shared by the ERP, MES, the API and
-Inngest jobs (posting documents, issuing material, converting quotes, importing CSVs).
-One directory per function (`src/<name>/index.ts`), each built with `defineServerFn`.
+Server functions: privileged, multi-step writes the MES shares with the ERP and jobs
+(issuing material, picking, production and maintenance events, recalculating and
+rescheduling jobs). One directory per function (`src/<name>/index.ts`), each built with
+`defineServerFn`. `src/lib/` holds the posting helpers both these functions and the
+ported ERP building blocks use.
 
-A function belongs here when it bypasses RLS (Kysely or the service role, so it must
-authorize its own caller), writes across several tables in one transaction, or is
-shared by more than one app or by jobs. Simple CRUD stays an app service; pure logic
-goes to `@carbon/utils` / `@carbon/database`.
+Add no new function here. A new privileged write is a `defineServiceFn` in its ERP
+module (`.claude/rules/module-files.md`); pure logic goes to `@carbon/utils` /
+`@carbon/database`.
 
 ## Shape
 
 ```ts
-const postCharge = defineServerFn({
-  name: "post-charge",                       // the directory name
-  input: postChargeInput,                    // zod; exported alongside
-  permissions: { update: "invoicing" },      // or "system", or { by: "type", rules: {...} }
-  async run({ db, companyId, userId }, { type, chargeId }) { ... }
+const triggerRework = defineServerFn({
+  name: "trigger-rework",                    // the directory name
+  input: triggerReworkInput,                 // zod; exported alongside
+  permissions: { update: "production" },     // or "system", or { by: "type", rules: {...} }
+  async run(ctx, input) { ... }
 });
-export default postCharge;                   // the function is its module's default export
+export default triggerRework;                // the function is its module's default export
 ```
 
 Callers go through `serverFns`, the package root's one runtime export, by the function's name:
@@ -38,9 +39,9 @@ Callers go through `serverFns`, the package root's one runtime export, by the fu
 ```ts
 import { serverFns } from "@carbon/server-functions";
 
-await serverFns.system({ db, companyId, userId }).invoke("post-charge", input);
-await serverFns.as({ client, db, companyId, userId }).invoke("post-charge", input);
-await serverFns.system(fields).invokeOrThrow("post-charge", input); // throws ServerFnError
+await serverFns.system({ db, companyId, userId }).invoke("trigger-rework", input);
+await serverFns.as({ client, db, companyId, userId }).invoke("trigger-rework", input);
+await serverFns.system(fields).invokeOrThrow("recalculate", input); // throws ServerFnError
 ```
 
 The name, input and result are typed from the function's own definition. `system(...)`
@@ -74,9 +75,11 @@ resets after a failed build, so one bad start does not poison later calls.
   field of the input (a value with no rule is refused). `server-fn-authorizes-caller`
   (`@carbon/checks`) fails an entry point not built with it.
 - MUST review `src/__snapshots__/permissions-manifest.test.ts.snap` when changing a
-  function's `permissions`: `permissions-manifest.test.ts` snapshots every function's
-  declared rule (exposed as `fn.permissions`), so a change to who may run a function is a
-  snapshot diff. Update it with `vitest -u` only after reviewing that diff.
+  function's `permissions`: `permissions-manifest.test.ts` snapshots the declared rule
+  (exposed as `fn.permissions`) of each of the 10 functions left here, so a change to who
+  may run one is a snapshot diff. Update it with `vitest -u` only after reviewing that
+  diff. A ported function's rule is its `<name>Permission` constant in the ERP, pinned by
+  `apps/erp/test/posting-permissions.test.ts`.
 - MUST build contexts with `ServerFnContext.system(...)`, `.user(...)` or
   `.fromClient(client, ...)` — never an object literal. `db` comes from
   `getDatabaseClient()` (ERP/MES `~/services/database.server`) or
@@ -107,8 +110,11 @@ resets after a failed build, so one bad start does not poison later calls.
   schema cannot express, `ServerFnError(message, status, body)` otherwise. A data-layer
   failure surfaces with an empty `message`, so callers keep their fallback copy
   (`error.message || "…"`).
-- MUST be called through `serverFns` from apps, jobs and `packages/ee`, never by
-  importing the function's module. The package root exports only `serverFns` and types,
+- MUST call one of the 10 functions through `serverFns` (the MES, the ERP's service
+  files, `packages/jobs` `tasks/recalculate.ts`, `packages/ee/src/oee`), never by
+  importing its module. A ported function is not in the registry: the ERP runs its
+  building block with `invokePosting`, jobs and ee with `posting` / `postingOrThrow`
+  (`@carbon/api/postings.server`). The package root exports only `serverFns` and types,
   and `invoke.ts` imports only types at module scope, so a browser-bundled
   `*.service.ts` can import the root statically. Never add a runtime export to
   `src/index.ts`: `defineServerFn`, the context and the error classes load `@carbon/env`
@@ -196,8 +202,8 @@ exists, but no code reads it.
     correct it instead."). The date is `postingDate`, else `transactionDate` or
     `reimbursementDate`, as the posting uses.
   - A payment or memo void builds the document's posting again
-    (`rebuildPaymentJournal` in `src/post-payment/rebuild-journal.ts`,
-    `rebuildMemoJournal` in `src/post-memo/rebuild-journal.ts`) and posts it negated,
+    (`rebuildPaymentJournal` and `rebuildMemoJournal`, both in the ERP's
+    `invoicing.service.ts`) and posts it negated,
     dated today, so it nets the opening lines. `assertNoMigrationClearing` refuses a
     rebuilt line on the Migration Clearing account. A customer credit memo that credits
     a contract or a rental agreement throws `MEMO_CREDIT_VOID_BEFORE_CUTOVER_ERROR`
@@ -222,9 +228,10 @@ exists, but no code reads it.
 
 ### `activate-accounting`
 
-The one-way enable (`src/activate-accounting/index.ts`, input `{ cutoverDate,
-confirmation }`, permission `update: accounting`). The wizard's Enable step calls it
-through `serverFns.as(...)`. It runs in one Kysely transaction. The steps use the
+The one-way enable (`activateAccounting` in `apps/erp/app/modules/accounting/accounting.service.ts`,
+input `{ cutoverDate, confirmation }`, permission `update: accounting`). The wizard's Enable
+step calls the service function `enableAccountingCutover` (`accounting.server.ts`), which
+runs it through `invokePosting`. It runs in one Kysely transaction. The steps use the
 spec's section 5 numbering, as the code comments do:
 
 1. Locks `companySettings` `FOR UPDATE`. Refuses when the company already has a cutover
@@ -235,7 +242,7 @@ spec's section 5 numbering, as the code comments do:
    (`isMigrationClearingZero`). The `account-defaults` check refuses an empty
    `migrationClearingAccount`, and one that is not an active Equity posting account.
    1a. Writes the journals of the legacy documents (`journalLegacyDocuments`, below).
-2. Inventory reset (`resetAndRecostInventory`, `src/activate-accounting/recost.ts`).
+2. Inventory reset (`resetAndRecostInventory`, `accounting.service.ts`).
    Closes the cost layers dated before the cutover and inserts one opening layer per
    item with stock (`planInventoryReset`). The unit cost comes from
    `getCutoverInventory`: a Standard item takes its standard cost, a FIFO or LIFO item
@@ -261,7 +268,7 @@ spec's section 5 numbering, as the code comments do:
    period of its date.
 9. `repointStandInLines` moves each stand-in line to the default it names (or that
    default's fallback). Then `promoteJournals` promotes those journals to `Posted`.
-   Both are in `src/activate-accounting/promote.ts`.
+   Both are in `accounting.service.ts`.
 10. Closes every period that ends before the cutover and snapshots its balances
     (`snapshotAccountingPeriodBalances`). It does not call `closeAccountingPeriod`,
     which opens its own transaction.
@@ -276,7 +283,7 @@ spec's section 5 numbering, as the code comments do:
 A legacy document is posted (not Draft, Pending or Voided), dated on or after the
 cutover, and has no journal line under its document keys in a journal of any status.
 A company with accounting off wrote no journal, and the reset deleted the others'.
-`journalLegacyDocuments` (`src/activate-accounting/legacy/`) writes, for each one, the
+`journalLegacyDocuments` (`accounting.service.ts`) writes, for each one, the
 journal its posting writes today: today's account defaults and item costs, in base
 currency at the document's exchange rate, `Provisional`, dated the document's posting
 date. The steps above then re-cost, period, re-point and promote it like any other
@@ -286,29 +293,28 @@ Provisional journal.
   returns a query; the enable executes it, and `getLegacyDocumentCounts`
   (`@carbon/database/accounting-cutover-reads`) counts the same rows for the wizard's
   Enable step. Change the detection there, never in a builder.
-- **Order** (`legacy/index.ts`): first the cost rows of movements that stored none
+- **Order** (`journalLegacyDocuments`): first the cost rows of movements that stored none
   (`writeLegacyMovementCosts`: sales order shipments, direct sales invoice lines, job
   issues and completions); then sales invoices, purchase invoices, memos, charges and
   reimbursements; then payments in posting order, because a payment reads the control
   line of what it settles; then purchase receipts, sales return receipts, sales
   shipments, return shipments, the adjustment core's movements, job issues and job
   completions; then depreciation runs, scrap disposals and revenue recognition runs
-  (`legacy/runs.ts`).
-- **Movement costs.** `writeLegacyMovementCosts` (`legacy/movement-cost.ts`) costs an
+  (also in `accounting.service.ts`).
+- **Movement costs.** `writeLegacyMovementCosts` (`accounting.service.ts`) costs an
   outbound FIFO or LIFO movement with no cost row against the layers open now
   (`relieveOpenLayers`: one locked read of the layers, then `replayReliefs`). A
   Standard item costs at its standard cost and an Average one at `itemCost.unitCost`.
   The enable then re-costs the FIFO and LIFO rows (step 3); the repair keeps what the
   open layers gave.
-- **Memos and payments** are built by `rebuildMemoJournals`
-  (`src/post-memo/rebuild-journal.ts`) and `rebuildPaymentJournals`
-  (`src/post-payment/rebuild-journal.ts`). The pre-cutover voids use the same files for
-  one document (`rebuildMemoJournal`, `rebuildPaymentJournal`). The payment posting
-  and its rebuild assemble the `buildPaymentJournal` input in one place,
-  `src/post-payment/journal-input.ts` (`assemblePaymentJournal`), and
-  `post-payment/rebuild-journal.test.ts` pins a rebuilt journal to the posted one.
+- **Memos and payments** are built by `rebuildMemoJournals` and `rebuildPaymentJournals`
+  (`invoicing.service.ts`). The pre-cutover voids use the same code for one document
+  (`rebuildMemoJournal`, `rebuildPaymentJournal`). The payment posting and its rebuild
+  assemble the `buildPaymentJournal` input in one place (`assemblePaymentJournal`,
+  `invoicing.service.ts`), and `apps/erp/test/database/post-payment/rebuild-journal.test.ts`
+  pins a rebuilt journal to the posted one.
 - **Every rebuilt journal stays out of provider sync.** The provider may already hold
-  the original. So `insertProvisionalJournals` (`legacy/write.ts`) calls
+  the original. So `insertProvisionalJournals` (`accounting.service.ts`) calls
   `keepOutOfProviderSync` for every journal it writes, in the enable's step 1a and in
   the repair. It writes an `Excluded` `accountingSyncOperation` per accounting
   integration with `errorCode` `CUTOVER_REBUILT` (`CUTOVER_REBUILT_SYNC_CODE`).
@@ -329,8 +335,9 @@ Provisional journal.
 
 A company enabled before step 1a existed, and a demo-template company (migration
 20261009004448 backfilled its cutover), can still hold legacy documents. The
-server function (input `{}`, permission `update: accounting`) runs step 1a
-again in one transaction, under `companySettings` `FOR UPDATE`. It refuses a
+building block (`repairLegacyJournals`, `accounting.service.ts`; input `{}`, permission
+`update: accounting`) runs step 1a again. The Settings service function in
+`settings.server.ts` runs it through `invokePosting` as the caller. It runs in one transaction, under `companySettings` `FOR UPDATE`. It refuses a
 company with no cutover (`ACCOUNTING_NOT_STARTED`). When it wrote journals,
 `assignPeriods`, `repointStandInLines` and `promoteJournals` take only those
 journals, by the ids `journalLegacyDocuments` returns. Then
@@ -339,8 +346,7 @@ enable leaves it. Settings → Accounting shows the count (`hasLegacyDocuments`,
 then `getLegacyDocumentCounts`) and a "Write missing journals" button.
 
 The one-off script `scripts/one-off/journal-legacy-documents.ts` runs it for
-each company (`journalLegacyDocumentsForAllCompanies`,
-`journal-legacy-documents/companies.ts`):
+each company (`journalLegacyDocumentsForAllCompanies`, `accounting.service.ts`):
 
 - `findCompaniesWithLegacyDocuments` takes only the companies with a cutover AND
   at least one legacy document. It runs each as `accountingActivatedBy`, else an
@@ -379,16 +385,17 @@ The error classes and the permission rules live in `@carbon/api` (`@carbon/api/e
 `@carbon/api/permissions`), so `defineServiceFn` and `defineServerFn` check a caller by
 the same rules while this package is dissolved into the ERP modules.
 
-Shared posting internals live in `src/lib/` (not exported): `get-accounting-period` (`resolveAccountingPeriod`, `getCurrentAccountingPeriod`, `getAccountingPeriodForDate`), `get-posting-group` (`getDefaultPostingGroup`, `resolveInventoryAccount`), `calculate-cogs` (`calculateCOGS`: reads and locks the open layers, then writes what `relieveLayers` from `@carbon/database/cost-relief` returns), `storage-units`, `require-accounting-cutover` (`assertAccountingCutover`, see Journals and the accounting cutover), `cutover-void` (`refuseVoidBeforeCutover`, `assertNoMigrationClearing`, the void messages and `TIME_ENTRY_BEFORE_CUTOVER_ERROR`), `postable` (`assertPostable` — only a Draft or Pending document is posted; called BEFORE the function's `try`, whose failure handler resets the document to Draft), `fixed-asset-writes` (`FixedAssetWrites` — asset changes decided while the journal is built are staged and applied inside the posting transaction, never written on `db` directly), `asset-transfer` (the capitalization / return-to-inventory journal line builders, used by `post-asset-transfer` and `post-rental-agreement`), `cost-layer-order` (`leavingTrackedEntityIds`, and `orderLayersForConsumption` re-exported from `@carbon/database/cost-relief` — a serial unit is costed from its own layer first), `contract-ledger` (`lockContractPositions`, `loadContractPositions` — the contract movement ledger's position lock and grouped read, shared by `post-sales-invoice`, `post-memo` and the recognition run's `synthesizeContractRevenue`; `samePosition`, the float-tolerant equality of two positions, used by `post-sales-invoice`; `signedCreditAmount`, a signed credit as an account's natural-balance journal amount, used by `post-sales-invoice` and `post-memo`), `party-dimensions` (`loadPartyDimensions`, `partyDimensionValues`, `partyDimensionValuesFrom` — the Customer / CustomerType or Supplier / SupplierType dimensions on every line of a payment or memo journal, used by `post-payment` and `post-memo` and their rebuilds), `cost-center-project-dimensions` (`costCenterAndProjectDimensions` — the oldest active Cost Center and Project dimensions, used by `post-charge`, `post-reimbursement` and their legacy builders), `document-journal-lines` (`documentJournalLines` — the lines one document's chain owns, read only from journals with a `DOCUMENT_JOURNAL_STATUSES` status; used by `post-receipt`, `post-shipment`, `post-sales-invoice` and `post-purchase-invoice`), `sales-invoice-stand-ins` (`salesInvoiceStandIns`, `STAND_IN_CLASS` — the stand-in lines of a sales invoice journal, used by `post-sales-invoice` and its legacy builder), `void-journal` (`insertNegatedJournal` — voids a journal with a negated copy dated the void date, each line negated with its documents, account default role and dimensions; used by the charge, reimbursement and lease voids), `journal-line-ids` (`allocateJournalLineIds` — the ids of a journal's lines drawn in one statement, used by `post-charge`, `post-reimbursement` and `post-lease`), `currency-decimals` (`currencyDecimals` — a currency's settlement precision, the group's `currency.decimalPlaces`; billed amounts such as rental billing periods and lease payment rows are rounded to it), `lease-payment-rows` (`cutLeasePaymentRows` — the ONE cutter of a lessee lease's payment rows, its Modify slice from `remainingLeasePayments` in `@carbon/utils`, used by `create-lease-invoices`' `rollOpenEndedLeasePayments` and `post-lease`'s Modify; the one helper here the ERP also calls, re-exported from `~/modules/purchasing/purchasing.service` for `regenerateLeasePayments` / `updateDraftLease` / `saveDraftLeaseLine`, which cut rows inside their own Kysely transaction), and the inventory-adjustment core — `post-adjustment` (`bookAdjustment`, `createAdjustmentJournal`, `loadOpenCostLayers`), the pure row builders in `plan-adjustment` and `post-adjustment-cost` (`computeCurrentUnitCost`). Pure logic that the apps also need goes to `@carbon/utils` / `@carbon/database`, not here.
+Shared posting internals live in `src/lib/`, exported as `./lib/*`: the 10 functions here
+and the ported ERP building blocks both import them (`@carbon/server-functions/lib/<name>`).
+They move with the MES functions (plan Phase 5). `get-accounting-period` (`resolveAccountingPeriod`, `getCurrentAccountingPeriod`, `getAccountingPeriodForDate`), `get-posting-group` (`getDefaultPostingGroup`, `resolveInventoryAccount`), `calculate-cogs` (`calculateCOGS`: reads and locks the open layers, then writes what `relieveLayers` from `@carbon/database/cost-relief` returns), `storage-units`, `require-accounting-cutover` (`assertAccountingCutover`, see Journals and the accounting cutover), `cutover-void` (`refuseVoidBeforeCutover`, `assertNoMigrationClearing`, the void messages and `TIME_ENTRY_BEFORE_CUTOVER_ERROR`), `postable` (`assertPostable` — only a Draft or Pending document is posted; called BEFORE the function's `try`, whose failure handler resets the document to Draft), `fixed-asset-writes` (`FixedAssetWrites` — asset changes decided while the journal is built are staged and applied inside the posting transaction, never written on `db` directly), `asset-transfer` (the capitalization / return-to-inventory journal line builders, used by `post-asset-transfer` and `post-rental-agreement`), `cost-layer-order` (`leavingTrackedEntityIds`, and `orderLayersForConsumption` re-exported from `@carbon/database/cost-relief` — a serial unit is costed from its own layer first), `contract-ledger` (`lockContractPositions`, `loadContractPositions` — the contract movement ledger's position lock and grouped read, shared by `post-sales-invoice`, `post-memo` and the recognition run's `synthesizeContractRevenue`; `samePosition`, the float-tolerant equality of two positions, used by `post-sales-invoice`; `signedCreditAmount`, a signed credit as an account's natural-balance journal amount, used by `post-sales-invoice` and `post-memo`), `party-dimensions` (`loadPartyDimensions`, `partyDimensionValues`, `partyDimensionValuesFrom` — the Customer / CustomerType or Supplier / SupplierType dimensions on every line of a payment or memo journal, used by `post-payment` and `post-memo` and their rebuilds), `cost-center-project-dimensions` (`costCenterAndProjectDimensions` — the oldest active Cost Center and Project dimensions, used by `post-charge`, `post-reimbursement` and their legacy builders), `document-journal-lines` (`documentJournalLines` — the lines one document's chain owns, read only from journals with a `DOCUMENT_JOURNAL_STATUSES` status; used by `post-receipt`, `post-shipment`, `post-sales-invoice` and `post-purchase-invoice`), `sales-invoice-stand-ins` (`salesInvoiceStandIns`, `STAND_IN_CLASS` — the stand-in lines of a sales invoice journal, used by `post-sales-invoice` and its legacy builder), `void-journal` (`insertNegatedJournal` — voids a journal with a negated copy dated the void date, each line negated with its documents, account default role and dimensions; used by the charge, reimbursement and lease voids), `journal-line-ids` (`allocateJournalLineIds` — the ids of a journal's lines drawn in one statement, used by `post-charge`, `post-reimbursement` and `post-lease`), `currency-decimals` (`currencyDecimals` — a currency's settlement precision, the group's `currency.decimalPlaces`; billed amounts such as rental billing periods and lease payment rows are rounded to it), `lease-payment-rows` (`cutLeasePaymentRows` — the ONE cutter of a lessee lease's payment rows, its Modify slice from `remainingLeasePayments` in `@carbon/utils`, used by `create-lease-invoices`' `rollOpenEndedLeasePayments` and `post-lease`'s Modify, both now in `purchasing.service.ts`, and by its `regenerateLeasePayments` / `updateDraftLease` / `saveDraftLeaseLine`, which cut rows inside their own Kysely transaction), and the inventory-adjustment core — `post-adjustment` (`bookAdjustment`, `createAdjustmentJournal`, `loadOpenCostLayers`), the pure row builders in `plan-adjustment` and `post-adjustment-cost` (`computeCurrentUnitCost`). Pure logic that the apps also need goes to `@carbon/utils` / `@carbon/database`, not here.
 
-`src/post-receipt/posting-lines.ts` (pure) builds the journal lines of a purchase order
+The ERP's `inventory.service.ts` builds (pure) the journal lines of a purchase order
 receipt (`purchaseReceiptLineCosts`, `buildPurchaseReceiptJournalLines`) and of a sales
-return receipt (`buildSalesReturnReceiptJournalLines`). `post-receipt` and the legacy
-backfill (`activate-accounting/legacy/receipt.ts`) both call it; each line carries its
-dimensions by entity type, written with `journalLineDimensionRows`
-(`src/lib/journal-line-dimensions.ts`).
+return receipt (`buildSalesReturnReceiptJournalLines`). `postReceipt` and the legacy
+backfill (`activateAccounting`) both call them; each line carries its dimensions by
+entity type, written with `journalLineDimensionRows` (`src/lib/journal-line-dimensions.ts`).
 
-`src/post-receipt/void-cost-ledger.ts` (`planReceiptVoidCostLedger`, pure) decides what
+`planReceiptVoidCostLedger` (pure, `inventory.service.ts`) decides what
 a purchase receipt void does to its cost rows: it closes the layers the receipt
 created, refuses (`consumed`) when part of one was already issued or shipped, and puts
 back what a negative line relieved as a new layer at the relieved cost.

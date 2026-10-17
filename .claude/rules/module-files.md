@@ -87,12 +87,13 @@ function keeps its logic as is:
   shape and the same `ServerFnError`. An older building block that holds `db`,
   `companyId` and `userId` passes those in place of `ctx`; with `{ as: rule }`
   it checks the caller behind `client` first, as `serverFns.as` did.
-- The operation keeps the function's permission exactly
-  (`src/__snapshots__/permissions-manifest.test.ts.snap`), and the function
-  leaves the package's registry (`src/invoke.ts`).
-- Its live-database tests move to `apps/erp/test/database/`, on the package's
-  fixtures (`@carbon/server-functions/always-post-test-fixture`, whose `service`
-  is a system `ServiceContext`) until those move too.
+- The operation keeps the function's permission exactly: a `<name>Permission`
+  constant beside the body, passed as `as`. `apps/erp/test/posting-permissions.test.ts`
+  pins them, as the package's `permissions-manifest` snapshot still does for the
+  10 functions left in it. The function leaves the package's registry (`src/invoke.ts`).
+- Its live-database tests move to `apps/erp/test/database/`, on the fixtures in
+  `apps/erp/test/database/fixtures/` (`always-post.ts`, whose `service` is a
+  system `ServiceContext`).
 
 ## Shared code: `@carbon/api`
 

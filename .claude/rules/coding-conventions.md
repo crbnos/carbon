@@ -101,9 +101,16 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
 - File-based via `remix-flat-routes`. Conventions seen in `apps/*/app/routes/`:
   `_index.tsx`, `_layout.tsx` and `_public+/` (pathless), `x+/`, `api+/`, `file+/`
   (folder groups), `$param` (dynamic segments), `[.]pdf` (escaped literals).
-- Loaders/actions destructure args typed by `react-router`; the first thing an
-  authenticated handler does is `await requirePermissions(request, { ... })`,
+- Loaders/actions destructure args typed by `react-router`. The first thing an
+  authenticated loader does is `await requirePermissions(request, { ... })`,
   destructuring `{ client, companyId, userId }` (also `email`, `companyGroupId`).
+- An action checks the request with `validator(schema).request(args, …)`
+  (`@carbon/form`), calls ONE service function through `carbon(request)`
+  (`@carbon/api/carbon.server`) and returns its result, or
+  `respond(request, result).redirect(...)` for a navigating form. The service
+  function holds the permission and the write. See
+  [conventions-forms.md](conventions-forms.md) and [module-files.md](module-files.md).
+  Older actions still run `assertIsPost` → `requirePermissions` → a building block.
 - Loaders/actions return **plain objects** or `data(value, responseInit)`.
   Do NOT use `json(...)` — that is the old Remix helper and is not the convention here.
 - A layout does NOT export `shouldRevalidate` to skip its loader. Single fetch
@@ -136,7 +143,7 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   `@carbon/utils`. The loaders of a matched branch run in parallel, so without it every
   parent loader runs for a request that is about to be redirected. Enforced by the
   `index-redirect-before-loaders` check (`@carbon/checks`).
-- On success an action throws a redirect (`throw redirect(...)`), not `return`.
+- A legacy action throws its success redirect (`throw redirect(...)`), not `return`.
   A cached `api+` loader exports `clientLoader = cachedClientLoader<typeof loader>()`;
   no route exports a `clientAction`.
 
@@ -181,8 +188,9 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
 
 - zod, imported as `import { z } from "zod"`, with `zfd` from `zod-form-data`
   for FormData coercion: `zfd.text(...)`, `zfd.numeric(...)`, `zfd.checkbox()`.
-- Validate in route actions with `validator(schema).validate(formData)` from
-  `@carbon/form` — not `schema.parse()`. Full pattern in conventions-forms.md.
+- Validate in route actions with `validator(schema).request(args, …)` from
+  `@carbon/form` (legacy actions: `validator(schema).validate(formData)`) — not
+  `schema.parse()`. Full pattern in conventions-forms.md.
 
 ## State
 

@@ -223,7 +223,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   `taxAmount` — decided from the posted lines, not the current setting), returns a Fully Depreciated asset
   above its residual to Active, and returns the run to Draft. A plain
   journal reversal of an `Asset Depreciation` journal is refused.
-- Server transactions (Kysely): `accounting.server.ts` — `postDisposal()`,
+- Server transactions (Kysely): building blocks in `accounting.service.ts` — `postDisposal()`,
   `postDepreciationRun()` and `postAssetRegistration()` build journals and
   update asset rows. `postAssetRegistration` takes an optional `status`
   (`"Active" | "Under Construction"`, default Active) and, for `Under
@@ -254,9 +254,10 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   the fleet register at `routes/x+/accounting+/fleet.tsx` (nav: Accounting →
   Fixed Assets → Assets / Fleet, and Accounting → Closing → Depreciation,
   `useAccountingSubmodules`).
-- Server functions (`packages/server-functions/src/`): `post-receipt`,
-  `post-purchase-invoice` (acquisition, CIP-aware), `post-shipment`,
-  `post-sales-invoice` (disposal), `post-asset-transfer` (transfers).
+- Postings (ported from server functions to module building blocks): `postReceipt` and
+  `postShipment` (`inventory.service.ts`), `postPurchaseInvoice` (acquisition, CIP-aware) and
+  `postSalesInvoice` (disposal) (`invoicing.service.ts`), `postAssetTransfer` (transfers,
+  `accounting.service.ts`).
 - Outside the module: production `production.models.ts` (`jobValidator`
   carries `fixedAssetClassId` / `fixedAssetId`, refined to at most one:
   "A job completes to a fixed-asset class or to one asset under construction,
@@ -323,7 +324,7 @@ fifth (5, a lessee lease's purchase option) inserts the asset already Active:
    lease's end date, at price 0 (ownership passes for nothing); with neither,
    it is refused ("has no purchase option").
    In ONE transaction it posts a `'Lease'` journal (`purchaseLines`,
-   `post-lease/lessee.ts`): Dr the class's `assetAccountId` at
+   `purchasing.service.ts`): Dr the class's `assetAccountId` at
    `assetCost = ROU cost − accumulated ROU amortization + price − carrying
    liability` (refused below zero), Dr accumulated ROU amortization, Dr lease
    liability (carrying, plus a Pending option row the schedule already counted
@@ -440,7 +441,7 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   (`itemLedger` −1, `entryType 'Negative Adjmt.'`, cost-layer consumption at
   carrying cost, no variance journal); posts Dr class asset / Cr the
   replenishment inventory account for that cost. The cost is decided by the
-  pure `resolveCapitalizationCost` (`validators.ts`): a unit that carries a
+  pure `resolveCapitalizationCost` (`accounting.service.ts`): a unit that carries a
   cost moves at it, and an entered `cost` is refused ("<serial> is carried in
   inventory at a cost…"); a unit whose carrying cost rounds to 0 takes the
   entered `cost` instead and the journal credits `offsetAccountId` (description
@@ -527,7 +528,7 @@ line's accounting treatment (`lessorClassification`) is set at activation:
 financing lease; `Financing` has no input). A **`Rental`** line posts no journal at activation, the asset stays `Active` and keeps
 depreciating, and only the derived fleet status changes (Reserved → On Rent →
 Available again, or In Maintenance when the rental receipt line's **Take out of
-service** box is ticked — `returnRentalUnit`, `post-rental-agreement/return-unit.ts`,
+service** box is ticked — `returnRentalUnit` (`sales.service.ts`)
 sets `outOfServiceSince = returnedAt` and the reason). A unit goes On Rent when a
 rental shipment posts (`post-shipment`, source `'Rental Agreement'`) and comes back
 when a rental receipt posts (`post-receipt`); neither writes an `itemLedger` row or a
@@ -556,7 +557,7 @@ being activated"), plus a `fixedAssetDisposal` row (`netBookValueAtDisposal`
 = C = cost − accumulated depreciation, `gainLoss` = selling profit, `journalId`
 = the commencement journal). The `'Lease'` journal (Provisional before the
 accounting cutover; pure
-builder `buildCommencementLines`, `post-rental-agreement/lessor.ts`) is: Dr Net
+builder `buildCommencementLines`, `sales.service.ts`) is: Dr Net
 Investment in Leases NI, Dr COGS C − PVres, **Dr class
 `accumulatedDepreciationAccountId`** accumulated depreciation / Cr Lease
 Revenue PVpay, **Cr class `assetAccountId`** at cost; no gain/loss or
@@ -574,7 +575,7 @@ no entry point in v1.
 sequence) in the non-CIP class named "Rental Fleet" (else the class the unit
 left at commencement; neither → "No Rental Fleet asset class to return the
 unit into; create one or return the unit to inventory") with `acquisitionCost`
-= the closing net investment (`netInvestmentAt`, `lessor.ts`: the
+= the closing net investment (`netInvestmentAt`, `sales.service.ts`: the
 `closingNetInvestment` of the last `rentalLeaseScheduleLine` dated on or
 before `returnedAt` — the closing target at or after `endDate` — or
 `initialNetInvestment` when the line has no schedule; read off the schedule,
@@ -599,7 +600,7 @@ future"), and a `Sale` line's billing is not re-cut by a return.
 
 **Purchase option exercise derecognizes the rest.** Posting a `Sale`
 line's `Purchase Option` invoice line (`post-sales-invoice`,
-`purchaseOptionSettlement` in `rental-posting.ts`) credits NI by the option
+`purchaseOptionSettlement` in `invoicing.service.ts`) credits NI by the option
 and settles the difference to the schedule's closing balance (the last
 `rentalLeaseScheduleLine`'s `closingNetInvestment`): shortfall Dr
 `costOfGoodsSoldAccount` / Cr NI, excess Dr NI / Cr `leaseRevenueAccount`,
@@ -641,12 +642,12 @@ themselves (remaining value over remaining life / cumulative minus taken);
 Units of Production does not catch up. Gated on the adjustment so a mid-life
 registration with an opening accumulated balance is never re-derived.
 
-1. `depreciation-runs.new` calls `depreciationRun.create`, which calls
-   `createDepreciationRun()`, which
+1. `depreciation-runs.new` calls the service function `createDepreciationRun`, which calls
+   the building block `createDepreciationRun()`, which
    builds the lines with `buildDepreciationRunLines()` and inserts a
    `depreciationRun` (Draft) + one `depreciationRunLine` per asset per month.
    With no lines it creates nothing.
-2. `$depreciationRunId.post` → `depreciationRun.post` → `postDepreciationRun()`: locks the run
+2. `$depreciationRunId.post` → the service function `postDepreciationRun` → the building block `postDepreciationRun()`: locks the run
    `FOR UPDATE` and refuses anything but a Draft, re-reads the lines and locks
    the assets inside the transaction (`RunOutOfDateError` when they no longer
    match what the operation checked), then per asset per month posts Debit

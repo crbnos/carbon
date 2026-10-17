@@ -2,7 +2,7 @@
 paths:
   - "packages/database/supabase/migrations/*tracked*.sql"
   - "packages/utils/src/{batch-split,batch-merge,entity-drain,pick-guards}.ts"
-  - "apps/erp/app/modules/inventory/{lineage.server,inventory.service,types}.ts"
+  - "apps/erp/app/modules/inventory/{inventory.server,inventory.service,types}.ts"
   - "apps/erp/app/routes/x+/traceability+/**"
   - "apps/mes/app/services/operations.service.ts"
 ---
@@ -103,7 +103,7 @@ Non-strict variants exist but include same-activity siblings — prefer strict.
 
 - Graph route: `apps/erp/app/routes/x+/traceability+/graph.tsx` → calls
   `fetchLineageSubgraph` / `fetchJobScopedLineage` in
-  `apps/erp/app/modules/inventory/lineage.server.ts` (BFS over the batch RPCs).
+  `apps/erp/app/modules/inventory/inventory.service.ts` (BFS over the batch RPCs).
 - Graph types `GraphNode` / `GraphLink` / `GraphData` live in
   `apps/erp/app/modules/inventory/types.ts` (link `type` is `"input" | "output"`).
 - ERP service `inventory.service.ts`: `getTrackedEntities`, `getTrackedEntity`,
@@ -129,7 +129,7 @@ members' quantities summed. Members are reached only through the sidebar's list 
 cluster nodes carry no expand toggles, since expanding a 50-member group would
 fetch 50 lineages. Clusters travel from the graph to the sidebar (its sibling in
 the route) through `ui/Traceability/store.ts`. Because clustering absorbs serial
-fans, `MAX_ENTITIES` in `lineage.server.ts` is **500**; the BFS must stay complete
+fans, `MAX_ENTITIES` in `inventory.service.ts` is **500**; the BFS must stay complete
 up to it, since a truncated frontier would split a group in two.
 
 ## Picking / availability (shelf → storageUnit rename)
@@ -158,7 +158,7 @@ shared record builder is `@carbon/utils` `batch-split.ts` (`buildBatchSplitRecor
 `buildMergeRecords`), used by every writer: `post-picking` (batch), `issue`
 (`trackedEntitiesToOperation` + `maintenanceDispatchTrackedEntities`), `post-stock-transfer`
 (batch), `post-shipment` (SO + PO — PO posts genealogy only, no ledger), and ERP
-`quality-disposition.subdivideBatchEntity`. Serial paths never split. Exception: the
+`subdivideBatchEntity` (`quality.service.ts`). Serial paths never split. Exception: the
 PO-sourced `post-shipment` split posts no `itemLedger` (matches pre-flip behavior).
 
 **Lot merge (the deliberate inverse; spec `.ai/specs/2026-09-16-batch-materials-and-output-lots.md`):**
@@ -187,7 +187,7 @@ the entity — the CONSUMED portion becomes the NEW `child` (`status: 'Consumed'
 keeps its id at lineside. Consumption/split rows are booked against the entity's actual on-hand
 bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. The **return** of the un-consumed
 remainder runs via `post-picking`'s sweep cases `returnJobRemainders` (at job complete — both
-policies) / `returnOperationRemainders` (at operation Done: the whole job's remainder when
+policies — and at job cancel, with `cancelling: true`, before the status flips) / `returnOperationRemainders` (at operation Done: the whole job's remainder when
 that operation completed the job, otherwise only when
 `companySettings.returnPickedMaterialTiming = 'operation'`): the tracked path walks the picked
 entity's split lineage and, for each lineage entity with lineside on-hand, **merges** it back
