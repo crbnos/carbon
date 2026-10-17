@@ -45,6 +45,13 @@ vi.mock("~/utils/path", () => ({
     }
   }
 }));
+// The order's default tax is not what this test is about.
+vi.mock("~/modules/sales/sales.server", () => ({
+  resolveSalesDocumentTaxes: vi.fn().mockResolvedValue({
+    data: null,
+    error: null
+  })
+}));
 vi.mock("~/modules/sales", () => ({
   getCustomer: vi.fn(),
   getOpportunity: vi.fn(),
