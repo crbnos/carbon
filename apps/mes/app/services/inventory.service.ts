@@ -5,7 +5,6 @@
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type {
   DocumentTemplate,
   DocumentTemplateType
@@ -501,7 +500,6 @@ export async function getPickedTrackedEntitiesForMaterial(
 // one transaction, and owns the insufficient-quantity guard.
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
     companyId: string;
     createdBy: string;

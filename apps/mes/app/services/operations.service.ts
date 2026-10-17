@@ -386,7 +386,7 @@ export async function finishJobOperation(
     // last operation. Return any picked-but-unconsumed stock staged at lineside
     // back to its warehouse source — the SQL trigger can't run app code,
     // so we orchestrate it here.
-    await returnPickedRemainders(client, db, args);
+    await returnPickedRemainders(client, args);
     const jobId = result.data[0]?.jobId;
 
     if (jobId) {
@@ -446,7 +446,6 @@ export async function finishJobOperation(
  */
 export async function returnPickedRemainders(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationId: string;
     userId: string;
@@ -1410,7 +1409,6 @@ export async function getJobMaterialsByOperationId(
  */
 export async function backflushUntrackedMaterialsOnStepRecord(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: { jobOperationStepId: string; companyId: string; userId: string }
 ) {
   const step = await client
@@ -2373,7 +2371,7 @@ export async function completeAllStepsForUnit(
   // operation-wide, so one call after the inserts tops up this unit's shortfall.
   // Non-blocking: a failure (e.g. insufficient stock) leaves parts manually
   // issuable, matching the per-step record path.
-  const backflush = await backflushUntrackedMaterialsOnStepRecord(client, db, {
+  const backflush = await backflushUntrackedMaterialsOnStepRecord(client, {
     jobOperationStepId: missing[0].id,
     companyId: args.companyId,
     userId: args.createdBy
@@ -2540,7 +2538,6 @@ export async function endMachineProductionEvent(
  */
 export async function postEndedProductionEvents(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: { companyId: string; userId: string; ids: string[] }
 ) {
   if (args.ids.length === 0) return;

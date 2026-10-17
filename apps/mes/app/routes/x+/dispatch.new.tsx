@@ -13,7 +13,6 @@ import { NotificationEvent } from "@carbon/notifications";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
 import { maintenanceDispatchValidator } from "~/services/models";
 import {
   endProductionEventsByWorkCenter,
@@ -164,7 +163,7 @@ export async function action({ request }: ActionFunctionArgs) {
         error: ended.error
       });
     } else {
-      await postEndedProductionEvents(serviceRole, getDatabaseClient(), {
+      await postEndedProductionEvents(serviceRole, {
         companyId,
         userId,
         ids: ended.data.map((event) => event.id)

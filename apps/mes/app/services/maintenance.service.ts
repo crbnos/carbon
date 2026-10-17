@@ -3,9 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import type { KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Kysely } from "kysely";
 import { erpPosting } from "~/services/erp";
 
 export async function getActiveMaintenanceDispatchesByLocation(
@@ -177,7 +175,6 @@ export async function endMaintenanceEvent(
 // entry ends or the dispatch completes).
 export async function postMaintenanceLabor(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: { maintenanceDispatchIds: string[]; companyId: string; userId: string }
 ) {
   return erpPosting(

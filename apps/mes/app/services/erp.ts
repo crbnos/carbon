@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ServerFnError } from "@carbon/api/errors";
-import type { MesPostingName } from "@carbon/api/postings";
+import type { MES_POSTINGS, MesPostingName } from "@carbon/api/postings";
 import type {
   PostingContract,
   PostingOutcome
@@ -19,8 +19,12 @@ import { ERP_URL } from "~/utils/path";
 
 const log = getLogger("mes", "erp");
 
+/** A posting's input, narrowed to the `type` values the ERP accepts from MES:
+ *  a new one fails typecheck here instead of the ERP refusing it. */
 export type ErpPostingInput<K extends MesPostingName> =
-  PostingContract[K]["input"];
+  (typeof MES_POSTINGS)[K] extends readonly (infer T)[]
+    ? PostingContract[K]["input"] & { type: T }
+    : PostingContract[K]["input"];
 
 type Caller = {
   companyId: string;

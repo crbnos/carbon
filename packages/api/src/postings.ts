@@ -562,6 +562,7 @@ export const MES_POSTINGS = {
     "partToOperation",
     "scrapTrackedEntity",
     "trackedEntitiesToBatch",
+    "trackedEntitiesToOperation",
     "unconsumeTrackedEntities"
   ],
   "post-picking": [

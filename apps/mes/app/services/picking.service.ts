@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type ErpPostingInput, erpPosting } from "~/services/erp";
@@ -167,7 +166,6 @@ export async function getUnresolvedPickingListLines(
  */
 export async function setPickingListLineQuantity(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: {
     pickingListLineId: string;
     quantity: number;
@@ -297,7 +295,6 @@ export async function setPickingListLineQuantity(
  */
 export async function setPickingListLineTrackedEntity(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: {
     pickingListLineId: string;
     trackedEntityId: string;
