@@ -31,7 +31,6 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
         if jobs.is_canceled(&job_id).await {
             return;
         }
-        jobs.set_status(&job_id, "running").await;
         eprintln!("[{job_id}] plan running");
         let started = Instant::now();
 
@@ -71,6 +70,8 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
         let grant = admission
             .acquire(admission::plan_estimate_mb(source_bytes, None))
             .await;
+        // Running from here on: the wait for memory is queue time, not work.
+        jobs.set_status(&job_id, "running").await;
         let runtime = tokio::runtime::Handle::current();
         let res = telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
             let grant = std::sync::Mutex::new(grant);

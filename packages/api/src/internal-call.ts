@@ -149,3 +149,27 @@ export function verifyInternalCall(
   }
   return call;
 }
+
+/**
+ * The token on the assembler's completion callback URL: an HMAC of the job id.
+ * The jobs package mints it into the job and the ERP callback route checks it,
+ * so nothing is stored. Throws on an empty secret, which would make every
+ * token guessable.
+ */
+export function assemblerCallbackToken(secret: string, jobId: string): string {
+  if (!secret) throw new Error("Assembler callbacks need SESSION_SECRET");
+  return createHmac("sha256", secret)
+    .update(`assembler-callback:${jobId}`)
+    .digest("hex");
+}
+
+/** Whether `token` is the callback token of `jobId`, in constant time. */
+export function isAssemblerCallbackToken(
+  secret: string,
+  jobId: string,
+  token: string
+): boolean {
+  const expected = Buffer.from(assemblerCallbackToken(secret, jobId));
+  const given = Buffer.from(token);
+  return given.length === expected.length && timingSafeEqual(given, expected);
+}

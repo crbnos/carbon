@@ -91,7 +91,6 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
         if jobs.is_canceled(&job_id).await {
             return;
         }
-        jobs.set_status(&job_id, "running").await;
         eprintln!(
             "[{job_id}] optimize running (codec={:?} format={})",
             req.opts.codec, req.format
@@ -116,6 +115,8 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
             let _grant = admission
                 .acquire(admission::estimate_mb(http::file_len(&tmp).await))
                 .await;
+            // Running from here on: the wait for memory is queue time, not work.
+            jobs.set_status(&job_id, "running").await;
             telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
                 run_optimize(&tmp_str, &declared, ext.as_deref(), &opts)
             }))

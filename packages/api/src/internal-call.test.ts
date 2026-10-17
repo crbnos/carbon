@@ -2,9 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
+  assemblerCallbackToken,
   INTERNAL_CALL_WINDOW_MS,
+  isAssemblerCallbackToken,
   signInternalCall,
   verifyInternalCall
 } from "./internal-call";
@@ -155,5 +158,27 @@ describe("internal calls", () => {
       signInternalCall(SECRET, { ...call, mode: "caller" }, body)
     ).toThrow();
     expect(() => signInternalCall(SECRET, call, body, "Bearer t")).toThrow();
+  });
+});
+
+describe("assemblerCallbackToken", () => {
+  it("is the HMAC the callback route has always checked, so in-flight jobs survive a deploy", () => {
+    expect(assemblerCallbackToken("s3cret", "job-1")).toBe(
+      createHmac("sha256", "s3cret")
+        .update("assembler-callback:job-1")
+        .digest("hex")
+    );
+  });
+
+  it("accepts only the token of the same job", () => {
+    const token = assemblerCallbackToken("s3cret", "job-1");
+    expect(isAssemblerCallbackToken("s3cret", "job-1", token)).toBe(true);
+    expect(isAssemblerCallbackToken("s3cret", "job-2", token)).toBe(false);
+    expect(isAssemblerCallbackToken("other", "job-1", token)).toBe(false);
+    expect(isAssemblerCallbackToken("s3cret", "job-1", "")).toBe(false);
+  });
+
+  it("refuses to sign with an empty secret", () => {
+    expect(() => assemblerCallbackToken("", "job-1")).toThrow();
   });
 });
