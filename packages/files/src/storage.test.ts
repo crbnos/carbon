@@ -396,6 +396,22 @@ describe("storage(client).company", () => {
     });
   });
 
+  it("never falls back to the retired shared bucket on a miss", async () => {
+    const client = makeClient({});
+    const from = vi.spyOn(client.storage, "from");
+    const files = storage(client).company("co1");
+
+    expect((await files.download("co1/docs/a.pdf")).error).toBeTruthy();
+    expect((await files.exists("co1/docs/a.pdf")).data).toBeFalsy();
+    expect(
+      (await files.createSignedUrl("co1/docs/a.pdf", 60)).error
+    ).toBeTruthy();
+
+    expect(new Set(from.mock.calls.map(([bucket]) => bucket))).toEqual(
+      new Set(["co1"])
+    );
+  });
+
   describe("move", () => {
     it("refuses a key outside the company prefix without touching storage", async () => {
       const move = vi.fn(() => ok({ message: "company" }));

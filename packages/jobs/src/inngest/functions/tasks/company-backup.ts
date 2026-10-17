@@ -653,10 +653,16 @@ async function copyStorageObject(
  */
 export async function copyAssetsToBackup(
   client: SupabaseClient,
-  args: { sourcePaths: string[]; destBucket: string; destPrefix: string },
+  args: {
+    companyId: string;
+    sourcePaths: string[];
+    destBucket: string;
+    destPrefix: string;
+  },
   onProgress?: (done: number, total: number) => Promise<void>
 ): Promise<{ copied: number; failed: number }> {
-  const { sourcePaths, destBucket, destPrefix } = args;
+  const { companyId, sourcePaths, destBucket, destPrefix } = args;
+  const srcBucket = getCompanyPrivateBucket(companyId);
   const total = sourcePaths.length;
   let copied = 0;
   let failed = 0;
@@ -665,9 +671,10 @@ export async function copyAssetsToBackup(
     sourcePaths,
     ASSET_COPY_CONCURRENCY,
     async (path) => {
-      // Assets live in the company's own bucket: keys start with companyId.
+      // The bucket comes from the company, never from the path: a path naming
+      // another company would otherwise read that company's bucket.
       const { ok, error } = await copyStorageObject(client, {
-        srcBucket: getCompanyPrivateBucket(path.split("/")[0] ?? ""),
+        srcBucket,
         srcPath: path,
         destBucket,
         destPath: `${destPrefix}/${path}`

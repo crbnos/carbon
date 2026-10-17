@@ -439,6 +439,9 @@ async fn worker_events(
 
     match state.jobs.internal_active(&job_id).await.as_deref() {
         Some("pending") => {
+            // Take the job before the long download and admission wait, so a
+            // second delivery in that window sees it as taken.
+            state.jobs.set_status(&job_id, "starting").await;
             if let Err(m) = run::spawn_from_spec(&state, &job_id, &action, &spec) {
                 state.jobs.set_error(&job_id, "invalid_input", m.clone()).await;
                 return Err(ApiError::invalid(m));

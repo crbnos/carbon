@@ -203,10 +203,6 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
         if jobs.is_canceled(&job_id).await {
             return;
         }
-        eprintln!(
-            "[{job_id}] optimize running (codec={:?} format={})",
-            req.opts.codec, req.format
-        );
         let started = Instant::now();
 
         let tmp = http::temp_path("model");
@@ -220,8 +216,6 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
         let declared = req.format.clone();
         let ext = url_ext(&req.source_url);
         let mut opts = req.opts;
-        // Charge the download + tessellation already spent against the budget.
-        opts.deadline = opts.budget.map(|b| started + b);
         let compact = req.compact.is_some();
         let thumbnail = req.thumbnail.as_ref().map(|t| (t.size, t.direction));
 
@@ -229,8 +223,20 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
             let _grant = admission
                 .acquire(admission::estimate_mb(http::file_len(&tmp).await))
                 .await;
-            // Running from here on: the wait for memory is queue time, not work.
+            // The wait may have been long: a job cancelled meanwhile is dropped
+            // before it takes the memory it was granted.
+            if jobs.is_canceled(&job_id).await {
+                let _ = tokio::fs::remove_file(&tmp).await;
+                return;
+            }
+            // Running from here on: the wait for memory is queue time, not
+            // work, so the budget starts now too.
             jobs.set_status(&job_id, "running").await;
+            eprintln!(
+                "[{job_id}] optimize running (codec={:?} format={declared})",
+                opts.codec
+            );
+            opts.deadline = opts.budget.map(|b| Instant::now() + b);
             telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
                 run_ingest(&tmp_str, &declared, ext.as_deref(), &opts, compact, thumbnail)
             }))

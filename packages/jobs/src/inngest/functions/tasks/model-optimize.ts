@@ -219,6 +219,11 @@ export const modelOptimizeFunction = inngest.createFunction(
     const stats: Json = optimize.stats;
 
     await step.run("persist", async () => {
+      // Read the thumbnail now, not at queue time: an Onshape sync can attach
+      // its own while the job runs, and that one is superseded too.
+      const superseded = outputs.thumbnail
+        ? (await getModelUpload(companyId, modelUploadId))?.thumbnailPath
+        : null;
       await updateModelUpload(companyId, modelUploadId, {
         optimizeStatus: "Success",
         optimizeError: null,
@@ -228,18 +233,14 @@ export const modelOptimizeFunction = inngest.createFunction(
         ...(outputs.thumbnail ? { thumbnailPath } : {})
       });
       // Drop the superseded thumbnail (best-effort — never fail the run over it).
-      if (
-        outputs.thumbnail &&
-        model.thumbnailPath &&
-        model.thumbnailPath !== thumbnailPath
-      ) {
+      if (superseded && superseded !== thumbnailPath) {
         const removed = await storage(getCarbonServiceRole())
           .company(companyId)
-          .remove([model.thumbnailPath]);
+          .remove([superseded]);
         if (removed.error) {
           logger.warn("failed to remove the superseded thumbnail", {
             modelUploadId,
-            path: model.thumbnailPath,
+            path: superseded,
             error: removed.error
           });
         }

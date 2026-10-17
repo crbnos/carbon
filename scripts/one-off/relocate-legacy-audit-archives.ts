@@ -14,12 +14,16 @@ import { readLocalScriptConfig } from "../lib/local-script-config";
 //
 // The apps stopped reading `private` in the same change that added this
 // script, so an archive this script has not moved cannot be downloaded.
-// Safe to remove once every deployment has run it.
+// Safe to remove once every deployment has run it. CI runs it once per
+// database after the migrations (scripts/one-off/README.md); `--dry-run`
+// lists what it would move.
 //
-// Usage:
-//   pnpm exec tsx scripts/one-off/relocate-legacy-audit-archives.ts            # move
-//   pnpm exec tsx scripts/one-off/relocate-legacy-audit-archives.ts --dry-run  # read-only
+// An archive whose file is gone is reported and left as it is: nothing can
+// bring it back, and failing on it would fail every later deploy. Any other
+// failure exits ONE_OFF_SCRIPT_DEFERRED, so the next deploy retries.
 
+/** ONE_OFF_SCRIPT_DEFERRED in ci/src/one-off-scripts.ts. */
+const DEFERRED = 75;
 const LEGACY_BUCKET = "private";
 const LEGACY_PREFIX = "audit-logs/";
 const PAGE_SIZE = 1000;
@@ -65,6 +69,16 @@ function isAlreadyExistsError(error: {
   );
 }
 
+function isNotFoundError(error: {
+  message?: string;
+  statusCode?: string | number;
+}) {
+  return (
+    /not found/i.test(error.message ?? "") ||
+    String(error.statusCode) === "404"
+  );
+}
+
 async function legacyArchives(): Promise<Archive[]> {
   const rows: Archive[] = [];
   for (let offset = 0; ; offset += PAGE_SIZE) {
@@ -83,7 +97,9 @@ async function legacyArchives(): Promise<Archive[]> {
   return rows;
 }
 
-async function relocate(archive: Archive): Promise<"moved" | "failed"> {
+async function relocate(
+  archive: Archive
+): Promise<"moved" | "missing" | "failed"> {
   const target = relocatedArchivePath(archive);
   if (!target) {
     process.stderr.write(
@@ -101,6 +117,12 @@ async function relocate(archive: Archive): Promise<"moved" | "failed"> {
   const copied = await client.storage
     .from(LEGACY_BUCKET)
     .copy(archive.archivePath, target, { destinationBucket: archive.companyId });
+  if (copied.error && isNotFoundError(copied.error)) {
+    process.stderr.write(
+      `  MISSING ${archive.id}: ${LEGACY_BUCKET}/${archive.archivePath} is gone; left as it is\n`
+    );
+    return "missing";
+  }
   if (copied.error && !isAlreadyExistsError(copied.error)) {
     process.stderr.write(
       `  FAILED ${archive.id}: copy — ${copied.error.message}\n`
@@ -131,7 +153,7 @@ async function relocate(archive: Archive): Promise<"moved" | "failed"> {
   const archives = await legacyArchives();
   process.stdout.write(`Found ${archives.length} legacy audit archives.\n`);
 
-  const total = { moved: 0, failed: 0 };
+  const total = { moved: 0, missing: 0, failed: 0 };
   for (const archive of archives) {
     total[await relocate(archive)] += 1;
   }
@@ -139,7 +161,7 @@ async function relocate(archive: Archive): Promise<"moved" | "failed"> {
   process.stdout.write(
     `Total${isDryRun ? " (dry run)" : ""}: ${JSON.stringify(total)}\n`
   );
-  if (total.failed > 0) process.exitCode = 1;
+  if (total.failed > 0) process.exitCode = DEFERRED;
 })().catch((err) => {
   process.stderr.write(`Relocation failed: ${(err as Error).message}\n`);
   process.exitCode = 1;

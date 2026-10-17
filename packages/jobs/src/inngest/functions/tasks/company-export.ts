@@ -412,6 +412,7 @@ export const companyExportFunction = inngest.createFunction(
         const assets = await copyAssetsToBackup(
           client,
           {
+            companyId,
             sourcePaths: assetSourcePaths,
             destBucket: companyId,
             destPrefix: backupAssetsDir(name)

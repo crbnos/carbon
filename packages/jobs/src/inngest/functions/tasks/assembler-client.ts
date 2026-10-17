@@ -29,12 +29,10 @@ import { getJobDatabaseClient } from "../../../db";
 // request; the run then waits on the callback's event in slices, polling the
 // job between slices. See .ai/specs/2026-07-15-assembler-deployment.md.
 
-// Submits are short; a tight per-request timeout catches an unreachable service.
+// Submits and polls are short; a tight per-request timeout catches an
+// unreachable service. A poll may upload a parked output, which is why it is
+// not shorter.
 const REQUEST_TIMEOUT_MS = 60 * 1000;
-// GET /v1/jobs/{id}?wait=N holds the request open until the job finishes (or N
-// elapses). Client timeout must exceed it.
-const LONG_POLL_WAIT_S = 25;
-const LONG_POLL_TIMEOUT_MS = (LONG_POLL_WAIT_S + 10) * 1000;
 // One wait for the completion callback. Between slices the run polls, which
 // catches a callback that fired while no wait was registered.
 const WAIT_SLICE_MS = 5 * 60 * 1000;
@@ -51,8 +49,8 @@ export const assemblerAuthHeaders: Record<string, string> =
     : {};
 
 // One shared concurrency key for every assembler-backed function. It bounds
-// the steps that run at once (submits and polls, a long poll holds a slot up
-// to 35 s), so a burst of uploads cannot take the account's concurrency from
+// the steps that run at once (submits and polls, each a short request), so a
+// burst of uploads cannot take the account's concurrency from
 // the `event-queue` drainer. It does NOT bound the jobs in the service: a run
 // waiting in `waitForEvent` holds no slot (Inngest counts executing steps
 // only). The service bounds its own work by memory (`admission.rs`) and queues
@@ -336,9 +334,11 @@ export type JobOutcome =
   | { status: "lost" };
 
 /**
- * One GET /v1/jobs/{id}?wait=N poll. Mints fresh signed upload URLs (late-mint)
- * for this poll via `mintUploadUrls` and sends them in X-Carbon-Upload-Urls, so
- * the service PUTs a parked output with seconds-old tokens.
+ * One GET /v1/jobs/{id} poll; it answers at once (the run waits between polls in
+ * `waitForEvent`, which holds no concurrency slot). Mints fresh signed upload
+ * URLs (late-mint) for this poll via `mintUploadUrls` and sends them in
+ * X-Carbon-Upload-Urls, so the service PUTs a parked output with seconds-old
+ * tokens.
  */
 export async function pollAssemblerJobOnce(opts: {
   jobId: string;
@@ -358,17 +358,17 @@ export async function pollAssemblerJobOnce(opts: {
 
   let response: Response;
   try {
-    response = await fetch(
-      `${base}/v1/jobs/${jobId}?wait=${LONG_POLL_WAIT_S}`,
-      {
-        headers,
-        signal: AbortSignal.timeout(LONG_POLL_TIMEOUT_MS)
-      }
-    );
+    response = await fetch(`${base}/v1/jobs/${jobId}`, {
+      headers,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    });
   } catch {
     return { status: "unreachable" };
   }
   if (response.status === 404) return { status: "lost" };
+  // A 5xx is the service (or its load balancer) mid-deploy: wait it out
+  // rather than fail a job that may still finish.
+  if (response.status >= 500) return { status: "unreachable" };
 
   const body = (await response.json().catch(() => null)) as {
     ok?: boolean;
@@ -410,6 +410,30 @@ function jobOutcome(job: {
       return { status: "queued" };
     default:
       return { status: "running" };
+  }
+}
+
+/** Best-effort: a failed cancel only leaves the job to finish unread. */
+async function cancelAssemblerJob(
+  jobId: string,
+  baseUrl: string | undefined,
+  logger: AssemblerLogger
+): Promise<void> {
+  const base = baseUrl ?? assemblerBaseUrl();
+  try {
+    const response = await fetch(`${base}/v1/jobs/${jobId}/cancel`, {
+      method: "POST",
+      headers: assemblerAuthHeaders,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    });
+    if (!response.ok) {
+      logger.warn("assembler job cancel refused", {
+        jobId,
+        status: response.status
+      });
+    }
+  } catch (error) {
+    logger.warn("assembler job cancel failed", { jobId, error });
   }
 }
 
@@ -609,6 +633,13 @@ export async function runAssemblerJob(
       return { result: decision.result, stats: decision.stats };
     }
     if (decision.kind === "fail") {
+      // Given up on a job the service still holds (over budget, queued too
+      // long): cancel it, so it stops taking memory nobody will read.
+      if (["queued", "running"].includes(polled.outcome.status)) {
+        await step.run(`${idPrefix}-cancel`, () =>
+          cancelAssemblerJob(jobId, baseUrl, logger)
+        );
+      }
       throw new NonRetriableError(decision.message);
     }
     resubmits += 1;

@@ -233,15 +233,15 @@ impl JobStore {
             .map(|s| external_status(&s).to_string())
     }
 
-    /// The INTERNAL status of an active job (pending/running/uploading). The
-    /// worker inlet dedupes deliveries on these exact names — the external
-    /// mapping folds pending->queued and uploading->running, which would make
-    /// the worker's pending/uploading branches unreachable (every Lambda job
-    /// no-op'd forever).
+    /// The INTERNAL status of an active job (pending/starting/running/uploading).
+    /// The worker inlet dedupes deliveries on these exact names — the external
+    /// mapping folds pending/starting->queued and uploading->running, which
+    /// would make the worker's pending/uploading branches unreachable (every
+    /// Lambda job no-op'd forever).
     pub async fn internal_active(&self, id: &str) -> Option<String> {
         self.read(id)
             .await
-            .filter(|j| matches!(j.status.as_str(), "pending" | "running" | "uploading"))
+            .filter(|j| is_active(&j.status))
             .map(|j| j.status)
     }
 
@@ -320,7 +320,7 @@ impl JobStore {
     /// isn't forcibly killed — it drops its result when it finds the job canceled.
     pub async fn cancel(&self, id: &str) -> Option<Value> {
         let mut rec = self.read(id).await?;
-        if matches!(rec.status.as_str(), "pending" | "running" | "uploading") {
+        if is_active(&rec.status) {
             rec.status = "canceled".into();
             self.write(id, &rec).await;
             self.unpark(id).await;
@@ -686,9 +686,17 @@ async fn connect(url: &str) -> redis::RedisResult<redis::aio::ConnectionManager>
 }
 
 /// Map an internal status to the public job-status enum.
+/// `starting`: a worker took the job and is downloading its source or waiting
+/// for memory. It is still `queued` to callers (queue time is not work), but a
+/// second delivery of the same job sees it as taken. `running` is set only
+/// once admission grants the memory.
+fn is_active(status: &str) -> bool {
+    matches!(status, "pending" | "starting" | "running" | "uploading")
+}
+
 fn external_status(internal: &str) -> &'static str {
     match internal {
-        "pending" => "queued",
+        "pending" | "starting" => "queued",
         "running" | "uploading" => "running",
         "done" => "succeeded",
         "error" => "failed",
@@ -870,6 +878,15 @@ mod tests {
         assert_eq!(done.result["componentCount"], 3);
         assert_eq!(done.stats["ms"], 7);
         assert_eq!(cache, Some(("model-1".to_string(), 0xff, 42)));
+    }
+
+    #[test]
+    fn a_taken_job_is_still_queued_to_callers_and_active() {
+        // A worker took it but has not been granted memory: callers must not
+        // start its time budget, and a second delivery must see it as taken.
+        assert_eq!(external_status("starting"), "queued");
+        assert!(is_active("starting"));
+        assert!(!is_active("canceled"));
     }
 
     #[tokio::test]

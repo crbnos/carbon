@@ -60,7 +60,6 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
         if jobs.is_canceled(&job_id).await {
             return;
         }
-        eprintln!("[{job_id}] compact running");
         let started = Instant::now();
 
         let src = http::temp_path("src");
@@ -78,8 +77,15 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
             let _grant = admission
                 .acquire(admission::estimate_mb(http::file_len(&src).await))
                 .await;
+            // The wait may have been long: a job cancelled meanwhile is dropped
+            // before it takes the memory it was granted.
+            if jobs.is_canceled(&job_id).await {
+                let _ = tokio::fs::remove_file(&src).await;
+                return;
+            }
             // Running from here on: the wait for memory is queue time, not work.
             jobs.set_status(&job_id, "running").await;
+            eprintln!("[{job_id}] compact running");
             telemetry::in_span("compute", tokio::task::spawn_blocking(move || compress(&src_str, mode, level))).await
         };
         let _ = tokio::fs::remove_file(&src).await;

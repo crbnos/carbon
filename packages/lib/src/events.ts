@@ -161,7 +161,9 @@ export type Events = {
     data: {
       modelUploadId: string;
       companyId: string;
-      userId: string;
+      // Absent when the database sends it: the `queue_model_pipeline` handler
+      // on a new modelUpload row, and the stuck-job cleanup's resend.
+      userId?: string;
       // format is derived from the stored file inside the job, not passed here.
       // Force a fresh optimise of an already-Successful model (the badge's
       // refresh action) — bypasses the already-optimized guard and mints a
@@ -172,9 +174,9 @@ export type Events = {
   };
 
   // Compact the retained raw (STEP → BinXCAF `.xbf.zst`, mesh → `.{ext}.zst`)
-  // so it never lingers as the fat upload. Fired after model-optimize settles
-  // (success, already-optimized, or failure) — decoupled so an optimize
-  // failure can't strand a fat raw for the prune to delete.
+  // so it never lingers as the fat upload. A successful optimise compacts
+  // inline; this fires when model-optimize skips (already optimised, a format
+  // it does not read, no assembler) or fails, so the raw still leaves staging.
   "carbon/model-compact": {
     data: {
       modelUploadId: string;

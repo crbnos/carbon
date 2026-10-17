@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it } from "vitest";
-import { decideJobStep } from "./assembler-client";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { decideJobStep, pollAssemblerJobOnce } from "./assembler-client";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -104,5 +104,36 @@ describe("decideJobStep", () => {
       kind: "fail",
       message: "assembler optimize canceled"
     });
+  });
+});
+
+describe("pollAssemblerJobOnce", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const poll = (status: number, body: unknown = {}) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify(body), { status }))
+    );
+    return pollAssemblerJobOnce({
+      jobId: "optimize-m1",
+      baseUrl: "http://assembler.test",
+      mintUploadUrls: async () => ({})
+    });
+  };
+
+  it("waits out a service that answers 5xx mid-deploy", async () => {
+    expect(await poll(502)).toEqual({ status: "unreachable" });
+    expect(await poll(503)).toEqual({ status: "unreachable" });
+  });
+
+  it("reports a job the service no longer knows as lost", async () => {
+    expect(await poll(404)).toEqual({ status: "lost" });
+  });
+
+  it("asks for the job without holding the request open", async () => {
+    await poll(200, { ok: true, job: { status: "queued" } });
+    const [url] = vi.mocked(fetch).mock.calls[0]!;
+    expect(String(url)).toBe("http://assembler.test/v1/jobs/optimize-m1");
   });
 });
