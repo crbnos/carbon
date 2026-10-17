@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { credit, debit } from "@carbon/utils";
+import { credit, debit, SCALE, splitLineTax } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import {
   type BuildPurchaseInvoicePostingLinesInput,
@@ -12,7 +12,10 @@ import {
   type PurchaseInvoiceJournalLine,
   type PurchaseInvoicePostingLine
 } from "./posting-lines";
-import { calculatePurchasePostingAmounts } from "./purchase-posting-amounts";
+import {
+  calculatePurchasePostingAmounts,
+  type PurchaseTaxLeg
+} from "./purchase-posting-amounts";
 
 const accounts: BuildPurchaseInvoicePostingLinesInput["accounts"] = {
   goodsReceivedNotInvoicedAccount: "grni",
@@ -20,7 +23,9 @@ const accounts: BuildPurchaseInvoicePostingLinesInput["accounts"] = {
   indirectCostAccount: "indirect",
   workInProgressAccount: "wip",
   rawMaterialsAccount: "raw",
-  finishedGoodsAccount: "finished"
+  finishedGoodsAccount: "finished",
+  taxPaidAccount: "tax-paid",
+  reverseChargeSalesTaxPayableAccount: "reverse-charge"
 };
 
 const part: PurchaseInvoiceItem = {
@@ -54,7 +59,11 @@ function amounts(
     inventoryQuantity,
     nominalBaseCost,
     totalBaseCost,
-    inventoryUnitCost: totalBaseCost / inventoryQuantity
+    inventoryUnitCost: totalBaseCost / inventoryQuantity,
+    payableBaseCost: totalBaseCost,
+    payableUnitCost: totalBaseCost / inventoryQuantity,
+    selfAssessedTaxBase: 0,
+    taxLegs: [] as PurchaseTaxLeg[]
   };
 }
 
@@ -547,5 +556,100 @@ describe("buildPurchaseInvoicePostingLines", () => {
       accountId: "wip",
       description: "WIP Account"
     });
+  });
+});
+
+describe("recoverable purchase tax", () => {
+  const vat = (recoverablePercent: number) => ({
+    id: "vat",
+    name: "VAT",
+    taxAuthorityId: null,
+    taxPercent: 0.2,
+    recoverablePercent,
+    sequence: 1,
+    isCompound: false,
+    taxReceivedAccountId: null,
+    taxPaidAccountId: null,
+    effectiveDate: null,
+    expirationDate: null
+  });
+
+  /** One direct £1,000 line, its tax split by the code. */
+  function directLine(
+    split: Parameters<typeof splitLineTax>[0]["components"],
+    reverseCharge = false
+  ): PurchaseInvoicePostingLine {
+    const base = { quantity: 1, unitPrice: 1000, shippingCost: 0 };
+    const parts = splitLineTax({
+      base: 1000,
+      lineTax: 200,
+      components: split,
+      scale: SCALE
+    });
+    const [lineAmounts] = calculatePurchasePostingAmounts({
+      lines: [
+        {
+          id: "l",
+          invoiceLineType: "Part",
+          conversionFactor: 1,
+          taxAmount: reverseCharge ? 0 : 200,
+          ...base,
+          ...(reverseCharge
+            ? { selfAssessedParts: parts }
+            : { taxParts: parts })
+        }
+      ],
+      exchangeRate: 1,
+      supplierShippingCost: 0
+    });
+    return {
+      id: "l",
+      invoiceLineType: "Part",
+      locationId: "loc-1",
+      amounts: lineAmounts!,
+      kind: "direct",
+      item: part,
+      receivedWithInvoice: true
+    };
+  }
+
+  it("debits Tax Paid with fully recoverable tax and keeps it out of cost", () => {
+    const { lines } = build([directLine([vat(1)])]);
+    expect(summary(lines)).toEqual([
+      { accountId: "raw", amount: debit("asset", 1000), quantity: 1 },
+      { accountId: "ap", amount: credit("liability", 1200), quantity: 1 },
+      { accountId: "tax-paid", amount: debit("asset", 200), quantity: 1 }
+    ]);
+  });
+
+  it("splits 50% recoverable tax between cost and Tax Paid", () => {
+    const { lines } = build([directLine([vat(0.5)])]);
+    expect(summary(lines)).toEqual([
+      { accountId: "raw", amount: debit("asset", 1100), quantity: 1 },
+      { accountId: "ap", amount: credit("liability", 1200), quantity: 1 },
+      { accountId: "tax-paid", amount: debit("asset", 100), quantity: 1 }
+    ]);
+  });
+
+  it("posts the same journal as before when no tax is recoverable", () => {
+    const { lines } = build([directLine([vat(0)])]);
+    expect(summary(lines)).toEqual([
+      { accountId: "raw", amount: debit("asset", 1200), quantity: 1 },
+      { accountId: "ap", amount: credit("liability", 1200), quantity: 1 }
+    ]);
+  });
+
+  it("self-assesses a reverse charge: Tax Paid and the reverse-charge account, AP net", () => {
+    const { lines } = build([directLine([vat(1)], true)]);
+    expect(summary(lines)).toEqual([
+      { accountId: "raw", amount: debit("asset", 1000), quantity: 1 },
+      { accountId: "ap", amount: credit("liability", 1000), quantity: 1 },
+      { accountId: "tax-paid", amount: debit("asset", 200), quantity: 1 },
+      {
+        accountId: "reverse-charge",
+        amount: credit("liability", 200),
+        quantity: 1
+      }
+    ]);
   });
 });

@@ -28,9 +28,12 @@ import {
   calculateDueDate,
   classifyIntercompanyPostingLines,
   datetime,
+  effectiveTaxPercent,
   getBillableQuantity,
   getRemainingQuantityToInvoice,
-  round
+  round,
+  SCALE,
+  splitLineTax
 } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -45,6 +48,7 @@ import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
 import { assertPostable } from "../lib/postable";
+import { loadTaxCodes } from "../lib/tax-codes";
 import { loadLeasePostingFacts, resolveLeasePostingLine } from "./lease-lines";
 import {
   buildPurchaseInvoicePostingLines,
@@ -792,9 +796,45 @@ const postPurchaseInvoice = defineServerFn({
         if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
       }
 
+      // Each line's tax split by its code's components on the posting date:
+      // the recoverable share leaves cost for Tax Paid, and a Reverse Charge
+      // code self-assesses tax the supplier did not charge.
+      const taxCodes = await loadTaxCodes(
+        db,
+        companyId,
+        purchaseInvoiceLines.data.map((line) => line.taxCodeId),
+        today
+      );
+      const linesWithTax = purchaseInvoiceLines.data.map((line) => {
+        const code = line.taxCodeId ? taxCodes.get(line.taxCodeId) : undefined;
+        if (!code || code.components.length === 0) return line;
+        const base =
+          line.quantity * (line.unitPrice ?? 0) + (line.shippingCost ?? 0);
+        if (code.calculationType === "Reverse Charge") {
+          return {
+            ...line,
+            selfAssessedParts: splitLineTax({
+              base,
+              lineTax: round(base * effectiveTaxPercent(code.components)),
+              components: code.components,
+              scale: SCALE
+            })
+          };
+        }
+        return {
+          ...line,
+          taxParts: splitLineTax({
+            base,
+            lineTax: line.taxAmount ?? 0,
+            components: code.components,
+            scale: SCALE
+          })
+        };
+      });
+
       const amountsByLineId = new Map(
         calculatePurchasePostingAmounts({
-          lines: purchaseInvoiceLines.data,
+          lines: linesWithTax,
           exchangeRate: purchaseInvoice.data.exchangeRate ?? 1,
           supplierShippingCost:
             purchaseInvoiceDelivery.data.supplierShippingCost ?? 0

@@ -29,6 +29,7 @@
 
 import type { Database } from "@carbon/database";
 import { journalReference } from "@carbon/database";
+import { TAX_PAID_POSTING_DESCRIPTION } from "@carbon/database/accounting-posting";
 import type { OptionalDefaultRole } from "@carbon/database/journal-posting-status";
 import { accountTypeFromClass } from "@carbon/database/ledger";
 import {
@@ -71,6 +72,8 @@ export type PurchaseInvoiceAccountDefaults = Pick<
   | "workInProgressAccount"
   | "rawMaterialsAccount"
   | "finishedGoodsAccount"
+  | "taxPaidAccount"
+  | "reverseChargeSalesTaxPayableAccount"
 >;
 
 /** What the journal reads of a line's item. */
@@ -125,6 +128,10 @@ type LineBase = {
     | "nominalBaseCost"
     | "totalBaseCost"
     | "inventoryUnitCost"
+    | "payableBaseCost"
+    | "payableUnitCost"
+    | "selfAssessedTaxBase"
+    | "taxLegs"
   >;
 };
 
@@ -434,7 +441,11 @@ export function buildPurchaseInvoicePostingLines(
   });
 
   for (const line of input.lines) {
-    const { inventoryQuantity: quantity, totalBaseCost: total } = line.amounts;
+    const {
+      inventoryQuantity: quantity,
+      totalBaseCost: total,
+      payableBaseCost: payableTotal
+    } = line.amounts;
 
     switch (line.kind) {
       case "direct": {
@@ -477,7 +488,7 @@ export function buildPurchaseInvoicePostingLines(
           },
           meta
         );
-        push(payable(total, quantity, { journalLineReference }), meta);
+        push(payable(payableTotal, quantity, { journalLineReference }), meta);
         break;
       }
 
@@ -554,7 +565,14 @@ export function buildPurchaseInvoicePostingLines(
               meta
             );
           }
-          push(payable(clearing.invoiceCost, clearing.quantity, keys), meta);
+          push(
+            payable(
+              clearing.quantity * line.amounts.payableUnitCost,
+              clearing.quantity,
+              keys
+            ),
+            meta
+          );
         }
 
         // Units not yet received accrue GR/IR. A service is never received,
@@ -587,10 +605,14 @@ export function buildPurchaseInvoicePostingLines(
             meta
           );
           push(
-            payable(accrualCost, quantityToAccrue, {
-              ...keys,
-              ...(isService ? {} : { accrual: true })
-            }),
+            payable(
+              quantityToAccrue * line.amounts.payableUnitCost,
+              quantityToAccrue,
+              {
+                ...keys,
+                ...(isService ? {} : { accrual: true })
+              }
+            ),
             meta
           );
         }
@@ -665,7 +687,7 @@ export function buildPurchaseInvoicePostingLines(
             meta
           );
         }
-        push(payable(total, quantity, keys), meta);
+        push(payable(payableTotal, quantity, keys), meta);
         break;
       }
 
@@ -696,7 +718,7 @@ export function buildPurchaseInvoicePostingLines(
           },
           meta
         );
-        push(payable(total, quantity, keys), meta);
+        push(payable(payableTotal, quantity, keys), meta);
         break;
       }
 
@@ -745,8 +767,70 @@ export function buildPurchaseInvoicePostingLines(
             meta
           );
         }
-        push(payable(total, quantity, keys), meta);
+        push(payable(payableTotal, quantity, keys), meta);
         break;
+      }
+    }
+
+    // Recoverable tax goes to Tax Paid (the component's account, else the
+    // default); self-assessed tax is owed to the authority, not the supplier.
+    const recoverable = line.amounts.taxLegs.filter(
+      (leg) => !equals(leg.part.recoverableAmount, 0)
+    );
+    if (
+      recoverable.length > 0 ||
+      !equals(line.amounts.selfAssessedTaxBase, 0)
+    ) {
+      const taxMeta: Dimensions = {
+        supplierTypeId,
+        itemPostingGroupId: null,
+        itemId: null,
+        locationId: line.locationId,
+        costCenterId: null,
+        projectId: null,
+        processId: null,
+        fixedAssetClassId: null
+      };
+      const keys = {
+        quantity: round(quantity),
+        documentLineReference: null,
+        journalLineReference: nanoid()
+      };
+      for (const leg of recoverable) {
+        const accountId =
+          leg.part.component.taxPaidAccountId ?? accounts.taxPaidAccount;
+        if (!accountId) {
+          throw new InvalidInputError(
+            "Set the Tax Paid account default before posting recoverable tax"
+          );
+        }
+        push(
+          {
+            accountId,
+            description: TAX_PAID_POSTING_DESCRIPTION,
+            amount: round(debit("asset", leg.part.recoverableAmount)),
+            ...keys
+          },
+          taxMeta
+        );
+      }
+      if (!equals(line.amounts.selfAssessedTaxBase, 0)) {
+        if (!accounts.reverseChargeSalesTaxPayableAccount) {
+          throw new InvalidInputError(
+            "Set the Reverse Charge Sales Tax account default before posting a reverse charge"
+          );
+        }
+        push(
+          {
+            accountId: accounts.reverseChargeSalesTaxPayableAccount,
+            description: "Reverse Charge Tax",
+            amount: round(
+              credit("liability", line.amounts.selfAssessedTaxBase)
+            ),
+            ...keys
+          },
+          taxMeta
+        );
       }
     }
   }
