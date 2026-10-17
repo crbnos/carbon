@@ -167,4 +167,14 @@ describe("released model exports", () => {
     expect(ids[0]).toBe(ids[1]);
     expect(ids[2]).not.toBe(ids[0]);
   });
+
+  it("gives a workspace export with no microversion no fixed generation", async () => {
+    await syncOnshapeElementAssetsToItem(carbon, {
+      ...input,
+      sourceWvm: "w",
+      versionId: "workspace-1"
+    });
+    const ids = mocks.attach.mock.calls.map(([, args]) => args.model.sourceId);
+    expect(ids).toEqual([undefined]);
+  });
 });

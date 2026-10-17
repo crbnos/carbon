@@ -193,9 +193,12 @@ async function exportRawGltfModel(
     // Immutable generation: old optimizer/thumbnail/compact jobs can only
     // finish against their old model ID. Replays of this exact released source
     // share one ID; a different part/configuration cannot reuse its artifacts.
-    // Keep whole-assembly attachment behavior unchanged.
+    // Keep whole-assembly attachment behavior unchanged. A workspace id is
+    // mutable: without a microversion there is no fixed source to name, so
+    // the model refreshes in place instead of reusing old geometry.
     sourceId:
-      input.modelElementKind === "partstudio"
+      input.modelElementKind === "partstudio" &&
+      (input.sourceWvm !== "w" || input.sourceMicroversionId)
         ? `onshape-${createHash("sha256")
             .update(
               JSON.stringify([
@@ -207,9 +210,7 @@ async function exportRawGltfModel(
                 input.modelElementId,
                 input.partId,
                 configuration ?? "",
-                ...(input.sourceWvm === "w"
-                  ? [input.sourceMicroversionId ?? ""]
-                  : [])
+                ...(input.sourceWvm === "w" ? [input.sourceMicroversionId] : [])
               ])
             )
             .digest("hex")
