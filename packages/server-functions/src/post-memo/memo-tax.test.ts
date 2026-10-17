@@ -46,3 +46,9 @@ it("posts no tax leg for a memo without tax", () => {
     planMemoTax({ ...memo, taxAmount: 0, isAR: true, taxCode: undefined })
   ).toMatchObject({ netAmount: 1200, taxToAccount: 0, parts: [] });
 });
+
+it("keeps a codeless supplier memo's tax in cost, as a legacy purchase line did", () => {
+  expect(
+    planMemoTax({ ...memo, isAR: false, taxCode: undefined })
+  ).toMatchObject({ netAmount: 1000, taxToAccount: 0, parts: [] });
+});

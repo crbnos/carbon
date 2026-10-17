@@ -907,6 +907,140 @@ databaseTest(
   }
 );
 
+databaseTest(
+  "a cancellation credit over two tax codes drafts one credit memo per code, each with its tax on top",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "two-codes",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      const reducedLineId = `${contractId}-reduced`;
+      await db
+        .insertInto("customerContractLine")
+        .values({
+          id: reducedLineId,
+          customerContractId: contractId,
+          revenueType: "Recurring",
+          itemId: await contractItemId(db, companyId, lineId),
+          quantity: 1,
+          rate: 200,
+          rateUnit: "Month",
+          startDate: "2026-01-01",
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      const standard = `${contractId}-standard`;
+      const reduced = `${contractId}-reduced-code`;
+      await db
+        .insertInto("taxCode")
+        .values([
+          { id: standard, name: "UK Standard", companyId, createdBy: USER },
+          { id: reduced, name: "UK Reduced", companyId, createdBy: USER }
+        ])
+        .execute();
+      await db
+        .insertInto("taxCodeComponent")
+        .values(
+          [
+            { taxCodeId: standard, name: "VAT", taxPercent: 0.2 },
+            { taxCodeId: reduced, name: "VAT", taxPercent: 0.05 }
+          ].map((c) => ({ ...c, sequence: 1, companyId, createdBy: USER }))
+        )
+        .execute();
+      for (const [id, taxCodeId, taxPercent] of [
+        [lineId, standard, 0.2],
+        [reducedLineId, reduced, 0.05]
+      ] as const) {
+        await db
+          .updateTable("customerContractLine")
+          .set({ taxCodeId, taxPercent })
+          .where("id", "=", id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+
+      const confirmed = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(confirmed.error).toBeNull();
+      const run = await createContractInvoices(ctx, {
+        asOf: "2026-01-01",
+        customerContractId: contractId
+      });
+      expect(run.error).toBeNull();
+      expect(run.data!.invoiceIds).toHaveLength(1);
+
+      // January is billed in advance; ending on 15 January leaves 16 of its
+      // 31 days unused on each line.
+      const cancelled = await postCustomerContract(ctx, {
+        type: "cancel",
+        customerContractId: contractId,
+        asOf: "2026-01-10",
+        endDate: "2026-01-15",
+        reason: "Customer closed the site",
+        creditUnusedTime: true
+      });
+      expect(cancelled.error).toBeNull();
+      const result = cancelled.data as unknown as ContractCancellationResult;
+      expect(result.memoIds).toHaveLength(2);
+      expect(result.memoId).toEqual(result.memoIds[0]);
+      expect(result.memoReadableIds).toHaveLength(2);
+
+      const memos = await db
+        .selectFrom("memo")
+        .select(["id", "amount", "taxAmount", "taxCodeId"])
+        .where("id", "in", result.memoIds)
+        .where("companyId", "=", companyId)
+        .execute();
+      const byCode = Object.fromEntries(
+        memos.map((memo) => [
+          memo.taxCodeId,
+          {
+            amount: Number(memo.amount),
+            taxAmount: Number(memo.taxAmount)
+          }
+        ])
+      );
+      // 100 × 16/31 = 51.61 net at 20%; 200 × 16/31 = 103.23 net at 5%.
+      // The tax is computed forward from each memo's net.
+      expect(byCode).toEqual({
+        [standard]: { amount: 61.93, taxAmount: 10.32 },
+        [reduced]: { amount: 108.39, taxAmount: 5.16 }
+      });
+
+      // Each memo carries only its own line's credit rows, and they sum to
+      // its net — posting a memo refuses rows that credit more than its net.
+      const rows = await db
+        .selectFrom("customerContractInvoiceLine")
+        .select(["memoId", "customerContractLineId", "amount"])
+        .where("memoId", "in", result.memoIds)
+        .where("companyId", "=", companyId)
+        .execute();
+      for (const memo of memos) {
+        const own = rows.filter((row) => row.memoId === memo.id);
+        expect(new Set(own.map((row) => row.customerContractLineId))).toEqual(
+          new Set([memo.taxCodeId === standard ? lineId : reducedLineId])
+        );
+        expect(
+          round(
+            own.reduce((sum, row) => sum + Number(row.amount), 0),
+            2
+          )
+        ).toEqual(-round(Number(memo.amount) - Number(memo.taxAmount), 2));
+      }
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
 /** Contract lines, oldest first, with their dates as text. */
 async function contractLines(
   db: Kysely<KyselyDatabase>,

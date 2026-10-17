@@ -19,7 +19,8 @@ import {
  * AP and `taxAmount` the tax inside it, both in document currency. A customer
  * memo moves all of the tax through Tax Received; a supplier memo moves only
  * the recoverable share through Tax Paid and leaves the rest in the reason
- * leg. Shared by the posting and the pre-cutover rebuild, so both build the
+ * leg; with no code it moves none, as a legacy purchase line folded its tax
+ * into cost. Shared by the posting and the pre-cutover rebuild, so both build the
  * same journal.
  */
 export function planMemoTax(args: {
@@ -41,9 +42,10 @@ export function planMemoTax(args: {
           scale: SCALE
         })
       : [];
-  if (isAR || parts.length === 0) {
-    return { netAmount, taxToAccount: taxAmount, parts };
-  }
+  if (isAR) return { netAmount, taxToAccount: taxAmount, parts };
+  // A supplier memo with no code reverses tax a legacy purchase line folded
+  // into cost, so it stays in the reason leg, as on that invoice.
+  if (parts.length === 0) return { netAmount, taxToAccount: 0, parts };
   const total = parts.reduce((t, p) => t + p.taxAmount, 0);
   return {
     netAmount,

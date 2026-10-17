@@ -28,6 +28,7 @@ import {
   fundingScopeOf,
   invoiceRemainingAmounts,
   isEffectiveSettlement,
+  memoAmounts,
   PAYABLE_POSTING_DESCRIPTIONS,
   RECEIVABLE_POSTING_DESCRIPTIONS,
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
@@ -49,7 +50,12 @@ import {
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getExchangeRate } from "../accounting/accounting.service";
+import {
+  getCurrencyByCode,
+  getExchangeRate,
+  getTaxCode
+} from "../accounting/accounting.service";
+import { taxCodeRate, toTaxCodeInput } from "../accounting/accounting.utils";
 import { getEmployeeJob } from "../people/people.service";
 import {
   getCustomerPayment,
@@ -3951,28 +3957,112 @@ export async function upsertMemo(
     | (Omit<z.infer<typeof memoValidator>, "id" | "memoId"> & {
         memoId: string;
         companyId: string;
+        companyGroupId: string;
         createdBy: string;
         customFields?: Json;
       })
     | (Omit<z.infer<typeof memoValidator>, "id"> & {
         id: string;
+        companyId: string;
+        companyGroupId: string;
         updatedBy: string;
         customFields?: Json;
       })
-) {
-  if ("createdBy" in memo) {
+): Promise<{
+  data: { id: string; memoId: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  const { companyGroupId, netAmount, taxCodeId, amount, ...rest } = memo;
+  const amounts = await memoTaxAmounts(client, {
+    companyId: memo.companyId,
+    companyGroupId,
+    currencyCode: memo.currencyCode,
+    memoDate: memo.memoDate,
+    netAmount,
+    taxCodeId,
+    amount
+  });
+  if ("error" in amounts) {
+    return {
+      data: null,
+      error: {
+        message: amounts.error
+      } as import("@supabase/supabase-js").PostgrestError
+    };
+  }
+  const values = { ...rest, ...amounts };
+
+  if ("createdBy" in values) {
     return client
       .from("memo")
-      .insert([sanitize(memo)])
+      .insert([sanitize(values)])
       .select("id, memoId")
       .single();
   }
+  const { companyId, ...update } = values;
   return client
     .from("memo")
-    .update(sanitize(memo))
-    .eq("id", memo.id)
+    .update(sanitize(update))
+    .eq("id", update.id)
+    .eq("companyId", companyId)
     .select("id, memoId")
     .single();
+}
+
+/**
+ * The stored amounts of a memo (spec "Memo tax"). The tax is computed here,
+ * forward from the net at the code's rate on the memo date — a tax sent by a
+ * client is never trusted, and tax is never worked out backwards from a
+ * gross. `amount` is the gross on AR or AP. A caller that sends only `amount`
+ * keeps the old meaning: a gross with no tax.
+ */
+async function memoTaxAmounts(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    currencyCode: string;
+    memoDate: string;
+    netAmount: number | undefined;
+    taxCodeId: string | undefined;
+    amount: number | undefined;
+  }
+): Promise<
+  | { amount: number; taxAmount: number; taxCodeId: string | null }
+  | { error: string }
+> {
+  if (args.netAmount === undefined) {
+    if (args.amount === undefined) return { error: "Net amount is required" };
+    if (args.taxCodeId) return { error: "A tax code needs a net amount" };
+    return { amount: args.amount, taxAmount: 0, taxCodeId: null };
+  }
+
+  const currency = await getCurrencyByCode(
+    client,
+    args.companyGroupId,
+    args.currencyCode
+  );
+  if (currency.error || currency.data?.decimalPlaces == null) {
+    return {
+      error: `Currency ${args.currencyCode} has no decimal places configured`
+    };
+  }
+
+  let taxPercent = 0;
+  if (args.taxCodeId) {
+    const taxCode = await getTaxCode(client, args.taxCodeId);
+    if (taxCode.error || taxCode.data?.companyId !== args.companyId) {
+      return { error: "Tax code not found" };
+    }
+    taxPercent = taxCodeRate(toTaxCodeInput(taxCode.data), args.memoDate);
+  }
+
+  const { amount, taxAmount } = memoAmounts(
+    args.netAmount,
+    taxPercent,
+    currency.data.decimalPlaces
+  );
+  return { amount, taxAmount, taxCodeId: args.taxCodeId ?? null };
 }
 
 // RLS DELETE policy on memo restricts to status='Draft'.

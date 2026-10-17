@@ -11,7 +11,7 @@
 import type { Database } from "@carbon/database";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
-import { getNextSequence } from "@carbon/database/sequence";
+import { getNextSequence, getNextSequences } from "@carbon/database/sequence";
 import {
   effectiveComponents,
   effectiveTaxPercent
@@ -20,7 +20,9 @@ import {
   billingHorizon,
   effectiveInvoiceAutomation,
   generateRentalBillingPeriods,
+  groupByTaxRate,
   type InvoiceAutomation,
+  memoAmounts,
   planRentalInvoices,
   round,
   wholeRateUnits
@@ -69,7 +71,8 @@ export type RentalInvoiceGenerationResult = {
   invoices: DraftedRentalInvoice[];
   /** `invoices.map(i => i.invoiceId)`. */
   invoiceIds: string[];
-  /** Early-return credits, one Draft credit memo per agreement. */
+  /** Early-return credits: Draft credit memos, one per agreement and tax
+   *  rate. */
   creditMemos: DraftedRentalCreditMemo[];
   /** Agreements whose transaction rolled back; their rows stay unbilled. */
   failures: RentalInvoiceGenerationFailure[];
@@ -349,17 +352,44 @@ async function draftAgreementInvoices(
   // invoiced as before.
   const adjustments = periods.filter((period) => period.isAdjustment);
   const billable = periods.filter((period) => !period.isAdjustment);
+
+  // A line with a tax code takes the code's rate on its own date — a rent
+  // period's start, a charge's date — so a component that starts or ends
+  // mid-term bills at the rate posting splits by. Loaded once, with every
+  // component. A line with no code (or a code since deleted) keeps its
+  // stored percent. An early-return credit takes the rate of the period it
+  // credits, as the invoice line it gives back did.
+  const taxCodes = await loadTaxCodes(
+    trx,
+    companyId,
+    [agreement.taxCodeId, ...charges.map((charge) => charge.taxCodeId)],
+    null
+  );
+  const taxPercentOn = (
+    taxCodeId: string | null,
+    storedPercent: number | string,
+    date: string
+  ) => {
+    const code = taxCodeId ? taxCodes.get(taxCodeId) : undefined;
+    return code
+      ? round(effectiveTaxPercent(effectiveComponents(code, date)))
+      : Number(storedPercent);
+  };
+
   const creditMemos: DraftedRentalCreditMemo[] =
     adjustments.length > 0
-      ? [
-          {
-            memoId: await insertRentalCreditMemo(trx, args, agreement, {
-              adjustments,
-              decimals
-            }),
-            rentalAgreementId: agreement.id
-          }
-        ]
+      ? (
+          await insertRentalCreditMemos(trx, args, agreement, {
+            adjustments,
+            decimals,
+            taxPercentOn: (period) =>
+              taxPercentOn(
+                agreement.taxCodeId,
+                agreement.taxPercent,
+                period.periodStart
+              )
+          })
+        ).map((memoId) => ({ memoId, rentalAgreementId: agreement.id }))
       : [];
 
   // The readable ids of the voided invoices these rows were billed on, so a
@@ -391,28 +421,6 @@ async function draftAgreementInvoices(
   // unitPrice × exchangeRate is what the customer sees), as on every sales
   // document.
   const exchangeRate = Number(agreement.exchangeRate);
-
-  // A line with a tax code takes the code's rate on its own date — a rent
-  // period's start, a charge's date — so a component that starts or ends
-  // mid-term bills at the rate posting splits by. Loaded once, with every
-  // component. A line with no code (or a code since deleted) keeps its
-  // stored percent.
-  const taxCodes = await loadTaxCodes(
-    trx,
-    companyId,
-    [agreement.taxCodeId, ...charges.map((charge) => charge.taxCodeId)],
-    null
-  );
-  const taxPercentOn = (
-    taxCodeId: string | null,
-    storedPercent: number | string,
-    date: string
-  ) => {
-    const code = taxCodeId ? taxCodes.get(taxCodeId) : undefined;
-    return code
-      ? round(effectiveTaxPercent(effectiveComponents(code, date)))
-      : Number(storedPercent);
-  };
 
   const lines: {
     values: LineValues;
@@ -498,12 +506,16 @@ async function draftAgreementInvoices(
 }
 
 /**
- * Inserts one Draft credit memo for an agreement's due early-return
- * adjustments and stamps them with it (`Invoiced`, `memoId`). The memo is the
- * sum of the credits at the currency's settlement precision; post-memo books
- * each period's share against its Deferral rows. Returns the memo id.
+ * Inserts the Draft credit memos for an agreement's due early-return
+ * adjustments and stamps each adjustment with its memo (`Invoiced`,
+ * `memoId`). One memo per tax rate (spec "Memo tax"): the adjustments carry
+ * the agreement's code, and a code whose rate changed between two periods'
+ * starts gives two memos. A memo's net is the sum of its credits at the
+ * currency's settlement precision, its tax computed forward from the net,
+ * and its `amount` the gross; post-memo books each period's share of the net
+ * against its Deferral rows. Returns the memo ids, the first period's first.
  */
-async function insertRentalCreditMemo(
+async function insertRentalCreditMemos(
   trx: KyselyTx,
   args: RentalInvoiceGenerationArgs,
   agreement: AgreementRow,
@@ -520,63 +532,83 @@ async function insertRentalCreditMemo(
       serialNumber: string | null;
     }[];
     decimals: number;
+    taxPercentOn: (period: { periodStart: string }) => number;
   }
-): Promise<string> {
+): Promise<string[]> {
   const { companyId, asOf, userId } = args;
-  const amount = round(
-    -credit.adjustments.reduce((sum, row) => sum + Number(row.amount), 0),
-    credit.decimals
-  );
-  if (!(amount > 0)) {
+  const groups = groupByTaxRate(credit.adjustments, (row) => ({
+    taxCodeId: agreement.taxCodeId,
+    taxPercent: credit.taxPercentOn(row)
+  })).map((group) => ({
+    ...group,
+    ...memoAmounts(
+      -group.rows.reduce((sum, row) => sum + Number(row.amount), 0),
+      group.taxPercent,
+      credit.decimals
+    )
+  }));
+  if (groups.some((group) => !(group.netAmount > 0))) {
     throw new Error("An early-return credit must be a positive amount");
   }
   // Allocated in this transaction, so a rollback leaves no gap.
-  const memoReadableId = await getNextSequence(trx, "creditMemo", companyId);
-  const memo = await trx
+  const memoReadableIds = await getNextSequences(
+    trx,
+    "creditMemo",
+    companyId,
+    groups.length
+  );
+  const memos = await trx
     .insertInto("memo")
-    .values({
-      memoId: memoReadableId,
-      direction: "Credit",
-      status: "Draft",
-      customerId: agreement.customerId,
-      memoDate: asOf,
-      currencyCode: agreement.currencyCode,
-      exchangeRate: agreement.exchangeRate,
-      amount,
-      reference: agreement.rentalAgreementId,
-      notes: credit.adjustments
-        .map((row) =>
-          rentLineDescription({
-            ...row,
-            isAdjustment: true,
-            cycle: agreement.billingCycle
-          })
-        )
-        .join("\n"),
-      rentalAgreementId: agreement.id,
-      companyId,
-      createdBy: userId
-    })
-    .returning(["id"])
-    .executeTakeFirstOrThrow();
-
-  await trx
-    .updateTable("rentalBillingPeriod")
-    .set({
-      status: "Invoiced",
-      memoId: memo.id,
-      updatedBy: userId,
-      updatedAt: sql`now()`
-    })
-    .where("companyId", "=", companyId)
-    .where(
-      "id",
-      "in",
-      credit.adjustments.map((row) => row.id)
+    .values(
+      groups.map((group, index) => ({
+        memoId: memoReadableIds[index]!,
+        direction: "Credit" as const,
+        status: "Draft" as const,
+        customerId: agreement.customerId,
+        memoDate: asOf,
+        currencyCode: agreement.currencyCode,
+        exchangeRate: agreement.exchangeRate,
+        amount: group.amount,
+        taxAmount: group.taxAmount,
+        taxCodeId: group.taxCodeId,
+        reference: agreement.rentalAgreementId,
+        notes: group.rows
+          .map((row) =>
+            rentLineDescription({
+              ...row,
+              isAdjustment: true,
+              cycle: agreement.billingCycle
+            })
+          )
+          .join("\n"),
+        rentalAgreementId: agreement.id,
+        companyId,
+        createdBy: userId
+      }))
     )
+    .returning(["id", "memoId"])
     .execute();
+  const idByReadableId = new Map(memos.map((memo) => [memo.memoId, memo.id]));
+  const memoIds = memoReadableIds.map(
+    (readableId) => idByReadableId.get(readableId)!
+  );
 
-  return memo.id;
+  // One statement for every memo's periods.
+  const stamps = groups.flatMap((group, index) =>
+    group.rows.map((row) => sql`(${row.id}::text, ${memoIds[index]!}::text)`)
+  );
+  await sql`
+    UPDATE "rentalBillingPeriod" AS p
+    SET "status" = 'Invoiced',
+        "memoId" = v."memoId",
+        "updatedBy" = ${userId},
+        "updatedAt" = now()
+    FROM (VALUES ${sql.join(stamps)}) AS v("id", "memoId")
+    WHERE p."id" = v."id"
+      AND p."companyId" = ${companyId}
+  `.execute(trx);
+
+  return memoIds;
 }
 
 /**

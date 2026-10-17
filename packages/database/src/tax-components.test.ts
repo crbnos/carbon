@@ -7,7 +7,9 @@ import { SCALE } from "./precision.ts";
 import {
   effectiveComponents,
   effectiveTaxPercent,
+  groupByTaxRate,
   lineTaxBase,
+  memoAmounts,
   receiptUnitCost,
   splitLineTax,
   type TaxComponentInput
@@ -195,5 +197,100 @@ describe("receiptUnitCost", () => {
         recoverableTaxAmount: 0
       })
     ).toBe(100 / 2 + 230 / 20);
+  });
+});
+
+describe("groupByTaxRate", () => {
+  const row = (id: string, taxCodeId: string | null, taxPercent: number) => ({
+    id,
+    taxCodeId,
+    taxPercent
+  });
+
+  it("makes one group per code, in the order of each group's first row", () => {
+    const groups = groupByTaxRate(
+      [
+        row("a", "uk-standard", 0.2),
+        row("b", "uk-reduced", 0.05),
+        row("c", "uk-standard", 0.2)
+      ],
+      (r) => r
+    );
+    expect(
+      groups.map((g) => [g.taxCodeId, g.taxPercent, g.rows.map((r) => r.id)])
+    ).toEqual([
+      ["uk-standard", 0.2, ["a", "c"]],
+      ["uk-reduced", 0.05, ["b"]]
+    ]);
+  });
+
+  it("splits one code at two rates, as a component that started mid-term does", () => {
+    const groups = groupByTaxRate(
+      [row("sep", "vat", 0.1), row("oct", "vat", 0.15)],
+      (r) => r
+    );
+    expect(groups.map((g) => g.taxPercent)).toEqual([0.1, 0.15]);
+  });
+
+  it("groups lines with no code by their bare percent, apart from coded lines at the same rate", () => {
+    const groups = groupByTaxRate(
+      [
+        row("a", null, 0.0825),
+        row("b", null, 0.0825),
+        row("c", null, 0),
+        row("d", "tx", 0.0825)
+      ],
+      (r) => r
+    );
+    expect(
+      groups.map((g) => [g.taxCodeId, g.taxPercent, g.rows.map((r) => r.id)])
+    ).toEqual([
+      [null, 0.0825, ["a", "b"]],
+      [null, 0, ["c"]],
+      ["tx", 0.0825, ["d"]]
+    ]);
+  });
+
+  it("treats float noise in a rate as the same rate", () => {
+    const groups = groupByTaxRate(
+      [row("a", null, 0.1 + 0.2), row("b", null, 0.3)],
+      (r) => r
+    );
+    expect(groups).toHaveLength(1);
+  });
+});
+
+describe("memoAmounts", () => {
+  it("computes the tax forward from the net and stores the gross", () => {
+    expect(memoAmounts(1000, 0.2, 2)).toEqual({
+      netAmount: 1000,
+      taxAmount: 200,
+      amount: 1200
+    });
+  });
+
+  it("rounds the net, then the tax on the rounded net, at the currency's decimals", () => {
+    // 33.335 → 33.34 (half up); 33.34 × 8.25% = 2.75055 → 2.75.
+    expect(memoAmounts(33.335, 0.0825, 2)).toEqual({
+      netAmount: 33.34,
+      taxAmount: 2.75,
+      amount: 36.09
+    });
+  });
+
+  it("settles a zero-decimal currency in whole units", () => {
+    expect(memoAmounts(1001, 0.1, 0)).toEqual({
+      netAmount: 1001,
+      taxAmount: 100,
+      amount: 1101
+    });
+  });
+
+  it("carries no tax at a zero rate", () => {
+    expect(memoAmounts(250.5, 0, 2)).toEqual({
+      netAmount: 250.5,
+      taxAmount: 0,
+      amount: 250.5
+    });
   });
 });

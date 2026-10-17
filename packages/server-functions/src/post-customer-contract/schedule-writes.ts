@@ -621,15 +621,16 @@ async function recutRows(
  *  2. re-cuts the rows in `recut`;
  *  3. inserts `create` — a group joins a kept invoice with the same date and
  *     status, else it gets a new invoice;
- *  4. inserts `adjustments`. With `adjustmentMemoId` they are memo-borne
- *     (no invoice). Otherwise each attaches to the `Planned` invoice of its
- *     `invoiceDate` (a created or kept one), inserting one when none exists. */
+ *  4. inserts `adjustments`. With `adjustmentMemoIds` (the memo of each
+ *     adjustment, by index) they are memo-borne (no invoice). Otherwise each
+ *     attaches to the `Planned` invoice of its `invoiceDate` (a created or
+ *     kept one), inserting one when none exists. */
 export async function applyReconciliation(
   trx: KyselyTx,
   scope: Scope,
   contractId: string,
   result: ContractScheduleReconciliation,
-  options: { adjustmentMemoId?: string | null } = {}
+  options: { adjustmentMemoIds?: string[] | null } = {}
 ): Promise<void> {
   const { companyId } = scope;
 
@@ -653,8 +654,8 @@ export async function applyReconciliation(
 
   await recutRows(trx, scope, contractId, result.recut);
 
-  const memoId = options.adjustmentMemoId ?? null;
-  const adjustmentsOnInvoices = memoId ? [] : result.adjustments;
+  const memoIds = options.adjustmentMemoIds ?? null;
+  const adjustmentsOnInvoices = memoIds ? [] : result.adjustments;
   const invoiceIds =
     result.create.length > 0 || adjustmentsOnInvoices.length > 0
       ? await resolveInvoiceIds(trx, scope, contractId, [
@@ -685,12 +686,15 @@ export async function applyReconciliation(
       })
     );
   }
-  if (memoId) {
-    for (const row of result.adjustments) {
+  if (memoIds) {
+    result.adjustments.forEach((row, index) => {
       rows.push(
-        scheduleRowValues(scope, contractId, row, { invoiceId: null, memoId })
+        scheduleRowValues(scope, contractId, row, {
+          invoiceId: null,
+          memoId: memoIds[index]!
+        })
       );
-    }
+    });
   }
   await insertScheduleRows(trx, rows);
 }

@@ -10,6 +10,7 @@ import {
   getCompanyTimeZone
 } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { getNextSequences } from "@carbon/database/sequence";
 import {
   convertUnitPrice,
   supplierPartCurrency
@@ -23,6 +24,8 @@ import {
   EPSILON,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
+  groupByTaxRate,
+  memoAmounts,
   RoundingMode,
   round
 } from "@carbon/utils";
@@ -4786,10 +4789,14 @@ export async function getCreditableQuantitiesForPurchaseReturn(
 }
 
 /**
- * Issue supplier credit: one AP memo + per-line purchaseReturnOrderCreditLine
- * breakdown. Cap = shipped − already credited over NON-VOIDED memos,
- * validated under a row lock. Amount rounded once at the currency's
- * decimals. Returns the memo id.
+ * Issue supplier credit: AP memos + per-line purchaseReturnOrderCreditLine
+ * breakdown. One memo per tax rate (spec "Memo tax": a memo has one code and
+ * one rate): each return line takes the code and rate of the purchase invoice
+ * line it returns, else of its purchase order line. A memo's net is rounded
+ * once at the currency's decimals, its tax computed forward from the net, and
+ * its `amount` is the gross the supplier credits. Cap = shipped − already
+ * credited over NON-VOIDED memos, validated under a row lock. Returns the
+ * first memo's id; the others share its purchaseReturnOrderId.
  *
  * The memo is a **Debit** memo (the `debitMemo` DR- sequence), NOT a Credit
  * memo. `direction` alone decides the control side for both AR and AP
@@ -4851,15 +4858,6 @@ export async function createPurchaseReturnOrderCredit(
   );
   const decimalPlaces = currency.data?.decimalPlaces ?? 2;
 
-  const seq = await client.rpc("get_next_sequence", {
-    sequence_name: "debitMemo",
-    company_id: companyId
-  });
-  if (seq.error || !seq.data) {
-    throw new Error("Failed to allocate debit memo number");
-  }
-  const memoId = seq.data;
-
   const requested = new Map(
     lines
       .filter((l) => l.quantity > 0)
@@ -4877,7 +4875,9 @@ export async function createPurchaseReturnOrderCredit(
         "lineNumber",
         "quantityShipped",
         "unitPrice",
-        "restockFeePercent"
+        "restockFeePercent",
+        "purchaseInvoiceLineId",
+        "purchaseOrderLineId"
       ])
       .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
       .where("companyId", "=", companyId)
@@ -4917,15 +4917,55 @@ export async function createPurchaseReturnOrderCredit(
       ])
     );
 
-    let total = 0;
-    const creditLineValues: {
-      memoId: string;
-      purchaseReturnOrderLineId: string;
-      quantity: number;
-      unitPrice: number;
-      restockFee: number;
-      companyId: string;
-      createdBy: string;
+    // The tax the supplier charged on each line: the invoice line it returns,
+    // else its purchase order line. A line with neither is untaxed.
+    const invoiceLineIds = orderLines
+      .map((line) => line.purchaseInvoiceLineId)
+      .filter((id): id is string => !!id);
+    const orderLineIds = orderLines
+      .map((line) => line.purchaseOrderLineId)
+      .filter((id): id is string => !!id);
+    const [invoiceLineTax, orderLineTax] = await Promise.all([
+      invoiceLineIds.length > 0
+        ? trx
+            .selectFrom("purchaseInvoiceLine")
+            .select(["id", "taxCodeId", "taxPercent"])
+            .where("companyId", "=", companyId)
+            .where("id", "in", invoiceLineIds)
+            .execute()
+        : [],
+      orderLineIds.length > 0
+        ? trx
+            .selectFrom("purchaseOrderLine")
+            .select(["id", "taxCodeId", "taxPercent"])
+            .where("companyId", "=", companyId)
+            .where("id", "in", orderLineIds)
+            .execute()
+        : []
+    ]);
+    const sourceTax = new Map(
+      [...orderLineTax, ...invoiceLineTax].map((row) => [
+        row.id,
+        { taxCodeId: row.taxCodeId, taxPercent: Number(row.taxPercent ?? 0) }
+      ])
+    );
+    const lineTax = (line: (typeof orderLines)[number]) =>
+      (line.purchaseInvoiceLineId &&
+        sourceTax.get(line.purchaseInvoiceLineId)) ||
+      (line.purchaseOrderLineId && sourceTax.get(line.purchaseOrderLineId)) || {
+        taxCodeId: null,
+        taxPercent: 0
+      };
+
+    const credits: {
+      net: number;
+      tax: { taxCodeId: string | null; taxPercent: number };
+      values: {
+        purchaseReturnOrderLineId: string;
+        quantity: number;
+        unitPrice: number;
+        restockFee: number;
+      };
     }[] = [];
 
     for (const line of orderLines) {
@@ -4945,47 +4985,85 @@ export async function createPurchaseReturnOrderCredit(
       const feePercent = Number(line.restockFeePercent ?? 0);
       const gross = quantity * unitPrice;
       const restockFee = gross * feePercent;
-      total += gross - restockFee;
-      creditLineValues.push({
-        memoId: "",
-        purchaseReturnOrderLineId: line.id,
-        quantity,
-        unitPrice,
-        restockFee,
-        companyId,
-        createdBy: userId
+      credits.push({
+        net: gross - restockFee,
+        tax: lineTax(line),
+        values: {
+          purchaseReturnOrderLineId: line.id,
+          quantity,
+          unitPrice,
+          restockFee
+        }
       });
     }
 
-    if (total <= 0) {
+    // One memo per tax rate. A rate whose lines credit nothing (zero-priced
+    // returns) gets no memo of its own; its credit lines join the first memo
+    // so the quantity still counts against the creditable cap.
+    const groups = groupByTaxRate(credits, (credit) => credit.tax).map(
+      (group) => ({
+        ...group,
+        ...memoAmounts(
+          group.rows.reduce((sum, credit) => sum + credit.net, 0),
+          group.taxPercent,
+          decimalPlaces
+        )
+      })
+    );
+    const memoGroups = groups.filter((group) => group.netAmount > 0);
+    if (memoGroups.length === 0) {
       throw new Error("Credit amount must be positive");
     }
 
-    const memo = await trx
+    // Allocated in this transaction, so a rollback leaves no gap.
+    const memoIds = await getNextSequences(
+      trx,
+      "debitMemo",
+      companyId,
+      memoGroups.length
+    );
+    const memos = await trx
       .insertInto("memo")
-      .values({
-        memoId,
-        direction: "Debit",
-        status: "Draft",
-        supplierId: order.data.supplierId,
-        memoDate,
-        currencyCode: order.data.currencyCode,
-        exchangeRate: order.data.exchangeRate ?? 1,
-        amount: round(total, decimalPlaces),
-        reference: order.data.purchaseReturnOrderId,
-        purchaseReturnOrderId,
-        companyId,
-        createdBy: userId
-      })
-      .returning(["id"])
-      .executeTakeFirstOrThrow();
+      .values(
+        memoGroups.map((group, index) => ({
+          memoId: memoIds[index]!,
+          direction: "Debit" as const,
+          status: "Draft" as const,
+          supplierId: order.data.supplierId,
+          memoDate,
+          currencyCode: order.data.currencyCode,
+          exchangeRate: order.data.exchangeRate ?? 1,
+          amount: group.amount,
+          taxAmount: group.taxAmount,
+          taxCodeId: group.taxCodeId,
+          reference: order.data.purchaseReturnOrderId,
+          purchaseReturnOrderId,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .returning(["id", "memoId"])
+      .execute();
+    const idByMemoId = new Map(memos.map((memo) => [memo.memoId, memo.id]));
+    const memoIdOf = (index: number) => idByMemoId.get(memoIds[index]!)!;
 
     await trx
       .insertInto("purchaseReturnOrderCreditLine")
-      .values(creditLineValues.map((v) => ({ ...v, memoId: memo.id })))
+      .values(
+        groups.flatMap((group) => {
+          const index = memoGroups.indexOf(group);
+          const memoId = memoIdOf(index === -1 ? 0 : index);
+          return group.rows.map((credit) => ({
+            ...credit.values,
+            memoId,
+            companyId,
+            createdBy: userId
+          }));
+        })
+      )
       .execute();
 
-    return memo.id;
+    return memoIdOf(0);
   });
 }
 

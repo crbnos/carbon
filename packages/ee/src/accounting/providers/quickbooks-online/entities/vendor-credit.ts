@@ -324,12 +324,13 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
 
   /**
    * The share of the memo's tax the posting moved through Tax Paid. With no
-   * tax code it moved all of it (planMemoTax); with a code, the tax ledger
-   * holds the recoverable amount of each component.
+   * tax code it moved none — the tax stays in cost, as on a legacy purchase
+   * line (planMemoTax); with a code, the tax ledger holds the recoverable
+   * amount of each component.
    */
   private async getRecoverableShare(local: QboMemoSource): Promise<number> {
     if (local.taxAmount === 0) return 0;
-    if (!local.taxCodeId) return 1;
+    if (!local.taxCodeId) return 0;
     const rows = await this.database
       .selectFrom("taxLedger")
       .select(["taxAmount", "recoverableAmount"])

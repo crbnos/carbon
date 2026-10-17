@@ -44,7 +44,7 @@ Slice B — Posting
 - [x] Task 20: Write the pure tax-ledger row builder with tests
 - [x] Task 21: Write `taxLedger` rows when sales and purchase invoices post and void
 - [x] Task 22: Post memo tax
-- [ ] Task 23: Enter memo tax in the memo form and in memos made from a source
+- [x] Task 23: Enter memo tax in the memo form and in memos made from a source
 - [x] Task 24: Write `taxLedger` rows in the legacy backfill
 - [ ] Task 25: Verify slice B end to end
 

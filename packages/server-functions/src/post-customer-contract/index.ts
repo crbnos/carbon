@@ -38,6 +38,7 @@ import {
   horizon,
   lastRecurringPeriodEnd,
   lineTotals,
+  type PlannedRow,
   periodEndContaining,
   planInvoiceSchedule,
   reconcileContractSchedule,
@@ -52,13 +53,20 @@ import {
   round
 } from "@carbon/database/precision";
 import { monthEnd } from "@carbon/database/revenue-schedule";
-import { getNextSequence } from "@carbon/database/sequence";
+import { getNextSequences } from "@carbon/database/sequence";
+import {
+  effectiveComponents,
+  effectiveTaxPercent,
+  groupByTaxRate,
+  memoAmounts
+} from "@carbon/database/tax-components";
 import { datetime, effectiveInvoiceAutomation } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
+import { loadTaxCodes } from "../lib/tax-codes";
 import {
   billedTotals,
   changedRevenueLines,
@@ -1595,9 +1603,12 @@ export type ContractCancellationPreview = {
 
 export type ContractCancellationResult = {
   customerContractId: string;
-  /** The Draft credit memo, when unused time was credited. */
+  /** The first Draft credit memo, when unused time was credited. */
   memoId: string | null;
   memoReadableId: string | null;
+  /** Every Draft credit memo, one per tax rate, the first one first. */
+  memoIds: string[];
+  memoReadableIds: string[];
 };
 
 async function cancel(
@@ -1722,68 +1733,66 @@ async function cancel(
         });
       }
 
-      // 6. The credit memo, or no credit at all.
-      let memoId: string | null = null;
-      let memoReadableId: string | null = null;
+      // 6. The credit memos, or no credit at all.
+      let memoIds: string[] = [];
+      let memoReadableIds: string[] = [];
       let adjustments = result.adjustments;
+      let adjustmentMemoIds: string[] | null = null;
       if (payload.creditUnusedTime && creditAvailable) {
-        const currency = await trx
-          .selectFrom("currency")
-          .innerJoin(
-            "company",
-            "company.companyGroupId",
-            "currency.companyGroupId"
-          )
-          .select("currency.decimalPlaces")
-          .where("company.id", "=", companyId)
-          .where("currency.code", "=", contract.currencyCode)
-          .executeTakeFirst();
-        if (!currency) {
-          throw new InvalidInputError(
-            `Currency ${contract.currencyCode} is not set up for this company`
+        const credit = await planCancellationCredit(trx, {
+          companyId,
+          currencyCode: contract.currencyCode,
+          lines: next.lines,
+          adjustments
+        });
+        if (credit.memos.length > 0) {
+          adjustments = credit.adjustments;
+          // Allocated in this transaction, so a rollback leaves no gap.
+          memoReadableIds = await getNextSequences(
+            trx,
+            "creditMemo",
+            companyId,
+            credit.memos.length
+          );
+          const memos = await trx
+            .insertInto("memo")
+            .values(
+              credit.memos.map((memo, index) => ({
+                memoId: memoReadableIds[index]!,
+                direction: "Credit" as const,
+                status: "Draft" as const,
+                customerId: contract.invoiceCustomerId ?? contract.customerId,
+                memoDate: payload.asOf,
+                currencyCode: contract.currencyCode,
+                exchangeRate: contract.exchangeRate,
+                amount: memo.amount,
+                taxAmount: memo.taxAmount,
+                taxCodeId: memo.taxCodeId,
+                reference: contract.customerContractId,
+                customerContractId: contract.id,
+                companyId,
+                createdBy: userId
+              }))
+            )
+            .returning(["id", "memoId"])
+            .execute();
+          const idByReadableId = new Map(
+            memos.map((memo) => [memo.memoId, memo.id])
+          );
+          memoIds = memoReadableIds.map(
+            (readableId) => idByReadableId.get(readableId)!
+          );
+          adjustmentMemoIds = credit.memoIndexOfAdjustment.map(
+            (index) => memoIds[index]!
           );
         }
-        // A memo total is a settlement value (currency decimals). Its rows
-        // are apportioned to the same decimals so they sum to it exactly —
-        // posting the memo refuses rows that credit more than its amount.
-        const amount = round(credit, currency.decimalPlaces);
-        const apportioned = distributeRoundingResidual(
-          adjustments.map((row) => row.amount),
-          -amount,
-          currency.decimalPlaces
-        );
-        adjustments = adjustments.map((row, index) => ({
-          ...row,
-          amount: apportioned[index]!
-        }));
-        // Allocated in this transaction, so a rollback leaves no gap.
-        memoReadableId = await getNextSequence(trx, "creditMemo", companyId);
-        const memo = await trx
-          .insertInto("memo")
-          .values({
-            memoId: memoReadableId,
-            direction: "Credit",
-            status: "Draft",
-            customerId: contract.invoiceCustomerId ?? contract.customerId,
-            memoDate: payload.asOf,
-            currencyCode: contract.currencyCode,
-            exchangeRate: contract.exchangeRate,
-            amount,
-            reference: contract.customerContractId,
-            customerContractId: contract.id,
-            companyId,
-            createdBy: userId
-          })
-          .returning(["id"])
-          .executeTakeFirstOrThrow();
-        memoId = memo.id;
       }
       await applyReconciliation(
         trx,
         scope,
         contract.id,
-        { ...result, adjustments: memoId ? adjustments : [] },
-        { adjustmentMemoId: memoId }
+        { ...result, adjustments: adjustmentMemoIds ? adjustments : [] },
+        { adjustmentMemoIds }
       );
 
       // 7. Reconcile revenue from the new end (D9): months after it are
@@ -1806,11 +1815,113 @@ async function cancel(
 
       return {
         customerContractId: contract.id,
-        memoId,
-        memoReadableId
+        memoId: memoIds[0] ?? null,
+        memoReadableId: memoReadableIds[0] ?? null,
+        memoIds,
+        memoReadableIds
       };
     }
   );
+}
+
+/**
+ * The credit memos a cancellation drafts for its unused billed time (spec
+ * "Memo tax"): one per tax rate, since a memo has one code and one rate.
+ * Each adjustment row takes its line's code at the code's rate on the row's
+ * period start — the rate its invoice row billed at (create-contract-invoices
+ * `taxPercentOn`); a line with no code keeps its stored percent. A memo's
+ * net is a settlement value (currency decimals) and its rows are apportioned
+ * to the same decimals so they sum to it exactly — posting the memo refuses
+ * rows that credit more than its net. A rate whose rows round to nothing gets
+ * no memo; its rows join the first memo. No memo at all when nothing is left
+ * to credit.
+ */
+async function planCancellationCredit(
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    currencyCode: string;
+    lines: ContractLineRow[];
+    adjustments: PlannedRow[];
+  }
+): Promise<{
+  memos: { amount: number; taxAmount: number; taxCodeId: string | null }[];
+  /** The adjustments, apportioned to the currency's decimals. */
+  adjustments: PlannedRow[];
+  /** The memo (index into `memos`) of each adjustment. */
+  memoIndexOfAdjustment: number[];
+}> {
+  const currency = await trx
+    .selectFrom("currency")
+    .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
+    .select("currency.decimalPlaces")
+    .where("company.id", "=", args.companyId)
+    .where("currency.code", "=", args.currencyCode)
+    .executeTakeFirst();
+  if (!currency || currency.decimalPlaces === null) {
+    throw new InvalidInputError(
+      `Currency ${args.currencyCode} is not set up for this company`
+    );
+  }
+  const decimals = currency.decimalPlaces;
+
+  const lineById = new Map(args.lines.map((line) => [line.id, line]));
+  const taxCodes = await loadTaxCodes(
+    trx,
+    args.companyId,
+    args.lines.map((line) => line.taxCodeId),
+    null
+  );
+  const taxOf = (row: PlannedRow) => {
+    const line = lineById.get(row.lineId);
+    const code = line?.taxCodeId ? taxCodes.get(line.taxCodeId) : undefined;
+    return {
+      taxCodeId: line?.taxCodeId ?? null,
+      taxPercent: code
+        ? round(effectiveTaxPercent(effectiveComponents(code, row.periodStart)))
+        : Number(line?.taxPercent ?? 0)
+    };
+  };
+
+  const groups = groupByTaxRate(
+    args.adjustments.map((row, index) => ({ row, index })),
+    ({ row }) => taxOf(row)
+  ).map((group) => {
+    const amounts = memoAmounts(
+      -group.rows.reduce((sum, { row }) => sum + row.amount, 0),
+      group.taxPercent,
+      decimals
+    );
+    return {
+      ...group,
+      ...amounts,
+      apportioned: distributeRoundingResidual(
+        group.rows.map(({ row }) => row.amount),
+        -amounts.netAmount,
+        decimals
+      )
+    };
+  });
+
+  const memoGroups = groups.filter((group) => group.netAmount > 0);
+  const adjustments = [...args.adjustments];
+  const memoIndexOfAdjustment = args.adjustments.map(() => 0);
+  for (const group of groups) {
+    const memoIndex = Math.max(memoGroups.indexOf(group), 0);
+    group.rows.forEach(({ row, index }, position) => {
+      adjustments[index] = { ...row, amount: group.apportioned[position]! };
+      memoIndexOfAdjustment[index] = memoIndex;
+    });
+  }
+  return {
+    memos: memoGroups.map((group) => ({
+      amount: group.amount,
+      taxAmount: group.taxAmount,
+      taxCodeId: group.taxCodeId
+    })),
+    adjustments,
+    memoIndexOfAdjustment
+  };
 }
 
 async function revertCancellation(

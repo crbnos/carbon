@@ -348,6 +348,47 @@ describe("memoValidator", () => {
       memoValidator.safeParse({ ...base, customerId: "cust_1" }).success
     ).toBe(false);
   });
+
+  it("takes the form's net amount and tax code", () => {
+    const { amount: _gross, ...withoutGross } = base;
+    const result = memoValidator.safeParse({
+      ...withoutGross,
+      direction: "Credit",
+      customerId: "cust_1",
+      netAmount: "1000",
+      taxCodeId: "txc_1"
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toMatchObject({
+        netAmount: 1000,
+        taxCodeId: "txc_1"
+      });
+      expect(result.data.amount).toBeUndefined();
+    }
+  });
+
+  it("refuses a memo with neither a net nor a gross amount", () => {
+    const { amount: _gross, ...withoutGross } = base;
+    expect(
+      memoValidator.safeParse({
+        ...withoutGross,
+        direction: "Credit",
+        customerId: "cust_1"
+      }).success
+    ).toBe(false);
+  });
+
+  it("refuses a tax code on a gross amount, which would need tax worked out backwards", () => {
+    expect(
+      memoValidator.safeParse({
+        ...base,
+        direction: "Credit",
+        customerId: "cust_1",
+        taxCodeId: "txc_1"
+      }).success
+    ).toBe(false);
+  });
 });
 
 describe("salesInvoiceCustomerChange", () => {

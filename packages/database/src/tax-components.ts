@@ -13,7 +13,7 @@
 // recoverable share (to Tax Paid) and a non-recoverable share (into cost).
 // See .ai/specs/2026-10-16-multi-jurisdiction-tax.md.
 
-import { distributeRoundingResidual, round } from "./precision.ts";
+import { applyRate, distributeRoundingResidual, round } from "./precision.ts";
 
 export type TaxComponentInput = {
   id: string;
@@ -176,4 +176,51 @@ export function receiptUnitCost(args: {
     args.unitPrice / factor +
     (inventoryQuantity === 0 ? 0 : extras / inventoryQuantity)
   );
+}
+
+/**
+ * A credit made from a source document's lines, grouped into one memo per
+ * tax rate (spec "Memo tax", grill 5: a memo has one code and one rate, so
+ * two rates means two memos). Rows with the same code group only at the same
+ * rate — a code whose rate changed between two rows' dates is two rates — and
+ * a row with no code groups with the other no-code rows of the same percent.
+ * Groups keep the order of their first row, so the first memo is the first
+ * row's.
+ */
+export function groupByTaxRate<T>(
+  rows: readonly T[],
+  taxOf: (row: T) => { taxCodeId: string | null; taxPercent: number }
+): { taxCodeId: string | null; taxPercent: number; rows: T[] }[] {
+  const groups = new Map<
+    string,
+    { taxCodeId: string | null; taxPercent: number; rows: T[] }
+  >();
+  for (const row of rows) {
+    const tax = taxOf(row);
+    const taxPercent = round(tax.taxPercent);
+    const key = `${tax.taxCodeId ?? ""}|${taxPercent}`;
+    const group = groups.get(key);
+    if (group) group.rows.push(row);
+    else groups.set(key, { taxCodeId: tax.taxCodeId, taxPercent, rows: [row] });
+  }
+  return [...groups.values()];
+}
+
+/**
+ * A memo's amounts from its net (spec "Memo tax"): the tax is computed
+ * forward from the net at the currency's decimals, never backwards from a
+ * gross, and `amount` is the gross that hits AR or AP.
+ */
+export function memoAmounts(
+  net: number,
+  taxPercent: number,
+  decimals: number
+): { netAmount: number; taxAmount: number; amount: number } {
+  const netAmount = round(net, decimals);
+  const taxAmount = applyRate(netAmount, taxPercent, decimals);
+  return {
+    netAmount,
+    taxAmount,
+    amount: round(netAmount + taxAmount, decimals)
+  };
 }
