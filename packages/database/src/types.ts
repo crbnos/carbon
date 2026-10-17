@@ -8368,6 +8368,7 @@ export type Database = {
           qualityDispatchNotificationGroup: string[] | null
           qualityIssueTarget: number
           quoteLineCategoryMarkups: Json | null
+          receiptQuantitiesStartAtZero: boolean
           requireCustomerContactAndLocation: boolean
           requireMfa: boolean
           requireSupplierContactAndLocation: boolean
@@ -8441,6 +8442,7 @@ export type Database = {
           qualityDispatchNotificationGroup?: string[] | null
           qualityIssueTarget?: number
           quoteLineCategoryMarkups?: Json | null
+          receiptQuantitiesStartAtZero?: boolean
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
           requireSupplierContactAndLocation?: boolean
@@ -8514,6 +8516,7 @@ export type Database = {
           qualityDispatchNotificationGroup?: string[] | null
           qualityIssueTarget?: number
           quoteLineCategoryMarkups?: Json | null
+          receiptQuantitiesStartAtZero?: boolean
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
           requireSupplierContactAndLocation?: boolean

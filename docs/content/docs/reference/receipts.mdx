@@ -11,7 +11,7 @@ Each receipt line references the purchase-order line it fulfills. Posting increa
 
 <FieldTable>
   <Field name="Source document" type="reference">The purchase order, transfer, or rental agreement being received. A rental receipt keeps its agreement: create it from the agreement's **"Return"** button, not by changing the source.</Field>
-  <Field name="Received quantity" type="number">Units on this receipt, per line.</Field>
+  <Field name="Received quantity" type="number">Units on this receipt, per line. A new receipt fills in the quantity still to receive; turn on **Start Receipt Quantities at Zero** in Settings → Inventory to start every line at 0, so the receiver enters what arrived and a line nothing arrived for stays at 0.</Field>
   <Field name="Conversion factor" type="number">Converts the supplier's purchase unit to the stock unit.</Field>
   <Field name="Location" type="reference">Where the goods land.</Field>
 </FieldTable>

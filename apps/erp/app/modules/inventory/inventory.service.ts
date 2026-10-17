@@ -10665,6 +10665,10 @@ export async function postReceipt(
             normalQuantity: normalQty,
             normalCost: normalPortionCost
           } = receiptLineCosts[index]!;
+          // A line nothing arrived for books nothing — the Sales Return and
+          // Inbound Transfer branches skip it the same way.
+          if (receivedQuantity === 0) continue;
+
           const itemTrackingType =
             receiptJournalLines[index]!.itemTrackingType ?? "Inventory";
           const isNegativeReceipt = receivedQuantity < 0;

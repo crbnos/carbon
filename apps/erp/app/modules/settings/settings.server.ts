@@ -226,7 +226,9 @@ export const writeMissingJournals = defineServiceFn({
  * new item; which inputs a calculated expiry reads; and what consuming an
  * expired entity does), whether finishing a picking list with unpicked
  * material warns or refuses, and when unconsumed picked material is returned
- * (when the job completes, or when each operation is done).
+ * (when the job completes, or when each operation is done), and whether a
+ * new receipt's lines start at a received quantity of 0 instead of the
+ * quantity still to receive.
  *
  * @mcp
  */
@@ -244,7 +246,8 @@ export const updateInventorySettings = defineServiceFn({
     incompletePickingListPolicy: z
       .enum(incompletePickingListPolicies)
       .optional(),
-    returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).optional()
+    returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).optional(),
+    receiptQuantitiesStartAtZero: z.boolean().optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {

@@ -8,6 +8,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   MENU_ITEM_SHORTCUTS,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -178,14 +181,31 @@ const ReceiptHeader = () => {
                 </Button>
               ))}
             {!isPosted && !isVoided && (
-              <Button
-                variant="primary"
-                onClick={postModal.onOpen}
-                isDisabled={!canPost || !permissions.is("employee")}
-                leftIcon={<LuCheckCheck />}
-              >
-                <Trans>Post</Trans>
-              </Button>
+              // A disabled button fires no pointer events, so the span is the
+              // trigger. Every line can start at 0 (receipt quantities start
+              // at zero), which leaves Post disabled with no other hint.
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      variant="primary"
+                      onClick={postModal.onOpen}
+                      isDisabled={!canPost || !permissions.is("employee")}
+                      leftIcon={<LuCheckCheck />}
+                    >
+                      <Trans>Post</Trans>
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!canPost && (
+                  <TooltipContent>
+                    <Trans>
+                      Enter a received quantity, or tick a unit, on at least one
+                      line.
+                    </Trans>
+                  </TooltipContent>
+                )}
+              </Tooltip>
             )}
           </>
         }

@@ -102403,6 +102403,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -102675,6 +102678,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -102899,6 +102905,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -166762,7 +166771,8 @@ export default {
         "invoiceNotificationGroup",
         "leaseIncrementalBorrowingRate",
         "leaseShortTermExpedient",
-        "leaseReminderDays"
+        "leaseReminderDays",
+        "receiptQuantitiesStartAtZero"
       ],
       properties: {
         id: {
@@ -167150,6 +167160,11 @@ export default {
           default: 90,
           format: "integer",
           type: "integer"
+        },
+        receiptQuantitiesStartAtZero: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -222735,6 +222750,12 @@ export default {
     },
     "rowFilter.companySettings.leaseReminderDays": {
       name: "leaseReminderDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.receiptQuantitiesStartAtZero": {
+      name: "receiptQuantitiesStartAtZero",
       required: false,
       in: "query",
       type: "string"
