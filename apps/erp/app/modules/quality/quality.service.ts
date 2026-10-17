@@ -11,6 +11,7 @@ import {
   buildBatchSplitRecords,
   datetime,
   EPSILON,
+  pick,
   resolveTrackedEntityBin,
   round
 } from "@carbon/utils";
@@ -66,17 +67,14 @@ import type {
   gaugeCalibrationStatus,
   gaugeRole,
   gaugeTypeValidator,
-  gaugeValidator,
   inspectionDocumentSamplingValidator,
   inspectionDocumentValidator,
   issueTypeValidator,
-  issueValidator,
   issueWorkflowValidator,
   itemInspectionDocumentAssignmentValidator,
   nonConformanceApprovalRequirement,
   nonConformanceReviewerValidator,
   nonConformanceStatus,
-  qualityDocumentStepValidator,
   qualityDocumentValidator,
   riskRegisterValidator,
   riskSource,
@@ -280,18 +278,6 @@ export async function deleteQualityDocument(
   qualityDocumentId: string
 ) {
   return client.from("qualityDocument").delete().eq("id", qualityDocumentId);
-}
-
-export async function deleteQualityDocumentStep(
-  client: SupabaseClient<Database>,
-  qualityDocumentStepId: string,
-  companyId: string
-) {
-  return client
-    .from("qualityDocumentStep")
-    .delete()
-    .eq("id", qualityDocumentStepId)
-    .eq("companyId", companyId);
 }
 
 export async function deleteRisk(
@@ -977,27 +963,6 @@ export async function getIssueSuppliers(
     .order("id", { ascending: true });
 }
 
-export async function getIssueTasks(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId: string
-) {
-  return Promise.all([
-    client
-      .from("nonConformanceActionTask")
-      .select("*")
-      .eq("nonConformanceId", id)
-      .eq("companyId", companyId)
-      .order("createdAt", { ascending: true }),
-    client
-      .from("nonConformanceApprovalTask")
-      .select("*")
-      .eq("nonConformanceId", id)
-      .eq("companyId", companyId)
-      .order("approvalType", { ascending: true })
-  ]);
-}
-
 export async function getIssueType(
   client: SupabaseClient<Database>,
   nonConformanceTypeId: string
@@ -1185,23 +1150,6 @@ export async function getQualityDocuments(
   return query;
 }
 
-export async function getQualityDocumentsList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    name: string;
-    version: number;
-    status: string;
-  }>(client, "qualityDocument", "id, name, version, status", (query) =>
-    query
-      .eq("companyId", companyId)
-      .order("name", { ascending: true })
-      .order("version", { ascending: false })
-  );
-}
-
 export async function getQualityFiles(
   client: SupabaseClient<Database>,
   id: string,
@@ -1357,21 +1305,28 @@ export async function updateIssueActionProcesses(
   }
 }
 
-/** The bare status write; starting, reopening and closing an issue is `quality.issue.setStatus` / `.close`. */
+/** The bare status write; starting, reopening and closing an issue is `setIssueStatus` / `completeIssue`. */
 export async function updateIssueStatus(
   client: SupabaseClient<Database>,
   update: {
     id: string;
+    companyId: string;
     status: (typeof nonConformanceStatus)[number];
     assignee: string | null | undefined;
     closeDate: string | null | undefined;
     updatedBy: string;
   }
 ) {
-  return client.from("nonConformance").update(update).eq("id", update.id);
+  const { id, companyId, ...row } = update;
+  return client
+    .from("nonConformance")
+    .update(row)
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id");
 }
 
-/** The bare status write; the operation is `quality.issue.task.setStatus`, which also tells the integrations. */
+/** The bare status write; the operation is `setIssueTaskStatus`, which also tells the integrations. */
 export async function updateIssueTaskStatus(
   client: SupabaseClient<Database>,
   args: {
@@ -1442,31 +1397,6 @@ export async function updateIssueTaskContent(
     .eq("id", id)
     .select("nonConformanceId")
     .single();
-}
-
-export async function updateQualityDocumentStepOrder(
-  client: SupabaseClient<Database>,
-  updates: {
-    id: string;
-    sortOrder: number;
-    updatedBy: string;
-  }[]
-) {
-  const updatePromises = updates.map(({ id, sortOrder, updatedBy }) =>
-    client
-      .from("qualityDocumentStep")
-      .update({ sortOrder, updatedBy })
-      .eq("id", id)
-  );
-  return Promise.all(updatePromises);
-}
-
-export async function updateRiskStatus(
-  client: SupabaseClient<Database>,
-  riskId: string,
-  status: (typeof riskStatus)[number]
-) {
-  return client.from("riskRegister").update({ status }).eq("id", riskId);
 }
 
 export async function insertGauge(
@@ -1585,32 +1515,6 @@ export async function updateGauge(
   return { data: { id: result.data.id! }, error: null };
 }
 
-/** @deprecated Use insertGauge for new gauges, updateGauge for existing gauges */
-export async function upsertGauge(
-  client: SupabaseClient<Database>,
-  gauge:
-    | (Omit<z.infer<typeof gaugeValidator>, "id" | "gaugeId"> & {
-        gaugeId: string;
-        companyId: string;
-        gaugeCalibrationStatus: (typeof gaugeCalibrationStatus)[number];
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof gaugeValidator>, "id" | "gaugeId"> & {
-        id: string;
-        gaugeId: string;
-        gaugeCalibrationStatus: (typeof gaugeCalibrationStatus)[number];
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in gauge) {
-    return client.from("gauges").insert([gauge]).select("id, gaugeId").single();
-  } else {
-    return client.from("gauges").update(sanitize(gauge)).eq("id", gauge.id);
-  }
-}
-
 export async function upsertGaugeCalibrationRecord(
   client: SupabaseClient<Database>,
   gaugeCalibrationRecord:
@@ -1665,7 +1569,7 @@ export async function upsertGaugeCalibrationRecord(
             ? "In-Calibration"
             : gauge.data.lastCalibrationStatus,
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", gaugeCalibrationRecord.gaugeId);
 
@@ -1689,7 +1593,7 @@ export async function upsertGaugeCalibrationRecord(
       sanitize({
         ...gaugeCalibrationRecord,
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
     )
     .eq("id", gaugeCalibrationRecord.id);
@@ -1945,10 +1849,33 @@ export async function insertIssue(
   };
 }
 
+const issueEditableFields = [
+  "nonConformanceId",
+  "name",
+  "priority",
+  "source",
+  "locationId",
+  "nonConformanceTypeId",
+  "nonConformanceWorkflowId",
+  "openDate",
+  "dueDate",
+  "closeDate",
+  "description",
+  "quantity",
+  "requiredActionIds",
+  "approvalRequirements",
+  "customFields"
+] as const;
+
+/**
+ * Writes only the fields sent, from `issueEditableFields`: `status` moves
+ * only through `setIssueStatus` and `completeIssue`.
+ */
 export async function updateIssue(
   client: SupabaseClient<Database>,
   input: {
     id: string;
+    companyId: string;
     updatedBy: string;
     nonConformanceId?: string;
     name?: string;
@@ -1970,189 +1897,20 @@ export async function updateIssue(
   data: { id: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
 }> {
-  const { id, ...rest } = input;
   const result = await client
     .from("nonConformance")
-    .update(sanitize(rest))
-    .eq("id", id)
+    .update({
+      ...sanitize(pick(input, [...issueEditableFields])),
+      updatedBy: input.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", input.id)
+    .eq("companyId", input.companyId)
     .select("id")
     .single();
 
   if (result.error) return { data: null, error: result.error };
   return { data: { id: result.data.id }, error: null };
-}
-
-/** @deprecated Use insertIssue for new issues, updateIssue for existing issues */
-export async function upsertIssue(
-  client: SupabaseClient<Database>,
-  nonConformance:
-    | (Omit<z.infer<typeof issueValidator>, "id" | "nonConformanceId"> & {
-        nonConformanceId: string;
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof issueValidator>, "id" | "nonConformanceId"> & {
-        id: string;
-        nonConformanceId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in nonConformance) {
-    const {
-      items,
-      jobOperationId,
-      customerId,
-      salesOrderLineId,
-      operationSupplierProcessId,
-      ...data
-    } = nonConformance;
-    const result = await client
-      .from("nonConformance")
-      .insert([data])
-      .select("id")
-      .single();
-
-    if (result.data?.id) {
-      if (items && items.length > 0) {
-        const itemInsert = await client.from("nonConformanceItem").insert(
-          items.map((item) => ({
-            nonConformanceId: result.data.id,
-            itemId: item,
-            companyId: nonConformance.companyId,
-            createdBy: nonConformance.createdBy
-          }))
-        );
-        if (itemInsert.error) {
-          logger.error("Failed to insert non-conformance item", {
-            error: itemInsert.error
-          });
-        }
-      }
-      if (jobOperationId) {
-        const jobOperation = await client
-          .from("jobOperation")
-          .select("*")
-          .eq("id", jobOperationId)
-          .single();
-        if (jobOperation?.data) {
-          const job = await client
-            .from("job")
-            .select("*")
-            .eq("id", jobOperation.data.jobId)
-            .single();
-          if (job.data) {
-            const jobOperationInsert = await client
-              .from("nonConformanceJobOperation")
-              .insert([
-                {
-                  jobId: jobOperation.data.jobId,
-                  jobOperationId,
-                  nonConformanceId: result.data.id,
-                  jobReadableId: job.data?.jobId,
-                  companyId: nonConformance.companyId,
-                  createdBy: nonConformance.createdBy
-                }
-              ]);
-            if (jobOperationInsert.error) {
-              logger.error("Failed to insert non-conformance job operation", {
-                error: jobOperationInsert.error
-              });
-            }
-          }
-        }
-      }
-      if (customerId) {
-        const customerInsert = await client
-          .from("nonConformanceCustomer")
-          .insert([
-            {
-              companyId: nonConformance.companyId,
-              createdBy: nonConformance.createdBy,
-              customerId: customerId,
-              nonConformanceId: result.data.id
-            }
-          ]);
-
-        if (customerInsert.error) {
-          logger.error("Failed to insert non-conformance customer", {
-            error: customerInsert.error
-          });
-        }
-      }
-      if (salesOrderLineId) {
-        const salesOrderLine = await client
-          .from("salesOrderLine")
-          .select("*, salesOrder(salesOrderId)")
-          .eq("id", salesOrderLineId)
-          .single();
-        if (salesOrderLine.data) {
-          const salesOrderLineInsert = await client
-            .from("nonConformanceSalesOrderLine")
-            .insert([
-              {
-                companyId: nonConformance.companyId,
-                createdBy: nonConformance.createdBy,
-                salesOrderLineId: salesOrderLineId,
-                salesOrderId: salesOrderLine.data.salesOrderId,
-                salesOrderReadableId:
-                  salesOrderLine.data.salesOrder.salesOrderId,
-                nonConformanceId: result.data.id
-              }
-            ]);
-
-          if (salesOrderLineInsert.error) {
-            logger.error("Failed to insert non-conformance sales order line", {
-              error: salesOrderLineInsert.error
-            });
-          }
-        }
-      }
-      if (operationSupplierProcessId) {
-        const operationSupplierProcess = await client
-          .from("supplierProcess")
-          .select("*")
-          .eq("id", operationSupplierProcessId)
-          .single();
-
-        if (operationSupplierProcess.data) {
-          const nonConformanceSupplierInsert = await client
-            .from("nonConformanceSupplier")
-            .insert([
-              {
-                companyId: nonConformance.companyId,
-                createdBy: nonConformance.createdBy,
-                supplierId: operationSupplierProcess.data.supplierId,
-                nonConformanceId: result.data.id
-              }
-            ]);
-
-          if (nonConformanceSupplierInsert.error) {
-            logger.error("Failed to insert non-conformance supplier", {
-              error: nonConformanceSupplierInsert.error
-            });
-          }
-        }
-      }
-    }
-
-    return result;
-  } else {
-    // The link fields live on their own tables, as in the insert above.
-    const {
-      items: _items,
-      jobOperationId: _jobOperationId,
-      customerId: _customerId,
-      salesOrderLineId: _salesOrderLineId,
-      operationSupplierProcessId: _operationSupplierProcessId,
-      ...data
-    } = nonConformance;
-    return client
-      .from("nonConformance")
-      .update(sanitize(data))
-      .eq("id", nonConformance.id);
-  }
 }
 
 export async function upsertIssueWorkflow(
@@ -2244,17 +2002,20 @@ export async function upsertQualityDocument(
       })
     | (Omit<z.infer<typeof qualityDocumentValidator>, "id"> & {
         id: string;
+        companyId?: string;
         updatedBy: string;
       })
 ) {
   const { copyFromId, ...rest } = qualityDocument;
   if ("id" in rest) {
-    return client
+    // companyId narrows the match; it must never move the row.
+    const { id, companyId, ...update } = rest;
+    let query = client
       .from("qualityDocument")
-      .update(sanitize(rest))
-      .eq("id", rest.id)
-      .select("id")
-      .single();
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
 
   const insert = await client
@@ -2312,34 +2073,7 @@ export async function upsertQualityDocument(
   return insert;
 }
 
-export async function upsertQualityDocumentStep(
-  client: SupabaseClient<Database>,
-  qualityDocumentStep:
-    | (Omit<z.infer<typeof qualityDocumentStepValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof qualityDocumentStepValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("id" in qualityDocumentStep) {
-    return client
-      .from("qualityDocumentStep")
-      .update(sanitize(qualityDocumentStep))
-      .eq("id", qualityDocumentStep.id)
-      .select("id")
-      .single();
-  }
-  return client
-    .from("qualityDocumentStep")
-    .insert([qualityDocumentStep])
-    .select("id")
-    .single();
-}
-
-/** The bare row write; the operations are `quality.risk.create` / `.update`, which notify the assignee. */
+/** The bare row write; the operations are `createRisk` / `updateRisk`, which notify the assignee. */
 export async function upsertRisk(
   client: SupabaseClient<Database>,
   risk:
@@ -2369,7 +2103,7 @@ export async function upsertRisk(
       .update({
         ...sanitize(data),
         updatedBy,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", risk.id)
       .select("id")
@@ -2584,7 +2318,7 @@ export async function upsertItemInspectionDocumentAssignment(
       .update({
         inspectionDocumentId: assignment.inspectionDocumentId,
         updatedBy: assignment.userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .eq("itemId", assignment.itemId)
       .eq("usage", assignment.usage)
@@ -3112,7 +2846,7 @@ export async function updateInspectionDocumentSampling(
     .update({
       ...sampling,
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", inspectionDocumentId)
     .eq("companyId", companyId);
@@ -3186,7 +2920,7 @@ export async function assignEntitiesToIssueItem(
     return errResult("Cannot move entities onto the same row");
   }
 
-  const nowIso = new Date().toISOString();
+  const nowIso = datetime.timestamp();
   const entityIds = assignments.map((a) => a.trackedEntityId);
 
   try {
@@ -3708,7 +3442,7 @@ export async function splitIssueItem(
   }
 ): Promise<Result<{ id: string }>> {
   const { id, companyId, userId, splitQuantity, entityAssignments } = args;
-  const nowIso = new Date().toISOString();
+  const nowIso = datetime.timestamp();
 
   try {
     const result = await db.transaction().execute(async (trx) => {
@@ -4301,7 +4035,7 @@ export async function closeIssue(
       if (!issue) throw new Error("Issue not found");
       if (issue.status === "Closed") return { id: issue.id };
 
-      const nowIso = new Date().toISOString();
+      const nowIso = datetime.timestamp();
       const today = nowIso.slice(0, 10);
 
       // The preflight plan above was read outside this transaction and can be
@@ -5427,7 +5161,7 @@ export async function activateQualityDocuments(
   const client = ctx.asCaller.supabase;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
-  const audit = { updatedBy: userId, updatedAt: new Date().toISOString() };
+  const audit = { updatedBy: userId, updatedAt: datetime.timestamp() };
 
   const transitioning = documents.filter(
     (doc) => doc.status === "Draft" || doc.status === "Archived"

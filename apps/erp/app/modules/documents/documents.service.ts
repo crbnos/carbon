@@ -7,10 +7,12 @@ import type { Database } from "@carbon/database";
 import {
   getDocumentType,
   imageTransformErrorMessage,
+  isUnsafeStoragePath,
   storage
 } from "@carbon/files";
 import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -32,30 +34,6 @@ export async function deleteDocument(
   id: string
 ) {
   return client.from("document").delete().eq("id", id);
-}
-
-export async function deleteDocumentFavorite(
-  client: SupabaseClient<Database>,
-  id: string,
-  userId: string
-) {
-  return client
-    .from("documentFavorite")
-    .delete()
-    .eq("documentId", id)
-    .eq("userId", userId);
-}
-
-export async function deleteDocumentLabel(
-  client: SupabaseClient<Database>,
-  id: string,
-  label: string
-) {
-  return client
-    .from("documentLabel")
-    .delete()
-    .eq("documentId", id)
-    .eq("label", label);
 }
 
 export async function getDocument(
@@ -119,26 +97,6 @@ export async function getDocumentLabels(
   return client.from("documentLabels").select("*").eq("userId", userId);
 }
 
-export async function insertDocumentFavorite(
-  client: SupabaseClient<Database>,
-  id: string,
-  userId: string
-) {
-  return client.from("documentFavorite").insert({ documentId: id, userId });
-}
-
-export async function insertDocumentLabel(
-  client: SupabaseClient<Database>,
-  id: string,
-  label: string,
-  companyId: string,
-  userId: string
-) {
-  return client
-    .from("documentLabel")
-    .insert({ documentId: id, label, companyId, userId });
-}
-
 export async function moveDocumentToTrash(
   client: SupabaseClient<Database>,
   id: string,
@@ -149,7 +107,7 @@ export async function moveDocumentToTrash(
     .update({
       active: false,
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", id);
 }
@@ -164,7 +122,7 @@ export async function restoreDocument(
     .update({
       active: true,
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", id);
 }
@@ -208,7 +166,7 @@ export async function upsertDocument(
       sanitize({
         ...data,
         type,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
     )
     .eq("id", document.id);
@@ -431,7 +389,7 @@ export async function insertDocumentExtraction(
         status: "failed",
         error: message,
         updatedBy: data.createdBy,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", result.data.id)
       .eq("companyId", result.data.companyId);
@@ -453,4 +411,16 @@ export async function findModel(ctx: ServiceContext, modelUploadId: string) {
   }
   if (!model.data) return ctx.error("notFound", "Model not found");
   return null;
+}
+
+/** A storage key the caller sent: refused unless it is a safe key in the company's folder. */
+export function refuseForeignPath(
+  ctx: ServiceContext,
+  path: string | undefined
+) {
+  if (path === undefined) return null;
+  if (path.startsWith(`${ctx.company.id}/`) && !isUnsafeStoragePath(path)) {
+    return null;
+  }
+  return ctx.error("validation", "The file must be in this company's storage");
 }

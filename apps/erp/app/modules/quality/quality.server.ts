@@ -22,10 +22,11 @@ import {
   notifyIssueStatusChanged,
   notifyTaskStatusChanged
 } from "@carbon/ee/notifications";
+import { isUnsafeStoragePath } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { async, datetime, unchecked } from "@carbon/utils";
+import { async, datetime, pick, pluckUnique, unchecked } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { updateChangeNotice } from "~/modules/items/items.service";
@@ -40,6 +41,7 @@ import {
   invokePosting,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
+import { updateSortOrder } from "~/modules/shared/sort-order";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
 import {
@@ -64,8 +66,7 @@ import type {
 import * as service from "./quality.service";
 
 const logger = getLogger("erp", "quality");
-// ─── Inspection plan save ────────────────────────────────────────────────────
-// ─── Balloon region vision analysis ──────────────────────────────────────────
+
 // ---------------------------------------------------------------------------
 // Operations (`defineServiceFn`): what the routes, the API and MCP all run
 // ---------------------------------------------------------------------------
@@ -230,6 +231,7 @@ export const createIssue = defineServiceFn({
     if (input.changeOrderId) {
       const linked = await updateChangeNotice(client, {
         id: input.changeOrderId,
+        companyId,
         nonConformanceId: issueId,
         updatedBy: userId
       });
@@ -306,7 +308,7 @@ export const updateIssueField = defineServiceFn({
               : []
             : value || null,
           updatedBy: ctx.auditUserId,
-          updatedAt: new Date().toISOString()
+          updatedAt: datetime.timestamp()
         })
       )
       .in("id", ids)
@@ -338,7 +340,7 @@ export const updateIssueField = defineServiceFn({
  * Start an issue (In Progress) or reopen it (Registered).
  *
  * @remarks
- * Closing is `quality.issue.close`, which posts the dispositions. Reopening a
+ * Closing is `completeIssue`, which posts the dispositions. Reopening a
  * closed issue whose dispositions posted inventory transactions is refused:
  * reversing posted value takes a correcting entry. The company's integrations
  * are told.
@@ -366,7 +368,15 @@ export const setIssueStatus = defineServiceFn({
       .eq("id", id)
       .eq("companyId", companyId)
       .maybeSingle();
-    if (current.data?.status === "Closed") {
+    if (current.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update issue status",
+        current.error
+      );
+    }
+    if (!current.data) return ctx.error("notFound", "Issue not found");
+    if (current.data.status === "Closed") {
       const posted = await serviceRole
         .from("itemLedger")
         .select("id")
@@ -374,7 +384,14 @@ export const setIssueStatus = defineServiceFn({
         .eq("documentId", id)
         .eq("companyId", companyId)
         .limit(1);
-      if ((posted.data?.length ?? 0) > 0) {
+      if (posted.error) {
+        return ctx.error(
+          "internal",
+          "Failed to update issue status",
+          posted.error
+        );
+      }
+      if (posted.data.length > 0) {
         return ctx.error(
           "rule",
           "This NCR posted inventory transactions and can't be reopened. Create a correcting entry instead."
@@ -384,6 +401,7 @@ export const setIssueStatus = defineServiceFn({
 
     const update = await service.updateIssueStatus(ctx.asCaller.supabase, {
       id,
+      companyId,
       status,
       assignee: undefined,
       closeDate: null,
@@ -396,6 +414,8 @@ export const setIssueStatus = defineServiceFn({
         update.error
       );
     }
+    if (update.data.length === 0)
+      return ctx.error("notFound", "Issue not found");
 
     await service.notifyIssue(
       ctx,
@@ -599,21 +619,40 @@ export const reorderIssueActionTasks = defineServiceFn({
   permission: { update: "quality" },
 
   async run(ctx, { updates }) {
-    const client = ctx.asCaller.supabase;
-    const results = await Promise.all(
-      Object.entries(updates).map(([id, sortOrder]) =>
-        client
-          .from("nonConformanceActionTask")
-          .update({ sortOrder, updatedBy: ctx.auditUserId })
-          .eq("id", id)
-          .eq("companyId", ctx.company.id)
-      )
-    );
-    const failed = results.find((result) => result.error)?.error;
-    if (failed) {
-      return ctx.error("internal", "Failed to update sort order", failed);
+    const ids = Object.keys(updates);
+    if (ids.length === 0) return { ids };
+    const tasks = await ctx.asCaller.supabase
+      .from("nonConformanceActionTask")
+      .select("nonConformanceId")
+      .in("id", ids)
+      .eq("companyId", ctx.company.id);
+    if (tasks.error) {
+      return ctx.error("internal", "Failed to update sort order", tasks.error);
     }
-    return { ids: Object.keys(updates) };
+    const [nonConformanceId, ...others] = pluckUnique(
+      tasks.data,
+      (task) => task.nonConformanceId
+    );
+    if (
+      !nonConformanceId ||
+      others.length > 0 ||
+      tasks.data.length !== ids.length
+    ) {
+      return ctx.error("rule", "The tasks must belong to one issue");
+    }
+
+    await updateSortOrder(ctx.asSystem.pg, {
+      table: "nonConformanceActionTask",
+      column: "sortOrder",
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      parent: { column: "nonConformanceId", id: nonConformanceId },
+      updates: Object.entries(updates).map(([id, sortOrder]) => ({
+        id,
+        sortOrder
+      }))
+    });
+    return { ids };
   }
 });
 
@@ -690,6 +729,13 @@ export const updateIssueItemField = defineServiceFn({
     return { id: input.id };
   }
 });
+const associatedRecordTable = {
+  items: "item",
+  customers: "customer",
+  suppliers: "supplier",
+  trackedEntities: "trackedEntity"
+} as const;
+
 /**
  * Associate a record with an issue: an item, customer, supplier, tracked
  * entity or inspection, or a line of a job (operation), purchase order, sales
@@ -723,8 +769,18 @@ export const createIssueAssociation = defineServiceFn({
       .eq("id", nonConformanceId)
       .eq("companyId", companyId)
       .maybeSingle();
-    if (isIssueLocked(issue.data?.status)) {
+    if (issue.error) return failed("association", issue.error);
+    if (!issue.data) return ctx.error("notFound", "Issue not found");
+    if (isIssueLocked(issue.data.status)) {
       return ctx.error("rule", service.issueLocked);
+    }
+
+    // These link tables' foreign keys take any company's row.
+    if (Object.hasOwn(associatedRecordTable, type)) {
+      const linked =
+        associatedRecordTable[type as keyof typeof associatedRecordTable];
+      const owned = await refuseUnlessOwned(ctx, linked, { id });
+      if (owned) return owned;
     }
 
     const audit = { nonConformanceId, companyId, createdBy: userId };
@@ -802,9 +858,7 @@ export const createIssueAssociation = defineServiceFn({
     return { nonConformanceId, type, id };
   }
 });
-// Auto-linking after a job operation association: it surfaces context into
-// the issue explorer (the job's item, the tracked entities its make method
-// produced), so its failures are logged, never returned.
+
 /**
  * Draft a supplier return from an issue's Return to Supplier rows.
  *
@@ -1581,6 +1635,23 @@ export const saveInspectionDocument = defineServiceFn({
     const companyId = ctx.company.id;
     const id = input.inspectionDocumentId;
 
+    // The drawing is read back through the private bucket, so it must be a
+    // file in this company's folder (the editor sends its preview URL).
+    const drawingPath = input.pdfUrl?.replace(
+      /^\/file\/preview\/private\//,
+      ""
+    );
+    if (
+      drawingPath &&
+      (!drawingPath.startsWith(`${companyId}/`) ||
+        isUnsafeStoragePath(drawingPath))
+    ) {
+      return ctx.error(
+        "validation",
+        "The drawing must be a file in this company's storage"
+      );
+    }
+
     let features: InspectionSaveFeaturesPayload =
       input.features ?? emptyInspectionSave;
     let balloons: InspectionSaveBalloonsGeometryPayload = emptyInspectionSave;
@@ -1679,7 +1750,7 @@ export const setInspectionDocumentDrawingNumber = defineServiceFn({
       .update({
         drawingNumber: drawingNumber?.trim() || null,
         updatedBy: ctx.auditUserId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", id)
       .eq("companyId", ctx.company.id);
@@ -1723,7 +1794,7 @@ export const updateQualityDocumentField = defineServiceFn({
     const companyId = ctx.company.id;
     const audit = {
       updatedBy: ctx.auditUserId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     };
     const written = (result: { error: unknown }) =>
       result.error
@@ -1940,7 +2011,7 @@ export const updateIssueWorkflowField = defineServiceFn({
       .update({
         [field]: value,
         updatedBy: ctx.auditUserId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .in("id", ids)
       .eq("companyId", ctx.company.id);
@@ -2089,7 +2160,8 @@ export const updateScarTaskNotes = defineServiceFn({
  */
 export const activateGauge = defineServiceFn({
   input: z.looseObject({ gaugeId: z.string() }),
-  permission: { update: "quality" },
+  // The route gated on delete; the write runs under the update policy.
+  permission: { update: "quality", delete: "quality" },
   async run(ctx, input) {
     return envelope(
       ctx,
@@ -2105,7 +2177,8 @@ export const activateGauge = defineServiceFn({
  */
 export const deactivateGauge = defineServiceFn({
   input: z.looseObject({ gaugeId: z.string() }),
-  permission: { update: "quality" },
+  // The route gated on delete; the write runs under the update policy.
+  permission: { update: "quality", delete: "quality" },
   async run(ctx, input) {
     return envelope(
       ctx,
@@ -3268,7 +3341,8 @@ export const updateGaugeCalibrationRecord = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "quality" },
+  // The route gated on create; the write runs under the update policy.
+  permission: { create: "quality", update: "quality" },
   async run(ctx, input) {
     return envelope(
       ctx,
@@ -3421,6 +3495,19 @@ export const updateIssue = defineServiceFn({
   }),
   permission: { update: "quality" },
   async run(ctx, input) {
+    const issue = await ctx.asCaller.supabase
+      .from("nonConformance")
+      .select("status")
+      .eq("id", input.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (issue.error) {
+      return ctx.error("internal", "Failed to update issue", issue.error);
+    }
+    if (!issue.data) return ctx.error("notFound", "Issue not found");
+    if (isIssueLocked(issue.data.status)) {
+      return ctx.error("rule", service.issueLocked);
+    }
     return envelope(
       ctx,
       await service.updateIssue(
@@ -3492,7 +3579,8 @@ export const updateIssueWorkflow = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "quality" },
+  // The route gated on create; the write runs under the update policy.
+  permission: { create: "quality", update: "quality" },
   async run(ctx, input) {
     return envelope(
       ctx,
@@ -3669,18 +3757,20 @@ export const createQualityDocument = defineServiceFn({
       .optional()
   }),
   permission: { create: "quality" },
-  async run(ctx, input) {
+  // Only these fields: a document's status moves through approvals
+  // (`updateQualityDocumentField`), and an id would turn the create into an
+  // update.
+  async run(ctx, { name, version, content, copyFromId }) {
     return envelope(
       ctx,
-      await service.upsertQualityDocument(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
-      )
+      await service.upsertQualityDocument(ctx.asCaller.supabase, {
+        name,
+        version,
+        content,
+        copyFromId,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
     );
   }
 });
@@ -3707,18 +3797,17 @@ export const updateQualityDocument = defineServiceFn({
     })
     .required({ id: true }),
   permission: { update: "quality" },
+  // Only these fields: a document's status moves through approvals
+  // (`updateQualityDocumentField`).
   async run(ctx, input) {
     return envelope(
       ctx,
-      await service.upsertQualityDocument(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
-      )
+      await service.upsertQualityDocument(ctx.asCaller.supabase, {
+        ...pick(input, ["name", "version", "content"]),
+        id: input.id,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      })
     );
   }
 });

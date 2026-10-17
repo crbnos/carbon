@@ -6,7 +6,6 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -21,6 +20,7 @@ import {
   RichTextView,
   ToggleGroup,
   ToggleGroupItem,
+  toast,
   useDebounce,
   VStack
 } from "@carbon/react";
@@ -42,7 +42,6 @@ import {
   TrainingProperties
 } from "~/modules/resources/ui";
 import { getTagsList } from "~/modules/shared/shared.service";
-import type { action as updateTrainingAction } from "~/routes/x+/training+/update";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -136,17 +135,24 @@ function TrainingContent() {
     (loaderData?.training?.content ?? {}) as JSONContent
   );
 
-  const contentFetcher = useAction<typeof updateTrainingAction>();
+  // A quiet POST, not a fetcher: an autosave every pause in typing must not
+  // reload every loader on the page.
   const updateTraining = useDebounce(
-    (content: JSONContent) => {
+    async (content: JSONContent) => {
       const formData = new FormData();
       formData.append("ids", id);
       formData.append("field", "content");
       formData.append("value", JSON.stringify(content ?? {}));
-      contentFetcher.submit(formData, {
+      const response = await fetch(path.to.bulkUpdateTraining, {
         method: "post",
-        action: path.to.bulkUpdateTraining
-      });
+        body: formData
+      }).catch(() => null);
+      const body = (await response?.json().catch(() => null)) as {
+        error?: { message: string } | null;
+      } | null;
+      if (!response?.ok || body?.error) {
+        toast.error(body?.error?.message ?? t`Failed to save the content`);
+      }
     },
     500,
     true
@@ -156,6 +162,7 @@ function TrainingContent() {
 
   const canEdit =
     permissions.can("update", "people") &&
+    permissions.can("update", "resources") &&
     loaderData?.training?.status === "Draft";
 
   const guidePath = loaderData?.training?.guidePath ?? null;

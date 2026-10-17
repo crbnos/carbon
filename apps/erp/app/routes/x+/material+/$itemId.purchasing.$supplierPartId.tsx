@@ -4,7 +4,7 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { validator } from "@carbon/form";
+import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
@@ -69,11 +69,18 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id: _id, ...supplierPart } = input.data;
   const api = await carbon(args.request);
-  return api.items.updateSupplierPart({
+  const result = await api.items.updateSupplierPart({
     ...supplierPart,
     id: input.params.supplierPartId,
     customFields: input.formData && setCustomFields(input.formData)
   });
+  // One supplier part per item and supplier: shown under the Supplier field.
+  if (result.error?.category === "conflict") {
+    return validationError({
+      fieldErrors: { supplierId: result.error.message }
+    });
+  }
+  return result;
 }
 
 export default function EditMaterialSupplierRoute() {

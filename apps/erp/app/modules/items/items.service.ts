@@ -4,7 +4,10 @@
 
 import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
-import type { ServiceContext } from "@carbon/api/service-fn.server";
+import {
+  CarbonError,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import { error } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -37,6 +40,8 @@ import {
   datetime,
   getReadableIdWithRevision,
   isUniqueViolation,
+  pick,
+  pluckUnique,
   withPathIds
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -52,7 +57,8 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { ruleError, sanitize } from "~/utils/supabase";
+import { ruleError, SERVICE_RULE_ERROR_CODE, sanitize } from "~/utils/supabase";
+import { makeToAssetItemError } from "../production/production.models";
 import * as productionPostings from "../production/production.service";
 import type { nonConformancePriority } from "../quality/quality.models";
 import type {
@@ -883,23 +889,6 @@ export async function getConsumables(
   return query;
 }
 
-export async function getConsumablesList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    name: string;
-    readableIdWithRevision: string;
-  }>(client, "item", "id, name, readableIdWithRevision", (query) =>
-    query
-      .eq("type", "Consumable")
-      .eq("companyId", companyId)
-      .eq("active", true)
-      .order("name")
-  );
-}
-
 export async function getItem(client: SupabaseClient<Database>, id: string) {
   return client.from("item").select("*").eq("id", id).single();
 }
@@ -1354,45 +1343,6 @@ export async function getSupersessionChain(
   return { chain, supersededBy: supersededBy.data ?? [] };
 }
 
-export async function getItemSupply(
-  client: SupabaseClient<Database>,
-  {
-    itemId,
-    locationId,
-    periods,
-    companyId
-  }: {
-    itemId: string;
-    locationId: string;
-    periods: string[];
-    companyId: string;
-  }
-) {
-  const [actuals, forecasts] = await Promise.all([
-    client
-      .from("supplyActual")
-      .select("*")
-      .eq("itemId", itemId)
-      .eq("locationId", locationId)
-      .eq("companyId", companyId)
-      .in("periodId", periods)
-      .order("periodId"),
-    client
-      .from("supplyForecast")
-      .select("*")
-      .eq("itemId", itemId)
-      .eq("locationId", locationId)
-      .eq("companyId", companyId)
-      .in("periodId", periods)
-      .order("periodId")
-  ]);
-
-  return {
-    actuals: actuals.data ?? [],
-    forecasts: forecasts.data ?? []
-  };
-}
-
 export async function getItemUnitSalePrice(
   client: SupabaseClient<Database>,
   id: string,
@@ -1404,39 +1354,6 @@ export async function getItemUnitSalePrice(
     .eq("itemId", id)
     .eq("companyId", companyId)
     .single();
-}
-
-export async function getJobMaterialUsageForItem(
-  client: SupabaseClient<Database>,
-  { itemId, companyId }: { itemId: string; companyId: string }
-): Promise<{
-  byMaterialId: Record<string, number>;
-  byJobId: Record<string, number>;
-}> {
-  const [materials, jobs] = await Promise.all([
-    client
-      .from("jobMaterial")
-      .select("id, estimatedQuantity")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("job")
-      .select("id, quantity")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-  ]);
-
-  const byMaterialId: Record<string, number> = {};
-  for (const row of materials.data ?? []) {
-    if (row.id) byMaterialId[row.id] = row.estimatedQuantity ?? 0;
-  }
-
-  const byJobId: Record<string, number> = {};
-  for (const row of jobs.data ?? []) {
-    if (row.id) byJobId[row.id] = row.quantity ?? 0;
-  }
-
-  return { byMaterialId, byJobId };
 }
 
 /**
@@ -1532,23 +1449,6 @@ export async function getMaterials(
     { column: "readableIdWithRevision", ascending: true }
   ]);
   return query;
-}
-
-export async function getMaterialsList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    name: string;
-    readableIdWithRevision: string;
-  }>(client, "item", "id, name, readableIdWithRevision", (query) =>
-    query
-      .eq("type", "Material")
-      .or(`companyId.eq.${companyId},companyId.is.null`)
-      .eq("active", true)
-      .order("name")
-  );
 }
 
 function buildSearchFilter(search: string, columns: string[]) {
@@ -1784,17 +1684,6 @@ export async function getMaterialSubstancesList(
     .select("id, name, code, companyId")
     .or(`companyId.eq.${companyId},companyId.is.null`)
     .order("name");
-}
-
-export async function getMethodMaterial(
-  client: SupabaseClient<Database>,
-  materialId: string
-) {
-  return client
-    .from("methodMaterial")
-    .select("*, item(name)")
-    .eq("id", materialId)
-    .single();
 }
 
 export async function getMethodMaterials(
@@ -2466,23 +2355,6 @@ export async function getTools(
   return query;
 }
 
-export async function getToolsList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    name: string;
-    readableIdWithRevision: string;
-  }>(client, "item", "id, name, readableIdWithRevision", (query) =>
-    query
-      .eq("type", "Tool")
-      .eq("companyId", companyId)
-      .eq("active", true)
-      .order("name")
-  );
-}
-
 export async function getUnitOfMeasure(
   client: SupabaseClient<Database>,
   id: string,
@@ -2624,34 +2496,6 @@ export async function updateItemCost(
     })
     .eq("itemId", itemId)
     .single();
-}
-
-export async function updateMaterialOrder(
-  client: SupabaseClient<Database>,
-  updates: {
-    id: string;
-    order: number;
-    updatedBy: string;
-  }[]
-) {
-  const updatePromises = updates.map(({ id, order, updatedBy }) =>
-    client.from("methodMaterial").update({ order, updatedBy }).eq("id", id)
-  );
-  return Promise.all(updatePromises);
-}
-
-export async function updateOperationOrder(
-  client: SupabaseClient<Database>,
-  updates: {
-    id: string;
-    order: number;
-    updatedBy: string;
-  }[]
-) {
-  const updatePromises = updates.map(({ id, order, updatedBy }) =>
-    client.from("methodOperation").update({ order, updatedBy }).eq("id", id)
-  );
-  return Promise.all(updatePromises);
 }
 
 export async function updateRevision(
@@ -3027,7 +2871,7 @@ export async function upsertItemShelfLife(
         triggerTiming,
         calculateFromBom,
         updatedBy: args.userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .eq("itemId", args.itemId);
   }
@@ -4340,7 +4184,7 @@ export async function upsertItemSupersession(
   if (existing.data) {
     return client
       .from("itemSupersession")
-      .update({ ...row, updatedBy, updatedAt: new Date().toISOString() })
+      .update({ ...row, updatedBy, updatedAt: datetime.timestamp() })
       .eq("itemId", itemId)
       .eq("companyId", companyId);
   }
@@ -4972,48 +4816,6 @@ export async function upsertMethodOperationTool(
     .eq("id", methodOperationTool.id)
     .select("id")
     .single();
-}
-
-// Replace a method tool's step links (tool ↔ step is many-to-many). No ids = the tool
-// applies to the whole operation (shown on every step in the MES). Delete-then-insert.
-// Replace a method material's step links (part ↔ step, many-to-many). See above.
-export async function replaceMethodMaterialSteps(
-  client: SupabaseClient<Database>,
-  methodMaterialId: string,
-  methodOperationStepIds: string[]
-) {
-  // Per-step quantities are edited from the step side; a BOM-side rewrite of the
-  // step set must not wipe them, so carry each retained step's quantity across
-  // the delete-then-insert. Pre-migration schema: quantities don't exist, so
-  // fall back to the bare link set.
-  let quantityByStepId = new Map<string, number | null>();
-  const existing = await client
-    .from("methodMaterialStep")
-    .select("methodOperationStepId, quantity")
-    .eq("methodMaterialId", methodMaterialId);
-  if (existing.error && !isMissingQuantityColumn(existing.error)) {
-    return existing;
-  }
-  if (!existing.error) {
-    quantityByStepId = new Map(
-      (existing.data ?? []).map((l) => [l.methodOperationStepId, l.quantity])
-    );
-  }
-  const del = await client
-    .from("methodMaterialStep")
-    .delete()
-    .eq("methodMaterialId", methodMaterialId);
-  if (del.error || methodOperationStepIds.length === 0) return del;
-  return client.from("methodMaterialStep").insert(
-    methodOperationStepIds.map((methodOperationStepId) => {
-      const quantity = quantityByStepId.get(methodOperationStepId);
-      return {
-        methodMaterialId,
-        methodOperationStepId,
-        ...(quantity != null ? { quantity } : {})
-      };
-    })
-  );
 }
 
 // Toggle a single part↔step link from the STEP side (the step editor's Parts picker).
@@ -6614,10 +6416,30 @@ export async function insertChangeNotice(
   };
 }
 
+const changeNoticeHeaderFields = [
+  "changeOrderId",
+  "name",
+  "type",
+  "priority",
+  "changeOrderTypeId",
+  "nonConformanceId",
+  "openDate",
+  "reasonForChange",
+  "description",
+  "dueDate",
+  "assignee",
+  "customFields"
+] as const;
+
+/**
+ * Writes only the header fields sent, from `changeNoticeHeaderFields`:
+ * `status` moves only through `updateChangeNoticeStatus` and the release.
+ */
 export async function updateChangeNotice(
   client: SupabaseClient<Database>,
   input: {
     id: string;
+    companyId: string;
     updatedBy: string;
     changeOrderId?: string;
     name?: string;
@@ -6636,11 +6458,15 @@ export async function updateChangeNotice(
   data: { id: string } | null;
   error: ChangeNoticeError | null;
 }> {
-  const { id, ...rest } = input;
   const result = await client
     .from("changeOrder")
-    .update(sanitize(rest))
-    .eq("id", id)
+    .update({
+      ...sanitize(pick(input, [...changeNoticeHeaderFields])),
+      updatedBy: input.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", input.id)
+    .eq("companyId", input.companyId)
     .select("id")
     .single();
 
@@ -6688,7 +6514,13 @@ export async function deleteChangeNotice(
 // Stage transition — the single guarded writer (G8), a compare-and-swap (G2).
 // Forward-only (isAllowedChangeNoticeTransition).
 // -----------------------------------------------------------------------------
-/** The guarded write only; `setChangeNoticeStatus` also gates approval, releases and notifies. */
+export const changeNoticeUpdatedElsewhere =
+  "The change notice was updated by someone else. Refresh and try again.";
+
+/**
+ * The guarded write only; `setChangeNoticeStatus` also gates approval,
+ * releases and notifies. Never Done: the release is `applyChangeNotice`.
+ */
 export async function updateChangeNoticeStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -6705,12 +6537,16 @@ export async function updateChangeNoticeStatus(
 }> {
   const { id, companyId, fromStatus, toStatus, ...rest } = update;
 
+  if (toStatus === "Done") {
+    return {
+      data: null,
+      error: ruleError("A change notice is completed only by its release")
+    };
+  }
   if (!isAllowedChangeNoticeTransition(fromStatus, toStatus)) {
     return {
       data: null,
-      error: {
-        message: `Cannot change status from ${fromStatus} to ${toStatus}`
-      }
+      error: ruleError(`Cannot change status from ${fromStatus} to ${toStatus}`)
     };
   }
 
@@ -6736,13 +6572,7 @@ export async function updateChangeNoticeStatus(
 
   if (result.error) return { data: null, error: result.error };
   if (!result.data) {
-    return {
-      data: null,
-      error: {
-        message:
-          "The change notice was updated by someone else. Refresh and try again."
-      }
-    };
+    return { data: null, error: { message: changeNoticeUpdatedElsewhere } };
   }
   return { data: result.data, error: null };
 }
@@ -6855,157 +6685,6 @@ export async function deleteChangeNoticeType(
 // PostgREST's deeply-recursive relation parser, and across the module that
 // pushed TS's global instantiation budget over the edge (TS2589 in unrelated
 // files). Flat selects barely instantiate.
-
-// Climb the BOM (methodMaterial → makeMethod → item) from a set of start items up
-// to the top-level products — items that are used by nothing. Returns each product
-// with `sourceItemIds`: which of the start items (the targeted assemblies) rolled up
-// into it (provenance, for the "affected by" display). Flat queries (no PostgREST
-// embeds — TS2589 budget); a per-item origin set that only grows drives a fixpoint,
-// so a corrupt/cyclic BOM can't loop forever and provenance fully propagates.
-// `nodeBudget` is a pure infinite-loop backstop, not a depth limit.
-export async function getTopLevelProductsForItems(
-  client: SupabaseClient<Database>,
-  itemIds: string[],
-  companyId: string
-): Promise<{
-  data: Array<{ productId: string; sourceItemIds: string[] }>;
-  error: { message: string } | null;
-}> {
-  const start = [...new Set(itemIds.filter(Boolean))];
-  if (start.length === 0) return { data: [], error: null };
-
-  // origins[item] = the start items (targeted assemblies) that reach it.
-  const origins = new Map<string, Set<string>>();
-  for (const s of start) origins.set(s, new Set([s]));
-  // parentsCache[item] = its immediate parent items (one level up), fetched once.
-  const parentsCache = new Map<string, Set<string>>();
-  const roots = new Map<string, Set<string>>();
-
-  const fetchParents = async (ids: string[]) => {
-    const unknown = ids.filter((id) => !parentsCache.has(id));
-    if (unknown.length === 0) return;
-    for (const id of unknown) parentsCache.set(id, new Set());
-
-    const materials = await client
-      .from("methodMaterial")
-      .select("itemId, makeMethodId")
-      .in("itemId", unknown)
-      .eq("companyId", companyId);
-    if (materials.error) throw materials.error;
-
-    const makeMethodIds = [
-      ...new Set((materials.data ?? []).map((m) => m.makeMethodId))
-    ];
-    const parentByMethod = new Map<string, string>();
-    if (makeMethodIds.length > 0) {
-      const methods = await client
-        .from("makeMethod")
-        .select("id, itemId")
-        .in("id", makeMethodIds)
-        .eq("companyId", companyId);
-      if (methods.error) throw methods.error;
-      for (const mm of methods.data ?? []) parentByMethod.set(mm.id, mm.itemId);
-    }
-    for (const row of materials.data ?? []) {
-      const parent = parentByMethod.get(row.makeMethodId);
-      if (parent) parentsCache.get(row.itemId)?.add(parent);
-    }
-  };
-
-  let queue = [...start];
-  let nodeBudget = 20000;
-  try {
-    while (queue.length > 0 && nodeBudget > 0) {
-      const batch = [...new Set(queue)];
-      queue = [];
-      nodeBudget -= batch.length;
-      await fetchParents(batch);
-
-      for (const id of batch) {
-        const parents = parentsCache.get(id);
-        const idOrigins = origins.get(id) ?? new Set<string>();
-
-        if (!parents || parents.size === 0) {
-          // used by nothing → a top-level product; record its origins
-          if (!roots.has(id)) roots.set(id, new Set());
-          const rootOrigins = roots.get(id)!;
-          for (const o of idOrigins) rootOrigins.add(o);
-          continue;
-        }
-
-        for (const parent of parents) {
-          if (!origins.has(parent)) origins.set(parent, new Set());
-          const target = origins.get(parent)!;
-          const before = target.size;
-          for (const o of idOrigins) target.add(o);
-          // Re-enqueue when the parent's origin set grew (monotonic, finite → the
-          // loop terminates even on cyclic data) so provenance fully propagates.
-          if (target.size > before) queue.push(parent);
-        }
-      }
-    }
-  } catch (err) {
-    return { data: [], error: { message: (err as Error).message } };
-  }
-
-  return {
-    data: [...roots.entries()].map(([productId, srcs]) => ({
-      productId,
-      sourceItemIds: [...srcs]
-    })),
-    error: null
-  };
-}
-
-// G3 — forward-reference to a not-yet-synced part. Mints a REAL item row
-// (active=false, revisionStatus='Design') through the standard item shape so
-// `changeOrderStagedMaterial.itemId` is always non-null and no placeholder branch
-// is threaded downstream. Onshape sync reconciles by matching readableId+company
-// (flip active, fill details). A cancelled CO can leave an inactive stub — it's
-// filterable and tied to the CO, far cheaper than nullable-threading everywhere.
-export async function mintPlaceholderPart(
-  client: SupabaseClient<Database>,
-  input: {
-    readableId: string;
-    name: string;
-    companyId: string;
-    createdBy: string;
-    unitOfMeasureCode?: string;
-  }
-): Promise<{
-  data: { id: string } | null;
-  error: ChangeNoticeError | null;
-}> {
-  const item = await client
-    .from("item")
-    .insert({
-      readableId: input.readableId,
-      revision: "0",
-      name: input.name,
-      type: "Part",
-      replenishmentSystem: "Buy",
-      defaultMethodType: "Pull from Inventory",
-      itemTrackingType: "Inventory",
-      unitOfMeasureCode: input.unitOfMeasureCode ?? "EA",
-      active: false,
-      revisionStatus: "Design",
-      companyId: input.companyId,
-      createdBy: input.createdBy
-    })
-    .select("id")
-    .single();
-
-  if (item.error || !item.data) return { data: null, error: item.error };
-
-  const part = await client.from("part").insert({
-    id: input.readableId,
-    companyId: input.companyId,
-    createdBy: input.createdBy
-  });
-  if (part.error) return { data: null, error: part.error };
-
-  return { data: { id: item.data.id }, error: null };
-}
 
 // =============================================================================
 // v2 — CO-owned Draft make-method orchestration (affected items).
@@ -7744,7 +7423,7 @@ export async function updateChangeNoticeAffectedItemCutover(
     .update({
       ...sanitize(rest),
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", id)
     .select("id")
@@ -7937,42 +7616,6 @@ export async function getChangeNoticesForNonConformance(
     .order("createdAt", { ascending: false });
 }
 
-// Single-open-CO-per-part guard (V1 — no parallel change notices): the OTHER
-// open change notices that already reference a part, excluding the current CO.
-// Reuses the canonical G6 query at the open-status filter. A non-empty result
-// means adding the part here would create a parallel open CO — the routes (and
-// the staging service) reject it.
-export async function findOtherOpenChangeNoticesForItem(
-  client: SupabaseClient<Database>,
-  args: { itemId: string; companyId: string; excludeChangeNoticeId: string }
-): Promise<ChangeNoticeForItem[]> {
-  const { data } = await findChangeNoticesForItem(client, {
-    itemId: args.itemId,
-    companyId: args.companyId,
-    statuses: changeNoticeOpenStatuses
-  });
-  return data.filter((cn) => cn.id !== args.excludeChangeNoticeId);
-}
-
-// Loader data for the "Change Notices" history section + open-CO alert on an
-// item detail page (part/tool/material) — the CO history for the item plus the
-// type lookup used to label rows. One shared source so the detail routes don't
-// each re-implement the pair of reads.
-export async function getItemChangeNoticeData(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  const [changeNotices, changeNoticeTypes] = await Promise.all([
-    findChangeNoticesForItem(client, { itemId, companyId }),
-    getChangeNoticeTypesList(client, companyId)
-  ]);
-  return {
-    changeNotices: changeNotices.data,
-    changeNoticeTypes: changeNoticeTypes.data ?? []
-  };
-}
-
 // =============================================================================
 // Change Notices — Actions (freeform tasks; reuse changeOrderActionTask). Any
 // user, any stage; non-gating. Kept as its own section of items.service.ts to
@@ -8039,19 +7682,26 @@ export async function updateChangeNoticeActionStatus(
   client: SupabaseClient<Database>,
   input: {
     id: string;
+    companyId: string;
     status: (typeof changeNoticeTaskStatus)[number];
     userId: string;
   }
 ) {
-  const today = new Date().toISOString().split("T")[0];
+  const completedDate =
+    input.status === "Completed"
+      ? datetime
+          .today(await getCompanyTimeZone(client, input.companyId))
+          .toString()
+      : null;
   return client
     .from("changeOrderActionTask")
     .update({
       status: input.status,
-      completedDate: input.status === "Completed" ? today : null,
+      completedDate,
       updatedBy: input.userId
     })
     .eq("id", input.id)
+    .eq("companyId", input.companyId)
     .select("id")
     .single();
 }
@@ -8243,32 +7893,6 @@ export async function setChangeNoticeActionTasks(
   }
 
   return { data: null, error: null };
-}
-
-// Instantiate one changeOrderActionTask per active template onto a new change
-// notice. Called by insertChangeNotice; non-gating, so callers ignore a soft
-// failure rather than roll back the change notice.
-export async function seedDefaultChangeNoticeActions(
-  client: SupabaseClient<Database>,
-  input: { changeNoticeId: string; companyId: string; userId: string }
-) {
-  const templates = await getChangeNoticeRequiredActionsList(
-    client,
-    input.companyId
-  );
-  if (templates.error || !templates.data?.length) return templates;
-
-  return client.from("changeOrderActionTask").insert(
-    templates.data.map((template, index) => ({
-      changeOrderId: input.changeNoticeId,
-      actionTypeId: template.id,
-      name: template.name,
-      status: "Pending" as const,
-      sortOrder: index + 1,
-      companyId: input.companyId,
-      createdBy: input.userId
-    }))
-  );
 }
 
 // =============================================================================
@@ -9201,7 +8825,6 @@ export async function getChangeNoticeDiff(
  * returned `signedUrl`, then call `insertModelUpload` with the returned `modelId`,
  * `path` and the file's size in bytes. The file is staged in the `temp-staging`
  * bucket, as the browser upload does, so models up to 2.5 GB are accepted.
- * @mcp create — the non-browser counterpart of the CAD model dropzone
  */
 export async function createModelUploadUrl(
   client: SupabaseClient<Database>,
@@ -9233,16 +8856,6 @@ const modelUploadTargets = [
   "salesOrderLine"
 ] as const;
 
-/**
- * Record a CAD model uploaded with `createModelUploadUrl`, as the CAD model
- * dropzone does, and make it the model of the records named: an item, a job, a
- * sales RFQ line, a quote line and/or a sales order line (a line and its item
- * together, as the dropzone does). With none the model is only recorded; pass
- * its id as `modelUploadId` to `upsertPart` or `upsertJob` later. Starts the optimisation job, which also renders the thumbnail. Set
- * `convert` for a STEP file whose assembly structure is needed (assembly
- * instructions, step slides).
- * @mcp create — second step of the model upload
- */
 /** Whether `path` is the one `createModelUploadUrl` minted for this model. */
 export function isModelUploadPath(
   companyId: string,
@@ -9255,6 +8868,16 @@ export function isModelUploadPath(
   );
 }
 
+/**
+ * Record a CAD model uploaded with `createModelUploadUrl`, as the CAD model
+ * dropzone does, and make it the model of the records named: an item, a job, a
+ * sales RFQ line, a quote line and/or a sales order line (a line and its item
+ * together, as the dropzone does). With none the model is only recorded; pass
+ * its id as `modelUploadId` to `upsertPart` or `upsertJob` later. The new row
+ * starts the optimisation job itself (the `queue_model_pipeline` handler on
+ * `modelUpload`), which also renders the thumbnail. Set `convert` for a STEP
+ * file whose assembly structure is needed (assembly instructions, step slides).
+ */
 export async function insertModelUpload(
   client: SupabaseClient<Database>,
   args: {
@@ -9396,7 +9019,6 @@ const thumbnailExtensions = ["png", "jpg", "jpeg", "webp"];
  * WebP). PUT the bytes to `signedUrl`, then call `updateItemThumbnail` with the
  * returned `path`. An item thumbnail is shown in place of the one rendered from
  * its model.
- * @mcp create — the non-browser counterpart of the thumbnail upload
  */
 export async function createItemThumbnailUploadUrl(
   client: SupabaseClient<Database>,
@@ -9423,7 +9045,6 @@ export async function createItemThumbnailUploadUrl(
  * Set an item's thumbnail to an image uploaded with
  * `createItemThumbnailUploadUrl`, or clear it (`thumbnailPath: null`) to show
  * the one rendered from its model.
- * @mcp update
  */
 export async function updateItemThumbnail(
   client: SupabaseClient<Database>,
@@ -9747,49 +9368,15 @@ export async function checkRevisionLocks(
   );
 }
 
-/** The locks of every method the rows belong to: a reorder names rows, not their method. */
-export async function checkRowMethodLocks(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  table: "methodMaterial" | "methodOperation",
-  ids: string[]
-): Promise<LockCheck> {
-  if (ids.length === 0) return { ok: true, warn: false };
-  const rows = await client
-    .from(table)
-    .select("makeMethodId")
-    .in("id", ids)
-    .eq("companyId", companyId);
-  if (rows.error) {
-    logger.error("Failed to read the methods of reordered rows", {
-      companyId,
-      table,
-      error: rows.error
-    });
-    return {
-      ok: false,
-      warn: false,
-      message: "Could not check whether the method is released"
-    };
-  }
-  const methodIds = [...new Set(rows.data.map((row) => row.makeMethodId))];
-  return checkRevisionLocks(
-    client,
-    companyId,
-    methodIds.map((id) => ({ kind: "makeMethod" as const, id }))
-  );
-}
-
 /**
  * Why a step, a slide or a step link cannot change, or null. Only a Draft
- * method's steps change; `revisionLock` adds the release lock, for the writes
- * whose editor checks it.
+ * method's steps change. The release lock is the caller's: its warning is
+ * returned with the write.
  */
 export async function methodStepRefusal(
   client: SupabaseClient<Database>,
   companyId: string,
-  ref: { operationId: string } | { stepId: string } | { slideId: string },
-  options: { revisionLock?: boolean } = {}
+  ref: { operationId: string } | { stepId: string } | { slideId: string }
 ): Promise<string | null> {
   let operationId: string | null = null;
   if ("operationId" in ref) {
@@ -9813,14 +9400,6 @@ export async function methodStepRefusal(
   }
   if (!operationId) return "Failed to find method operation";
 
-  if (options.revisionLock) {
-    const lock = await checkRevisionLock(client, {
-      kind: "operation",
-      id: operationId,
-      companyId
-    });
-    if (!lock.ok) return lock.message;
-  }
   try {
     await assertMethodOperationIsDraft(client, operationId);
     return null;
@@ -10126,13 +9705,10 @@ export async function applyChangeNotice(
     .eq("companyId", companyId)
     .single();
   if (cn.error || !cn.data) {
-    return { data: null, error: { message: "Change notice not found" } };
+    return { data: null, error: ruleError("Change notice not found") };
   }
   if (cn.data.status !== "Implementation") {
-    return {
-      data: null,
-      error: { message: "Change notice must be at Implementation to apply" }
-    };
+    return { data: null, error: { message: changeNoticeUpdatedElsewhere } };
   }
 
   // Load the affected items with change type + draft refs + cutover config.
@@ -10185,10 +9761,7 @@ export async function applyChangeNotice(
       return Number(res.numUpdatedRows);
     });
     if (updated === 0) {
-      return {
-        data: null,
-        error: { message: "Change notice has already been applied" }
-      };
+      return { data: null, error: { message: changeNoticeUpdatedElsewhere } };
     }
   } catch (err) {
     return {
@@ -10275,7 +9848,7 @@ async function releaseAffectedItem(
         active: true,
         changeOrderId: changeNoticeId,
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", newItemId)
       .eq("companyId", companyId);
@@ -11350,4 +10923,161 @@ export async function syncMakeMethod(
       };
     }
   }
+}
+
+// ── Service function helpers ────────────────────────────────────────────────
+
+/** The write's result, with the release lock's warning when release control only warns. */
+export function withLockNotice<T>(lock: LockCheck, result: T | CarbonError) {
+  if (result instanceof CarbonError || !lock.warn) return result;
+  return Object.assign({}, result, { notice: lock.message });
+}
+
+/** A change notice write's own refusal, passed through; anything else is internal. */
+export function changeNoticeRefusal(
+  ctx: ServiceContext,
+  error: { message: string; code?: string } | null,
+  fallback: string
+) {
+  if (error?.message === changeNoticeUpdatedElsewhere) {
+    return ctx.error("conflict", error.message);
+  }
+  if (error?.code === SERVICE_RULE_ERROR_CODE) {
+    return ctx.error("rule", error.message);
+  }
+  return ctx.error("internal", fallback, error);
+}
+
+/**
+ * Write a drag-sort of one make method's materials or operations: one
+ * statement, scoped to the company and the method, all or nothing.
+ */
+export async function reorderMethodRows(
+  ctx: ServiceContext,
+  table: "methodMaterial" | "methodOperation",
+  updates: { id: string; order: number }[]
+) {
+  if (updates.length === 0) return { ids: [] as string[], notice: undefined };
+  const companyId = ctx.company.id;
+  // Both tables carry makeMethodId; the cast only gives supabase-js one table to type.
+  const rows = await ctx.asCaller.supabase
+    .from(table as "methodMaterial")
+    .select("makeMethodId")
+    .in(
+      "id",
+      updates.map((update) => update.id)
+    )
+    .eq("companyId", companyId);
+  if (rows.error) {
+    return ctx.error("internal", "Failed to update sort order", rows.error);
+  }
+  const [makeMethodId, ...others] = pluckUnique(
+    rows.data,
+    (row) => row.makeMethodId
+  );
+  if (
+    !makeMethodId ||
+    others.length > 0 ||
+    rows.data.length !== updates.length
+  ) {
+    return ctx.error("rule", "The rows must belong to one make method");
+  }
+
+  const lock = await checkRevisionLock(ctx.asCaller.supabase, {
+    kind: "makeMethod",
+    id: makeMethodId,
+    companyId
+  });
+  if (!lock.ok) return ctx.error("rule", lock.message);
+
+  await updateSortOrder(ctx.asSystem.pg, {
+    table,
+    column: "order",
+    companyId,
+    userId: ctx.auditUserId,
+    parent: { column: "makeMethodId", id: makeMethodId },
+    updates: updates.map(({ id, order }) => ({ id, sortOrder: order }))
+  });
+  return {
+    ids: updates.map((update) => update.id),
+    notice: lock.warn ? lock.message : undefined
+  };
+}
+
+/**
+ * Why a job cannot be created from these records, or null: every id must be
+ * this company's (the job is written with the service role), the item must
+ * not be one an unreleased change notice holds (the job would take its draft
+ * method), and a Make to Asset item must be able to complete to its asset.
+ * The last is checked here, not only at release, so the form says why while
+ * the item is still being chosen.
+ */
+export async function jobCreationRefusal(
+  ctx: ServiceContext,
+  job: {
+    itemId: string;
+    quantity?: number;
+    locationId?: string | null;
+    customerId?: string | null;
+    modelUploadId?: string | null;
+    fixedAssetClassId?: string | null;
+    fixedAssetId?: string | null;
+    storageUnitId?: string | null;
+    salesOrderId?: string | null;
+    salesOrderLineId?: string | null;
+    quoteId?: string | null;
+    quoteLineId?: string | null;
+  }
+): Promise<CarbonError | null> {
+  const owned = await productionPostings.requireOwnRecords(ctx, [
+    ["item", job.itemId, "item"],
+    ["location", job.locationId, "location"],
+    ["customer", job.customerId, "customer"],
+    ["modelUpload", job.modelUploadId, "model"],
+    ["fixedAssetClass", job.fixedAssetClassId, "fixed asset class"],
+    ["fixedAsset", job.fixedAssetId, "fixed asset"],
+    ["storageUnit", job.storageUnitId, "storage unit"],
+    ["salesOrder", job.salesOrderId, "sales order"],
+    ["salesOrderLine", job.salesOrderLineId, "sales order line"],
+    ["quote", job.quoteId, "quote"],
+    ["quoteLine", job.quoteLineId, "quote line"]
+  ]);
+  if (owned) return owned;
+
+  const unreleasedIssue = await getUnreleasedChangeOrderIssue(
+    ctx.asSystem.supabase,
+    { itemId: job.itemId, companyId: ctx.company.id }
+  );
+  if (unreleasedIssue) {
+    return ctx.error("rule", `${unreleasedIssue} A job cannot be made for it.`);
+  }
+
+  if (job.fixedAssetClassId || job.fixedAssetId) {
+    const item = await ctx.asSystem.supabase
+      .from("item")
+      .select("itemTrackingType")
+      .eq("id", job.itemId)
+      .eq("companyId", ctx.company.id)
+      .single();
+    const itemError = makeToAssetItemError({
+      ...job,
+      itemTrackingType: item.data?.itemTrackingType
+    });
+    if (itemError) return ctx.error("rule", itemError);
+  }
+  return null;
+}
+
+/**
+ * Why a job's method cannot be saved onto make method `targetId`, or null:
+ * the item's revision is released and release control enforces it, or a
+ * change notice holds the method. The same lock as the items' Save Method.
+ */
+export async function saveMethodRefusal(ctx: ServiceContext, targetId: string) {
+  const lock = await checkRevisionLock(ctx.asSystem.supabase, {
+    kind: "makeMethod",
+    id: targetId,
+    companyId: ctx.company.id
+  });
+  return lock.ok ? null : ctx.error("rule", lock.message);
 }

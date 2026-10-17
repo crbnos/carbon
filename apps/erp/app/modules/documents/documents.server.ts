@@ -7,6 +7,7 @@ import { envelope, paged, stamp } from "@carbon/api/service-tools.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import { z } from "zod";
 import { refuseUnlessOwned } from "~/modules/shared/shared.service";
 import { modelViewDirection } from "./documents.models";
@@ -105,7 +106,13 @@ export const optimizeModel = defineServiceFn({
     if (force) {
       const reset = await ctx.asSystem.supabase
         .from("modelUpload")
-        .update({ optimizeStatus: "Queued", optimizeError: null })
+        // `updatedAt` too: the stuck-job cleanup reads it, and an old one
+        // would mark this live run interrupted.
+        .update({
+          optimizeStatus: "Queued",
+          optimizeError: null,
+          updatedAt: datetime.timestamp()
+        })
         .eq("id", modelUploadId)
         .eq("companyId", companyId);
       if (reset.error) {
@@ -406,6 +413,8 @@ export const createDocument = defineServiceFn({
   }),
   permission: { create: "documents" },
   async run(ctx, input) {
+    const foreign = service.refuseForeignPath(ctx, input.path);
+    if (foreign) return foreign;
     return envelope(
       ctx,
       await service.upsertDocument(
@@ -471,6 +480,8 @@ export const updateDocument = defineServiceFn({
     .required({ id: true }),
   permission: { update: "documents" },
   async run(ctx, input) {
+    const foreign = service.refuseForeignPath(ctx, input.path);
+    if (foreign) return foreign;
     return envelope(
       ctx,
       await service.upsertDocument(
@@ -548,6 +559,8 @@ export const insertUploadedDocument = defineServiceFn({
   }),
   permission: { create: "documents" },
   async run(ctx, input) {
+    const foreign = service.refuseForeignPath(ctx, input.path);
+    if (foreign) return foreign;
     return envelope(
       ctx,
       await service.insertUploadedDocument(
@@ -613,6 +626,8 @@ export const insertDocumentExtraction = defineServiceFn({
   }),
   permission: { create: "documents" },
   async run(ctx, input) {
+    const foreign = service.refuseForeignPath(ctx, input.storagePath);
+    if (foreign) return foreign;
     return envelope(
       ctx,
       await service.insertDocumentExtraction(

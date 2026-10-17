@@ -2,10 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import {
   envelope,
-  envelopes,
   paged,
   plain,
   stamp
@@ -375,37 +374,37 @@ export const setItemReadableId = defineServiceFn({
     }
     const current = item.data.readableId;
 
-    const revisions = await client
-      .from("item")
-      .select("id")
-      .eq("readableId", current)
-      .eq("type", type)
-      .eq("companyId", companyId);
-    if (revisions.error) {
-      return ctx.error("internal", revisions.error.message, revisions.error);
-    }
-
     const audit = {
       updatedBy: ctx.auditUserId,
       updatedAt: datetime.timestamp()
     };
-    const [itemUpdate, typedUpdate] = await Promise.all([
-      client
-        .from("item")
-        .update({ readableId, ...audit })
-        .in(
-          "id",
-          revisions.data.map((revision) => revision.id)
-        )
-        .eq("companyId", companyId),
-      client
-        .from(renumberedTable[type] as "part")
-        .update({ id: readableId, ...audit })
-        .eq("id", current)
-        .eq("companyId", companyId)
-    ]);
-    const failed = typedUpdate.error ?? itemUpdate.error;
-    if (failed) return ctx.error("internal", failed.message, failed);
+    try {
+      // The type row is keyed by the readable id, so both renames land or
+      // neither does. The function's gate is the update policy of both tables.
+      await ctx.transaction(async (tx) => {
+        await tx.asSystem.pg
+          .updateTable("item")
+          .set({ readableId, ...audit })
+          .where("readableId", "=", current)
+          .where("type", "=", type)
+          .where("companyId", "=", companyId)
+          .execute();
+        await tx.asSystem.pg
+          .updateTable(renumberedTable[type] as "part")
+          .set({ id: readableId, ...audit })
+          .where("id", "=", current)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        return ctx.error(
+          "conflict",
+          `A ${type.toLowerCase()} with this number already exists`
+        );
+      }
+      throw err;
+    }
     return { id, readableId };
   }
 });
@@ -516,9 +515,7 @@ const partInput = applyStorageAndShelfLifeRefines(
  *
  * @remarks
  * Writes the item and its part row, its item group and unit cost, batch size,
- * default storage unit and shelf life (`upsertPart`). A part created with a
- * CAD model queues the model's optimisation, which also renders its
- * thumbnail.
+ * default storage unit and shelf life (`upsertPart`).
  *
  * @mcp
  */
@@ -1466,7 +1463,7 @@ export const setChangeNoticeStatus = defineServiceFn({
       if (current.data?.status !== fromStatus) {
         return ctx.error(
           "conflict",
-          "The change notice was updated by someone else. Refresh and try again.",
+          service.changeNoticeUpdatedElsewhere,
           current.error
         );
       }
@@ -1514,10 +1511,10 @@ export const setChangeNoticeStatus = defineServiceFn({
         companyId
       });
       if (applied.error || !applied.data) {
-        return ctx.error(
-          "internal",
-          "Failed to apply change notice",
-          applied.error
+        return service.changeNoticeRefusal(
+          ctx,
+          applied.error,
+          "Failed to apply change notice"
         );
       }
     } else {
@@ -1530,10 +1527,10 @@ export const setChangeNoticeStatus = defineServiceFn({
         updatedBy: userId
       });
       if (update.error || !update.data) {
-        return ctx.error(
-          "internal",
-          "Failed to update change notice status",
-          update.error
+        return service.changeNoticeRefusal(
+          ctx,
+          update.error,
+          "Failed to update change notice status"
         );
       }
     }
@@ -1662,12 +1659,15 @@ export const activateMethodVersion = defineServiceFn({
       [{ kind: "makeMethod", id: input.id }]
     );
     if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelope(
-      ctx,
-      await service.activateMethodVersion(
-        ctx.asCaller.supabase,
-        ctx.asSystem.pg,
-        stamp(ctx, input, ["companyId", "userId"]) as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.activateMethodVersion(
+          ctx.asCaller.supabase,
+          ctx.asSystem.pg,
+          stamp(ctx, input, ["companyId", "userId"]) as never
+        )
       )
     );
   }
@@ -1971,11 +1971,14 @@ export const deleteMethodMaterial = defineServiceFn({
       [{ kind: "material", id: input.id }]
     );
     if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelope(
-      ctx,
-      await service.deleteMethodMaterial(
-        ctx.asCaller.supabase,
-        input.id as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.deleteMethodMaterial(
+          ctx.asCaller.supabase,
+          input.id as never
+        )
       )
     );
   }
@@ -1990,13 +1993,18 @@ export const assertMethodOperationIsDraft = defineServiceFn({
   input: z.looseObject({ operationId: z.string() }),
   permission: { update: "parts" },
   async run(ctx, input) {
-    return plain(
-      ctx,
+    try {
       await service.assertMethodOperationIsDraft(
         ctx.asCaller.supabase,
-        input.operationId as never
-      )
-    );
+        input.operationId
+      );
+    } catch (err) {
+      return ctx.error(
+        "rule",
+        err instanceof Error ? err.message : "Failed to find method operation"
+      );
+    }
+    return { operationId: input.operationId };
   }
 });
 
@@ -2009,18 +2017,23 @@ export const deleteMethodOperationStep = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLock(ctx.asCaller.supabase, {
+      kind: "step",
+      id: input.id,
+      companyId: ctx.company.id
+    });
+    if (!lock.ok) return ctx.error("rule", lock.message);
     const refusal = await service.methodStepRefusal(
       ctx.asCaller.supabase,
       ctx.company.id,
-      { stepId: input.id },
-      { revisionLock: true }
+      { stepId: input.id }
     );
     if (refusal) return ctx.error("rule", refusal);
-    return envelope(
-      ctx,
-      await service.deleteMethodOperationStep(
-        ctx.asCaller.supabase,
-        input.id as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.deleteMethodOperationStep(ctx.asCaller.supabase, input.id)
       )
     );
   }
@@ -2066,11 +2079,14 @@ export const deleteMethodOperationParameter = defineServiceFn({
       [{ kind: "parameter", id: input.id }]
     );
     if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelope(
-      ctx,
-      await service.deleteMethodOperationParameter(
-        ctx.asCaller.supabase,
-        input.id as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.deleteMethodOperationParameter(
+          ctx.asCaller.supabase,
+          input.id as never
+        )
       )
     );
   }
@@ -2091,11 +2107,14 @@ export const deleteMethodOperationTool = defineServiceFn({
       [{ kind: "tool", id: input.id }]
     );
     if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelope(
-      ctx,
-      await service.deleteMethodOperationTool(
-        ctx.asCaller.supabase,
-        input.id as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.deleteMethodOperationTool(
+          ctx.asCaller.supabase,
+          input.id as never
+        )
       )
     );
   }
@@ -3756,20 +3775,7 @@ export const updateMaterialOrder = defineServiceFn({
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
-    const lock = await service.checkRowMethodLocks(
-      ctx.asCaller.supabase,
-      ctx.company.id,
-      "methodMaterial",
-      input.updates.map((update) => update.id)
-    );
-    if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelopes(
-      ctx,
-      await service.updateMaterialOrder(
-        ctx.asCaller.supabase,
-        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
-      )
-    );
+    return service.reorderMethodRows(ctx, "methodMaterial", input.updates);
   }
 });
 
@@ -3784,20 +3790,7 @@ export const updateOperationOrder = defineServiceFn({
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
-    const lock = await service.checkRowMethodLocks(
-      ctx.asCaller.supabase,
-      ctx.company.id,
-      "methodOperation",
-      input.updates.map((update) => update.id)
-    );
-    if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelopes(
-      ctx,
-      await service.updateOperationOrder(
-        ctx.asCaller.supabase,
-        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
-      )
-    );
+    return service.reorderMethodRows(ctx, "methodOperation", input.updates);
   }
 });
 
@@ -4123,7 +4116,9 @@ export const updateConsumable = defineServiceFn({
 });
 
 /**
- * Resolve extracted document line text to an item id: first through the party's part mapping (customerPartToItem / supplierPart), then by exact readableId/name m…
+ * Resolve extracted document line text to an item id: first through the
+ * party's part mapping (customer part or supplier part), then by an exact
+ * match on the item's readable id or name. Null when nothing matches.
  *
  * @mcp
  */
@@ -4504,16 +4499,19 @@ export const createMethodMaterial = defineServiceFn({
       [{ kind: "makeMethod", id: input.makeMethodId }]
     );
     if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelope(
-      ctx,
-      await service.upsertMethodMaterial(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.upsertMethodMaterial(
+          ctx.asCaller.supabase,
+          stamp(
+            ctx,
+            input,
+            ["companyId", "createdBy", "updatedBy"],
+            "create"
+          ) as never
+        )
       )
     );
   }
@@ -4553,7 +4551,8 @@ export const updateMethodMaterial = defineServiceFn({
       customFields: z.unknown().optional()
     })
     .required({ id: true }),
-  permission: { update: "parts" },
+  // The route gated on create; the write runs under the update policy.
+  permission: { create: "parts", update: "parts" },
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -4564,16 +4563,19 @@ export const updateMethodMaterial = defineServiceFn({
       ]
     );
     if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelope(
-      ctx,
-      await service.upsertMethodMaterial(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.upsertMethodMaterial(
+          ctx.asCaller.supabase,
+          stamp(
+            ctx,
+            input,
+            ["companyId", "createdBy", "updatedBy"],
+            "update"
+          ) as never
+        )
       )
     );
   }
@@ -4672,16 +4674,19 @@ export const createMethodOperation = defineServiceFn({
       [{ kind: "makeMethod", id: input.makeMethodId }]
     );
     if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelope(
-      ctx,
-      await service.upsertMethodOperation(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.upsertMethodOperation(
+          ctx.asCaller.supabase,
+          stamp(
+            ctx,
+            input,
+            ["companyId", "createdBy", "updatedBy"],
+            "create"
+          ) as never
+        )
       )
     );
   }
@@ -4774,7 +4779,8 @@ export const updateMethodOperation = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "parts" },
+  // The route gated on create; the write runs under the update policy.
+  permission: { create: "parts", update: "parts" },
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -4785,16 +4791,19 @@ export const updateMethodOperation = defineServiceFn({
       ]
     );
     if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelope(
-      ctx,
-      await service.upsertMethodOperation(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.upsertMethodOperation(
+          ctx.asCaller.supabase,
+          stamp(
+            ctx,
+            input,
+            ["companyId", "createdBy", "updatedBy"],
+            "update"
+          ) as never
+        )
       )
     );
   }
@@ -4837,23 +4846,31 @@ export const createMethodOperationStep = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLock(ctx.asCaller.supabase, {
+      kind: "operation",
+      id: input.operationId,
+      companyId: ctx.company.id
+    });
+    if (!lock.ok) return ctx.error("rule", lock.message);
     const refusal = await service.methodStepRefusal(
       ctx.asCaller.supabase,
       ctx.company.id,
-      { operationId: input.operationId },
-      { revisionLock: true }
+      { operationId: input.operationId }
     );
     if (refusal) return ctx.error("rule", refusal);
-    return envelope(
-      ctx,
-      await service.upsertMethodOperationStep(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.upsertMethodOperationStep(
+          ctx.asCaller.supabase,
+          stamp(
+            ctx,
+            input,
+            ["companyId", "createdBy", "updatedBy"],
+            "create"
+          ) as never
+        )
       )
     );
   }
@@ -4898,6 +4915,15 @@ export const updateMethodOperationStep = defineServiceFn({
     .required({ id: true }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [
+        { kind: "step", id: input.id },
+        { kind: "operation", id: input.operationId }
+      ]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     for (const ref of [
       { stepId: input.id },
       { operationId: input.operationId }
@@ -4905,21 +4931,23 @@ export const updateMethodOperationStep = defineServiceFn({
       const refusal = await service.methodStepRefusal(
         ctx.asCaller.supabase,
         ctx.company.id,
-        ref,
-        { revisionLock: true }
+        ref
       );
       if (refusal) return ctx.error("rule", refusal);
     }
-    return envelope(
-      ctx,
-      await service.upsertMethodOperationStep(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.upsertMethodOperationStep(
+          ctx.asCaller.supabase,
+          stamp(
+            ctx,
+            input,
+            ["companyId", "createdBy", "updatedBy"],
+            "update"
+          ) as never
+        )
       )
     );
   }
@@ -5097,16 +5125,19 @@ export const createMethodOperationParameter = defineServiceFn({
       [{ kind: "operation", id: input.operationId }]
     );
     if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelope(
-      ctx,
-      await service.upsertMethodOperationParameter(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.upsertMethodOperationParameter(
+          ctx.asCaller.supabase,
+          stamp(
+            ctx,
+            input,
+            ["companyId", "createdBy", "updatedBy"],
+            "create"
+          ) as never
+        )
       )
     );
   }
@@ -5144,16 +5175,19 @@ export const updateMethodOperationParameter = defineServiceFn({
       ]
     );
     if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelope(
-      ctx,
-      await service.upsertMethodOperationParameter(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.upsertMethodOperationParameter(
+          ctx.asCaller.supabase,
+          stamp(
+            ctx,
+            input,
+            ["companyId", "createdBy", "updatedBy"],
+            "update"
+          ) as never
+        )
       )
     );
   }
@@ -5186,16 +5220,19 @@ export const createMethodOperationTool = defineServiceFn({
       [{ kind: "operation", id: input.operationId }]
     );
     if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelope(
-      ctx,
-      await service.upsertMethodOperationTool(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.upsertMethodOperationTool(
+          ctx.asCaller.supabase,
+          stamp(
+            ctx,
+            input,
+            ["companyId", "createdBy", "updatedBy"],
+            "create"
+          ) as never
+        )
       )
     );
   }
@@ -5233,16 +5270,19 @@ export const updateMethodOperationTool = defineServiceFn({
       ]
     );
     if (!lock.ok) return ctx.error("rule", lock.message);
-    return envelope(
-      ctx,
-      await service.upsertMethodOperationTool(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+    return service.withLockNotice(
+      lock,
+      envelope(
+        ctx,
+        await service.upsertMethodOperationTool(
+          ctx.asCaller.supabase,
+          stamp(
+            ctx,
+            input,
+            ["companyId", "createdBy", "updatedBy"],
+            "update"
+          ) as never
+        )
       )
     );
   }
@@ -5511,12 +5551,17 @@ export const upsertMaterialDimension = defineServiceFn({
     id: z.string().optional()
   }),
   permission: { create: "parts", update: "parts" },
-  async run(ctx, input) {
+  // The row is built from the known fields: the table has no audit columns,
+  // so a stray createdBy or updatedBy would fail the write.
+  async run(ctx, { name, materialFormId, isMetric, id }) {
+    const row = { name, materialFormId, companyId: ctx.company.id };
     return envelope(
       ctx,
       await service.upsertMaterialDimension(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
+        id
+          ? { ...row, id, ...(isMetric !== undefined && { isMetric }) }
+          : { ...row, isMetric: isMetric ?? false }
       )
     );
   }
@@ -5534,12 +5579,15 @@ export const upsertMaterialFinish = defineServiceFn({
     id: z.string().optional()
   }),
   permission: { create: "parts", update: "parts" },
-  async run(ctx, input) {
+  // The row is built from the known fields: the table has no audit columns,
+  // so a stray createdBy or updatedBy would fail the write.
+  async run(ctx, { materialSubstanceId, name, id }) {
+    const row = { materialSubstanceId, name, companyId: ctx.company.id };
     return envelope(
       ctx,
       await service.upsertMaterialFinish(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
+        id ? { ...row, id } : row
       )
     );
   }
@@ -5629,12 +5677,15 @@ export const upsertMaterialGrade = defineServiceFn({
     id: z.string().optional()
   }),
   permission: { create: "parts", update: "parts" },
-  async run(ctx, input) {
+  // The row is built from the known fields: the table has no audit columns,
+  // so a stray createdBy or updatedBy would fail the write.
+  async run(ctx, { materialSubstanceId, name, id }) {
+    const row = { materialSubstanceId, name, companyId: ctx.company.id };
     return envelope(
       ctx,
       await service.upsertMaterialGrade(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
+        id ? { ...row, id } : row
       )
     );
   }
@@ -5738,12 +5789,21 @@ export const upsertMaterialType = defineServiceFn({
     id: z.string().optional()
   }),
   permission: { create: "parts", update: "parts" },
-  async run(ctx, input) {
+  // The row is built from the known fields: the table has no audit columns,
+  // so a stray createdBy or updatedBy would fail the write.
+  async run(ctx, { materialSubstanceId, materialFormId, name, code, id }) {
+    const row = {
+      materialSubstanceId,
+      materialFormId,
+      name,
+      code,
+      companyId: ctx.company.id
+    };
     return envelope(
       ctx,
       await service.upsertMaterialType(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
+        id ? { ...row, id } : row
       )
     );
   }
@@ -6197,15 +6257,33 @@ export const deleteChangeNotice = defineServiceFn({
   input: z.looseObject({ changeNoticeId: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
-    return envelope(
+    const deleted = envelope(
       ctx,
       await service.deleteChangeNotice(
         ctx.asCaller.supabase,
         ctx.asSystem.pg,
-        input.changeNoticeId as never,
+        input.changeNoticeId,
         ctx.company.id
       )
     );
+    if (deleted instanceof CarbonError) return deleted;
+
+    // approvalRequest.documentId has no foreign key, so a pending request
+    // would outlive the notice in the approvers' lists.
+    const cancelled = await cancelPendingApprovals(ctx.asSystem.supabase, {
+      documentType: "changeOrder",
+      documentIds: [input.changeNoticeId],
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (cancelled.error) {
+      logger.error("Failed to cancel change notice approval requests", {
+        companyId: ctx.company.id,
+        changeNoticeId: input.changeNoticeId,
+        error: cancelled.error
+      });
+    }
+    return deleted;
   }
 });
 
@@ -6506,7 +6584,7 @@ export const getChangeNoticeAffectedItems = defineServiceFn({
  */
 export const removeChangeNoticeAffectedItem = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { update: "parts" },
+  permission: { delete: "parts" },
   async run(ctx, input) {
     const locked = await service.requireChangeNoticeChildEditable(
       ctx.asCaller.supabase,

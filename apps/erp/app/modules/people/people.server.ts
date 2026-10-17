@@ -72,7 +72,8 @@ export const createShift = defineServiceFn({
  */
 export const updateShift = defineServiceFn({
   input: shiftInput.extend({ id: z.string().min(1) }),
-  permission: { update: "people" },
+  // The route gated on create; the write runs under the update policy.
+  permission: { create: "people", update: "people" },
   async run(ctx, shift) {
     const updated = await service.upsertShift(ctx.asCaller.supabase, {
       ...shift,

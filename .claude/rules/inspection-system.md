@@ -342,9 +342,11 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 - **Server** — the transactional engine lives in **`@carbon/database/quality`**
   (`packages/database/src/quality.ts`; moved 2026-07-26 so ERP and MES run one
   engine). Every function takes a `Kysely<KyselyDatabase>` first param; ERP's
-  `quality.server.ts` curries `getDatabaseClient()` into those engine calls, and
+  `quality.service.ts` wraps those engine calls with the caller's `db` (a
+  route's `getDatabaseClient()`, a service function's `ctx.asSystem.pg`), and
   also holds the plan editor's server-only helpers (legacy save-payload
-  translation, the balloon-region vision call). `packages/database/src/sampling.ts`
+  translation `translateLegacyInspectionSavePayload`, the balloon-region vision
+  call `runInspectionBalloonRegionVisionAnalysis`). `packages/database/src/sampling.ts`
   is the pure resolver; the engine and `post-receipt` both consume it, so they share ONE resolver copy
   (ERP's `samplingStandards.ts` client copy remains for UI previews).
   - **Closed guards + linked-sample locks (2026-07-27):** all three terminal
@@ -385,8 +387,8 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     predicate against the committed terminal status, and matches nothing. ERP
     receipt lots do NOT pass it, preserving re-disposition (write-off retry)
     semantics.
-  - NCR auto-creation lives in the **reject route** (`x+/inspection+/$id.reject.tsx`),
-    optional via `createNcr`, linking through `nonConformanceInspection`; the description
+  - NCR auto-creation lives in the **`rejectInspection` operation** (`quality.server.ts`,
+    called by `x+/inspection+/$id.reject.tsx`), optional via `createNcr`, linking through `nonConformanceInspection`; the description
     includes a "Failed features" block built from the lot's measurements.
 - **Service** `quality.service.ts`: `getInspections` (list), `getInspection`,
   `getInspectionTrackedEntities`, `getInspectionSamplingPlans` (embeds

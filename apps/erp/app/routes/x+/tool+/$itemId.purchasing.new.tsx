@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon } from "@carbon/api/carbon.server";
-import { validator } from "@carbon/form";
+import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
@@ -20,10 +20,17 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id: _id, ...supplierPart } = input.data;
   const api = await carbon(args.request);
-  return api.items.createSupplierPart({
+  const result = await api.items.createSupplierPart({
     ...supplierPart,
     customFields: input.formData && setCustomFields(input.formData)
   });
+  // One supplier part per item and supplier: shown under the Supplier field.
+  if (result.error?.category === "conflict") {
+    return validationError({
+      fieldErrors: { supplierId: result.error.message }
+    });
+  }
+  return result;
 }
 
 export default function NewToolSupplierRoute() {

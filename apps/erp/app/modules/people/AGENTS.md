@@ -70,7 +70,7 @@ pnpm --filter erp test -- people   # vitest filters by file path
 
 Each is a `defineServiceFn` const in `people.server.ts`. The route calls it as `api.people.<name>(input)`; the API and MCP publish the ones tagged `@mcp` as `people_<name>`. Routes validate the request, call one, and answer with `respond(request, result).redirect(…)` (a flash) or the result.
 
-- `createShift` (people create), `updateShift` (people update, the `shift` UPDATE policy; refused `notFound` when the update reaches no row of the company, and only then marks active jobs for rescheduling, `notifyScheduleInputsChanged`). Published.
+- `createShift` (people create), `updateShift` (people create and update: the old route's gate and the `shift` UPDATE policy; refused `notFound` when the update reaches no row of the company, and only then marks active jobs for rescheduling, `notifyScheduleInputsChanged`). Published.
 - `updatePersonJob` — the person's job (`updateEmployeeJob`: ids checked against the company, `employeeShift` kept in step, one transaction), then reschedules. Published.
 - The person timecard page (`x+/person+/$personId.timecard.tsx`): `clockInPerson`, `clockOutPerson`, `addPersonTimeCardEntry`, `updatePersonTimeCardEntry`, `deletePersonTimeCardEntry`. They need only people view, as that page always did, so they stay unpublished. A helper's own refusal ("Already clocked in") is a `rule` error; a database error is `internal`.
 - `clockInSelf`, `clockOutSelf` for the caller (`api+/people.timecard.ts`, the "Forgot to clock out?" prompt). Unpublished.

@@ -54,6 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const result = await updateChangeNotice(client, {
     id,
+    companyId,
     [field]: parsed,
     updatedBy: userId
   });

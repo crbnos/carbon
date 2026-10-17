@@ -22,6 +22,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { getLocalTimeZone, toZoned } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useState } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
@@ -425,7 +426,10 @@ const MaintenanceDispatchProperties = () => {
           inline
           isDisabled={!permissions.can("update", "resources") || isLocked}
           onChange={(date) => {
-            onUpdate("plannedStartTime", date?.toString() ?? null);
+            onUpdate(
+              "plannedStartTime",
+              date ? toZoned(date, getLocalTimeZone()).toAbsoluteString() : null
+            );
           }}
         />
       </ValidatedForm>
@@ -445,7 +449,10 @@ const MaintenanceDispatchProperties = () => {
           inline
           isDisabled={!permissions.can("update", "resources") || isLocked}
           onChange={(date) => {
-            onUpdate("plannedEndTime", date?.toString() ?? null);
+            onUpdate(
+              "plannedEndTime",
+              date ? toZoned(date, getLocalTimeZone()).toAbsoluteString() : null
+            );
           }}
         />
       </ValidatedForm>
@@ -465,7 +472,10 @@ const MaintenanceDispatchProperties = () => {
           inline
           isDisabled={!permissions.can("update", "resources") || isLocked}
           onChange={(date) => {
-            onUpdate("actualStartTime", date?.toString() ?? null);
+            onUpdate(
+              "actualStartTime",
+              date ? toZoned(date, getLocalTimeZone()).toAbsoluteString() : null
+            );
           }}
         />
       </ValidatedForm>
@@ -485,7 +495,10 @@ const MaintenanceDispatchProperties = () => {
           inline
           isDisabled={!permissions.can("update", "resources") || isLocked}
           onChange={(date) => {
-            onUpdate("actualEndTime", date?.toString() ?? null);
+            onUpdate(
+              "actualEndTime",
+              date ? toZoned(date, getLocalTimeZone()).toAbsoluteString() : null
+            );
           }}
         />
       </ValidatedForm>

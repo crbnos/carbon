@@ -60,6 +60,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const update = await updateChangeNoticeActionStatus(client, {
     id,
+    companyId,
     status,
     userId
   });

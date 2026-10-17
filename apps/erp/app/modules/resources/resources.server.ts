@@ -16,6 +16,7 @@ import { postSuggestionToCarbonSlack } from "@carbon/lib/slack.server";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { datetime, unchecked } from "@carbon/utils";
+import { parseAbsolute } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
@@ -45,15 +46,6 @@ import * as service from "./resources.service";
 
 const logger = getLogger("erp", "resources");
 
-// Reconcile the dispatches' labor postings with their time entries (the
-// post-maintenance-event server function — idempotent, so call it after ANY
-// change to a dispatch's entries or its completion). Returns the failure's
-// message, or null. System: the operation has already authorized the change,
-// and a delete-only user must still reverse its cost.
-// An external assignment (no training) is always open and one-time.
-// The only completion path (quiz, manager Mark Complete). An external
-// assignment may carry a certificate; the server builds its key, so a caller
-// cannot point a completion at another person's file.
 /** The `custom-*` fields of a form, by field id (`setCustomFields`). */
 const customFieldsInput = z
   .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
@@ -275,7 +267,8 @@ export const updateLocation = defineServiceFn({
     id: z.string(),
     customFields: customFieldsInput
   }),
-  permission: { create: "resources" },
+  // The route gated on create; the write runs under the update policy.
+  permission: { create: "resources", update: "resources" },
 
   async run(ctx, { id, ...location }) {
     const update = await service.upsertLocation(ctx.asCaller.supabase, {
@@ -364,7 +357,10 @@ export const createProcess = defineServiceFn({
  */
 export const updateProcess = defineServiceFn({
   input: processInput.safeExtend({ id: z.string() }),
-  permission: { update: "resources" },
+  // The route gated on create and wrote under the caller's policies: the
+  // process update, and the delete and insert of its work centers, which
+  // now run on the system connection.
+  permission: { create: "resources", update: "resources", delete: "resources" },
 
   async run(ctx, { id, ...process }) {
     const client = ctx.asCaller.supabase;
@@ -464,7 +460,8 @@ const workCenterInput = workCenterValidator.safeExtend({
  */
 export const createWorkCenter = defineServiceFn({
   input: workCenterInput,
-  permission: { create: "resources" },
+  // The route gated on update; the inserts run under the create policy.
+  permission: { create: "resources", update: "resources" },
 
   async run(ctx, { id: _id, ...workCenter }) {
     const insert = await service.upsertWorkCenter(ctx.asCaller.supabase, {
@@ -817,12 +814,19 @@ export const updateMaintenanceDispatchField = defineServiceFn({
 
     const now = datetime.timestamp();
     const isTime = (dispatchTimeFields as readonly string[]).includes(field);
+    let fieldValue = value || null;
+    if (isTime && fieldValue) {
+      try {
+        fieldValue = parseAbsolute(fieldValue, "UTC").toAbsoluteString();
+      } catch {
+        return ctx.error(
+          "validation",
+          "A time must be an ISO 8601 instant with an offset"
+        );
+      }
+    }
     const update: Record<string, string | null> = {
-      [field]: isTime
-        ? value
-          ? new Date(value).toISOString()
-          : null
-        : value || null,
+      [field]: fieldValue,
       updatedBy: ctx.auditUserId,
       updatedAt: now
     };
@@ -949,6 +953,8 @@ export const createMaintenanceEvent = defineServiceFn({
   async run(ctx, { id: _id, maintenanceDispatchId, endTime, notes, ...event }) {
     const dispatch = await service.editableDispatch(ctx, maintenanceDispatchId);
     if (dispatch instanceof CarbonError) return dispatch;
+    const refused = await service.refuseForeignTimecard(ctx, event);
+    if (refused) return refused;
 
     const insert = await service.upsertMaintenanceDispatchEvent(
       ctx.asCaller.supabase,
@@ -994,6 +1000,8 @@ export const updateMaintenanceEvent = defineServiceFn({
   async run(ctx, { id, maintenanceDispatchId, ...event }) {
     const dispatch = await service.editableDispatch(ctx, maintenanceDispatchId);
     if (dispatch instanceof CarbonError) return dispatch;
+    const refused = await service.refuseForeignTimecard(ctx, event);
+    if (refused) return refused;
 
     const update = await ctx.asCaller.supabase
       .from("maintenanceDispatchEvent")
@@ -1129,10 +1137,13 @@ export const stopMaintenanceEvent = defineServiceFn({
       .update({ endTime: datetime.timestamp(), updatedBy: ctx.auditUserId })
       .eq("id", eventId)
       .eq("maintenanceDispatchId", dispatchId)
-      .eq("companyId", ctx.company.id);
+      .eq("companyId", ctx.company.id)
+      .select("id");
     if (update.error) {
       return ctx.error("internal", "Failed to stop event", update.error);
     }
+    if (update.data.length === 0)
+      return ctx.error("notFound", "Event not found");
 
     const postingError = await service.postMaintenanceLabor(ctx, [dispatchId]);
     return {
@@ -1148,11 +1159,12 @@ export const stopMaintenanceEvent = defineServiceFn({
  * Add a spare part to a maintenance dispatch and issue it from stock.
  *
  * @remarks
- * Refused when the dispatch is Completed or Cancelled. A serial or batch part
- * names the tracked entities it takes in `children`; any other part takes
- * `quantity` from inventory at the dispatch's location. The quantity must be
- * more than 0. The stock leaves inventory through the `issue` server
- * function.
+ * Refused when the dispatch is Completed or Cancelled, or the item is not the
+ * company's. A serial or batch part names the tracked entities it takes in
+ * `children`, each with a quantity more than 0; any other part takes
+ * `quantity` (more than 0) from inventory at the dispatch's location. The
+ * stock leaves inventory through the `issue` posting, whose refusal is
+ * returned as it is.
  *
  * @mcp
  */
@@ -1163,7 +1175,12 @@ export const issueMaintenancePart = defineServiceFn({
     unitOfMeasureCode: z.string().min(1),
     quantity: z.number().optional(),
     children: z
-      .array(z.object({ trackedEntityId: z.string(), quantity: z.number() }))
+      .array(
+        z.object({
+          trackedEntityId: z.string(),
+          quantity: z.number().positive()
+        })
+      )
       .optional()
   }),
   permission: { update: "resources" },
@@ -1172,15 +1189,17 @@ export const issueMaintenancePart = defineServiceFn({
     ctx,
     { dispatchId, itemId, unitOfMeasureCode, quantity, children }
   ) {
-    const dispatch = await service.editableDispatch(ctx, dispatchId);
-    if (dispatch instanceof CarbonError) return dispatch;
-
     const total = children
       ? children.reduce((sum, child) => sum + child.quantity, 0)
       : (quantity ?? 0);
     if (total <= 0) {
       return ctx.error("validation", "Quantity must be greater than 0");
     }
+
+    const dispatch = await service.editableDispatch(ctx, dispatchId);
+    if (dispatch instanceof CarbonError) return dispatch;
+    const owned = await refuseUnlessOwned(ctx, "item", { id: itemId });
+    if (owned) return owned;
 
     const tracked = !!children && children.length > 0;
     const issued = await invokePosting(
@@ -1203,15 +1222,7 @@ export const issueMaintenancePart = defineServiceFn({
           },
       inventoryPostings.issueMaterial
     );
-    if (issued.error) {
-      return ctx.error(
-        "internal",
-        tracked
-          ? "Failed to issue tracked items"
-          : "Failed to issue from inventory",
-        issued.error
-      );
-    }
+    if (issued.error) return envelope(ctx, issued) as CarbonError;
     return { dispatchId, itemId };
   }
 });
@@ -1250,11 +1261,7 @@ export const unissueMaintenancePart = defineServiceFn({
     if (!item.data) return ctx.error("notFound", "Item not found");
 
     const returned = await invokePosting(
-      {
-        db: ctx.asSystem.pg,
-        companyId: ctx.company.id,
-        userId: ctx.auditUserId
-      },
+      ctx,
       "issue",
       {
         type: "maintenanceDispatchUnissue",
@@ -1262,9 +1269,7 @@ export const unissueMaintenancePart = defineServiceFn({
       },
       inventoryPostings.issueMaterial
     );
-    if (returned.error) {
-      return ctx.error("internal", "Failed to remove item", returned.error);
-    }
+    if (returned.error) return envelope(ctx, returned) as CarbonError;
     return { id: maintenanceDispatchItemId };
   }
 });
@@ -1377,10 +1382,12 @@ const trainingFields = [
  * Set one field on one or more trainings.
  *
  * @remarks
- * `content` is the editor's document, as JSON. An empty `grantsAbilityId`
- * clears it. `guidePath` is the PDF that replaces the written content: it
- * takes one training, must be a key under that training's folder (empty
- * clears it), and changes only while the training is Draft.
+ * `content` is the editor's document, as JSON; it needs `resources` update,
+ * as the training table's policy does, and every other field `people` update
+ * as well. An empty `grantsAbilityId` clears it. `guidePath` is the PDF that
+ * replaces the written content: it takes one training, must be a key under
+ * that training's folder (empty clears it), and changes only while the
+ * training is Draft. Refused when a training is not the company's.
  *
  * @mcp
  */
@@ -1390,9 +1397,14 @@ export const updateTrainingField = defineServiceFn({
     field: z.enum(trainingFields),
     value: z.string()
   }),
-  permission: { update: "people" },
+  // The editor wrote its content directly, under the training table's policy;
+  // the other fields went through a route gated on people update.
+  permission: { update: "resources" },
 
   async run(ctx, { ids, field, value }) {
+    if (field !== "content" && !ctx.can({ update: "people" })) {
+      return ctx.error("forbidden", "You do not have permission to do this");
+    }
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
     const audit = {
@@ -1452,9 +1464,13 @@ export const updateTrainingField = defineServiceFn({
       .from("training")
       .update(unchecked({ [field]: fieldValue, ...audit }))
       .in("id", ids)
-      .eq("companyId", companyId);
+      .eq("companyId", companyId)
+      .select("id");
     if (updated.error) {
       return ctx.error("internal", "Failed to update training", updated.error);
+    }
+    if (updated.data.length < new Set(ids).size) {
+      return ctx.error("notFound", "Training not found");
     }
     return { ids };
   }
@@ -3151,39 +3167,34 @@ export const updateMaintenanceDispatchComment = defineServiceFn({
 });
 
 /**
- * Create a maintenance dispatch item
+ * Add a spare part to a maintenance dispatch, issued from inventory.
  *
  * @remarks
- * Upsert maintenance dispatch item
+ * The same as `issueMaintenancePart` with a `quantity`: refused when the
+ * dispatch is Completed or Cancelled, and the stock leaves inventory at the
+ * dispatch's location, at its cost. A serial or batch part is issued with
+ * `issueMaintenancePart`, which names its tracked entities.
  *
  * @mcp
  */
 export const createMaintenanceDispatchItem = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     maintenanceDispatchId: z.string().min(1),
     itemId: z.string().min(1),
     quantity: z.number().min(1),
-    unitOfMeasureCode: z.string().min(1),
-    unitCost: z.number().min(0).optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
+    unitOfMeasureCode: z.string().min(1)
   }),
-  permission: { create: "resources" },
-  async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.upsertMaintenanceDispatchItem(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
-      )
-    );
+  permission: { update: "resources" },
+  async run(
+    ctx,
+    { maintenanceDispatchId, itemId, quantity, unitOfMeasureCode }
+  ) {
+    return issueMaintenancePart(ctx, {
+      dispatchId: maintenanceDispatchId,
+      itemId,
+      unitOfMeasureCode,
+      quantity
+    });
   }
 });
 
@@ -3191,7 +3202,8 @@ export const createMaintenanceDispatchItem = defineServiceFn({
  * Update a maintenance dispatch item
  *
  * @remarks
- * Upsert maintenance dispatch item
+ * Refused when the dispatch is Completed or Cancelled, or the item is not on
+ * it. Moves no stock.
  *
  * @mcp
  */
@@ -3211,18 +3223,33 @@ export const updateMaintenanceDispatchItem = defineServiceFn({
     .required({ id: true }),
   permission: { update: "resources" },
   async run(ctx, input) {
-    return envelope(
+    const dispatch = await service.editableDispatch(
       ctx,
-      await service.upsertMaintenanceDispatchItem(
-        ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
-      )
+      input.maintenanceDispatchId
     );
+    if (dispatch instanceof CarbonError) return dispatch;
+    const owned = await refuseUnlessOwned(ctx, "item", { id: input.itemId });
+    if (owned) return owned;
+    const updated = await ctx.asCaller.supabase
+      .from("maintenanceDispatchItem")
+      .update({
+        itemId: input.itemId,
+        quantity: input.quantity,
+        unitOfMeasureCode: input.unitOfMeasureCode,
+        ...(input.unitCost !== undefined && { unitCost: input.unitCost }),
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", input.id)
+      .eq("maintenanceDispatchId", input.maintenanceDispatchId)
+      .eq("companyId", ctx.company.id)
+      .select("id");
+    if (updated.error) {
+      return ctx.error("internal", "Failed to update the part", updated.error);
+    }
+    if (updated.data.length === 0)
+      return ctx.error("notFound", "Part not found");
+    return { id: input.id };
   }
 });
 

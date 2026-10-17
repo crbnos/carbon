@@ -160,7 +160,9 @@ describe("maintenance timecards", () => {
     invoke.mockResolvedValue({ data: null, error: { message: "no period" } });
     const { ctx, writes } = contextWith({
       maintenanceDispatch: { id: "md-1", status: "In Progress" },
-      maintenanceDispatchEvent: { id: "ev-1" }
+      maintenanceDispatchEvent: { id: "ev-1" },
+      employee: { id: "user-2" },
+      workCenter: { id: "wc-1" }
     });
 
     const result = await createMaintenanceEvent(ctx, timecard);
@@ -179,7 +181,10 @@ describe("maintenance timecards", () => {
 });
 
 describe("issuing a spare part to a dispatch", () => {
-  const open = { maintenanceDispatch: { id: "md-1", status: "Open" } };
+  const open = {
+    maintenanceDispatch: { id: "md-1", status: "Open" },
+    item: { id: "item-1" }
+  };
   const part = { dispatchId: "md-1", itemId: "item-1", unitOfMeasureCode: "EA" };
 
   it("refuses nothing to issue", async () => {

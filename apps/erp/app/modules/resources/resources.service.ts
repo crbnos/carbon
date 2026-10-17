@@ -35,6 +35,7 @@ import type { z } from "zod";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import {
   createAdjustmentJournal,
+  isActiveCompanyEmployee,
   refuseUnlessOwned,
   resolveAccountingPeriod,
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
@@ -51,8 +52,6 @@ import type {
   maintenanceDispatchItemValidator,
   maintenanceDispatchPriority,
   maintenanceDispatchStatus,
-  maintenanceDispatchWorkCenterValidator,
-  maintenanceScheduleItemValidator,
   maintenanceScheduleValidator,
   partnerValidator,
   processValidator,
@@ -67,7 +66,7 @@ import {
   validateTrainingCertificate
 } from "./resources.models";
 
-/** The bare write under `resources.workCenter.reactivate`, which also tells the scheduler. */
+/** The bare write under `reactivateWorkCenter`, which also tells the scheduler. */
 export async function activateWorkCenter(
   client: SupabaseClient<Database>,
   id: string
@@ -75,7 +74,7 @@ export async function activateWorkCenter(
   return client.from("workCenter").update({ active: true }).eq("id", id);
 }
 
-/** The bare write under `resources.ability.deactivate`, which also tells the scheduler. */
+/** The bare write under `deactivateAbility`, which also tells the scheduler. */
 export async function deleteAbility(
   client: SupabaseClient<Database>,
   abilityId: string,
@@ -114,13 +113,6 @@ export async function deleteMaintenanceDispatch(
   return client.from("maintenanceDispatch").delete().eq("id", dispatchId);
 }
 
-export async function deleteMaintenanceDispatchComment(
-  client: SupabaseClient<Database>,
-  commentId: string
-) {
-  return client.from("maintenanceDispatchComment").delete().eq("id", commentId);
-}
-
 export async function deleteMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
   itemId: string
@@ -128,28 +120,11 @@ export async function deleteMaintenanceDispatchItem(
   return client.from("maintenanceDispatchItem").delete().eq("id", itemId);
 }
 
-export async function deleteMaintenanceDispatchWorkCenter(
-  client: SupabaseClient<Database>,
-  workCenterId: string
-) {
-  return client
-    .from("maintenanceDispatchWorkCenter")
-    .delete()
-    .eq("id", workCenterId);
-}
-
 export async function deleteMaintenanceSchedule(
   client: SupabaseClient<Database>,
   scheduleId: string
 ) {
   return client.from("maintenanceSchedule").delete().eq("id", scheduleId);
-}
-
-export async function deleteMaintenanceScheduleItem(
-  client: SupabaseClient<Database>,
-  itemId: string
-) {
-  return client.from("maintenanceScheduleItem").delete().eq("id", itemId);
 }
 
 export async function deletePartner(
@@ -221,7 +196,7 @@ export async function deleteTrainingQuestion(
     .eq("companyId", companyId);
 }
 
-/** The bare write under `resources.workCenter.deactivate`, which also tells the scheduler. */
+/** The bare write under `deactivateWorkCenter`, which also tells the scheduler. */
 export async function deleteWorkCenter(
   client: SupabaseClient<Database>,
   id: string
@@ -1254,7 +1229,7 @@ export async function insertTrainingCompletion(
     .from("trainingCompletion")
     .insert({
       ...completion,
-      completedAt: new Date().toISOString()
+      completedAt: datetime.timestamp()
     })
     .select("id")
     .single();
@@ -1367,8 +1342,8 @@ export async function upsertEmployeeAbilityCell(
 /**
  * Find-or-create the ability linked 1:1 to a process. Called when a process
  * has "Requires Ability" toggled on — the ability (named after the process)
- * is what employees get qualified against. `resources.ability.create` and
- * `resources.process.create` / `.update` call it.
+ * is what employees get qualified against. `createAbility`, `createProcess`
+ * and `updateProcess` call it.
  */
 export async function ensureProcessAbility(
   client: SupabaseClient<Database>,
@@ -1416,14 +1391,6 @@ export async function updateSuggestionEmoji(
   emoji: string
 ) {
   return client.from("suggestion").update({ emoji }).eq("id", suggestionId);
-}
-
-export async function updateSuggestionTags(
-  client: SupabaseClient<Database>,
-  suggestionId: string,
-  tags: string[]
-) {
-  return client.from("suggestion").update({ tags }).eq("id", suggestionId);
 }
 
 export async function updateTrainingQuestionOrder(
@@ -1526,7 +1493,7 @@ export async function upsertFailureMode(
     .eq("id", mode.id);
 }
 
-/** The bare write under `resources.location.create` / `.update`; the update also drops the cached timezone. */
+/** The bare write under `createLocation` / `updateLocation`; the update also drops the cached timezone. */
 export async function upsertLocation(
   client: SupabaseClient<Database>,
   location:
@@ -1714,32 +1681,6 @@ export async function upsertMaintenanceDispatchItem(
   }
 }
 
-export async function upsertMaintenanceDispatchWorkCenter(
-  client: SupabaseClient<Database>,
-  workCenter:
-    | (Omit<z.infer<typeof maintenanceDispatchWorkCenterValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchWorkCenterValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in workCenter) {
-    return client
-      .from("maintenanceDispatchWorkCenter")
-      .insert([workCenter])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchWorkCenter")
-      .update(sanitize(workCenter))
-      .eq("id", workCenter.id);
-  }
-}
-
 /** The bare write under `resources.maintenanceSchedule.create` / `.update`, which also generate its dispatches. */
 export async function upsertMaintenanceSchedule(
   client: SupabaseClient<Database>,
@@ -1764,32 +1705,6 @@ export async function upsertMaintenanceSchedule(
       .from("maintenanceSchedule")
       .update(sanitize(schedule))
       .eq("id", schedule.id);
-  }
-}
-
-export async function upsertMaintenanceScheduleItem(
-  client: SupabaseClient<Database>,
-  item:
-    | (Omit<z.infer<typeof maintenanceScheduleItemValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceScheduleItemValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in item) {
-    return client
-      .from("maintenanceScheduleItem")
-      .insert([item])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceScheduleItem")
-      .update(sanitize(item))
-      .eq("id", item.id);
   }
 }
 
@@ -2058,7 +1973,7 @@ export async function upsertTrainingQuestion(
     .single();
 }
 
-/** The bare write under `resources.workCenter.create` / `.update`, which also tell the scheduler. */
+/** The bare write under `createWorkCenter` / `updateWorkCenter`, which also tell the scheduler. */
 export async function upsertWorkCenter(
   client: SupabaseClient<Database>,
   workCenter:
@@ -2863,4 +2778,24 @@ export async function postMaintenanceEvent(
   });
 
   return { success: true, journalIds };
+}
+
+/**
+ * A timecard's employee and work center are tagged on the dispatch's labor
+ * journal, and their columns take any company's id.
+ */
+export async function refuseForeignTimecard(
+  ctx: ServiceContext,
+  timecard: { employeeId: string; workCenterId: string }
+) {
+  if (
+    !(await isActiveCompanyEmployee(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      timecard.employeeId
+    ))
+  ) {
+    return ctx.error("rule", "Choose an employee of this company");
+  }
+  return refuseUnlessOwned(ctx, "workCenter", { id: timecard.workCenterId });
 }

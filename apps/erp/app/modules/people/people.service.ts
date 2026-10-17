@@ -597,7 +597,7 @@ export async function updateAttributeSortOrder(
   return Promise.all(updatePromises);
 }
 
-/** People's job updates go through `people_updatePersonJob`, which also reschedules. */
+/** People's job updates go through `updatePersonJob`, which also reschedules. */
 export async function updateEmployeeJob(
   db: Kysely<KyselyDatabase>,
   employeeId: string,
@@ -610,7 +610,7 @@ export async function updateEmployeeJob(
   // One Kysely transaction: the employeeJob update and the employeeShift
   // sync commit or roll back together. Kysely also bypasses RLS, so the
   // sync no longer silently no-ops for users without people_create/
-  // people_delete — the route's people_update check is the auth gate.
+  // people_delete — `updatePersonJob`'s people update gate is the auth gate.
   try {
     // sanitize() turns any absent field into null, and locationId is NOT NULL,
     // so a caller that omits it (the API/MCP tool leaves it optional) would
@@ -805,7 +805,7 @@ export async function upsertShift(
     .maybeSingle();
 }
 
-/** Clocking in goes through `people.timecard.clockIn` / `people.ownTimecard.clockIn`. */
+/** Clocking in goes through `clockInPerson` / `clockInSelf`. */
 export async function clockIn(
   client: SupabaseClient<Database>,
   args: {
@@ -830,7 +830,7 @@ export async function clockIn(
   });
 }
 
-/** Clocking out goes through `people.timecard.clockOut` / `people.ownTimecard.clockOut`. */
+/** Clocking out goes through `clockOutPerson` / `clockOutSelf`. */
 export async function clockOut(
   client: SupabaseClient<Database>,
   args: {
@@ -850,10 +850,10 @@ export async function clockOut(
     .from("timeCardEntry")
     .update(
       sanitize({
-        clockOut: args.clockOut ?? new Date().toISOString(),
+        clockOut: args.clockOut ?? datetime.timestamp(),
         note: args.note,
         updatedBy: args.updatedBy,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
     )
     .eq("id", open.data.id);
@@ -908,18 +908,6 @@ export async function getOpenClockEntry(
     .eq("companyId", companyId)
     .is("clockOut", null)
     .maybeSingle();
-}
-
-export async function getRecentTimecards(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("timeCardEntries")
-    .select("*")
-    .eq("companyId", companyId)
-    .order("clockIn", { ascending: false })
-    .limit(100);
 }
 
 export async function getScheduledEmployeesToday(
@@ -1069,7 +1057,7 @@ export async function updateTimeCardEntry(
         clockOut: args.clockOut,
         note: args.note,
         updatedBy: args.updatedBy,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
     )
     .eq("id", args.entryId);

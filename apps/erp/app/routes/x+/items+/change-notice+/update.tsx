@@ -62,6 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const result = await updateChangeNotice(client, {
     id,
+    companyId,
     [field]: normalized,
     updatedBy: userId
   });

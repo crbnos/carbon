@@ -20,9 +20,7 @@ vi.mock("@carbon/ee/approvals/document.server", () => ({
 }));
 vi.mock("../app/modules/items/items.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  addChangeNoticeAffectedItem: vi.fn(),
   getItemSupersession: vi.fn(),
-  insertChangeNotice: vi.fn(),
   updateChangeNoticeStatus: vi.fn(),
   updateItemMethodAndSourcing: vi.fn(),
   upsertItemPlanning: vi.fn(),
@@ -32,7 +30,6 @@ vi.mock("../app/modules/items/items.service", async (importOriginal) => ({
 import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
 import {
   addItemPredecessor,
-  createChangeNotice,
   setChangeNoticeStatus,
   setItemActive,
   setItemPostingGroup,
@@ -40,9 +37,7 @@ import {
   updateItemPlanning
 } from "../app/modules/items/items.server";
 import {
-  addChangeNoticeAffectedItem,
   getItemSupersession,
-  insertChangeNotice,
   updateChangeNoticeStatus,
   updateItemMethodAndSourcing,
   upsertItemPlanning,
@@ -268,43 +263,6 @@ describe("setChangeNoticeStatus", () => {
 
     expect(result.error).toMatchObject({ category: "conflict" });
     expect(updateChangeNoticeStatus).not.toHaveBeenCalled();
-  });
-});
-
-describe("createChangeNotice", () => {
-  it("adds only the company's parts, and says when it skipped the rest", async () => {
-    const { client } = fakeClient({
-      item: [
-        { id: "part-1", type: "Part" },
-        { id: "tool-1", type: "Tool" }
-      ]
-    });
-    vi.mocked(insertChangeNotice).mockResolvedValue({
-      data: { id: "co-1", changeNoticeId: "ECO-1" },
-      error: null
-    });
-    vi.mocked(addChangeNoticeAffectedItem).mockResolvedValue({
-      data: { id: "affected-1", draftMakeMethodId: null },
-      error: null
-    });
-
-    const result = await createChangeNotice(contextFor(client), {
-      name: "Rework",
-      openDate: "2026-10-16",
-      affectedItemIds: ["part-1", "tool-1", "elsewhere-1"]
-    });
-
-    expect(addChangeNoticeAffectedItem).toHaveBeenCalledTimes(1);
-    expect(addChangeNoticeAffectedItem).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.anything(),
-      expect.objectContaining({ itemId: "part-1", changeType: "Version" })
-    );
-    expect(result.data).toEqual({
-      id: "co-1",
-      warning:
-        "Change notice created. Change notices support Parts only, so non-Part items were skipped"
-    });
   });
 });
 
