@@ -3,12 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
-import {
-  envelope,
-  paged,
-  plain,
-  stamp
-} from "@carbon/api/service-tools.server";
+import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable, fetchAllRecords } from "@carbon/database";
 import type { RunType } from "@carbon/database/run-type";
@@ -1986,7 +1981,7 @@ export const getAccountLedger = defineServiceFn({
       ctx,
       await service.getAccountLedger(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2005,13 +2000,13 @@ export const getAccountLedgerSummary = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAccountLedgerSummary(
         ctx.asCaller.supabase,
         ctx.company.groupId,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2030,13 +2025,13 @@ export const getFinancialStatementBalances = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getFinancialStatementBalances(
         ctx.asCaller.supabase,
         ctx.company.groupId,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2064,13 +2059,13 @@ export const getFinancialStatementPeriodSeries = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getFinancialStatementPeriodSeries(
         ctx.asCaller.supabase,
         ctx.company.groupId,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2085,7 +2080,7 @@ export const getReportPins = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getReportPins(
         ctx.asCaller.supabase,
@@ -2105,16 +2100,11 @@ export const upsertReportPin = defineServiceFn({
   input: z.looseObject({ reportKey: z.string(), pinned: z.boolean() }),
   permission: { create: "accounting", update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertReportPin(
         ctx.asCaller.supabase,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "userId"
-        ]) as never
+        payload(ctx, input).withUser().forUpsert() as never
       )
     );
   }
@@ -2166,13 +2156,13 @@ export const getAccountsInScope = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAccountsInScope(
         ctx.asCaller.supabase,
         ctx.company.groupId,
-        stamp(ctx, input.scope, ["companyId"]) as never,
-        stamp(ctx, input.scrapAccountIds, ["companyId"]) as never
+        payload(ctx, input.scope).build() as never,
+        payload(ctx, input.scrapAccountIds).build() as never
       )
     );
   }
@@ -2270,11 +2260,11 @@ export const getDimensionPivot = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDimensionPivot(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "companyGroupId"]) as never
+        payload(ctx, input).withGroup().build() as never
       )
     );
   }
@@ -2353,11 +2343,11 @@ export const getDimensionPivotLines = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDimensionPivotLines(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "companyGroupId"]) as never
+        payload(ctx, input).withGroup().build() as never
       )
     );
   }
@@ -2409,11 +2399,11 @@ export const getPurchaseLinePivot = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseLinePivot(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2439,11 +2429,11 @@ export const getPurchaseLinePivotLines = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseLinePivotLines(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2458,11 +2448,11 @@ export const getReportViews = defineServiceFn({
   input: z.looseObject({ reportKey: z.string().optional() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getReportViews(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2485,16 +2475,11 @@ export const createReportView = defineServiceFn({
   }),
   permission: { create: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertReportView(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -2518,16 +2503,11 @@ export const updateReportView = defineServiceFn({
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertReportView(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -2542,7 +2522,7 @@ export const deleteReportView = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteReportView(
         ctx.asCaller.supabase,
@@ -2562,7 +2542,7 @@ export const getCompaniesInGroup = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCompaniesInGroup(
         ctx.asCaller.supabase,
@@ -2581,7 +2561,7 @@ export const deleteAccount = defineServiceFn({
   input: z.looseObject({ accountId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteAccount(
         ctx.asCaller.supabase,
@@ -2600,7 +2580,7 @@ export const deletePaymentTerm = defineServiceFn({
   input: z.looseObject({ paymentTermId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deletePaymentTerm(
         ctx.asCaller.supabase,
@@ -2619,7 +2599,7 @@ export const getAccount = defineServiceFn({
   input: z.looseObject({ accountId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAccount(ctx.asCaller.supabase, input.accountId as never)
     );
@@ -2644,12 +2624,12 @@ export const getAccountsList = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAccountsList(
         ctx.asCaller.supabase,
         ctx.company.groupId,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2664,7 +2644,7 @@ export const getGroupAccounts = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getGroupAccounts(ctx.asCaller.supabase, ctx.company.groupId)
     );
@@ -2680,7 +2660,7 @@ export const getBaseCurrency = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getBaseCurrency(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2700,12 +2680,12 @@ export const getChartOfAccounts = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getChartOfAccounts(
         ctx.asCaller.supabase,
         ctx.company.groupId,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2720,7 +2700,7 @@ export const getCurrency = defineServiceFn({
   input: z.looseObject({ currencyId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCurrency(
         ctx.asCaller.supabase,
@@ -2739,7 +2719,7 @@ export const getCurrencyByCode = defineServiceFn({
   input: z.looseObject({ currencyCode: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCurrencyByCode(
         ctx.asCaller.supabase,
@@ -2759,7 +2739,7 @@ export const getExchangeRate = defineServiceFn({
   input: z.looseObject({ currencyCode: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getExchangeRate(
         ctx.asCaller.supabase,
@@ -2779,7 +2759,7 @@ export const getExchangeRates = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getExchangeRates(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2803,12 +2783,12 @@ export const getCurrencies = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCurrencies(
         ctx.asCaller.supabase,
         ctx.company.groupId,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2823,7 +2803,7 @@ export const getCurrenciesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCurrenciesList(
         ctx.asCaller.supabase,
@@ -2842,7 +2822,7 @@ export const getAccountingPeriods = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAccountingPeriods(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2858,7 +2838,7 @@ export const getAccountingPeriodDeletability = defineServiceFn({
   input: z.looseObject({ periodId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAccountingPeriodDeletability(
         ctx.asCaller.supabase,
@@ -2878,12 +2858,9 @@ export const deleteAccountingPeriod = defineServiceFn({
   input: z.looseObject({ periodId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.deleteAccountingPeriod(
-        ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
-      )
+    return await service.deleteAccountingPeriod(
+      ctx.asCaller.supabase,
+      payload(ctx, input).build() as never
     );
   }
 });
@@ -2897,7 +2874,7 @@ export const getFiscalCalendarCommitted = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getFiscalCalendarCommitted(
         ctx.asCaller.supabase,
@@ -2916,17 +2893,9 @@ export const createFiscalYearPeriods = defineServiceFn({
   input: z.looseObject({ fiscalYear: z.number() }),
   permission: { create: "accounting" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.createFiscalYearPeriods(
-        ctx.asCaller.supabase,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "userId"
-        ]) as never
-      )
+    return await service.createFiscalYearPeriods(
+      ctx.asCaller.supabase,
+      payload(ctx, input).withUser().forUpsert() as never
     );
   }
 });
@@ -2940,12 +2909,12 @@ export const getPeriodCloseChecklist = defineServiceFn({
   input: z.looseObject({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPeriodCloseChecklist(
         ctx.asCaller.supabase,
         ctx.asSystem.pg,
-        stamp(ctx, input, ["companyId", "userId", "companyGroupId"]) as never
+        payload(ctx, input).withGroup().withUser().build() as never
       )
     );
   }
@@ -2960,7 +2929,7 @@ export const getDefaultAccounts = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDefaultAccounts(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2976,7 +2945,7 @@ export const getScrapAccountIds = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getScrapAccountIds(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2992,7 +2961,7 @@ export const getFiscalYearSettings = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getFiscalYearSettings(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -3008,7 +2977,7 @@ export const getPaymentTerm = defineServiceFn({
   input: z.looseObject({ paymentTermId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPaymentTerm(
         ctx.asCaller.supabase,
@@ -3040,7 +3009,7 @@ export const getPaymentTerms = defineServiceFn({
       await service.getPaymentTerms(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -3055,7 +3024,7 @@ export const getPaymentTermsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPaymentTermsList(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -3137,11 +3106,11 @@ export const updateDefaultAccounts = defineServiceFn({
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateDefaultAccounts(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3185,11 +3154,11 @@ export const updateFiscalYearSettings = defineServiceFn({
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateFiscalYearSettings(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3245,16 +3214,11 @@ export const createAccount = defineServiceFn({
   }),
   permission: { create: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertAccount(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["createdBy", "updatedBy", "companyGroupId"],
-          "create"
-        ) as never
+        payload(ctx, input).withoutCompany().withGroup().forCreate() as never
       )
     );
   }
@@ -3312,16 +3276,11 @@ export const updateAccount = defineServiceFn({
     .required({ id: true }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertAccount(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["createdBy", "updatedBy", "companyGroupId"],
-          "update"
-        ) as never
+        payload(ctx, input).withoutCompany().withGroup().forUpdate() as never
       )
     );
   }
@@ -3350,16 +3309,11 @@ export const createPaymentTerm = defineServiceFn({
   }),
   permission: { create: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPaymentTerm(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -3390,16 +3344,11 @@ export const updatePaymentTerm = defineServiceFn({
     .required({ id: true }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPaymentTerm(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3414,7 +3363,7 @@ export const deleteCostCenter = defineServiceFn({
   input: z.looseObject({ costCenterId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteCostCenter(
         ctx.asCaller.supabase,
@@ -3433,7 +3382,7 @@ export const getCostCenter = defineServiceFn({
   input: z.looseObject({ costCenterId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCostCenter(
         ctx.asCaller.supabase,
@@ -3452,7 +3401,7 @@ export const getCostCentersList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCostCentersList(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -3468,7 +3417,7 @@ export const getCostCentersTree = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCostCentersTree(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -3496,16 +3445,11 @@ export const createCostCenter = defineServiceFn({
   }),
   permission: { create: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertCostCenter(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -3534,16 +3478,11 @@ export const updateCostCenter = defineServiceFn({
     .required({ id: true }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertCostCenter(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3558,7 +3497,7 @@ export const deleteProject = defineServiceFn({
   input: z.looseObject({ projectId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteProject(
         ctx.asCaller.supabase,
@@ -3579,7 +3518,7 @@ export const getProject = defineServiceFn({
   input: z.looseObject({ projectId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getProject(
         ctx.asCaller.supabase,
@@ -3612,7 +3551,7 @@ export const getProjects = defineServiceFn({
       await service.getProjects(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -3637,16 +3576,11 @@ export const createProject = defineServiceFn({
   }),
   permission: { create: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertProject(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -3673,16 +3607,11 @@ export const updateProject = defineServiceFn({
     .required({ id: true }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertProject(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3710,7 +3639,7 @@ export const getDimensions = defineServiceFn({
       await service.getDimensions(
         ctx.asCaller.supabase,
         ctx.company.groupId,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -3725,7 +3654,7 @@ export const getDimension = defineServiceFn({
   input: z.looseObject({ dimensionId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDimension(
         ctx.asCaller.supabase,
@@ -3771,22 +3700,18 @@ export const createDimension = defineServiceFn({
   permission: { create: "accounting" },
   async run(ctx, input) {
     const { dimensionValues, ...dimension } = input;
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertDimension(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          dimension,
-          ["createdBy", "updatedBy", "companyGroupId"],
-          "create"
-        ) as never,
-        stamp(
-          ctx,
-          dimensionValues,
-          ["createdBy", "updatedBy", "companyGroupId"],
-          "create"
-        ) as never
+        payload(ctx, dimension)
+          .withoutCompany()
+          .withGroup()
+          .forCreate() as never,
+        payload(ctx, dimensionValues)
+          .withoutCompany()
+          .withGroup()
+          .forCreate() as never
       )
     );
   }
@@ -3829,22 +3754,18 @@ export const updateDimension = defineServiceFn({
   permission: { update: "accounting" },
   async run(ctx, input) {
     const { dimensionValues, ...dimension } = input;
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertDimension(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          dimension,
-          ["createdBy", "updatedBy", "companyGroupId"],
-          "update"
-        ) as never,
-        stamp(
-          ctx,
-          dimensionValues,
-          ["createdBy", "updatedBy", "companyGroupId"],
-          "update"
-        ) as never
+        payload(ctx, dimension)
+          .withoutCompany()
+          .withGroup()
+          .forUpdate() as never,
+        payload(ctx, dimensionValues)
+          .withoutCompany()
+          .withGroup()
+          .forUpdate() as never
       )
     );
   }
@@ -3859,7 +3780,7 @@ export const deleteDimension = defineServiceFn({
   input: z.looseObject({ dimensionId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteDimension(
         ctx.asCaller.supabase,
@@ -3878,7 +3799,7 @@ export const getActiveDimensionsWithValues = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getActiveDimensionsWithValues(
         ctx.asCaller.supabase,
@@ -3898,11 +3819,11 @@ export const getJournalLineDimensions = defineServiceFn({
   input: z.looseObject({ journalLineIds: z.array(z.string()) }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getJournalLineDimensions(
         ctx.asCaller.supabase,
-        stamp(ctx, input.journalLineIds, ["companyId"]) as never
+        payload(ctx, input.journalLineIds).build() as never
       )
     );
   }
@@ -3922,13 +3843,13 @@ export const saveJournalLineDimensions = defineServiceFn({
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.saveJournalLineDimensions(
         ctx.asCaller.supabase,
         input.journalLineId as never,
         ctx.company.id,
-        stamp(ctx, input.dimensions, ["companyId"]) as never
+        payload(ctx, input.dimensions).build() as never
       )
     );
   }
@@ -3956,7 +3877,7 @@ export const translateCompanyBalances = defineServiceFn({
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.translateCompanyBalances(
         ctx.asCaller.supabase,
@@ -3965,7 +3886,7 @@ export const translateCompanyBalances = defineServiceFn({
         input.targetCurrency as never,
         input.periodEnd as never,
         input.periodStart as never,
-        stamp(ctx, input.balances, ["companyId"]) as never
+        payload(ctx, input.balances).build() as never
       )
     );
   }
@@ -3993,7 +3914,7 @@ export const getIntercompanyTransactions = defineServiceFn({
       await service.getIntercompanyTransactions(
         ctx.asCaller.supabase,
         ctx.company.groupId,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4017,17 +3938,11 @@ export const createIntercompanyTransaction = defineServiceFn({
   }),
   permission: { create: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.createIntercompanyTransaction(
         ctx.asCaller.supabase,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "userId",
-          "companyGroupId"
-        ]) as never
+        payload(ctx, input).withGroup().withUser().forUpsert() as never
       )
     );
   }
@@ -4042,7 +3957,7 @@ export const runIntercompanyMatching = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { update: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.runIntercompanyMatching(
         ctx.asCaller.supabase,
@@ -4061,7 +3976,7 @@ export const generateEliminations = defineServiceFn({
   input: z.looseObject({ regenerate: z.boolean().optional() }),
   permission: { create: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.generateEliminations(
         ctx.asCaller.supabase,
@@ -4082,7 +3997,7 @@ export const getExchangeRateHistory = defineServiceFn({
   input: z.looseObject({ currencyCode: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getExchangeRateHistory(
         ctx.asCaller.supabase,
@@ -4115,7 +4030,7 @@ export const getJournalEntries = defineServiceFn({
       await service.getJournalEntries(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4130,7 +4045,7 @@ export const getJournalEntry = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getJournalEntry(ctx.asCaller.supabase, input.id as never)
     );
@@ -4146,7 +4061,7 @@ export const deleteJournalEntry = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteJournalEntry(ctx.asCaller.supabase, input.id as never)
     );
@@ -4162,7 +4077,7 @@ export const postJournalEntry = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.postJournalEntry(
         ctx.asCaller.supabase,
@@ -4185,12 +4100,12 @@ export const reverseJournalEntry = defineServiceFn({
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.reverseJournalEntry(
         ctx.asCaller.supabase,
         input.id as never,
-        stamp(ctx, input.data, ["companyId", "userId"]) as never
+        payload(ctx, input.data).withUser().build() as never
       )
     );
   }
@@ -4218,7 +4133,7 @@ export const getFixedAssetClasses = defineServiceFn({
       await service.getFixedAssetClasses(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4233,7 +4148,7 @@ export const getFixedAssetClass = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getFixedAssetClass(ctx.asCaller.supabase, input.id as never)
     );
@@ -4249,7 +4164,7 @@ export const getFixedAssetClassesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "accounting" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getFixedAssetClassesList(
         ctx.asCaller.supabase,
@@ -4271,16 +4186,11 @@ export const createFixedAssetClass = defineServiceFn({
   input: z.looseObject({ data: z.unknown() }),
   permission: { create: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertFixedAssetClass(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input.data,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input.data).forCreate() as never
       )
     );
   }
@@ -4300,16 +4210,11 @@ export const updateFixedAssetClass = defineServiceFn({
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertFixedAssetClass(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -4324,7 +4229,7 @@ export const deleteFixedAssetClass = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteFixedAssetClass(
         ctx.asCaller.supabase,
@@ -4366,7 +4271,7 @@ export const getFixedAssets = defineServiceFn({
       await service.getFixedAssets(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4381,7 +4286,7 @@ export const getFixedAsset = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getFixedAsset(
         ctx.asCaller.supabase,
@@ -4420,11 +4325,11 @@ export const insertFixedAsset = defineServiceFn({
   }),
   permission: { create: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertFixedAsset(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -4465,11 +4370,11 @@ export const updateFixedAsset = defineServiceFn({
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateFixedAsset(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -4484,7 +4389,7 @@ export const deleteFixedAsset = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteFixedAsset(ctx.asCaller.supabase, input.id as never)
     );
@@ -4500,7 +4405,7 @@ export const deleteDepreciationRun = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteDepreciationRun(
         ctx.asCaller.supabase,
@@ -4532,7 +4437,7 @@ export const getDepreciationRuns = defineServiceFn({
       await service.getDepreciationRuns(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4547,7 +4452,7 @@ export const getDepreciationRun = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDepreciationRun(ctx.asCaller.supabase, input.id as never)
     );
@@ -4563,7 +4468,7 @@ export const getDepreciationRunLines = defineServiceFn({
   input: z.looseObject({ depreciationRunId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDepreciationRunLines(
         ctx.asCaller.supabase,
@@ -4582,7 +4487,7 @@ export const getRevenueRecognitionRun = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getRevenueRecognitionRun(
         ctx.asCaller.supabase,
@@ -4602,7 +4507,7 @@ export const getRevenueRecognitionRunLines = defineServiceFn({
   input: z.looseObject({ runId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getRevenueRecognitionRunLines(
         ctx.asCaller.supabase,
@@ -4627,14 +4532,11 @@ export const getPeriodRunRelatedItems = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getPeriodRunRelatedItems(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        input.periodEnd as never,
-        stamp(ctx, input.journalIds, ["companyId"]) as never
-      )
+    return await service.getPeriodRunRelatedItems(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.periodEnd as never,
+      payload(ctx, input.journalIds).build() as never
     );
   }
 });
@@ -4648,12 +4550,12 @@ export const getDeferredRevenueWaterfall = defineServiceFn({
   input: z.looseObject({ asOf: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDeferredRevenueWaterfall(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4672,12 +4574,12 @@ export const getRentalUtilization = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getRentalUtilization(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4692,12 +4594,12 @@ export const getLeaseNetInvestment = defineServiceFn({
   input: z.looseObject({ asOf: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getLeaseNetInvestment(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4724,12 +4626,12 @@ export const getLeaseLiabilities = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getLeaseLiabilities(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4744,7 +4646,7 @@ export const getAssetDepreciationHistory = defineServiceFn({
   input: z.looseObject({ fixedAssetId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAssetDepreciationHistory(
         ctx.asCaller.supabase,
@@ -4763,7 +4665,7 @@ export const getFixedAssetDisposal = defineServiceFn({
   input: z.looseObject({ fixedAssetId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getFixedAssetDisposal(
         ctx.asCaller.supabase,
@@ -4796,7 +4698,7 @@ export const getFleetAssets = defineServiceFn({
       await service.getFleetAssets(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4811,7 +4713,7 @@ export const getFixedAssetTransfers = defineServiceFn({
   input: z.looseObject({ fixedAssetId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getFixedAssetTransfers(
         ctx.asCaller.supabase,
@@ -4831,7 +4733,7 @@ export const getFixedAssetCipCosts = defineServiceFn({
   input: z.looseObject({ fixedAssetId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getFixedAssetCipCosts(
         ctx.asCaller.supabase,
@@ -4853,7 +4755,7 @@ export const getWorkCenterCapitalCost = defineServiceFn({
   input: z.looseObject({ workCenterId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getWorkCenterCapitalCost(
         ctx.asCaller.supabase,
@@ -4878,12 +4780,12 @@ export const invokeAssetTransfer = defineServiceFn({
   input: service.postAssetTransferInput,
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.invokeAssetTransfer(
         ctx.asCaller.supabase,
         ctx.asSystem.pg,
-        stamp(ctx, input, ["companyId", "userId"]) as never
+        payload(ctx, input).withUser().build() as never
       )
     );
   }
@@ -4908,12 +4810,12 @@ export const getAccountingSyncTieOut = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAccountingSyncTieOut(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4935,7 +4837,7 @@ export const getAccountingSyncTieOutCell = defineServiceFn({
   input: z.looseObject({ cellId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAccountingSyncTieOutCell(
         ctx.asCaller.supabase,

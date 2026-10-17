@@ -23,6 +23,7 @@ import {
   Node,
   type ParameterDeclaration,
   Project,
+  type PropertyAccessExpression,
   SyntaxKind
 } from "ts-morph";
 import { routerLeaves } from "./service-fn-metadata";
@@ -241,8 +242,22 @@ function calledFunction(call: CallExpression): ServiceFunctionNode | undefined {
  * The filters of a leaf's `run(ctx, input)`, as paths into `input`: its own,
  * and those of each function it passes input to — a field
  * (`service.getJob(client, input.jobId)`), the whole input, or the input
- * stamped (`stamp(ctx, input, …)`).
+ * with the caller's identity on it (`payload(ctx, input)…forUpdate()`).
  */
+/** The value inside a `payload(ctx, value)…forX()` chain, else `node`. */
+function payloadValue(node: Node | undefined): Node | undefined {
+  let inner: Node | undefined = node;
+  while (
+    Node.isCallExpression(inner) &&
+    Node.isPropertyAccessExpression(inner.getExpression())
+  ) {
+    inner = (inner.getExpression() as PropertyAccessExpression).getExpression();
+  }
+  return Node.isCallExpression(inner) && memberName(inner) === "payload"
+    ? unwrap(inner.getArguments()[1])
+    : node;
+}
+
 export function inputFilters(run: ServiceFunctionNode): ParamFilter[] {
   const input = run.getParameters()[1];
   if (!input) return [];
@@ -269,9 +284,7 @@ export function inputFilters(run: ServiceFunctionNode): ParamFilter[] {
     const given = new Map<string, string>();
     call.getArguments().forEach((argument, index) => {
       let value = unwrap(argument);
-      if (Node.isCallExpression(value) && memberName(value) === "stamp") {
-        value = unwrap(value.getArguments()[1]);
-      }
+      value = payloadValue(value) ?? value;
       const at = intoInput(parameterPath(value, own));
       const param = params[index];
       if (param && at !== undefined) given.set(serviceParamName(param), at);

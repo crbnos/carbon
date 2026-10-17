@@ -8,8 +8,9 @@ import type { SourceFile, Violation } from "../check";
 export const STAMP_MATCHES_COLUMNS = "stamp-matches-columns";
 
 /**
- * A service function's `stamp(ctx, value, fields, operation?)` adds identity
- * fields to the payload it hands a building block. When the building block
+ * A service function's `payload(ctx, value)…forCreate()` (or `forUpdate`,
+ * `forUpsert`, `for(op)`, `build`) adds identity fields to the payload it
+ * hands a building block. When the building block
  * spreads that payload into a write, every added field is a column of the
  * write: one the table does not have fails the whole statement (PGRST204),
  * and `createdBy` added to a payload that only ever reaches an `.update(`
@@ -17,11 +18,11 @@ export const STAMP_MATCHES_COLUMNS = "stamp-matches-columns";
  * stamped `companyId` onto the group-scoped `account`, `upsertItemCost`
  * restamped `createdBy` on each cost edit.
  *
- * Follows `stamp(...)` in `<module>.server.ts` into the `service.<fn>(...)`
+ * Follows each `payload(...)` chain in `<module>.server.ts` into the `service.<fn>(...)`
  * it is passed to, finds that function in `<module>.service.ts`, and reads
  * the writes whose row is the parameter itself (`insert([p])`, `...p`,
  * `sanitize(p)`). A field of a nested object (`...p.contact`) is never added
- * by `stamp`, so it is not followed.
+ * by `payload`, so it is not followed.
  */
 export function findStampColumnMismatches(
   modules: { server: SourceFile; service: SourceFile }[],
@@ -32,10 +33,9 @@ export function findStampColumnMismatches(
     const serviceFns = exportedFunctions(parse(service));
     const serverSf = parse(server);
     visit(serverSf, (node) => {
-      if (!isStampCall(node)) return;
-      const fields = stringElements(node.arguments[2]);
-      if (!fields) return;
-      const operation = stringValue(node.arguments[3]);
+      const chain = payloadChain(node);
+      if (!chain) return;
+      const { fields, operation } = chain;
       const outer = enclosingServiceCall(node);
       if (!outer) return;
       const fn = serviceFns.get(outer.name);
@@ -108,22 +108,59 @@ function exportedFunctions(sf: ts.SourceFile) {
   return out;
 }
 
-function isStampCall(node: ts.Node): node is ts.CallExpression {
-  return (
-    ts.isCallExpression(node) &&
-    ts.isIdentifier(node.expression) &&
-    node.expression.text === "stamp"
-  );
+const TERMINALS: Record<string, { fields: string[]; operation?: string }> = {
+  forCreate: { fields: ["createdBy"], operation: "create" },
+  forUpdate: { fields: ["updatedBy"], operation: "update" },
+  forUpsert: { fields: ["createdBy", "updatedBy"] },
+  for: { fields: ["createdBy", "updatedBy"] },
+  build: { fields: [] }
+};
+
+/**
+ * The fields and operation of a `payload(ctx, value).<modifiers>.<terminal>()`
+ * chain, read off its calls; undefined for any other call.
+ */
+function payloadChain(
+  node: ts.Node
+): (ts.CallExpression & { fields: string[]; operation?: string }) | undefined {
+  if (
+    !ts.isCallExpression(node) ||
+    !ts.isPropertyAccessExpression(node.expression)
+  ) {
+    return undefined;
+  }
+  const name = node.expression.name.text;
+  if (!Object.hasOwn(TERMINALS, name)) return undefined;
+  const terminal = TERMINALS[name]!;
+  const fields = new Set(["companyId", ...terminal.fields]);
+  const operation =
+    node.expression.name.text === "for"
+      ? stringValue(node.arguments[0])
+      : terminal.operation;
+  let inner: ts.Expression = node.expression.expression;
+  while (
+    ts.isCallExpression(inner) &&
+    ts.isPropertyAccessExpression(inner.expression)
+  ) {
+    const modifier = inner.expression.name.text;
+    if (modifier === "withGroup") fields.add("companyGroupId");
+    else if (modifier === "withUser") fields.add("userId");
+    else if (modifier === "withoutCompany") fields.delete("companyId");
+    else return undefined;
+    inner = inner.expression.expression;
+  }
+  if (
+    !ts.isCallExpression(inner) ||
+    !ts.isIdentifier(inner.expression) ||
+    inner.expression.text !== "payload"
+  ) {
+    return undefined;
+  }
+  return Object.assign(node, { fields: [...fields], operation });
 }
 
 function stringValue(node: ts.Node | undefined): string | undefined {
   return node && ts.isStringLiteral(node) ? node.text : undefined;
-}
-
-function stringElements(node: ts.Node | undefined): string[] | undefined {
-  if (!node || !ts.isArrayLiteralExpression(node)) return undefined;
-  const out = node.elements.map(stringValue);
-  return out.every((v) => v !== undefined) ? (out as string[]) : undefined;
 }
 
 /** The `service.<name>(…)` call the stamped value is an argument of. */

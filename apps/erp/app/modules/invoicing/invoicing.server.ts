@@ -3,12 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
-import {
-  envelope,
-  paged,
-  plain,
-  stamp
-} from "@carbon/api/service-tools.server";
+import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import {
   dedupeViolations,
   evaluateSalesRulesForSalesDocument,
@@ -2093,7 +2088,7 @@ export const createPurchaseInvoiceFromPurchaseOrder = defineServiceFn({
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.createPurchaseInvoiceFromPurchaseOrder(
         ctx.asCaller.supabase,
@@ -2115,7 +2110,7 @@ export const createSalesInvoiceFromSalesOrder = defineServiceFn({
   input: z.looseObject({ salesOrderId: z.string() }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.createSalesInvoiceFromSalesOrder(
         ctx.asCaller.supabase,
@@ -2137,7 +2132,7 @@ export const createSalesInvoiceFromShipment = defineServiceFn({
   input: z.looseObject({ shipmentId: z.string() }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.createSalesInvoiceFromShipment(
         ctx.asCaller.supabase,
@@ -2159,7 +2154,7 @@ export const getPurchaseInvoice = defineServiceFn({
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseInvoice(
         ctx.asCaller.supabase,
@@ -2192,7 +2187,7 @@ export const getPurchaseInvoices = defineServiceFn({
       await service.getPurchaseInvoices(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2207,7 +2202,7 @@ export const getPurchaseInvoiceDelivery = defineServiceFn({
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseInvoiceDelivery(
         ctx.asCaller.supabase,
@@ -2226,7 +2221,7 @@ export const getPurchaseInvoiceLines = defineServiceFn({
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseInvoiceLines(
         ctx.asCaller.supabase,
@@ -2245,7 +2240,7 @@ export const getPurchaseInvoiceLine = defineServiceFn({
   input: z.looseObject({ purchaseInvoiceLineId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseInvoiceLine(
         ctx.asCaller.supabase,
@@ -2264,7 +2259,7 @@ export const getSalesInvoice = defineServiceFn({
   input: z.looseObject({ salesInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSalesInvoice(
         ctx.asCaller.supabase,
@@ -2297,7 +2292,7 @@ export const getSalesInvoices = defineServiceFn({
       await service.getSalesInvoices(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2312,7 +2307,7 @@ export const getSalesInvoiceShipment = defineServiceFn({
   input: z.looseObject({ salesInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSalesInvoiceShipment(
         ctx.asCaller.supabase,
@@ -2331,7 +2326,7 @@ export const getSalesInvoiceLines = defineServiceFn({
   input: z.looseObject({ salesInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSalesInvoiceLines(
         ctx.asCaller.supabase,
@@ -2350,7 +2345,7 @@ export const getSalesInvoiceLine = defineServiceFn({
   input: z.looseObject({ salesInvoiceLineId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSalesInvoiceLine(
         ctx.asCaller.supabase,
@@ -2369,11 +2364,11 @@ export const updatePurchaseInvoiceExchangeRate = defineServiceFn({
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updatePurchaseInvoiceExchangeRate(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -2388,11 +2383,11 @@ export const updateSalesInvoiceExchangeRate = defineServiceFn({
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateSalesInvoiceExchangeRate(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -2423,11 +2418,11 @@ export const updatePurchaseInvoice = defineServiceFn({
   }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updatePurchaseInvoice(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -2465,11 +2460,11 @@ export const upsertPurchaseInvoiceDelivery = defineServiceFn({
   }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceDelivery(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -2544,16 +2539,11 @@ export const createPurchaseInvoiceLine = defineServiceFn({
   }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -2630,16 +2620,11 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -2657,15 +2642,12 @@ export const updatePurchaseInvoiceLineOrder = defineServiceFn({
   }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.updatePurchaseInvoiceLineOrder(
-        ctx.asSystem.pg,
-        ctx.company.id,
-        ctx.auditUserId,
-        input.invoiceId as never,
-        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
-      )
+    return await service.updatePurchaseInvoiceLineOrder(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      ctx.auditUserId,
+      input.invoiceId as never,
+      payload(ctx, input.updates).forUpdate() as never
     );
   }
 });
@@ -2694,16 +2676,11 @@ export const insertSalesInvoice = defineServiceFn({
   }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertSalesInvoice(
         ctx.asCaller.supabase,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "companyGroupId"
-        ]) as never
+        payload(ctx, input).withGroup().forUpsert() as never
       )
     );
   }
@@ -2742,11 +2719,11 @@ export const upsertSalesInvoiceShipment = defineServiceFn({
   }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertSalesInvoiceShipment(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -2764,15 +2741,12 @@ export const updateSalesInvoiceLineOrder = defineServiceFn({
   }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.updateSalesInvoiceLineOrder(
-        ctx.asSystem.pg,
-        ctx.company.id,
-        ctx.auditUserId,
-        input.invoiceId as never,
-        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
-      )
+    return await service.updateSalesInvoiceLineOrder(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      ctx.auditUserId,
+      input.invoiceId as never,
+      payload(ctx, input.updates).forUpdate() as never
     );
   }
 });
@@ -2786,7 +2760,7 @@ export const getPayment = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPayment(
         ctx.asCaller.supabase,
@@ -2824,7 +2798,7 @@ export const getPayments = defineServiceFn({
       await service.getPayments(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2839,7 +2813,7 @@ export const getCharge = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCharge(
         ctx.asCaller.supabase,
@@ -2877,7 +2851,7 @@ export const getCharges = defineServiceFn({
       await service.getCharges(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2892,7 +2866,7 @@ export const getReimbursement = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getReimbursement(
         ctx.asCaller.supabase,
@@ -2927,7 +2901,7 @@ export const getReimbursements = defineServiceFn({
       await service.getReimbursements(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2942,13 +2916,10 @@ export const getReimbursementRelatedItems = defineServiceFn({
   input: z.looseObject({ reimbursementId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getReimbursementRelatedItems(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        input.reimbursementId as never
-      )
+    return await service.getReimbursementRelatedItems(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.reimbursementId as never
     );
   }
 });
@@ -2962,7 +2933,7 @@ export const getInvoiceSettlements = defineServiceFn({
   input: z.looseObject({ paymentId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getInvoiceSettlements(
         ctx.asCaller.supabase,
@@ -2985,7 +2956,7 @@ export const getInvoiceSettlementsForInvoice = defineServiceFn({
   }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getInvoiceSettlementsForInvoice(
         ctx.asCaller.supabase,
@@ -3006,7 +2977,7 @@ export const getMemoApplications = defineServiceFn({
   input: z.looseObject({ memoId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getMemoApplications(
         ctx.asCaller.supabase,
@@ -3029,7 +3000,7 @@ export const getOpenSalesInvoicesForCustomer = defineServiceFn({
   }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getOpenSalesInvoicesForCustomer(
         ctx.asCaller.supabase,
@@ -3053,7 +3024,7 @@ export const getOpenPurchaseInvoicesForSupplier = defineServiceFn({
   }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getOpenPurchaseInvoicesForSupplier(
         ctx.asCaller.supabase,
@@ -3082,7 +3053,7 @@ export const getOpenReimbursementsForEmployee = defineServiceFn({
   }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getOpenReimbursementsForEmployee(
         ctx.asCaller.supabase,
@@ -3103,13 +3074,10 @@ export const getPaymentCurrencyConfiguration = defineServiceFn({
   input: z.looseObject({ currencyCode: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getPaymentCurrencyConfiguration(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        input.currencyCode as never
-      )
+    return await service.getPaymentCurrencyConfiguration(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.currencyCode as never
     );
   }
 });
@@ -3135,12 +3103,12 @@ export const getAvailableOnAccountCreditSources = defineServiceFn({
   }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAvailableOnAccountCreditSources(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input.party, ["companyId"]) as never,
+        payload(ctx, input.party).build() as never,
         input.currencyCode as never
       )
     );
@@ -3187,16 +3155,11 @@ export const updatePayment = defineServiceFn({
     .required({ id: true }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPayment(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3211,7 +3174,7 @@ export const deletePayment = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deletePayment(
         ctx.asCaller.supabase,
@@ -3249,12 +3212,9 @@ export const replaceInvoiceSettlements = defineServiceFn({
   }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.replaceInvoiceSettlements(
-        ctx.asSystem.pg,
-        stamp(ctx, input, ["companyId", "createdBy"]) as never
-      )
+    return await service.replaceInvoiceSettlements(
+      ctx.asSystem.pg,
+      payload(ctx, input).forCreate() as never
     );
   }
 });
@@ -3268,7 +3228,7 @@ export const getMemo = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getMemo(
         ctx.asCaller.supabase,
@@ -3305,7 +3265,7 @@ export const getMemos = defineServiceFn({
       await service.getMemos(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -3345,16 +3305,11 @@ export const createMemo = defineServiceFn({
   }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertMemo(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -3396,16 +3351,11 @@ export const updateMemo = defineServiceFn({
     .required({ id: true }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertMemo(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3427,12 +3377,12 @@ export const getAvailableCreditsForParty = defineServiceFn({
   }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAvailableCreditsForParty(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input.party, ["companyId"]) as never,
+        payload(ctx, input.party).build() as never,
         input.excludePaymentId as never,
         input.currencyCode as never
       )
@@ -3449,13 +3399,10 @@ export const getCompanyHasOpenCredits = defineServiceFn({
   input: z.looseObject({ side: z.enum(["sales", "purchase"]) }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getCompanyHasOpenCredits(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        input.side as never
-      )
+    return await service.getCompanyHasOpenCredits(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.side as never
     );
   }
 });
@@ -3472,7 +3419,7 @@ export const getStagedCreditsForPayment = defineServiceFn({
   }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getStagedCreditsForPayment(
         ctx.asCaller.supabase,
@@ -3505,12 +3452,9 @@ export const applyCreditsToInvoices = defineServiceFn({
   }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.applyCreditsToInvoices(
-        ctx.asSystem.pg,
-        stamp(ctx, input, ["companyId", "createdBy"]) as never
-      )
+    return await service.applyCreditsToInvoices(
+      ctx.asSystem.pg,
+      payload(ctx, input).forCreate() as never
     );
   }
 });
@@ -3524,7 +3468,7 @@ export const getArTieOut = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getArTieOut(
         ctx.asCaller.supabase,
@@ -3544,7 +3488,7 @@ export const getApTieOut = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getApTieOut(
         ctx.asCaller.supabase,
@@ -3564,7 +3508,7 @@ export const getArOpenByCustomer = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getArOpenByCustomer(
         ctx.asCaller.supabase,
@@ -3584,7 +3528,7 @@ export const getApOpenBySupplier = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getApOpenBySupplier(
         ctx.asCaller.supabase,
@@ -3612,13 +3556,13 @@ export const getArAging = defineServiceFn({
   }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getArAging(
         ctx.asCaller.supabase,
         ctx.company.id,
         input.asOfDate as never,
-        stamp(ctx, input.options, ["companyId"]) as never
+        payload(ctx, input.options).build() as never
       )
     );
   }
@@ -3641,13 +3585,13 @@ export const getApAging = defineServiceFn({
   }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getApAging(
         ctx.asCaller.supabase,
         ctx.company.id,
         input.asOfDate as never,
-        stamp(ctx, input.options, ["companyId"]) as never
+        payload(ctx, input.options).build() as never
       )
     );
   }

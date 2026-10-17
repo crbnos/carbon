@@ -4,12 +4,7 @@
 
 import { accountProfileValidator } from "@carbon/account";
 import { defineServiceFn } from "@carbon/api/service-fn.server";
-import {
-  envelope,
-  paged,
-  plain,
-  stamp
-} from "@carbon/api/service-tools.server";
+import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CarbonEdition, CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
@@ -912,13 +907,10 @@ export const getItarCertificationStatus = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
-    return plain(
-      ctx,
-      await service.getItarCertificationStatus(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        ctx.auditUserId
-      )
+    return await service.getItarCertificationStatus(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      ctx.auditUserId
     );
   }
 });
@@ -932,7 +924,7 @@ export const getItarEntityCertification = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getItarEntityCertification(
         ctx.asCaller.supabase,
@@ -951,7 +943,7 @@ export const getItarCertificationReport = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getItarCertificationReport(
         ctx.asCaller.supabase,
@@ -970,7 +962,7 @@ export const deleteGroup = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
   permission: { delete: "users" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteGroup(ctx.asCaller.supabase, input.groupId as never)
     );
@@ -999,7 +991,7 @@ export const getCustomers = defineServiceFn({
       await service.getCustomers(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -1014,7 +1006,7 @@ export const getEmployee = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getEmployee(
         ctx.asCaller.supabase,
@@ -1034,7 +1026,7 @@ export const getUnrevokedInviteEmails = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getUnrevokedInviteEmails(
         ctx.asCaller.supabase,
@@ -1053,7 +1045,7 @@ export const getUsersWithVerifiedMfa = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getUsersWithVerifiedMfa(
         ctx.asCaller.supabase,
@@ -1085,7 +1077,7 @@ export const getEmployees = defineServiceFn({
       await service.getEmployees(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -1113,7 +1105,7 @@ export const getConsoleOperators = defineServiceFn({
       await service.getConsoleOperators(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -1128,7 +1120,7 @@ export const getEmployeeType = defineServiceFn({
   input: z.looseObject({ employeeTypeId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getEmployeeType(
         ctx.asCaller.supabase,
@@ -1160,7 +1152,7 @@ export const getEmployeeTypes = defineServiceFn({
       await service.getEmployeeTypes(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -1175,7 +1167,7 @@ export const getInvitable = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getInvitable(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -1191,7 +1183,7 @@ export const getModules = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
   async run(ctx) {
-    return envelope(ctx, await service.getModules(ctx.asCaller.supabase));
+    return unwrap(ctx, await service.getModules(ctx.asCaller.supabase));
   }
 });
 
@@ -1204,7 +1196,7 @@ export const getGroup = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getGroup(ctx.asCaller.supabase, input.groupId as never)
     );
@@ -1220,7 +1212,7 @@ export const getGroupMembers = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getGroupMembers(
         ctx.asCaller.supabase,
@@ -1253,7 +1245,7 @@ export const getGroups = defineServiceFn({
       await service.getGroups(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -1268,12 +1260,9 @@ export const getGroupEmails = defineServiceFn({
   input: z.looseObject({ groupIds: z.array(z.string()) }),
   permission: { view: "users" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getGroupEmails(
-        ctx.asCaller.supabase,
-        stamp(ctx, input.groupIds, ["companyId"]) as never
-      )
+    return await service.getGroupEmails(
+      ctx.asCaller.supabase,
+      payload(ctx, input.groupIds).build() as never
     );
   }
 });
@@ -1292,12 +1281,12 @@ export const getUserSelectGroups = defineServiceFn({
   }),
   permission: { view: "users" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getUserSelectGroups(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -1312,7 +1301,7 @@ export const getUserSelectGroupMembers = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getUserSelectGroupMembers(
         ctx.asCaller.supabase,
@@ -1337,12 +1326,12 @@ export const searchUsersForSelect = defineServiceFn({
   }),
   permission: { view: "users" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.searchUsersForSelect(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId", "userId"]) as never
+        payload(ctx, input).withUser().build() as never
       )
     );
   }
@@ -1357,13 +1346,10 @@ export const resolveUserSelectIds = defineServiceFn({
   input: z.looseObject({ ids: z.array(z.string()) }),
   permission: { update: "users" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.resolveUserSelectIds(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        stamp(ctx, input.ids, ["companyId"]) as never
-      )
+    return await service.resolveUserSelectIds(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      payload(ctx, input.ids).build() as never
     );
   }
 });
@@ -1377,7 +1363,7 @@ export const getPermissionsByEmployeeType = defineServiceFn({
   input: z.looseObject({ employeeTypeId: z.string() }),
   permission: { view: "users" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPermissionsByEmployeeType(
         ctx.asCaller.supabase,
@@ -1409,7 +1395,7 @@ export const getSuppliers = defineServiceFn({
       await service.getSuppliers(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -1606,7 +1592,7 @@ export const getNotificationPreferences = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getNotificationPreferences(
         ctx.asCaller.supabase,
@@ -1630,11 +1616,11 @@ export const upsertNotificationPreference = defineServiceFn({
   }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertNotificationPreference(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "userId"]) as never
+        payload(ctx, input).withUser().build() as never
       )
     );
   }
@@ -1649,7 +1635,7 @@ export const getAccount = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAccount(ctx.asCaller.supabase, input.id as never)
     );
@@ -1665,7 +1651,7 @@ export const getCurrentUser = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCurrentUser(ctx.asCaller.supabase, ctx.auditUserId)
     );
@@ -1681,7 +1667,7 @@ export const getAllAttributeCategories = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAllAttributeCategories(
         ctx.asCaller.supabase,
@@ -1701,7 +1687,7 @@ export const getAttributeCategoryWithValues = defineServiceFn({
   input: z.looseObject({ categoryId: z.string() }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAttributeCategoryWithValues(
         ctx.asCaller.supabase,
@@ -1728,7 +1714,7 @@ export const updatePublicAccount = defineServiceFn({
   }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updatePublicAccount(ctx.asCaller.supabase, input as never)
     );

@@ -45,7 +45,7 @@ const JSON_OPAQUE_COLLECTIONS = new Set([
  * `Promise<PostgrestSingleResponse<T>>` and the hand-rolled
  * `Promise<{ data: T | null; error }>` both reduce to `T`.
  *
- * This mirrors the result readers (`envelope`, `paged` in
+ * This mirrors the result readers (`unwrap`, `paged` in
  * `@carbon/api/service-tools.server`), which unwrap the Supabase result to its
  * `data` — so the schema describes what a caller receives, not the driver's
  * envelope.

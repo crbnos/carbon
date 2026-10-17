@@ -54,7 +54,7 @@ function findings(server: string) {
 const leaf = (name: string, call: string) => `
 export const ${name} = defineServiceFn({
   async run(ctx, input) {
-    return envelope(ctx, await ${call});
+    return unwrap(ctx, await ${call});
   }
 });
 `;
@@ -65,7 +65,7 @@ describe("stamp-matches-columns", () => {
       findings(
         leaf(
           "createAccount",
-          `service.upsertAccount(ctx.asCaller.supabase, stamp(ctx, input, ["companyId", "createdBy", "companyGroupId"], "create"))`
+          `service.upsertAccount(ctx.asCaller.supabase, payload(ctx, input).withGroup().forCreate())`
         )
       )
     ).toEqual(["createAccount account companyId"]);
@@ -76,7 +76,7 @@ describe("stamp-matches-columns", () => {
       findings(
         leaf(
           "upsertItemCost",
-          `service.upsertItemCost(ctx.asCaller.supabase, stamp(ctx, input, ["createdBy", "updatedBy"]))`
+          `service.upsertItemCost(ctx.asCaller.supabase, payload(ctx, input).withoutCompany().forUpsert())`
         )
       )
     ).toEqual(["upsertItemCost createdBy-on-update"]);
@@ -87,11 +87,11 @@ describe("stamp-matches-columns", () => {
       findings(
         leaf(
           "upsertItemCost",
-          `service.upsertItemCost(ctx.asCaller.supabase, stamp(ctx, input, ["updatedBy"]))`
+          `service.upsertItemCost(ctx.asCaller.supabase, payload(ctx, input).withoutCompany().forUpdate())`
         ) +
           leaf(
             "updateAccount",
-            `service.upsertAccount(ctx.asCaller.supabase, stamp(ctx, input, ["createdBy", "updatedBy"], "update"))`
+            `service.upsertAccount(ctx.asCaller.supabase, payload(ctx, input).withoutCompany().forUpdate())`
           )
       )
     ).toEqual([]);
@@ -102,7 +102,7 @@ describe("stamp-matches-columns", () => {
       findings(
         leaf(
           "createRecord",
-          `service.upsertRecord(ctx.asCaller.supabase, stamp(ctx, input, ["createdBy", "companyGroupId"], "create"))`
+          `service.upsertRecord(ctx.asCaller.supabase, payload(ctx, input).withoutCompany().withGroup().forCreate())`
         )
       )
     ).toEqual(["createRecord itemCost companyGroupId"]);
@@ -113,7 +113,7 @@ describe("stamp-matches-columns", () => {
       findings(
         leaf(
           "insertContact",
-          `service.insertContact(ctx.asCaller.supabase, stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]))`
+          `service.insertContact(ctx.asCaller.supabase, payload(ctx, input).forUpsert())`
         )
       )
     ).toEqual([]);
@@ -124,7 +124,7 @@ describe("stamp-matches-columns", () => {
       findings(
         leaf(
           "insertRows",
-          `service.insertRows(ctx.asCaller.supabase, stamp(ctx, input.rows, ["companyId", "createdBy"]))`
+          `service.insertRows(ctx.asCaller.supabase, payload(ctx, input.rows).forCreate())`
         )
       )
     ).toEqual([]);

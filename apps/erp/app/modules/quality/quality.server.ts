@@ -3,12 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
-import {
-  envelope,
-  paged,
-  plain,
-  stamp
-} from "@carbon/api/service-tools.server";
+import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import * as engine from "@carbon/database/quality";
 import { lockIssueDispositions } from "@carbon/database/quality";
@@ -2163,7 +2158,7 @@ export const activateGauge = defineServiceFn({
   // The route gated on delete; the write runs under the update policy.
   permission: { update: "quality", delete: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.activateGauge(ctx.asCaller.supabase, input.gaugeId as never)
     );
@@ -2180,7 +2175,7 @@ export const deactivateGauge = defineServiceFn({
   // The route gated on delete; the write runs under the update policy.
   permission: { update: "quality", delete: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deactivateGauge(
         ctx.asCaller.supabase,
@@ -2199,7 +2194,7 @@ export const deleteGauge = defineServiceFn({
   input: z.looseObject({ gaugeId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteGauge(ctx.asCaller.supabase, input.gaugeId as never)
     );
@@ -2215,7 +2210,7 @@ export const deleteGaugeCalibrationRecord = defineServiceFn({
   input: z.looseObject({ gaugeCalibrationRecordId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteGaugeCalibrationRecord(
         ctx.asCaller.supabase,
@@ -2234,7 +2229,7 @@ export const deleteGaugeType = defineServiceFn({
   input: z.looseObject({ gaugeTypeId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteGaugeType(
         ctx.asCaller.supabase,
@@ -2253,7 +2248,7 @@ export const deleteIssue = defineServiceFn({
   input: z.looseObject({ nonConformanceId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteIssue(
         ctx.asCaller.supabase,
@@ -2272,13 +2267,10 @@ export const deleteIssueAssociation = defineServiceFn({
   input: z.looseObject({ type: z.string(), associationId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.deleteIssueAssociation(
-        ctx.asCaller.supabase,
-        input.type as never,
-        input.associationId as never
-      )
+    return await service.deleteIssueAssociation(
+      ctx.asCaller.supabase,
+      input.type as never,
+      input.associationId as never
     );
   }
 });
@@ -2292,7 +2284,7 @@ export const deleteIssueType = defineServiceFn({
   input: z.looseObject({ nonConformanceTypeId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteIssueType(
         ctx.asCaller.supabase,
@@ -2311,7 +2303,7 @@ export const deleteIssueWorkflow = defineServiceFn({
   input: z.looseObject({ nonConformanceWorkflowId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteIssueWorkflow(
         ctx.asCaller.supabase,
@@ -2330,7 +2322,7 @@ export const deleteRequiredAction = defineServiceFn({
   input: z.looseObject({ requiredActionId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteRequiredAction(
         ctx.asCaller.supabase,
@@ -2349,7 +2341,7 @@ export const deleteQualityDocument = defineServiceFn({
   input: z.looseObject({ qualityDocumentId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteQualityDocument(
         ctx.asCaller.supabase,
@@ -2368,7 +2360,7 @@ export const deleteRisk = defineServiceFn({
   input: z.looseObject({ riskId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteRisk(ctx.asCaller.supabase, input.riskId as never)
     );
@@ -2384,7 +2376,7 @@ export const getIssueFromExternalLink = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIssueFromExternalLink(
         ctx.asCaller.supabase,
@@ -2403,7 +2395,7 @@ export const getGauge = defineServiceFn({
   input: z.looseObject({ gaugeId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getGauge(ctx.asCaller.supabase, input.gaugeId as never)
     );
@@ -2432,7 +2424,7 @@ export const getGauges = defineServiceFn({
       await service.getGauges(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2447,7 +2439,7 @@ export const getGaugesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getGaugesList(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2463,7 +2455,7 @@ export const getGaugeCalibrationRecord = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getGaugeCalibrationRecord(
         ctx.asCaller.supabase,
@@ -2495,7 +2487,7 @@ export const getGaugeCalibrationRecords = defineServiceFn({
       await service.getGaugeCalibrationRecords(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2510,7 +2502,7 @@ export const getGaugeCalibrationRecordsByGaugeId = defineServiceFn({
   input: z.looseObject({ gaugeId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getGaugeCalibrationRecordsByGaugeId(
         ctx.asCaller.supabase,
@@ -2529,7 +2521,7 @@ export const getGaugeTypesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getGaugeTypesList(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2545,7 +2537,7 @@ export const getGaugeType = defineServiceFn({
   input: z.looseObject({ gaugeTypeId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getGaugeType(
         ctx.asCaller.supabase,
@@ -2577,7 +2569,7 @@ export const getGaugeTypes = defineServiceFn({
       await service.getGaugeTypes(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2592,7 +2584,7 @@ export const getIssue = defineServiceFn({
   input: z.looseObject({ nonConformanceId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIssue(
         ctx.asCaller.supabase,
@@ -2624,7 +2616,7 @@ export const getIssues = defineServiceFn({
       await service.getIssues(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2639,7 +2631,7 @@ export const getIssueWorkflow = defineServiceFn({
   input: z.looseObject({ nonConformanceWorkflowId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIssueWorkflow(
         ctx.asCaller.supabase,
@@ -2658,7 +2650,7 @@ export const getIssueActionTasks = defineServiceFn({
   input: z.looseObject({ id: z.string(), supplierId: z.string().optional() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIssueActionTasks(
         ctx.asCaller.supabase,
@@ -2679,7 +2671,7 @@ export const getIssueApprovalTasks = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIssueApprovalTasks(
         ctx.asCaller.supabase,
@@ -2699,7 +2691,7 @@ export const getIssueItems = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIssueItems(
         ctx.asCaller.supabase,
@@ -2719,13 +2711,10 @@ export const getIssueAssociations = defineServiceFn({
   input: z.looseObject({ nonConformanceId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getIssueAssociations(
-        ctx.asCaller.supabase,
-        input.nonConformanceId as never,
-        ctx.company.id
-      )
+    return await service.getIssueAssociations(
+      ctx.asCaller.supabase,
+      input.nonConformanceId as never,
+      ctx.company.id
     );
   }
 });
@@ -2739,7 +2728,7 @@ export const getIssueReviewers = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIssueReviewers(
         ctx.asCaller.supabase,
@@ -2759,7 +2748,7 @@ export const getIssueSuppliers = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIssueSuppliers(
         ctx.asCaller.supabase,
@@ -2779,7 +2768,7 @@ export const getIssueType = defineServiceFn({
   input: z.looseObject({ nonConformanceTypeId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIssueType(
         ctx.asCaller.supabase,
@@ -2798,7 +2787,7 @@ export const getIssueTypeByName = defineServiceFn({
   input: z.looseObject({ name: z.string(), excludeId: z.string().optional() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIssueTypeByName(
         ctx.asCaller.supabase,
@@ -2832,7 +2821,7 @@ export const getIssueTypes = defineServiceFn({
       await service.getIssueTypes(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2860,7 +2849,7 @@ export const getIssueWorkflows = defineServiceFn({
       await service.getIssueWorkflows(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2875,7 +2864,7 @@ export const getIssueWorkflowsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIssueWorkflowsList(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2891,7 +2880,7 @@ export const getIssueTypesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIssueTypesList(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2920,7 +2909,7 @@ export const getQualityActions = defineServiceFn({
       await service.getQualityActions(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2935,7 +2924,7 @@ export const getQualityDocument = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getQualityDocument(ctx.asCaller.supabase, input.id as never)
     );
@@ -2951,11 +2940,11 @@ export const getQualityDocumentVersions = defineServiceFn({
   input: z.looseObject({ name: z.string(), version: z.number() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getQualityDocumentVersions(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never,
+        payload(ctx, input).build() as never,
         ctx.company.id
       )
     );
@@ -2984,7 +2973,7 @@ export const getQualityDocuments = defineServiceFn({
       await service.getQualityDocuments(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2999,13 +2988,10 @@ export const getQualityFiles = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getQualityFiles(
-        ctx.asCaller.supabase,
-        input.id as never,
-        ctx.company.id
-      )
+    return await service.getQualityFiles(
+      ctx.asCaller.supabase,
+      input.id as never,
+      ctx.company.id
     );
   }
 });
@@ -3019,7 +3005,7 @@ export const getRequiredActionsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getRequiredActionsList(
         ctx.asCaller.supabase,
@@ -3051,7 +3037,7 @@ export const getRequiredActions = defineServiceFn({
       await service.getRequiredActions(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -3066,7 +3052,7 @@ export const getRequiredAction = defineServiceFn({
   input: z.looseObject({ requiredActionId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getRequiredAction(
         ctx.asCaller.supabase,
@@ -3085,7 +3071,7 @@ export const getRisk = defineServiceFn({
   input: z.looseObject({ riskId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getRisk(ctx.asCaller.supabase, input.riskId as never)
     );
@@ -3133,7 +3119,7 @@ export const getRisks = defineServiceFn({
       await service.getRisks(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -3151,11 +3137,11 @@ export const insertIssueReviewer = defineServiceFn({
   }),
   permission: { create: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertIssueReviewer(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -3173,11 +3159,11 @@ export const updateIssueActionProcesses = defineServiceFn({
   }),
   permission: { update: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateIssueActionProcesses(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3212,11 +3198,11 @@ export const insertGauge = defineServiceFn({
   }),
   permission: { create: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertGauge(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -3250,11 +3236,11 @@ export const updateGauge = defineServiceFn({
   }),
   permission: { update: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateGauge(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3293,16 +3279,11 @@ export const createGaugeCalibrationRecord = defineServiceFn({
   }),
   permission: { create: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertGaugeCalibrationRecord(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -3344,16 +3325,11 @@ export const updateGaugeCalibrationRecord = defineServiceFn({
   // The route gated on create; the write runs under the update policy.
   permission: { create: "quality", update: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertGaugeCalibrationRecord(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3378,16 +3354,11 @@ export const createGaugeType = defineServiceFn({
   }),
   permission: { create: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertGaugeType(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -3414,16 +3385,11 @@ export const updateGaugeType = defineServiceFn({
     .required({ id: true }),
   permission: { update: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertGaugeType(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3459,11 +3425,11 @@ export const insertIssue = defineServiceFn({
   }),
   permission: { create: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertIssue(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -3508,11 +3474,11 @@ export const updateIssue = defineServiceFn({
     if (isIssueLocked(issue.data.status)) {
       return ctx.error("rule", service.issueLocked);
     }
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateIssue(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3541,16 +3507,11 @@ export const createIssueWorkflow = defineServiceFn({
   }),
   permission: { create: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertIssueWorkflow(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -3582,16 +3543,11 @@ export const updateIssueWorkflow = defineServiceFn({
   // The route gated on create; the write runs under the update policy.
   permission: { create: "quality", update: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertIssueWorkflow(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3616,16 +3572,11 @@ export const createIssueType = defineServiceFn({
   }),
   permission: { create: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertIssueType(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -3652,16 +3603,11 @@ export const updateIssueType = defineServiceFn({
     .required({ id: true }),
   permission: { update: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertIssueType(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3686,16 +3632,11 @@ export const createRequiredAction = defineServiceFn({
   }),
   permission: { create: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertRequiredAction(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -3722,16 +3663,11 @@ export const updateRequiredAction = defineServiceFn({
     .required({ id: true }),
   permission: { update: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertRequiredAction(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -3761,7 +3697,7 @@ export const createQualityDocument = defineServiceFn({
   // (`updateQualityDocumentField`), and an id would turn the create into an
   // update.
   async run(ctx, { name, version, content, copyFromId }) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertQualityDocument(ctx.asCaller.supabase, {
         name,
@@ -3800,7 +3736,7 @@ export const updateQualityDocument = defineServiceFn({
   // Only these fields: a document's status moves through approvals
   // (`updateQualityDocumentField`).
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertQualityDocument(ctx.asCaller.supabase, {
         ...pick(input, ["name", "version", "content"]),
@@ -3836,7 +3772,7 @@ export const getInspections = defineServiceFn({
       await service.getInspections(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -3851,9 +3787,9 @@ export const getInspection = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getInspection(ctx.asCaller.supabase, input.id as never)
+    return await service.getInspection(
+      ctx.asCaller.supabase,
+      input.id as never
     );
   }
 });
@@ -3867,7 +3803,7 @@ export const getReceiptInspections = defineServiceFn({
   input: z.looseObject({ receiptId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getReceiptInspections(
         ctx.asCaller.supabase,
@@ -3887,7 +3823,7 @@ export const getInspectionTrackedEntities = defineServiceFn({
   input: z.looseObject({ receiptLineId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getInspectionTrackedEntities(
         ctx.asCaller.supabase,
@@ -3907,7 +3843,7 @@ export const getInspectionSamplingPlans = defineServiceFn({
   input: z.looseObject({ inspectionId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getInspectionSamplingPlans(
         ctx.asCaller.supabase,
@@ -3927,7 +3863,7 @@ export const getInspectionGauges = defineServiceFn({
   input: z.looseObject({ inspectionId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getInspectionGauges(
         ctx.asCaller.supabase,
@@ -3947,7 +3883,7 @@ export const getInspectionMeasurements = defineServiceFn({
   input: z.looseObject({ inspectionId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getInspectionMeasurements(
         ctx.asCaller.supabase,
@@ -3967,7 +3903,7 @@ export const getItemInspectionDocumentAssignments = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getItemInspectionDocumentAssignments(
         ctx.asCaller.supabase,
@@ -3991,16 +3927,11 @@ export const upsertItemInspectionDocumentAssignment = defineServiceFn({
   }),
   permission: { create: "quality", update: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertItemInspectionDocumentAssignment(
         ctx.asCaller.supabase,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "userId"
-        ]) as never
+        payload(ctx, input).withUser().forUpsert() as never
       )
     );
   }
@@ -4028,7 +3959,7 @@ export const getInspectionDocuments = defineServiceFn({
       await service.getInspectionDocuments(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4043,7 +3974,7 @@ export const getInspectionDocumentsForItem = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getInspectionDocumentsForItem(
         ctx.asCaller.supabase,
@@ -4063,7 +3994,7 @@ export const getInspectionDocument = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getInspectionDocument(
         ctx.asCaller.supabase,
@@ -4094,11 +4025,11 @@ export const upsertInspectionDocument = defineServiceFn({
   }),
   permission: { create: "quality", update: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertInspectionDocument(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -4113,7 +4044,7 @@ export const deleteInspectionDocument = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteInspectionDocument(
         ctx.asCaller.supabase,
@@ -4133,7 +4064,7 @@ export const getInspectionFeatures = defineServiceFn({
   input: z.looseObject({ inspectionDocumentId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getInspectionFeatures(
         ctx.asCaller.supabase,
@@ -4152,7 +4083,7 @@ export const getBalloons = defineServiceFn({
   input: z.looseObject({ inspectionDocumentId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getBalloons(
         ctx.asCaller.supabase,
@@ -4171,7 +4102,7 @@ export const getInspectionPlan = defineServiceFn({
   input: z.looseObject({ inspectionDocumentId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getInspectionPlan(
         ctx.asCaller.supabase,
@@ -4200,11 +4131,11 @@ export const updateInspectionDocumentSampling = defineServiceFn({
   }),
   permission: { update: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateInspectionDocumentSampling(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+        payload(ctx, input).withUser().forUpdate() as never
       )
     );
   }
@@ -4227,11 +4158,11 @@ export const saveInspectionDocumentAtomic = defineServiceFn({
   }),
   permission: { update: "quality" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.saveInspectionDocumentAtomic(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "userId"]) as never
+        payload(ctx, input).withUser().build() as never
       )
     );
   }

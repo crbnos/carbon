@@ -3,12 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
-import {
-  envelope,
-  envelopes,
-  paged,
-  stamp
-} from "@carbon/api/service-tools.server";
+import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { z } from "zod";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import { employeeJobValidator } from "./people.models";
@@ -286,7 +281,7 @@ export const deleteAttribute = defineServiceFn({
   input: z.looseObject({ attributeId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteAttribute(
         ctx.asCaller.supabase,
@@ -305,7 +300,7 @@ export const deleteAttributeCategory = defineServiceFn({
   input: z.looseObject({ attributeCategoryId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteAttributeCategory(
         ctx.asCaller.supabase,
@@ -324,7 +319,7 @@ export const deleteDepartment = defineServiceFn({
   input: z.looseObject({ departmentId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteDepartment(
         ctx.asCaller.supabase,
@@ -343,7 +338,7 @@ export const deleteHoliday = defineServiceFn({
   input: z.looseObject({ holidayId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteHoliday(
         ctx.asCaller.supabase,
@@ -362,7 +357,7 @@ export const deleteShift = defineServiceFn({
   input: z.looseObject({ shiftId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteShift(ctx.asCaller.supabase, input.shiftId as never)
     );
@@ -378,7 +373,7 @@ export const getAttribute = defineServiceFn({
   input: z.looseObject({ attributeId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAttribute(
         ctx.asCaller.supabase,
@@ -410,7 +405,7 @@ export const getAttributeCategories = defineServiceFn({
       await service.getAttributeCategories(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -425,7 +420,7 @@ export const getAttributeCategory = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAttributeCategory(
         ctx.asCaller.supabase,
@@ -444,7 +439,7 @@ export const getAttributeDataTypes = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAttributeDataTypes(ctx.asCaller.supabase)
     );
@@ -460,7 +455,7 @@ export const getDepartment = defineServiceFn({
   input: z.looseObject({ departmentId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDepartment(
         ctx.asCaller.supabase,
@@ -479,7 +474,7 @@ export const getDepartmentsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDepartmentsList(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -495,7 +490,7 @@ export const getDepartmentsTree = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDepartmentsTree(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -511,7 +506,7 @@ export const getEmployeeJob = defineServiceFn({
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getEmployeeJob(
         ctx.asCaller.supabase,
@@ -531,7 +526,7 @@ export const getEmployeeSummary = defineServiceFn({
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getEmployeeSummary(
         ctx.asCaller.supabase,
@@ -551,7 +546,7 @@ export const getHoliday = defineServiceFn({
   input: z.looseObject({ holidayId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getHoliday(ctx.asCaller.supabase, input.holidayId as never)
     );
@@ -580,7 +575,7 @@ export const getHolidays = defineServiceFn({
       await service.getHolidays(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -595,7 +590,7 @@ export const getHolidayYears = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getHolidayYears(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -619,12 +614,12 @@ export const getPeople = defineServiceFn({
   }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPeople(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -639,7 +634,7 @@ export const getShift = defineServiceFn({
   input: z.looseObject({ shiftId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getShift(ctx.asCaller.supabase, input.shiftId as never)
     );
@@ -668,7 +663,7 @@ export const getShifts = defineServiceFn({
       await service.getShifts(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -683,7 +678,7 @@ export const getShiftsList = defineServiceFn({
   input: z.looseObject({ locationId: z.string().nullable() }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getShiftsList(
         ctx.asCaller.supabase,
@@ -703,7 +698,7 @@ export const getEmployeeShifts = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getEmployeeShifts(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -719,7 +714,7 @@ export const getEmployeeDepartments = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getEmployeeDepartments(
         ctx.asCaller.supabase,
@@ -738,7 +733,7 @@ export const getShiftsWithTimes = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getShiftsWithTimes(
         ctx.asCaller.supabase,
@@ -764,11 +759,11 @@ export const insertAttribute = defineServiceFn({
   }),
   permission: { create: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertAttribute(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["createdBy"]) as never
+        payload(ctx, input).withoutCompany().forCreate() as never
       )
     );
   }
@@ -787,11 +782,11 @@ export const insertAttributeCategory = defineServiceFn({
   }),
   permission: { create: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertAttributeCategory(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -806,11 +801,11 @@ export const insertEmployeeJob = defineServiceFn({
   input: z.looseObject({ id: z.string(), locationId: z.string() }),
   permission: { create: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertEmployeeJob(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -830,11 +825,11 @@ export const updateAttribute = defineServiceFn({
   }),
   permission: { update: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateAttribute(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -854,11 +849,11 @@ export const updateAttributeCategory = defineServiceFn({
   }),
   permission: { update: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateAttributeCategory(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -875,12 +870,12 @@ export const updateAttributeSortOrder = defineServiceFn({
   }),
   permission: { update: "people" },
   async run(ctx, input) {
-    return envelopes(
+    return unwrap(
       ctx,
-      await service.updateAttributeSortOrder(
+      ...(await service.updateAttributeSortOrder(
         ctx.asCaller.supabase,
-        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
-      )
+        payload(ctx, input.updates).forUpdate() as never
+      ))
     );
   }
 });
@@ -905,16 +900,11 @@ export const createDepartment = defineServiceFn({
   }),
   permission: { create: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertDepartment(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -942,16 +932,11 @@ export const updateDepartment = defineServiceFn({
     .required({ id: true }),
   permission: { update: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertDepartment(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -977,16 +962,11 @@ export const createHoliday = defineServiceFn({
   }),
   permission: { create: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertHoliday(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -1014,16 +994,11 @@ export const updateHoliday = defineServiceFn({
     .required({ id: true }),
   permission: { update: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertHoliday(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -1043,11 +1018,11 @@ export const createTimeCardEntry = defineServiceFn({
   }),
   permission: { create: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.createTimeCardEntry(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -1062,7 +1037,7 @@ export const deleteTimeCardEntry = defineServiceFn({
   input: z.looseObject({ entryId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteTimeCardEntry(
         ctx.asCaller.supabase,
@@ -1081,7 +1056,7 @@ export const getOpenClockEntry = defineServiceFn({
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getOpenClockEntry(
         ctx.asCaller.supabase,
@@ -1101,7 +1076,7 @@ export const getTimeCardEntry = defineServiceFn({
   input: z.looseObject({ entryId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getTimeCardEntry(
         ctx.asCaller.supabase,
@@ -1124,11 +1099,11 @@ export const getTimeCardEntries = defineServiceFn({
   }),
   permission: { view: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getTimeCardEntries(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -1156,7 +1131,7 @@ export const getTimecardEntries = defineServiceFn({
       await service.getTimecardEntries(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -1176,11 +1151,11 @@ export const updateTimeCardEntry = defineServiceFn({
   }),
   permission: { update: "people" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateTimeCardEntry(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }

@@ -81,7 +81,7 @@ export const getItems = defineServiceFn({
   input: z.object({ search: z.string().optional() }),
   permission: { view: "parts" },
   async run(ctx, input) {
-    return envelope(ctx, await service.getItems(ctx.asCaller.supabase, ctx.company.id, input));
+    return unwrap(ctx, await service.getItems(ctx.asCaller.supabase, ctx.company.id, input));
   }
 });
 ```

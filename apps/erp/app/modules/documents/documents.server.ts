@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
-import { envelope, paged, stamp } from "@carbon/api/service-tools.server";
+import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -236,7 +236,7 @@ export const deleteDocument = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "documents" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteDocument(ctx.asCaller.supabase, input.id as never)
     );
@@ -252,7 +252,7 @@ export const getDocument = defineServiceFn({
   input: z.looseObject({ documentId: z.string() }),
   permission: { view: "documents" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDocument(
         ctx.asCaller.supabase,
@@ -287,7 +287,7 @@ export const getDocuments = defineServiceFn({
       await service.getDocuments(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -302,7 +302,7 @@ export const getDocumentExtensions = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "documents" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDocumentExtensions(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -318,7 +318,7 @@ export const getDocumentLabels = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "documents" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDocumentLabels(ctx.asCaller.supabase, ctx.auditUserId)
     );
@@ -334,7 +334,7 @@ export const moveDocumentToTrash = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { update: "documents" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.moveDocumentToTrash(
         ctx.asCaller.supabase,
@@ -354,7 +354,7 @@ export const restoreDocument = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { update: "documents" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.restoreDocument(
         ctx.asCaller.supabase,
@@ -415,16 +415,11 @@ export const createDocument = defineServiceFn({
   async run(ctx, input) {
     const foreign = service.refuseForeignPath(ctx, input.path);
     if (foreign) return foreign;
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertDocument(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -482,16 +477,11 @@ export const updateDocument = defineServiceFn({
   async run(ctx, input) {
     const foreign = service.refuseForeignPath(ctx, input.path);
     if (foreign) return foreign;
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertDocument(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -510,11 +500,11 @@ export const createDocumentUploadUrl = defineServiceFn({
   }),
   permission: { create: "documents" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.createDocumentUploadUrl(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -561,11 +551,11 @@ export const insertUploadedDocument = defineServiceFn({
   async run(ctx, input) {
     const foreign = service.refuseForeignPath(ctx, input.path);
     if (foreign) return foreign;
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertUploadedDocument(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -580,11 +570,11 @@ export const updateDocumentFavorite = defineServiceFn({
   input: z.looseObject({ id: z.string(), favorite: z.boolean() }),
   permission: { update: "documents" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateDocumentFavorite(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "userId"]) as never
+        payload(ctx, input).withUser().build() as never
       )
     );
   }
@@ -602,11 +592,11 @@ export const updateDocumentLabels = defineServiceFn({
   }),
   permission: { update: "documents" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateDocumentLabels(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "userId"]) as never
+        payload(ctx, input).withUser().build() as never
       )
     );
   }
@@ -628,11 +618,11 @@ export const insertDocumentExtraction = defineServiceFn({
   async run(ctx, input) {
     const foreign = service.refuseForeignPath(ctx, input.storagePath);
     if (foreign) return foreign;
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertDocumentExtraction(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }

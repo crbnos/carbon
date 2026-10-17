@@ -3,13 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import {
-  envelope,
-  envelopes,
-  paged,
-  plain,
-  stamp
-} from "@carbon/api/service-tools.server";
+import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import {
   convertUnitPrice,
@@ -3707,12 +3701,12 @@ export const convertSupplierQuoteToOrder = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.convertSupplierQuoteToOrder(
         ctx.asCaller.supabase,
         ctx.asSystem.pg,
-        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+        payload(ctx, input).withUser().forUpdate() as never
       )
     );
   }
@@ -3727,7 +3721,7 @@ export const deletePurchaseOrderLine = defineServiceFn({
   input: z.looseObject({ purchaseOrderLineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deletePurchaseOrderLine(
         ctx.asCaller.supabase,
@@ -3746,17 +3740,11 @@ export const duplicatePurchaseOrder = defineServiceFn({
   input: z.looseObject({ sourcePurchaseOrderId: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.duplicatePurchaseOrder(
         ctx.asCaller.supabase,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "userId",
-          "companyGroupId"
-        ]) as never
+        payload(ctx, input).withGroup().withUser().forUpsert() as never
       )
     );
   }
@@ -3771,7 +3759,7 @@ export const deleteSupplier = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteSupplier(
         ctx.asCaller.supabase,
@@ -3793,7 +3781,7 @@ export const deleteSupplierContact = defineServiceFn({
   }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteSupplierContact(
         ctx.asCaller.supabase,
@@ -3816,7 +3804,7 @@ export const deleteSupplierLocation = defineServiceFn({
   }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteSupplierLocation(
         ctx.asCaller.supabase,
@@ -3836,7 +3824,7 @@ export const deleteSupplierBankAccount = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteSupplierBankAccount(
         ctx.asCaller.supabase,
@@ -3855,7 +3843,7 @@ export const getSupplierBankAccounts = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierBankAccounts(
         ctx.asCaller.supabase,
@@ -3894,17 +3882,9 @@ export const createSupplierBankAccount = defineServiceFn({
   }),
   permission: { create: "accounting" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.upsertSupplierBankAccount(
-        ctx.asSystem.pg,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
-      )
+    return await service.upsertSupplierBankAccount(
+      ctx.asSystem.pg,
+      payload(ctx, input).forCreate() as never
     );
   }
 });
@@ -3940,17 +3920,9 @@ export const updateSupplierBankAccount = defineServiceFn({
     .required({ id: true }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.upsertSupplierBankAccount(
-        ctx.asSystem.pg,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
-      )
+    return await service.upsertSupplierBankAccount(
+      ctx.asSystem.pg,
+      payload(ctx, input).forUpdate() as never
     );
   }
 });
@@ -3964,7 +3936,7 @@ export const deleteSupplierProcess = defineServiceFn({
   input: z.looseObject({ supplierProcessId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteSupplierProcess(
         ctx.asCaller.supabase,
@@ -3983,7 +3955,7 @@ export const deleteSupplierQuote = defineServiceFn({
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteSupplierQuote(
         ctx.asCaller.supabase,
@@ -4002,7 +3974,7 @@ export const deleteSupplierQuoteLine = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteSupplierQuoteLine(
         ctx.asCaller.supabase,
@@ -4021,7 +3993,7 @@ export const deleteSupplierType = defineServiceFn({
   input: z.looseObject({ supplierTypeId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteSupplierType(
         ctx.asCaller.supabase,
@@ -4040,7 +4012,7 @@ export const getPurchaseOrder = defineServiceFn({
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseOrder(
         ctx.asCaller.supabase,
@@ -4074,7 +4046,7 @@ export const getPurchaseOrders = defineServiceFn({
       await service.getPurchaseOrders(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4089,7 +4061,7 @@ export const getPurchaseOrderDelivery = defineServiceFn({
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseOrderDelivery(
         ctx.asCaller.supabase,
@@ -4108,7 +4080,7 @@ export const getPurchaseOrderPayment = defineServiceFn({
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseOrderPayment(
         ctx.asCaller.supabase,
@@ -4127,7 +4099,7 @@ export const getPurchaseOrderLines = defineServiceFn({
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseOrderLines(
         ctx.asCaller.supabase,
@@ -4146,7 +4118,7 @@ export const getPurchaseOrderLine = defineServiceFn({
   input: z.looseObject({ purchaseOrderLineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseOrderLine(
         ctx.asCaller.supabase,
@@ -4165,13 +4137,10 @@ export const getPurchasingDocumentsAssignedToMe = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "purchasing" },
   async run(ctx) {
-    return plain(
-      ctx,
-      await service.getPurchasingDocumentsAssignedToMe(
-        ctx.asCaller.supabase,
-        ctx.auditUserId,
-        ctx.company.id
-      )
+    return await service.getPurchasingDocumentsAssignedToMe(
+      ctx.asCaller.supabase,
+      ctx.auditUserId,
+      ctx.company.id
     );
   }
 });
@@ -4204,8 +4173,8 @@ export const getPurchasingPlanning = defineServiceFn({
         ctx.asCaller.supabase,
         input.locationId as never,
         ctx.company.id,
-        stamp(ctx, input.periods, ["companyId"]) as never,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input.periods).build() as never,
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4220,7 +4189,7 @@ export const getSupplier = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplier(
         ctx.asCaller.supabase,
@@ -4239,7 +4208,7 @@ export const getSupplierContact = defineServiceFn({
   input: z.looseObject({ supplierContactId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierContact(
         ctx.asCaller.supabase,
@@ -4259,7 +4228,7 @@ export const getSupplierContacts = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierContacts(
         ctx.asCaller.supabase,
@@ -4278,7 +4247,7 @@ export const getSupplierInteraction = defineServiceFn({
   input: z.looseObject({ opportunityId: z.string().nullable() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierInteraction(
         ctx.asCaller.supabase,
@@ -4297,13 +4266,10 @@ export const getSupplierInteractionDocuments = defineServiceFn({
   input: z.looseObject({ interactionId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getSupplierInteractionDocuments(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        input.interactionId as never
-      )
+    return await service.getSupplierInteractionDocuments(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.interactionId as never
     );
   }
 });
@@ -4317,13 +4283,10 @@ export const getSupplierInteractionLineDocuments = defineServiceFn({
   input: z.looseObject({ lineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getSupplierInteractionLineDocuments(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        input.lineId as never
-      )
+    return await service.getSupplierInteractionLineDocuments(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.lineId as never
     );
   }
 });
@@ -4337,7 +4300,7 @@ export const getSupplierLocations = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierLocations(
         ctx.asCaller.supabase,
@@ -4356,7 +4319,7 @@ export const getSupplierLocation = defineServiceFn({
   input: z.looseObject({ supplierContactId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierLocation(
         ctx.asCaller.supabase,
@@ -4375,7 +4338,7 @@ export const getSupplierPayment = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierPayment(
         ctx.asCaller.supabase,
@@ -4394,7 +4357,7 @@ export const getSupplierProcessesByProcess = defineServiceFn({
   input: z.looseObject({ processId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierProcessesByProcess(
         ctx.asCaller.supabase,
@@ -4413,7 +4376,7 @@ export const getSupplierProcessesBySupplier = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierProcessesBySupplier(
         ctx.asCaller.supabase,
@@ -4432,7 +4395,7 @@ export const getSupplierQuote = defineServiceFn({
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierQuote(
         ctx.asCaller.supabase,
@@ -4451,7 +4414,7 @@ export const getSupplierQuoteByExternalLinkId = defineServiceFn({
   input: z.looseObject({ externalLinkId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierQuoteByExternalLinkId(
         ctx.asCaller.supabase,
@@ -4483,7 +4446,7 @@ export const getSupplierQuotes = defineServiceFn({
       await service.getSupplierQuotes(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4498,7 +4461,7 @@ export const getSupplierQuoteLine = defineServiceFn({
   input: z.looseObject({ supplierQuoteLineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierQuoteLine(
         ctx.asCaller.supabase,
@@ -4517,7 +4480,7 @@ export const getSupplierQuoteLines = defineServiceFn({
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierQuoteLines(
         ctx.asCaller.supabase,
@@ -4536,7 +4499,7 @@ export const getSupplierQuoteLinePrices = defineServiceFn({
   input: z.looseObject({ supplierQuoteLineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierQuoteLinePrices(
         ctx.asCaller.supabase,
@@ -4555,7 +4518,7 @@ export const getSupplierQuoteLinePricesByQuoteId = defineServiceFn({
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierQuoteLinePricesByQuoteId(
         ctx.asCaller.supabase,
@@ -4574,7 +4537,7 @@ export const getSupplierShipping = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierShipping(
         ctx.asCaller.supabase,
@@ -4593,13 +4556,13 @@ export const getSupplierReportContacts = defineServiceFn({
   input: z.looseObject({ supplierIds: z.array(z.string()) }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelopes(
+    return unwrap(
       ctx,
-      await service.getSupplierReportContacts(
+      ...(await service.getSupplierReportContacts(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input.supplierIds, ["companyId"]) as never
-      )
+        payload(ctx, input.supplierIds).build() as never
+      ))
     );
   }
 });
@@ -4628,7 +4591,7 @@ export const getSuppliers = defineServiceFn({
       await service.getSuppliers(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4643,7 +4606,7 @@ export const getSuppliersList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "purchasing" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSuppliersList(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -4659,7 +4622,7 @@ export const getSupplierType = defineServiceFn({
   input: z.looseObject({ supplierTypeId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierType(
         ctx.asCaller.supabase,
@@ -4691,7 +4654,7 @@ export const getSupplierTypes = defineServiceFn({
       await service.getSupplierTypes(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -4706,7 +4669,7 @@ export const getSupplierTypesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "purchasing" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierTypesList(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -4739,11 +4702,11 @@ export const insertSupplierContact = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertSupplierContact(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -4770,11 +4733,11 @@ export const insertSupplierLocation = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertSupplierLocation(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -4789,11 +4752,11 @@ export const updatePurchaseOrderExchangeRate = defineServiceFn({
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updatePurchaseOrderExchangeRate(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -4808,11 +4771,11 @@ export const updatePurchaseOrderFavorite = defineServiceFn({
   input: z.looseObject({ id: z.string(), favorite: z.boolean() }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updatePurchaseOrderFavorite(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "userId"]) as never
+        payload(ctx, input).withUser().build() as never
       )
     );
   }
@@ -4844,11 +4807,11 @@ export const updateSupplierContact = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateSupplierContact(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -4875,11 +4838,11 @@ export const updateSupplierLocation = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateSupplierLocation(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -4901,11 +4864,11 @@ export const updateSupplierPayment = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateSupplierPayment(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -4920,11 +4883,11 @@ export const updateSupplierQuoteExchangeRate = defineServiceFn({
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateSupplierQuoteExchangeRate(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -4943,11 +4906,11 @@ export const updateSupplierQuoteStatus = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateSupplierQuoteStatus(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -4985,11 +4948,11 @@ export const updateSupplierShipping = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateSupplierShipping(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -5004,7 +4967,7 @@ export const getSupplierTax = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierTax(
         ctx.asCaller.supabase,
@@ -5046,11 +5009,11 @@ export const updateSupplierTax = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateSupplierTax(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -5099,16 +5062,11 @@ export const insertPurchaseOrder = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertPurchaseOrder(
         ctx.asCaller.supabase,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "companyGroupId"
-        ]) as never
+        payload(ctx, input).withGroup().forUpsert() as never
       )
     );
   }
@@ -5160,7 +5118,7 @@ export const updatePurchaseOrder = defineServiceFn({
         "Cannot modify a finalized purchase order. To make changes, please cancel this PO and create a new one."
       );
     }
-    return envelope(
+    return unwrap(
       ctx,
       await service.updatePurchaseOrder(ctx.asCaller.supabase, {
         ...input,
@@ -5210,11 +5168,11 @@ export const upsertPurchaseOrderDelivery = defineServiceFn({
   }),
   permission: { create: "purchasing", update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPurchaseOrderDelivery(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -5277,16 +5235,11 @@ export const createPurchaseOrderLine = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPurchaseOrderLine(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -5351,16 +5304,11 @@ export const updatePurchaseOrderLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPurchaseOrderLine(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -5378,15 +5326,12 @@ export const updatePurchaseOrderLineOrder = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.updatePurchaseOrderLineOrder(
-        ctx.asSystem.pg,
-        ctx.company.id,
-        ctx.auditUserId,
-        input.purchaseOrderId as never,
-        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
-      )
+    return await service.updatePurchaseOrderLineOrder(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      ctx.auditUserId,
+      input.purchaseOrderId as never,
+      payload(ctx, input.updates).forUpdate() as never
     );
   }
 });
@@ -5404,12 +5349,9 @@ export const shortClosePurchaseOrderLine = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.shortClosePurchaseOrderLine(
-        ctx.asSystem.pg,
-        stamp(ctx, input, ["companyId", "userId"]) as never
-      )
+    return await service.shortClosePurchaseOrderLine(
+      ctx.asSystem.pg,
+      payload(ctx, input).withUser().build() as never
     );
   }
 });
@@ -5430,11 +5372,11 @@ export const upsertPurchaseOrderPayment = defineServiceFn({
   }),
   permission: { create: "purchasing", update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPurchaseOrderPayment(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -5469,16 +5411,11 @@ export const createSupplier = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertSupplier(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -5515,16 +5452,11 @@ export const updateSupplier = defineServiceFn({
     .required({ id: true }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertSupplier(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -5552,16 +5484,11 @@ export const createSupplierProcess = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertSupplierProcess(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -5591,16 +5518,11 @@ export const updateSupplierProcess = defineServiceFn({
     .required({ id: true }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertSupplierProcess(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -5634,16 +5556,11 @@ export const insertSupplierQuote = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertSupplierQuote(
         ctx.asCaller.supabase,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "companyGroupId"
-        ]) as never
+        payload(ctx, input).withGroup().forUpsert() as never
       )
     );
   }
@@ -5669,11 +5586,11 @@ export const updateSupplierQuote = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateSupplierQuote(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -5716,16 +5633,11 @@ export const createSupplierQuoteLine = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertSupplierQuoteLine(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -5770,16 +5682,11 @@ export const updateSupplierQuoteLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertSupplierQuoteLine(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -5797,15 +5704,12 @@ export const updateSupplierQuoteLineOrder = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.updateSupplierQuoteLineOrder(
-        ctx.asSystem.pg,
-        ctx.company.id,
-        ctx.auditUserId,
-        input.supplierQuoteId as never,
-        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
-      )
+    return await service.updateSupplierQuoteLineOrder(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      ctx.auditUserId,
+      input.supplierQuoteId as never,
+      payload(ctx, input.updates).forUpdate() as never
     );
   }
 });
@@ -5829,16 +5733,11 @@ export const createSupplierType = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertSupplierType(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -5865,16 +5764,11 @@ export const updateSupplierType = defineServiceFn({
     .required({ id: true }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertSupplierType(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -5889,7 +5783,7 @@ export const deletePurchasingRFQ = defineServiceFn({
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deletePurchasingRFQ(
         ctx.asCaller.supabase,
@@ -5908,7 +5802,7 @@ export const deletePurchasingRFQLine = defineServiceFn({
   input: z.looseObject({ purchasingRfqLineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deletePurchasingRFQLine(
         ctx.asCaller.supabase,
@@ -5927,7 +5821,7 @@ export const getPurchasingRFQ = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchasingRFQ(ctx.asCaller.supabase, input.id as never)
     );
@@ -5956,7 +5850,7 @@ export const getPurchasingRFQs = defineServiceFn({
       await service.getPurchasingRFQs(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -5971,7 +5865,7 @@ export const getPurchasingRFQLine = defineServiceFn({
   input: z.looseObject({ lineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchasingRFQLine(
         ctx.asCaller.supabase,
@@ -5990,7 +5884,7 @@ export const getPurchasingRFQLines = defineServiceFn({
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchasingRFQLines(
         ctx.asCaller.supabase,
@@ -6018,11 +5912,11 @@ export const upsertPurchasingRFQ = defineServiceFn({
   }),
   permission: { create: "purchasing", update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPurchasingRFQ(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -6050,16 +5944,11 @@ export const createPurchasingRFQLine = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPurchasingRFQLine(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -6088,16 +5977,11 @@ export const updatePurchasingRFQLine = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPurchasingRFQLine(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -6115,15 +5999,12 @@ export const updatePurchasingRFQLineOrder = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.updatePurchasingRFQLineOrder(
-        ctx.asSystem.pg,
-        ctx.company.id,
-        ctx.auditUserId,
-        input.purchasingRfqId as never,
-        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
-      )
+    return await service.updatePurchasingRFQLineOrder(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      ctx.auditUserId,
+      input.purchasingRfqId as never,
+      payload(ctx, input.updates).forUpdate() as never
     );
   }
 });
@@ -6140,16 +6021,12 @@ export const upsertPurchasingRFQSuppliers = defineServiceFn({
   }),
   permission: { create: "purchasing", update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertPurchasingRFQSuppliers(
         ctx.asCaller.supabase,
         input.purchasingRfqId as never,
-        stamp(ctx, input.supplierIds, [
-          "companyId",
-          "createdBy",
-          "updatedBy"
-        ]) as never,
+        payload(ctx, input.supplierIds).forUpsert() as never,
         ctx.company.id,
         ctx.auditUserId
       )
@@ -6170,11 +6047,11 @@ export const updatePurchasingRFQStatus = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updatePurchasingRFQStatus(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -6189,7 +6066,7 @@ export const getLinkedSupplierQuotes = defineServiceFn({
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getLinkedSupplierQuotes(
         ctx.asCaller.supabase,
@@ -6208,7 +6085,7 @@ export const getSiblingQuotesForQuote = defineServiceFn({
   input: z.looseObject({ supplierQuoteId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSiblingQuotesForQuote(
         ctx.asCaller.supabase,
@@ -6227,7 +6104,7 @@ export const getSupplierQuotesForComparison = defineServiceFn({
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSupplierQuotesForComparison(
         ctx.asCaller.supabase,
@@ -6246,7 +6123,7 @@ export const getPurchasingRFQSuppliersWithLinks = defineServiceFn({
   input: z.looseObject({ purchasingRfqId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchasingRFQSuppliersWithLinks(
         ctx.asCaller.supabase,
@@ -6268,12 +6145,9 @@ export const getDefaultAttachmentsForPO = defineServiceFn({
   }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getDefaultAttachmentsForPO(
-        ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
-      )
+    return await service.getDefaultAttachmentsForPO(
+      ctx.asCaller.supabase,
+      payload(ctx, input).build() as never
     );
   }
 });
@@ -6302,7 +6176,7 @@ export const getPurchaseReturnOrders = defineServiceFn({
       await service.getPurchaseReturnOrders(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -6317,7 +6191,7 @@ export const getPurchaseReturnOrder = defineServiceFn({
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseReturnOrder(
         ctx.asCaller.supabase,
@@ -6336,7 +6210,7 @@ export const getPurchaseReturnOrderLines = defineServiceFn({
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseReturnOrderLines(
         ctx.asCaller.supabase,
@@ -6356,7 +6230,7 @@ export const getPurchaseReturnOrderLine = defineServiceFn({
   input: z.looseObject({ lineId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseReturnOrderLine(
         ctx.asCaller.supabase,
@@ -6375,11 +6249,11 @@ export const getPurchaseReturnOrderLineTrackedEntities = defineServiceFn({
   input: z.looseObject({ lineIds: z.array(z.string()) }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseReturnOrderLineTrackedEntities(
         ctx.asCaller.supabase,
-        stamp(ctx, input.lineIds, ["companyId"]) as never
+        payload(ctx, input.lineIds).build() as never
       )
     );
   }
@@ -6407,16 +6281,11 @@ export const insertPurchaseReturnOrder = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertPurchaseReturnOrder(
         ctx.asCaller.supabase,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "companyGroupId"
-        ]) as never
+        payload(ctx, input).withGroup().forUpsert() as never
       )
     );
   }
@@ -6431,7 +6300,7 @@ export const deletePurchaseReturnOrder = defineServiceFn({
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deletePurchaseReturnOrder(
         ctx.asCaller.supabase,
@@ -6450,7 +6319,7 @@ export const deletePurchaseReturnOrderLine = defineServiceFn({
   input: z.looseObject({ lineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deletePurchaseReturnOrderLine(
         ctx.asCaller.supabase,
@@ -6469,7 +6338,7 @@ export const getPurchaseReturnOrderShipments = defineServiceFn({
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseReturnOrderShipments(
         ctx.asCaller.supabase,
@@ -6489,7 +6358,7 @@ export const getPurchaseReturnOrderCredits = defineServiceFn({
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseReturnOrderCredits(
         ctx.asCaller.supabase,
@@ -6509,7 +6378,7 @@ export const getPurchaseReturnOrderIssues = defineServiceFn({
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getPurchaseReturnOrderIssues(
         ctx.asCaller.supabase,
@@ -6533,12 +6402,9 @@ export const shortClosePurchaseReturnOrderLine = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.shortClosePurchaseReturnOrderLine(
-        ctx.asSystem.pg,
-        stamp(ctx, input, ["companyId", "userId"]) as never
-      )
+    return await service.shortClosePurchaseReturnOrderLine(
+      ctx.asSystem.pg,
+      payload(ctx, input).withUser().build() as never
     );
   }
 });
@@ -6558,13 +6424,13 @@ export const getReturnableLinesForSupplier = defineServiceFn({
   }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getReturnableLinesForSupplier(
         ctx.asCaller.supabase,
         ctx.company.id,
         input.supplierId as never,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -6579,7 +6445,7 @@ export const getReturnableEntitiesForSupplier = defineServiceFn({
   input: z.looseObject({ supplierId: z.string(), itemId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getReturnableEntitiesForSupplier(
         ctx.asCaller.supabase,
@@ -6600,7 +6466,7 @@ export const getCreditableQuantitiesForPurchaseReturn = defineServiceFn({
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCreditableQuantitiesForPurchaseReturn(
         ctx.asCaller.supabase,
@@ -6629,19 +6495,10 @@ export const createPurchaseReturnOrderCredit = defineServiceFn({
   }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.createPurchaseReturnOrderCredit(
-        ctx.asCaller.supabase,
-        ctx.asSystem.pg,
-        stamp(ctx, input, [
-          "companyId",
-          "companyGroupId",
-          "createdBy",
-          "updatedBy",
-          "userId"
-        ]) as never
-      )
+    return await service.createPurchaseReturnOrderCredit(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      payload(ctx, input).withGroup().withUser().forUpsert() as never
     );
   }
 });
@@ -6659,17 +6516,11 @@ export const createReplacementPurchaseOrder = defineServiceFn({
   input: z.looseObject({ purchaseReturnOrderId: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.createReplacementPurchaseOrder(
         ctx.asCaller.supabase,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "userId",
-          "companyGroupId"
-        ]) as never
+        payload(ctx, input).withGroup().withUser().forUpsert() as never
       )
     );
   }
@@ -6684,11 +6535,11 @@ export const createSupplierInteractionDocumentUploadUrl = defineServiceFn({
   input: z.looseObject({ interactionId: z.string(), name: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.createSupplierInteractionDocumentUploadUrl(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -6703,11 +6554,11 @@ export const createSupplierInteractionLineDocumentUploadUrl = defineServiceFn({
   input: z.looseObject({ lineId: z.string(), name: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.createSupplierInteractionLineDocumentUploadUrl(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -6735,7 +6586,7 @@ export const getLeases = defineServiceFn({
       await service.getLeases(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -6750,7 +6601,7 @@ export const getLease = defineServiceFn({
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getLease(
         ctx.asCaller.supabase,
@@ -6796,11 +6647,11 @@ export const insertLease = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertLease(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -6825,11 +6676,11 @@ export const updateLeaseDetails = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateLeaseDetails(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -6844,7 +6695,7 @@ export const deleteLease = defineServiceFn({
   input: z.looseObject({ leaseId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteLease(
         ctx.asCaller.supabase,
@@ -6864,7 +6715,7 @@ export const getLeaseLines = defineServiceFn({
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getLeaseLines(
         ctx.asCaller.supabase,
@@ -6884,7 +6735,7 @@ export const getLeasePayments = defineServiceFn({
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getLeasePayments(
         ctx.asCaller.supabase,
@@ -6904,11 +6755,11 @@ export const deleteLeaseLine = defineServiceFn({
   input: z.looseObject({ leaseId: z.string(), leaseLineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteLeaseLine(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -6934,11 +6785,11 @@ export const upsertLeasePayment = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertLeasePayment(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+        payload(ctx, input).withUser().forUpdate() as never
       )
     );
   }
@@ -6953,11 +6804,11 @@ export const deleteLeasePayment = defineServiceFn({
   input: z.looseObject({ leaseId: z.string(), paymentId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteLeasePayment(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -6972,7 +6823,7 @@ export const getLeaseSchedule = defineServiceFn({
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getLeaseSchedule(
         ctx.asCaller.supabase,
@@ -6992,7 +6843,7 @@ export const getLeaseEvents = defineServiceFn({
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getLeaseEvents(
         ctx.asCaller.supabase,
@@ -7012,7 +6863,7 @@ export const getLeaseRelatedDocuments = defineServiceFn({
   input: z.looseObject({ leaseId: z.string() }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getLeaseRelatedDocuments(
         ctx.asCaller.supabase,

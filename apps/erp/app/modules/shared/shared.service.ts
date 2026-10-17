@@ -9946,7 +9946,7 @@ export async function convertDocument(
   return { convertedId };
 }
 
-/** A server function's refusal as this function's error, mapped as `settle`
+/** A server function's refusal as this function's error, mapped as `run`
  *  maps it; an empty message (our own failure) is `fallback`. */
 export function fromServerFn(
   ctx: ServiceContext,

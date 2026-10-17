@@ -2,20 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// What a service function does around the building block it calls: stamp the
-// caller's identity onto the payload, read the building block's `{ data, error }`
-// as a service function's result, and settle a posting engine's throw.
+// What a service function does around the building block it calls: put the
+// caller's identity on the payload (`payload`), read the building block's
+// `{ data, error }` as the result (`unwrap`, `paged`), and turn a posting
+// engine's throw into a refusal (`run`).
 
 import { failSpan, inSpan } from "@carbon/logger/span";
 import { RAISED_EXCEPTION, ServerFnError, toServerFnError } from "./errors";
 import { SERVICE_RULE_ERROR_CODE } from "./rule-error";
-import type {
+import {
   CarbonError,
-  ErrorCategory,
-  ServiceContext
+  type ErrorCategory,
+  type ServiceContext
 } from "./service-fn.server";
 
-export type StampField =
+type StampField =
   | "companyId"
   | "companyGroupId"
   | "createdBy"
@@ -47,8 +48,7 @@ function overwriteIdentityKeys(ctx: ServiceContext, value: unknown): unknown {
 }
 
 /**
- * The payload with the caller's identity in the fields the service reads it
- * from. `operation` picks the audit field of an upsert: a create gets
+ * The payload with the caller's identity in `fields`. `operation` picks the audit field of an upsert: a create gets
  * `createdBy` and loses `updatedBy`, an update the reverse (a service that
  * branches on `"createdBy" in` or `"updatedBy" in` takes the right branch).
  * Without it, `fields` naming only `updatedBy` means an update and only
@@ -61,7 +61,7 @@ function overwriteIdentityKeys(ctx: ServiceContext, value: unknown): unknown {
  * `userId` is overwritten only when listed: some inputs name a target user
  * with it.
  */
-export function stamp<T>(
+function stamp<T>(
   ctx: ServiceContext,
   value: T,
   fields: StampField[],
@@ -112,8 +112,52 @@ export function stamp<T>(
   return stamped as T;
 }
 
-/** Where a service reports what it did: read off its return type. */
-export type ResultShape = "envelope" | "plain" | "envelopes" | "flag";
+/**
+ * The payload a service writes, with the caller's identity on it: the
+ * company always (unless `withoutCompany`), the author by the terminal.
+ *
+ * - `forCreate()` — `createdBy`; a `updatedBy` the caller sent is dropped.
+ * - `forUpdate()` — `updatedBy`; a `createdBy` is dropped, so an update never
+ *   rewrites a record's creator.
+ * - `forUpsert()` — both: a service that branches on `"createdBy" in` picks.
+ * - `for(operation)` — `forCreate`, `forUpdate` or `forUpsert` by value.
+ * - `build()` — no author: a read, or a service that stamps its own.
+ *
+ * Whatever the terminal, an identity key (`companyId`, `companyGroupId`,
+ * `createdBy`, `updatedBy`) the caller put in the payload, one level down or
+ * in a list's rows is overwritten: a payload cannot name another company or
+ * forge who wrote it. `userId` is set only with `withUser`, since some
+ * inputs name a target user with it.
+ */
+export function payload<T>(ctx: ServiceContext, value: T) {
+  const fields = new Set<StampField>(["companyId"]);
+  const done = (audit: StampField[], operation?: "create" | "update") =>
+    stamp(ctx, value, [...fields, ...audit], operation);
+  const builder = {
+    /** Also `userId`, as the caller. */
+    withUser() {
+      fields.add("userId");
+      return builder;
+    },
+    /** Also `companyGroupId`. */
+    withGroup() {
+      fields.add("companyGroupId");
+      return builder;
+    },
+    /** No `companyId`: the table has none. */
+    withoutCompany() {
+      fields.delete("companyId");
+      return builder;
+    },
+    forCreate: (): T => done(["createdBy"], "create"),
+    forUpdate: (): T => done(["updatedBy"], "update"),
+    forUpsert: (): T => done(["createdBy", "updatedBy"]),
+    for: (operation: "create" | "update" | undefined): T =>
+      done(["createdBy", "updatedBy"], operation),
+    build: (): T => done([])
+  };
+  return builder;
+}
 
 const DATABASE_REFUSALS: Record<string, [ErrorCategory, string]> = {
   "23505": ["conflict", "A record with these values already exists."],
@@ -181,32 +225,17 @@ export function serverFnRefusal(
  * throw: its failure is an `error` in what it returns, a failed element of a
  * list of results, or `{ ok: false }`.
  */
-export function serviceResult(
+function read(
   ctx: ServiceContext,
   result: unknown,
-  shape: ResultShape,
-  { paginates = false }: { paginates?: boolean } = {}
+  paginates = false
 ): unknown {
-  if (shape === "envelopes" && Array.isArray(result)) {
-    const failed = result.find((item) => isRecord(item) && item.error);
-    return failed
-      ? serviceRefusal(ctx, (failed as { error: unknown }).error)
-      : result;
-  }
   if (!isRecord(result)) return result;
 
   if (result.error instanceof ServerFnError) {
     return serverFnRefusal(ctx, result.error);
   }
   if (result.error) return serviceRefusal(ctx, result.error);
-
-  if (shape === "flag" && (result.ok === false || result.success === false)) {
-    const reason = result.reason ?? result.message;
-    return ctx.error(
-      "rule",
-      typeof reason === "string" ? reason : "The operation did not succeed."
-    );
-  }
 
   if ("data" in result) {
     return paginates
@@ -219,12 +248,27 @@ export function serviceResult(
 type Envelope = { data?: unknown; error?: unknown; count?: number | null };
 type DataOf<R> = R extends { data: infer D } ? D : never;
 
-/** A `{ data, error }` service result: its data, or its refusal. */
-export function envelope<R extends Envelope>(
+/**
+ * What a building block returned, as the service function's result: the
+ * `data` of each `{ data, error }`, or the first refusal. One result gives
+ * its data; several give a tuple of them.
+ */
+export function unwrap<R extends Envelope>(
   ctx: ServiceContext,
   result: R
-): DataOf<R> | CarbonError {
-  return serviceResult(ctx, result, "envelope") as DataOf<R> | CarbonError;
+): DataOf<R> | CarbonError;
+export function unwrap<R extends Envelope[]>(
+  ctx: ServiceContext,
+  ...results: R
+): { [K in keyof R]: DataOf<R[K]> } | CarbonError;
+export function unwrap(ctx: ServiceContext, ...results: Envelope[]): unknown {
+  const values: unknown[] = [];
+  for (const result of results) {
+    const value = read(ctx, result);
+    if (value instanceof CarbonError) return value;
+    values.push(value);
+  }
+  return results.length === 1 ? values[0] : values;
 }
 
 /** A paged list's `{ data, count, error }`: its rows and total, or its refusal. */
@@ -232,27 +276,9 @@ export function paged<R extends Envelope>(
   ctx: ServiceContext,
   result: R
 ): { rows: DataOf<R>; count: number | null } | CarbonError {
-  return serviceResult(ctx, result, "envelope", { paginates: true }) as
+  return read(ctx, result, true) as
     | { rows: DataOf<R>; count: number | null }
     | CarbonError;
-}
-
-/** A value with no envelope; a truthy `error` on it is still a refusal. */
-export function plain<R>(ctx: ServiceContext, result: R): R | CarbonError {
-  return serviceResult(ctx, result, "plain") as R | CarbonError;
-}
-
-/** The results of several writes: refused when any one failed. */
-export function envelopes<R extends unknown[]>(
-  ctx: ServiceContext,
-  result: R
-): R | CarbonError {
-  return serviceResult(ctx, result, "envelopes") as R | CarbonError;
-}
-
-/** A `{ success | ok, message | reason }` result: refused when false. */
-export function flag<R>(ctx: ServiceContext, result: R): R | CarbonError {
-  return serviceResult(ctx, result, "flag") as R | CarbonError;
 }
 
 /**
@@ -263,20 +289,18 @@ export function flag<R>(ctx: ServiceContext, result: R): R | CarbonError {
  * status decides the category (`NotFoundError` → `notFound`). One span per
  * call, named `function <name>` as before.
  */
-export async function settle<R>(
+export async function run<R>(
   ctx: ServiceContext,
   name: string,
   body: () => Promise<R>,
   defaultStatus = 500
 ): Promise<R | CarbonError> {
   const out = await attempt(ctx, name, body, defaultStatus);
-  return out.error
-    ? (serviceResult(ctx, out, "envelope") as CarbonError)
-    : out.data;
+  return out.error ? (read(ctx, out) as CarbonError) : out.data;
 }
 
 /**
- * {@link settle}, but the refusal is the `ServerFnError` itself, as
+ * {@link run}, but the refusal is the `ServerFnError` itself, as
  * `serverFns.invoke` returned it: for a caller that reads its status or body.
  * `body` gets the span, to name the actor when only it knows who the caller is.
  */

@@ -3,12 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
-import {
-  envelope,
-  paged,
-  plain,
-  stamp
-} from "@carbon/api/service-tools.server";
+import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
 import {
@@ -2357,7 +2352,7 @@ export const getAccountsPayableBillingAddress = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAccountsPayableBillingAddress(
         ctx.asCaller.supabase,
@@ -2376,7 +2371,7 @@ export const getAccountsReceivableBillingAddress = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getAccountsReceivableBillingAddress(
         ctx.asCaller.supabase,
@@ -2408,7 +2403,7 @@ export const getApiKeys = defineServiceFn({
       await service.getApiKeys(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2423,7 +2418,7 @@ export const getCompanies = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCompanies(ctx.asCaller.supabase, ctx.auditUserId)
     );
@@ -2439,7 +2434,7 @@ export const getEmployeeCompanies = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getEmployeeCompanies(ctx.asCaller.supabase, ctx.auditUserId)
     );
@@ -2455,7 +2450,7 @@ export const getIndustries = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(ctx, await service.getIndustries(ctx.asCaller.supabase));
+    return unwrap(ctx, await service.getIndustries(ctx.asCaller.supabase));
   }
 });
 
@@ -2468,7 +2463,7 @@ export const getCompany = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCompany(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2484,7 +2479,7 @@ export const getCompanySettings = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCompanySettings(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2500,7 +2495,7 @@ export const getConfig = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(ctx, await service.getConfig(ctx.asCaller.supabase));
+    return unwrap(ctx, await service.getConfig(ctx.asCaller.supabase));
   }
 });
 
@@ -2513,7 +2508,7 @@ export const getCurrentSequence = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCurrentSequence(
         ctx.asCaller.supabase,
@@ -2533,7 +2528,7 @@ export const getCustomField = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCustomField(ctx.asCaller.supabase, input.id as never)
     );
@@ -2549,7 +2544,7 @@ export const getCustomFields = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCustomFields(
         ctx.asCaller.supabase,
@@ -2582,7 +2577,7 @@ export const getCustomFieldsTables = defineServiceFn({
       await service.getCustomFieldsTables(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2597,7 +2592,7 @@ export const getIntegration = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getIntegration(
         ctx.asCaller.supabase,
@@ -2617,7 +2612,7 @@ export const getKanbanOutputSetting = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getKanbanOutputSetting(
         ctx.asCaller.supabase,
@@ -2636,7 +2631,7 @@ export const getNextSequence = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getNextSequence(
         ctx.asCaller.supabase,
@@ -2656,7 +2651,7 @@ export const getPlans = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(ctx, await service.getPlans(ctx.asCaller.supabase));
+    return unwrap(ctx, await service.getPlans(ctx.asCaller.supabase));
   }
 });
 
@@ -2669,7 +2664,7 @@ export const getSequence = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSequence(
         ctx.asCaller.supabase,
@@ -2702,7 +2697,7 @@ export const getSequences = defineServiceFn({
       await service.getSequences(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2717,7 +2712,7 @@ export const getSequencesList = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSequencesList(
         ctx.asCaller.supabase,
@@ -2750,7 +2745,7 @@ export const getItemSerialSequences = defineServiceFn({
       await service.getItemSerialSequences(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -2765,7 +2760,7 @@ export const getItemSerialSequence = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getItemSerialSequence(
         ctx.asCaller.supabase,
@@ -2799,16 +2794,11 @@ export const createItemSerialSequence = defineServiceFn({
   }),
   permission: { create: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertItemSerialSequence(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "create"
-        ) as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -2839,16 +2829,11 @@ export const updateItemSerialSequence = defineServiceFn({
     .required({ id: true }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertItemSerialSequence(
         ctx.asCaller.supabase,
-        stamp(
-          ctx,
-          input,
-          ["companyId", "createdBy", "updatedBy"],
-          "update"
-        ) as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }
@@ -2863,7 +2848,7 @@ export const deleteItemSerialSequence = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteItemSerialSequence(
         ctx.asCaller.supabase,
@@ -2883,7 +2868,7 @@ export const getSubsidiaries = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSubsidiaries(ctx.asCaller.supabase, ctx.company.groupId)
     );
@@ -2899,7 +2884,7 @@ export const getSubsidiary = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getSubsidiary(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2915,7 +2900,7 @@ export const getTerms = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getTerms(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -2945,7 +2930,7 @@ export const getDocumentTemplate = defineServiceFn({
   }),
   permission: { view: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDocumentTemplate(
         ctx.asCaller.supabase,
@@ -2979,13 +2964,10 @@ export const getDocumentTemplateConfig = defineServiceFn({
   }),
   permission: { view: "settings" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getDocumentTemplateConfig(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        input.documentType as never
-      )
+    return await service.getDocumentTemplateConfig(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.documentType as never
     );
   }
 });
@@ -2999,7 +2981,7 @@ export const getDocumentSections = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getDocumentSections(ctx.asCaller.supabase, ctx.company.id)
     );
@@ -3015,13 +2997,10 @@ export const resolveSections = defineServiceFn({
   input: z.looseObject({ ids: z.array(z.string()) }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.resolveSections(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        stamp(ctx, input.ids, ["companyId"]) as never
-      )
+    return await service.resolveSections(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      payload(ctx, input.ids).build() as never
     );
   }
 });
@@ -3035,7 +3014,7 @@ export const getWebhook = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { view: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getWebhook(ctx.asCaller.supabase, input.id as never)
     );
@@ -3064,7 +3043,7 @@ export const getWebhooks = defineServiceFn({
       await service.getWebhooks(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -3079,7 +3058,7 @@ export const getWebhookTables = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { view: "settings" },
   async run(ctx) {
-    return envelope(ctx, await service.getWebhookTables(ctx.asCaller.supabase));
+    return unwrap(ctx, await service.getWebhookTables(ctx.asCaller.supabase));
   }
 });
 
@@ -3102,13 +3081,13 @@ export const updateSequence = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.updateSequence(
         ctx.asCaller.supabase,
         input.table as never,
         ctx.company.id,
-        stamp(ctx, input.sequence, ["companyId", "updatedBy"]) as never
+        payload(ctx, input.sequence).forUpdate() as never
       )
     );
   }

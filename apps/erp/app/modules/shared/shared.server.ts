@@ -5,12 +5,7 @@
 import { NotFoundError } from "@carbon/api/errors";
 import type { RequiredPermissions } from "@carbon/api/permissions";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import {
-  envelope,
-  paged,
-  plain,
-  stamp
-} from "@carbon/api/service-tools.server";
+import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
 import {
   actionTaskEntities,
@@ -965,7 +960,7 @@ export const deleteSavedView = defineServiceFn({
   input: z.looseObject({ viewId: z.string() }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.deleteSavedView(
         ctx.asCaller.supabase,
@@ -984,12 +979,9 @@ export const getBase64ImageFromSupabase = defineServiceFn({
   input: z.looseObject({ path: z.string() }),
   permission: {},
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getBase64ImageFromSupabase(
-        ctx.asCaller.supabase,
-        input.path as never
-      )
+    return await service.getBase64ImageFromSupabase(
+      ctx.asCaller.supabase,
+      input.path as never
     );
   }
 });
@@ -1003,7 +995,7 @@ export const getCountries = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
-    return envelope(ctx, await service.getCountries(ctx.asCaller.supabase));
+    return unwrap(ctx, await service.getCountries(ctx.asCaller.supabase));
   }
 });
 
@@ -1016,12 +1008,9 @@ export const getModelByItemId = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
   permission: {},
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getModelByItemId(
-        ctx.asCaller.supabase,
-        input.itemId as never
-      )
+    return await service.getModelByItemId(
+      ctx.asCaller.supabase,
+      input.itemId as never
     );
   }
 });
@@ -1035,7 +1024,7 @@ export const getNotes = defineServiceFn({
   input: z.looseObject({ documentId: z.string() }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getNotes(ctx.asCaller.supabase, input.documentId as never)
     );
@@ -1051,7 +1040,7 @@ export const getTagsList = defineServiceFn({
   input: z.looseObject({ table: z.string().nullable().optional() }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getTagsList(
         ctx.asCaller.supabase,
@@ -1071,11 +1060,11 @@ export const insertNote = defineServiceFn({
   input: z.looseObject({ note: z.string(), documentId: z.string() }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertNote(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -1094,11 +1083,11 @@ export const insertTag = defineServiceFn({
   }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.insertTag(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        payload(ctx, input).forUpsert() as never
       )
     );
   }
@@ -1113,7 +1102,7 @@ export const getExternalLink = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getExternalLink(ctx.asCaller.supabase, input.id as never)
     );
@@ -1142,7 +1131,7 @@ export const getCustomerPortals = defineServiceFn({
       await service.getCustomerPortals(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -1157,7 +1146,7 @@ export const getCustomerPortal = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getCustomerPortal(ctx.asCaller.supabase, input.id as never)
     );
@@ -1184,17 +1173,14 @@ export const upsertSavedView = defineServiceFn({
   }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.upsertSavedView(
         ctx.asCaller.supabase,
         // The view keeps its creator: an update stamps only who changed it.
-        stamp(
-          ctx,
-          input,
-          ["companyId", "userId"],
-          input.id ? "update" : "create"
-        ) as never
+        payload(ctx, input)
+          .withUser()
+          .for(input.id ? "update" : "create") as never
       )
     );
   }
@@ -1258,7 +1244,7 @@ export const getEnforcementRules = defineServiceFn({
         ctx.asCaller.supabase,
         input.family as never,
         ctx.company.id,
-        stamp(ctx, input, ["companyId"]) as never
+        payload(ctx, input).build() as never
       )
     );
   }
@@ -1276,7 +1262,7 @@ export const getEnforcementRule = defineServiceFn({
   }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getEnforcementRule(
         ctx.asCaller.supabase,
@@ -1297,11 +1283,11 @@ export const getEnforcementRuleAssignmentCounts = defineServiceFn({
   input: z.looseObject({ ruleIds: z.array(z.string()) }),
   permission: {},
   async run(ctx, input) {
-    return envelope(
+    return unwrap(
       ctx,
       await service.getEnforcementRuleAssignmentCounts(
         ctx.asCaller.supabase,
-        stamp(ctx, input.ruleIds, ["companyId"]) as never
+        payload(ctx, input.ruleIds).build() as never
       )
     );
   }

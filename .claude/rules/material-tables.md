@@ -114,7 +114,7 @@ the service loads the rows they read and writes what they decide.
   the material has several revisions (sizes are revisions); pass the item id.
 - `materialDimension`, `materialFinish`, `materialGrade` and `materialType` have no audit columns,
   so their service functions in `items.server.ts` stamp only `companyId`
-  (`stamp(ctx, input, ["companyId"])`; the `stamp-matches-columns` check fails a stamped
+  (`payload(ctx, input).build()`; the `stamp-matches-columns` check fails a stamped
   field the table has no column for). Their update branch filters by `companyId` when given and
   never writes it, so an update cannot move a row to another company.
 

@@ -127,7 +127,7 @@ and `create.ts` handles both that and the legacy envelope shape: it checks
 `envelope.error` when the payload looks like one, and `idIn` walks a list if one
 came back. No id means `"The record was created but could not be read back."`,
 never a silent success. `companyId`, `createdBy` and `updatedBy` are stamped by
-the service function itself (`stamp`, `@carbon/api/service-tools.server`), from
+the service function itself (`payload`, `@carbon/api/service-tools.server`), from
 its context, never from the input.
 
 ## `createWorkflowServices` — the one port

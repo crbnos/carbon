@@ -76,11 +76,11 @@ function kept its logic as is:
   parses the function's own input schema (exported beside it). `ctx.db` is
   `ctx.asSystem.pg`, `ctx.companyId` is `ctx.company.id`, `ctx.userId` is
   `ctx.auditUserId`.
-- The operation that runs it calls `settle(ctx, "<posting-name>", () =>
+- The operation that runs it calls `run(ctx, "<posting-name>", () =>
   service.<name>(ctx, input))` (`@carbon/api/service-tools.server`). A body
-  throws with messages written for the person (673 plain `Error`s); `settle`
+  throws with messages written for the person (673 plain `Error`s); `run`
   turns a throw into a refusal by the rules the package's `defineServerFn` used, so the message and
-  status a caller sees do not change. A plain `run` would withhold them.
+  status a caller sees do not change. Without it, a throw is `internal` and its message is withheld.
 - A caller that read the `{ data, error }` the package's `invoke` returned (a fallback
   message, the error's `status` or `body`) calls `invokePosting(ctx, "<name>",
   input, service.<name>)` (`~/modules/shared/shared.service`) instead: the same
@@ -99,7 +99,7 @@ function kept its logic as is:
 | Import | From |
 |---|---|
 | `defineServiceFn`, `CarbonError`, `ServiceContext`, `toResult` | `@carbon/api/service-fn.server` |
-| `stamp`, `envelope`, `paged`, `plain`, `envelopes`, `flag`, `settle`, `attempt` | `@carbon/api/service-tools.server` |
+| `payload`, `unwrap`, `paged`, `run`, `attempt` | `@carbon/api/service-tools.server` |
 | `carbon`, `respond` | `@carbon/api/carbon.server` |
 
 The ERP hands `carbon()` its router and caller context once

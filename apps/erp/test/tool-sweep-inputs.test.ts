@@ -80,7 +80,7 @@ describe("what a published tool's input is", () => {
   project.createSourceFile(
     "/m/helper.ts",
     `export declare function defineServiceFn<D>(definition: D): D;
-     export declare function stamp<T>(ctx: unknown, value: T, fields: string[]): T;`
+     export declare function payload<T>(ctx: unknown, value: T): { build(): T };`
   );
   project.createSourceFile(
     "/m/jobs.service.ts",
@@ -93,7 +93,7 @@ describe("what a published tool's input is", () => {
   );
   project.createSourceFile(
     "/m/jobs.server.ts",
-    `import { defineServiceFn, stamp } from "./helper";
+    `import { defineServiceFn, payload } from "./helper";
      import * as service from "./jobs.service";
      export const getJob = defineServiceFn({
        input: null,
@@ -106,7 +106,7 @@ describe("what a published tool's input is", () => {
        input: null,
        permission: { view: "production" },
        async run(ctx, input) {
-         return service.getLines(ctx.client, ctx.company.id, stamp(ctx, input, ["companyId"]) as never);
+         return service.getLines(ctx.client, ctx.company.id, payload(ctx, input).build() as never);
        }
      });
      export const status = defineServiceFn({

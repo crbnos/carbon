@@ -92,7 +92,7 @@ DB logic lives in module files, **not** in route handlers:
 
 A building block takes the **client as its first argument** and returns the raw supabase
 `{ data, error }` (it does **not** throw). The service function that calls it reads `error`
-(`envelope`, `plain`, … in `@carbon/api/service-tools.server`, or `ctx.error(...)`); a legacy
+(`unwrap`, `paged` in `@carbon/api/service-tools.server`, or `ctx.error(...)`); a legacy
 route that calls it directly converts it with `flash(request, error(...))`.
 
 ```typescript
