@@ -55,9 +55,11 @@ export const cancelJob = defineServiceFn({
   value or `ctx.error(category, message, cause)`; a throw becomes `internal`
   with the cause logged and withheld. The error union is inferred.
 - **Gate**: every ENTRY call is checked against `permission` for its actor
-  (`user` claims, `apiKey` scopes; `system` passes). `{}` means company
-  membership, `"system"` admits only the system actor, `{ by, rules }` keys
-  the rule on an input field. A call made from inside another function's
+  (`user` claims, `apiKey` scopes; `system` passes). `"member"` admits any
+  member of the company (a read every screen needs, such as locations or
+  units; RLS still filters the rows), `"system"` admits only the system
+  actor, `{ by, rules }` keys the rule on an input field. `permission: {}` is
+  refused by `service-fn-file`: write `"member"`. A call made from inside another function's
   `run` is not checked again.
 - **Context**: `ctx.asCaller.supabase` (RLS), `ctx.asSystem.supabase` /
   `ctx.asSystem.pg` (no RLS: scope every query by `ctx.company.id`), `ctx.kv`,

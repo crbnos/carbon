@@ -23,6 +23,10 @@ import {
 } from "./conformance/function-redefinition-keeps-changes";
 import { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 import { journalStatusFilter } from "./conformance/journal-status-filter";
+import {
+  loaderReadsThroughApi,
+  wrappedBuildingBlocks
+} from "./conformance/loader-reads-through-api";
 import { moduleShape } from "./conformance/module-shape";
 import {
   MANAGED_FUNCTION_SETS,
@@ -206,7 +210,10 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noStateCopyOfLoaderData
     ]),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
-      indexRedirectBeforeLoaders
+      indexRedirectBeforeLoaders,
+      loaderReadsThroughApi(
+        wrappedBuildingBlocks(loadModuleServerFiles(root).map((f) => f.server))
+      )
     ]),
     ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
     ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader]),

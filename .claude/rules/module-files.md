@@ -100,11 +100,45 @@ function kept its logic as is:
 |---|---|
 | `defineServiceFn`, `CarbonError`, `ServiceContext`, `toResult` | `@carbon/api/service-fn.server` |
 | `payload`, `unwrap`, `paged`, `run`, `attempt` | `@carbon/api/service-tools.server` |
-| `carbon`, `respond` | `@carbon/api/carbon.server` |
+| `carbon`, `carbonFor`, `dataOrThrow`, `respond` | `@carbon/api/carbon.server` |
 
 The ERP hands `carbon()` its router and caller context once
 (`registerCarbon`, in `apps/erp/app/modules/carbon.server.ts`, imported by
 `entry.server.tsx`) and its router type through `Register`.
+
+## A route loader
+
+A loader reads through the service functions too, so it passes the same gate
+an API or MCP caller does. Bind `api` to the loader's own caller: `carbon(request)`
+would authenticate a second time, and for a `bypassRls: true` route it would
+replace the service-role client with the user's.
+
+```ts
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const auth = await requirePermissions(request, { view: "sales" });
+  const api = carbonFor(auth);
+  const [customer, locations] = await Promise.all([
+    api.sales.getCustomer({ customerId: params.customerId! }),
+    api.resources.getLocationsList({})
+  ]);
+  if (customer.error) throw redirect(path.to.customers, await flash(request, error(customer.error, "Failed to load customer")));
+  return { customer: customer.data, locations: locations.data ?? [] };
+}
+```
+
+- A paged read answers `data: { rows, count }`. A list loader that hands the
+  raw page to its component returns `{ data: page.data?.rows ?? null, count:
+  page.data?.count ?? null, error: page.error }`.
+- A refusal is `{ category, message, status }`: a missing row is `category ===
+  "notFound"`, never a `PGRST116` code.
+- A service function that returns a plain value (not `unwrap`/`paged`) is read
+  with `dataOrThrow(await api.<module>.<fn>(input))`
+  (`@carbon/api/carbon.server`): the value, or the refusal thrown.
+- A lookup every screen needs (locations, units, company settings) gates on
+  `"member"`, so a page reads it without the module's permission.
+- A building block no service function calls is a helper (a time zone, user
+  defaults, a label logo) and the loader calls it directly. A read made as the
+  service role, or for another company of the group, stays a direct call too.
 
 ## A route action
 
@@ -132,3 +166,4 @@ elsewhere.
 | `service-fn-file` | anything in `<module>.server.ts` other than imports, types, plain constants and exported `defineServiceFn` consts |
 | `no-server-code-in-client` | a value import of a `.service` or `.server` file from components, hooks, `ui/`, models, utils or types |
 | `route-action-shape` | a write made in a route instead of a service function |
+| `loader-reads-through-api` | a loader calling a building block that a service function wraps (`service.<name>(…)` in `<module>.server.ts`) |

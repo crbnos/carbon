@@ -68,12 +68,12 @@ any other value export in a server file fails generation.
   `@param name - text` becomes that input field's `description`, and naming a
   field the input does not have fails generation.
 - **Permission**: read off the literal `permission` and published in the
-  manifest. One module → `{ module, actions }`; several modules, or `{}`
-  (company membership) → `{ module: null, actions: [] }`. The function's own
+  manifest. One module → `{ module, actions }`; several modules, or
+  `"member"` (company membership) → `{ module: null, actions: [] }`. The function's own
   gate is the only check. `"system"` and a keyed permission (`{ by, rules }`)
   cannot be published.
 - **Classification**: only `view` → READ; any `delete` → DESTRUCTIVE; else
-  WRITE. `@mcp read` forces READ, for a read gated on membership alone (`{}`);
+  WRITE. `@mcp read` forces READ, for a read gated on membership alone (`"member"`);
   on a permission that names `create`, `update` or `delete` it fails
   generation, since a READ is offered as safe to run unasked. `@mcp destructive`
   forces DESTRUCTIVE.
