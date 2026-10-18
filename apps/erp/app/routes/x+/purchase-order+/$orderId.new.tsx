@@ -7,9 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
+import { useRouteData } from "~/hooks";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import {
   isPurchaseOrderLocked,
@@ -17,6 +19,7 @@ import {
 } from "~/modules/purchasing/purchasing.models";
 import {
   getPurchaseOrder,
+  resolveCreatedPurchaseLineTax,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
@@ -54,9 +57,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "purchasing"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      create: "purchasing"
+    });
 
   const formData = await request.formData();
   const validation = await validator(purchaseOrderLineValidator).validate(
@@ -85,6 +89,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
+  const tax = await resolveCreatedPurchaseLineTax(client, {
+    companyId,
+    companyGroupId,
+    supplierId: purchaseOrder.data?.supplierId,
+    documentDate: purchaseOrder.data?.orderDate,
+    currencyCode: purchaseOrder.data?.currencyCode,
+    itemId: d.itemId,
+    unitPrice: d.supplierUnitPrice ?? 0,
+    quantity: d.purchaseQuantity ?? 0,
+    shippingCost: d.supplierShippingCost ?? 0,
+    // The form posts the field: an empty one is a cleared code. A request
+    // that does not takes the supplier's code.
+    taxCodeId: formData.has("taxCodeId") ? (d.taxCodeId ?? "") : undefined,
+    taxPercent: d.taxPercent,
+    supplierTaxAmount: d.supplierTaxAmount ?? 0
+  });
+  Object.assign(d, tax);
+
   const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {
     ...d,
     companyId,
@@ -112,6 +134,9 @@ export default function NewPurchaseOrderLineRoute() {
   const { orderId } = useParams();
 
   if (!orderId) throw new Error("Could not find purchase order id");
+  const routeData = useRouteData<{ resolvedTax: LineTaxDecision | null }>(
+    path.to.purchaseOrder(orderId)
+  );
 
   const initialValues = {
     conversionFactor: 1,
@@ -130,7 +155,9 @@ export default function NewPurchaseOrderLineRoute() {
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
     supplierUnitPrice: 0,
-    taxPercent: 0
+    // The supplier's tax code, else its bare percent.
+    taxCodeId: routeData?.resolvedTax?.taxCodeId ?? undefined,
+    taxPercent: round(routeData?.resolvedTax?.taxPercent ?? 0)
   };
 
   return <PurchaseOrderLineForm initialValues={initialValues} />;

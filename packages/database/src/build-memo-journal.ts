@@ -86,6 +86,16 @@ export interface BuildMemoJournalInput {
   // Received Not Invoiced") so the three-line entry reads the same way the
   // return shipment's own GRNI line does.
   reasonDescription?: string;
+  // The memo's tax, in document currency, part of `amount` (the gross that
+  // hits the control account). It posts on the reason side to the tax
+  // account — Tax Received for a customer memo, Tax Paid for a supplier memo —
+  // and the reason leg takes the rest. Omit, or 0, for a memo with no tax.
+  taxAmount?: number;
+  taxAccountId?: string | null;
+  /** The tax account's class. A company may keep one VAT control account
+   *  for both directions, so Tax Paid is not always an asset. Omitted: Tax
+   *  Received is a liability, Tax Paid an asset. */
+  taxAccountClass?: string | null;
 }
 
 export interface BuildMemoJournalResult {
@@ -113,7 +123,10 @@ export function buildMemoJournal(
     reasonAccountClass,
     reasonAmountBase,
     varianceAccountId,
-    reasonDescription
+    reasonDescription,
+    taxAmount = 0,
+    taxAccountId,
+    taxAccountClass
   } = input;
 
   if (!controlAccountId) {
@@ -178,9 +191,21 @@ export function buildMemoJournal(
   // the control leg (AP) moves by what the supplier actually credited. When
   // those differ, the reason leg uses its own magnitude and the remainder
   // becomes leg 3.
+  if (!Number.isFinite(taxAmount) || taxAmount < 0 || taxAmount >= amount) {
+    throw new Error(
+      "Memo tax must be at least 0 and less than the memo amount"
+    );
+  }
+  const taxMagnitude =
+    taxAmount > 0 ? toBaseAmount(taxAmount, exchangeRate) : 0;
+  if (taxMagnitude > 0 && !taxAccountId) {
+    throw new Error(
+      `Missing ${isAR ? "Tax Received" : "Tax Paid"} account default; cannot post memo tax`
+    );
+  }
   const reasonMagnitude =
     reasonAmountBase === undefined
-      ? magnitude
+      ? round(magnitude - taxMagnitude)
       : round(Math.abs(reasonAmountBase));
   pushLine(
     controlIsDebit ? "credit" : "debit",
@@ -190,6 +215,22 @@ export function buildMemoJournal(
       (direction === "Credit" ? "Credit memo" : "Debit memo"),
     reasonMagnitude
   );
+
+  // 2b) Tax leg — the tax inside the memo, on the reason side, so a credit
+  // against a taxed invoice unwinds the tax it charged.
+  if (taxMagnitude > 0 && taxAccountId) {
+    pushLine(
+      controlIsDebit ? "credit" : "debit",
+      taxAccountClass
+        ? accountTypeFromClass(taxAccountClass)
+        : isAR
+          ? "liability"
+          : "asset",
+      taxAccountId,
+      isAR ? "Tax Received" : "Tax Paid",
+      taxMagnitude
+    );
+  }
 
   // 3) Variance leg — the plug that makes an unequal control/reason pair
   // balance. Same economic family as the invoice-vs-receipt PPV

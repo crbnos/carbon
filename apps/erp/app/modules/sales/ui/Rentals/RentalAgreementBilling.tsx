@@ -12,7 +12,12 @@ import {
   LuCalendarDays,
   LuRepeat
 } from "react-icons/lu";
-import { NumberControlled, PaymentTerm, Select } from "~/components/Form";
+import {
+  NumberControlled,
+  PaymentTerm,
+  Select,
+  TaxCode
+} from "~/components/Form";
 import { SetupSection, TermForm } from "~/components/Setup";
 import { useCurrencyDecimals, usePermissions, useSettings } from "~/hooks";
 import {
@@ -215,6 +220,17 @@ const RentalAgreementBilling = ({
                   "depositAmount",
                   String(Number.isNaN(value) ? 0 : value)
                 )
+              }
+            />
+          </TermForm>
+          <TermForm name="taxCodeId" value={rentalAgreement.taxCodeId}>
+            <TaxCode
+              name="taxCodeId"
+              label={t`Tax Code`}
+              helperText={t`Sets the tax percent to the code's rate`}
+              isReadOnly={isDisabled}
+              onChange={(option) =>
+                onChange("taxCodeId", option?.value ?? null)
               }
             />
           </TermForm>

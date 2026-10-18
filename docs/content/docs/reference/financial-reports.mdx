@@ -66,6 +66,23 @@ Journal lines can carry <Term id="reporting-dimension">reporting dimensions</Ter
 
 The account ledger drawer (the drill-down you get by clicking an account on any of these reports) lists that account's individual posted lines for the same window, so a report figure always traces back to the transactions that make it up.
 
+## Tax Liability
+
+The **Tax Liability** report shows what each tax authority is owed for a date range. Open it from the Reports page, or from **Accounting → Tax → Tax Liability**. It needs `accounting` view permission and opens on the current quarter to date. Filter it by dates and by authority.
+
+It reads the [tax ledger](/docs/reference/accounting#the-tax-ledger), not the account balances, and counts only Posted journals. Each row is one authority and one <Term>tax component</Term>:
+
+<FieldTable>
+  <Field name="Taxable Sales / Exempt Sales">The sales base the component taxed, and the base an exempt customer or a non-taxable item left untaxed.</Field>
+  <Field name="Tax Collected">Tax on sales invoices. A customer credit memo with tax reduces it.</Field>
+  <Field name="Taxable Purchases">The purchase base the component taxed.</Field>
+  <Field name="Self-Assessed Tax">Tax you calculated yourself on a bill with a *Reverse Charge* code, such as use tax.</Field>
+  <Field name="Recoverable Tax">The share of purchase tax you can reclaim.</Field>
+  <Field name="Net Due">Tax Collected plus Self-Assessed Tax, less Recoverable Tax.</Field>
+</FieldTable>
+
+A line taxed at a 0% code counts as taxable at 0, not as exempt. Only an exempt customer or a non-taxable item adds to Exempt Sales. A line taxed by a bare percent, with no code, shows as a row with no authority.
+
 ## Related
 
 <Cards>

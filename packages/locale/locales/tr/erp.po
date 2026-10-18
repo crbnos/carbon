@@ -154,7 +154,7 @@ msgstr "{0} amortisman yapılacak kıymet · {amount}"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
-msgstr ""
+msgstr "{0} BOM çizgileri eşleşmedi: {names}"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -239,11 +239,11 @@ msgstr "{0} fatura önceki sisteminizde faturalandırıldı ve tekrar taslak ola
 #. placeholder {0}: skipped.readableId
 #. placeholder {1}: skipped.status
 msgid "{0} is {1}, not Draft or Planned"
-msgstr ""
+msgstr "{0}, Taslak veya Planlandı değildir; {1}"
 
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
-msgstr ""
+msgstr "{0} öğe toplandı olarak işaretlendi"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
@@ -308,7 +308,7 @@ msgstr "{0} sipariş"
 
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
-msgstr ""
+msgstr "{0} parça bağlantısı operasyondaki BOM çizgisiyle eşleşmedi"
 
 #. placeholder {0}: payments.length
 msgid "{0} payments"
@@ -503,6 +503,9 @@ msgstr "{count} adet"
 msgid "{created} created, {updated} updated."
 msgstr "{created} oluşturuldu, {updated} güncellendi."
 
+msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr "{customersWithoutTaxCode, plural, one {# müşterinin bir vergi yüzdesi var, ancak vergi kodu yok. Bunu seçin ve Vergi Kodu Ata'yı seçin.} other {# müşterinin bir vergi yüzdesi var, ancak vergi kodu yok. Bunları seçin ve Vergi Kodu Ata'yı seçin.}}"
+
 msgid "{days}d"
 msgstr "{days}g"
 
@@ -522,7 +525,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
 
 msgid "{errors} failed"
-msgstr ""
+msgstr "{errors} başarısız oldu"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç tutuldu}}"
@@ -563,7 +566,7 @@ msgid "{locationName} (the lease's)"
 msgstr "{locationName} (kiralamanın)"
 
 msgid "{manual} targets are committed — review on the order"
-msgstr ""
+msgstr "{manual} hedef taahhüt edildi — siparişte gözden geçir"
 
 msgid "{mappedCount} of {totalCount} mapped"
 msgstr "{totalCount} cihazdan {mappedCount} eşlendi"
@@ -670,10 +673,13 @@ msgid "{selectedCount} selected"
 msgstr "{selectedCount} seçildi"
 
 msgid "{stale} changed since the page loaded"
-msgstr ""
+msgstr "{stale} sayfanın yüklenmesinden beri değişti"
 
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} eşitlendi"
+
+msgid "{suppliersWithoutTaxCode, plural, one {# supplier has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# suppliers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr "{suppliersWithoutTaxCode, plural, one {# tedarikçinin bir vergi yüzdesi var, ancak vergi kodu yok. Bunu seçin ve Vergi Kodu Ata'yı seçin.} other {# tedarikçinin bir vergi yüzdesi var, ancak vergi kodu yok. Bunları seçin ve Vergi Kodu Ata'yı seçin.}}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ay} other {# ay}}"
@@ -709,10 +715,13 @@ msgid "{unitCount} units"
 msgstr "{unitCount} adet"
 
 msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
-msgstr ""
+msgstr "{unmapped} bileşenin BOM eşleşmesi yok — malzemelerini bağlamak için BOM Eşleştir'i kullanın."
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Önce kalan # gerekli hesabı eşleyin.} other {Önce kalan # gerekli hesabı eşleyin.}}"
+
+msgid "{unmappedTaxCodeCount, plural, one {Map the # remaining tax code first.} other {Map the # remaining tax codes first.}}"
+msgstr "{unmappedTaxCodeCount, plural, one {Önce # kalan vergi kodunu eşleştirin.} other {Önce # kalan vergi kodlarını eşleştirin.}}"
 
 msgid "{unread} unread"
 msgstr "{unread} okunmamış"
@@ -730,7 +739,7 @@ msgid "{variances, plural, one {# line differs from the expected quantity} other
 msgstr "{variances, plural, one {# satır beklenen miktardan farklıdır} other {# satır beklenen miktardan farklıdır}}"
 
 msgid "{warnings} need a follow-up"
-msgstr ""
+msgstr "{warnings} bir takip gerektirir"
 
 msgid "{years}yr"
 msgstr "{years}yr"
@@ -807,7 +816,7 @@ msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 fatura önceki sisteminizde faturalandırıldı ve tekrar taslak olarak oluşturulmadı."
 
 msgid "1 item marked as picked"
-msgstr ""
+msgstr "1 öğe toplandı olarak işaretlendi"
 
 msgid "1 job created"
 msgstr "1 iş oluşturuldu"
@@ -837,7 +846,7 @@ msgid "1 suggested batch"
 msgstr "1 önerilen parti"
 
 msgid "1 target is committed — review on the order"
-msgstr ""
+msgstr "1 hedef taahhüt edildi — siparişte gözden geçir"
 
 msgid "1 unit"
 msgstr "1 adet"
@@ -1147,6 +1156,9 @@ msgstr "Ölçüm aleti (kumpas, mikrometre, pin ölçüm aleti, CMM) bir kayıt 
 
 msgid "A name is required to save a view"
 msgstr "Bir görünüm kaydetmek için bir isim gereklidir"
+
+msgid "A named tax treatment, such as \"TX – Houston\", made of one or more tax components; a document line takes the combined rate of the components in force on its date."
+msgstr "\"TX – Houston\" gibi adlandırılmış bir vergi işlemi, bir veya daha fazla vergi bileşeninden oluşur; bir belge satırı, tarihi itibariyle geçerli olan bileşenlerin toplam oranını alır."
 
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Belirli bir müşteri, müşteri türü veya tüm müşteriler için sabitlenmiş ve temel fiyatın yerini tamamıyla alan, isteğe bağlı olarak miktar kademesileri ile birlikte gelen müzakere edilmiş fiyat."
@@ -1708,13 +1720,13 @@ msgid "Accounts Payable"
 msgstr "Borç hesapları"
 
 msgid "Accounts payable billing address disabled"
-msgstr ""
+msgstr "Borç hesapları fatura adresi devre dışı bırakıldı"
 
 msgid "Accounts payable billing address enabled"
-msgstr ""
+msgstr "Borç hesapları fatura adresi etkinleştirildi"
 
 msgid "Accounts payable billing address updated"
-msgstr ""
+msgstr "Borç hesapları fatura adresi güncellendi"
 
 msgid "Accounts payable for amounts owed to suppliers"
 msgstr "Tedarikçilere borçlu olunan tutarlar için ödenecek hesaplar."
@@ -1723,13 +1735,13 @@ msgid "Accounts Receivable"
 msgstr "Alacak hesapları"
 
 msgid "Accounts receivable billing address disabled"
-msgstr ""
+msgstr "Alacak hesapları fatura adresi devre dışı bırakıldı"
 
 msgid "Accounts receivable billing address enabled"
-msgstr ""
+msgstr "Alacak hesapları fatura adresi etkinleştirildi"
 
 msgid "Accounts receivable billing address updated"
-msgstr ""
+msgstr "Alacak hesapları fatura adresi güncellendi"
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Müşteriler tarafından borçlu olunan tutarlar için alacak hesapları."
@@ -2259,7 +2271,7 @@ msgstr "Eklenen {0} satır"
 
 #. placeholder {0}: data.materialsCreated
 msgid "added {0} step materials"
-msgstr ""
+msgstr "{0} adım malzemesi eklendi"
 
 msgid "Added {name} · {quantity} × {rate}"
 msgstr "Eklendi {name} · {quantity} × {rate}"
@@ -2384,6 +2396,9 @@ msgstr "Tüm gelişmiş özellikler kullanılabilir"
 
 msgid "All Audit Logs"
 msgstr "Tüm Denetim Günlükleri"
+
+msgid "All authorities"
+msgstr "Tüm otoriteler"
 
 msgid "All changes to auditable entities are being recorded."
 msgstr "Denetlenebilir varlıklardaki tüm değişiklikler kaydediliyor."
@@ -2540,6 +2555,9 @@ msgstr "Giderleri departman veya işlev tarafından gruplandıran ve Büyük Def
 
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "Gider yerine amortisman yaptığınız kapitalize edilmiş bir madde için bir muhasebe kaydı; Taslak → Aktif → Amortismanı tamamlanmış → Elden çıkarıldı."
+
+msgid "An active tax code charges tax in these countries, but the company has no tax registration there."
+msgstr "Aktif bir vergi kodu bu ülkelerde vergi tahsil etmesine rağmen, şirketin bu ülkelerde vergi kaydı yoktur."
 
 msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
 msgstr "Bir carbon/notify etkinliğinden uygulama içi gelen kutusu ve isteğe bağlı e-posta ve Slack'e dağıtılan bir uyarı; konu başına ve kullanıcı başına sessize alınabilir."
@@ -2817,10 +2835,10 @@ msgid "Applied"
 msgstr "Uygulandı"
 
 msgid "Applied {applied} planning actions"
-msgstr ""
+msgstr "{applied} planlama eylem uygulandı"
 
 msgid "Applied 1 planning action"
-msgstr ""
+msgstr "1 planlama eylem uygulandı"
 
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Uygulanan tutarlar şirket temel para birimindedir ({baseCurrency})."
@@ -3301,6 +3319,13 @@ msgstr "Depolama birimini silmek istediğinizden emin misiniz: {0}? Bu geri alı
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "Tedarikçi türünü silmek istediğinizden emin misiniz: {0}? Bu geri alınamaz."
 
+#. placeholder {0}: taxAuthority.name
+msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
+msgstr "{0} vergi otoritesini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+
+msgid "Are you sure you want to delete the tax registration: {name}? This cannot be undone."
+msgstr "{name} vergi kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "Birim ölçüsünü silmek istediğinizden emin misiniz: {0}? Bu geri alınamaz."
@@ -3568,6 +3593,9 @@ msgstr "Varlık hesabı"
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Mallar veya hizmetler alınmadan önce tedarikçilere yapılan ön ödemeler için varlık hesabı"
 
+msgid "Asset account for the recoverable share of tax paid on purchases"
+msgstr "Satın alınanlar üzerindeki verginin geri alınabilir payı için varlık hesabı"
+
 msgid "Asset Acquisition Cost"
 msgstr "Varlık Edinme Maliyeti"
 
@@ -3631,6 +3659,9 @@ msgstr "Yüklü bir operasyonun talep etmediği makine süresini doğru işe ata
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
 
+msgid "Assign Tax Code"
+msgstr "Vergi Kodu Ata"
+
 msgid "Assign To"
 msgstr "Ata"
 
@@ -3644,13 +3675,13 @@ msgid "Assigned"
 msgstr "Atanmış"
 
 msgid "Assigned {changed} planning actions"
-msgstr ""
+msgstr "{changed} planlama eylem atandı"
 
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName} öğesi hafta boyunca {targetName} için atandı"
 
 msgid "Assigned 1 planning action"
-msgstr ""
+msgstr "1 planlama eylem atandı"
 
 msgid "Assigned to Me"
 msgstr "Bana Atananlar"
@@ -3665,7 +3696,7 @@ msgid "Assignment"
 msgstr "Görevlendirme"
 
 msgid "Assignment updated"
-msgstr ""
+msgstr "Atama güncellendi"
 
 msgid "Assignments"
 msgstr "Atamalar"
@@ -3768,6 +3799,9 @@ msgstr "Kimlik Doğrulayıcı Uygulaması"
 
 msgid "Authenticator QR code"
 msgstr "Doğrulayıcı QR kodu"
+
+msgid "Authority"
+msgstr "Otorite"
 
 msgid "Authorized overtime on top of the shift"
 msgstr "Vardiyayı çok aşan yetkili fazla mesai"
@@ -4232,7 +4266,7 @@ msgid "BoM Explorer"
 msgstr "BoM Gezgini"
 
 msgid "BoM explorer setting updated"
-msgstr ""
+msgstr "BOM explorer ayarı güncellendi"
 
 msgid "BOM synced successfully"
 msgstr "BOM başarıyla senkronize edildi"
@@ -4395,6 +4429,9 @@ msgstr "En iyi durum hesaplanıyor…"
 
 msgid "Calculation Method"
 msgstr "Hesaplama Yöntemi"
+
+msgid "Calculation Type"
+msgstr "Hesaplama Türü"
 
 msgid "Calendar"
 msgstr "Takvim"
@@ -5065,7 +5102,7 @@ msgid "Clocked in since <0/>"
 msgstr "<0/> tarihinden beri saatlenmiş"
 
 msgid "Clocked out"
-msgstr ""
+msgstr "Çıkış yapıldı"
 
 msgid "Close"
 msgstr "Kapat"
@@ -5236,7 +5273,7 @@ msgid "Company default ({companyLabel})"
 msgstr "Şirket varsayılanı ({companyLabel})"
 
 msgid "Company default updated"
-msgstr ""
+msgstr "Şirket varsayılanı güncellendi"
 
 msgid "Company group"
 msgstr "Şirket grubu"
@@ -5331,6 +5368,9 @@ msgstr "Tamamlama devam ediyor — Atölye'de yeniden deneyin"
 msgid "Completion Time"
 msgstr "Tamamlama Süresi"
 
+msgid "Component"
+msgstr "Bileşen"
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "Bileşen ayrıntıları: {0}"
@@ -5346,6 +5386,9 @@ msgstr "Bileşenler"
 
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "Bu adım oynarken yalnızca gizli bileşenler, yolda bir bağlama aparatı gibi; birini gizlemek için Bileşenler sekmesindeki gözü kullanın."
+
+msgid "Compound"
+msgstr "Bileşik"
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -5557,7 +5600,7 @@ msgstr "Konsol Modu"
 
 #. placeholder {0}: data.pinError.toLowerCase()
 msgid "Console mode enabled, but {0}. Set one from Users → Employees → Set Console PIN."
-msgstr ""
+msgstr "Konsol modu etkinleştirildi, ancak {0}. Kullanıcılar → Çalışanlar → Konsol PIN'ini Ayarla'dan bir tane ayarlayın."
 
 msgid "Console mode has been enabled. Use this PIN to identify yourself at MES terminals."
 msgstr "Konsol modu etkinleştirildi. Kendinizi MES terminallerinde tanımlamak için bu PIN'i kullanın."
@@ -5569,7 +5612,7 @@ msgid "Console mode is enabled"
 msgstr "Konsol modu etkinleştirildi"
 
 msgid "Console mode settings updated"
-msgstr ""
+msgstr "Konsol modu ayarları güncellendi"
 
 msgid "Console Operator"
 msgstr "Konsol Operatörü"
@@ -5596,7 +5639,7 @@ msgid "Consumable ID"
 msgstr "Sarf malzemesi ID"
 
 msgid "Consumable supplier created"
-msgstr ""
+msgstr "Sarf malzemesi tedarikçisi oluşturuldu"
 
 msgid "consumables"
 msgstr "sarf malzemeleri"
@@ -5780,7 +5823,7 @@ msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satır
 
 #. placeholder {0}: counts.copied ?? 0
 msgid "Copied {0} assignments"
-msgstr ""
+msgstr "{0} atama kopyalandı"
 
 msgid "Copied ID to clipboard"
 msgstr "ID panoya kopyalandı"
@@ -6171,6 +6214,9 @@ msgstr "İlgili belgeler yüklenemedi. Yinelemelerden kaçınmak için yeni bir 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Sağlayıcının boyut hedefleri yüklenemedi — bağlantıyı kontrol edin ve sayfayı yeniden yükleyin."
 
+msgid "Couldn't load the provider's tax rates — check the connection and reload."
+msgstr "Sağlayıcının vergi oranları yüklenemedi — bağlantıyı kontrol edin ve yeniden yükleyin."
+
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "İş yeniden planlanamadı. Lütfen tekrar deneyin."
 
@@ -6493,6 +6539,12 @@ msgstr "Depolama türü oluşturuldu"
 msgid "Created supplier: {0}"
 msgstr "Oluşturulan tedarikçi: {0}"
 
+msgid "Created tax authority"
+msgstr "Vergi otoritesi oluşturuldu"
+
+msgid "Created tax registration"
+msgstr "Vergi kaydı oluşturuldu"
+
 msgid "Created tool"
 msgstr "Oluşturulan araç"
 
@@ -6610,7 +6662,7 @@ msgid "Currency code"
 msgstr "Para birimi kodu"
 
 msgid "Currency display updated"
-msgstr ""
+msgstr "Para birimi gösterimi güncellendi"
 
 msgid "Currency Translation"
 msgstr "Kur çevrimi"
@@ -6694,10 +6746,10 @@ msgid "Customer Contact"
 msgstr "Müşteri İlgili Kişi"
 
 msgid "Customer contact requirement disabled"
-msgstr ""
+msgstr "Müşteri ilgili kişi gereksinimi devre dışı bırakıldı"
 
 msgid "Customer contact requirement enabled"
-msgstr ""
+msgstr "Müşteri ilgili kişi gereksinimi etkinleştirildi"
 
 msgid "Customer contacts"
 msgstr "Müşteri ilgili kişileri"
@@ -6712,7 +6764,7 @@ msgid "Customer Details"
 msgstr "Müşteri Detayları"
 
 msgid "Customer email settings updated"
-msgstr ""
+msgstr "Müşteri e-posta ayarları güncellendi"
 
 msgid "Customer engineering contact"
 msgstr "Müşteri mühendislik ilgili kişi"
@@ -6733,10 +6785,10 @@ msgid "Customer IDs are shown"
 msgstr "Müşteri ID'leri gösteriliyor"
 
 msgid "Customer IDs hidden"
-msgstr ""
+msgstr "Müşteri ID'leri gizlendi"
 
 msgid "Customer IDs shown"
-msgstr ""
+msgstr "Müşteri ID'leri gösterildi"
 
 msgid "Customer Invoice Number"
 msgstr "Müşteri Fatura Numarası"
@@ -6895,7 +6947,7 @@ msgid "Dashboard"
 msgstr "Gösterge Paneli"
 
 msgid "Dashboard settings updated"
-msgstr ""
+msgstr "Pano ayarları güncellendi"
 
 msgid "Data flows through once instead of being re-keyed and reconciled across tools."
 msgstr "Veriler bir kez akış sağlar, farklı araçlar arasında yeniden girilmez ve uzlaştırılmaz."
@@ -7141,7 +7193,7 @@ msgid "Default cash account for transactions in your base currency."
 msgstr "Temel para biriminizde işlemler için varsayılan nakit hesabı"
 
 msgid "Default category markups updated"
-msgstr ""
+msgstr "Varsayılan kategori marjları güncellendi"
 
 msgid "Default cc"
 msgstr "Varsayılan cc"
@@ -7605,6 +7657,12 @@ msgstr "Tedarikçi İadesini Sil"
 msgid "Delete Supplier Type"
 msgstr "Tedarikçi Türünü Sil"
 
+msgid "Delete Tax Authority"
+msgstr "Vergi Otoritesini Sil"
+
+msgid "Delete Tax Registration"
+msgstr "Vergi Kaydını Sil"
+
 #. placeholder {0}: formatDate(deleting.invoiceDate)
 msgid "Delete the {0} invoice"
 msgstr "{0} faturasını sil"
@@ -7662,7 +7720,7 @@ msgid "Deleted"
 msgstr "Silindi"
 
 msgid "Deleted attribute value"
-msgstr ""
+msgstr "Öznitelik değeri silindi"
 
 msgid "Deliver"
 msgstr "Teslim Et"
@@ -7857,7 +7915,7 @@ msgid "Digital quote rejected by email"
 msgstr "Dijital teklif e-posta ile reddedildi"
 
 msgid "Digital quote setting updated"
-msgstr ""
+msgstr "Dijital teklif ayarı güncellendi"
 
 msgid "Digital Quotes"
 msgstr "Dijital Teklifler"
@@ -7971,10 +8029,10 @@ msgid "Dismissed"
 msgstr "Reddedildi"
 
 msgid "Dismissed {changed} planning actions"
-msgstr ""
+msgstr "Reddedilen {changed} planlama eylem"
 
 msgid "Dismissed 1 planning action"
-msgstr ""
+msgstr "Reddedilen 1 planlama eylem"
 
 msgid "Dispatch"
 msgstr "Bakım emri"
@@ -8792,6 +8850,15 @@ msgstr "Tedarikçi Prosesi Düzenle"
 msgid "Edit Supplier Type"
 msgstr "Tedarikçi Türünü Düzenle"
 
+msgid "Edit Tax Authority"
+msgstr "Vergi Otoritesini Düzenle"
+
+msgid "Edit Tax Code"
+msgstr "Vergi Kodunu Düzenle"
+
+msgid "Edit Tax Registration"
+msgstr "Vergi Kaydını Düzenle"
+
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Kuralı düzenleyerek \"Tümüne uygulanır\" işaretini kaldırın"
 
@@ -8839,6 +8906,10 @@ msgstr "Yürürlükte"
 
 msgid "Effective Date"
 msgstr "Yürürlük Tarihi"
+
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Effective rate today: <0>{0}</0>"
+msgstr "Bugünün geçerli oranı: <0>{0}</0>"
 
 msgid "Eliminated"
 msgstr "Ortadan Kaldırılmış"
@@ -9187,16 +9258,16 @@ msgid "Entry"
 msgstr "Giriş"
 
 msgid "Entry added"
-msgstr ""
+msgstr "Girdi eklendi"
 
 msgid "Entry deleted"
-msgstr ""
+msgstr "Girdi silindi"
 
 msgid "Entry Type"
 msgstr "Giriş Türü"
 
 msgid "Entry updated"
-msgstr ""
+msgstr "Girdi güncellendi"
 
 msgid "EORI"
 msgstr "EORI"
@@ -9329,13 +9400,13 @@ msgid "Event"
 msgstr "Etkinlik"
 
 msgid "Event saved"
-msgstr ""
+msgstr "Etkinlik kaydedildi"
 
 msgid "Event started"
-msgstr ""
+msgstr "Etkinlik başladı"
 
 msgid "Event stopped"
-msgstr ""
+msgstr "Etkinlik durduruldu"
 
 msgid "Event Type"
 msgstr "Olay Türü"
@@ -9385,6 +9456,9 @@ msgstr "Her satır faturaladığı şeyi muhasebeleştirir."
 msgid "Every match"
 msgstr "Her eşleşme"
 
+msgid "Every other active tax code. Pick a different provider rate to re-map."
+msgstr "Diğer tüm aktif vergi kodları. Yeniden eşleştirmek için farklı bir sağlayıcı oranı seçin."
+
 msgid "Every required action has already been added."
 msgstr "Gerekli olan tüm eylemler zaten eklendi."
 
@@ -9393,6 +9467,9 @@ msgstr "Dönem kapatılmadan önce her gerekli görev Bitti veya Atlandı olmal�
 
 msgid "Every row was imported successfully."
 msgstr "Her satır başarıyla içe aktarıldı."
+
+msgid "Every tax code in use is mapped"
+msgstr "Tüm vergi kodları eşleştirilmiştir"
 
 msgid "Every unit has a rate."
 msgstr "Her adetin bir oranı vardır."
@@ -9444,6 +9521,9 @@ msgstr "Hariç Tutulan"
 
 msgid "Executive P&L"
 msgstr "Yönetici P&L"
+
+msgid "Exempt Sales"
+msgstr "Muaf Satışlar"
 
 msgid "Exemption Certificate"
 msgstr "İstisnai Sertifika"
@@ -9817,6 +9897,14 @@ msgid "Failed to create supplier: {0}"
 msgstr "Tedarikçi oluşturulamadı: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax authority: {0}"
+msgstr "Vergi otoritesi oluşturulamadı: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax registration: {0}"
+msgstr "Vergi kaydı oluşturulamadı: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
 msgstr "Araç oluşturulamadı: {0}"
 
@@ -10003,7 +10091,7 @@ msgid "Failed to save the change"
 msgstr "Değişikliği kaydetme başarısız oldu"
 
 msgid "Failed to save the content"
-msgstr ""
+msgstr "İçerik kaydedilemedi"
 
 msgid "Failed to save the cost"
 msgstr "Maliyet kaydedilemedi"
@@ -10045,7 +10133,7 @@ msgid "Failed to update supplier quote line"
 msgstr "Tedarikçi teklif satırı güncellenemedi"
 
 msgid "Failed to update the setting"
-msgstr ""
+msgstr "Ayar güncellenemedi"
 
 msgid "Failed to update thumbnail path"
 msgstr "Küçük resim yolu güncellenemedi"
@@ -10335,7 +10423,7 @@ msgid "Fixed Asset Class"
 msgstr "Sabit Kıymet Sınıfı"
 
 msgid "Fixed asset settings updated"
-msgstr ""
+msgstr "Sabit kıymet ayarları güncellendi"
 
 msgid "Fixed Assets"
 msgstr "Sabit kıymetler"
@@ -10401,7 +10489,7 @@ msgid "Forecast Consumption"
 msgstr "Tahmin Tüketimi"
 
 msgid "Forecast consumption updated"
-msgstr ""
+msgstr "Tahmin tüketimi güncellendi"
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -10429,10 +10517,10 @@ msgid "Foundation (everyone)"
 msgstr "Temel (herkes)"
 
 msgid "Four-eyes enforcement disabled"
-msgstr ""
+msgstr "Dört göz denetimi devre dışı bırakıldı"
 
 msgid "Four-eyes enforcement enabled"
-msgstr ""
+msgstr "Dört göz denetimi etkinleştirildi"
 
 msgid "Freeze the old system, no new transactions"
 msgstr "Eski sistemi dondur, yeni işlem yok"
@@ -10545,7 +10633,7 @@ msgid "Gauge"
 msgstr "Ölçüm aleti"
 
 msgid "Gauge calibration notification settings updated"
-msgstr ""
+msgstr "Ölçüm aleti kalibrasyon bildirim ayarları güncellendi"
 
 msgid "Gauge Calibration Notifications"
 msgstr "Ölçüm Aleti Kalibrasyon Bildirimleri"
@@ -10608,7 +10696,7 @@ msgid "Generate Picking List"
 msgstr "Toplama listesi oluştur"
 
 msgid "Generated {created} steps from the motion plan"
-msgstr ""
+msgstr "Hareket planından {created} adım oluşturuldu"
 
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "Bir kira sözleşmesinden oluşturuldu. Bu satırı değiştirmek için sözleşmeyi değiştirin."
@@ -10706,9 +10794,6 @@ msgstr "Banka hizmet bedelleri ve benzeri ücretler için muhasebe hesabı."
 msgid "GL account for interest income or expense."
 msgstr "Faiz geliri veya gideri için GL hesabı."
 
-msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "Tedarikçilere ödenen satın alma vergisi için GL hesabı (veya geri alınabilir)."
-
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 msgstr "Alıcının kendisini değerlendirdiği ters masraf kuralları altında tahakkuk eden Vergi için Muhasebe hesabı."
 
@@ -10751,6 +10836,9 @@ msgstr "Müşterilere verilen erken ödeme iskontolarının kaydedildiği muhase
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Tedarikçilerden alınan erken ödeme iskontolarının kaydedildiği muhasebe hesabı."
 
+msgid "GL asset account debited with the recoverable share of tax paid to suppliers."
+msgstr "Tedarikçilere ödenen verginin geri alınabilir payı için büyük defter varlık hesabı"
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Amortisman muhasebeleştirildiğinde her dönem alacağa kaydedilen ve varlık satıldığında veya hurda hale getirildiğinde tam olarak borca kaydedilen muhasebe kontra-varlık hesabı."
 
@@ -10772,8 +10860,8 @@ msgstr "Bir varlığın defter değeri zayıflamaya maruz kaldığında, yani ge
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Stok dışı satın almalar (malzeme, hizmet) için muhasebe gider hesabı."
 
-msgid "GL liability account credited for sales tax collected from customers."
-msgstr "Müşterilerden toplanan satış vergisi için alacağa kaydedilen muhasebe yükümlülük hesabı."
+msgid "GL liability account credited with tax collected from customers."
+msgstr "Müşterilerden toplanan vergi için büyük defter yükümlülük hesabı"
 
 msgid "GL tie-out"
 msgstr "Muhasebe mutabakatı"
@@ -10865,6 +10953,9 @@ msgstr "Her kullanıcıya modüle özel, ayrıntılı izinler verin, herkes içi
 
 msgid "Grants Ability"
 msgstr "Yetkinlik Verir"
+
+msgid "Gross"
+msgstr "Brüt"
 
 msgid "Gross Profit"
 msgstr "Brüt Kar"
@@ -11858,8 +11949,11 @@ msgstr "Fatura Kimlik Numarası"
 msgid "Invoice Location"
 msgstr "Fatura Konumu"
 
+msgid "Invoice Message"
+msgstr "Fatura Mesajı"
+
 msgid "Invoice notification settings updated"
-msgstr ""
+msgstr "Fatura bildirim ayarları güncellendi"
 
 msgid "Invoice Now"
 msgstr "Şimdi Fatura Oluştur"
@@ -11868,7 +11962,7 @@ msgid "Invoice Number"
 msgstr "Fatura Numarası"
 
 msgid "Invoice posted and sent via Stripe"
-msgstr ""
+msgstr "Fatura muhasebeleştirildi ve Stripe üzerinden gönderildi"
 
 msgid "Invoice Rate"
 msgstr "Fatura döviz kuru"
@@ -12081,7 +12175,7 @@ msgid "Item Group"
 msgstr "Ürün Grubu"
 
 msgid "Item group ownership updated"
-msgstr ""
+msgstr "Stok kartı grubu sahipliği güncellendi"
 
 msgid "item groups"
 msgstr "madde grupları"
@@ -12096,7 +12190,7 @@ msgid "Item ID"
 msgstr "Ürün Kimliği"
 
 msgid "Item ID casing setting updated"
-msgstr ""
+msgstr "Stok kartı ID'si büyüklük ayarı güncellendi"
 
 msgid "Item IDs"
 msgstr "Ürün Kimlikleri"
@@ -12174,10 +12268,10 @@ msgid "Job · {itemReadableId}"
 msgstr "İş emri · {itemReadableId}"
 
 msgid "Job cancelled"
-msgstr ""
+msgstr "İş emri iptal edildi"
 
 msgid "Job completed successfully"
-msgstr ""
+msgstr "İş emri başarıyla tamamlandı"
 
 msgid "Job completions"
 msgstr "İş emri tamamlamaları"
@@ -12204,7 +12298,7 @@ msgid "Job Materials"
 msgstr "İş emri malzemeleri"
 
 msgid "Job notification settings updated"
-msgstr ""
+msgstr "İş emri bildirim ayarları güncellendi"
 
 msgid "Job operation"
 msgstr "İş emri operasyonu"
@@ -12286,7 +12380,7 @@ msgid "Kanban Output"
 msgstr "Kanban Çıktısı"
 
 msgid "Kanban output setting updated"
-msgstr ""
+msgstr "Kanban çıkış ayarı güncellendi"
 
 msgid "Kanbans"
 msgstr "Kanbanlar"
@@ -12504,10 +12598,10 @@ msgid "Lead time updates are enabled"
 msgstr "Tedarik süresi güncellemeleri etkinleştirildi"
 
 msgid "Lead time updates on receipt disabled"
-msgstr ""
+msgstr "Mal kabul üzerindeki tedarik süresi güncellemeleri devre dışı bırakıldı"
 
 msgid "Lead time updates on receipt enabled"
-msgstr ""
+msgstr "Mal kabul üzerindeki tedarik süresi güncellemeleri etkinleştirildi"
 
 msgid "Lead Time:"
 msgstr "Tedarik süresi:"
@@ -12546,7 +12640,7 @@ msgid "Lease Liability:"
 msgstr "Kira Yükümlülüğü:"
 
 msgid "Lease policy updated"
-msgstr ""
+msgstr "Kiralama politikası güncellendi"
 
 msgid "Lease Reminder Days"
 msgstr "Kira Hatırlatma Günleri"
@@ -12669,11 +12763,8 @@ msgstr "Çalışanlara ödenen gider geri ödemelerine ait borç tutarları içi
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Hızlandırılmış amortisman nedeniyle ertelenen vergiler için borç hesabı"
 
-msgid "Liability account for sales tax collected from customers"
-msgstr "Müşterilerden toplanan satış vergisi için borç hesabı"
-
-msgid "Liability account for tax paid on purchases"
-msgstr "Satın almalar üzerinde ödenen vergi için borç hesabı"
+msgid "Liability account for tax collected from customers"
+msgstr "Müşterilerden toplanan vergi için yükümlülük hesabı"
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Hizmet tarihli veya kiralama fatura satırı, hasılat kazanılmadan önce faturalandırıldığında kredi verilen yükümlülük; muhasebe tanıma çalıştırmaları tarafından serbest bırakılır"
@@ -12772,7 +12863,7 @@ msgid "Line Type"
 msgstr "Satır Türü"
 
 msgid "Line unpicked"
-msgstr ""
+msgstr "Satır toplanmamış hale getirildi"
 
 msgid "Linear Team"
 msgstr "Lineer Takım"
@@ -12926,7 +13017,7 @@ msgid "Location Name"
 msgstr "Konum Adı"
 
 msgid "Location ownership updated"
-msgstr ""
+msgstr "Lokasyon sahipliği güncellendi"
 
 msgid "Location shifts"
 msgstr "Konum vardiyaları"
@@ -13029,10 +13120,10 @@ msgid "Lot-based inspection of received goods against a sampling plan; the units
 msgstr "Lot tabanlı alınan malların örnekleme planına karşı muayenesi; birimler mal kabulde Askıda durumunda kaydedilir ve Lot kabul edildi olarak sınıflandırıldıktan sonra Kullanılabilir durumuna serbest bırakılır."
 
 msgid "Lots merged"
-msgstr ""
+msgstr "Lotlar birleştirildi"
 
 msgid "Lots merged into {readableId}"
-msgstr ""
+msgstr "Lotlar {readableId} içine birleştirildi"
 
 msgid "Low"
 msgstr "Düşük"
@@ -13107,7 +13198,7 @@ msgid "Maintenance Dispatch"
 msgstr "Bakım emri"
 
 msgid "Maintenance dispatch notification settings updated"
-msgstr ""
+msgstr "Bakım emri bildirim ayarları güncellendi"
 
 msgid "Maintenance Dispatch Notifications"
 msgstr "Bakım emri bildirimleri"
@@ -13248,6 +13339,9 @@ msgstr "üretim engellendi"
 msgid "Map accounts"
 msgstr "Hesapları Eşle"
 
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
+msgstr "Her Carbon vergi kodunu bir sağlayıcı vergi oranına eşleştirin, satışlar için bir kez ve satın almalar için bir kez. Gönderilen belgeler eşleştirilen oranla Carbon'un vergi tutarını gönderir."
+
 msgid "Map Extracted Invoice Lines"
 msgstr "Çıkarılan Fatura Satırlarını Eşle"
 
@@ -13269,7 +13363,7 @@ msgstr "Mevcut sürecinizi, sistemlerinizi ve verilerinizi eşleyin"
 #. placeholder {0}: data.mapped
 #. placeholder {1}: data.totalComponents
 msgid "Mapped {0} of {1} components to the bill of materials"
-msgstr ""
+msgstr "{0} bileşenin {1}'i Ürün ağacına eşleştirildi"
 
 msgid "Mapped devices"
 msgstr "Eşlenen cihazlar"
@@ -13329,7 +13423,7 @@ msgstr "Silmek için işaretle"
 
 #. placeholder {0}: counts.created ?? 0
 msgid "Marked absent for {0} day(s)"
-msgstr ""
+msgstr "{0} gün boyunca devamsız olarak işaretlendi"
 
 msgid "Market rate"
 msgstr "Piyasa kuru"
@@ -13376,6 +13470,9 @@ msgstr "Koda göre eşleştir"
 msgid "Match by name"
 msgstr "Ada göre eşleştir"
 
+msgid "Match by rate"
+msgstr "Orana Göre Eşleştir"
+
 msgid "Match none"
 msgstr "Hiçbiriyle eşleşme"
 
@@ -13398,7 +13495,7 @@ msgid "Material Cost"
 msgstr "Malzeme Maliyeti"
 
 msgid "Material created"
-msgstr ""
+msgstr "Malzeme oluşturuldu"
 
 msgid "Material Dimension"
 msgstr "Malzeme Boyutu"
@@ -13437,7 +13534,7 @@ msgid "Material IDs"
 msgstr "Malzeme Kimlikleri"
 
 msgid "Material IDs setting updated"
-msgstr ""
+msgstr "Malzeme ID'leri ayarı güncellendi"
 
 msgid "Material is pre-selected"
 msgstr "Malzeme önceden seçilmiş"
@@ -13455,16 +13552,16 @@ msgid "Material planning shows only the actions and suggested orders due within 
 msgstr "Malzeme planlama yalnızca bu kadar gün içinde gerçekleşmesi gereken eylemleri ve önerilen siparişleri gösterir; böylece uzak gelecekteki gereksinimler önemli olana kadar yol dışında kalır. Bir stok kartının kendi planlama ufku bu varsayılanı geçersiz kılar."
 
 msgid "Material pre-selection disabled"
-msgstr ""
+msgstr "Malzeme ön seçimi devre dışı bırakıldı"
 
 msgid "Material pre-selection enabled"
-msgstr ""
+msgstr "Malzeme ön seçimi etkinleştirildi"
 
 msgid "Material Properties"
 msgstr "Malzeme Özellikleri"
 
 msgid "Material return timing updated"
-msgstr ""
+msgstr "Malzeme iade zamanlaması güncellendi"
 
 msgid "Material Review Board (MRB)"
 msgstr "Malzeme İnceleme Kurulu (MRB)"
@@ -13482,7 +13579,7 @@ msgid "Material Substances"
 msgstr "Ana malzemeler"
 
 msgid "Material supplier created"
-msgstr ""
+msgstr "Malzeme tedarikçisi oluşturuldu"
 
 msgid "material type"
 msgstr "Malzeme Türü"
@@ -13497,10 +13594,10 @@ msgid "Material Types"
 msgstr "Malzeme Tipleri"
 
 msgid "Material units setting updated"
-msgstr ""
+msgstr "Malzeme birimleri ayarı güncellendi"
 
 msgid "Material updated"
-msgstr ""
+msgstr "Malzeme güncellendi"
 
 msgid "Material Usage Variance"
 msgstr "Malzeme Kullanım Sapması"
@@ -13734,10 +13831,10 @@ msgid "Mode"
 msgstr "Mod"
 
 msgid "Model cache invalidated; re-converting from the source file"
-msgstr ""
+msgstr "Model önbelleği geçersiz kılındı; kaynak dosyadan yeniden dönüştürülüyor"
 
 msgid "Model conversion started"
-msgstr ""
+msgstr "Model dönüşümü başladı"
 
 msgid "Model Number"
 msgstr "Model Numarası"
@@ -13873,7 +13970,7 @@ msgid "Motion"
 msgstr "Hareket"
 
 msgid "Motion planning started — steps generate when it finishes"
-msgstr ""
+msgstr "Hareket planlama başladı — adımlar bittiğinde oluşturulur"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
 msgstr "Mount bu tanımlayıcıya sahip {matches} kayıt içeriyor. Fazlasını Mount'ta silin veya birleştirin, sonra yeniden gönderin."
@@ -13910,6 +14007,9 @@ msgstr "Taşış"
 
 msgid "Move to Group"
 msgstr "Gruba Taşı"
+
+msgid "Move to tax codes"
+msgstr "Vergi Kodlarına Taşı"
 
 msgid "Move to Trash"
 msgstr "Çöp Sepetine Taşı"
@@ -13951,7 +14051,7 @@ msgid "MRP Schedule"
 msgstr "MRP Çizelgesi"
 
 msgid "MRP schedule updated"
-msgstr ""
+msgstr "MRP çizelgesi güncellendi"
 
 msgid "MRP Suggestions"
 msgstr "MRP Önerileri"
@@ -14031,6 +14131,9 @@ msgstr "İncelemesi Gerekli"
 msgid "Negative Adjustment"
 msgstr "Negatif düzeltme"
 
+msgid "Net Amount"
+msgstr "Net Tutar"
+
 msgid "Net book value"
 msgstr "Net Defter Değeri"
 
@@ -14039,6 +14142,9 @@ msgstr "Net Defter Değeri"
 
 msgid "Net Change"
 msgstr "Net Değişim"
+
+msgid "Net Due"
+msgstr "Ödenecek Net"
 
 msgid "Net Income"
 msgstr "Net Gelir"
@@ -14370,6 +14476,15 @@ msgstr "Yeni Tedarikçi Parçası"
 msgid "New Supplier Return"
 msgstr "Yeni Tedarikçi İadesi"
 
+msgid "New Tax Authority"
+msgstr "Yeni Vergi Otoritesi"
+
+msgid "New Tax Code"
+msgstr "Yeni Vergi Kodu"
+
+msgid "New Tax Registration"
+msgstr "Yeni Vergi Kaydı"
+
 msgid "New Timecard"
 msgstr "Yeni Vardiya"
 
@@ -14541,6 +14656,9 @@ msgstr "Aktif bir plan yok"
 msgid "No Active Quotes"
 msgstr "Aktif Teklif Yok"
 
+msgid "No active tax code for {uncovered}"
+msgstr "{uncovered} için aktif vergi kodu yok"
+
 msgid "No addresses found"
 msgstr "Adres bulunamadı"
 
@@ -14571,6 +14689,9 @@ msgstr "Henüz varlık yok. Kiralamadaki her varlığı ve bunun için ödediği
 
 msgid "No attachments."
 msgstr "Ek ekli değil."
+
+msgid "No authority"
+msgstr "Vergi Dairesi yok"
 
 msgid "No available filters"
 msgstr "Kullanılabilir filtre yok"
@@ -14963,6 +15084,9 @@ msgstr "Hiç seçenek bulunamadı."
 msgid "No options found."
 msgstr "Seçenek bulunamadı."
 
+msgid "No other active tax codes"
+msgstr "Başka aktif vergi kodu yok"
+
 msgid "No other bins hold this item"
 msgstr "Bu stok kartını tutan başka göz yok"
 
@@ -15111,7 +15235,7 @@ msgid "No rules assigned"
 msgstr "Atanmış kural yok"
 
 msgid "No running job to cancel"
-msgstr ""
+msgstr "İptal edilecek çalışan hiçbir iş emri yok"
 
 msgid "No schedule lines."
 msgstr "Çizelge satırı yok."
@@ -15185,6 +15309,12 @@ msgstr "Henüz tedarikçi yok"
 msgid "No sync operations yet"
 msgstr "Henüz senkronizasyon operasyonu yok"
 
+msgid "No tax code"
+msgstr "Vergi kodu yok"
+
+msgid "No tax registration for {unregistered}"
+msgstr "{unregistered} için vergi kaydı yok"
+
 msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
 
@@ -15208,6 +15338,9 @@ msgstr "Henüz adet yok. Bu anlaşmanın kiraladığı filo adetlerini ekleyin."
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Haritalanmamış hesaplar sağlayıcı kodundan herhangi biriyle uyuşmıyor"
+
+msgid "No unmapped tax code matches exactly one provider rate"
+msgstr "Eşleştirilmemiş hiçbir vergi kodu tam olarak bir sağlayıcı oranıyla eşleşmiyor"
 
 msgid "No unmapped values match a provider option name"
 msgstr "Eşlenmemiş değerler hiçbir sağlayıcı seçeneğinin adıyla eşleşmiyor"
@@ -15642,6 +15775,9 @@ msgstr "Dönemin her yılı için bir ödeme."
 msgid "One payment for every three months."
 msgstr "Her üç ay için bir ödeme."
 
+msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
+msgstr "Bir vergi kodu içindeki, eyalet oranı veya şehir oranı gibi, kendi vergi dairesi, geri alınabilir yüzde ve yürürlüğe giriş tarihleri olan bir oran."
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "Her fatura için bir satır, her satır için bir sütun. Bir tarihi veya tutarı değiştirin, bir fatura ekleyin veya silin."
 
@@ -15855,6 +15991,9 @@ msgstr "Alt Montajı Aç"
 msgid "Open task details"
 msgstr "Görev ayrıntılarını aç"
 
+msgid "Open Tax Rates"
+msgstr "Açık Vergi Oranları"
+
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "Cutover tarihinde defteri-kebiri açınız. Muhasebeyi etkinleştirmek geri dönüşsüzdür."
 
@@ -15928,7 +16067,7 @@ msgid "Operation batch"
 msgstr "Operasyon partisi"
 
 msgid "Operation created"
-msgstr ""
+msgstr "Operasyon oluşturuldu"
 
 msgid "Operation lead time"
 msgstr "Operasyon tedarik süresi"
@@ -15949,10 +16088,10 @@ msgid "Operation supplier process"
 msgstr "Operasyon tedarikçi prosesi"
 
 msgid "Operation timer auto-start disabled"
-msgstr ""
+msgstr "Operasyon zamanlayıcı otomatik başlatma devre dışı bırakıldı"
 
 msgid "Operation timer auto-start enabled"
-msgstr ""
+msgstr "Operasyon zamanlayıcı otomatik başlatma etkinleştirildi"
 
 msgid "Operation type"
 msgstr "İşlem türü"
@@ -15964,7 +16103,7 @@ msgid "Operation unit cost"
 msgstr "İşlem birim maliyeti"
 
 msgid "Operation updated"
-msgstr ""
+msgstr "Operasyon güncellendi"
 
 msgid "Operations"
 msgstr "Operasyonlar"
@@ -16266,7 +16405,7 @@ msgstr "Fazla Mesai"
 
 #. placeholder {0}: counts.updated ?? 0
 msgid "Overtime set for {0} assignments"
-msgstr ""
+msgstr "{0} atama için fazla mesai ayarlandı"
 
 msgid "Overview"
 msgstr "Genel bakış"
@@ -16381,7 +16520,7 @@ msgid "Part"
 msgstr "Parça"
 
 msgid "Part added and issued successfully"
-msgstr ""
+msgstr "Parça başarıyla eklendi ve verildi"
 
 msgid "Part Being Replaced"
 msgstr "Yerine Geçilen Parça"
@@ -16408,7 +16547,7 @@ msgid "Part Supersession"
 msgstr "Parça İkamesi"
 
 msgid "Part supplier created"
-msgstr ""
+msgstr "Parça tedarikçisi oluşturuldu"
 
 msgid "Partial"
 msgstr "Kısmi"
@@ -16659,13 +16798,13 @@ msgid "Period lock policy"
 msgstr "Dönem kilit politikası"
 
 msgid "Period locked"
-msgstr ""
+msgstr "Dönem kilitlendi"
 
 msgid "Period Start"
 msgstr "Dönem Başlangıcı"
 
 msgid "Period unlocked"
-msgstr ""
+msgstr "Dönem kilidi açıldı"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Sabit kıymetler için dönemsel amortisman gideri"
@@ -16807,7 +16946,7 @@ msgid "Picking List"
 msgstr "Toplama Listesi"
 
 msgid "Picking list completion policy updated"
-msgstr ""
+msgstr "Toplama listesi tamamlama politikası güncellendi"
 
 msgid "Picking List ID"
 msgstr "Toplama Listesi ID"
@@ -16918,7 +17057,7 @@ msgid "Planning Horizon (Days)"
 msgstr "Planlama Ufku (Gün)"
 
 msgid "Planning horizon updated"
-msgstr ""
+msgstr "Planlama ufku güncellendi"
 
 msgid "Planning Horizon:"
 msgstr "Planlama Ufku:"
@@ -17248,7 +17387,7 @@ msgid "Print batch list"
 msgstr "Parti Listesini Yazdır"
 
 msgid "Print job deleted"
-msgstr ""
+msgstr "Yazdırma işi silindi"
 
 msgid "Print Jobs"
 msgstr "İş emirlerini Yazdır"
@@ -17264,10 +17403,10 @@ msgid "Print Output ({0})"
 msgstr "Yazdırma Çıktısı ({0})"
 
 msgid "Printer route created"
-msgstr ""
+msgstr "Yazıcı rota oluşturuldu"
 
 msgid "Printer route updated"
-msgstr ""
+msgstr "Yazıcı rota güncellendi"
 
 msgid "Printer Settings"
 msgstr "Yazıcı Ayarları"
@@ -17378,7 +17517,7 @@ msgid "Production Quantity"
 msgstr "Üretim Miktarı"
 
 msgid "Production settings updated"
-msgstr ""
+msgstr "Üretim ayarları güncellendi"
 
 msgid "Production variance"
 msgstr "Üretim sapması"
@@ -17475,6 +17614,9 @@ msgstr "Özellikler"
 msgid "Property"
 msgstr "Özellik"
 
+msgid "Proposed matches where exactly one provider rate has the tax code's percentage, for sales and for purchases."
+msgstr "Satış ve satın almalar için tam olarak bir sağlayıcı oranının vergi kodunun yüzdesini taşıdığı önerilen eşleştirmeler."
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Carbon hesap numarasının sağlayıcı hesap koduyla tam olarak eşleştiği önerilen eşleşmeler."
 
@@ -17510,6 +17652,9 @@ msgstr "Sağlayıcı hesabı"
 
 msgid "Provider option"
 msgstr "Sağlayıcı seçeneği"
+
+msgid "Provider rate"
+msgstr "Sağlayıcı oranı"
 
 msgid "Provisional"
 msgstr "Geçici"
@@ -17585,7 +17730,7 @@ msgid "Purchase Invoice Line"
 msgstr "Alış faturası satırı"
 
 msgid "Purchase invoice voided"
-msgstr ""
+msgstr "Alış faturası hükümsüz kılındı"
 
 msgid "Purchase invoices"
 msgstr "Alış faturaları"
@@ -17657,7 +17802,7 @@ msgid "Purchase Price"
 msgstr "Satın Alma Fiyatı"
 
 msgid "Purchase price update timing updated"
-msgstr ""
+msgstr "Satın alma fiyatı güncelleme zamanlaması güncellendi"
 
 msgid "Purchase price variance"
 msgstr "Satın Alma Fiyat Sapması"
@@ -17676,12 +17821,6 @@ msgstr "Satın alma mal kabulü"
 
 msgid "Purchase Return"
 msgstr "Satın alma iadesi"
-
-msgid "Purchase Tax Payable"
-msgstr "Satın Alma Vergisi Ödenecek (varsayılan)"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "Ödenecek satın alma vergisi (varsayılan)"
 
 msgid "Purchase to Order"
 msgstr "Siparişe göre satın alma"
@@ -17747,7 +17886,7 @@ msgid "Push to accounting"
 msgstr "Muhasebede gönder"
 
 msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "Gönderimleri bu stok kartının alanlarını değiştirmez, bu yüzden burada yapılan düzenlemeler kalır."
+msgstr "İtmeler bu stok kartının alanlarını değiştirmez, bu nedenle burada yapılan düzenlemeler kalır."
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
 msgstr "Onshape'ten gelen gönderimleri bu stok kartını artık güncellemeyecektir. Bu parçayı Onshape'ten yeniden göndermek onu yeniden bağlayacaktır."
@@ -17927,13 +18066,13 @@ msgid "Queued"
 msgstr "Kuyrukta"
 
 msgid "Queued {count} sync operations for sync"
-msgstr ""
+msgstr "Kuyrukta {count} senkronizasyon işlemi senkronizasyon için"
 
 msgid "Queued finish"
 msgstr "Kuyrukta bitiş"
 
 msgid "Queued sync operation for sync"
-msgstr ""
+msgstr "Kuyrukta senkronizasyon işlemi senkronizasyon için"
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "Atölyede bu gece sessiz, {name}."
@@ -18089,10 +18228,10 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Tekliflendirme, üretim ve muhasebe arasında veri yeniden girişi"
 
 msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
-msgstr ""
+msgstr "Baştan planlama — adımlar bittiğinde otomatik olarak yeniden oluşturulur"
 
 msgid "Re-planning motions in the current step order — steps update when it finishes"
-msgstr ""
+msgstr "Mevcut adım sırasında hareketleri yeniden planlama — adımlar bittiğinde güncellenir"
 
 msgid "Re-send"
 msgstr "Yeniden gönder"
@@ -18181,6 +18320,9 @@ msgstr "Yeniden Hesapla"
 msgid "Recalculate Run"
 msgstr "Yeniden Hesapla Çalıştırması"
 
+msgid "Recalculate taxes"
+msgstr "Vergileri yeniden hesapla"
+
 msgid "Recalculate Unit Cost"
 msgstr "Birim Maliyetini Yeniden Hesapla"
 
@@ -18206,7 +18348,7 @@ msgid "Receipt Requested Date"
 msgstr "Talep Edilen Teslim Tarihi"
 
 msgid "Receipt voided"
-msgstr ""
+msgstr "Mal kabul hükümsüz kılındı"
 
 msgid "Receipts"
 msgstr "Makbuzlar"
@@ -18233,7 +18375,7 @@ msgid "Receivables Email"
 msgstr "Alacaklar E-postası"
 
 msgid "Receivables email updated"
-msgstr ""
+msgstr "Alacaklar e-posta adresi güncellendi"
 
 msgid "Receive"
 msgstr "Teslim Al"
@@ -18387,6 +18529,18 @@ msgstr "Maliyeti Yeniden Hesapla"
 msgid "Recost {0}"
 msgstr "{0} için Maliyeti Yeniden Hesapla"
 
+msgid "Recoverable"
+msgstr "Geri alınabilir"
+
+msgid "Recoverable percent"
+msgstr "Geri alınabilir yüzde"
+
+msgid "Recoverable Tax"
+msgstr "Geri Alınabilir Vergi"
+
+msgid "Recoverable: {amount}"
+msgstr "Geri Alınabilir: {amount}"
+
 msgid "Recovery Period"
 msgstr "Kayıt Yap"
 
@@ -18394,7 +18548,7 @@ msgid "Recurring"
 msgstr "Tekrarlanan"
 
 msgid "Recurring invoice setting updated"
-msgstr ""
+msgstr "Yinelenen fatura ayarı güncellendi"
 
 msgid "Recurring Invoices"
 msgstr "Tekrarlanan Faturalar"
@@ -18457,7 +18611,7 @@ msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D modelinden Küçük resim yeniden oluştur"
 
 msgid "Regenerated {created} steps from the motion plan"
-msgstr ""
+msgstr "Hareket planından {created} adım yeniden oluşturuldu"
 
 msgid "Regenerating thumbnail…"
 msgstr "Küçük resim yenileniyor…"
@@ -18553,7 +18707,7 @@ msgid "Release Control"
 msgstr "Serbest Bırakma Kontrolü"
 
 msgid "Release control setting updated"
-msgstr ""
+msgstr "Serbest bırakma kontrolü ayarı güncellendi"
 
 msgid "Release date"
 msgstr "Serbest Bırakma Tarihi"
@@ -18809,10 +18963,10 @@ msgid "Reopen Training"
 msgstr "Eğitimi Yeniden Aç"
 
 msgid "Reopened {changed} planning actions"
-msgstr ""
+msgstr "Yeniden açılan {changed} planlama eylem"
 
 msgid "Reopened 1 planning action"
-msgstr ""
+msgstr "Yeniden açılan 1 planlama eylem"
 
 msgid "Reorder"
 msgstr "Yeniden Sırala"
@@ -18913,6 +19067,9 @@ msgstr "Rapor"
 msgid "Reporting"
 msgstr "Raporlama"
 
+msgid "Reporting Category"
+msgstr "Raporlama Kategorisi"
+
 msgid "Reporting dimension"
 msgstr "Raporlama boyutu"
 
@@ -18930,7 +19087,7 @@ msgid "Reprint"
 msgstr "Yeniden Yazdır"
 
 msgid "Reprint job created"
-msgstr ""
+msgstr "Yeniden yazdırma işi oluşturuldu"
 
 msgid "Request a new invite"
 msgstr "Yeni bir davet iste"
@@ -19035,7 +19192,7 @@ msgid "Reschedule Tolerance"
 msgstr "Yeniden Planlama Toleransı"
 
 msgid "Reschedule tolerance updated"
-msgstr ""
+msgstr "Yeniden planlama toleransı güncellendi"
 
 msgid "Reserve floor"
 msgstr "Rezerv tabanı"
@@ -19179,6 +19336,20 @@ msgstr "Dağıtılmamış Kârlar"
 
 msgid "Retained Earnings (default)"
 msgstr "Dağıtılmamış Kârlar (varsayılan)"
+
+msgid "Retire"
+msgstr "Kaldır"
+
+#. placeholder {0}: taxCode.name
+msgid "Retire {0}"
+msgstr "{0} Kaldır"
+
+msgid "Retire Tax Code"
+msgstr "Vergi Kodunu Kaldır"
+
+#. placeholder {0}: taxCode.name
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
+msgstr "Vergi kodu {0} kaldırılsın mı? Artık yeni satırlarda seçilemeyecek. Zaten onu kullanan satırlar bunu tutar."
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Bir varlığı hurdaya ayırarak veya satarak hizmetten çekmek; net defter değerine karşı oluşan kâr veya zararı kaydetmek ve durumunu Elden Çıkarıldı olarak ayarlamak."
@@ -19473,7 +19644,7 @@ msgid "RFQ Number"
 msgstr "Teklif Numarası"
 
 msgid "RFQ setting updated"
-msgstr ""
+msgstr "Teklif talebi ayarı güncellendi"
 
 msgid "RFQs"
 msgstr "Teklif Talepleri"
@@ -19757,7 +19928,7 @@ msgid "Sales Invoice"
 msgstr "Satış Faturası"
 
 msgid "Sales invoice confirmed"
-msgstr ""
+msgstr "Satış faturası teyit edildi"
 
 msgid "Sales invoice line"
 msgstr "Satış faturası satırı"
@@ -19766,7 +19937,7 @@ msgid "Sales Invoice Line"
 msgstr "Satış Faturası Kalemi"
 
 msgid "Sales invoice voided"
-msgstr ""
+msgstr "Satış faturası hükümsüz kılındı"
 
 msgid "Sales invoices"
 msgstr "Satış Faturaları"
@@ -19827,7 +19998,7 @@ msgid "Sales rule \"{0}\""
 msgstr "Satış kuralı « {0} »"
 
 msgid "Sales rule notification settings updated"
-msgstr ""
+msgstr "Satış kuralı bildirim ayarları güncellendi"
 
 msgid "Sales Rule Violations"
 msgstr "Satış Kuralı İhlalleri"
@@ -19840,12 +20011,6 @@ msgstr "Satış Kuralları"
 
 msgid "Sales shipments"
 msgstr "Satış sevkiyatları"
-
-msgid "Sales Tax Payable"
-msgstr "Ödenmesi gereken satış vergisi"
-
-msgid "Sales Tax Payable (default)"
-msgstr "Ödenmesi gereken satış vergisi (varsayılan)"
 
 msgid "Sales-type lease"
 msgstr "Satış tipi kiralama"
@@ -19881,7 +20046,7 @@ msgid "Sampling Standard"
 msgstr "Örnekleme Standardı"
 
 msgid "Sampling standard updated"
-msgstr ""
+msgstr "Örnekleme normal düzeyi güncellendi"
 
 msgid "Saturday"
 msgstr "Cumartesi"
@@ -19940,22 +20105,29 @@ msgstr "Kaydedildi"
 
 #. placeholder {0}: data.count
 msgid "Saved {0} dimension value mappings"
-msgstr ""
+msgstr "{0} boyut değeri eşlemesi kaydedildi"
+
+#. placeholder {0}: data.count
+msgid "Saved {0} tax code mappings"
+msgstr "{0} vergi kodu eşlemesi kaydedildi"
 
 msgid "Saved {count} account mappings"
-msgstr ""
+msgstr "Kaydedilen {count} hesap eşlemesi"
 
 msgid "Saved account mapping"
-msgstr ""
+msgstr "Kaydedilen hesap eşlemesi"
 
 msgid "Saved device mapping"
-msgstr ""
+msgstr "Kaydedilen cihaz eşlemesi"
 
 msgid "Saved dimension value mapping"
-msgstr ""
+msgstr "Kaydedilen boyut değeri eşlemesi"
 
 msgid "Saved document layout"
-msgstr ""
+msgstr "Kaydedilen belge düzeni"
+
+msgid "Saved tax code mapping"
+msgstr "Kaydedilen vergi kodu eşlemesi"
 
 msgid "Saved view"
 msgstr "Kaydedilmiş görünüm"
@@ -20238,10 +20410,10 @@ msgid "Section"
 msgstr "Bölüm"
 
 msgid "Section deleted"
-msgstr ""
+msgstr "Bölüm silindi"
 
 msgid "Section saved"
-msgstr ""
+msgstr "Bölüm kaydedildi"
 
 msgid "Secure your account with 2FA"
 msgstr "Hesabınızı 2FA ile güvenli hale getirin"
@@ -20440,6 +20612,9 @@ msgstr "Yazıcı Seçin"
 msgid "Select provider account"
 msgstr "Sağlayıcı hesabı seç"
 
+msgid "Select provider rate"
+msgstr "Sağlayıcı oranını seç"
+
 msgid "Select provider target"
 msgstr "Sağlayıcı hedefini seç"
 
@@ -20498,6 +20673,13 @@ msgstr "Seçilen: {selectedSum} / bölünme sonrası kalan: {0}"
 msgid "Self Managed"
 msgstr "Kendi Yönettiği"
 
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Self-assessed rate today: <0>{0}</0>. Lines using this code are charged no tax."
+msgstr "Bugün beyan edilen oran: <0>{0}</0>. Bu kodu kullanan satırlara vergi uygulanmaz."
+
+msgid "Self-Assessed Tax"
+msgstr "Kendi Kendine Değerlendirilen Vergi"
+
 msgid "Self-hosted or managed"
 msgstr "Kendi barındırılan veya yönetilen"
 
@@ -20550,7 +20732,7 @@ msgid "Sending defective units back to an earlier operation to be corrected inst
 msgstr "Hatalı ürünleri hurdalanması yerine, daha önceki bir operasyona düzeltilmesi için geri göndermek."
 
 msgid "Sending invoice"
-msgstr ""
+msgstr "Fatura gönderiliyor"
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Bu belge aktif hale gelmeden önce onay için gönderilir."
@@ -20667,7 +20849,7 @@ msgid "Service start"
 msgstr "Hizmet Başlangıç Tarihi"
 
 msgid "Service supplier created"
-msgstr ""
+msgstr "Hizmet tedarikçisi oluşturuldu"
 
 msgid "services"
 msgstr "hizmetler"
@@ -20769,6 +20951,9 @@ msgstr "Sürüm {0}\"ü Aktif Sürüm Olarak Ayarla?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Bir depolama birimi seçmek için varsayılan konumunuzu profil ayarlarınızda belirleyin."
 
+msgid "Sets the tax percent to the code's rate"
+msgstr "Vergi yüzdesini kodun oranına ayarlar"
+
 msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Bu öğenin envanterde muhasebeleştirildiği değeri ayarlar. Fark, envanter ile maliyetin harcandığı hesap arasında kaydedilir: önceki yıl için Dağıtılmamış kârlar veya bu yıl'ın İşçilik veya malzeme gideri."
 
@@ -20862,7 +21047,7 @@ msgid "Shelf Life (Days)"
 msgstr "Raf Ömrü (Gün)"
 
 msgid "Shelf life & expiry settings updated"
-msgstr ""
+msgstr "Raf ömrü ve son kullanma ayarları güncellendi"
 
 msgid "Shelf Life Start Process"
 msgstr "Raf Ömrü Başlangıç Süreci"
@@ -20928,7 +21113,7 @@ msgid "Shipment Location"
 msgstr "Sevkiyat lokasyonu"
 
 msgid "Shipment voided"
-msgstr ""
+msgstr "Sevkiyat hükümsüz kılındı"
 
 msgid "Shipments"
 msgstr "Sevkiyatlar"
@@ -21256,10 +21441,10 @@ msgid "Skipped"
 msgstr "Atlanmış"
 
 msgid "Skipped {count} sync operations"
-msgstr ""
+msgstr "Atlanan {count} senkronizasyon işlemi"
 
 msgid "Skipped sync operation"
-msgstr ""
+msgstr "Atlanan senkronizasyon işlemi"
 
 msgid "Slack"
 msgstr "Slack"
@@ -21317,7 +21502,7 @@ msgid "Someone who can update accounting has to enter what it cost to make befor
 msgstr "Muhasebeyi güncelleyebilen birinin, varlıklaştırılabilmesi için üretim maliyetini girmesi gerekir."
 
 msgid "Something went wrong"
-msgstr ""
+msgstr "Bir hata oluştu"
 
 msgid "Something went wrong. Please try again."
 msgstr "Bir şeyler ters gitti. Lütfen tekrar deneyin."
@@ -21458,10 +21643,10 @@ msgid "Staffing required"
 msgstr "Personel gerekli"
 
 msgid "Staffing requirement disabled"
-msgstr ""
+msgstr "Personel gereksinimi devre dışı bırakıldı"
 
 msgid "Staffing requirement enabled"
-msgstr ""
+msgstr "Personel gereksinimi etkinleştirildi"
 
 msgid "Stand up hosting"
 msgstr "Barındırmayı ayarla"
@@ -21891,7 +22076,7 @@ msgid "Success"
 msgstr "Başarılı"
 
 msgid "Successfully added invites to queue"
-msgstr ""
+msgstr "Davetiyeler başarıyla kuyruğa eklendi"
 
 msgid "Successfully copied quote"
 msgstr "Başarıyla kopyalandı"
@@ -21900,13 +22085,13 @@ msgid "Successfully created a new revision"
 msgstr "Başarıyla yeni bir revizyon oluşturuldu"
 
 msgid "Successfully resent invite"
-msgstr ""
+msgstr "Davetiye başarıyla yeniden gönderildi"
 
 msgid "Successfully revoked invites"
-msgstr ""
+msgstr "Davetiyeler başarıyla iptal edildi"
 
 msgid "Successfully seeded documents"
-msgstr ""
+msgstr "Belgeler başarıyla tohumlandı"
 
 msgid "Successor effectivity"
 msgstr "ardıl geçerliliği"
@@ -21951,13 +22136,13 @@ msgid "Suggestion"
 msgstr "Öneri"
 
 msgid "Suggestion notification settings updated"
-msgstr ""
+msgstr "Öneri bildirim ayarları güncellendi"
 
 msgid "Suggestion Notifications"
 msgstr "Öneri Bildirimleri"
 
 msgid "Suggestion submitted"
-msgstr ""
+msgstr "Öneri gönderildi"
 
 msgid "Suggestions"
 msgstr "Öneriler"
@@ -22005,10 +22190,10 @@ msgid "Supplier Contact"
 msgstr "Tedarikçi İlgili Kişisi"
 
 msgid "Supplier contact requirement disabled"
-msgstr ""
+msgstr "Tedarikçi ilgili kişi gereksinimi devre dışı bırakıldı"
 
 msgid "Supplier contact requirement enabled"
-msgstr ""
+msgstr "Tedarikçi ilgili kişi gereksinimi etkinleştirildi"
 
 msgid "Supplier Credit"
 msgstr "Tedarikçi Kredisi"
@@ -22017,7 +22202,7 @@ msgid "Supplier Credits"
 msgstr "Tedarikçi Kredileri"
 
 msgid "Supplier email settings updated"
-msgstr ""
+msgstr "Tedarikçi e-posta ayarları güncellendi"
 
 msgid "Supplier ID"
 msgstr "Tedarikçi Kimliği"
@@ -22032,10 +22217,10 @@ msgid "Supplier IDs are shown"
 msgstr "Tedarikçi ID'leri gösteriliyor"
 
 msgid "Supplier IDs hidden"
-msgstr ""
+msgstr "Tedarikçi ID'leri gizlendi"
 
 msgid "Supplier IDs shown"
-msgstr ""
+msgstr "Tedarikçi ID'leri gösterildi"
 
 msgid "Supplier interaction"
 msgstr "Tedarikçi etkileşimi"
@@ -22071,7 +22256,7 @@ msgid "Supplier Part Numbers"
 msgstr "Tedarikçi Parça Numaraları"
 
 msgid "Supplier part updated"
-msgstr ""
+msgstr "Tedarikçi parçası güncellendi"
 
 msgid "Supplier Parts"
 msgstr "Tedarikçi Parçaları"
@@ -22107,7 +22292,7 @@ msgid "Supplier Quote ID"
 msgstr "Tedarikçi Teklif Kimliği"
 
 msgid "Supplier quote notification setting updated"
-msgstr ""
+msgstr "Tedarikçi teklifi bildirim ayarı güncellendi"
 
 msgid "Supplier Quote Notifications"
 msgstr "Tedarikçi Teklif Bildirimleri"
@@ -22264,7 +22449,7 @@ msgstr "Eşitlendi"
 #. placeholder {3}: data.slidesSynced
 #. placeholder {4}: data.toolsLinked
 msgid "Synced {synced} steps to the BOP ({0} new, {1} updated, {2} removed, {3} slides, {4} tool links)"
-msgstr ""
+msgstr "BOP'a {synced} adım senkronize edildi ({0} yeni, {1} güncellendi, {2} kaldırıldı, {3} slayt, {4} takım bağlantısı)"
 
 msgid "System"
 msgstr "Sistem"
@@ -22370,10 +22555,10 @@ msgid "Task"
 msgstr "Görev"
 
 msgid "Task marked done"
-msgstr ""
+msgstr "Görev bitti olarak işaretlendi"
 
 msgid "Task skipped"
-msgstr ""
+msgstr "Görev atlandı"
 
 msgid "tasks"
 msgstr "görevler"
@@ -22405,11 +22590,47 @@ msgstr "Vergi ve Nakliye"
 msgid "Tax Amount"
 msgstr "Vergi Tutarı"
 
+msgid "Tax Authorities"
+msgstr "Vergi Daireleri"
+
+msgid "Tax Authority"
+msgstr "Vergi Dairesi"
+
 msgid "Tax Book Value"
 msgstr "Vergi Defter değeri"
 
+msgid "tax code"
+msgstr "vergi kodu"
+
+msgid "Tax code"
+msgstr "Vergi kodu"
+
+msgid "Tax Code"
+msgstr "Vergi Kodu"
+
+msgid "tax codes"
+msgstr "vergi kodları"
+
+msgid "Tax codes"
+msgstr "Vergi kodları"
+
+msgid "Tax Codes"
+msgstr "Vergi Kodları"
+
+msgid "Tax codes used on customers, suppliers or documents with no provider rate for that use. Sync stays off until they are mapped."
+msgstr "Sağlayıcı oranı olmayan müşteriler, tedarikçiler veya belgeler üzerinde kullanılan vergi kodları. Sync eşleştirilene kadar kapalı kalır."
+
 msgid "Tax codes, rates"
 msgstr "Vergi kodları, oranları"
+
+msgid "Tax Collected"
+msgstr "Toplanan Vergi"
+
+msgid "Tax collected and recoverable by authority, and the net due"
+msgstr "Daire tarafından toplanan ve geri alınabilir vergi ile net borç"
+
+msgid "Tax component"
+msgstr "Vergi bileşeni"
 
 msgid "Tax Depreciation"
 msgstr "Vergi Amortisman"
@@ -22429,6 +22650,12 @@ msgstr "Vergi Kimlik Numarası"
 msgid "Tax Information"
 msgstr "Vergi Bilgileri"
 
+msgid "Tax ledger"
+msgstr "Vergi defteri"
+
+msgid "Tax Liability"
+msgstr "Vergi Yükümlülüğü"
+
 msgid "Tax liability for reverse-charge transactions"
 msgstr "Ters Muhasebeleştirme İşlemleri için Vergi Yükümlülüğü"
 
@@ -22438,11 +22665,38 @@ msgstr "Vergi Yöntemi"
 msgid "Tax Method (default)"
 msgstr "Vergi Yöntemi (varsayılan)"
 
+msgid "Tax Paid"
+msgstr "Ödenen Vergi"
+
+msgid "Tax Paid (default)"
+msgstr "Ödenen Vergi (varsayılan)"
+
+msgid "Tax Paid Account"
+msgstr "Ödenen Vergi Hesabı"
+
 msgid "Tax percent"
 msgstr "Vergi yüzdesi"
 
 msgid "Tax Percent"
 msgstr "Vergi Yüzdesi"
+
+msgid "Tax Rates"
+msgstr "Vergi Oranları"
+
+msgid "Tax Received"
+msgstr "Alınan Vergi"
+
+msgid "Tax Received (default)"
+msgstr "Alınan Vergi (varsayılan)"
+
+msgid "Tax Received Account"
+msgstr "Alınan Vergi Hesabı"
+
+msgid "Tax Registration"
+msgstr "Vergi Kaydı"
+
+msgid "Tax Registrations"
+msgstr "Vergi Kayıtları"
 
 msgid "Tax Residual Value"
 msgstr "Vergi Kalıntı değeri"
@@ -22468,8 +22722,20 @@ msgstr "Vergi Faydalı ömür (Ay)"
 msgid "Tax:"
 msgstr "Vergi:"
 
+msgid "Taxable"
+msgstr "Vergiye Tabi"
+
+msgid "Taxable Purchases"
+msgstr "Vergiye Tabi Satın Almalar"
+
+msgid "Taxable Sales"
+msgstr "Vergiye Tabi Satışlar"
+
 msgid "Taxes"
 msgstr "Vergiler"
+
+msgid "Taxes Shipping"
+msgstr "Sevkiyat Vergileri"
 
 msgid "Team trained"
 msgstr "Takım eğitildi"
@@ -22542,7 +22808,7 @@ msgid "Test"
 msgstr "Test"
 
 msgid "Test label sent to printer"
-msgstr ""
+msgstr "Test etiketi yazıcıya gönderildi"
 
 msgid "Test run"
 msgstr "Test çalıştırması"
@@ -22634,7 +22900,7 @@ msgstr "Parti atölyeye gider. İş emirleri zaten serbest bırakıldı."
 
 #. placeholder {0}: skipped.status
 msgid "The batch is {0}, not Planned"
-msgstr ""
+msgstr "Parti {0} olup, Planlandı değildir"
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Parti en acil üyesinin zamanında çalışır — diğerleri öne çekilir"
@@ -22722,6 +22988,9 @@ msgstr "Şirket zaten muhasebeleştirilmiş bir açılış bakiyesi muhasebe fi�
 
 msgid "The company has no account defaults."
 msgstr "Şirketin hesap varsayılanları yoktur."
+
+msgid "The company is registered in these countries, but no active tax code charges tax there."
+msgstr "Şirket bu ülkelerde kayıtlıdır, ancak hiçbir aktif vergi kodu burada vergi talep etmez."
 
 msgid "The contract cannot be cancelled then"
 msgstr "Sözleşme o zaman iptal edilemez"
@@ -22849,9 +23118,6 @@ msgstr "Siparişin toplama işleminde sunacağı takip edilen varlıkları seçi
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "Bu parça yapıldığında varsayılan çalıştırma miktarı; planlama turları bunun katlarına kadar yenileme yapar."
-
-msgid "The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top."
-msgstr "Bu müşterinin alıntı ve satış siparişi satırlarına uygulanan varsayılan vergi oranı, satır başına geçersiz kılmadan önce; yetki alanına özgü vergi matematik üstünde çalışır."
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Bu departmanın raporlama ve personel sayısı hiyerarşisinde bağlı olduğu departman; üst seviye bir departman için boş bırakın."
@@ -23311,6 +23577,9 @@ msgstr "Bu iş merkezinin çalıştırabileceği prosesler; operasyonları zaman
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Sağlayıcı boyut hedefleri sunmaz. Önce sağlayıcıda özelliği etkinleştirin (örneğin, izleme kategorileri, sınıf izleme veya alanlar)."
 
+msgid "The provider returned no tax rates — check the connection and reload."
+msgstr "Sağlayıcı hiçbir vergi oranı döndürmedi — bağlantıyı kontrol edin ve yeniden yükleyin."
+
 #. placeholder {0}: formatter.format(invoicedOption)
 msgid "The purchase option is already invoiced at {0}. Exercise it at that price, or delete the invoice first."
 msgstr "Satın alma seçeneği zaten {0}'da faturalandırıldı. O fiyattan kullanın veya önce faturayı silin."
@@ -23359,6 +23628,9 @@ msgstr "Yürürlüğe giriş tarihindeki oran"
 
 msgid "The rate every asset's payments are discounted at."
 msgstr "Her varlığın ödemelerinin iskonto edileceği oran."
+
+msgid "The rate this customer's document lines take when no tax code applies to them. Once the company has a tax code, assign one to the customer instead."
+msgstr "Bu müşterinin belge satırlarının, hiçbir vergi kodu uygulanmadığında uygulanacağı oran. Şirketin bir vergi kodu olduğunda, müşteriye bir tane atayın."
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "Satın aldığınız ve tükettiğiniz ham stok ve malzeme ana kaydı"
@@ -23448,6 +23720,9 @@ msgstr "seçilen sınıf"
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Bu sözleşmenin faturalandırdığı hizmetler: bir kerelik ücretler ve tekrarlayan ücretler. Değiştirmek için bir hücreyi tıklayın."
 
+msgid "The share of a tax component's purchase tax the company can reclaim: it posts to Tax Paid, and the rest stays in the cost of what was bought."
+msgstr "Bir vergi bileşeninin satın alınan vergisinin, şirketin geri talep edebileceği kısmı: Vergi Ödenen Hesabına muhasebeleştirilir, gerisi satın alınan malların maliyetinde kalır."
+
 msgid "The shelves and bins where stock physically sits"
 msgstr "Stoğun fiziksel olarak bulunduğu raflar ve gözler"
 
@@ -23532,6 +23807,9 @@ msgstr "Bu öğenin satın alınması gerektiğinde planlamanın ilk olarak öne
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "Bu portal hesabının bağlandığı tedarikçi kaydı; yalnızca o tedarikçi üzerinde olan ilgili kişiler hesap sahibi olarak seçilebilir."
 
+msgid "The supplier you pay this authority's tax to"
+msgstr "Bu yetkiliye vergi ödediğiniz tedarikçi"
+
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "Tedarikçinin kendi alıntı/teklif numarası; bu alıntıdan dönüştürülen PO'da izlenebilirlik için kaydedilmiştir."
 
@@ -23558,6 +23836,9 @@ msgstr "Bir Şirketi Personel giriş kimlik doğrulaması için kullandığı Si
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "Sistem, yapılandırılmış sisteminizde kapsamdaki her kabul testini geçer, verilerinizle; veriler doğrulanır; ve siz onay verirsiniz. Ardından canlı yayına geçin."
+
+msgid "The tax record every posted invoice and memo writes with its journal: one row per line and tax component, with the taxable base, the tax and the recoverable tax."
+msgstr "Her muhasebeleştirildi fatura ve notun muhasebe fişi ile yazdığı vergi kaydı: her satır ve vergi bileşeni için bir satır, vergiye tabi temel, vergi ve geri talep edilebilir vergi ile."
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Satış RFQ'sunu, kendi alıntısını ve ortaya çıkan satış siparişini bağlayan iş parçacığı - bir birleştirme, kendi durumu olan bir belge değildir."
@@ -23635,7 +23916,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "Satın aldığınız, stokladığınız ve sattığınız ölçü birimleri"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
-msgstr ""
+msgstr "<0>{name}</0> dosyasının yüklenmesi %{stopped} konumunda durdu. Devam etmek için aynı dosyayı tekrar bırakın."
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "IRS mülkiyet sınıfı tabloları ile ABD vergi amortisman sistemi, kitap çizelgesi ile birlikte ayrı bir vergi planı olarak çalıştırılır."
@@ -24235,7 +24516,7 @@ msgid "Timecard"
 msgstr "Çalışma Saati Kaydı"
 
 msgid "Timecard settings updated"
-msgstr ""
+msgstr "Zaman kartı ayarları güncellendi"
 
 msgid "Timecards"
 msgstr "Puantaj"
@@ -24379,7 +24660,7 @@ msgid "Tool ID"
 msgstr "Alet Kimliği"
 
 msgid "Tool supplier created"
-msgstr ""
+msgstr "Takım tedarikçisi oluşturuldu"
 
 msgid "Tooling Cost"
 msgstr "Takım Maliyeti"
@@ -24587,7 +24868,7 @@ msgid "Training Assignments"
 msgstr "Eğitim Atamaları"
 
 msgid "Training marked as complete"
-msgstr ""
+msgstr "Eğitim tamamlandı olarak işaretlendi"
 
 msgid "Training not recorded"
 msgstr "Eğitim kaydedilmedi"
@@ -24653,16 +24934,16 @@ msgid "Trash"
 msgstr "Çöp Kutusu"
 
 msgid "Traveler materials disabled"
-msgstr ""
+msgstr "İş takip kartı malzemeleri devre dışı bırakıldı"
 
 msgid "Traveler materials enabled"
-msgstr ""
+msgstr "İş takip kartı malzemeleri etkinleştirildi"
 
 msgid "Traveler operations disabled"
-msgstr ""
+msgstr "İş takip kartı operasyonları devre dışı bırakıldı"
 
 msgid "Traveler operations enabled"
-msgstr ""
+msgstr "İş takip kartı operasyonları etkinleştirildi"
 
 msgid "Treatment"
 msgstr "Muhasebe Muamelesi"
@@ -24698,10 +24979,10 @@ msgid "Turn on the built-in pieces"
 msgstr "Yerleşik parçaları açın"
 
 msgid "Turned off sync"
-msgstr ""
+msgstr "Senkronizasyon kapatıldı"
 
 msgid "Turned on sync"
-msgstr ""
+msgstr "Senkronizasyon açıldı"
 
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "On iki ay veya daha az. Bilançoya hiçbir şey gelmez; her fatura gider olarak kaydedilir."
@@ -24725,13 +25006,13 @@ msgid "Two-Factor Authentication Enforcement"
 msgstr "İki Faktörlü Kimlik Doğrulaması Zorunluluğu"
 
 msgid "Two-factor authentication is no longer required"
-msgstr ""
+msgstr "İki faktörlü kimlik doğrulama artık gerekli değildir"
 
 msgid "Two-factor authentication is not enabled."
 msgstr "İki Faktörlü Kimlik Doğrulama Etkin Değildir."
 
 msgid "Two-factor authentication is now required"
-msgstr ""
+msgstr "İki faktörlü kimlik doğrulama artık gereklidir"
 
 msgid "Two-factor authentication is optional"
 msgstr "İki faktörlü kimlik doğrulama isteğe bağlıdır"
@@ -24895,7 +25176,7 @@ msgid "Unit Price"
 msgstr "Birim Fiyatı"
 
 msgid "Unit recosted"
-msgstr ""
+msgstr "Adet yeniden maliyetlendirildi"
 
 msgid "Unit Sale Price"
 msgstr "Birim Satış Fiyatı"
@@ -24959,6 +25240,9 @@ msgstr "Eşlenmemiş boyut değerleri"
 
 msgid "Unmapped Extracted Lines"
 msgstr "Eşlenmemiş Çıkarılan Satırlar"
+
+msgid "Unmapped tax codes"
+msgstr "Eşlenmemiş vergi kodları"
 
 msgid "Unmapped values"
 msgstr "Eşlenmemiş değerler"
@@ -25131,31 +25415,31 @@ msgid "Updated At"
 msgstr "Güncellendi"
 
 msgid "Updated attribute value"
-msgstr ""
+msgstr "Öznitelik değeri güncellendi"
 
 msgid "Updated avatar"
-msgstr ""
+msgstr "Avatar güncellendi"
 
 msgid "Updated By"
 msgstr "Güncellendiği Kişi"
 
 msgid "Updated dimension sync settings"
-msgstr ""
+msgstr "Boyut senkronizasyon ayarları güncellendi"
 
 msgid "Updated dispatch status"
-msgstr ""
+msgstr "Bakım emri durumu güncellendi"
 
 msgid "Updated job status"
-msgstr ""
+msgstr "İş emri durumu güncellendi"
 
 msgid "Updated posting sync settings"
-msgstr ""
+msgstr "Muhasebeleştirme senkronizasyon ayarları güncellendi"
 
 msgid "Updated successfully"
 msgstr "Başarıyla güncellendi"
 
 msgid "Updated task status"
-msgstr ""
+msgstr "Görev durumu güncellendi"
 
 msgid "Upgrade"
 msgstr "Yükselt"
@@ -25270,6 +25554,9 @@ msgstr "Bir sonraki parça kimliğini almak için ..."
 
 msgid "Use ... to get the next tool ID"
 msgstr "Sonraki araç kimliğini almak için ..."
+
+msgid "Use {suggestedName}"
+msgstr "{suggestedName} kullan"
 
 msgid "Use a different account"
 msgstr "Farklı bir hesap kullan"
@@ -26542,11 +26829,11 @@ msgid "Writing an asset's value down over its life — a monthly batch you creat
 msgstr "Bir varlığın değerini yaşamı boyunca azaltma — her ay oluşturduğunuz, taslak olarak incelediğiniz ve sonra muhasebeleştirdiğiniz bir işlem."
 
 msgid "Wrote the missing journal of 1 document"
-msgstr ""
+msgstr "1 belgenin eksik muhasebe fişi yazıldı"
 
 #. placeholder {0}: data.documents
 msgid "Wrote the missing journals of {0} documents"
-msgstr ""
+msgstr "{0} belgenin eksik muhasebe fişleri yazıldı"
 
 msgid "Year"
 msgstr "Yıl"

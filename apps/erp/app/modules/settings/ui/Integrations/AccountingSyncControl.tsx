@@ -12,17 +12,20 @@ type AccountingSyncControlProps = {
   enabled: boolean;
   /** Required accounts with no provider account yet; sync stays off while > 0. */
   unmappedRequiredCount: number;
+  /** Used tax codes with no provider rate yet (Xero, QuickBooks Online); sync stays off while > 0. */
+  unmappedTaxCodeCount?: number;
 };
 
 /**
  * The on/off switch for an accounting integration's sync, shown in the
  * integration drawer header. A new connection starts off so accounts can be
- * mapped first; the switch only turns on once every required account is mapped
- * (the action enforces the same rule).
+ * mapped first; the switch only turns on once every required account and every
+ * used tax code is mapped (the action enforces the same rule).
  */
 export function AccountingSyncControl({
   enabled,
-  unmappedRequiredCount
+  unmappedRequiredCount,
+  unmappedTaxCodeCount = 0
 }: AccountingSyncControlProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -38,7 +41,17 @@ export function AccountingSyncControl({
   const checked = fetcher.formData
     ? fetcher.formData.get("syncEnabled") === "true"
     : enabled;
-  const isBlocked = !checked && unmappedRequiredCount > 0;
+  const isBlocked =
+    !checked && (unmappedRequiredCount > 0 || unmappedTaxCodeCount > 0);
+
+  const openTab = (tab: string) =>
+    setSearchParams(
+      (params) => {
+        params.set("tab", tab);
+        return params;
+      },
+      { replace: true }
+    );
 
   return (
     <div className="flex items-start justify-between gap-4 rounded-md border border-border bg-muted/40 px-3 py-2 max-md:border-0 max-md:p-0 max-md:rounded-none max-md:bg-transparent">
@@ -65,12 +78,27 @@ export function AccountingSyncControl({
             </Trans>
           ) : isBlocked ? (
             <>
-              <Trans>Nothing is synced until you turn sync on.</Trans>{" "}
-              <Plural
-                value={unmappedRequiredCount}
-                one="Map the # remaining required account first."
-                other="Map the # remaining required accounts first."
-              />
+              <Trans>Nothing is synced until you turn sync on.</Trans>
+              {unmappedRequiredCount > 0 && (
+                <>
+                  {" "}
+                  <Plural
+                    value={unmappedRequiredCount}
+                    one="Map the # remaining required account first."
+                    other="Map the # remaining required accounts first."
+                  />
+                </>
+              )}
+              {unmappedTaxCodeCount > 0 && (
+                <>
+                  {" "}
+                  <Plural
+                    value={unmappedTaxCodeCount}
+                    one="Map the # remaining tax code first."
+                    other="Map the # remaining tax codes first."
+                  />
+                </>
+              )}
             </>
           ) : (
             <Trans>
@@ -79,22 +107,24 @@ export function AccountingSyncControl({
             </Trans>
           )}
         </p>
-        {isBlocked && (
+        {isBlocked && unmappedRequiredCount > 0 && (
           <Button
             variant="link"
             size="sm"
             className="self-start px-0"
-            onClick={() =>
-              setSearchParams(
-                (params) => {
-                  params.set("tab", "account-mapping");
-                  return params;
-                },
-                { replace: true }
-              )
-            }
+            onClick={() => openTab("account-mapping")}
           >
             <Trans>Open Account Mapping</Trans>
+          </Button>
+        )}
+        {isBlocked && unmappedTaxCodeCount > 0 && (
+          <Button
+            variant="link"
+            size="sm"
+            className="self-start px-0"
+            onClick={() => openTab("tax-rates")}
+          >
+            <Trans>Open Tax Rates</Trans>
           </Button>
         )}
       </div>

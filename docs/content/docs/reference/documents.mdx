@@ -92,6 +92,8 @@ The model is handed the actual list of your suppliers, payment terms, or custome
 
 For a **Purchase Invoice**, extraction targets the supplier (name, contact, address, and a resolved `supplierId`), the invoice header (number, invoice and due dates, payment terms and a resolved `paymentTermId`, referenced PO number, currency), the money (subtotal, tax, shipping, total), and the **line items** (part number, description, quantity, unit price, line total) (`schemas.ts:20-54`).
 
+Extraction reads the tax as an amount. It does not pick a <Term>tax code</Term>, so check the code on each line before you post.
+
 For a **Request for Quote**, it targets the customer (name, a resolved `customerId`, plus separate purchasing and engineering contacts and the customer address), the RFQ header (number, RFQ date, due date, requested delivery date), and the **line items** (part number, description, quantity) (`schemas.ts:63-86`).
 
 <Callout type="warning" title="Extraction is a draft, not a commit">

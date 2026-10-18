@@ -57,7 +57,12 @@ vi.mock("~/modules/sales/sales.service", () => ({
   getSalesOrderInvoicePaymentsByIds: vi.fn(),
   getSalesOrderInvoicesByIds: vi.fn(),
   getSalesOrderLines: vi.fn(),
-  getSalesOrderRelatedItems: vi.fn()
+  getSalesOrderRelatedItems: vi.fn(),
+  // The order's default tax is not what this test is about.
+  resolveSalesDocumentTaxes: vi.fn().mockResolvedValue({
+    data: null,
+    error: null
+  })
 }));
 
 const getSalesOrderInvoicePaymentsByIds = vi.mocked(

@@ -82,6 +82,8 @@ function fixture() {
         addOnCost: 20,
         nonTaxableAddOnCost: 3,
         taxPercent: 0.1,
+        taxCodeId: null as string | null,
+        taxesShipping: false,
         lineAmount: 100
       }
     ]
@@ -236,6 +238,101 @@ describe("buildSalesDocumentComponents", () => {
       itemId: "item"
     });
     expect(result.totalAmount).toBe(17.6);
+  });
+
+  it("taxes header shipping at the line's rate when its code taxes shipping", () => {
+    const source = fixture();
+    source.lines[0] = {
+      ...source.lines[0]!,
+      taxCodeId: "uk20",
+      taxesShipping: true
+    };
+    // The view adds 5 × 10% of header shipping tax.
+    source.totalTax = 13.5;
+    source.totalAmount = 151.5;
+    source.balance = 151.5;
+    const result = build(source);
+    expect(
+      result.components.find((c) => c.kind === "HeaderShipping")
+    ).toMatchObject({
+      id: "invoice:HeaderShipping",
+      taxCodeId: "uk20",
+      taxPercent: 0.1,
+      netAmount: 4,
+      taxAmount: 0.4
+    });
+    expect(result.totalTax).toBe(10.8);
+    expect(
+      round(
+        result.components.reduce((t, c) => t + c.taxAmount, 0),
+        2
+      )
+    ).toBe(10.8);
+  });
+
+  it("sends a non-taxable add-on with no tax code, whatever the line's", () => {
+    const source = fixture();
+    source.lines[0] = { ...source.lines[0]!, taxCodeId: "uk20" };
+    const components = build(source).components;
+    expect(
+      components.find((c) => c.kind === "NonTaxableAddOn")?.taxCodeId
+    ).toBeNull();
+    expect(components.find((c) => c.kind === "Merchandise")?.taxCodeId).toBe(
+      "uk20"
+    );
+  });
+
+  it("splits header shipping into a taxed and an untaxed share by line", () => {
+    const source = fixture();
+    source.currencyCode = "USD";
+    source.exchangeRate = 1;
+    source.headerShippingCost = 10;
+    const plain = {
+      ...source.lines[0]!,
+      convertedUnitPrice: 100,
+      shippingCost: 0,
+      addOnCost: 0,
+      nonTaxableAddOnCost: 0
+    };
+    source.lines = [
+      {
+        ...plain,
+        id: "a",
+        taxPercent: 0.2,
+        taxCodeId: "a",
+        taxesShipping: true
+      },
+      {
+        ...plain,
+        id: "b",
+        taxPercent: 0.1,
+        taxCodeId: "b",
+        taxesShipping: false
+      }
+    ];
+    source.subtotal = 200;
+    source.totalTax = 31;
+    source.totalAmount = 241;
+    source.balance = 241;
+    const header = build(source).components.filter(
+      (c) => c.kind === "HeaderShipping"
+    );
+    expect(header).toEqual([
+      expect.objectContaining({
+        id: "invoice:HeaderShipping",
+        taxCodeId: "a",
+        taxPercent: 0.2,
+        netAmount: 5,
+        taxAmount: 1
+      }),
+      expect.objectContaining({
+        id: "invoice:HeaderShipping:1",
+        taxCodeId: null,
+        taxPercent: 0,
+        netAmount: 5,
+        taxAmount: 0
+      })
+    ]);
   });
 
   it("exports a zero-weight header charge once with its invoice identity", () => {
@@ -1005,7 +1102,8 @@ describe("fixed-asset disposal components", () => {
     unitAmount: 5000,
     netAmount: 5000,
     taxPercent: 0,
-    taxAmount: 0
+    taxAmount: 0,
+    taxCodeId: null
   };
   const partComponent = {
     ...assetComponent,

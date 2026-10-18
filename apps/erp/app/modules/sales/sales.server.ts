@@ -18,6 +18,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import {
   breakQuantities,
+  chargedTaxPercent,
   datetime,
   getErrorMessage,
   getSalesOrderStatus,
@@ -27,7 +28,12 @@ import {
   unchecked
 } from "@carbon/utils";
 import { z } from "zod";
-import { getExchangeRate } from "~/modules/accounting/accounting.service";
+import {
+  getExchangeRate,
+  getTaxCode,
+  resolveLineTaxes
+} from "~/modules/accounting/accounting.service";
+import { toTaxCodeInput } from "~/modules/accounting/accounting.utils";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import { stripeCustomerActions } from "~/modules/invoicing/invoicing.models";
 import { linkStripeCustomerForBilling } from "~/modules/invoicing/invoicing.service";
@@ -831,10 +837,18 @@ export const updateQuoteField = defineServiceFn({
  * method and rolling up its cost. When pricing fails the line is kept and
  * `warning` says what failed.
  *
+ * The line's tax: a non-taxable item takes none. Without `taxCodeId` the
+ * line takes the quote's default (the ship-to's or the customer's code); an
+ * empty `taxCodeId` keeps `taxPercent` with no code.
+ *
+ * @param taxCodeId - The line's tax code. Omit for the quote's default; empty
+ * for none.
+ *
  * @mcp
  */
 export const createQuoteLine = defineServiceFn({
   input: quoteLineValidator.extend({
+    taxCodeId: z.string().optional(),
     customFields: customFieldValues.optional(),
     acknowledged: z.boolean().default(false)
   }),
@@ -866,8 +880,22 @@ export const createQuoteLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
+    const tax = await service.resolveCreatedLineTax(
+      ctx.asCaller.supabase,
+      companyId,
+      {
+        document: "quote",
+        documentId: quoteId,
+        itemId: line.itemId,
+        sentTaxCode: line.taxCodeId !== undefined,
+        taxCodeId: line.taxCodeId,
+        taxPercent: line.taxPercent
+      }
+    );
+
     const created = await service.upsertQuoteLine(serviceRole, {
       ...line,
+      ...tax,
       companyId,
       configuration,
       createdBy: userId,
@@ -910,7 +938,8 @@ export const createQuoteLine = defineServiceFn({
  * quantity breaks are reconciled: a break no longer offered loses its price,
  * and a new break of a Make to Order, Pull from Inventory or Purchase to
  * Order line is priced. The prices are computed before anything is written,
- * and the line and its prices are saved in one transaction.
+ * and the line and its prices are saved in one transaction. A non-taxable
+ * item carries no tax, whatever was sent.
  *
  * @mcp
  */
@@ -952,6 +981,17 @@ export const updateQuoteLine = defineServiceFn({
       acknowledged
     });
     if (gate.blocked) return gate.blocked;
+
+    if (
+      !(await service.isItemTaxable(
+        ctx.asCaller.supabase,
+        companyId,
+        line.itemId
+      ))
+    ) {
+      line.taxCodeId = undefined;
+      line.taxPercent = 0;
+    }
 
     const existing = await serviceRole
       .from("quoteLinePrice")
@@ -2138,10 +2178,19 @@ const salesOrderLineInput = salesOrderLineValidator.safeExtend({
  * first checked against the sales rules at the order's ship-to: an error,
  * or a warning not `acknowledged`, returns `violations` and adds nothing.
  *
+ * The line's tax: a non-taxable item takes none. Without `taxCodeId` the
+ * line takes the order's default (the ship-to's or the customer's code); an
+ * empty `taxCodeId` keeps `taxPercent` with no code.
+ *
+ * @param taxCodeId - The line's tax code. Omit for the order's default; empty
+ * for none.
+ *
  * @mcp
  */
 export const createSalesOrderLine = defineServiceFn({
-  input: salesOrderLineInput,
+  input: salesOrderLineInput.safeExtend({
+    taxCodeId: z.string().optional()
+  }),
   permission: { create: "sales" },
 
   async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
@@ -2174,8 +2223,22 @@ export const createSalesOrderLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
+    const tax = await service.resolveCreatedLineTax(
+      ctx.asCaller.supabase,
+      companyId,
+      {
+        document: "salesOrder",
+        documentId: line.salesOrderId,
+        itemId: line.itemId,
+        sentTaxCode: line.taxCodeId !== undefined,
+        taxCodeId: line.taxCodeId,
+        taxPercent: line.taxPercent
+      }
+    );
+
     const created = await service.upsertSalesOrderLine(ctx.asCaller.supabase, {
       ...line,
+      ...tax,
       companyId,
       createdBy: ctx.auditUserId,
       customFields
@@ -2208,7 +2271,8 @@ export const createSalesOrderLine = defineServiceFn({
  *
  * @remarks
  * Refused while the order is locked. A line with an item is first checked
- * against the sales rules (see `createSalesOrderLine`).
+ * against the sales rules (see `createSalesOrderLine`). A non-taxable item
+ * carries no tax, whatever was sent.
  *
  * @mcp
  */
@@ -2240,6 +2304,17 @@ export const updateSalesOrderLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
+    if (
+      !(await service.isItemTaxable(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        line.itemId
+      ))
+    ) {
+      line.taxCodeId = undefined;
+      line.taxPercent = 0;
+    }
+
     const updated = await service.upsertSalesOrderLine(ctx.asCaller.supabase, {
       id,
       ...line,
@@ -2266,6 +2341,48 @@ export const updateSalesOrderLine = defineServiceFn({
       gate.check
     );
     return { salesOrderLineId: id };
+  }
+});
+
+/**
+ * Recalculate the tax of every line on a sales order.
+ *
+ * @remarks
+ * Refused while the order is locked. For use after the order's ship-to or the
+ * customer's tax code changed: each line takes the tax its item gets at the
+ * order's ship-to on the order date. A line is written only when that names a
+ * code or zeroes it (an exempt customer, a non-taxable item); with no code, a
+ * percent typed on the line stands. Comment lines are left alone. The lines
+ * are written in one transaction; `updated` counts them.
+ *
+ * @mcp
+ */
+export const recalculateSalesOrderTaxes = defineServiceFn({
+  input: z.object({ salesOrderId: z.string() }),
+  permission: { update: "sales" },
+
+  async run(ctx, { salesOrderId }) {
+    const locked = await service.unlockedSalesOrder(
+      ctx,
+      salesOrderId,
+      "Cannot modify a locked sales order. Reopen it first."
+    );
+    if (locked) return locked;
+
+    const result = await service.recalculateSalesDocumentTaxes(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        document: "salesOrder",
+        documentId: salesOrderId
+      }
+    );
+    if (result.error || !result.data) {
+      return ctx.error("internal", "Failed to recalculate taxes", result.error);
+    }
+    return { salesOrderId, updated: result.data.updated };
   }
 });
 
@@ -4147,8 +4264,9 @@ export const previewContractCancellation = defineServiceFn({
  *
  * @remarks
  * Ends it at `endDate`. With `creditUnusedTime` a Draft credit memo is
- * drafted for the unused time, which needs the invoicing create permission
- * as well; `memoReadableId` names it.
+ * drafted for the unused time, one per tax rate, which needs the invoicing
+ * create permission as well; `memoReadableIds` names them (`memoReadableId`
+ * the first).
  *
  * @mcp
  */
@@ -4183,7 +4301,8 @@ export const cancelContract = defineServiceFn({
     const cancelled = result.data as Partial<ContractCancellationResult> | null;
     return {
       id: input.customerContractId,
-      memoReadableId: cancelled?.memoReadableId ?? null
+      memoReadableId: cancelled?.memoReadableId ?? null,
+      memoReadableIds: cancelled?.memoReadableIds ?? []
     };
   }
 });
@@ -4250,11 +4369,19 @@ const rentalAgreementInput = rentalAgreementValidator.safeExtend({
  * agreement is kept and `warning` says so. The agreement is then set up
  * from its units step.
  *
+ * Without `taxCodeId` the rent lines take the customer's or the rental
+ * site's code on the start date; with no code `taxPercent` stands. An empty
+ * `taxCodeId` keeps `taxPercent` with no code.
+ *
+ * @param taxCodeId - The rent lines' tax code. Omit for the customer's or
+ * the rental site's; empty for none.
+ *
  * @mcp
  */
 export const createRentalAgreement = defineServiceFn({
   input: rentalAgreementInput.safeExtend({
-    fixedAssetId: z.string().optional()
+    fixedAssetId: z.string().optional(),
+    taxCodeId: z.string().optional()
   }),
   permission: { create: "sales" },
 
@@ -4266,8 +4393,26 @@ export const createRentalAgreement = defineServiceFn({
       rentalAgreementId: _rentalAgreementId,
       fixedAssetId,
       customFields,
-      ...data
+      taxCodeId,
+      ...terms
     } = input;
+    const data = { ...terms, taxCodeId: taxCodeId || undefined };
+
+    // The rent lines' tax, for a caller that sent no code (an empty one is a
+    // cleared code): the customer's or the rental site's code. With no code
+    // the terms' own percent stands, as before tax codes.
+    if (taxCodeId === undefined) {
+      const tax = await resolveLineTaxes(client, companyId, {
+        source: "sales",
+        customerId: data.customerId,
+        customerLocationId: data.customerLocationId,
+        date: data.startDate
+      });
+      if (tax.data && (tax.data.taxCodeId || tax.data.exempt)) {
+        data.taxCodeId = tax.data.taxCodeId ?? undefined;
+        data.taxPercent = tax.data.taxPercent;
+      }
+    }
 
     const sequence = await getNextSequenceNumber(
       client,
@@ -4336,6 +4481,7 @@ const rentalTermFields = [
   "currencyCode",
   "depositAmount",
   "taxPercent",
+  "taxCodeId",
   "discountRate",
   "ownershipTransfers",
   "specializedAsset",
@@ -4358,7 +4504,8 @@ const rentalBooleanTerms = new Set<string>([
  * option reasonably certain needs an end date), so the stored terms are
  * read, the one field is swapped in and the whole set is validated and
  * saved. A new customer clears the site and contact; a new currency brings
- * today's rate. The yes/no terms take `true` or `on`.
+ * today's rate. A tax code sets the rent lines' percent to the code's rate
+ * today; clearing it keeps the percent. The yes/no terms take `true` or `on`.
  *
  * @mcp
  */
@@ -4396,6 +4543,7 @@ export const setRentalAgreementTerm = defineServiceFn({
       currencyCode: agreement.currencyCode,
       depositAmount: agreement.depositAmount,
       taxPercent: agreement.taxPercent,
+      taxCodeId: agreement.taxCodeId,
       discountRate: agreement.discountRate,
       ownershipTransfers: agreement.ownershipTransfers,
       specializedAsset: agreement.specializedAsset,
@@ -4407,6 +4555,18 @@ export const setRentalAgreementTerm = defineServiceFn({
     terms[field] = rentalBooleanTerms.has(field)
       ? value === "on" || value === "true"
       : value || null;
+    // Picking a code sets the rent lines' rate to the code's rate today.
+    // Clearing it keeps the rate, which stays editable on its own.
+    if (field === "taxCodeId" && value) {
+      const taxCode = await getTaxCode(client, value);
+      if (taxCode.error || taxCode.data?.companyId !== companyId) {
+        return ctx.error("notFound", "Tax code not found", taxCode.error);
+      }
+      terms.taxPercent = chargedTaxPercent(
+        toTaxCodeInput(taxCode.data),
+        await service.companyToday(ctx)
+      );
+    }
     // A site and contact belong to one customer.
     if (field === "customerId" && value !== agreement.customerId) {
       terms.customerLocationId = null;
@@ -4453,6 +4613,8 @@ export const setRentalAgreementTerm = defineServiceFn({
 
     const update = await service.updateRentalAgreement(client, {
       ...data,
+      // Stated, so clearing the code (an empty value) writes null.
+      taxCodeId: (terms.taxCodeId as string | null) ?? null,
       id,
       companyId,
       updatedBy: ctx.auditUserId,
@@ -4924,6 +5086,7 @@ export const sellRentalUnit = defineServiceFn({
       chargeDate: today,
       description: "Purchase option exercised",
       taxPercent: agreement.data.taxPercent ?? 0,
+      taxCodeId: agreement.data.taxCodeId,
       companyId,
       createdBy: ctx.auditUserId
     });
@@ -5664,6 +5827,77 @@ export const getCustomerShipping = defineServiceFn({
         ctx.company.id
       )
     );
+  }
+});
+
+/**
+ * Set one field on several customers.
+ *
+ * @remarks
+ * The one field is `taxCodeId`: the customers' tax code (Customers → Assign
+ * Tax Code). The code must be an active code of the company, and every
+ * customer the company's.
+ *
+ * @mcp
+ */
+export const updateCustomerField = defineServiceFn({
+  input: service.fieldUpdate(["taxCodeId"]),
+  permission: { update: "sales" },
+
+  async run(ctx, { ids, field, value }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    if (field !== "taxCodeId") return ctx.error("validation", "Invalid field");
+    if (!value) return ctx.error("validation", "Select a tax code");
+
+    const [taxCode, customers] = await Promise.all([
+      client
+        .from("taxCode")
+        .select("id")
+        .eq("id", value)
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .maybeSingle(),
+      client
+        .from("customer")
+        .select("id")
+        .in("id", ids)
+        .eq("companyId", companyId)
+    ]);
+    if (taxCode.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the tax code",
+        taxCode.error
+      );
+    }
+    if (!taxCode.data) return ctx.error("notFound", "Tax code not found");
+    if (customers.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the customers",
+        customers.error
+      );
+    }
+    const customerIds = customers.data.map((customer) => customer.id);
+    if (customerIds.length === 0) {
+      return ctx.error("notFound", "No customers found");
+    }
+
+    const update = await service.upsertCustomersTaxCode(ctx.asSystem.supabase, {
+      companyId,
+      userId: ctx.auditUserId,
+      customerIds,
+      taxCodeId: taxCode.data.id
+    });
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update the customers",
+        update.error
+      );
+    }
+    return { ids: customerIds };
   }
 });
 

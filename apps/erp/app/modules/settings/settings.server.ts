@@ -20,11 +20,13 @@ import {
 import { integrations as availableIntegrations } from "@carbon/ee";
 import {
   getUnmappedRequiredAccounts,
+  getUnmappedTaxCodes,
   JOURNAL_ENTRY_SOURCE_TYPES,
   POSTING_POLICY,
   suggestAccountMatchesWithAI,
   upsertAccountMappings,
   upsertDimensionValueMapping,
+  upsertTaxCodeMappings,
   validateDimensionSlots
 } from "@carbon/ee/accounting";
 import { deleteApiKey, upsertApiKey } from "@carbon/ee/api-keys.server";
@@ -91,7 +93,8 @@ import {
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
   returnPickedMaterialTimings,
-  subsidiaryValidator
+  subsidiaryValidator,
+  taxCodeMappingEntrySchema
 } from "./settings.models";
 import * as service from "./settings.service";
 
@@ -2094,12 +2097,58 @@ export const saveDimensionValueMappings = defineServiceFn({
 });
 
 /**
+ * Map Carbon tax codes to an accounting integration's tax rates.
+ *
+ * @remarks
+ * Xero and QuickBooks Online only: each mapping names one tax code, the
+ * direction it is used in (sales or purchase) and the provider's rate.
+ * Written all or none.
+ */
+export const saveTaxCodeMappings = defineServiceFn({
+  input: z.object({
+    integrationId: z.string().min(1),
+    mappings: z
+      .array(taxCodeMappingEntrySchema)
+      .min(1, { message: "No tax code mappings to save" })
+  }),
+  permission: { update: "settings" },
+  async run(ctx, { integrationId, mappings }) {
+    if (!service.TAX_RATE_MAPPING_PROVIDERS.has(integrationId)) {
+      return ctx.error("rule", "This integration does not map tax codes");
+    }
+    const result = await upsertTaxCodeMappings(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      integration: integrationId,
+      userId: ctx.auditUserId,
+      mappings: mappings.map((mapping) => ({
+        taxCodeId: mapping.taxCodeId,
+        direction: mapping.direction,
+        externalId: mapping.externalId,
+        externalName: mapping.externalName ?? null,
+        externalRate: mapping.externalRate ?? null
+      }))
+    });
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        mappings.length === 1
+          ? "Failed to save tax code mapping"
+          : "Failed to save tax code mappings",
+        result.error
+      );
+    }
+    return { count: mappings.length };
+  }
+});
+
+/**
  * Turn an accounting integration's sync on or off.
  *
  * @remarks
  * A new connection starts with sync off. Turning it on is refused until
  * every required account is mapped, so the first push cannot park a wall of
- * unmapped-account warnings.
+ * unmapped-account warnings. Xero and QuickBooks Online also need a provider
+ * rate for every tax code in each direction it is used in.
  *
  * @mcp
  */
@@ -2134,6 +2183,33 @@ export const setIntegrationSyncEnabled = defineServiceFn({
             unmapped.data.length === 1 ? "" : "s"
           } before turning on sync`
         );
+      }
+
+      // A document whose code has no mapping parks with UNMAPPED_TAX_CODES.
+      // Rillet maps no tax codes.
+      if (service.TAX_RATE_MAPPING_PROVIDERS.has(integrationId)) {
+        const unmappedTaxCodes = await getUnmappedTaxCodes(ctx.asSystem.pg, {
+          companyId: ctx.company.id,
+          integration: integrationId
+        });
+        if (unmappedTaxCodes.error || !unmappedTaxCodes.data) {
+          return ctx.error(
+            "internal",
+            "Failed to check the tax code mapping",
+            unmappedTaxCodes.error
+          );
+        }
+        const unmappedTaxCodeCount = new Set(
+          unmappedTaxCodes.data.map((code) => code.taxCodeId)
+        ).size;
+        if (unmappedTaxCodeCount > 0) {
+          return ctx.error(
+            "rule",
+            `Map the remaining ${unmappedTaxCodeCount} tax code${
+              unmappedTaxCodeCount === 1 ? "" : "s"
+            } before turning on sync`
+          );
+        }
       }
     }
 

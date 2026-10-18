@@ -597,3 +597,102 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "an RMA credit memo carrying tax books its net to Sales Returns and its tax to Tax Received",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      // 66 EUR at 1.1: 55 net (50 base) and 11 tax (10 base), as Issue
+      // Credit stores a return credited at 20% — `amount` is the gross.
+      await f.db
+        .insertInto("account")
+        .values(
+          [
+            { name: "returns", class: "Revenue" as const },
+            { name: "tax-received", class: "Liability" as const }
+          ].map((row) => ({
+            id: f.account(row.name),
+            name: row.name,
+            class: row.class,
+            incomeBalance:
+              row.class === "Liability"
+                ? ("Balance Sheet" as const)
+                : ("Income Statement" as const),
+            companyGroupId: f.groupId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+      await f.db
+        .updateTable("accountDefault")
+        .set({
+          salesReturnsAccount: f.account("returns"),
+          taxReceivedAccount: f.account("tax-received")
+        })
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const memoId = `${f.companyId}-rma-credit`;
+      await f.db.transaction().execute(async (trx) => {
+        // The memo names a return order this fixture has no reason to build.
+        await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+        await trx
+          .insertInto("memo")
+          .values({
+            id: memoId,
+            memoId: "CREDIT-RMA",
+            companyId: f.companyId,
+            customerId: f.customerId,
+            salesReturnOrderId: `${f.companyId}-return-order`,
+            direction: "Credit",
+            memoDate: "2026-09-07",
+            currencyCode: "EUR",
+            exchangeRate: 1.1,
+            amount: 66,
+            taxAmount: 11,
+            createdBy: "system"
+          })
+          .execute();
+      });
+
+      const { journalId } = await postMemoTransaction(f.db, {
+        ...f.args,
+        memoId
+      });
+
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("journalId", "=", journalId!)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const amountOn = (name: string) =>
+        lines.find((line) => line.accountId === f.account(name))?.amount;
+      // Cr AR 60 / Dr Sales Returns 50 / Dr Tax Received 10, each signed by
+      // its account's natural balance.
+      expect(lines).toHaveLength(3);
+      expect(amountOn("control")).toEqual(-60);
+      expect(amountOn("returns")).toEqual(-50);
+      expect(amountOn("tax-received")).toEqual(-10);
+
+      // The credit reverses tax the invoice recorded: negative in the ledger.
+      const ledger = await f.db
+        .selectFrom("taxLedger")
+        .select(["taxableAmount", "taxAmount", "documentTaxAmount"])
+        .where("documentId", "=", memoId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        ledger.map((row) => ({
+          taxableAmount: Number(row.taxableAmount),
+          taxAmount: Number(row.taxAmount),
+          documentTaxAmount: Number(row.documentTaxAmount)
+        }))
+      ).toEqual([
+        { taxableAmount: -50, taxAmount: -10, documentTaxAmount: -11 }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

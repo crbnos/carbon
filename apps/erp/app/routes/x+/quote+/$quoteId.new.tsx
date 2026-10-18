@@ -22,6 +22,11 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.sales.createQuoteLine({
     ...input.data,
+    // The form posts the field: an empty one is a cleared code. A caller
+    // that does not takes the quote's default.
+    taxCodeId: formData.has("taxCodeId")
+      ? (input.data.taxCodeId ?? "")
+      : undefined,
     // The URL quote, not the form's copy.
     quoteId,
     customFields: setCustomFields(formData),

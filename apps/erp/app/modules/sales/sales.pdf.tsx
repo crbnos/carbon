@@ -16,8 +16,13 @@ import {
   templateShowsThumbnails,
   toDocumentTemplate
 } from "@carbon/documents/template";
+import {
+  TAX_CODE_SUMMARY_SELECT,
+  type TaxCodeSummaryRow
+} from "@carbon/documents/utils";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -184,6 +189,28 @@ export async function renderQuotePdf(
     currencyDecimals = currency.data?.decimalPlaces ?? null;
   }
 
+  // The codes the lines name, for the tax summary (one read). A quote has no
+  // document date; its codes are read on today, as the resolver reads them.
+  const taxCodeIds = [
+    ...new Set(
+      (quoteLines.data ?? [])
+        .map((line) => line.taxCodeId)
+        .filter((taxCodeId): taxCodeId is string => Boolean(taxCodeId))
+    )
+  ];
+  const taxCodes =
+    taxCodeIds.length > 0
+      ? await client
+          .from("taxCode")
+          .select(TAX_CODE_SUMMARY_SELECT)
+          .eq("companyId", companyId)
+          .in("id", taxCodeIds)
+      : null;
+  if (taxCodes?.error) {
+    quotePdfLogger.error("Failed to load taxCodes", { error: taxCodes.error });
+  }
+  const taxDate = datetime.today(company.data.timezone ?? "UTC").toString();
+
   const resolved = resolveTemplate("quote", templateConfig);
   const sections = await resolveSections(
     client,
@@ -216,6 +243,8 @@ export async function renderQuotePdf(
       thumbnails={thumbnails}
       template={templateConfig}
       sections={sections}
+      taxCodes={taxCodes?.data as TaxCodeSummaryRow[] | null | undefined}
+      taxDate={taxDate}
     />
   );
 
@@ -363,6 +392,31 @@ export async function renderSalesOrderPdf(
     : null;
   const currencyDecimals = currencyRow?.data?.decimalPlaces ?? null;
 
+  // The codes the lines name, for the tax summary (one read).
+  const taxCodeIds = [
+    ...new Set(
+      (salesOrderLines.data ?? [])
+        .map((line) => line.taxCodeId)
+        .filter((taxCodeId): taxCodeId is string => Boolean(taxCodeId))
+    )
+  ];
+  const taxCodes =
+    taxCodeIds.length > 0
+      ? await client
+          .from("taxCode")
+          .select(TAX_CODE_SUMMARY_SELECT)
+          .eq("companyId", companyId)
+          .in("id", taxCodeIds)
+      : null;
+  if (taxCodes?.error) {
+    salesOrderPdfLogger.error("Failed to load taxCodes", {
+      error: taxCodes.error
+    });
+  }
+  const taxDate =
+    salesOrder.data.orderDate ??
+    datetime.today(company.data.timezone ?? "UTC").toString();
+
   const stream = await renderToStream(
     <SalesOrderPDF
       company={company.data as any}
@@ -389,6 +443,8 @@ export async function renderSalesOrderPdf(
       thumbnails={thumbnails}
       template={templateConfig}
       sections={sections}
+      taxCodes={taxCodes?.data as TaxCodeSummaryRow[] | null | undefined}
+      taxDate={taxDate}
     />
   );
 

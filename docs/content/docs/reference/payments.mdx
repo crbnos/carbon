@@ -39,6 +39,12 @@ A memo belongs to exactly one party. Its reason account is **not** a user choice
 
 Credit and debit memos number independently, from `CR-YYYY-MM-` and `DR-YYYY-MM-` sequences.
 
+### Memo tax
+
+The memo form takes a **"Net Amount"** and an optional **"Tax Code"**, and shows the **"Tax"** and **"Gross"** it gives. On save, Carbon works out the tax from the code's rate on the memo date and stores the gross. The gross is what moves the customer's or supplier's balance.
+
+A credit made from another document takes that document's tax code and rate. This covers a return, a supplier return, a contract cancellation and a rental early return. A credit that spans two codes or rates becomes one memo for each.
+
 ## The settlement row
 
 Cash and memos both settle open items through one primitive: the **invoice settlement**. Each row nets one **source** against one **target**.
@@ -78,7 +84,9 @@ Only a **Draft** can be deleted; a **Posted** payment or memo must be voided ins
 Posting always writes a journal and applies the settlements. Before the company has [set up accounting](/docs/reference/accounting#setting-up-accounting), the journal is Provisional and counts in no balance.
 
 - **A payment** books the **bank account** against the **AR or AP control account** (receivables for a customer, payables for a supplier), split per application. Each settlement's discount goes to the discount account and its write-off to the write-off account. Realized FX is computed **per application** — the carrying value released from the funding source, less the base principal relieved on the target — and stored on that settlement row as `fxGainLossAmount`. The journal then books the **net** of those to the realized exchange gain or loss account as one line.
-- **A memo** books a balanced two-line entry: the **control account** against the derived **reason account**. Applying a balance-reducing memo to an invoice afterward is GL-neutral — both sit in AR/AP — and realizes no FX, because Carbon only lets you apply a credit whose exchange rate matches the invoice's.
+- **A memo** books the **control account** against the derived **reason account**. Applying a balance-reducing memo to an invoice afterward is GL-neutral — both sit in AR/AP — and realizes no FX, because Carbon only lets you apply a credit whose exchange rate matches the invoice's.
+
+A memo with tax adds a tax line and writes the [tax ledger](/docs/reference/accounting#the-tax-ledger). A customer memo moves all of its tax through **Tax Received**. A supplier memo moves only the recoverable share through **Tax Paid**, and the rest stays on the reason account. A supplier memo with no code moves no tax at all, because its tax was part of the cost.
 
 Every payment and memo journal line is tagged with the counterparty's type and entity dimensions, so AR and AP can be reported by customer or supplier. Voiding emits a paired reversing journal rather than mutating the original, and carries the same dimensions so dimension-filtered balances net to zero. See [Accounting & the ledger](/docs/reference/accounting) for where these entries land.
 

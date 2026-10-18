@@ -27,6 +27,14 @@ The asymmetry to remember: **supplier status is a fixed four-value set; customer
 
 Both records carry the same satellite shape: **contacts**, **locations/addresses**, and **payment, shipping, and tax** defaults. Payment terms, currency, and tax settings live on those satellites, not on the core record. Both also have a human-readable id (`SUP…` / `CUS…`) on top of their internal key, and both can expose an external **portal**: suppliers respond to <Term id="rfq">RFQs</Term> through a digital-quote link; customers track their orders through a [customer portal](/docs/reference/customer-portal).
 
+## Tax
+
+The **Tax Information** card of a customer or a supplier holds its **"Tax Code"**. New document lines take that <Term>tax code</Term> and its rate. A customer ship-to location can carry its own **"Tax Code"**, which wins over the customer's on sales lines that ship there. A customer can also be marked <Term>tax exempt</Term>: its sales lines then take no tax. See [which code a line takes](/docs/reference/accounting#which-code-a-line-takes).
+
+Before tax codes, a party carried a bare **"Tax Percent"**. A line still takes that percent when the party has no code. Once the company has a tax code, the customer form no longer shows **"Tax Percent"**.
+
+To move parties to codes, select them in the customer or supplier list and choose **Assign Tax Code**, then pick the code. While parties with a percent and no code remain, the list shows a **"Move to tax codes"** banner with their count. The customer and supplier CSV import also takes a **Tax Code** column. It sets a code but never clears one.
+
 ## Bank accounts
 
 Both parties can carry bank accounts: the account you pay a supplier into, and the one you refund a customer to. They live on the **Bank Accounts** tab of the record, and they are reference data. Nothing in Carbon moves money from them; a person reads the details and enters them in their own banking system.

@@ -51,6 +51,11 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.sales.createRentalAgreement({
     ...input.data,
+    // A form that posts the field decides (an empty one is a cleared code);
+    // the details form does not, so the customer's code applies.
+    taxCodeId: formData.has("taxCodeId")
+      ? (input.data.taxCodeId ?? "")
+      : undefined,
     fixedAssetId:
       typeof fixedAssetId === "string" && fixedAssetId
         ? fixedAssetId

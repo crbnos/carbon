@@ -3,19 +3,24 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
-import { assertExchangeRate, toBaseAmount } from "@carbon/utils";
+import { assertExchangeRate, round, toBaseAmount } from "@carbon/utils";
 import { sql } from "kysely";
 import {
+  type BillCostingResult,
+  type BillTaxLine,
+  billSendsTax,
   type CostingLine,
   costingLineItemLabel,
   loadBillCostingLines,
-  toTransactionCurrencyLines
+  planBillTaxLines,
+  replayBillTaxNeutral
 } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
 import {
   JournalEntrySyncError,
   noPostedJournalMessage
 } from "../../../core/posting";
+import { getTaxCodeMappings } from "../../../core/tax-mapping";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -24,10 +29,20 @@ import {
 import { parseQboDate, type Qbo } from "../models";
 import type { QboProvider } from "../provider";
 import {
+  buildQboTxnTaxDetail,
+  isQboUsCompany,
+  loadQboInvoiceTaxCatalog,
+  type QboInvoiceTaxCatalog,
+  type QboTaxCodeMappings,
+  QboTaxContext,
+  resolveQboPurchaseTaxLines
+} from "./invoice-tax";
+import {
   buildQboDocNumberFields,
   loadQboAccountRefsById,
   type QboWriteOmit,
-  updateWithSyncTokenRetry
+  updateWithSyncTokenRetry,
+  withQboExpenseTaxCode
 } from "./shared";
 
 /**
@@ -125,7 +140,8 @@ const SYNCABLE_STATUSES: Accounting.Bill["status"][] = [
  * item's account. The item is a Description label only. Pure — exported for
  * tests. Amounts are already in the invoice's transaction currency
  * (`toTransactionCurrencyLines`). Tax-neutral: no `TxnTaxDetail`, no per-line
- * tax (the replay amounts embed tax; the purchase posting folds it into cost).
+ * tax. A bill that sends tax outside the US goes through
+ * `buildQboTaxedBillLines` instead.
  *
  * Unmapped / account-less lines throw the structured UNMAPPED_ACCOUNTS
  * Warning (user-fixable: map the account, then retry) — the same envelope the
@@ -202,12 +218,141 @@ export function buildQboBillLines(args: {
   });
 }
 
+/**
+ * The lines of a bill that sends tax, outside the US (`planBillTaxLines`). The
+ * Tax Paid legs are not lines: QuickBooks books the recoverable tax itself
+ * from each line's tax code. A line with tax goes at its mapped code, the
+ * rest of a leg at the company's non-taxable code, and a zero-rated line keeps
+ * its mapped code (`resolveQboPurchaseTaxLines`). `TotalTax` equals the
+ * converted Tax Paid legs exactly, so the bill total is unchanged. Pure —
+ * exported for tests.
+ */
+export function buildQboTaxedBillLines(args: {
+  bill: Accounting.Bill;
+  /** Planned lines, in transaction currency. */
+  lines: readonly BillTaxLine[];
+  /** The Tax Paid legs, converted to transaction currency. */
+  recoverableTax: number;
+  decimalPlaces: number;
+  accountRefsById: ReadonlyMap<string, Qbo.Ref>;
+  catalog: QboInvoiceTaxCatalog;
+  mappings: QboTaxCodeMappings;
+}): {
+  Line: Array<Omit<Qbo.ExpenseLine, "Id">>;
+  TxnTaxDetail: Qbo.TxnTaxDetail | undefined;
+} {
+  const parts = resolveQboPurchaseTaxLines({
+    documentId: args.bill.id,
+    lines: args.lines,
+    decimalPlaces: args.decimalPlaces,
+    catalog: args.catalog,
+    mappings: args.mappings
+  });
+  const lines = buildQboBillLines({
+    bill: args.bill,
+    costingLines: args.lines.map((line) => ({
+      ...line.leg,
+      amount: line.amount
+    })),
+    accountRefsById: args.accountRefsById
+  });
+  const txnTaxDetail = buildQboTxnTaxDetail(
+    parts.map((part) => ({
+      rate: part.rate,
+      netAmount: part.line.amount,
+      taxAmount: part.line.tax?.taxAmount ?? 0
+    })),
+    args.decimalPlaces
+  );
+  if (
+    round(txnTaxDetail?.TotalTax ?? 0, args.decimalPlaces) !==
+    round(args.recoverableTax, args.decimalPlaces)
+  ) {
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_TAX_CODES",
+      warning: true,
+      message: `Cannot sync bill ${args.bill.invoiceId}: its tax lines do not add up to the ${args.recoverableTax} posted to Tax Paid. Check the bill's tax codes, then retry.`,
+      metadata: {
+        billId: args.bill.id,
+        recoverableTax: args.recoverableTax,
+        totalTax: txnTaxDetail?.TotalTax ?? 0
+      }
+    });
+  }
+  return {
+    Line: lines.map((line, index) =>
+      withQboExpenseTaxCode(line, parts[index]!.codeRef)
+    ),
+    TxnTaxDetail: txnTaxDetail
+  };
+}
+
+/**
+ * A bill's `Line`, and its tax outside the US. A bill that does not send tax
+ * (`billSendsTax`) replays every posted leg as an account line, as it always
+ * has. One that does sends its tax as QuickBooks tax (`planBillTaxLines`,
+ * `buildQboTaxedBillLines`) outside the US. QuickBooks US has no purchase tax
+ * codes, so there every bill replays as before and the Tax Paid legs stay
+ * account lines. `tax` is null when no catalog was read. Pure — exported for
+ * tests.
+ */
+export function buildQboBillPayloadLines(args: {
+  bill: Accounting.Bill;
+  costing: Pick<
+    BillCostingResult,
+    "lines" | "taxLedger" | "exchangeRate" | "documentTotal" | "decimalPlaces"
+  >;
+  accountRefsById: ReadonlyMap<string, Qbo.Ref>;
+  tax: { catalog: QboInvoiceTaxCatalog; mappings: QboTaxCodeMappings } | null;
+}): Pick<Qbo.Bill, "Line" | "TxnTaxDetail" | "GlobalTaxCalculation"> {
+  const sendsTax = billSendsTax(args.costing.lines);
+  if (sendsTax && !args.tax)
+    throw new Error("A bill that sends tax needs the tax catalog");
+  if (!args.tax || !sendsTax || isQboUsCompany(args.tax.catalog)) {
+    return {
+      Line: buildQboBillLines({
+        bill: args.bill,
+        costingLines: replayBillTaxNeutral(args.costing).map(
+          (line) => line.leg
+        ),
+        accountRefsById: args.accountRefsById
+      })
+    };
+  }
+  const plan = planBillTaxLines(args.costing, {
+    id: args.bill.id,
+    label: `bill ${args.bill.invoiceId}`
+  });
+  const taxed = buildQboTaxedBillLines({
+    bill: args.bill,
+    lines: plan.lines,
+    recoverableTax: plan.recoverableTax,
+    decimalPlaces: args.costing.decimalPlaces,
+    accountRefsById: args.accountRefsById,
+    catalog: args.tax.catalog,
+    mappings: args.tax.mappings
+  });
+  return {
+    Line: taxed.Line,
+    GlobalTaxCalculation: "TaxExcluded",
+    ...(taxed.TxnTaxDetail ? { TxnTaxDetail: taxed.TxnTaxDetail } : {})
+  };
+}
+
 export class QboBillSyncer extends BaseEntitySyncer<
   Accounting.Bill,
   Qbo.Bill,
   QboWriteOmit
 > {
   private accountRefsByIdPromise?: Promise<Map<string, Qbo.Ref>>;
+  private readonly taxContext = new QboTaxContext({
+    catalog: () => loadQboInvoiceTaxCatalog(this.qboProvider),
+    mappings: () =>
+      getTaxCodeMappings(this.database, {
+        companyId: this.companyId,
+        integration: this.provider.id
+      })
+  });
   private remoteMetaById = new Map<
     string,
     { syncToken?: string; lastUpdatedTime?: string }
@@ -462,6 +607,19 @@ export class QboBillSyncer extends BaseEntitySyncer<
   protected async mapToRemote(
     local: Accounting.Bill
   ): Promise<Omit<Qbo.Bill, QboWriteOmit>> {
+    // Account-costed replay of the bill's posted Purchase Invoice journal —
+    // the item is a label only, so NO item dependency sync is needed here (the
+    // PO keeps item lines via buildQboExpenseLines; the bill does not).
+    const accountRefsById = await this.getAccountRefsById();
+    const costing = await loadBillCostingLines(this.database, {
+      companyId: this.companyId,
+      billId: local.id
+    });
+    const { currencyCode, exchangeRate, baseCurrencyCode } = costing;
+    // Lines and tax resolve before the vendor is pushed, so a refused bill
+    // writes nothing to QuickBooks.
+    const lines = await this.buildLines(local, costing, accountRefsById);
+
     // JIT dependency: vendor before the document
     let vendorRemoteId = local.supplierExternalId;
     if (!vendorRemoteId && local.supplierId) {
@@ -476,28 +634,6 @@ export class QboBillSyncer extends BaseEntitySyncer<
         `Cannot sync bill ${local.id}: No supplier linked or supplier not synced to QuickBooks Online`
       );
     }
-
-    // Account-costed replay of the bill's posted Purchase Invoice journal —
-    // the item is a label only, so NO item dependency sync is needed here (the
-    // PO keeps item lines via buildQboExpenseLines; the bill does not).
-    const accountRefsById = await this.getAccountRefsById();
-    const {
-      lines: costingLines,
-      currencyCode,
-      exchangeRate,
-      documentTotal,
-      decimalPlaces,
-      baseCurrencyCode
-    } = await loadBillCostingLines(this.database, {
-      companyId: this.companyId,
-      billId: local.id
-    });
-
-    const transactionLines = toTransactionCurrencyLines(costingLines, {
-      exchangeRate,
-      documentTotal,
-      decimalPlaces
-    });
 
     // Due date: use dateDue if provided, otherwise default to Net 30
     // (Xero-syncer parity)
@@ -530,12 +666,36 @@ export class QboBillSyncer extends BaseEntitySyncer<
             ExchangeRate: 1 / exchangeRate
           }
         : {}),
-      Line: buildQboBillLines({
-        bill: local,
-        costingLines: transactionLines,
-        accountRefsById
-      })
+      ...lines
     };
+  }
+
+  /**
+   * The bill's lines and tax, read before any dependency is pushed. The
+   * QuickBooks catalog and the tax code mappings are read only for a bill
+   * that sends tax.
+   */
+  private async buildLines(
+    local: Accounting.Bill,
+    costing: BillCostingResult,
+    accountRefsById: ReadonlyMap<string, Qbo.Ref>
+  ): Promise<Pick<Qbo.Bill, "Line" | "TxnTaxDetail" | "GlobalTaxCalculation">> {
+    let tax: Parameters<typeof buildQboBillPayloadLines>[0]["tax"] = null;
+    if (billSendsTax(costing.lines)) {
+      const catalog = await this.taxContext.catalog(local.id);
+      tax = {
+        catalog,
+        mappings: isQboUsCompany(catalog)
+          ? new Map()
+          : await this.taxContext.mappings(local.id)
+      };
+    }
+    return buildQboBillPayloadLines({
+      bill: local,
+      costing,
+      accountRefsById,
+      tax
+    });
   }
 
   // =================================================================

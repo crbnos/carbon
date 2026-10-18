@@ -3,7 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
-import { credit, debit, equals, round, toStoredAmount } from "@carbon/utils";
+import {
+  chargedTaxPercent,
+  credit,
+  debit,
+  effectiveComponents,
+  effectiveTaxPercent,
+  equals,
+  round,
+  type TaxCodeInput,
+  type TaxComponentInput,
+  toStoredAmount
+} from "@carbon/utils";
 import {
   type CalendarDate,
   endOfMonth,
@@ -1122,6 +1133,118 @@ function isCalendarDateString(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+// -- Tax determination --
+// See .ai/specs/2026-10-16-multi-jurisdiction-tax.md ("Determination").
+
+export type LineTaxDecision = {
+  taxCodeId: string | null;
+  taxPercent: number;
+  components: TaxComponentInput[];
+  exempt: boolean;
+  exemptionReason: string | null;
+};
+
+/**
+ * The tax a document line takes, from facts the caller has already loaded.
+ * The order is fixed: an exempt customer, a non-taxable item, the ship-to
+ * location's code (sales only), the party's code, and last the party's bare
+ * percent — the behavior from before tax codes existed.
+ */
+export function decideLineTax(facts: {
+  source: "sales" | "purchase";
+  taxExempt: boolean;
+  taxExemptionReason: string | null;
+  itemTaxable: boolean;
+  locationTaxCode: TaxCodeInput | null;
+  partyTaxCode: TaxCodeInput | null;
+  fallbackTaxPercent: number;
+  date: string;
+}): LineTaxDecision {
+  const none = { taxCodeId: null, taxPercent: 0, components: [] };
+  if (facts.source === "sales" && facts.taxExempt) {
+    return {
+      ...none,
+      exempt: true,
+      exemptionReason: facts.taxExemptionReason
+    };
+  }
+  if (!facts.itemTaxable) {
+    return { ...none, exempt: true, exemptionReason: null };
+  }
+  const code =
+    (facts.source === "sales" ? facts.locationTaxCode : null) ??
+    facts.partyTaxCode;
+  if (code) {
+    const components = effectiveComponents(code, facts.date);
+    return {
+      taxCodeId: code.id,
+      // The CHARGED rate: 0 for a Reverse Charge code, which the posting
+      // self-assesses from the components instead.
+      taxPercent: chargedTaxPercent(code, facts.date),
+      components,
+      exempt: false,
+      exemptionReason: null
+    };
+  }
+  return {
+    taxCodeId: null,
+    taxPercent: facts.fallbackTaxPercent,
+    components: [],
+    exempt: false,
+    exemptionReason: null
+  };
+}
+
+type TaxCodeRow = {
+  id: string;
+  calculationType: TaxCodeInput["calculationType"];
+  taxesShipping: boolean;
+  taxCodeComponent?: Array<{
+    id: string;
+    name: string;
+    taxAuthorityId: string | null;
+    taxPercent: number;
+    recoverablePercent: number;
+    sequence: number;
+    isCompound: boolean;
+    taxReceivedAccountId: string | null;
+    taxPaidAccountId: string | null;
+    effectiveDate: string | null;
+    expirationDate: string | null;
+  }> | null;
+};
+
+/** A `taxCode` row with its embedded `taxCodeComponent` rows, as the pure helpers take it. */
+export function toTaxCodeInput(row: TaxCodeRow): TaxCodeInput {
+  return {
+    id: row.id,
+    calculationType: row.calculationType,
+    taxesShipping: row.taxesShipping,
+    components: (row.taxCodeComponent ?? []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      taxAuthorityId: c.taxAuthorityId,
+      taxPercent: Number(c.taxPercent),
+      recoverablePercent: Number(c.recoverablePercent),
+      sequence: c.sequence,
+      isCompound: c.isCompound,
+      taxReceivedAccountId: c.taxReceivedAccountId,
+      taxPaidAccountId: c.taxPaidAccountId,
+      effectiveDate: c.effectiveDate,
+      expirationDate: c.expirationDate
+    }))
+  };
+}
+
+/**
+ * A code's combined rate on `date` — for a Reverse Charge code, the rate the
+ * company self-assesses. A display and provider-mapping value, never a line's
+ * default `taxPercent`: that is `chargedTaxPercent` (`@carbon/utils`).
+ */
+export function taxCodeRate(code: TaxCodeInput, date: string): number {
+  return round(effectiveTaxPercent(effectiveComponents(code, date)));
 }
 
 // The "Lock the period" checklist step is an Action task whose completion IS the

@@ -950,7 +950,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     sourcingType: { kind: "primitive", of: "string" },
     mpn: { kind: "primitive", of: "string" },
     revisionStatus: { kind: "primitive", of: "string" },
-    changeOrderId: { kind: "primitive", of: "string" }
+    changeOrderId: { kind: "primitive", of: "string" },
+    taxable: { kind: "primitive", of: "boolean" }
   },
   job: {
     id: { kind: "primitive", of: "string" },

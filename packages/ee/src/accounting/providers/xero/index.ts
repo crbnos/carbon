@@ -22,7 +22,7 @@ export * from "./entities/bill";
 export * from "./entities/charge";
 export * from "./entities/contact";
 // credit-memo hosts the shared Xero credit-note base (XeroCreditNoteSyncerBase,
-// buildXeroCreditNoteLineItem, XERO_MEMO_INCREASER_SKIP_REASON) and the AR syncer
+// buildXeroCreditNoteLineItems, XERO_MEMO_INCREASER_SKIP_REASON) and the AR syncer
 export * from "./entities/credit-memo";
 export * from "./entities/invoice";
 export * from "./entities/item";

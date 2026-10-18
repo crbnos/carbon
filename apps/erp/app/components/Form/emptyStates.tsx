@@ -31,6 +31,7 @@ export type EntityKey =
   | "workCenter"
   | "employee"
   | "paymentTerm"
+  | "taxCode"
   | "shippingMethod"
   | "ability"
   | "assetClass"
@@ -153,6 +154,15 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
         route: path.to.newPaymentTerm,
         noun: t`payment term`,
         pluralNoun: t`payment terms`,
+        moduleLabel: t`accounting`
+      };
+    case "taxCode":
+      return {
+        module: "accounting",
+        action: "create",
+        route: path.to.newTaxCode,
+        noun: t`tax code`,
+        pluralNoun: t`tax codes`,
         moduleLabel: t`accounting`
       };
     case "shippingMethod":

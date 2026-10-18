@@ -145,6 +145,10 @@ import {
   getNextSequence as getNextSequenceInTransaction,
   getNextSequences
 } from "@carbon/database/sequence";
+import {
+  buildTaxLedgerRows,
+  type TaxLedgerDocument
+} from "@carbon/database/tax-ledger";
 import { getLogger } from "@carbon/logger";
 import type {
   AccountType as LedgerAccountType,
@@ -179,6 +183,8 @@ import {
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
   round,
   type SalesPostingAccount,
+  taxableBase,
+  taxPairFromPercent,
   toBaseAmount,
   toDisplayCredit,
   toDisplayDebit,
@@ -242,13 +248,19 @@ import {
   insertNegatedJournal,
   invokePosting,
   loadContractPositions,
+  loadTaxAccountClasses,
+  loadTaxCodes,
   lockContractPositions,
   type PostingLine,
+  purchaseTaxLedgerLines,
   REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR,
   refuseVoidBeforeCutover,
   resolveAccountingPeriod,
   resolveInventoryAccount,
-  syncDraftRecognitionRuns
+  salesTaxLedgerLines,
+  syncDraftRecognitionRuns,
+  taxCodesOn,
+  withPurchaseTax
 } from "../shared/shared.service";
 import type {
   AnalyticsAccountScope,
@@ -274,7 +286,11 @@ import type {
   periodCloseTaskStatuses,
   periodCloseTaskTypes,
   projectValidator,
-  taxDepreciationMethods
+  taxAuthorityValidator,
+  taxCodeComponentValidator,
+  taxCodeValidator,
+  taxDepreciationMethods,
+  taxRegistrationValidator
 } from "./accounting.models";
 import {
   CONSTRUCTION_IN_PROGRESS_ENABLED,
@@ -287,14 +303,17 @@ import {
   activationCutoverDates,
   buildDepreciationLines,
   type DepreciationLine,
+  decideLineTax,
   depreciationFloor,
   depreciationRunLinesMatch,
   diffJournalLines,
   hasAccountingCutover,
   isFutureRunPeriod,
+  type LineTaxDecision,
   LOCK_PERIOD_TASK_NAME,
   monthEndOf,
   runPostingTargets,
+  toTaxCodeInput,
   usageKey
 } from "./accounting.utils";
 import {
@@ -16220,7 +16239,7 @@ export async function buildLegacyMemoJournals(
       postingStatus: "Provisional"
     });
     batch.forEach((memo, index) => {
-      const { lines, dimensions } = rebuilt[index]!;
+      const { lines, dimensions, taxLedger } = rebuilt[index]!;
       journals.push({
         documentId: memo.id,
         description: `${memo.direction} Memo ${memo.memoId}`,
@@ -16230,7 +16249,8 @@ export async function buildLegacyMemoJournals(
           ...line,
           dimensions: {},
           dimensionValues: dimensions
-        }))
+        })),
+        taxLedger: taxLedger ?? undefined
       });
     });
   }
@@ -17225,6 +17245,23 @@ export async function buildLegacyPurchaseInvoiceJournals(
   );
 
   const linesByInvoice = Map.groupBy(lines, (line) => line.invoiceId);
+  // The codes as each invoice's posting split its tax, on its posting date.
+  const taxCodes = await loadTaxCodes(
+    trx,
+    companyId,
+    lines.map((line) => line.taxCodeId),
+    null
+  );
+  const taxAccountClasses = await loadTaxAccountClasses(trx, {
+    companyId,
+    defaults,
+    taxCodes
+  });
+  const { baseCurrencyCode } = await trx
+    .selectFrom("company")
+    .select("baseCurrencyCode")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
   const shippingByInvoice = new Map(
     deliveries.map((row) => [row.id, Number(row.supplierShippingCost ?? 0)])
   );
@@ -17318,14 +17355,14 @@ export async function buildLegacyPurchaseInvoiceJournals(
         )
       : { accountId: defaults.payablesAccount, accountDefaultRole: null };
     const invoiceLines = linesByInvoice.get(invoice.id) ?? [];
+    const postingDate = String(invoice.postingDate);
     const amountsByLine = new Map(
       calculatePurchasePostingAmounts({
-        lines: invoiceLines,
+        lines: withPurchaseTax(invoiceLines, taxCodesOn(taxCodes, postingDate)),
         exchangeRate: invoice.exchangeRate ?? 1,
         supplierShippingCost: shippingByInvoice.get(invoice.id) ?? 0
       }).map((amounts) => [amounts.id, amounts])
     );
-    const postingDate = String(invoice.postingDate);
     /** The receipts the posting saw: posted on or before the invoice. */
     const receiptsBefore = (purchaseOrderLineId: string) =>
       (receiptsByLine.get(purchaseOrderLineId) ?? []).filter(
@@ -17486,13 +17523,24 @@ export async function buildLegacyPurchaseInvoiceJournals(
       supplierTypeId: supplier?.supplierTypeId ?? null,
       accounts: defaults,
       payables,
-      lines: postingLines
+      lines: postingLines,
+      taxAccountClasses
     });
     return {
       description: `Purchase Invoice ${invoice.invoiceId}`,
       postingDate,
       sourceType: "Purchase Invoice" as const,
-      lines: journalLines
+      lines: journalLines,
+      taxLedger: {
+        source: "Purchase" as const,
+        documentType: "Purchase Invoice" as const,
+        documentId: invoice.id,
+        supplierId: invoice.supplierId,
+        currencyCode: invoice.currencyCode ?? baseCurrencyCode,
+        exchangeRate: invoice.exchangeRate ?? 1,
+        sign: 1 as const,
+        lines: purchaseTaxLedgerLines(invoiceLines, amountsByLine)
+      }
     };
   });
 }
@@ -18697,7 +18745,7 @@ export async function buildLegacySalesInvoiceJournals(
   const items = await readByIds(itemIds, (ids) =>
     trx
       .selectFrom("item")
-      .select(["id", "itemTrackingType", "replenishmentSystem"])
+      .select(["id", "itemTrackingType", "replenishmentSystem", "taxable"])
       .where("companyId", "=", companyId)
       .where("id", "in", ids)
       .execute()
@@ -18783,13 +18831,49 @@ export async function buildLegacySalesInvoiceJournals(
     contract: false,
     accountIds: deferrals.map((row) => row.debitAccountId)
   });
-  const accountRows = await readByIds(plan.accountIds, (ids) =>
-    trx
-      .selectFrom("account")
-      .select(["id", "class", "active", "isGroup"])
-      .where("companyGroupId", "=", companyGroupId)
-      .where("id", "in", ids)
-      .execute()
+  // The codes as each invoice's posting split its tax, on its posting date,
+  // and what the tax ledger snapshots: each customer's exemption.
+  const taxCodes = await loadTaxCodes(
+    trx,
+    companyId,
+    lines.map((line) => line.taxCodeId),
+    null
+  );
+  const taxAccountIds = [...taxCodes.values()].flatMap((code) =>
+    code.components.flatMap((component) =>
+      component.taxReceivedAccountId ? [component.taxReceivedAccountId] : []
+    )
+  );
+  const customerTaxes = await readByIds(
+    invoices.map((invoice) => invoice.customerId),
+    (ids) =>
+      trx
+        .selectFrom("customerTax")
+        .select([
+          "customerId",
+          "taxExempt",
+          "taxExemptionReason",
+          "taxExemptionCertificateNumber"
+        ])
+        .where("companyId", "=", companyId)
+        .where("customerId", "in", ids)
+        .execute()
+  );
+  const { baseCurrencyCode } = await trx
+    .selectFrom("company")
+    .select("baseCurrencyCode")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+
+  const accountRows = await readByIds(
+    [...plan.accountIds, ...taxAccountIds],
+    (ids) =>
+      trx
+        .selectFrom("account")
+        .select(["id", "class", "active", "isGroup"])
+        .where("companyGroupId", "=", companyGroupId)
+        .where("id", "in", ids)
+        .execute()
   );
   const accounts = resolveSalesInvoiceAccounts(
     plan,
@@ -18803,6 +18887,12 @@ export async function buildLegacySalesInvoiceJournals(
     shipments.map((row) => [row.id, Number(row.shippingCost ?? 0)])
   );
   const customerById = new Map(customers.map((row) => [row.id, row]));
+  const customerTaxById = new Map(
+    customerTaxes.map((row) => [row.customerId, row])
+  );
+  const nonTaxableItemIds = new Set(
+    items.filter((item) => item.taxable === false).map((item) => item.id)
+  );
   const deferralsByLine = Map.groupBy(
     deferrals,
     (row) => row.salesInvoiceLineId
@@ -18868,23 +18958,30 @@ export async function buildLegacySalesInvoiceJournals(
       unusedCostRows.splice(unusedCostRows.indexOf(costRow), 1);
       return -Number(costRow.cost);
     };
+    const postingDate = String(invoice.postingDate);
+    const codesOnDate = taxCodesOn(taxCodes, postingDate);
+    const headerShipping = allocateSalesHeaderShipping(
+      invoiceLines,
+      shippingByInvoice.get(invoice.id) ?? 0
+    );
     const journal = buildSalesInvoiceJournal({
       ...facts,
+      taxCodes: codesOnDate,
       invoice,
       customerTypeId: customer?.customerTypeId ?? null,
       intercompanyPartnerId: customer?.intercompanyCompanyId ?? null,
       lines: invoiceLines,
-      headerShipping: allocateSalesHeaderShipping(
-        invoiceLines,
-        shippingByInvoice.get(invoice.id) ?? 0
-      ),
+      headerShipping,
       revenue,
       directCost
     });
+    const customerTax = invoice.customerId
+      ? customerTaxById.get(invoice.customerId)
+      : undefined;
 
     return {
       description: `Sales Invoice ${invoice.invoiceId}`,
-      postingDate: String(invoice.postingDate),
+      postingDate,
       sourceType: "Sales Invoice" as const,
       lines: journal.lines.map((line, index) => ({
         ...accounts.standIns.storedLine(line),
@@ -18892,7 +18989,28 @@ export async function buildLegacySalesInvoiceJournals(
           journal.metadata[index]!,
           invoice.customerId
         )
-      }))
+      })),
+      taxLedger: {
+        source: "Sales" as const,
+        documentType: "Sales Invoice" as const,
+        documentId: invoice.id,
+        customerId: invoice.customerId,
+        currencyCode: invoice.currencyCode ?? baseCurrencyCode,
+        exchangeRate: invoice.exchangeRate ?? 1,
+        sign: 1 as const,
+        lines: salesTaxLedgerLines({
+          lines: invoiceLines,
+          headerShipping,
+          taxCodes: codesOnDate,
+          nonTaxableItemIds,
+          exemption: customerTax?.taxExempt
+            ? {
+                reason: customerTax.taxExemptionReason,
+                certificateNumber: customerTax.taxExemptionCertificateNumber
+              }
+            : null
+        })
+      }
     };
   });
 }
@@ -19158,6 +19276,8 @@ export type LegacyJournal = {
   postingDate: string;
   sourceType: Enums["journalEntrySourceType"];
   lines: LegacyJournalLine[];
+  /** Written beside the journal, as the document's posting writes it. */
+  taxLedger?: TaxLedgerDocument;
 };
 
 /** A legacy journal and the document whose `journalId` gets its id. */
@@ -19416,7 +19536,75 @@ export async function insertProvisionalJournals(
       sourceType: journal.sourceType
     }))
   });
+  await insertTaxLedgers(trx, {
+    companyId,
+    userId,
+    journals: writable.flatMap((journal) =>
+      journal.taxLedger
+        ? [
+            {
+              journalId: idByJournal.get(journal)!,
+              postingDate: journal.postingDate,
+              taxLedger: journal.taxLedger
+            }
+          ]
+        : []
+    )
+  });
   return journals.map((journal) => idByJournal.get(journal) ?? null);
+}
+
+/** The tax-ledger rows of the written journals, in base and document
+ *  currency at the group's precision for each currency. */
+async function insertTaxLedgers(
+  trx: KyselyTx,
+  {
+    companyId,
+    userId,
+    journals
+  }: {
+    companyId: string;
+    userId: string;
+    journals: {
+      journalId: string;
+      postingDate: string;
+      taxLedger: TaxLedgerDocument;
+    }[];
+  }
+): Promise<void> {
+  if (journals.length === 0) return;
+  const codes = [
+    ...new Set(journals.map((journal) => journal.taxLedger.currencyCode))
+  ];
+  const currencies = await trx
+    .selectFrom("currency")
+    .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
+    .select(["currency.code", "currency.decimalPlaces"])
+    .where("company.id", "=", companyId)
+    .where("currency.code", "in", codes)
+    .execute();
+  const decimalsByCode = new Map(
+    currencies.map((currency) => [currency.code, currency.decimalPlaces])
+  );
+  const rows = journals.flatMap(({ journalId, postingDate, taxLedger }) => {
+    const decimals = decimalsByCode.get(taxLedger.currencyCode);
+    if (decimals === null || decimals === undefined) {
+      throw new InvalidInputError(
+        `Currency ${taxLedger.currencyCode} is not set up for this company`
+      );
+    }
+    return buildTaxLedgerRows({
+      ...taxLedger,
+      companyId,
+      createdBy: userId,
+      journalId,
+      postingDate,
+      currencyDecimals: decimals
+    });
+  });
+  for (const chunk of chunkArray(rows, ROWS_PER_STATEMENT)) {
+    await trx.insertInto("taxLedger").values(chunk).execute();
+  }
 }
 
 /** A document whose posting stores the journal it wrote. */
@@ -21522,4 +21710,731 @@ export async function recalculateRevenueRecognitionRun(
       deleted: false
     };
   });
+}
+
+// -- Tax codes, authorities and registrations --
+// See .ai/specs/2026-10-16-multi-jurisdiction-tax.md.
+
+const TAX_CODE_COMPONENT_COLUMNS =
+  "id, name, taxAuthorityId, taxPercent, recoverablePercent, sequence, isCompound, taxReceivedAccountId, taxPaidAccountId, effectiveDate, expirationDate";
+
+export async function getTaxCodes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("taxCode")
+    .select(`*, taxCodeComponent(${TAX_CODE_COMPONENT_COLUMNS})`, {
+      count: LIST_COUNT
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getTaxCodesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("taxCode")
+    .select(
+      `id, name, calculationType, taxesShipping, taxCodeComponent(${TAX_CODE_COMPONENT_COLUMNS})`
+    )
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("name", { ascending: true });
+}
+
+export async function getTaxCode(
+  client: SupabaseClient<Database>,
+  taxCodeId: string
+) {
+  return client
+    .from("taxCode")
+    .select(`*, taxCodeComponent(${TAX_CODE_COMPONENT_COLUMNS})`)
+    .eq("id", taxCodeId)
+    .single();
+}
+
+type TaxCodeComponentInput = z.infer<typeof taxCodeComponentValidator>;
+
+/**
+ * Create or update a tax code and replace its components, in one transaction.
+ * Components that keep their id are updated, components with no id are
+ * inserted, and components missing from the list are deleted.
+ */
+export async function upsertTaxCode(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    taxCode: Omit<z.infer<typeof taxCodeValidator>, "components">;
+    components: TaxCodeComponentInput[];
+    customFields?: Json;
+  }
+): Promise<{ data: { id: string } | null; error: string | null }> {
+  const { companyId, companyGroupId, userId, taxCode, components } = args;
+  try {
+    const id = await db.transaction().execute(async (trx) => {
+      // Kysely bypasses RLS: refuse accounts outside the company's group.
+      const accountIds = [
+        ...new Set(
+          components
+            .flatMap((c) => [c.taxReceivedAccountId, c.taxPaidAccountId])
+            .filter((accountId): accountId is string => !!accountId)
+        )
+      ];
+      if (accountIds.length > 0) {
+        const accounts = await trx
+          .selectFrom("account")
+          .select("id")
+          .where("id", "in", accountIds)
+          .where("companyGroupId", "=", companyGroupId)
+          .execute();
+        if (accounts.length !== accountIds.length) {
+          throw new Error("A tax account does not belong to this company");
+        }
+      }
+
+      const header = {
+        name: taxCode.name,
+        description: taxCode.description ?? null,
+        calculationType: taxCode.calculationType,
+        reportingCategory: taxCode.reportingCategory,
+        taxesShipping: taxCode.taxesShipping,
+        invoiceMessage: taxCode.invoiceMessage ?? null,
+        countryCode: taxCode.countryCode ?? null,
+        state: taxCode.state ?? null,
+        active: taxCode.active
+      };
+
+      let taxCodeId: string;
+      if (taxCode.id) {
+        const updated = await trx
+          .updateTable("taxCode")
+          .set({
+            ...header,
+            ...(args.customFields ? { customFields: args.customFields } : {}),
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", taxCode.id)
+          .where("companyId", "=", companyId)
+          .returning("id")
+          .executeTakeFirst();
+        if (!updated) throw new Error("Tax code not found");
+        taxCodeId = updated.id;
+      } else {
+        const inserted = await trx
+          .insertInto("taxCode")
+          .values({
+            ...header,
+            customFields: args.customFields ?? null,
+            companyId,
+            createdBy: userId
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        taxCodeId = inserted.id;
+      }
+
+      const row = (c: TaxCodeComponentInput) => ({
+        name: c.name,
+        taxAuthorityId: c.taxAuthorityId || null,
+        taxPercent: c.taxPercent,
+        recoverablePercent: c.recoverablePercent,
+        sequence: c.sequence,
+        isCompound: c.isCompound,
+        taxReceivedAccountId: c.taxReceivedAccountId || null,
+        taxPaidAccountId: c.taxPaidAccountId || null,
+        effectiveDate: c.effectiveDate || null,
+        expirationDate: c.expirationDate || null
+      });
+      // Only an id this code already has is an update. The upsert conflicts on
+      // (id, companyId) alone, so any other id (another code's component, or
+      // one deleted since) would rewrite that row: it is inserted as new.
+      const ownedIds = new Set(
+        taxCode.id
+          ? (
+              await trx
+                .selectFrom("taxCodeComponent")
+                .select("id")
+                .where("taxCodeId", "=", taxCodeId)
+                .where("companyId", "=", companyId)
+                .execute()
+            ).map((c) => c.id)
+          : []
+      );
+      const kept = components.filter((c) => !!c.id && ownedIds.has(c.id));
+      // `row` carries no id, so these take a new one.
+      const added = components.filter((c) => !c.id || !ownedIds.has(c.id));
+
+      let removal = trx
+        .deleteFrom("taxCodeComponent")
+        .where("taxCodeId", "=", taxCodeId)
+        .where("companyId", "=", companyId);
+      if (kept.length > 0) {
+        removal = removal.where(
+          "id",
+          "not in",
+          kept.map((c) => c.id!)
+        );
+      }
+      await removal.execute();
+
+      // Two statements: one column list per multi-row insert, so rows with and
+      // without an id never share one (lesson "Kysely builds ONE column list").
+      if (kept.length > 0) {
+        await trx
+          .insertInto("taxCodeComponent")
+          .values(
+            kept.map((c) => ({
+              ...row(c),
+              id: c.id!,
+              taxCodeId,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .onConflict((oc) =>
+            oc.columns(["id", "companyId"]).doUpdateSet((eb) => ({
+              name: eb.ref("excluded.name"),
+              taxAuthorityId: eb.ref("excluded.taxAuthorityId"),
+              taxPercent: eb.ref("excluded.taxPercent"),
+              recoverablePercent: eb.ref("excluded.recoverablePercent"),
+              sequence: eb.ref("excluded.sequence"),
+              isCompound: eb.ref("excluded.isCompound"),
+              taxReceivedAccountId: eb.ref("excluded.taxReceivedAccountId"),
+              taxPaidAccountId: eb.ref("excluded.taxPaidAccountId"),
+              effectiveDate: eb.ref("excluded.effectiveDate"),
+              expirationDate: eb.ref("excluded.expirationDate"),
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            }))
+          )
+          .execute();
+      }
+      if (added.length > 0) {
+        await trx
+          .insertInto("taxCodeComponent")
+          .values(
+            added.map((c) => ({
+              ...row(c),
+              taxCodeId,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+      return taxCodeId;
+    });
+    return { data: { id }, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : String(err)
+    };
+  }
+}
+
+/**
+ * Retire a tax code. Lines that name it keep it, so it is never deleted.
+ */
+export async function deleteTaxCode(
+  client: SupabaseClient<Database>,
+  taxCodeId: string
+) {
+  return client.from("taxCode").update({ active: false }).eq("id", taxCodeId);
+}
+
+export async function suggestTaxCodes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { countryCode: string | null; state: string | null }
+) {
+  if (!args.countryCode) return { data: [], error: null };
+  let query = client
+    .from("taxCode")
+    .select("id, name, state")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .eq("countryCode", args.countryCode);
+  query = args.state
+    ? query.or(`state.is.null,state.eq.${args.state}`)
+    : query.is("state", null);
+  return query.order("state", { ascending: false, nullsFirst: false });
+}
+
+/**
+ * The tax a new document line takes. Reads the party's tax record, the
+ * ship-to location, the item and the codes, then decides with the pure
+ * `decideLineTax` (accounting.utils.ts).
+ */
+export async function resolveLineTaxes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    source: "sales" | "purchase";
+    customerId?: string | null;
+    customerLocationId?: string | null;
+    supplierId?: string | null;
+    itemId?: string | null;
+    date: string;
+  }
+): Promise<{ data: LineTaxDecision | null; error: string | null }> {
+  const sales = args.source === "sales";
+  const [party, partyTax, location, item] = await Promise.all([
+    sales
+      ? args.customerId
+        ? client
+            .from("customer")
+            .select("taxPercent")
+            .eq("id", args.customerId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : null
+      : args.supplierId
+        ? client
+            .from("supplier")
+            .select("taxPercent")
+            .eq("id", args.supplierId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : null,
+    sales
+      ? args.customerId
+        ? client
+            .from("customerTax")
+            .select("taxExempt, taxExemptionReason, taxCodeId")
+            .eq("customerId", args.customerId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : null
+      : args.supplierId
+        ? client
+            .from("supplierTax")
+            .select("taxCodeId")
+            .eq("supplierId", args.supplierId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : null,
+    sales && args.customerLocationId
+      ? client
+          .from("customerLocation")
+          .select("taxCodeId")
+          .eq("id", args.customerLocationId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.itemId
+      ? client
+          .from("item")
+          .select("taxable")
+          .eq("id", args.itemId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+  const failed = [party, partyTax, location, item].find((r) => r?.error);
+  if (failed?.error) return { data: null, error: failed.error.message };
+
+  const taxRecord = partyTax?.data as
+    | {
+        taxCodeId: string | null;
+        taxExempt?: boolean;
+        taxExemptionReason?: string | null;
+      }
+    | null
+    | undefined;
+  const locationCodeId = location?.data?.taxCodeId ?? null;
+  const partyCodeId = taxRecord?.taxCodeId ?? null;
+  const codeIds = [locationCodeId, partyCodeId].filter(
+    (id): id is string => !!id
+  );
+
+  let codes = new Map<string, ReturnType<typeof toTaxCodeInput>>();
+  if (codeIds.length > 0) {
+    const result = await client
+      .from("taxCode")
+      .select(
+        `id, calculationType, taxesShipping, taxCodeComponent(${TAX_CODE_COMPONENT_COLUMNS})`
+      )
+      .in("id", codeIds)
+      .eq("companyId", companyId)
+      .eq("active", true);
+    if (result.error) return { data: null, error: result.error.message };
+    codes = new Map(
+      (result.data ?? []).map((row) => [row.id, toTaxCodeInput(row)])
+    );
+  }
+
+  return {
+    data: decideLineTax({
+      source: args.source,
+      taxExempt: taxRecord?.taxExempt ?? false,
+      taxExemptionReason: taxRecord?.taxExemptionReason ?? null,
+      itemTaxable: item?.data?.taxable ?? true,
+      locationTaxCode: locationCodeId
+        ? (codes.get(locationCodeId) ?? null)
+        : null,
+      partyTaxCode: partyCodeId ? (codes.get(partyCodeId) ?? null) : null,
+      fallbackTaxPercent: Number(party?.data?.taxPercent ?? 0),
+      date: args.date
+    }),
+    error: null
+  };
+}
+
+export async function getTaxAuthorities(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("taxAuthority")
+    .select("*, supplier(name)", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+  if (args.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getTaxAuthoritiesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("taxAuthority")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name", { ascending: true });
+}
+
+export async function getTaxAuthority(
+  client: SupabaseClient<Database>,
+  taxAuthorityId: string
+) {
+  return client
+    .from("taxAuthority")
+    .select("*")
+    .eq("id", taxAuthorityId)
+    .single();
+}
+
+export async function upsertTaxAuthority(
+  client: SupabaseClient<Database>,
+  taxAuthority:
+    | (Omit<z.infer<typeof taxAuthorityValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof taxAuthorityValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const values = {
+    ...taxAuthority,
+    supplierId: taxAuthority.supplierId || null
+  };
+  if ("createdBy" in values) {
+    return client.from("taxAuthority").insert([values]).select("id").single();
+  }
+  return client
+    .from("taxAuthority")
+    .update({ ...values, updatedAt: datetime.timestamp() })
+    .eq("id", values.id)
+    .select("id")
+    .single();
+}
+
+export async function deleteTaxAuthority(
+  client: SupabaseClient<Database>,
+  taxAuthorityId: string
+) {
+  return client.from("taxAuthority").delete().eq("id", taxAuthorityId);
+}
+
+export async function getTaxRegistrations(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("taxRegistration")
+    .select("*, country(name)", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+  if (args.search) {
+    query = query.ilike("registrationNumber", `%${args.search}%`);
+  }
+  query = setGenericQueryFilters(query, args, [
+    { column: "countryCode", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getTaxRegistration(
+  client: SupabaseClient<Database>,
+  taxRegistrationId: string
+) {
+  return client
+    .from("taxRegistration")
+    .select("*")
+    .eq("id", taxRegistrationId)
+    .single();
+}
+
+export async function upsertTaxRegistration(
+  client: SupabaseClient<Database>,
+  taxRegistration:
+    | (Omit<z.infer<typeof taxRegistrationValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof taxRegistrationValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const values = {
+    ...taxRegistration,
+    state: taxRegistration.state || null,
+    effectiveDate: taxRegistration.effectiveDate || null,
+    endDate: taxRegistration.endDate || null
+  };
+  if ("createdBy" in values) {
+    return client
+      .from("taxRegistration")
+      .insert([values])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("taxRegistration")
+    .update({ ...values, updatedAt: datetime.timestamp() })
+    .eq("id", values.id)
+    .select("id")
+    .single();
+}
+
+export async function deleteTaxRegistration(
+  client: SupabaseClient<Database>,
+  taxRegistrationId: string
+) {
+  return client.from("taxRegistration").delete().eq("id", taxRegistrationId);
+}
+
+export type TaxLiabilityRow = {
+  taxAuthorityId: string | null;
+  authorityName: string | null;
+  componentName: string | null;
+  taxableSales: number;
+  exemptSales: number;
+  taxCollected: number;
+  taxablePurchases: number;
+  /** Tax the company owes on its own purchases: reverse charge and use
+   *  tax, which the supplier did not charge. */
+  selfAssessedTax: number;
+  recoverableTax: number;
+  /** Collected plus self-assessed, less recoverable. */
+  netDue: number;
+};
+
+/**
+ * Tax collected and recoverable per authority and component, from the tax
+ * ledger of Posted journals dated in the range (spec "Tax Liability
+ * report"). Sales rows give the collected tax and the taxable and exempt
+ * sales; purchase rows give the recoverable tax, and a row posted as
+ * self-assessed (a Reverse Charge code) the tax owed. That flag was
+ * recorded at posting, so editing or deleting a code later changes no past
+ * figure. A line taxed by a bare percent (no code) has no authority or
+ * component.
+ */
+export async function getTaxLiability(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  {
+    startDate,
+    endDate,
+    taxAuthorityId
+  }: { startDate: string; endDate: string; taxAuthorityId?: string | null }
+): Promise<TaxLiabilityRow[]> {
+  const sumWhere = (source: "Sales" | "Purchase", column: string) =>
+    sql<number>`coalesce(sum(case when "taxLedger"."source" = ${source} then ${sql.ref(`taxLedger.${column}`)} else 0 end), 0)`;
+  let query = db
+    .selectFrom("taxLedger")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "taxLedger.journalId")
+        .onRef("journal.companyId", "=", "taxLedger.companyId")
+    )
+    .leftJoin("taxAuthority", (join) =>
+      join
+        .onRef("taxAuthority.id", "=", "taxLedger.taxAuthorityId")
+        .onRef("taxAuthority.companyId", "=", "taxLedger.companyId")
+    )
+    .select([
+      "taxLedger.taxAuthorityId",
+      "taxAuthority.name as authorityName",
+      "taxLedger.componentName",
+      sumWhere("Sales", "taxableAmount").as("taxableSales"),
+      sumWhere("Sales", "exemptAmount").as("exemptSales"),
+      sumWhere("Sales", "taxAmount").as("taxCollected"),
+      sumWhere("Purchase", "taxableAmount").as("taxablePurchases"),
+      sql<number>`coalesce(sum(case when "taxLedger"."source" = 'Purchase' and "taxLedger"."selfAssessed" then "taxLedger"."taxAmount" else 0 end), 0)`.as(
+        "selfAssessedTax"
+      ),
+      sumWhere("Purchase", "recoverableAmount").as("recoverableTax")
+    ])
+    .where("taxLedger.companyId", "=", companyId)
+    .where("journal.status", "=", "Posted")
+    .where("taxLedger.postingDate", ">=", startDate)
+    .where("taxLedger.postingDate", "<=", endDate);
+  if (taxAuthorityId) {
+    query = query.where("taxLedger.taxAuthorityId", "=", taxAuthorityId);
+  }
+  const rows = await query
+    .groupBy([
+      "taxLedger.taxAuthorityId",
+      "taxAuthority.name",
+      "taxLedger.componentName"
+    ])
+    .orderBy("taxAuthority.name")
+    .orderBy("taxLedger.componentName")
+    .execute();
+
+  return rows.map((row) => {
+    const taxCollected = round(Number(row.taxCollected));
+    const selfAssessedTax = round(Number(row.selfAssessedTax));
+    const recoverableTax = round(Number(row.recoverableTax));
+    return {
+      taxAuthorityId: row.taxAuthorityId,
+      authorityName: row.authorityName,
+      componentName: row.componentName,
+      taxableSales: round(Number(row.taxableSales)),
+      exemptSales: round(Number(row.exemptSales)),
+      taxCollected,
+      taxablePurchases: round(Number(row.taxablePurchases)),
+      selfAssessedTax,
+      recoverableTax,
+      netDue: round(taxCollected + selfAssessedTax - recoverableTax)
+    };
+  });
+}
+
+const taxLogger = getLogger("erp", "accounting");
+
+/**
+ * The tax a new purchase order or invoice line takes when the request names
+ * no tax code at all — an API or MCP caller. The line forms always send the
+ * field (the user's pick, or the supplier's code they were given), so they
+ * never reach this.
+ *
+ * Returns null when the resolver decides nothing beyond the supplier's bare
+ * percent: the request's own tax pair then stands, as it did before tax
+ * codes. Otherwise the line takes the code (or the non-taxable item's zero)
+ * and its amount is restated from the rate.
+ */
+export async function resolvePurchaseLineTax(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    supplierId: string | null | undefined;
+    itemId: string | null | undefined;
+    /** The document's date; the company's today when it has none. */
+    documentDate: string | null | undefined;
+    currencyCode: string | null | undefined;
+    unitPrice: number;
+    quantity: number;
+    shippingCost: number;
+  }
+): Promise<{
+  taxCodeId: string | undefined;
+  taxPercent: number;
+  supplierTaxAmount: number;
+} | null> {
+  const { companyId, companyGroupId, supplierId } = args;
+  if (!supplierId) return null;
+
+  const date =
+    args.documentDate ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+  // The tax amount settles at the document currency's decimals, else the
+  // company base currency's. Read alongside the resolver, never a literal.
+  const settlementCurrency = async () => {
+    const currencyCode =
+      args.currencyCode ??
+      (
+        await client
+          .from("company")
+          .select("baseCurrencyCode")
+          .eq("id", companyId)
+          .single()
+      ).data?.baseCurrencyCode;
+    return currencyCode
+      ? getCurrencyByCode(client, companyGroupId, currencyCode)
+      : null;
+  };
+  const [resolved, currency] = await Promise.all([
+    resolveLineTaxes(client, companyId, {
+      source: "purchase",
+      supplierId,
+      itemId: args.itemId,
+      date
+    }),
+    settlementCurrency()
+  ]);
+  if (resolved.error) {
+    // Best effort: the line keeps the tax the request sent.
+    taxLogger.error("Failed to resolve purchase line tax", {
+      companyId,
+      supplierId,
+      itemId: args.itemId,
+      error: resolved.error
+    });
+    return null;
+  }
+  if (!resolved.data) return null;
+  if (!resolved.data.taxCodeId && !resolved.data.exempt) return null;
+
+  const decimalPlaces = currency?.data?.decimalPlaces;
+  if (decimalPlaces === undefined || decimalPlaces === null) {
+    // No currency row to settle in: the line keeps the tax the request sent.
+    taxLogger.error("No currency to settle purchase line tax in", {
+      companyId,
+      currencyCode: args.currencyCode,
+      error: currency?.error
+    });
+    return null;
+  }
+  const pair = taxPairFromPercent(
+    taxableBase(args.unitPrice, args.quantity, args.shippingCost),
+    round(resolved.data.taxPercent),
+    decimalPlaces
+  );
+  return {
+    taxCodeId: resolved.data.taxCodeId ?? undefined,
+    taxPercent: pair.percent,
+    supplierTaxAmount: pair.amount
+  };
 }

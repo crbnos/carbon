@@ -5,18 +5,29 @@
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import type { Database } from "@carbon/database";
-import { fetchAllFromTable, fetchAllRecords } from "@carbon/database";
+import {
+  fetchAllFromTable,
+  fetchAllRecords,
+  getCompanyTimeZone
+} from "@carbon/database";
 import type { RunType } from "@carbon/database/run-type";
-import { round } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import { z } from "zod";
 import {
   insertPurchaseOrder,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
-import { insertSalesOrder } from "~/modules/sales/sales.service";
+import {
+  insertSalesOrder,
+  resolveSalesDocumentTaxes
+} from "~/modules/sales/sales.service";
 import { invokeCreate, invokePosting } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { fromServerFn } from "../shared/shared.service";
+import {
+  taxCalculationTypes,
+  taxReportingCategories
+} from "./accounting.models";
 import * as service from "./accounting.service";
 import {
   accountMoveRefusal,
@@ -1352,6 +1363,16 @@ export const purchaseFixedAsset = defineServiceFn({
     }
     const purchaseOrderId = order.data.id;
 
+    // The line takes the supplier's tax code (or bare percent). Its price is
+    // entered later, so the amount stays 0 until then.
+    const resolvedTax = await service.resolveLineTaxes(client, companyId, {
+      source: "purchase",
+      supplierId,
+      date: datetime
+        .today(await getCompanyTimeZone(client, companyId))
+        .toString()
+    });
+
     const line = await upsertPurchaseOrderLine(client, {
       purchaseOrderId,
       purchaseOrderLineType: "Fixed Asset",
@@ -1362,7 +1383,8 @@ export const purchaseFixedAsset = defineServiceFn({
       supplierUnitPrice: 0,
       supplierShippingCost: 0,
       supplierTaxAmount: 0,
-      taxPercent: 0,
+      taxCodeId: resolvedTax.data?.taxCodeId ?? undefined,
+      taxPercent: round(resolvedTax.data?.taxPercent ?? 0),
       exchangeRate: 1,
       purchaseUnitOfMeasureCode: "EA",
       inventoryUnitOfMeasureCode: "EA",
@@ -1431,6 +1453,12 @@ export const sellFixedAsset = defineServiceFn({
     }
     const salesOrderId = order.data.id;
 
+    // The order's default tax (ship-to, then customer), as any new line takes.
+    const tax = await resolveSalesDocumentTaxes(client, companyId, {
+      document: "salesOrder",
+      documentId: salesOrderId
+    });
+
     const line = await client.from("salesOrderLine").insert({
       salesOrderId,
       salesOrderLineType: "Fixed Asset",
@@ -1442,7 +1470,8 @@ export const sellFixedAsset = defineServiceFn({
           Number(asset.data.accumulatedDepreciation)
       ),
       locationId: asset.data.locationId ?? "",
-      taxPercent: 0,
+      taxPercent: tax.data?.document.taxPercent ?? 0,
+      taxCodeId: tax.data?.document.taxCodeId ?? null,
       exchangeRate: 1,
       companyId,
       createdBy: ctx.auditUserId
@@ -4845,5 +4874,521 @@ export const getAccountingSyncTieOutCell = defineServiceFn({
         input.cellId as never
       )
     );
+  }
+});
+
+// ── Tax codes, authorities and registrations ────────────────────────────────
+
+/** The `custom-*` fields of a form, by field id (`setCustomFields`). */
+const taxCustomFieldsInput = z
+  .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+  .optional();
+
+const taxPagedInput = z.looseObject({
+  limit: z
+    .number()
+    .int()
+    .describe("Rows per page. Left out, the read is not paged.")
+    .optional(),
+  offset: z.number().int().default(0),
+  search: z.string().nullable().optional()
+});
+
+/** Every rate is a 0..1 fraction, as `taxPercent` is on document lines. */
+const taxCodeComponentInput = z
+  .object({
+    id: z
+      .string()
+      .describe("A component of this code keeps its id; omit to add one.")
+      .optional(),
+    name: z.string().trim().min(1),
+    taxAuthorityId: z.string().optional(),
+    taxPercent: z.number().min(0).max(1),
+    recoverablePercent: z.number().min(0).max(1),
+    sequence: z.number().int().min(1),
+    isCompound: z.boolean(),
+    taxReceivedAccountId: z.string().optional(),
+    taxPaidAccountId: z.string().optional(),
+    effectiveDate: z.string().optional(),
+    expirationDate: z.string().optional()
+  })
+  .refine(
+    (c) =>
+      !c.effectiveDate ||
+      !c.expirationDate ||
+      c.expirationDate >= c.effectiveDate,
+    {
+      message: "The expiry date must be on or after the effective date",
+      path: ["expirationDate"]
+    }
+  );
+
+const taxCodeInput = z.object({
+  name: z.string().trim().min(1),
+  description: z.string().optional(),
+  calculationType: z.enum(taxCalculationTypes),
+  reportingCategory: z.enum(taxReportingCategories),
+  taxesShipping: z.boolean(),
+  invoiceMessage: z.string().optional(),
+  countryCode: z.string().optional(),
+  state: z.string().optional(),
+  active: z.boolean(),
+  components: z.array(taxCodeComponentInput).min(1),
+  customFields: taxCustomFieldsInput
+});
+
+const taxAuthorityInput = z.object({
+  name: z.string().trim().min(1),
+  supplierId: z.string().optional(),
+  customFields: taxCustomFieldsInput
+});
+
+const taxRegistrationFields = {
+  countryCode: z.string().min(1),
+  state: z.string().optional(),
+  registrationNumber: z.string().trim().min(1),
+  effectiveDate: z.string().optional(),
+  endDate: z.string().optional(),
+  customFields: taxCustomFieldsInput
+};
+
+/**
+ * Get tax codes
+ *
+ * @mcp read
+ */
+export const getTaxCodes = defineServiceFn({
+  input: taxPagedInput,
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getTaxCodes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get the active tax codes, with their components
+ *
+ * @mcp read
+ */
+export const getTaxCodesList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getTaxCodesList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get tax code
+ *
+ * @mcp read
+ */
+export const getTaxCode = defineServiceFn({
+  input: z.object({ taxCodeId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getTaxCode(ctx.asCaller.supabase, input.taxCodeId)
+    );
+  }
+});
+
+/**
+ * Create a tax code
+ *
+ * @remarks
+ * Creates the code and its components in one transaction. Refuses a tax
+ * account outside the company's group.
+ *
+ * @mcp
+ */
+export const createTaxCode = defineServiceFn({
+  input: taxCodeInput,
+  permission: { create: "accounting" },
+  async run(ctx, { components, customFields, ...taxCode }) {
+    const result = await service.upsertTaxCode(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      userId: ctx.auditUserId,
+      taxCode,
+      components,
+      customFields
+    });
+    if (result.error || !result.data) {
+      return ctx.error("internal", "Failed to create tax code", result.error);
+    }
+    return result.data;
+  }
+});
+
+/**
+ * Update a tax code and replace its components
+ *
+ * @remarks
+ * In one transaction: a component that keeps its id is updated, one with no
+ * id (or an id that is not this code's) is added, and a component missing
+ * from the list is deleted. Refuses a tax account outside the company's
+ * group.
+ *
+ * @mcp destructive
+ */
+export const updateTaxCode = defineServiceFn({
+  input: taxCodeInput.safeExtend({ id: z.string() }),
+  permission: { update: "accounting" },
+  async run(ctx, { components, customFields, ...taxCode }) {
+    const result = await service.upsertTaxCode(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      userId: ctx.auditUserId,
+      taxCode,
+      components,
+      customFields
+    });
+    if (result.error || !result.data) {
+      return ctx.error("internal", "Failed to update tax code", result.error);
+    }
+    return result.data;
+  }
+});
+
+/**
+ * Retire a tax code
+ *
+ * @remarks
+ * Lines that name the code keep it, so it is never deleted: it is made
+ * inactive and can no longer be chosen on new lines.
+ *
+ * @mcp
+ */
+export const deleteTaxCode = defineServiceFn({
+  input: z.object({ taxCodeId: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.deleteTaxCode(ctx.asCaller.supabase, input.taxCodeId)
+    );
+  }
+});
+
+/**
+ * Suggest tax codes for an address
+ *
+ * @remarks
+ * The active codes of the country, the state's own first, then the
+ * country-wide ones. No country, no suggestions.
+ *
+ * @mcp read
+ */
+export const suggestTaxCodes = defineServiceFn({
+  input: z.object({
+    countryCode: z.string().nullable(),
+    state: z.string().nullable()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.suggestTaxCodes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input
+      )
+    );
+  }
+});
+
+/**
+ * Resolve the tax a new document line takes
+ *
+ * @remarks
+ * In order: an exempt customer, a non-taxable item, the ship-to location's
+ * code (sales only), the party's code, and last the party's bare percent.
+ *
+ * @param date - The document's date (YYYY-MM-DD): the components in effect on it.
+ *
+ * @mcp read
+ */
+export const resolveLineTaxes = defineServiceFn({
+  input: z.object({
+    source: z.enum(["sales", "purchase"]),
+    customerId: z.string().nullish(),
+    customerLocationId: z.string().nullish(),
+    supplierId: z.string().nullish(),
+    itemId: z.string().nullish(),
+    date: z.string()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    const result = await service.resolveLineTaxes(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input
+    );
+    if (result.error) {
+      return ctx.error("internal", "Failed to resolve the line's tax", {
+        message: result.error
+      });
+    }
+    return result.data;
+  }
+});
+
+/**
+ * Get tax authorities
+ *
+ * @mcp read
+ */
+export const getTaxAuthorities = defineServiceFn({
+  input: taxPagedInput,
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getTaxAuthorities(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get tax authorities list
+ *
+ * @mcp read
+ */
+export const getTaxAuthoritiesList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getTaxAuthoritiesList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get tax authority
+ *
+ * @mcp read
+ */
+export const getTaxAuthority = defineServiceFn({
+  input: z.object({ taxAuthorityId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getTaxAuthority(ctx.asCaller.supabase, input.taxAuthorityId)
+    );
+  }
+});
+
+/**
+ * Create a tax authority
+ *
+ * @mcp
+ */
+export const createTaxAuthority = defineServiceFn({
+  input: taxAuthorityInput,
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertTaxAuthority(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Update a tax authority
+ *
+ * @mcp
+ */
+export const updateTaxAuthority = defineServiceFn({
+  input: taxAuthorityInput.safeExtend({ id: z.string() }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertTaxAuthority(ctx.asCaller.supabase, {
+        ...input,
+        updatedBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Delete tax authority
+ *
+ * @mcp destructive
+ */
+export const deleteTaxAuthority = defineServiceFn({
+  input: z.object({ taxAuthorityId: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.deleteTaxAuthority(
+        ctx.asCaller.supabase,
+        input.taxAuthorityId
+      )
+    );
+  }
+});
+
+/**
+ * Get tax registrations
+ *
+ * @mcp read
+ */
+export const getTaxRegistrations = defineServiceFn({
+  input: taxPagedInput,
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getTaxRegistrations(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get tax registration
+ *
+ * @mcp read
+ */
+export const getTaxRegistration = defineServiceFn({
+  input: z.object({ taxRegistrationId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getTaxRegistration(
+        ctx.asCaller.supabase,
+        input.taxRegistrationId
+      )
+    );
+  }
+});
+
+/**
+ * Create a tax registration
+ *
+ * @mcp
+ */
+export const createTaxRegistration = defineServiceFn({
+  input: z
+    .object(taxRegistrationFields)
+    .refine(
+      (r) => !r.effectiveDate || !r.endDate || r.endDate >= r.effectiveDate,
+      {
+        message: "The end date must be on or after the effective date",
+        path: ["endDate"]
+      }
+    ),
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertTaxRegistration(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Update a tax registration
+ *
+ * @mcp
+ */
+export const updateTaxRegistration = defineServiceFn({
+  input: z
+    .object({ ...taxRegistrationFields, id: z.string() })
+    .refine(
+      (r) => !r.effectiveDate || !r.endDate || r.endDate >= r.effectiveDate,
+      {
+        message: "The end date must be on or after the effective date",
+        path: ["endDate"]
+      }
+    ),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertTaxRegistration(ctx.asCaller.supabase, {
+        ...input,
+        updatedBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Delete tax registration
+ *
+ * @mcp destructive
+ */
+export const deleteTaxRegistration = defineServiceFn({
+  input: z.object({ taxRegistrationId: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.deleteTaxRegistration(
+        ctx.asCaller.supabase,
+        input.taxRegistrationId
+      )
+    );
+  }
+});
+
+/**
+ * Get the tax liability per authority and component
+ *
+ * @remarks
+ * From the tax ledger of Posted journals dated in the range: taxable and
+ * exempt sales, tax collected, taxable purchases, self-assessed tax (reverse
+ * charge and use tax), recoverable tax, and the net due.
+ *
+ * @param startDate - The first posting date (YYYY-MM-DD).
+ * @param endDate - The last posting date (YYYY-MM-DD).
+ *
+ * @mcp read
+ */
+export const getTaxLiability = defineServiceFn({
+  input: z.object({
+    startDate: z.string(),
+    endDate: z.string(),
+    taxAuthorityId: z.string().nullish()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return service.getTaxLiability(ctx.asSystem.pg, ctx.company.id, input);
   }
 });

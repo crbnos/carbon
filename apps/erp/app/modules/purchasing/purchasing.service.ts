@@ -39,7 +39,7 @@ import {
   maybeSingle,
   selectRows
 } from "@carbon/database/rows";
-import { getNextSequence } from "@carbon/database/sequence";
+import { getNextSequence, getNextSequences } from "@carbon/database/sequence";
 import {
   convertUnitPrice,
   supplierPartCurrency
@@ -53,16 +53,19 @@ import { getLogger } from "@carbon/logger";
 import {
   addDays,
   addMonths,
+  applyRate,
   async,
   BILLABLE_LEASE_STATUSES,
   buildJournalLineDimensionInserts,
   buildLesseeSchedule,
+  chargedTaxPercent,
   datetime,
   EPSILON,
   escalatedLeasePayment,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
   groupBy,
+  groupByTaxRate,
   isBillableLeaseStatus,
   isPaidBeforeOpening,
   isTermWithinTwelveMonths,
@@ -80,12 +83,14 @@ import {
   lesseeScheduleSpan,
   lesseeTerminationLegs,
   measureLesseeAsset,
+  memoAmounts,
   normalizeLesseeLegs,
   openEndedLeaseHorizon,
   paymentMonthIndex,
   RoundingMode,
   remeasureLease,
-  round
+  round,
+  type TaxCodeInput
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
@@ -116,13 +121,15 @@ import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
-  getExchangeRate
+  getExchangeRate,
+  resolvePurchaseLineTax
 } from "../accounting/accounting.service";
 import type { PurchaseInvoice } from "../invoicing/types";
 import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "../production/planning-action-claims";
+import { isItemTaxable } from "../sales/sales.service";
 import * as sharedPostings from "../shared/shared.service";
 import {
   allocateJournalLineIds,
@@ -293,7 +300,7 @@ export async function duplicatePurchaseOrder(
     client
       .from("purchaseOrderLine")
       .select(
-        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, taxPercent, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId"
+        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, taxCodeId, taxPercent, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId"
       )
       .eq("purchaseOrderId", sourcePurchaseOrderId)
       .eq("companyId", companyId)
@@ -1745,6 +1752,34 @@ export async function updateSupplierTax(
     .eq("companyId", supplierTax.companyId);
 }
 
+/**
+ * Give suppliers one tax code (`supplierTax.taxCodeId`). The supplier insert
+ * interceptor creates the supplierTax row, so this normally updates; it
+ * upserts to cover a missing row, which needs the service role: supplierTax
+ * has no INSERT policy. The caller checks every id against the company first,
+ * so the conflict update only reaches that company's rows.
+ */
+export async function upsertSupplierTaxCodes(
+  serviceRole: SupabaseClient<Database>,
+  args: {
+    supplierIds: string[];
+    taxCodeId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return serviceRole.from("supplierTax").upsert(
+    args.supplierIds.map((supplierId) => ({
+      supplierId,
+      companyId: args.companyId,
+      taxCodeId: args.taxCodeId,
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    })),
+    { onConflict: "supplierId" }
+  );
+}
+
 export async function insertPurchaseOrder(
   client: SupabaseClient<Database>,
   input: {
@@ -2088,6 +2123,84 @@ export async function upsertPurchaseOrderLine(
     .insert([{ ...normalized, sortOrder: maxSortOrder + 1 }])
     .select("id")
     .single();
+}
+
+type PurchaseLineTax = {
+  taxCodeId: string | undefined;
+  taxPercent: number;
+  supplierTaxAmount: number;
+};
+
+/**
+ * The tax a line on a non-taxable item stores — no code, 0% and no amount,
+ * whatever was sent — or null when the item may carry tax (or there is no
+ * item). Shared by every purchase order and purchase invoice line write.
+ */
+export async function nonTaxableItemTax(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemId: string | null | undefined
+): Promise<PurchaseLineTax | null> {
+  return (await isItemTaxable(client, companyId, itemId))
+    ? null
+    : { taxCodeId: undefined, taxPercent: 0, supplierTaxAmount: 0 };
+}
+
+/**
+ * The tax a line created on a purchase order or purchase invoice keeps: the
+ * purchase twin of `resolveCreatedLineTax` (sales).
+ *
+ * - A line on a non-taxable item takes none (`nonTaxableItemTax`).
+ * - A `taxCodeId` that is sent decides. A code is kept with the sent percent
+ *   and amount; an empty string means the user cleared the code, and the
+ *   sent percent and amount stand.
+ * - A caller that sends no `taxCodeId` (the API, an MCP tool, a workflow)
+ *   gets the supplier's resolved tax (`resolvePurchaseLineTax`). With no code
+ *   to apply, the sent percent and amount stand.
+ *
+ * A read failure keeps what was sent.
+ */
+export async function resolveCreatedPurchaseLineTax(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    supplierId: string | null | undefined;
+    /** The document's date; the company's today when it has none. */
+    documentDate: string | null | undefined;
+    currencyCode: string | null | undefined;
+    itemId: string | null | undefined;
+    unitPrice: number;
+    quantity: number;
+    shippingCost: number;
+    taxCodeId: string | undefined;
+    taxPercent: number;
+    supplierTaxAmount: number;
+  }
+): Promise<PurchaseLineTax> {
+  const zero = await nonTaxableItemTax(client, args.companyId, args.itemId);
+  if (zero) return zero;
+
+  const submitted = {
+    taxCodeId: args.taxCodeId || undefined,
+    taxPercent: args.taxPercent,
+    supplierTaxAmount: args.supplierTaxAmount
+  };
+  if (args.taxCodeId !== undefined) return submitted;
+
+  const resolved = await resolvePurchaseLineTax(client, {
+    companyId: args.companyId,
+    companyGroupId: args.companyGroupId,
+    supplierId: args.supplierId,
+    // The item is taxable (or there is none): no second read of it.
+    itemId: null,
+    documentDate: args.documentDate,
+    currencyCode: args.currencyCode,
+    unitPrice: args.unitPrice,
+    quantity: args.quantity,
+    shippingCost: args.shippingCost
+  });
+  return resolved ?? submitted;
 }
 
 export async function updatePurchaseOrderLineOrder(
@@ -4453,10 +4566,14 @@ export async function getCreditableQuantitiesForPurchaseReturn(
 }
 
 /**
- * Issue supplier credit: one AP memo + per-line purchaseReturnOrderCreditLine
- * breakdown. Cap = shipped − already credited over NON-VOIDED memos,
- * validated under a row lock. Amount rounded once at the currency's
- * decimals. Returns the memo id.
+ * Issue supplier credit: AP memos + per-line purchaseReturnOrderCreditLine
+ * breakdown. One memo per tax rate (spec "Memo tax": a memo has one code and
+ * one rate): each return line takes the code and rate of the purchase invoice
+ * line it returns, else of its purchase order line. A memo's net is rounded
+ * once at the currency's decimals, its tax computed forward from the net, and
+ * its `amount` is the gross the supplier credits. Cap = shipped − already
+ * credited over NON-VOIDED memos, validated under a row lock. Returns the
+ * first memo's id; the others share its purchaseReturnOrderId.
  *
  * The memo is a **Debit** memo (the `debitMemo` DR- sequence), NOT a Credit
  * memo. `direction` alone decides the control side for both AR and AP
@@ -4515,15 +4632,6 @@ export async function createPurchaseReturnOrderCredit(
   );
   const decimalPlaces = currency.data?.decimalPlaces ?? 2;
 
-  const seq = await client.rpc("get_next_sequence", {
-    sequence_name: "debitMemo",
-    company_id: companyId
-  });
-  if (seq.error || !seq.data) {
-    throw new Error("Failed to allocate debit memo number");
-  }
-  const memoId = seq.data;
-
   const requested = new Map(
     lines
       .filter((l) => l.quantity > 0)
@@ -4541,7 +4649,9 @@ export async function createPurchaseReturnOrderCredit(
         "lineNumber",
         "quantityShipped",
         "unitPrice",
-        "restockFeePercent"
+        "restockFeePercent",
+        "purchaseInvoiceLineId",
+        "purchaseOrderLineId"
       ])
       .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
       .where("companyId", "=", companyId)
@@ -4581,15 +4691,55 @@ export async function createPurchaseReturnOrderCredit(
       ])
     );
 
-    let total = 0;
-    const creditLineValues: {
-      memoId: string;
-      purchaseReturnOrderLineId: string;
-      quantity: number;
-      unitPrice: number;
-      restockFee: number;
-      companyId: string;
-      createdBy: string;
+    // The tax the supplier charged on each line: the invoice line it returns,
+    // else its purchase order line. A line with neither is untaxed.
+    const invoiceLineIds = orderLines
+      .map((line) => line.purchaseInvoiceLineId)
+      .filter((id): id is string => !!id);
+    const orderLineIds = orderLines
+      .map((line) => line.purchaseOrderLineId)
+      .filter((id): id is string => !!id);
+    const [invoiceLineTax, orderLineTax] = await Promise.all([
+      invoiceLineIds.length > 0
+        ? trx
+            .selectFrom("purchaseInvoiceLine")
+            .select(["id", "taxCodeId", "taxPercent"])
+            .where("companyId", "=", companyId)
+            .where("id", "in", invoiceLineIds)
+            .execute()
+        : [],
+      orderLineIds.length > 0
+        ? trx
+            .selectFrom("purchaseOrderLine")
+            .select(["id", "taxCodeId", "taxPercent"])
+            .where("companyId", "=", companyId)
+            .where("id", "in", orderLineIds)
+            .execute()
+        : []
+    ]);
+    const sourceTax = new Map(
+      [...orderLineTax, ...invoiceLineTax].map((row) => [
+        row.id,
+        { taxCodeId: row.taxCodeId, taxPercent: Number(row.taxPercent ?? 0) }
+      ])
+    );
+    const lineTax = (line: (typeof orderLines)[number]) =>
+      (line.purchaseInvoiceLineId &&
+        sourceTax.get(line.purchaseInvoiceLineId)) ||
+      (line.purchaseOrderLineId && sourceTax.get(line.purchaseOrderLineId)) || {
+        taxCodeId: null,
+        taxPercent: 0
+      };
+
+    const credits: {
+      net: number;
+      tax: { taxCodeId: string | null; taxPercent: number };
+      values: {
+        purchaseReturnOrderLineId: string;
+        quantity: number;
+        unitPrice: number;
+        restockFee: number;
+      };
     }[] = [];
 
     for (const line of orderLines) {
@@ -4609,47 +4759,85 @@ export async function createPurchaseReturnOrderCredit(
       const feePercent = Number(line.restockFeePercent ?? 0);
       const gross = quantity * unitPrice;
       const restockFee = gross * feePercent;
-      total += gross - restockFee;
-      creditLineValues.push({
-        memoId: "",
-        purchaseReturnOrderLineId: line.id,
-        quantity,
-        unitPrice,
-        restockFee,
-        companyId,
-        createdBy: userId
+      credits.push({
+        net: gross - restockFee,
+        tax: lineTax(line),
+        values: {
+          purchaseReturnOrderLineId: line.id,
+          quantity,
+          unitPrice,
+          restockFee
+        }
       });
     }
 
-    if (total <= 0) {
+    // One memo per tax rate. A rate whose lines credit nothing (zero-priced
+    // returns) gets no memo of its own; its credit lines join the first memo
+    // so the quantity still counts against the creditable cap.
+    const groups = groupByTaxRate(credits, (credit) => credit.tax).map(
+      (group) => ({
+        ...group,
+        ...memoAmounts(
+          group.rows.reduce((sum, credit) => sum + credit.net, 0),
+          group.taxPercent,
+          decimalPlaces
+        )
+      })
+    );
+    const memoGroups = groups.filter((group) => group.netAmount > 0);
+    if (memoGroups.length === 0) {
       throw new Error("Credit amount must be positive");
     }
 
-    const memo = await trx
+    // Allocated in this transaction, so a rollback leaves no gap.
+    const memoIds = await getNextSequences(
+      trx,
+      "debitMemo",
+      companyId,
+      memoGroups.length
+    );
+    const memos = await trx
       .insertInto("memo")
-      .values({
-        memoId,
-        direction: "Debit",
-        status: "Draft",
-        supplierId: order.data.supplierId,
-        memoDate,
-        currencyCode: order.data.currencyCode,
-        exchangeRate: order.data.exchangeRate ?? 1,
-        amount: round(total, decimalPlaces),
-        reference: order.data.purchaseReturnOrderId,
-        purchaseReturnOrderId,
-        companyId,
-        createdBy: userId
-      })
-      .returning(["id"])
-      .executeTakeFirstOrThrow();
+      .values(
+        memoGroups.map((group, index) => ({
+          memoId: memoIds[index]!,
+          direction: "Debit" as const,
+          status: "Draft" as const,
+          supplierId: order.data.supplierId,
+          memoDate,
+          currencyCode: order.data.currencyCode,
+          exchangeRate: order.data.exchangeRate ?? 1,
+          amount: group.amount,
+          taxAmount: group.taxAmount,
+          taxCodeId: group.taxCodeId,
+          reference: order.data.purchaseReturnOrderId,
+          purchaseReturnOrderId,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .returning(["id", "memoId"])
+      .execute();
+    const idByMemoId = new Map(memos.map((memo) => [memo.memoId, memo.id]));
+    const memoIdOf = (index: number) => idByMemoId.get(memoIds[index]!)!;
 
     await trx
       .insertInto("purchaseReturnOrderCreditLine")
-      .values(creditLineValues.map((v) => ({ ...v, memoId: memo.id })))
+      .values(
+        groups.flatMap((group) => {
+          const index = memoGroups.indexOf(group);
+          const memoId = memoIdOf(index === -1 ? 0 : index);
+          return group.rows.map((credit) => ({
+            ...credit.values,
+            memoId,
+            companyId,
+            createdBy: userId
+          }));
+        })
+      )
       .execute();
 
-    return memo.id;
+    return memoIdOf(0);
   });
 }
 
@@ -10166,6 +10354,15 @@ async function draftLeaseInvoices(
     .where("companyId", "=", companyId)
     .executeTakeFirst();
 
+  // The supplier's tax code taxes each line at the rate in force on its due
+  // date. A supplier with no code bills no tax, as before tax codes, and nor
+  // does a Reverse Charge code: the supplier charges none, and posting
+  // self-assesses it from the code's components.
+  const taxCode = await readSupplierTaxCode(trx, companyId, lease.supplierId);
+  const decimals = taxCode
+    ? await currencyDecimals(trx, companyId, lease.currencyCode)
+    : null;
+
   const byDueDate = new Map<string, typeof rows>();
   for (const row of rows) {
     const group = byDueDate.get(row.dueDate) ?? [];
@@ -10177,6 +10374,12 @@ async function draftLeaseInvoices(
   for (const [dueDate, group] of byDueDate) {
     const subtotal = round(
       group.reduce((sum, row) => sum + Number(row.amount), 0)
+    );
+    const taxPercent = taxCode ? chargedTaxPercent(taxCode, dueDate) : 0;
+    const lineTax = (amount: number) =>
+      decimals === null ? 0 : applyRate(amount, taxPercent, decimals);
+    const totalTax = round(
+      group.reduce((sum, row) => sum + lineTax(Number(row.amount)), 0)
     );
     const invoiceId = await getNextSequence(trx, "purchaseInvoice", companyId);
     // Every purchase invoice hangs off a supplier interaction, as the ERP's
@@ -10206,8 +10409,8 @@ async function draftLeaseInvoices(
         dateIssued: dueDate,
         subtotal,
         totalDiscount: 0,
-        totalAmount: subtotal,
-        totalTax: 0,
+        totalAmount: round(subtotal + totalTax),
+        totalTax,
         companyId,
         createdBy: userId
       })
@@ -10238,8 +10441,9 @@ async function draftLeaseInvoices(
           quantity: 1,
           supplierUnitPrice: Number(row.amount),
           supplierShippingCost: 0,
-          supplierTaxAmount: 0,
-          taxPercent: 0,
+          supplierTaxAmount: lineTax(Number(row.amount)),
+          taxPercent,
+          taxCodeId: taxCode?.id ?? null,
           exchangeRate: 1,
           sortOrder: index + 1,
           companyId,
@@ -10276,6 +10480,76 @@ async function draftLeaseInvoices(
     drafted.push({ invoiceId: invoice.id, leaseId });
   }
   return drafted;
+}
+
+/**
+ * The lease supplier's tax code (`supplierTax.taxCodeId`) with all its
+ * components, in one query; null when the supplier has no active code.
+ */
+async function readSupplierTaxCode(
+  trx: KyselyTx,
+  companyId: string,
+  supplierId: string
+): Promise<TaxCodeInput | null> {
+  const rows = await trx
+    .selectFrom("supplierTax as st")
+    .innerJoin("taxCode as tc", (join) =>
+      join
+        .onRef("tc.id", "=", "st.taxCodeId")
+        .onRef("tc.companyId", "=", "st.companyId")
+    )
+    .leftJoin("taxCodeComponent as c", (join) =>
+      join
+        .onRef("c.taxCodeId", "=", "tc.id")
+        .onRef("c.companyId", "=", "tc.companyId")
+    )
+    .select([
+      "tc.id as taxCodeId",
+      "tc.calculationType",
+      "tc.taxesShipping",
+      "c.id",
+      "c.name",
+      "c.taxAuthorityId",
+      "c.taxPercent",
+      "c.recoverablePercent",
+      "c.sequence",
+      "c.isCompound",
+      "c.taxReceivedAccountId",
+      "c.taxPaidAccountId",
+      sql<string | null>`c."effectiveDate"::text`.as("effectiveDate"),
+      sql<string | null>`c."expirationDate"::text`.as("expirationDate")
+    ])
+    .where("st.supplierId", "=", supplierId)
+    .where("st.companyId", "=", companyId)
+    .where("tc.active", "=", true)
+    .execute();
+  const first = rows[0];
+  if (!first) return null;
+
+  return {
+    id: first.taxCodeId,
+    calculationType: first.calculationType,
+    taxesShipping: first.taxesShipping,
+    components: rows.flatMap((row) =>
+      row.id === null
+        ? []
+        : [
+            {
+              id: row.id,
+              name: row.name ?? "",
+              taxAuthorityId: row.taxAuthorityId,
+              taxPercent: Number(row.taxPercent ?? 0),
+              recoverablePercent: Number(row.recoverablePercent ?? 0),
+              sequence: row.sequence ?? 0,
+              isCompound: row.isCompound ?? false,
+              taxReceivedAccountId: row.taxReceivedAccountId,
+              taxPaidAccountId: row.taxPaidAccountId,
+              effectiveDate: row.effectiveDate,
+              expirationDate: row.expirationDate
+            }
+          ]
+    )
+  };
 }
 
 /**

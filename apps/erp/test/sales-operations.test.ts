@@ -253,7 +253,10 @@ describe("cancelling a contract", () => {
     });
 
   it("needs the invoicing permission only to credit the unused time", async () => {
-    invoke.mockResolvedValue({ data: { memoReadableId: "CM-1" }, error: null });
+    invoke.mockResolvedValue({
+      data: { memoReadableId: "CM-1", memoReadableIds: ["CM-1"] },
+      error: null
+    });
 
     expect((await cancel(grant("sales"), true)).error?.category).toBe(
       "forbidden"
@@ -263,7 +266,8 @@ describe("cancelling a contract", () => {
     expect((await cancel(grant("sales"), false)).error).toBeNull();
     expect((await cancel(grant("sales", "invoicing"), true)).data).toEqual({
       id: "contract-1",
-      memoReadableId: "CM-1"
+      memoReadableId: "CM-1",
+      memoReadableIds: ["CM-1"]
     });
   });
 });

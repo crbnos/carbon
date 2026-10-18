@@ -43,6 +43,31 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   the PARTY (`getMemos({ party })`) and offer direction as a separate filter;
   `vendor-credits.tsx` redirects old links. The readable id comes from the `creditMemo` or
   `debitMemo` sequence chosen by **direction**, not party.
+- **Memo tax** — `memo.amount` is the GROSS (what moves AR/AP); `memo.taxCodeId` and
+  `memo.taxAmount` hold the tax inside it. `MemoForm` posts **Net Amount** + **Tax Code**
+  (Tax and Gross are read-only). `upsertMemo` recomputes the tax server-side from the code's
+  rate on `memoDate` (`memoTaxAmounts` → `memoAmounts`, `@carbon/utils`) and refuses a code
+  with no net ("A tax code needs a net amount"). Stored tax is never dropped silently
+  (`resolveMemoTaxAmounts`, `invoicing.models.ts`, shared with `MemoForm`): an UPDATE that
+  keeps the code (both null counts) of a memo with tax keeps the stored rate
+  (`deriveRate(taxAmount, amount − taxAmount)`, applied with `applyRate`; an unchanged net
+  keeps the tax exactly) — a codeless RMA / return credit with a bare percent, or a coded
+  memo whose source line overrode the percent; a changed code takes the new code's rate;
+  a gross-only update of a memo with tax or a code is refused ("This memo carries tax;
+  send netAmount"). Never trust a client tax amount, and never
+  infer tax from a gross. Posting is `post-memo` `planMemoTax`: a customer memo moves ALL its
+  tax through Tax Received; a supplier memo moves only the recoverable share through Tax
+  Paid and leaves the rest in the reason leg; a codeless supplier memo moves none (its tax
+  was cost). The memo tax leg always posts to the default tax account, not a component's
+  override. Credits made from a source (RMA `sales.service.ts`, purchase return
+  `purchasing.service.ts`, rental early return `create-rental-invoices`, contract
+  cancellation `post-customer-contract`) group their lines with `groupByTaxRate`: one memo
+  per (code, rate).
+- **Invoice tax** — invoice lines carry `taxCodeId` + `taxPercent` (resolver: accounting
+  AGENTS → Tax). `post-sales-invoice` / `post-purchase-invoice` write the `taxLedger` rows in
+  the journal's transaction, and their voids write the negated rows. The sales invoice PDF's
+  tax summary, invoice messages and "Seller Tax ID" come from
+  `packages/documents/src/utils/tax-summary.ts` and `packages/lib/src/sales-invoice-document.server.tsx`.
 - **Payment — THREE payee kinds.** `paymentValidator` requires exactly one of `customerId` /
   `supplierId` / `employeeId` (mirroring the DB `payment_party_check`). An `employeeId` payment
   is a **reimbursement payout**: always `Disbursement`, never AR, never a refund. In

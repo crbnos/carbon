@@ -47,7 +47,7 @@ const defaultsWith = (overrides: Partial<AccountDefaults> = {}) =>
     intercompanyReceivablesAccount: "ic-ar",
     salesAccount: "sales",
     salesShippingRevenueAccount: "shipping",
-    salesTaxPayableAccount: "tax",
+    taxReceivedAccount: "tax",
     deferredRevenueAccount: "deferred",
     contractAssetAccount: null,
     rentalIncomeAccount: null,
@@ -87,6 +87,7 @@ const invoiceLine = (
   overrides: Partial<SalesInvoiceLine> = {}
 ): SalesInvoiceLine => ({
   id: "line-1",
+  taxCodeId: null,
   invoiceLineType: "Part",
   itemId: "item-1",
   quantity: 2,
@@ -216,6 +217,53 @@ describe("account resolution", () => {
       postingAccountNeeds([{ ...dated, invoiceLineType: "Part" }], [])
         .deferredRevenue
     ).toBe(false);
+  });
+
+  it("refuses a tax component whose account the group read did not return", () => {
+    const component = (taxReceivedAccountId: string) => ({
+      id: "component-1",
+      name: "State",
+      taxAuthorityId: null,
+      taxPercent: 0.1,
+      recoverablePercent: 0,
+      sequence: 1,
+      isCompound: false,
+      taxReceivedAccountId,
+      taxPaidAccountId: null,
+      effectiveDate: null,
+      expirationDate: null
+    });
+    const taxed = (taxReceivedAccountId: string) =>
+      facts(
+        accountsFor(defaultsWith(), "Posted", {
+          ...NO_NEEDS,
+          accountIds: [taxReceivedAccountId]
+        }),
+        {
+          lines: [invoiceLine({ taxCodeId: "code-1", taxPercent: 0.1 })],
+          taxCodes: new Map([
+            [
+              "code-1",
+              {
+                id: "code-1",
+                calculationType: "Normal" as const,
+                taxesShipping: false,
+                components: [component(taxReceivedAccountId)]
+              }
+            ]
+          ])
+        }
+      );
+    // An account of this group carries the component's tax.
+    expect(
+      summary(buildSalesInvoiceJournal(taxed("tax")).lines).find(
+        ([accountId]) => accountId === "tax"
+      )?.[2]
+    ).toBe(10);
+    // Another group's account is not read, and never falls back to the default.
+    expect(() => buildSalesInvoiceJournal(taxed("other-group-tax"))).toThrow(
+      "outside this company group"
+    );
   });
 });
 

@@ -1045,6 +1045,8 @@ export const REF_LABELS = {
   storageType: "storageType",
   customerType: "customer type",
   supplierType: "supplier type",
+  taxCode: "tax code",
+  taxAuthority: "tax authority",
   substance: "material substance",
   form: "material form",
   materialType: "material type",
@@ -1110,6 +1112,8 @@ export function buildIndex(dataset: Dataset): DatasetIndex {
     storageType: new Set(f.storageTypes),
     customerType: new Set(f.customerTypes),
     supplierType: new Set(f.supplierTypes),
+    taxCode: new Set(f.taxCodes.map((code) => code.name)),
+    taxAuthority: new Set(f.taxAuthorities.map((authority) => authority.name)),
     substance: new Set(taxonomy.substances.map((s) => s.name)),
     form: new Set(taxonomy.forms.map((s) => s.name)),
     materialType: new Set(taxonomy.types.map((t) => t.name)),
@@ -1362,6 +1366,26 @@ export function foundation(ctx: ValidationCtx): void {
   }
   for (const c of f.customers) {
     need("customerType", `foundation.customers "${c.name}"`, c.type);
+    if (c.taxCode)
+      need("taxCode", `foundation.customers "${c.name}"`, c.taxCode);
+  }
+  for (const code of f.taxCodes) {
+    if (code.components.length === 0) {
+      fail(`foundation.taxCodes "${code.name}": a code needs a component`);
+    }
+    for (const component of code.components) {
+      need(
+        "taxAuthority",
+        `foundation.taxCodes "${code.name}"`,
+        component.authority
+      );
+      // Stated as people write them: 6.25 for 6.25%.
+      if (component.taxPercent < 0 || component.taxPercent > 100) {
+        fail(
+          `foundation.taxCodes "${code.name}": ${component.name} rate ${component.taxPercent} is not a percent`
+        );
+      }
+    }
   }
   for (const s of f.suppliers) {
     need("supplierType", `foundation.suppliers "${s.name}"`, s.type);

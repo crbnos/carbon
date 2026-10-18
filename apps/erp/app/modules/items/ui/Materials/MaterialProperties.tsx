@@ -111,6 +111,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   // When `data` is injected (subassembly context), this hook won't match a
   // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
+    taxable?: boolean;
     materialSummary: MaterialSummary;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -193,6 +194,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         | "itemTrackingType"
         | "itemPostingGroupId"
         | "active"
+        | "taxable"
         | "unitOfMeasureCode"
         | "materialFormId"
         | "materialSubstanceId"
@@ -740,6 +742,23 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
             }}
           />
         </ValidatedForm>
+        {routeDataFromRoute?.taxable !== undefined && (
+          <ValidatedForm
+            key={itemId}
+            defaultValues={{ taxable: routeDataFromRoute.taxable }}
+            validator={z.object({ taxable: zfd.checkbox() })}
+            className="w-full"
+          >
+            <Boolean
+              label={t`Taxable`}
+              name="taxable"
+              variant="small"
+              onChange={(value) => {
+                onUpdate("taxable", value ? "on" : "off");
+              }}
+            />
+          </ValidatedForm>
+        )}
         {routeData?.materialSummary?.replenishmentSystem?.includes("Buy") && (
           <ValidatedForm
             defaultValues={{

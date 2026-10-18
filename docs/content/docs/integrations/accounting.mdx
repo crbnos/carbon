@@ -39,7 +39,8 @@ Xero and QuickBooks Online use **OAuth**. Rillet uses a per-company **API key**.
   ### Turn on sync
 
   Turn on the **Sync** switch at the top of the integration. It stays locked until every account marked
-  **Required** on the Account Mapping tab is mapped. Turning it off later pauses the sync again; a reconnect
+  **Required** on the Account Mapping tab is mapped. For Xero and QuickBooks Online, every tax code in use
+  must also have a provider rate on the **Tax Rates** tab. Turning it off later pauses the sync again; a reconnect
   to the same organization keeps it where it was.
   </Step>
   <Step>
@@ -64,11 +65,12 @@ Xero appears only when `XERO_CLIENT_ID` is set. QuickBooks Online appears only w
 
 ## Configure the sync
 
-An accounting integration has four tabs beyond the basic connection settings.
+An accounting integration has these tabs beyond the basic connection settings. **Tax Rates** shows for Xero and QuickBooks Online only.
 
 <FieldTable>
   <Field name="Account Mapping">Map each Carbon posting account to a code in the provider's chart of accounts. Posted journals push using the mapped provider account. Use **Suggest with AI** or **Match by code** to fill the map, then resolve anything left unmapped.</Field>
   <Field name="Dimensions">Map Carbon dimensions to the provider's tracking slots. Xero and QuickBooks expose two slots. Rillet sends every dimension on each line and provisions the matching fields automatically, so the slot editor does not apply to it.</Field>
+  <Field name="Tax Rates">Map each <Term>tax code</Term> to a provider tax rate, once for sales and once for purchases (see below).</Field>
   <Field name="Posting Sync">Choose how posted journals reach the ledger (see below).</Field>
   <Field name="Sync Activity">Watch every sync operation and retry the ones that failed (see below).</Field>
 </FieldTable>
@@ -80,6 +82,18 @@ The **Posting Sync** tab controls three things:
   <Field name="AR / AP representation">How receivables and payables reach the ledger. Each is either **Documents** (push the invoice or bill itself) or **Off — handled outside the sync**.</Field>
   <Field name="Books lock date">A manual date before which Carbon will not push new entries, so a closed period stays closed.</Field>
 </FieldTable>
+
+### Tax rates
+
+The **Tax Rates** tab lists **Unmapped tax codes** first: codes that customers, suppliers or documents use, with no provider rate for that use. **Tax codes** below it lists every other active code. Pick a **Sales** and a **Purchase** rate for each code, then select **Save**. Several codes can share one provider rate. **Match by rate** proposes a rate when exactly one provider rate has the code's percentage.
+
+Each pushed line sends Carbon's own tax amount with the mapped rate. A line with no code but a tax percent goes out with the one provider rate of that percentage.
+
+<Callout type="warn" title="A rate with a different percentage stops the document">
+Before each push, Carbon checks that the line's tax is the mapped rate's percentage of the net, to one minor unit. If it is not, or the code has no mapping, the document waits in **Sync Activity** as a warning. Fix the mapping, then **Retry**. Nothing reaches the ledger until the tax resolves.
+</Callout>
+
+On a bill, only the recoverable share of the tax goes out at the mapped rate. The rest of a partly recoverable line goes out as a second line with no tax, on the same account. Rillet receives bills as before: the recoverable tax goes as an account line.
 
 ## Watch it run
 

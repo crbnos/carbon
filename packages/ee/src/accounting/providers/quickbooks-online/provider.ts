@@ -10,6 +10,7 @@ import type {
   RemoteCandidate
 } from "../../core/counterpart-types";
 import { ProviderID } from "../../core/models";
+import { TAX_DIRECTIONS, type TaxRateOption } from "../../core/tax-mapping";
 import {
   parseQboTrialBalance,
   type QboTrialBalanceResponse,
@@ -33,6 +34,7 @@ import {
   HTTPClient,
   type HttpResponse
 } from "../../core/utils";
+import { qboTaxOptions } from "./entities/invoice-tax";
 import { buildQboPaymentSyncChange } from "./entities/payment";
 import {
   parseQboDate,
@@ -1270,6 +1272,26 @@ export class QboProvider extends BaseProvider {
       );
       return [];
     }
+  }
+
+  /**
+   * The tax-rate mapping tab's options, both directions: the active tax
+   * codes with exactly one rate in that direction's list (`qboTaxOptions`).
+   * Throws an AccountingApiError when a catalog read fails, so the settings
+   * drawer can say the read failed rather than show an empty list.
+   */
+  async listTaxRateOptions(): Promise<TaxRateOption[]> {
+    const [codes, rates] = await Promise.all([
+      this.query<Qbo.TaxCode>("TaxCode"),
+      this.query<Qbo.TaxRate>("TaxRate")
+    ]);
+    const catalog = {
+      taxCodes: codes.filter((code) => code.Active !== false),
+      taxRates: rates.filter((rate) => rate.Active !== false)
+    };
+    return TAX_DIRECTIONS.flatMap((direction) =>
+      qboTaxOptions(catalog, direction)
+    );
   }
 
   /** Create a QBO Class by name (dimension autoCreate). Throws on failure. */

@@ -1565,6 +1565,26 @@ export const manifest = {
     update: false,
     delete: "settings_update"
   }),
+  taxAuthority: company("accounting", {
+    read: anyOf("accounting_view", "sales_view", "purchasing_view")
+  }),
+  taxCode: company("accounting", {
+    read: anyOf("accounting_view", "sales_view", "purchasing_view")
+  }),
+  taxCodeComponent: company("accounting", {
+    read: anyOf("accounting_view", "sales_view", "purchasing_view")
+  }),
+  // Written by the posting server functions in the journal's transaction.
+  // No API writes.
+  taxLedger: company("accounting", {
+    read: anyOf("accounting_view", "sales_view", "purchasing_view"),
+    create: false,
+    update: false,
+    delete: false
+  }),
+  taxRegistration: company("accounting", {
+    read: anyOf("accounting_view", "sales_view", "purchasing_view")
+  }),
   terms: company("settings", {
     read: anyOf("purchasing_view", "sales_view", "settings_view"),
     create: false,

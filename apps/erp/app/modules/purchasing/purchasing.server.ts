@@ -36,6 +36,7 @@ import {
   datetime,
   deriveRate,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
+  round,
   SCALE,
   taxableBase,
   tiptapToHTML,
@@ -44,6 +45,10 @@ import {
 import { type CalendarDate, parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
+import {
+  decideLineTax,
+  toTaxCodeInput
+} from "~/modules/accounting/accounting.utils";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
   assignPlanningActions,
@@ -2760,7 +2765,7 @@ export const orderPlannedPurchases = defineServiceFn({
     if (location) return location;
     const ownedItems = await client
       .from("item")
-      .select("id")
+      .select("id, taxable")
       .in("id", Array.from(itemIds))
       .eq("companyId", companyId);
     if (ownedItems.error || (ownedItems.data?.length ?? 0) !== itemIds.size) {
@@ -2850,6 +2855,53 @@ export const orderPlannedPurchases = defineServiceFn({
     // Weeks are counted from the location's today, as the planning grid's are.
     const asOf = datetime.today(
       await getLocationTimeZone(client, locationId, companyId)
+    );
+
+    // The tax a new line takes, by the resolver's own rule
+    // (`decideLineTax`): the supplier's tax code, else its bare percent,
+    // and none for a non-taxable item. Read once for the whole batch.
+    const taxDate = asOf.toString();
+    const itemTaxable = new Map(
+      ownedItems.data.map((item) => [item.id, item.taxable])
+    );
+    const supplierTaxes = await client
+      .from("supplierTax")
+      .select("supplierId, taxCodeId")
+      .in("supplierId", Array.from(supplierIds))
+      .eq("companyId", companyId);
+    const taxCodeIds = Array.from(
+      new Set(
+        (supplierTaxes.data ?? [])
+          .map((row) => row.taxCodeId)
+          .filter((id): id is string => !!id)
+      )
+    );
+    const taxCodes =
+      taxCodeIds.length > 0
+        ? await client
+            .from("taxCode")
+            .select(
+              "id, calculationType, taxesShipping, taxCodeComponent(id, name, taxAuthorityId, taxPercent, recoverablePercent, sequence, isCompound, taxReceivedAccountId, taxPaidAccountId, effectiveDate, expirationDate)"
+            )
+            .in("id", taxCodeIds)
+            .eq("companyId", companyId)
+            .eq("active", true)
+        : null;
+    if (supplierTaxes.error || taxCodes?.error) {
+      return ctx.error(
+        "internal",
+        "Failed to retrieve supplier tax codes from database",
+        supplierTaxes.error ?? taxCodes?.error
+      );
+    }
+    const taxCodeById = new Map(
+      (taxCodes?.data ?? []).map((code) => [code.id, toTaxCodeInput(code)])
+    );
+    const supplierTaxCode = new Map(
+      (supplierTaxes.data ?? []).map((row) => [
+        row.supplierId,
+        row.taxCodeId ? (taxCodeById.get(row.taxCodeId) ?? null) : null
+      ])
     );
 
     // Every open PO an order may join, with its lines, in one read: the
@@ -3059,8 +3111,18 @@ export const orderPlannedPurchases = defineServiceFn({
                     { currencyCode, exchangeRate: purchaseOrder.exchangeRate }
                   )
                 : 0;
-            const taxPercent = supplier.taxPercent ?? 0;
-            // supplier.taxPercent is a 0..1 fraction; the amount follows the
+            const tax = decideLineTax({
+              source: "purchase",
+              taxExempt: false,
+              taxExemptionReason: null,
+              itemTaxable: itemTaxable.get(itemId) ?? true,
+              locationTaxCode: null,
+              partyTaxCode: supplierTaxCode.get(supplierId) ?? null,
+              fallbackTaxPercent: Number(supplier.taxPercent ?? 0),
+              date: taxDate
+            });
+            const taxPercent = round(tax.taxPercent);
+            // taxPercent is a 0..1 fraction; the amount follows the
             // canonical denominator. Shipping is 0 on this path.
             const supplierTaxAmount = applyRate(
               taxableBase(supplierUnitPrice, adjustedQuantity, 0),
@@ -3080,6 +3142,7 @@ export const orderPlannedPurchases = defineServiceFn({
               conversionFactor: supplierPart?.conversionFactor ?? 1,
               supplierUnitPrice,
               exchangeRate: purchaseOrder.exchangeRate,
+              taxCodeId: tax.taxCodeId ?? undefined,
               taxPercent,
               supplierTaxAmount,
               supplierShippingCost: 0,
@@ -5005,7 +5068,8 @@ export const updateSupplierTax = defineServiceFn({
       .nullable()
       .optional(),
     taxExemptionCertificateNumber: z.string().optional(),
-    taxExemptionCertificatePath: z.string().nullable().optional()
+    taxExemptionCertificatePath: z.string().nullable().optional(),
+    taxCodeId: z.string().optional()
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
@@ -5016,6 +5080,67 @@ export const updateSupplierTax = defineServiceFn({
         payload(ctx, input).forUpdate() as never
       )
     );
+  }
+});
+
+/**
+ * Assign a tax code to suppliers
+ *
+ * @remarks
+ * Sets the tax code (`supplierTax.taxCodeId`) of each supplier to one active
+ * tax code of the company. New purchase lines for these suppliers default to
+ * it.
+ *
+ * @param ids - The suppliers to update.
+ * @param taxCodeId - An active tax code of the company.
+ *
+ * @mcp
+ */
+export const assignSupplierTaxCode = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string()),
+    taxCodeId: z.string().min(1, { message: "Select a tax code" })
+  }),
+  permission: { update: "purchasing" },
+  async run(ctx, { ids, taxCodeId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const [taxCode, suppliers] = await Promise.all([
+      client
+        .from("taxCode")
+        .select("id")
+        .eq("id", taxCodeId)
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .maybeSingle(),
+      client
+        .from("supplier")
+        .select("id")
+        .in("id", ids)
+        .eq("companyId", companyId)
+    ]);
+    if (taxCode.error) {
+      return ctx.error("internal", taxCode.error.message, taxCode.error);
+    }
+    if (!taxCode.data) return ctx.error("notFound", "Tax code not found");
+    if (suppliers.error) {
+      return ctx.error("internal", suppliers.error.message, suppliers.error);
+    }
+    const supplierIds = suppliers.data.map((supplier) => supplier.id);
+    if (supplierIds.length === 0) {
+      return ctx.error("notFound", "No suppliers found");
+    }
+
+    const upsert = await service.upsertSupplierTaxCodes(ctx.asSystem.supabase, {
+      supplierIds,
+      taxCodeId: taxCode.data.id,
+      companyId,
+      userId: ctx.auditUserId
+    });
+    if (upsert.error) {
+      return ctx.error("internal", upsert.error.message, upsert.error);
+    }
+    return { ids: supplierIds };
   }
 });
 
@@ -5182,7 +5307,9 @@ export const upsertPurchaseOrderDelivery = defineServiceFn({
  * Create a purchase order line
  *
  * @remarks
- * Upsert purchase order line
+ * Upsert purchase order line. A line sent with no `taxCodeId` takes the
+ * supplier's tax code at the order date; an empty `taxCodeId` keeps the sent
+ * percent with no code. A non-taxable item carries no tax, whatever was sent.
  *
  * @mcp
  */
@@ -5227,6 +5354,12 @@ export const createPurchaseOrderLine = defineServiceFn({
       .describe(
         "Applied when creating; on update a field left out keeps its value."
       ),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe(
+        "Omit to take the supplier's tax code; an empty string keeps the sent percent with no code."
+      ),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -5235,11 +5368,35 @@ export const createPurchaseOrderLine = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    // A new line takes the tax the form would have opened with: the
+    // supplier's code when none is sent, and none for a non-taxable item.
+    // A failed read of the order leaves the sent tax, as the form's would.
+    const order = input.id
+      ? null
+      : await service.getPurchaseOrder(client, input.purchaseOrderId);
+    const tax = input.id
+      ? await service.nonTaxableItemTax(client, companyId, input.itemId)
+      : await service.resolveCreatedPurchaseLineTax(client, {
+          companyId,
+          companyGroupId: ctx.company.groupId,
+          supplierId: order?.data?.supplierId,
+          documentDate: order?.data?.orderDate,
+          currencyCode: order?.data?.currencyCode,
+          itemId: input.itemId,
+          unitPrice: input.supplierUnitPrice ?? 0,
+          quantity: input.purchaseQuantity ?? 0,
+          shippingCost: input.supplierShippingCost ?? 0,
+          taxCodeId: input.taxCodeId,
+          taxPercent: input.taxPercent,
+          supplierTaxAmount: input.supplierTaxAmount ?? 0
+        });
     return unwrap(
       ctx,
       await service.upsertPurchaseOrderLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
+        client,
+        payload(ctx, { ...input, ...tax }).forCreate() as never
       )
     );
   }
@@ -5249,7 +5406,8 @@ export const createPurchaseOrderLine = defineServiceFn({
  * Update a purchase order line
  *
  * @remarks
- * Upsert purchase order line
+ * Upsert purchase order line. A non-taxable item carries no tax, whatever was
+ * sent.
  *
  * @mcp
  */
@@ -5295,6 +5453,7 @@ export const updatePurchaseOrderLine = defineServiceFn({
           "Applied when creating; on update a field left out keeps its value."
         )
         .optional(),
+      taxCodeId: z.string().optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()
@@ -5304,11 +5463,18 @@ export const updatePurchaseOrderLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    // A non-taxable item carries no tax, whatever was sent. A line whose item
+    // is left out keeps its stored one.
+    const itemId =
+      input.itemId ??
+      (await service.getPurchaseOrderLine(client, input.id)).data?.itemId;
+    const tax = await service.nonTaxableItemTax(client, ctx.company.id, itemId);
     return unwrap(
       ctx,
       await service.upsertPurchaseOrderLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+        client,
+        payload(ctx, { ...input, ...tax }).forUpdate() as never
       )
     );
   }

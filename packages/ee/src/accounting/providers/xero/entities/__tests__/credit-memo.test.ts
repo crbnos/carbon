@@ -7,7 +7,7 @@ import { DEFAULT_SYNC_CONFIG } from "../../../../core/models";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import { XeroProvider } from "../../provider";
 import {
-  buildXeroCreditNoteLineItem,
+  buildXeroCreditNoteLineItems,
   CreditMemoSyncer,
   XERO_MEMO_INCREASER_SKIP_REASON,
   type XeroCreditNoteWrite,
@@ -35,6 +35,8 @@ const memo = (overrides: Partial<XeroMemoSource> = {}): XeroMemoSource => ({
   currencyCode: "USD",
   exchangeRate: 1,
   amount: 250,
+  taxCodeId: null,
+  taxAmount: 0,
   reasonAccount: "acct_reason",
   reference: "RMA-9",
   notes: "Returned goods",
@@ -42,6 +44,25 @@ const memo = (overrides: Partial<XeroMemoSource> = {}): XeroMemoSource => ({
   applications: [],
   ...overrides
 });
+
+/** "UK Standard 20%", mapped both ways. */
+const TAX_MAPPINGS = [
+  {
+    entityId: "tc_uk20:sales",
+    externalId: "OUTPUT2",
+    metadata: { externalName: "20% (VAT on Income)", externalRate: 0.2 }
+  },
+  {
+    entityId: "tc_uk20:purchase",
+    externalId: "INPUT2",
+    metadata: { externalName: "20% (VAT on Expenses)", externalRate: 0.2 }
+  },
+  {
+    entityId: "tc_uk0:purchase",
+    externalId: "ZERORATEDINPUT",
+    metadata: { externalName: "Zero Rated Expenses", externalRate: 0 }
+  }
+];
 
 // Table-dispatching Kysely fake for the mapToRemote drive (mirrors bill.test.ts).
 function makeCreditNoteDb(
@@ -63,7 +84,8 @@ function makeCreditNoteDb(
       accountNumber: "4400",
       accountName: "Sales Discounts"
     }
-  ]
+  ],
+  taxLedger: Array<{ taxAmount: number; recoverableAmount: number }> = []
 ) {
   const makeBuilder = (table: string) => {
     const builder: any = {
@@ -74,11 +96,14 @@ function makeCreditNoteDb(
       orderBy: () => builder,
       async execute() {
         if (table === "externalIntegrationMapping as m") return accountMappings;
+        if (table === "externalIntegrationMapping") return TAX_MAPPINGS;
+        if (table === "taxLedger") return taxLedger;
         return [];
       },
       async executeTakeFirst() {
         if (table === "company")
           return { baseCurrencyCode: "USD", companyGroupId: "group-1" };
+        if (table === "currency") return { decimalPlaces: 2 };
         return undefined;
       }
     };
@@ -105,7 +130,26 @@ function makeSyncer(
   const syncer = new Syncer({
     database: db,
     companyId: "company-1",
-    provider: { id: "xero", settings: {} } as never,
+    provider: {
+      id: "xero",
+      settings: {},
+      listTaxRates: async () => [
+        {
+          TaxType: "OUTPUT2",
+          Name: "20% (VAT on Income)",
+          EffectiveRate: 20,
+          CanApplyToRevenue: true,
+          CanApplyToExpenses: false
+        },
+        {
+          TaxType: "INPUT2",
+          Name: "20% (VAT on Expenses)",
+          EffectiveRate: 20,
+          CanApplyToRevenue: false,
+          CanApplyToExpenses: true
+        }
+      ]
+    } as never,
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType
   });
@@ -121,30 +165,32 @@ const drive = (context: {
   localEntity: XeroMemoSource;
 }) => ({ ...context, isFirstSync: true, entityId: context.localEntity.id });
 
-describe("buildXeroCreditNoteLineItem (AccountCode-coded, no item)", () => {
+describe("buildXeroCreditNoteLineItems (AccountCode-coded, no item)", () => {
   it("codes the reason account directly, quantity 1, tax-neutral", () => {
     expect(
-      buildXeroCreditNoteLineItem({ memo: memo(), accountCodesById: CODES })
-    ).toEqual({
-      Description: "Returned goods",
-      Quantity: 1,
-      UnitAmount: 250,
-      AccountCode: "4400",
-      TaxType: "NONE"
-    });
+      buildXeroCreditNoteLineItems({ memo: memo(), accountCodesById: CODES })
+    ).toEqual([
+      {
+        Description: "Returned goods",
+        Quantity: 1,
+        UnitAmount: 250,
+        AccountCode: "4400",
+        TaxType: "NONE"
+      }
+    ]);
   });
 
   it("never emits an ItemCode — Xero codes the line by account alone", () => {
-    const line = buildXeroCreditNoteLineItem({
+    const [line] = buildXeroCreditNoteLineItems({
       memo: memo(),
       accountCodesById: CODES
     });
-    expect("ItemCode" in line).toBe(false);
+    expect("ItemCode" in line!).toBe(false);
   });
 
   it("warns (UNMAPPED_ACCOUNTS) when the reason account has no Xero mapping", () => {
     try {
-      buildXeroCreditNoteLineItem({
+      buildXeroCreditNoteLineItems({
         memo: memo(),
         accountCodesById: new Map()
       });
@@ -158,7 +204,7 @@ describe("buildXeroCreditNoteLineItem (AccountCode-coded, no item)", () => {
 
   it("warns when the memo has no reason account (never posted)", () => {
     expect(() =>
-      buildXeroCreditNoteLineItem({
+      buildXeroCreditNoteLineItems({
         memo: memo({ reasonAccount: null }),
         accountCodesById: CODES
       })
@@ -167,7 +213,7 @@ describe("buildXeroCreditNoteLineItem (AccountCode-coded, no item)", () => {
 
   it("refuses sub-cent principal instead of letting Xero round it away", () => {
     expect(() =>
-      buildXeroCreditNoteLineItem({
+      buildXeroCreditNoteLineItems({
         memo: memo({ amount: 250.005 }),
         accountCodesById: CODES
       })
@@ -545,5 +591,140 @@ describe("VendorCreditSyncer.upsertRemote (create once, never duplicate)", () =>
       "cn-existing"
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * Memo tax (grill 5): `amount` is the gross; the line sends the net
+ * (`amount − taxAmount`), the tax and the code's mapped rate — sales for a
+ * customer memo, purchase for a supplier memo — so the credit note totals
+ * the gross that hit AR or AP.
+ */
+describe("Xero credit notes with tax", () => {
+  const taxed = (overrides: Partial<XeroMemoSource> = {}) =>
+    memo({ amount: 1200, taxAmount: 200, taxCodeId: "tc_uk20", ...overrides });
+
+  it("sends a taxed customer credit note's net, tax and mapped sales rate", async () => {
+    const payload = await makeSyncer(
+      CreditMemoSyncer,
+      "creditMemo"
+    ).mapToRemote(
+      taxed({ direction: "Credit", customerId: "cus_1", supplierId: null })
+    );
+    expect(payload.LineAmountTypes).toBe("Exclusive");
+    expect(payload.LineItems).toEqual([
+      {
+        Description: "Returned goods",
+        Quantity: 1,
+        UnitAmount: 1000,
+        AccountCode: "4400",
+        TaxType: "OUTPUT2",
+        TaxAmount: 200
+      }
+    ]);
+  });
+
+  /** A supplier memo's tax ledger: £200 of tax, `recoverable` of it to Tax Paid. */
+  const supplierDb = (recoverable: number) =>
+    makeCreditNoteDb(undefined, [
+      { taxAmount: 200, recoverableAmount: recoverable }
+    ]);
+  const lines = (payload: XeroCreditNoteWrite) =>
+    payload.LineItems.map((line) => [
+      line.AccountCode,
+      line.UnitAmount,
+      line.TaxType,
+      line.TaxAmount
+    ]);
+
+  it("sends a fully recoverable supplier credit as one line at the mapped purchase rate", async () => {
+    const payload = await makeSyncer(
+      VendorCreditSyncer,
+      "supplierCredit",
+      supplierDb(200)
+    ).mapToRemote(taxed());
+    expect(payload.LineAmountTypes).toBe("Exclusive");
+    expect(lines(payload)).toEqual([["4400", 1000, "INPUT2", 200]]);
+  });
+
+  it("splits a 50% recoverable supplier credit into the recoverable part and the rest at NONE", async () => {
+    // £1,000 net + £200 tax, half of it through Tax Paid: £500 at INPUT2
+    // with £100, then £500 net + the £100 kept in cost at NONE.
+    const payload = await makeSyncer(
+      VendorCreditSyncer,
+      "supplierCredit",
+      supplierDb(100)
+    ).mapToRemote(taxed());
+    expect(lines(payload)).toEqual([
+      ["4400", 500, "INPUT2", 100],
+      ["4400", 600, "NONE", undefined]
+    ]);
+  });
+
+  it("sends a supplier credit with nothing recoverable as NONE for the gross", async () => {
+    const payload = await makeSyncer(
+      VendorCreditSyncer,
+      "supplierCredit",
+      supplierDb(0)
+    ).mapToRemote(taxed());
+    expect(payload.LineAmountTypes).toBeUndefined();
+    expect(lines(payload)).toEqual([["4400", 1200, "NONE", undefined]]);
+  });
+
+  it("sends a codeless taxed supplier credit as NONE for the gross, without percent-matching", async () => {
+    const payload = await makeSyncer(
+      VendorCreditSyncer,
+      "supplierCredit",
+      supplierDb(0)
+    ).mapToRemote(taxed({ taxCodeId: null }));
+    expect(payload.LineAmountTypes).toBeUndefined();
+    expect(lines(payload)).toEqual([["4400", 1200, "NONE", undefined]]);
+  });
+
+  it("asks for a repost when a coded taxed supplier credit has no tax ledger rows", async () => {
+    await expect(
+      makeSyncer(VendorCreditSyncer, "supplierCredit").mapToRemote(taxed())
+    ).rejects.toMatchObject({
+      failure: {
+        errorCode: "UNMAPPED_TAX_CODES",
+        warning: true,
+        message: expect.stringContaining("Repost the memo")
+      }
+    });
+  });
+
+  it("sends a zero-rated supplier credit at its mapped rate with TaxAmount 0", async () => {
+    const payload = await makeSyncer(
+      VendorCreditSyncer,
+      "supplierCredit"
+    ).mapToRemote(memo({ taxCodeId: "tc_uk0", taxAmount: 0 }));
+    expect(payload.LineAmountTypes).toBe("Exclusive");
+    expect(payload.LineItems[0]).toMatchObject({
+      UnitAmount: 250,
+      TaxType: "ZERORATEDINPUT",
+      TaxAmount: 0
+    });
+  });
+
+  it("stops an unmapped code with the UNMAPPED_TAX_CODES Warning", async () => {
+    await expect(
+      makeSyncer(
+        VendorCreditSyncer,
+        "supplierCredit",
+        supplierDb(200)
+      ).mapToRemote(taxed({ taxCodeId: "tc_unmapped" }))
+    ).rejects.toMatchObject({
+      failure: { errorCode: "UNMAPPED_TAX_CODES", warning: true }
+    });
+  });
+
+  it("keeps an untaxed memo tax-neutral, with no LineAmountTypes", async () => {
+    const payload = await makeSyncer(
+      VendorCreditSyncer,
+      "supplierCredit"
+    ).mapToRemote(memo());
+    expect(payload.LineAmountTypes).toBeUndefined();
+    expect(payload.LineItems[0]?.TaxType).toBe("NONE");
+    expect(payload.LineItems[0]).not.toHaveProperty("TaxAmount");
   });
 });

@@ -17,6 +17,7 @@ export function PartiesBlock({ data }: { data: SalesInvoiceData }) {
     salesOrderIds,
     paymentTerms,
     shippingMethods,
+    sellerRegistration,
     locale
   } = data;
 
@@ -138,6 +139,11 @@ export function PartiesBlock({ data }: { data: SalesInvoiceData }) {
                     ? ` — ${salesInvoiceShipment.incotermLocation}`
                     : ""}
                 </Text>
+              ) : null}
+              {/* The seller's own tax number — its registration for its
+                  country, else its tax ID */}
+              {sellerRegistration ? (
+                <Text>Seller Tax ID: {sellerRegistration}</Text>
               ) : null}
             </View>
           </View>

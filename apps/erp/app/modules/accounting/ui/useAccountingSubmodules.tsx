@@ -19,8 +19,11 @@ import {
   LuFileSpreadsheet,
   LuFolderKanban,
   LuHandCoins,
+  LuIdCard,
   LuKeyRound,
+  LuLandmark,
   LuLayers,
+  LuReceiptText,
   LuScale,
   LuSheet,
   LuTruck
@@ -122,6 +125,35 @@ export default function useAccountingSubmodules() {
             role: "employee",
             icon: <LuTruck />,
             table: "fleetAssets"
+          }
+        ]
+      },
+      {
+        name: t`Tax`,
+        routes: [
+          {
+            name: t`Tax Codes`,
+            to: path.to.taxCodes,
+            role: "employee",
+            icon: <LuReceiptText />
+          },
+          {
+            name: t`Tax Authorities`,
+            to: path.to.taxAuthorities,
+            role: "employee",
+            icon: <LuLandmark />
+          },
+          {
+            name: t`Tax Registrations`,
+            to: path.to.taxRegistrations,
+            role: "employee",
+            icon: <LuIdCard />
+          },
+          {
+            name: t`Tax Liability`,
+            to: path.to.taxLiability,
+            role: "employee",
+            icon: <LuFileSpreadsheet />
           }
         ]
       },

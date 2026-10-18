@@ -18,7 +18,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { distinctItemText, getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
@@ -45,6 +45,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { itemType } from "~/modules/shared/shared.models";
 import type { ItemType } from "~/modules/shared/types";
@@ -64,6 +65,7 @@ export default function PurchaseOrderExplorer() {
     purchaseOrder: PurchaseOrder;
     lines: PurchaseOrderLine[];
     supplier: Supplier;
+    resolvedTax: LineTaxDecision | null;
   }>(path.to.purchaseOrder(orderId));
   const permissions = usePermissions();
 
@@ -79,7 +81,9 @@ export default function PurchaseOrderExplorer() {
     locationId:
       purchaseOrderData?.purchaseOrder?.locationId ?? defaults.locationId ?? "",
     supplierTaxAmount: 0,
-    taxPercent: 0,
+    // The supplier's tax code, else its bare percent.
+    taxCodeId: purchaseOrderData?.resolvedTax?.taxCodeId ?? undefined,
+    taxPercent: round(purchaseOrderData?.resolvedTax?.taxPercent ?? 0),
     supplierShippingCost: 0,
     exchangeRate: purchaseOrderData?.purchaseOrder?.exchangeRate ?? 1
   };

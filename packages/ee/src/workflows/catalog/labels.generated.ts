@@ -136,6 +136,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.item.revision": msg`Revision`,
   "entity.item.revisionStatus": msg`Revision status`,
   "entity.item.sourcingType": msg`Sourcing type`,
+  "entity.item.taxable": msg`Taxable`,
   "entity.item.thumbnailPath": msg`Thumbnail path`,
   "entity.item.trackingMethod": msg`Tracking method`,
   "entity.item.type": msg`Type`,

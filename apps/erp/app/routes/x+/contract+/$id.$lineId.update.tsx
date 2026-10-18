@@ -13,6 +13,7 @@ import { customerContractLineValidator } from "~/modules/sales/sales.models";
 import {
   getContract,
   getContractLine,
+  isItemTaxable,
   upsertContractLine
 } from "~/modules/sales/sales.service";
 
@@ -91,6 +92,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     discountPercent: round(Number(line.discountPercent) * 100),
     discountEndsOn: line.discountEndsOn,
     taxPercent: round(Number(line.taxPercent) * 100),
+    taxCodeId: line.taxCodeId,
     startDate: line.startDate,
     endDate: line.endDate,
     goLiveDate: line.goLiveDate,
@@ -133,9 +135,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, ...values } = validation.data;
+  // A non-taxable item carries no tax, whatever the line stored.
+  const taxable = await isItemTaxable(client, companyId, values.itemId);
   // Refuses a contract that is not a Draft and an item that is not a Service.
   const update = await upsertContractLine(client, {
     ...values,
+    ...(taxable ? {} : { taxPercent: 0, taxCodeId: null }),
     customerContractId: id,
     id: lineId,
     updatedBy: userId

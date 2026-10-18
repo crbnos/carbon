@@ -1290,6 +1290,12 @@ export const SalesInvoiceLineSchema = z.object({
   addOnCost: z.number().default(0),
   nonTaxableAddOnCost: z.number().default(0),
   taxPercent: z.number(),
+  // The Carbon tax code, for the provider tax-rate mapping. Absent on a
+  // legacy line and on lines mapped back from a provider.
+  taxCodeId: withNullable(z.string()).optional(),
+  // The line's code taxes delivery charges: its share of header shipping
+  // joins its tax base, as post-sales-invoice taxes it.
+  taxesShipping: z.boolean().optional(),
   // Merchandise net of the line discount, in base currency.
   lineAmount: z.number()
 });

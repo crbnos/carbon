@@ -24,7 +24,10 @@ import {
   upsertPurchaseInvoiceLine
 } from "~/modules/invoicing/invoicing.service";
 import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
-import { getSupplierInteractionLineDocuments } from "~/modules/purchasing/purchasing.service";
+import {
+  getSupplierInteractionLineDocuments,
+  nonTaxableItemTax
+} from "~/modules/purchasing/purchasing.service";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
@@ -81,7 +84,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "invoicing"
   });
 
@@ -113,9 +116,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   //   d.assetId = undefined;
   // }
 
+  // A non-taxable item carries no tax, whatever was posted.
+  const tax = await nonTaxableItemTax(client, companyId, d.itemId);
+
   const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
     id: lineId,
     ...d,
+    ...tax,
     updatedBy: userId,
     customFields: setCustomFields(formData)
   });
@@ -166,6 +173,7 @@ export default function EditPurchaseInvoiceLineRoute() {
     conversionFactor: purchaseInvoiceLine?.conversionFactor ?? 1,
     storageUnitId: purchaseInvoiceLine?.storageUnitId ?? "",
     costCenterId: purchaseInvoiceLine?.costCenterId ?? "",
+    taxCodeId: purchaseInvoiceLine?.taxCodeId ?? undefined,
     taxPercent: purchaseInvoiceLine?.taxPercent ?? 0,
     assetReadableId: (purchaseInvoiceLine as any)?.assetReadableId ?? "",
     assetName: (purchaseInvoiceLine as any)?.assetName ?? "",

@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261017070014",
+  "schemaVersion": "20261018041036",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-17T07:08:05.778Z",
+  "exportedAt": "2026-10-18T04:21:48.206Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -65,8 +65,8 @@
         "bankForeignCurrencyAccount",
         "prepaymentAccount",
         "payablesAccount",
-        "salesTaxPayableAccount",
-        "purchaseTaxPayableAccount",
+        "taxReceivedAccount",
+        "taxPaidAccount",
         "reverseChargeSalesTaxPayableAccount",
         "retainedEarningsAccount",
         "updatedBy",
@@ -2361,6 +2361,82 @@
       ]
     },
     {
+      "name": "taxCode",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "description",
+        "calculationType",
+        "reportingCategory",
+        "taxesShipping",
+        "invoiceMessage",
+        "countryCode",
+        "state",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields"
+      ]
+    },
+    {
+      "name": "taxLedger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "source",
+        "documentType",
+        "documentId",
+        "documentLineId",
+        "journalId",
+        "postingDate",
+        "taxCodeId",
+        "taxCodeComponentId",
+        "componentName",
+        "taxAuthorityId",
+        "taxPercent",
+        "recoverablePercent",
+        "customerId",
+        "supplierId",
+        "taxableAmount",
+        "taxAmount",
+        "recoverableAmount",
+        "exemptAmount",
+        "documentTaxableAmount",
+        "documentTaxAmount",
+        "currencyCode",
+        "exchangeRate",
+        "taxExemptionReason",
+        "exemptionCertificateNumber",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "selfAssessed"
+      ]
+    },
+    {
+      "name": "taxRegistration",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "countryCode",
+        "state",
+        "registrationNumber",
+        "effectiveDate",
+        "endDate",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields"
+      ]
+    },
+    {
       "name": "terms",
       "rows": 0,
       "columns": [
@@ -2547,7 +2623,8 @@
         "sourcingType",
         "mpn",
         "revisionStatus",
-        "changeOrderId"
+        "changeOrderId",
+        "taxable"
       ]
     },
     {
@@ -4187,7 +4264,8 @@
         "customFields",
         "name",
         "tags",
-        "companyId"
+        "companyId",
+        "taxCodeId"
       ]
     },
     {
@@ -4261,7 +4339,8 @@
         "taxExemptionCertificatePath",
         "companyId",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "taxCodeId"
       ]
     },
     {
@@ -4342,7 +4421,8 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "invoiceAutomation"
+        "invoiceAutomation",
+        "taxCodeId"
       ]
     },
     {
@@ -4399,7 +4479,8 @@
         "updatedBy",
         "updatedAt",
         "voidedSalesInvoiceId",
-        "invoiceSeparately"
+        "invoiceSeparately",
+        "taxCodeId"
       ]
     },
     {
@@ -4590,7 +4671,8 @@
         "sortOrder",
         "configuration",
         "serviceStartDate",
-        "serviceEndDate"
+        "serviceEndDate",
+        "taxCodeId"
       ]
     },
     {
@@ -4624,7 +4706,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields"
+        "customFields",
+        "taxCodeId"
       ]
     },
     {
@@ -5083,7 +5166,8 @@
         "configuration",
         "pricingRuleId",
         "priceTrace",
-        "sortOrder"
+        "sortOrder",
+        "taxCodeId"
       ]
     },
     {
@@ -6278,7 +6362,8 @@
         "costCenterId",
         "ownerId",
         "sortOrder",
-        "supplierPartId"
+        "supplierPartId",
+        "taxCodeId"
       ]
     },
     {
@@ -6755,7 +6840,8 @@
         "customerContractLineId",
         "customerContractInvoiceLineId",
         "projectId",
-        "discountPercent"
+        "discountPercent",
+        "taxCodeId"
       ]
     },
     {
@@ -7215,7 +7301,8 @@
         "sortOrder",
         "projectId",
         "leaseId",
-        "leasePaymentId"
+        "leasePaymentId",
+        "taxCodeId"
       ]
     },
     {
@@ -7311,7 +7398,9 @@
         "salesReturnOrderId",
         "purchaseReturnOrderId",
         "customerContractId",
-        "rentalAgreementId"
+        "rentalAgreementId",
+        "taxAmount",
+        "taxCodeId"
       ]
     },
     {
@@ -7577,7 +7666,8 @@
         "updatedBy",
         "supplierTaxAmount",
         "taxPercent",
-        "companyId"
+        "companyId",
+        "taxCodeId"
       ]
     },
     {
@@ -7613,7 +7703,46 @@
         "taxExemptionCertificatePath",
         "companyId",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "taxCodeId"
+      ]
+    },
+    {
+      "name": "taxAuthority",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "supplierId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields"
+      ]
+    },
+    {
+      "name": "taxCodeComponent",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "taxCodeId",
+        "name",
+        "taxAuthorityId",
+        "taxPercent",
+        "recoverablePercent",
+        "sequence",
+        "isCompound",
+        "taxReceivedAccountId",
+        "taxPaidAccountId",
+        "effectiveDate",
+        "expirationDate",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {

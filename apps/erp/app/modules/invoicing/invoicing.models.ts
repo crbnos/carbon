@@ -2,6 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  applyRate,
+  deriveRate,
+  equals,
+  memoAmounts,
+  round
+} from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -178,6 +185,7 @@ export const purchaseInvoiceLineValidator = z
     supplierUnitPrice: zfd.numeric(z.number().optional()),
     supplierShippingCost: zfd.numeric(z.number().optional().default(0)),
     supplierTaxAmount: zfd.numeric(z.number().optional().default(0)),
+    taxCodeId: zfd.text(z.string().optional()),
     taxPercent: zfd.numeric(z.number().min(0).max(1).optional().default(0)),
     requiredDate: zfd.text(z.string().optional()),
     locationId: zfd.text(z.string().optional()),
@@ -399,6 +407,7 @@ export const salesInvoiceLineValidator = z
     discountPercent: zfd.numeric(z.number().min(0).max(100).optional()),
     shippingCost: zfd.numeric(z.number().optional().default(0)),
     taxPercent: zfd.numeric(z.number().optional().default(0)),
+    taxCodeId: zfd.text(z.string().optional()),
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
@@ -501,14 +510,106 @@ export const memoValidator = z
     memoDate: z.string().min(1, { message: "Date is required" }),
     currencyCode: z.string().min(1, { message: "Currency is required" }),
     exchangeRate: zfd.numeric(z.number().positive().default(1)),
-    amount: zfd.numeric(z.number().positive({ message: "Amount must be > 0" })),
+    // The memo form enters the NET and a tax code; `upsertMemo` computes the
+    // tax forward from the code's rate on the memo date and stores
+    // amount = net + tax (spec "Memo tax"). A caller that sends `amount` and
+    // no `netAmount` keeps the old meaning: a gross with no tax — refused on
+    // an update of a memo that carries tax (`resolveMemoTaxAmounts`).
+    netAmount: zfd.numeric(
+      z.number().positive({ message: "Net amount must be > 0" }).optional()
+    ),
+    taxCodeId: zfd.text(z.string().optional()),
+    amount: zfd.numeric(
+      z.number().positive({ message: "Amount must be > 0" }).optional()
+    ),
     reference: zfd.text(z.string().optional()),
     notes: zfd.text(z.string().optional())
   })
   .refine((d) => Boolean(d.customerId) !== Boolean(d.supplierId), {
     message: "A memo is for exactly one party (customer or supplier)",
     path: ["customerId"]
+  })
+  .refine((d) => d.netAmount !== undefined || d.amount !== undefined, {
+    message: "Net amount is required",
+    path: ["netAmount"]
+  })
+  // A tax code is applied to a net. Taken with only a gross, the tax would
+  // have to be worked out backwards from it, which posting never does.
+  .refine((d) => !d.taxCodeId || d.netAmount !== undefined, {
+    message: "A tax code needs a net amount",
+    path: ["taxCodeId"]
   });
+
+/** The tax a memo already stores: `amount` is its gross. */
+export type StoredMemoTax = {
+  amount: number;
+  taxAmount: number;
+  taxCodeId: string | null;
+};
+
+/** Whether a memo saved with `taxCodeId` keeps the rate its stored tax implies:
+ *  it carries tax and its code is unchanged (both null counts as unchanged). */
+export function memoKeepsStoredTaxRate(
+  stored: StoredMemoTax,
+  taxCodeId: string | null
+): boolean {
+  return stored.taxAmount !== 0 && stored.taxCodeId === (taxCodeId || null);
+}
+
+/**
+ * The one decision for a memo's stored amounts (spec "Memo tax"), shared by
+ * `upsertMemo` and `MemoForm` so the form shows what a save stores. Stored tax
+ * is never dropped silently:
+ *
+ * - A memo that keeps its tax code (both null counts as kept) and carries tax
+ *   keeps its stored rate, `taxAmount / (amount − taxAmount)`, applied to the
+ *   new net. That covers a codeless memo made from lines with a bare percent
+ *   (tax 8 on 100, no code) and a coded memo whose source line overrode the
+ *   code's percent. An unchanged net keeps the stored tax exactly.
+ * - A changed code takes the new code's rate on the memo date (`codeRate`).
+ * - `amount` with no `netAmount` is a gross with no tax. On a memo that
+ *   carries tax it is refused: storing it would drop the tax.
+ *
+ * `stored` is null on create. `codeRate` is the submitted code's rate on the
+ * memo date, 0 when no code is submitted.
+ */
+export function resolveMemoTaxAmounts(args: {
+  stored: StoredMemoTax | null;
+  netAmount: number | undefined;
+  amount: number | undefined;
+  taxCodeId: string | null;
+  codeRate: number;
+  decimals: number;
+}):
+  | { netAmount: number; taxAmount: number; amount: number }
+  | { error: string } {
+  const { stored, decimals } = args;
+  const storedTax = stored ? stored.taxAmount : 0;
+  const carriesTax =
+    stored !== null && (storedTax !== 0 || stored.taxCodeId !== null);
+
+  if (args.netAmount === undefined) {
+    if (args.amount === undefined) return { error: "Net amount is required" };
+    if (args.taxCodeId) return { error: "A tax code needs a net amount" };
+    if (carriesTax) return { error: "This memo carries tax; send netAmount" };
+    return { netAmount: args.amount, taxAmount: 0, amount: args.amount };
+  }
+
+  if (stored !== null && memoKeepsStoredTaxRate(stored, args.taxCodeId)) {
+    const storedNet = round(stored.amount - storedTax, decimals);
+    const netAmount = round(args.netAmount, decimals);
+    const taxAmount = equals(netAmount, storedNet)
+      ? round(storedTax, decimals)
+      : applyRate(netAmount, deriveRate(storedTax, storedNet), decimals);
+    return {
+      netAmount,
+      taxAmount,
+      amount: round(netAmount + taxAmount, decimals)
+    };
+  }
+
+  return memoAmounts(args.netAmount, args.codeRate, decimals);
+}
 
 // ----------------------------------------------------------------------
 // Payments (AR receipts + AP disbursements + applications)

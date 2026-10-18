@@ -26,13 +26,18 @@ import {
 } from "~/modules/items/items.service";
 import {
   deletePurchaseInvoiceLineReleasingLeases,
-  deletePurchaseInvoiceReleasingLeases
+  deletePurchaseInvoiceReleasingLeases,
+  nonTaxableItemTax,
+  resolveCreatedPurchaseLineTax
 } from "~/modules/purchasing/purchasing.service";
 import {
   deleteRentalCreditMemoReleasingPeriods,
   deleteSalesInvoiceLineReleasingRentals,
   deleteSalesInvoiceReleasingRentals,
-  recordSalesRuleOutcome
+  isItemTaxable,
+  recalculateSalesDocumentTaxes,
+  recordSalesRuleOutcome,
+  resolveCreatedLineTax
 } from "~/modules/sales/sales.service";
 import {
   getCompanySettings,
@@ -208,7 +213,11 @@ const salesInvoiceLineInput = salesInvoiceLineValidator.safeExtend({
  * @mcp
  */
 export const createSalesInvoiceLine = defineServiceFn({
-  input: salesInvoiceLineInput,
+  // A plain string, not the form validator's text field: the route sends
+  // "" for a code the user cleared, which must not read as "not sent".
+  input: salesInvoiceLineInput.safeExtend({
+    taxCodeId: z.string().optional()
+  }),
   permission: { create: "invoicing" },
 
   async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
@@ -240,10 +249,26 @@ export const createSalesInvoiceLine = defineServiceFn({
       check = gate.check;
     }
 
+    // A caller that sends no tax code (the API, MCP) takes the resolved tax;
+    // a non-taxable item carries none.
+    const tax = await resolveCreatedLineTax(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      {
+        document: "salesInvoice",
+        documentId: line.invoiceId,
+        itemId: line.itemId,
+        sentTaxCode: line.taxCodeId !== undefined,
+        taxCodeId: line.taxCodeId,
+        taxPercent: line.taxPercent
+      }
+    );
+
     const created = await service.upsertSalesInvoiceLine(
       ctx.asCaller.supabase,
       {
         ...line,
+        ...tax,
         companyId: ctx.company.id,
         createdBy: ctx.auditUserId,
         customFields
@@ -343,11 +368,19 @@ export const updateSalesInvoiceLine = defineServiceFn({
       check = gate.check;
     }
 
+    // A non-taxable item carries no tax, whatever was sent.
+    const taxable = await isItemTaxable(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      line.itemId
+    );
+
     const updated = await service.upsertSalesInvoiceLine(
       ctx.asCaller.supabase,
       {
         id,
         ...line,
+        ...(taxable ? {} : { taxCodeId: undefined, taxPercent: 0 }),
         updatedBy: ctx.auditUserId,
         customFields
       }
@@ -404,6 +437,45 @@ export const deleteDraftSalesInvoiceLine = defineServiceFn({
       return ctx.error("internal", "Failed to delete sales invoice line", err);
     }
     return { invoiceId, lineId };
+  }
+});
+
+/**
+ * Recalculate the tax of every line on a sales invoice.
+ *
+ * @remarks
+ * Refused while the invoice is posted. Each line takes the tax decision for
+ * its item at the invoice's ship-to (`recalculateSalesDocumentTaxes`): run
+ * it after the ship-to or the customer's tax code changed. Rental and
+ * contract lines keep the tax of their agreement or contract.
+ *
+ * @mcp
+ */
+export const recalculateSalesInvoiceTaxes = defineServiceFn({
+  input: z.object({ invoiceId: z.string() }),
+  permission: { update: "invoicing" },
+
+  async run(ctx, { invoiceId }) {
+    const locked = await service.unlockedSalesInvoice(
+      ctx,
+      invoiceId,
+      "Cannot modify a locked sales invoice. Reopen it first."
+    );
+    if (locked) return locked;
+    const result = await recalculateSalesDocumentTaxes(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        document: "salesInvoice",
+        documentId: invoiceId
+      }
+    );
+    if (result.error) {
+      return ctx.error("internal", "Failed to recalculate taxes", result.error);
+    }
+    return { invoiceId, updated: result.data?.updated ?? 0 };
   }
 });
 
@@ -1068,6 +1140,14 @@ export const postPurchaseInvoice = defineServiceFn({
       );
       if (posted.error) {
         await backToDraft();
+        logger.error("Failed to post purchase invoice", {
+          companyId,
+          invoiceId,
+          error: posted.error
+        });
+        // A refusal the user can act on (a 4xx, such as a Reverse Charge
+        // line that still carries a tax amount) says what to fix; anything
+        // else stays generic.
         return fromServerFn(
           ctx,
           posted.error,
@@ -2474,7 +2554,10 @@ export const upsertPurchaseInvoiceDelivery = defineServiceFn({
  * Create a purchase invoice line
  *
  * @remarks
- * Upsert purchase invoice line
+ * Upsert purchase invoice line. A line sent with no `taxCodeId` takes the
+ * supplier's tax code at the invoice date; an empty `taxCodeId` keeps the
+ * sent percent with no code. A non-taxable item carries no tax, whatever was
+ * sent.
  *
  * @mcp
  */
@@ -2527,6 +2610,12 @@ export const createPurchaseInvoiceLine = defineServiceFn({
       .describe(
         "Applied when creating; on update a field left out keeps its value."
       ),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe(
+        "Omit to take the supplier's tax code; an empty string keeps the sent percent with no code."
+      ),
     requiredDate: z.string().optional(),
     locationId: z.string().optional(),
     storageUnitId: z.string().optional(),
@@ -2539,11 +2628,35 @@ export const createPurchaseInvoiceLine = defineServiceFn({
   }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    // A new line takes the tax the form would have opened with: the
+    // supplier's code when none is sent, and none for a non-taxable item.
+    // A failed read of the invoice leaves the sent tax, as the form's would.
+    const invoice = input.id
+      ? null
+      : await service.getPurchaseInvoice(client, input.invoiceId);
+    const tax = input.id
+      ? await nonTaxableItemTax(client, companyId, input.itemId)
+      : await resolveCreatedPurchaseLineTax(client, {
+          companyId,
+          companyGroupId: ctx.company.groupId,
+          supplierId: invoice?.data?.supplierId,
+          documentDate: invoice?.data?.dateIssued,
+          currencyCode: invoice?.data?.currencyCode,
+          itemId: input.itemId,
+          unitPrice: input.supplierUnitPrice ?? 0,
+          quantity: input.quantity ?? 0,
+          shippingCost: input.supplierShippingCost,
+          taxCodeId: input.taxCodeId,
+          taxPercent: input.taxPercent,
+          supplierTaxAmount: input.supplierTaxAmount
+        });
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
+        client,
+        payload(ctx, { ...input, ...tax }).forCreate() as never
       )
     );
   }
@@ -2553,7 +2666,8 @@ export const createPurchaseInvoiceLine = defineServiceFn({
  * Update a purchase invoice line
  *
  * @remarks
- * Upsert purchase invoice line
+ * Upsert purchase invoice line. A non-taxable item carries no tax, whatever
+ * was sent.
  *
  * @mcp
  */
@@ -2607,6 +2721,7 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
           "Applied when creating; on update a field left out keeps its value."
         )
         .optional(),
+      taxCodeId: z.string().optional(),
       requiredDate: z.string().optional(),
       locationId: z.string().optional(),
       storageUnitId: z.string().optional(),
@@ -2620,11 +2735,18 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    // A non-taxable item carries no tax, whatever was sent. A line whose item
+    // is left out keeps its stored one.
+    const itemId =
+      input.itemId ??
+      (await service.getPurchaseInvoiceLine(client, input.id)).data?.itemId;
+    const tax = await nonTaxableItemTax(client, ctx.company.id, itemId);
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+        client,
+        payload(ctx, { ...input, ...tax }).forUpdate() as never
       )
     );
   }
@@ -3293,7 +3415,21 @@ export const createMemo = defineServiceFn({
       .describe(
         "Applied when creating; on update a field left out keeps its value."
       ),
-    amount: z.number().gt(0),
+    netAmount: z
+      .number()
+      .gt(0)
+      .describe(
+        "The amount before tax. The tax is computed from `taxCodeId` on the memo date; the memo's amount is net plus tax."
+      )
+      .optional(),
+    taxCodeId: z.string().optional(),
+    amount: z
+      .number()
+      .gt(0)
+      .describe(
+        "A gross with no tax, when `netAmount` is not sent. Refused on a memo that carries tax."
+      )
+      .optional(),
     reference: z.string().optional(),
     notes: z.string().optional(),
     memoId: z.string().optional(),
@@ -3307,10 +3443,10 @@ export const createMemo = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.upsertMemo(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
+      await service.upsertMemo(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forCreate(),
+        companyGroupId: ctx.company.groupId
+      } as never)
     );
   }
 });
@@ -3338,7 +3474,21 @@ export const updateMemo = defineServiceFn({
           "Applied when creating; on update a field left out keeps its value."
         )
         .optional(),
-      amount: z.number().gt(0),
+      netAmount: z
+        .number()
+        .gt(0)
+        .describe(
+          "The amount before tax. The tax is computed from `taxCodeId` on the memo date; the memo's amount is net plus tax."
+        )
+        .optional(),
+      taxCodeId: z.string().optional(),
+      amount: z
+        .number()
+        .gt(0)
+        .describe(
+          "A gross with no tax, when `netAmount` is not sent. Refused on a memo that carries tax."
+        )
+        .optional(),
       reference: z.string().optional(),
       notes: z.string().optional(),
       memoId: z.string().optional(),
@@ -3353,10 +3503,10 @@ export const updateMemo = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.upsertMemo(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.upsertMemo(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forUpdate(),
+        companyGroupId: ctx.company.groupId
+      } as never)
     );
   }
 });

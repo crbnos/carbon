@@ -70,7 +70,7 @@ import {
 import { toJson } from "@carbon/database/json";
 import type { AccountType } from "@carbon/database/ledger";
 import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
-import { equals } from "@carbon/database/precision";
+import { equals, SCALE } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
 import type * as rows from "@carbon/database/rows";
 import type * as rowsModule from "@carbon/database/rows";
@@ -85,12 +85,30 @@ import {
   single,
   updateRows
 } from "@carbon/database/rows";
+import {
+  roundSalesPostingAmounts,
+  type SalesPostingAmountsInput,
+  salesTaxableBase
+} from "@carbon/database/sales-posting-amounts";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
   type CurrencyRate,
   convertUnitPrice,
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
+import {
+  effectiveComponents,
+  effectiveTaxPercent,
+  receiptUnitCost,
+  recoverableTax,
+  splitLineTax,
+  type TaxCodeInput
+} from "@carbon/database/tax-components";
+import {
+  negateTaxLedgerRows,
+  type TaxLedgerLine,
+  type TaxLedgerRow
+} from "@carbon/database/tax-ledger";
 import {
   ImplementationHubEmail,
   SalesOrderEmail
@@ -162,6 +180,10 @@ import {
   getCurrencyByCode,
   getPaymentTermsList
 } from "~/modules/accounting/accounting.service";
+import type {
+  PurchasePostingAmounts,
+  PurchasePostingLine
+} from "~/modules/invoicing/invoicing.service";
 import {
   canEditChangeNoticeWorkflow,
   changeNoticeLockedMessage
@@ -4666,6 +4688,7 @@ type ReferencedTable =
   | "supplierType"
   | "paymentTerm"
   | "shippingMethod"
+  | "taxCode"
   | "supplier"
   | "location"
   | "materialSubstance"
@@ -4696,7 +4719,8 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
     { column: "accountManagerId", table: "employee", label: "Account Manager" },
     { column: "customerStatusId", table: "customerStatus", label: "Status" },
     { column: "customerTypeId", table: "customerType", label: "Type" },
-    { column: "paymentTermId", table: "paymentTerm", label: "Payment Term" }
+    { column: "paymentTermId", table: "paymentTerm", label: "Payment Term" },
+    { column: "taxCodeId", table: "taxCode", label: "Tax Code" }
   ],
   supplier: [
     { column: "accountManagerId", table: "employee", label: "Account Manager" },
@@ -4706,7 +4730,8 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
       column: "shippingMethodId",
       table: "shippingMethod",
       label: "Shipping Method"
-    }
+    },
+    { column: "taxCodeId", table: "taxCode", label: "Tax Code" }
   ],
   part: itemReferences,
   tool: itemReferences,
@@ -5638,7 +5663,12 @@ async function writeItemPlanningOrderMultiples(
 async function upsertTaxIdentifiers(
   trx: Kysely<KyselyDatabase>,
   table: "customerTax" | "supplierTax",
-  records: Array<{ entityId: string; taxId: string | null | undefined }>,
+  records: Array<{
+    entityId: string;
+    taxId: string | null | undefined;
+    /** A CSV sets a tax code but never clears one. */
+    taxCodeId?: string | null;
+  }>,
   cId: string,
   userId: string
 ): Promise<void> {
@@ -5650,6 +5680,7 @@ async function upsertTaxIdentifiers(
       records.map((r) => ({
         customerId: r.entityId,
         taxId: r.taxId ?? null,
+        taxCodeId: r.taxCodeId || null,
         companyId: cId,
         updatedAt: now,
         updatedBy: userId
@@ -5661,6 +5692,7 @@ async function upsertTaxIdentifiers(
           .onConflict((oc) =>
             oc.column("customerId").doUpdateSet({
               taxId: sql`excluded."taxId"`,
+              taxCodeId: sql`COALESCE(excluded."taxCodeId", "customerTax"."taxCodeId")`,
               updatedAt: now,
               updatedBy: userId
             })
@@ -5673,6 +5705,7 @@ async function upsertTaxIdentifiers(
     records.map((r) => ({
       supplierId: r.entityId,
       taxId: r.taxId ?? null,
+      taxCodeId: r.taxCodeId || null,
       companyId: cId,
       updatedAt: now,
       updatedBy: userId
@@ -5684,6 +5717,7 @@ async function upsertTaxIdentifiers(
         .onConflict((oc) =>
           oc.column("supplierId").doUpdateSet({
             taxId: sql`excluded."taxId"`,
+            taxCodeId: sql`COALESCE(excluded."taxCodeId", "supplierTax"."taxCodeId")`,
             updatedAt: now,
             updatedBy: userId
           })
@@ -5819,6 +5853,7 @@ export async function importCsvTable(
           [];
         const customerTaxForInserts: Array<{
           taxId: string | null | undefined;
+          taxCodeId: string | null | undefined;
         }> = [];
         const csvIdsForInserts: string[] = [];
         const customerUpdates: {
@@ -5828,6 +5863,7 @@ export async function importCsvTable(
         const customerTaxUpdates: Array<{
           entityId: string;
           taxId: string | null | undefined;
+          taxCodeId: string | null | undefined;
         }> = [];
         // Updates matched by name (no pre-existing csv mapping). After the
         // updates run, we add csv mappings for these so the next import takes
@@ -5847,6 +5883,7 @@ export async function importCsvTable(
           const {
             id,
             taxId,
+            taxCodeId,
             locationName: _ln,
             addressLine1: _a1,
             addressLine2: _a2,
@@ -5892,7 +5929,11 @@ export async function importCsvTable(
                 updatedBy: userId
               }
             });
-            customerTaxUpdates.push({ entityId: decision.entityId, taxId });
+            customerTaxUpdates.push({
+              entityId: decision.entityId,
+              taxId,
+              taxCodeId
+            });
             extForUpdates.push({ entityId: decision.entityId, ext });
             // Only attach a CSV->entity mapping when there is a real external id.
             if (matchedByCsvId === undefined && id) {
@@ -5911,7 +5952,7 @@ export async function importCsvTable(
               createdAt: datetime.timestamp(),
               createdBy: userId
             } as Database["public"]["Tables"]["customer"]["Insert"]);
-            customerTaxForInserts.push({ taxId });
+            customerTaxForInserts.push({ taxId, taxCodeId });
             csvIdsForInserts.push(id!);
             extForInserts.push(ext);
           }
@@ -5944,7 +5985,8 @@ export async function importCsvTable(
             "customerTax",
             inserted.map((row, i) => ({
               entityId: row.id!,
-              taxId: customerTaxForInserts[i]?.taxId
+              taxId: customerTaxForInserts[i]?.taxId,
+              taxCodeId: customerTaxForInserts[i]?.taxCodeId
             })),
             companyId,
             userId
@@ -6028,6 +6070,7 @@ export async function importCsvTable(
           [];
         const supplierTaxForInserts: Array<{
           taxId: string | null | undefined;
+          taxCodeId: string | null | undefined;
         }> = [];
         const csvIdsForInserts: string[] = [];
         const supplierUpdates: {
@@ -6037,6 +6080,7 @@ export async function importCsvTable(
         const supplierTaxUpdates: Array<{
           entityId: string;
           taxId: string | null | undefined;
+          taxCodeId: string | null | undefined;
         }> = [];
         const csvIdsForNameMatchedUpdates: Array<{
           entityId: string;
@@ -6056,6 +6100,7 @@ export async function importCsvTable(
           const {
             id,
             taxId,
+            taxCodeId,
             locationName: _ln,
             addressLine1: _a1,
             addressLine2: _a2,
@@ -6101,7 +6146,11 @@ export async function importCsvTable(
                 updatedBy: userId
               }
             });
-            supplierTaxUpdates.push({ entityId: decision.entityId, taxId });
+            supplierTaxUpdates.push({
+              entityId: decision.entityId,
+              taxId,
+              taxCodeId
+            });
             extForUpdates.push({ entityId: decision.entityId, ext });
             // Only attach a CSV->entity mapping when there is a real external id.
             if (matchedByCsvId === undefined && id) {
@@ -6120,7 +6169,7 @@ export async function importCsvTable(
               createdAt: datetime.timestamp(),
               createdBy: userId
             } as Database["public"]["Tables"]["supplier"]["Insert"]);
-            supplierTaxForInserts.push({ taxId });
+            supplierTaxForInserts.push({ taxId, taxCodeId });
             csvIdsForInserts.push(id!);
             extForInserts.push(ext);
           }
@@ -6153,7 +6202,8 @@ export async function importCsvTable(
             "supplierTax",
             inserted.map((row, i) => ({
               entityId: row.id!,
-              taxId: supplierTaxForInserts[i]?.taxId
+              taxId: supplierTaxForInserts[i]?.taxId,
+              taxCodeId: supplierTaxForInserts[i]?.taxCodeId
             })),
             companyId,
             userId
@@ -8229,6 +8279,7 @@ export async function convertDocument(
               (line.supplierTaxAmount ?? 0) * uninvoicedFraction(line),
             // The rate is invariant under proration; only the amount scales
             taxPercent: line.taxPercent ?? 0,
+            taxCodeId: line.taxCodeId,
             purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
             inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
             conversionFactor: line.conversionFactor,
@@ -8523,6 +8574,7 @@ export async function convertDocument(
               companyId,
               exchangeRate: quote.data.exchangeRate ?? 1,
               taxPercent: line.taxPercent,
+              taxCodeId: line.taxCodeId,
               shippingCost: price.shippingCost ?? 0,
               sortOrder: line.sortOrder ?? 1,
               configuration: toJson(line.configuration)
@@ -8799,6 +8851,7 @@ export async function convertDocument(
               nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
               shippingCost: line.shippingCost ?? 0,
               taxPercent: line.taxPercent ?? 0,
+              taxCodeId: line.taxCodeId,
               unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
               exchangeRate: line.exchangeRate ?? 1,
               serviceStartDate: line.serviceStartDate ?? null,
@@ -9420,6 +9473,7 @@ export async function convertDocument(
               nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
               shippingCost: line.shippingCost ?? 0,
               taxPercent: line.taxPercent ?? 0,
+              taxCodeId: line.taxCodeId,
               unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
               exchangeRate: line.exchangeRate ?? 1,
               serviceStartDate: line.serviceStartDate ?? null,
@@ -9445,27 +9499,41 @@ export async function convertDocument(
     case "supplierQuoteToPurchaseOrder": {
       const { selectedLines } = payload;
 
-      const [quote, quoteLines, company, employeeJob] = await inOrder([
-        () => single(db, "supplierQuote", { id, companyId }),
-        () =>
-          many<
-            "supplierQuoteLine",
-            rows.Tables["supplierQuoteLine"]["Row"] & {
-              item: Pick<rows.Tables["item"]["Row"], "type"> | null;
-            }
-          >(
-            db,
-            "supplierQuoteLine",
-            { supplierQuoteId: id, companyId },
-            {
-              embed: {
-                item: { table: "item", via: "itemId", columns: ["type"] }
+      const [quote, quoteLines, quoteLinePrices, company, employeeJob] =
+        await inOrder([
+          () => single(db, "supplierQuote", { id, companyId }),
+          () =>
+            many<
+              "supplierQuoteLine",
+              rows.Tables["supplierQuoteLine"]["Row"] & {
+                item: Pick<rows.Tables["item"]["Row"], "type"> | null;
               }
-            }
-          ),
-        () => single(db, "company", { id: companyId }),
-        () => single(db, "employeeJob", { id: userId, companyId })
-      ]);
+            >(
+              db,
+              "supplierQuoteLine",
+              { supplierQuoteId: id, companyId },
+              {
+                embed: {
+                  item: { table: "item", via: "itemId", columns: ["type"] }
+                }
+              }
+            ),
+          // The tax code of the price break each selected quantity bought.
+          () =>
+            many(db, "supplierQuoteLinePrice", {
+              supplierQuoteId: id,
+              companyId
+            }),
+          () => single(db, "company", { id: companyId }),
+          () => single(db, "employeeJob", { id: userId, companyId })
+        ]);
+      if (quoteLinePrices.error) throw quoteLinePrices.error;
+      const priceTaxCodeIds = new Map(
+        (quoteLinePrices.data ?? []).map((price) => [
+          `${price.supplierQuoteLineId}:${price.quantity}`,
+          price.taxCodeId
+        ])
+      );
 
       if (quote.error) throw new NotFoundError(`Quote with id ${id} not found`);
       if (quoteLines.error)
@@ -9602,6 +9670,10 @@ export async function convertDocument(
                   selectedLines![line.id!]!.supplierShippingCost,
                 supplierTaxAmount: selectedLines![line.id!]!.supplierTaxAmount,
                 taxPercent: resolveTaxPercent(selectedLines![line.id!]!),
+                taxCodeId:
+                  priceTaxCodeIds.get(
+                    `${line.id}:${selectedLines![line.id!]!.quantity}`
+                  ) ?? null,
                 sortOrder: line.sortOrder ?? 1,
                 createdBy: userId,
                 companyId
@@ -10818,6 +10890,44 @@ export async function createDocument(
         return acc;
       }, {});
 
+      // The tax the company cannot reclaim is cost; the recoverable share
+      // goes to Tax Paid when the invoice posts, so it never enters the
+      // received cost. A Reverse Charge code's non-recoverable share is
+      // self-assessed cost the supplier did not charge. With no code this
+      // is the receipt's historical cost.
+      const receiptTaxCodes = await loadTaxCodes(
+        db,
+        companyId,
+        purchaseOrderLines.data.map((line) => line.taxCodeId),
+        datetime.today(await resolveCompanyTimeZone(db, companyId)).toString()
+      );
+      const reclaimedTax = (line: (typeof purchaseOrderLines.data)[number]) => {
+        const code = line.taxCodeId
+          ? receiptTaxCodes.get(line.taxCodeId)
+          : undefined;
+        if (!code || code.components.length === 0) return 0;
+        const base =
+          (line.purchaseQuantity ?? 0) * (line.unitPrice ?? 0) +
+          (line.shippingCost ?? 0);
+        if (code.calculationType === "Reverse Charge") {
+          const parts = splitLineTax({
+            base,
+            lineTax: round(base * effectiveTaxPercent(code.components)),
+            components: code.components,
+            scale: SCALE
+          });
+          return -parts.reduce((t, p) => t + p.nonRecoverableAmount, 0);
+        }
+        return recoverableTax(
+          splitLineTax({
+            base,
+            lineTax: line.taxAmount ?? 0,
+            components: code.components,
+            scale: SCALE
+          })
+        );
+      };
+
       const receiptLineItems = purchaseOrderLines.data.reduce<
         ReceiptLineItem[]
       >((acc, d) => {
@@ -10835,10 +10945,6 @@ export async function createDocument(
         const outstandingQuantity =
           d.purchaseQuantity - (previouslyReceivedQuantitiesByLine[d.id!] ?? 0);
 
-        const shippingAndTaxUnitCost =
-          ((d.taxAmount ?? 0) + (d.shippingCost ?? 0)) /
-          (d.purchaseQuantity * (d.conversionFactor ?? 1));
-
         acc.push({
           lineId: d.id,
           companyId: companyId,
@@ -10851,8 +10957,14 @@ export async function createDocument(
             serializedItems.has(d.itemId) && !isOutsideOperation,
           requiresBatchTracking:
             batchItems.has(d.itemId) && !isOutsideOperation,
-          unitPrice:
-            unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
+          unitPrice: receiptUnitCost({
+            unitPrice,
+            conversionFactor: d.conversionFactor ?? 1,
+            purchaseQuantity: d.purchaseQuantity,
+            taxAmount: d.taxAmount ?? 0,
+            recoverableTaxAmount: reclaimedTax(d),
+            shippingCost: d.shippingCost ?? 0
+          }),
           unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
           locationId: d.locationId ?? null,
           storageUnitId:
@@ -16303,4 +16415,406 @@ async function authorizeApiKey(
   if (!hasPermissions(scopes, companyId, required)) {
     throw new ForbiddenError("API key lacks required permissions");
   }
+}
+
+// ---------------------------------------------------------------------------
+// Tax codes and the tax ledger, shared by every posting path
+// ---------------------------------------------------------------------------
+
+/**
+ * The tax codes `ids` name, each with only the components in force on
+ * `date` (YYYY-MM-DD), in two queries. A null `date` keeps every component,
+ * for a caller that reads documents of many dates (`taxCodeOn`). Shared by every posting path that
+ * splits a line's tax into components. A code of another company, or one
+ * that no longer exists, is simply absent from the map.
+ */
+export async function loadTaxCodes(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  companyId: string,
+  ids: ReadonlyArray<string | null | undefined>,
+  date: string | null
+): Promise<Map<string, TaxCodeInput>> {
+  const taxCodeIds = [...new Set(ids.filter((id): id is string => !!id))];
+  if (taxCodeIds.length === 0) return new Map();
+
+  const [codes, components] = await Promise.all([
+    db
+      .selectFrom("taxCode")
+      .select(["id", "calculationType", "taxesShipping"])
+      .where("companyId", "=", companyId)
+      .where("id", "in", taxCodeIds)
+      .execute(),
+    db
+      .selectFrom("taxCodeComponent")
+      .select([
+        "id",
+        "taxCodeId",
+        "name",
+        "taxAuthorityId",
+        "taxPercent",
+        "recoverablePercent",
+        "sequence",
+        "isCompound",
+        "taxReceivedAccountId",
+        "taxPaidAccountId",
+        "effectiveDate",
+        "expirationDate"
+      ])
+      .where("companyId", "=", companyId)
+      .where("taxCodeId", "in", taxCodeIds)
+      .execute()
+  ]);
+
+  return new Map(
+    codes.map((code) => {
+      const all = components
+        .filter((c) => c.taxCodeId === code.id)
+        .map((c) => ({
+          id: c.id,
+          name: c.name,
+          taxAuthorityId: c.taxAuthorityId,
+          taxPercent: Number(c.taxPercent),
+          recoverablePercent: Number(c.recoverablePercent),
+          sequence: c.sequence,
+          isCompound: c.isCompound,
+          taxReceivedAccountId: c.taxReceivedAccountId,
+          taxPaidAccountId: c.taxPaidAccountId,
+          effectiveDate: c.effectiveDate,
+          expirationDate: c.expirationDate
+        }));
+      return [
+        code.id,
+        {
+          id: code.id,
+          calculationType: code.calculationType,
+          taxesShipping: code.taxesShipping,
+          components:
+            date === null ? all : effectiveComponents({ components: all }, date)
+        }
+      ];
+    })
+  );
+}
+
+/** A code loaded with every component (`loadTaxCodes` with a null date),
+ *  with only those in force on `date`. */
+export function taxCodeOn(
+  code: TaxCodeInput | undefined,
+  date: string
+): TaxCodeInput | undefined {
+  return code && { ...code, components: effectiveComponents(code, date) };
+}
+
+/** Every code of `codes` (loaded with a null date) on `date`. */
+export function taxCodesOn(
+  codes: ReadonlyMap<string, TaxCodeInput>,
+  date: string
+): Map<string, TaxCodeInput> {
+  return new Map(
+    [...codes].map(([id, code]) => [
+      id,
+      { ...code, components: effectiveComponents(code, date) }
+    ])
+  );
+}
+
+type TaxedPurchaseLine = {
+  id: string;
+  quantity: number;
+  unitPrice: number | null;
+  shippingCost: number | null;
+  taxAmount: number | null;
+  taxCodeId: string | null;
+};
+
+/** What names a purchase line to the user: where the invoice lists it. */
+type PositionedPurchaseLine = {
+  id: string;
+  /** DOUBLE PRECISION: node-postgres hands it over as a string. */
+  sortOrder: number | string;
+  /** A timestamp: a string through PostgREST, a `Date` through Kysely. */
+  createdAt: string | Date;
+  description?: string | null;
+};
+
+/** The moment a row was created, for ordering only (an absolute instant). */
+function createdInstant(value: string | Date): number {
+  return value instanceof Date ? value.getTime() : Date.parse(value);
+}
+
+/**
+ * "Line 2 (Freight services)": the line's 1-based position among the
+ * invoice's lines in the order the purchase invoice lists them
+ * (`getPurchaseInvoiceLines`: sortOrder, then createdAt), and its
+ * description when it has one. `lines` must be every line of the invoice.
+ */
+function purchaseInvoiceLineLabel(
+  line: PositionedPurchaseLine,
+  lines: ReadonlyArray<PositionedPurchaseLine>
+): string {
+  const ordered = [...lines].sort(
+    (a, b) =>
+      Number(a.sortOrder) - Number(b.sortOrder) ||
+      createdInstant(a.createdAt) - createdInstant(b.createdAt) ||
+      a.id.localeCompare(b.id)
+  );
+  const position = ordered.findIndex((other) => other.id === line.id) + 1;
+  const description = line.description?.trim();
+  return description ? `Line ${position} (${description})` : `Line ${position}`;
+}
+
+/**
+ * Each purchase line with its tax split by its code's components (base
+ * amounts): the supplier's tax for a Normal code, self-assessed tax for a
+ * Reverse Charge code. A line with no code is returned as it is. Shared by
+ * the posting and the cutover backfill so both split the same way.
+ *
+ * Refuses a Reverse Charge line that carries a tax amount: the supplier
+ * charges no tax on a reverse charge, so that amount would be paid to the
+ * supplier AND self-assessed — the same tax twice. `lines` is every line of
+ * one invoice, so the refusal can name the line as the invoice lists it.
+ */
+export function withPurchaseTax<
+  T extends TaxedPurchaseLine & PositionedPurchaseLine
+>(
+  lines: ReadonlyArray<T>,
+  taxCodes: ReadonlyMap<string, TaxCodeInput>
+): Array<T & Pick<PurchasePostingLine, "taxParts" | "selfAssessedParts">> {
+  return lines.map((line) => {
+    const code = line.taxCodeId ? taxCodes.get(line.taxCodeId) : undefined;
+    if (!code || code.components.length === 0) return line;
+    const base =
+      line.quantity * (line.unitPrice ?? 0) + (line.shippingCost ?? 0);
+    if (code.calculationType === "Reverse Charge") {
+      if (!equals(line.taxAmount ?? 0, 0)) {
+        throw new InvalidInputError(
+          `${purchaseInvoiceLineLabel(line, lines)} has a Reverse Charge tax code and a tax amount of ${line.taxAmount}. A supplier charges no tax on a reverse charge, and Carbon self-assesses it when it posts. Clear the line's tax amount.`
+        );
+      }
+      return {
+        ...line,
+        selfAssessedParts: splitLineTax({
+          base,
+          lineTax: round(base * effectiveTaxPercent(code.components)),
+          components: code.components,
+          scale: SCALE
+        })
+      };
+    }
+    return {
+      ...line,
+      taxParts: splitLineTax({
+        base,
+        lineTax: line.taxAmount ?? 0,
+        components: code.components,
+        scale: SCALE
+      })
+    };
+  });
+}
+
+/** The tax-ledger inputs of a posted purchase invoice, from its amounts. */
+export function purchaseTaxLedgerLines(
+  lines: ReadonlyArray<
+    TaxedPurchaseLine & { invoiceLineType: string; taxPercent: number | null }
+  >,
+  amountsByLineId: ReadonlyMap<string, PurchasePostingAmounts>
+): TaxLedgerLine[] {
+  return lines
+    .filter((line) => line.invoiceLineType !== "Comment")
+    .map((line) => {
+      const amounts = amountsByLineId.get(line.id);
+      const legs = amounts?.taxLegs ?? [];
+      const selfAssessed = legs.some((leg) => leg.selfAssessed);
+      return {
+        documentLineId: line.id,
+        taxCodeId: line.taxCodeId,
+        taxableBase: (amounts?.nominalBaseCost ?? 0) + (line.shippingCost ?? 0),
+        components: legs.map((leg) => leg.part),
+        taxPercent: line.taxPercent ?? 0,
+        taxAmount: selfAssessed
+          ? (amounts?.selfAssessedTaxBase ?? 0)
+          : (line.taxAmount ?? 0),
+        exempt: null,
+        selfAssessed
+      };
+    });
+}
+
+/**
+ * The class of each account a purchase posting's tax legs can hit: the Tax
+ * Paid and reverse charge defaults and every component's Tax Paid account
+ * (`taxAccountClasses` on `buildPurchaseInvoicePostingLines`). One query.
+ *
+ * Refuses an account that is not in the company's group: the posting would
+ * otherwise default its class and post to another company's account.
+ */
+export async function loadTaxAccountClasses(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    defaults: {
+      taxPaidAccount: string | null;
+      reverseChargeSalesTaxPayableAccount: string | null;
+    };
+    taxCodes: ReadonlyMap<string, TaxCodeInput>;
+  }
+): Promise<Map<string, string>> {
+  const ids = [
+    args.defaults.taxPaidAccount,
+    args.defaults.reverseChargeSalesTaxPayableAccount,
+    ...[...args.taxCodes.values()].flatMap((code) =>
+      code.components.map((component) => component.taxPaidAccountId)
+    )
+  ].filter((id): id is string => !!id);
+  if (ids.length === 0) return new Map();
+  const requested = [...new Set(ids)];
+  const rows = await db
+    .selectFrom("account")
+    .innerJoin("company", "company.companyGroupId", "account.companyGroupId")
+    .select(["account.id", "account.class"])
+    .where("company.id", "=", args.companyId)
+    .where("account.id", "in", requested)
+    .execute();
+  const found = new Set(rows.map((row) => row.id));
+  const foreign = requested.find((id) => !found.has(id));
+  if (foreign) {
+    throw new InvalidInputError(
+      `Tax account ${foreign} is not an account of this company. Choose one of this company's accounts on the tax code or in the account defaults.`
+    );
+  }
+  return new Map(
+    rows.flatMap((row) => (row.class ? [[row.id, row.class] as const] : []))
+  );
+}
+
+export type SalesTaxLedgerSourceLine = SalesPostingAmountsInput & {
+  id: string;
+  invoiceLineType: string;
+  itemId: string | null;
+  taxCodeId: string | null;
+};
+
+/**
+ * The tax-ledger inputs of a posted sales invoice's lines, from the same
+ * rounded amounts the journal posts (`roundSalesPostingAmounts`) and the same
+ * tax base (`salesTaxableBase`), so the subledger agrees with the journal.
+ * An exempt customer or a non-taxable item writes an exempt-base row.
+ */
+export function salesTaxLedgerLines(args: {
+  lines: ReadonlyArray<SalesTaxLedgerSourceLine>;
+  headerShipping: ReadonlyMap<string, number>;
+  taxCodes: ReadonlyMap<string, TaxCodeInput>;
+  nonTaxableItemIds: ReadonlySet<string>;
+  exemption: {
+    reason: Database["public"]["Enums"]["taxExemptionReason"] | null;
+    certificateNumber: string | null;
+  } | null;
+}): TaxLedgerLine[] {
+  return args.lines
+    .filter((line) => line.invoiceLineType !== "Comment")
+    .map((line) => {
+      const code = line.taxCodeId
+        ? args.taxCodes.get(line.taxCodeId)
+        : undefined;
+      const postingLine = {
+        ...line,
+        allocatedHeaderShipping: args.headerShipping.get(line.id) ?? 0,
+        taxesShipping: code?.taxesShipping ?? false
+      };
+      const taxableBase = salesTaxableBase(postingLine);
+      const taxAmount = roundSalesPostingAmounts(postingLine).salesTaxBase;
+      const nonTaxable =
+        !!line.itemId && args.nonTaxableItemIds.has(line.itemId);
+      const exempt =
+        taxAmount === 0 && (args.exemption || nonTaxable)
+          ? {
+              reason: nonTaxable ? null : (args.exemption?.reason ?? null),
+              certificateNumber: nonTaxable
+                ? null
+                : (args.exemption?.certificateNumber ?? null)
+            }
+          : null;
+      return {
+        documentLineId: line.id,
+        taxCodeId: line.taxCodeId,
+        taxableBase,
+        components:
+          !exempt && code && code.components.length > 0
+            ? splitLineTax({
+                base: taxableBase,
+                lineTax: taxAmount,
+                components: code.components,
+                scale: SCALE
+              })
+            : [],
+        taxPercent: line.taxPercent ?? 0,
+        taxAmount,
+        exempt
+      };
+    });
+}
+
+/**
+ * A void's tax-ledger rows: every row the document wrote, negated, on the
+ * void's journal and date. The liability report then nets the document to
+ * zero. Writes nothing for a document that wrote no rows.
+ */
+export async function negateDocumentTaxLedger(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    documentType: TaxLedgerRow["documentType"];
+    documentId: string;
+    journalId: string;
+    postingDate: string;
+    createdBy: string;
+  }
+): Promise<void> {
+  const rows = await trx
+    .selectFrom("taxLedger")
+    .select([
+      "companyId",
+      "createdBy",
+      "source",
+      "documentType",
+      "documentId",
+      "documentLineId",
+      "journalId",
+      "postingDate",
+      "taxCodeId",
+      "taxCodeComponentId",
+      "componentName",
+      "taxAuthorityId",
+      "taxPercent",
+      "recoverablePercent",
+      "customerId",
+      "supplierId",
+      "taxableAmount",
+      "taxAmount",
+      "recoverableAmount",
+      "exemptAmount",
+      "documentTaxableAmount",
+      "documentTaxAmount",
+      "currencyCode",
+      "exchangeRate",
+      "taxExemptionReason",
+      "exemptionCertificateNumber",
+      "selfAssessed"
+    ])
+    .where("companyId", "=", args.companyId)
+    .where("documentType", "=", args.documentType)
+    .where("documentId", "=", args.documentId)
+    .execute();
+  if (rows.length === 0) return;
+  await trx
+    .insertInto("taxLedger")
+    .values(
+      negateTaxLedgerRows(rows as TaxLedgerRow[], {
+        journalId: args.journalId,
+        postingDate: args.postingDate,
+        createdBy: args.createdBy
+      })
+    )
+    .execute();
 }

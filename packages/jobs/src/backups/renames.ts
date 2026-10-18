@@ -59,7 +59,13 @@ export const LIVE_COLUMN_RENAMES: Record<string, Record<string, string>> = {
   // part's own currency, which every pre-rename price was (the base currency;
   // a NULL currencyCode reads as base).
   supplierPart: { unitPrice: "supplierUnitPrice" },
-  supplierPartPrice: { unitPrice: "supplierUnitPrice" }
+  supplierPartPrice: { unitPrice: "supplierUnitPrice" },
+  // 2026-10 (multi-jurisdiction tax): the tax account defaults took Odoo's
+  // names. Both columns kept their values; only the names changed.
+  accountDefault: {
+    salesTaxPayableAccount: "taxReceivedAccount",
+    purchaseTaxPayableAccount: "taxPaidAccount"
+  }
 };
 
 /** A live table's column list under its CURRENT column names. */

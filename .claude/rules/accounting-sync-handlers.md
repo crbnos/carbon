@@ -120,6 +120,9 @@ The drawer header's `AccountingSyncControl` posts intent `update-sync-enabled`; 
 refuses ON while `getUnmappedRequiredAccounts` (`core/account-mapping.ts`) is non-empty. The
 "required" set — `selectRequiredMappingAccountIds`: every `accountDefault` account plus every
 Expense account, among active leaf accounts — is the same one the Account Mapping tab badges.
+For Xero and QBO (`TAX_RATE_MAPPING_PROVIDERS`) the action also refuses ON while
+`getUnmappedTaxCodes` is non-empty ("Map the remaining N tax codes before turning on sync"),
+and the header shows **Open Tax Rates**. See "Tax-code mapping" below. Rillet has no tax gate.
 
 While off, nothing moves: `events/sync.ts` skips before reconciling, the four crons filter their
 targets, `sync-external-accounting` enqueues nothing, a master-data PUSH and the journal backfill
@@ -316,9 +319,7 @@ revenue, so it cannot mirror Carbon's posting. Spec:
   currency precision, and reconciles only a permitted rounding residual to the
   largest absolute line; its storage envelope derives from shared `SCALE`.
   Identity conversion also rounds; signed PPV is retained. The item is a **description
-  label only** (`costingLineItemLabel`). Bill lines are **tax-neutral** (the
-  purchase posting folds tax into cost): Rillet no `tax_rate`, QBO no
-  `TxnTaxDetail`, Xero `TaxType: "NONE"`. FX bills pin the provider rate
+  label only** (`costingLineItemLabel`). Bill tax: see "Bill tax" below. FX bills pin the provider rate
   (Rillet named `exchange_rate` object, QBO `CurrencyRef` + reciprocal
   `ExchangeRate = 1/r`, Xero `CurrencyRate = r`, including foreign 1:1 snapshots).
   Rillet's directed pair is document currency → subsidiary base currency at
@@ -336,6 +337,71 @@ revenue, so it cannot mirror Carbon's posting. Spec:
     QBO/Xero substitute it). Account codes resolve through the shared
     `loadAccountCodesById` (Xero) / `loadQboAccountRefsById` (QBO) /
     `loadRilletAccountCodesById` (Rillet).
+  - **Bill tax.** The purchase posting splits each line's tax. The recoverable
+    share posts to Tax Paid. The non-recoverable share stays in cost, and so
+    does the line's share of the UNTAXED header freight
+    (`purchaseInvoiceDelivery.supplierShippingCost`, weighted on gross). A cost
+    leg is therefore net + non-recoverable tax + freight, and its taxable base
+    CANNOT be derived from its amount.
+    `loadBillCostingLines` returns every leg and flags each tax leg by its
+    posting role (`classifyAccountingPostingRole`): `"TaxPaid"` →
+    `taxLeg: true`; `"ReverseChargeTax"` (`REVERSE_CHARGE_TAX_POSTING_DESCRIPTION`,
+    the credit for self-assessed tax) → `reverseChargeLeg: true`. It also
+    returns the bill's `taxLedger` rows (`BillTaxLedgerRow`, base currency).
+    - `resolveCostingLineTax` ties each cost leg to one tax
+      (`{ taxCodeId, taxPercent }`). The journal names no invoice line, so it
+      tries, in order:
+      1. the one tax every line of the bill shares;
+      2. else the invoice lines of the leg's purchase-order line;
+      3. else the direct (no PO) lines on the leg's account;
+      4. else `tax: null`.
+    - **One shared planner, `planBillTaxLines`** (`core/document-costing.ts`),
+      used by Xero and QBO. A provider does no tax maths of its own: Xero maps
+      each planned line to a `TaxType` (`buildXeroBillLineItems`), QBO to a
+      `TaxCodeRef` (`resolveQboPurchaseTaxLines`).
+      1. `billSendsTax` decides. No Tax Paid leg and no zero-rated coded leg:
+         every leg replays at no tax, **byte-identical** to before, and the tax
+         catalog is never read (`replayBillTaxNeutral`).
+      2. Otherwise the Tax Paid legs come out. Their converted total is
+         `toDocumentTaxTotal` (the legs summed, then converted ONCE; leg-by-leg
+         rounding drifts by up to half a unit per leg). `toTransactionCurrencyLines`
+         reconciles the cost legs against the same figure.
+      3. Each code's recoverable tax R is Σ`recoverableAmount` of its ledger
+         rows. The codes are converted with `distributeRoundingResidual`, so they
+         sum exactly to the Tax Paid total. A ledger that disagrees with Tax
+         Paid refuses.
+      4. `allocateRecoverableTax`: for a code at rate r, the recoverable net is
+         N = R / r at document decimals. N fills that code's legs of the same
+         sign, largest first, each up to its own amount. R is spread over the
+         pieces in proportion to their net (`distributeRoundingResidual`). Each
+         piece is a line at the mapped purchase rate with its tax. The rest of
+         the leg is a second line on the same account at no tax (Xero `NONE`, QBO
+         the company's non-taxable code from `qboNonTaxableCode`). The share
+         R / tax is never computed, so it is never rounded.
+      5. Every other leg is one line: a code at 0% (zero-rated or exempt) at its
+         mapped rate with tax 0, so the net reaches the return (UK box 7); tax
+         folded into cost (r ≠ 0, nothing recoverable), no code, or `tax: null`
+         at no tax.
+      Legs of a code that cannot absorb N (none tied to the code, or too small)
+      refuse with the `UNMAPPED_TAX_CODES` Warning. Every refusal is a
+      `JournalEntrySyncError` with `warning: true`, never a plain Error.
+    - **Reverse charge — Phase 1.** A bill with a Reverse Charge Tax leg sends
+      NO tax: every leg, the Tax Paid and Reverse Charge Tax legs included, is an
+      account line at no tax, as before bills carried tax. This keeps GL parity.
+      Provider reverse-charge rates are not mapped yet.
+      <!-- UNVERIFIED: how Xero (reverse-charge TaxTypes) and QBO (reverse-charge codes) take a reverse-charge bill natively; Phase 1 avoids them -->
+    - QBO's vendor credit reuses `allocateRecoverableTax` for a supplier memo's
+      single reason leg.
+    - Xero sets `LineAmountTypes: "Exclusive"` only when a line carries a mapped
+      `TaxType` (`hasXeroMappedTax`). QBO sends `GlobalTaxCalculation: "TaxExcluded"`
+      and `TxnTaxDetail` (`buildQboTxnTaxDetail`) outside the US. A QBO US company
+      has no purchase tax codes, so its bills replay as before and the Tax Paid
+      legs stay account lines.
+    - Every tax resolves before `ensureDependencySynced`, so a refused bill
+      pushes no vendor.
+    - **Rillet is unchanged.** It replays every leg, Tax Paid and reverse-charge
+      legs included, as an account line with no `tax_rate`.
+    <!-- UNVERIFIED: the taxed Xero and QBO bill payloads (two-line split, zero-rated leg, TxnTaxDetail) are pinned by unit tests only; no provider sandbox accepted them yet (plan Task 39) -->
 - **AR invoices are ACCOUNT-referenced, not item-referenced** (changed 2026-09-28).
   Every line carries a SYNTHETIC item standing for the posted revenue ACCOUNT —
   a Rillet product / QBO Service item provisioned per account, or nothing at all
@@ -382,7 +448,13 @@ revenue, so it cannot mirror Carbon's posting. Spec:
   Rillet provision reusable service/product helpers under `shippingItem`, keyed
   by the original shipping account (Rillet also includes base currency).
   Tax appears once through native provider fields; COGS stays on the pushed
-  `Sales Shipment` journal.
+  `Sales Shipment` journal. Each component carries `taxCodeId` and
+  `taxPercent`. Header shipping is split by tax: one `HeaderShipping`
+  component per (code, rate), from each line's allocated share at that line's
+  rate when the line's code taxes shipping (`taxesShipping`), the rest untaxed.
+  The first keeps the id `<invoiceId>:HeaderShipping`; the others add `:<index>`.
+  A `NonTaxableAddOn` has `taxCodeId: null`, which overrides the line's code:
+  inheriting the code at zero tax made the provider rate check refuse it.
   - Xero sends one monetary unit per component, keeping original quantity and
     unit price in Description. This preserves net and native tax for bulk
     quantities and fine unit prices. Actual invoice/bill POSTs use `unitdp=4`;
@@ -393,12 +465,23 @@ revenue, so it cannot mirror Carbon's posting. Spec:
     CurrencyRate is omitted only for identical currencies; foreign 1:1 stays
     explicit. Preflight and mocked transports do not prove returned-provider
     totals; connected acceptance must compare those independently.
-  - QBO US line `TAX`/`NON` values are documented protocol markers, so an
+  - QBO (`resolveQboInvoiceTax`, `invoice-tax.ts`): a component with a Carbon
+    tax code uses its mapped QuickBooks code (`resolveQboLineTax`). A legacy
+    component (no code) matches its percentage to one active single-rate code.
+    US line `TAX`/`NON` values are documented protocol markers, so an
     untaxed US invoice does not require catalog marker rows. Nonzero US
     transaction tax rates and all non-US line codes still resolve from the
     real active catalog; missing/ambiguous configuration raises
-    `UNMAPPED_TAX_CODES` before dependencies. Failed catalog reads evict the
+    `UNMAPPED_TAX_CODES` before dependencies. Tax goes in `TxnTaxDetail`, one
+    `TaxLine` per rate. A mapped 0% code keeps its tax line outside the US, so
+    its net reaches the return. Outside the US the invoice sends
+    `GlobalTaxCalculation: "TaxExcluded"`; a US invoice sends a `TxnTaxCodeRef`
+    and allows one transaction code. Failed catalog reads evict the
     cached promise so another invoice can retry. [Intuit SDK tax contract](https://intuit.github.io/QuickBooks-V3-PHP-SDK/quickstart.html#constructing-entities-with-tax).
+  - Xero: each line's `TaxType` comes from `resolveXeroTaxType`
+    (`providers/xero/tax.ts`). An untaxed legacy line (no code, 0%, no tax) is
+    `NONE` and never reads `GET /TaxRates`. Any other line goes through
+    `resolveProviderTaxRate`. Sales orders and purchase orders resolve the same way.
   - Rillet REVENUE_RECOGNITION_ONLY accepts the same directed fixed rate as bills.
     Each item has a DAILY revenue period beginning and ending on Carbon's
     posting date, also used as the remote invoice/FX date. The interim
@@ -467,8 +550,13 @@ revenue, so it cannot mirror Carbon's posting. Spec:
   create and OMITS the flag on update (Xero rejects untracking an item with
   stock/txns; a still-tracked remote logs a recorded warning to untrack
   manually). QBO items are Service/NonInventory (never Inventory).
-- **PO / SO / Quote are unchanged** — item-referenced, no GL constraint (QBO PO
-  keeps `buildQboExpenseLines` / `ItemBasedExpenseLineDetail`).
+- **PO / SO / Quote stay item-referenced** — no GL constraint (QBO PO
+  keeps `buildQboExpenseLines` / `ItemBasedExpenseLineDetail`). Their lines
+  carry mapped tax (see "Tax-code mapping"). A QBO PO outside the US puts a
+  `TaxCodeRef` on each line and sends `TxnTaxDetail` with
+  `GlobalTaxCalculation: "TaxExcluded"`. A partly recoverable PO line is NOT
+  split as a bill leg is: a PO posts nothing, and an item line's amount must
+  stay quantity × unit price. A QBO US company's PO sends no tax fields.
 
 ## Card charges as provider objects (`charge` entity)
 
@@ -690,6 +778,56 @@ the Rillet sandbox.
 slot config is now inert (the mapper no longer reads it) — the tab's slot editor
 is dead config for Rillet only, left in place for the capped providers.
 
+## Tax-code mapping (Xero and QBO only)
+
+A Carbon tax code maps to one provider tax rate per direction: a Xero
+`TaxType`, a QBO `TaxCode` id. Spec: `.ai/specs/2026-10-16-multi-jurisdiction-tax.md`
+(grills 6, 8, 9, 10). Rillet maps no tax codes (grill 6).
+
+- **Storage** (`core/tax-mapping.ts`): `externalIntegrationMapping` rows with
+  `entityType` `"taxCode"` and `entityId` `<taxCodeId>:<direction>`
+  (`buildTaxCodeMappingEntityId`; direction `sales` | `purchase`). One code needs
+  both: Xero refuses a revenue rate on an expense account. Many codes may share
+  one provider rate (`allowDuplicateExternalId: true`). `metadata` holds
+  `externalName` and `externalRate` (0..1).
+- **Catalogs**: Xero `listTaxRates` (`GET /TaxRates`, ACTIVE only, `[]` on
+  failure) → `toXeroTaxRateOptions` (a rate is a sales option unless
+  `CanApplyToRevenue` is false, a purchase option unless `CanApplyToExpenses` is
+  false). QBO `listTaxRateOptions` → `qboTaxOptions`: active codes with exactly
+  one rate in the direction's list; tax groups are not offered.
+- **Used-but-unmapped** (`getUnmappedTaxCodes`): an active code is used for
+  sales when `customerTax`, `customerLocation`, `quoteLine`, `salesOrderLine`,
+  `salesInvoiceLine`, `rentalAgreement`, `rentalAgreementCharge`,
+  `customerContractLine` or a customer `memo` names it. It is used for purchases
+  when `supplierTax`, `supplierQuoteLinePrice`, `purchaseOrderLine`,
+  `purchaseInvoiceLine` or a supplier `memo` names it. Items and locations do
+  not count.
+- **Resolution** (`core/provider-tax.ts` `resolveProviderTaxRate`, shared by
+  Xero `resolveXeroTaxType` and QBO `resolveQboLineTax`):
+  1. A line with a code uses the code's mapping for the direction. No mapping
+     raises the retryable `UNMAPPED_TAX_CODES` Warning naming the code.
+  2. A legacy line (bare `taxPercent`, no code) matches its percentage to
+     exactly one provider rate of the direction. A 0% legacy line takes the
+     provider's `NONE` rate when it has one. Zero or several matches raise the Warning.
+  3. The line's tax must be within one minor unit of `round(net × provider rate,
+     decimalPlaces)`. Else the Warning: a code mapped to a rate with a different
+     percentage is caught before the push, not on the VAT return.
+  Every syncer resolves tax BEFORE `ensureDependencySynced`, so an
+  `UNMAPPED_TAX_CODES` Warning provisions nothing in the provider. The context
+  (mappings + catalog) loads once per syncer and is dropped on a failed read.
+- **ERP surface**: the integration drawer's **Tax Rates** tab
+  (`x+/settings+/integrations.$id.tsx` `getTaxRateTabData`,
+  `modules/settings/ui/Integrations/TaxRateMapping.tsx`), rendered only for
+  `TAX_RATE_MAPPING_PROVIDERS` (Xero, QBO). It lists "Unmapped tax codes" then
+  "Tax codes", each with a Sales and a Purchase provider rate. Intent
+  `upsert-tax-code-mapping` saves one code (`upsertTaxCodeMappings`, all or
+  none, ids checked against `companyId`). **Match by rate**
+  (`matchTaxCodesByRate`) proposes a rate only when exactly one provider rate of
+  the direction has the code's percentage today.
+- **Sync gate**: `update-sync-enabled` refuses ON while `getUnmappedTaxCodes` is
+  non-empty (see "The sync switch" above).
+<!-- UNVERIFIED: no Xero or QBO sandbox has accepted a document with a mapped tax rate yet (plan Task 39) -->
+
 ## Gotchas
 
 - All DB writes during sync are wrapped in `withTriggersDisabled(database, tx => ...)` to break the loop (sync writes DB → event trigger → sync again). Since migration `20260811224732`, that suppression is **scoped**: `dispatch_event_batch()` drops only SYNC/WEBHOOK/WORKFLOW subscriptions while `app.sync_in_progress` is set (the loop/echo-prone types); SEARCH/AUDIT/EMBEDDING observers now see sync-written rows (v4 F13). **Exception:** payment sync-back invokes `post-payment` *outside* that tx (triggers enabled), like a user posting a payment — intended.
@@ -750,6 +888,24 @@ Direction is NOT derived from the party. `memoDirection` carries both `Credit` a
 party while offering direction as a separate filter — so all four combinations are legal and
 authorable. `MemoForm` briefly derived direction from the party and force-submitted it,
 which overwrote a stored direction on save; `invoicing.models.test.ts` pins the contract.
+
+**Memo tax.** A memo stores its GROSS `amount`, plus `taxCodeId` and
+`taxAmount`; the net is `amount − taxAmount`. A memo with neither goes out as
+before, with no tax.
+- A customer memo with tax goes out as one line for the net at the code's
+  mapped sales rate with its tax (a legacy memo matches its percentage). Its
+  posting moved all the tax through Tax Received.
+- A coded supplier memo with tax mirrors its posting (`planMemoTax`), which
+  moved only the recoverable share through Tax Paid. The share comes from the
+  memo's `taxLedger` rows (`documentType 'Memo'`, `source 'Purchase'`). It
+  splits like a bill leg: the recoverable net at the mapped purchase rate with
+  the recoverable tax, the rest at no tax (Xero `NONE`, QBO the non-taxable
+  code). A coded, taxed memo with no ledger rows refuses with
+  `UNMAPPED_TAX_CODES` ("Repost the memo, then retry").
+- A codeless taxed supplier memo kept all its tax in cost, so it goes out
+  gross at no tax and is never percent-matched.
+- QBO: a customer `CreditMemo` sends the line at net with `TxnTaxDetail`. A
+  `VendorCredit` sends tax only outside the US.
 
 Three things that are easy to get wrong, all of them shipped wrong once:
 

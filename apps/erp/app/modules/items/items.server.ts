@@ -259,6 +259,33 @@ export const setItemActive = defineServiceFn({
 });
 
 /**
+ * Mark items taxable or not taxable.
+ *
+ * @remarks
+ * A taxable item's sales and purchase lines take the tax code's rate; a line
+ * for a non-taxable item charges no tax.
+ *
+ * @mcp
+ */
+export const setItemTaxable = defineServiceFn({
+  input: z.object({ ids: itemIdsInput, taxable: z.boolean() }),
+  permission: { update: "parts" },
+
+  async run(ctx, { ids, taxable }) {
+    const update = await service.updateItemTaxable(ctx.asCaller.supabase, {
+      ids,
+      taxable,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (update.error) {
+      return ctx.error("internal", update.error.message, update.error);
+    }
+    return { ids };
+  }
+});
+
+/**
  * Set items' item group (posting group).
  *
  * @remarks

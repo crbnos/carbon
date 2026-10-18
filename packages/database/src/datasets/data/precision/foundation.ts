@@ -264,28 +264,32 @@ export const CUSTOMERS = [
     type: "Hydraulics",
     status: "Active",
     phone: "+1-319-555-0100",
-    website: "https://cedarvalleyhydraulics.com"
+    website: "https://cedarvalleyhydraulics.com",
+    taxCode: "IL – Rockford"
   },
   {
     name: "Granite State Instruments",
     type: "Instrumentation",
     status: "Active",
     phone: "+1-603-555-0200",
-    website: "https://granitestateinstruments.com"
+    website: "https://granitestateinstruments.com",
+    taxCode: "IL – Rockford"
   },
   {
     name: "Dominion Ag Equipment",
     type: "Agriculture",
     status: "Active",
     phone: "+1-804-555-0300",
-    website: "https://dominionag.com"
+    website: "https://dominionag.com",
+    taxCode: "IL – Rockford"
   },
   {
     name: "Solstice Medical Devices",
     type: "Medical",
     status: "Lead",
     phone: "+1-612-555-0400",
-    website: "https://solsticemedical.com"
+    website: "https://solsticemedical.com",
+    taxCode: "IL – Rockford"
   }
 ];
 
@@ -838,6 +842,56 @@ export const precisionFoundation: FoundationData = {
   workCenterProcessLinks: WORK_CENTER_PROCESS_LINKS,
   customerTypes: CUSTOMER_TYPES,
   supplierTypes: SUPPLIER_TYPES,
+  taxAuthorities: [
+    { name: "Illinois Department of Revenue" },
+    { name: "City of Rockford" }
+  ],
+  taxCodes: [
+    {
+      name: "IL – Rockford",
+      countryCode: "US",
+      state: "IL",
+      components: [
+        {
+          name: "Illinois State",
+          authority: "Illinois Department of Revenue",
+          taxPercent: 6.25
+        },
+        {
+          name: "Rockford Local",
+          authority: "City of Rockford",
+          taxPercent: 2.5
+        }
+      ]
+    },
+    {
+      name: "Out of State – Exempt",
+      reportingCategory: "Exempt",
+      invoiceMessage: "Exempt from Illinois sales tax",
+      countryCode: "US",
+      components: [
+        {
+          name: "Exempt",
+          authority: "Illinois Department of Revenue",
+          taxPercent: 0
+        }
+      ]
+    },
+    {
+      name: "Use Tax 6.25%",
+      calculationType: "Reverse Charge",
+      reportingCategory: "Reverse Charge",
+      countryCode: "US",
+      state: "IL",
+      components: [
+        {
+          name: "Illinois Use Tax",
+          authority: "Illinois Department of Revenue",
+          taxPercent: 6.25
+        }
+      ]
+    }
+  ],
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,

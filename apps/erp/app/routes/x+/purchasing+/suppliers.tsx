@@ -5,11 +5,20 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { RecordOutlet, VStack } from "@carbon/react";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  RecordOutlet,
+  VStack
+} from "@carbon/react";
 import { indexBy, indexByMapped, pluckUnique, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Plural, Trans } from "@lingui/react/macro";
+import { LuInfo } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { getTaxCodesList } from "~/modules/accounting/accounting.service";
 import {
   getSupplierReportContacts,
   getSuppliers
@@ -42,7 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [suppliers, tags] = await Promise.all([
+  const [suppliers, tags, taxCodes] = await Promise.all([
     getSuppliers(client, companyId, {
       search,
       type,
@@ -52,8 +61,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getTagsList(client, companyId, "supplier")
+    getTagsList(client, companyId, "supplier"),
+    getTaxCodesList(client, companyId)
   ]);
+
+  // Once the company has a tax code, count the suppliers still taxed by the
+  // legacy bare percent: a percent above zero and no tax code.
+  const suppliersWithoutTaxCode = taxCodes.data?.length
+    ? ((
+        await client
+          .from("supplier")
+          .select("id, supplierTax!inner(taxCodeId)", {
+            count: "exact",
+            head: true
+          })
+          .eq("companyId", companyId)
+          .gt("taxPercent", 0)
+          .is("supplierTax.taxCodeId", null)
+      ).count ?? 0)
+    : 0;
 
   if (suppliers.error) {
     redirect(
@@ -91,16 +117,39 @@ export async function loader({ request }: LoaderFunctionArgs) {
     count: suppliers.count ?? 0,
     suppliers: suppliers.data ?? [],
     tags: tags.data ?? [],
-    supplierReportContacts
+    supplierReportContacts,
+    suppliersWithoutTaxCode
   };
 }
 
 export default function PurchasingSuppliersRoute() {
-  const { count, suppliers, tags, supplierReportContacts } =
-    useLoaderData<typeof loader>();
+  const {
+    count,
+    suppliers,
+    tags,
+    supplierReportContacts,
+    suppliersWithoutTaxCode
+  } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
+      {suppliersWithoutTaxCode > 0 && (
+        <div className="w-full p-4 pb-0">
+          <Alert variant="info">
+            <LuInfo className="h-4 w-4" />
+            <AlertTitle>
+              <Trans>Move to tax codes</Trans>
+            </AlertTitle>
+            <AlertDescription>
+              <Plural
+                value={suppliersWithoutTaxCode}
+                one="# supplier has a tax percent and no tax code. Select it and choose Assign Tax Code."
+                other="# suppliers have a tax percent and no tax code. Select them and choose Assign Tax Code."
+              />
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
       <SuppliersTable
         data={suppliers}
         count={count}

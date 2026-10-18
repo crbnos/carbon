@@ -23,6 +23,7 @@ import {
   getPurchaseOrder,
   getPurchaseOrderLine,
   getSupplierInteractionLineDocuments,
+  nonTaxableItemTax,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
@@ -120,7 +121,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -136,9 +137,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
+  // A non-taxable item carries no tax, whatever was posted.
+  const tax = await nonTaxableItemTax(client, companyId, d.itemId);
+
   const updatePurchaseOrderLine = await upsertPurchaseOrderLine(client, {
     id: lineId,
     ...d,
+    ...tax,
     updatedBy: userId,
     customFields: setCustomFields(formData)
   });
@@ -195,6 +200,7 @@ export default function EditPurchaseOrderLineRoute() {
     supplierTaxAmount: line?.supplierTaxAmount ?? 0,
     supplierUnitPrice: line?.supplierUnitPrice ?? 0,
     costCenterId: line?.costCenterId ?? "",
+    taxCodeId: line?.taxCodeId ?? undefined,
     taxPercent: line?.taxPercent ?? 0,
     assetReadableId: (line as any)?.assetReadableId ?? "",
     assetName: (line as any)?.assetName ?? "",

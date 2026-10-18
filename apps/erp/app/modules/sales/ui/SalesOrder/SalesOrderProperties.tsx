@@ -47,6 +47,7 @@ import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/sales-order+/$orderId.exchange-rate";
+import type { action as recalculateTaxesAction } from "~/routes/x+/sales-order+/$orderId.recalculate-taxes";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import { isSalesOrderLocked } from "../../sales.models";
@@ -70,6 +71,7 @@ const SalesOrderProperties = () => {
   });
   const { company } = useUser();
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
+  const recalculateTaxesFetcher = useFetcher<typeof recalculateTaxesAction>();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
@@ -237,27 +239,45 @@ const SalesOrderProperties = () => {
         />
       </ValidatedForm>
 
-      <ValidatedForm
-        defaultValues={{
-          customerLocationId: routeData?.salesOrder?.customerLocationId ?? ""
-        }}
-        validator={z.object({
-          customerLocationId: zfd.text(z.string().optional())
-        })}
-        className="w-full"
-      >
-        <CustomerLocation
-          name="customerLocationId"
-          customer={routeData?.salesOrder?.customerId ?? ""}
-          inline
-          isReadOnly={isDisabled}
-          onChange={(customerLocation) => {
-            if (customerLocation?.id) {
-              onUpdate("customerLocationId", customerLocation.id);
-            }
+      <HStack className="w-full items-end" spacing={1}>
+        <ValidatedForm
+          defaultValues={{
+            customerLocationId: routeData?.salesOrder?.customerLocationId ?? ""
+          }}
+          validator={z.object({
+            customerLocationId: zfd.text(z.string().optional())
+          })}
+          className="w-full"
+        >
+          <CustomerLocation
+            name="customerLocationId"
+            customer={routeData?.salesOrder?.customerId ?? ""}
+            inline
+            isReadOnly={isDisabled}
+            onChange={(customerLocation) => {
+              if (customerLocation?.id) {
+                onUpdate("customerLocationId", customerLocation.id);
+              }
+            }}
+          />
+        </ValidatedForm>
+        {/* A new ship-to can mean a new tax code: re-resolve every line. */}
+        <IconButton
+          size="sm"
+          variant="secondary"
+          aria-label={t`Recalculate taxes`}
+          title={t`Recalculate taxes`}
+          icon={<LuRefreshCcw />}
+          isDisabled={isDisabled}
+          isLoading={recalculateTaxesFetcher.state !== "idle"}
+          onClick={() => {
+            recalculateTaxesFetcher.submit(null, {
+              method: "post",
+              action: path.to.salesOrderRecalculateTaxes(orderId)
+            });
           }}
         />
-      </ValidatedForm>
+      </HStack>
 
       <ValidatedForm
         defaultValues={{
