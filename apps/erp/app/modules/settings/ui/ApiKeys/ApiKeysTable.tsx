@@ -24,7 +24,7 @@ import {
   LuTrash,
   LuUser
 } from "react-icons/lu";
-import { Outlet, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { ApiKey } from "~/modules/settings/types";
@@ -212,31 +212,28 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
   );
 
   return (
-    <>
-      <Table<ApiKey>
-        data={data}
-        columns={columns}
-        count={count ?? 0}
-        primaryAction={
-          <HStack>
-            {permissions.can("update", "users") && (
-              <New
-                label={t`API Key`}
-                to={`${path.to.newApiKey}?${params.toString()}`}
-              />
-            )}
-            <Button leftIcon={<LuCode />} variant="secondary" asChild>
-              <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
-                <Trans>API Docs</Trans>
-              </a>
-            </Button>
-          </HStack>
-        }
-        renderContextMenu={renderContextMenu}
-        title={t`API Keys`}
-      />
-      <Outlet />
-    </>
+    <Table<ApiKey>
+      data={data}
+      columns={columns}
+      count={count ?? 0}
+      primaryAction={
+        <HStack>
+          {permissions.can("update", "users") && (
+            <New
+              label={t`API Key`}
+              to={`${path.to.newApiKey}?${params.toString()}`}
+            />
+          )}
+          <Button leftIcon={<LuCode />} variant="secondary" asChild>
+            <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
+              <Trans>API Docs</Trans>
+            </a>
+          </Button>
+        </HStack>
+      }
+      renderContextMenu={renderContextMenu}
+      title={t`API Keys`}
+    />
   );
 });
 
