@@ -7,8 +7,9 @@
 --
 -- The level is the lowest one that holds every granted checkbox: view and update
 -- without create becomes Edit. "convertedFrom" keeps the checkboxes, so the change is
--- reportable. A "0" in a company list (all companies) counts as granted, as the app
--- reads it. The Admin type resolves to Full and gets no rows. Old columns stay until
+-- reportable. A flag counts only where its company list names the company: RLS never
+-- honored the retired "0" (all companies), so neither does the conversion. The Admin
+-- type resolves to Full and gets no rows. Old columns stay until
 -- the cleanup. Re-running is safe: a subject's existing module grant is left alone,
 -- and supabase/tests/access-migration.test.sql runs this file again over fixtures.
 
@@ -43,7 +44,7 @@ LANGUAGE sql STABLE AS $$
   FROM jsonb_each(CASE WHEN jsonb_typeof(keys) = 'object' THEN keys ELSE '{}'::jsonb END) kv
   CROSS JOIN LATERAL regexp_match(kv.key, '^(.*)_(view|create|update|delete)$') AS parts
   JOIN unnest(enum_range(NULL::"module")) AS m(module) ON lower(m.module::text) = parts[1]
-  WHERE jsonb_typeof(kv.value) = 'array' AND (kv.value ? company OR kv.value ? '0')
+  WHERE jsonb_typeof(kv.value) = 'array' AND kv.value ? company
   GROUP BY m.module
 $$;
 
@@ -58,10 +59,10 @@ JOIN "employeeType" et ON et.id = etp."employeeTypeId"
 JOIN company co ON co.id = et."companyId"
 JOIN "companyGroup" cg ON cg.id = co."companyGroupId"
 CROSS JOIN LATERAL (SELECT
-  COALESCE(cardinality(etp."view"), 0) > 0 AS v,
-  COALESCE(cardinality(etp."create"), 0) > 0 AS c,
-  COALESCE(cardinality(etp."update"), 0) > 0 AS u,
-  COALESCE(cardinality(etp."delete"), 0) > 0 AS d
+  et."companyId" = ANY(etp."view") AS v,
+  et."companyId" = ANY(etp."create") AS c,
+  et."companyId" = ANY(etp."update") AS u,
+  et."companyId" = ANY(etp."delete") AS d
 ) f
 WHERE et."systemType" IS DISTINCT FROM 'Admin'
   AND pg_temp.round_up(f.v, f.c, f.u, f.d) <> 'None'
@@ -83,10 +84,10 @@ person AS (
 ),
 role_keys AS (
   SELECT emp."userId", emp."companyId", etp."module",
-    COALESCE(cardinality(etp."view"), 0) > 0 AS v,
-    COALESCE(cardinality(etp."create"), 0) > 0 AS c,
-    COALESCE(cardinality(etp."update"), 0) > 0 AS u,
-    COALESCE(cardinality(etp."delete"), 0) > 0 AS d
+    emp."companyId" = ANY(etp."view") AS v,
+    emp."companyId" = ANY(etp."create") AS c,
+    emp."companyId" = ANY(etp."update") AS u,
+    emp."companyId" = ANY(etp."delete") AS d
   FROM emp
   JOIN "employeeTypePermission" etp ON etp."employeeTypeId" = emp."employeeTypeId"
 ),

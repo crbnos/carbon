@@ -37,6 +37,7 @@ BEGIN
     (role_type, 'Purchasing', '{}', '{}', '{}', everything),              -- delete only → Full
     (role_type, 'Inventory', everything, everything, everything, everything), -- all four → Full
     (role_type, 'Accounting', '{}', '{}', '{}', '{}'),                    -- none → no row
+    (role_type, 'Quality', ARRAY['0'], '{}', '{}', '{}'),                 -- the retired "0" → no row
     (admin_type, 'Sales', everything, '{}', '{}', '{}');                  -- Admin type → no row
 
   INSERT INTO "user" (id, email) VALUES
@@ -55,7 +56,7 @@ BEGIN
     (differs, jsonb_build_object(
       'sales_view', everything,                      -- below the role's Edit → View
       'purchasing_delete', everything,
-      'quality_create', jsonb_build_array('0'),      -- "0": all companies → Create
+      'quality_create', jsonb_build_array('0'),      -- the retired "0": not granted
       'accounting_view', jsonb_build_array('other'))), -- another company: not granted
                                                        -- and no Inventory keys → None
     (boss, jsonb_build_object('sales_view', everything))
@@ -92,7 +93,6 @@ BEGIN
     ('role', 'Purchasing', 'Full', '{delete}'),
     ('role', 'Inventory', 'Full', '{view,create,update,delete}'),
     ('differs', 'Sales', 'View', '{view}'),
-    ('differs', 'Quality', 'Create', '{create}'),
     ('differs', 'Inventory', 'None', '{}'),
     ('key', 'Parts', 'Edit', '{view,update}');
 
@@ -118,7 +118,7 @@ BEGIN
   IF got IS NOT NULL THEN RAISE EXCEPTION 'unexpected grants: %', got; END IF;
 
   SELECT count(*) INTO n FROM permission WHERE "companyId" = company_a;
-  IF n <> 7 THEN RAISE EXCEPTION 'a second run must add nothing: % rows', n; END IF;
+  IF n <> 6 THEN RAISE EXCEPTION 'a second run must add nothing: % rows', n; END IF;
 
   -- The converted grants resolve as the old keys did.
   IF util.access_level(current_setting('test.same'), NULL, company_a, 'sales') <> 'Edit'
@@ -131,7 +131,7 @@ BEGIN
     RAISE EXCEPTION 'a converted grant does not resolve to its old level';
   END IF;
 
-  RAISE NOTICE 'access migration: 7 grants, a no-op second run, and the levels resolve';
+  RAISE NOTICE 'access migration: 6 grants, a no-op second run, and the levels resolve';
 END;
 $proof$;
 

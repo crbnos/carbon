@@ -303,7 +303,7 @@ pnpm --filter @carbon/database test -- migration
 2. Write a temporary SQL function `pg_temp.round_up(v bool, c bool, u bool, d bool) RETURNS "permissionLevel"`.
 3. It returns the lowest level whose actions include every true flag, or `'None'`.
 4. For each `employeeTypePermission` row of a non-Admin type, insert one module grant on the role.
-5. Use `cardinality(view) > 0` and the same for the other three columns as the flags.
+5. A flag is set when its column names the role's company: `"companyId" = ANY(view)`. RLS never honored the retired `"0"`, so the conversion does not either.
 6. For each employee (`userToCompany` role `employee`), compute the module flags from `userPermission`.
 7. Compare them to the role's flags. For each module that differs, insert a person module grant.
 8. For each `apiKey`, read `scopes` per module and insert a key module grant.
