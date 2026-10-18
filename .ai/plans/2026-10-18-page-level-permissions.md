@@ -19,14 +19,14 @@ Phases 1 and 2 — grants, resolver, editors (one release)
 - [x] Task 7: Convert today's permissions to grants
 - [x] Task 8: Read claims and key scopes from grants in TS
 - [x] Task 9: Write grants from every authoring path
-- [ ] Task 10: Build `AccessGrid` and the role editor
-- [ ] Task 11: Build the person Access tab and bulk overrides
-- [ ] Task 12: Build the API key grid
+- [x] Task 10: Build `AccessGrid` and the role editor
+- [x] Task 11: Build the person Access tab and bulk overrides
+- [x] Task 12: Build the API key grid
 - [x] Task 13: Build the access view
-- [ ] Task 14: Update dev bootstrap, company seed and demo datasets
+- [x] Task 14: Update dev bootstrap, company seed and demo datasets
 - [x] Task 14a: Replace the ERP auth entry points with `authorize`
 - [x] Task 15: Rewrite the permissions docs and glossary
-- [ ] Task 16: Verify phases 1 and 2 in the browser
+- [x] Task 16: Verify phases 1 and 2 in the browser
 
 Phase 3 — every module to page keys (one deploy)
 - [ ] Task 17: Define the pages of all 14 modules in the registry
