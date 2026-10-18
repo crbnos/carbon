@@ -477,14 +477,15 @@ Browser: give one person an Inventory override of None. Expected: that person lo
 1. Replace the scope checkbox table with `AccessGrid`.
 2. Make "Select all" set Edit on Accounting pages and Full elsewhere.
 3. Allow Full on an Accounting page only by choosing it on that row.
-4. Send the grants to `createApiKey` and `updateApiKey`.
+4. Send the grants to `createApiKey` and `updateApiKey`. The key list embeds each key's grants (`permission(module, page, level)`), which the edit form and the table's count read; `apiKey.scopes` is no longer written.
+5. Delete `PermissionMatrix` and `usePermissionMatrix`: nothing else uses them.
 
 **Verify:**
 ```bash
 pnpm exec turbo run typecheck --filter=erp --concurrency=1
 # Expected: no "error TS" lines outside docs/content
 ```
-Browser: create a key with Receipts View. Call `POST /api/v1/inventory/getReceipts` with it. Expected: 200. Call a receipt create. Expected: 403.
+Browser: create a key with Inventory View. Call `POST /api/v1/inventory/getReceipts` with it. Expected: 200. Call a receipt create. Expected: 403. A page grant (Receipts) needs Task 17.
 
 **Out of scope:** API keys that take a role (a planned extension).
 

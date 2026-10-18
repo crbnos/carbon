@@ -494,6 +494,9 @@ msgstr "{count, plural, one {배치 # 릴리스됨} other {배치 # 릴리스됨
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {작업 지시 # 릴리스됨} other {작업 지시 # 릴리스됨}}"
 
+msgid "{count} grants"
+msgstr ""
+
 msgid "{count} of {total} units"
 msgstr "{count}/{total} 개"
 
@@ -659,9 +662,6 @@ msgstr "{resourceCount}개 자원 · {reservationCount}개 예약 · {jobCount}�
 
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel}이(가) 다음 리비전으로 계획을 위해 다시 열기됩니다. 이미 공급업체로 보낸 문서는 주문서를 최종화하고 다시 보낼 때까지 변경되지 않습니다."
-
-msgid "{scopeCount} permissions"
-msgstr "권한 {scopeCount}개"
 
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} 라인"
@@ -16685,9 +16685,6 @@ msgstr "영구 삭제"
 msgid "Permission groups for granting access in bulk"
 msgstr "일괄 접근 권한 부여를 위한 권한 그룹"
 
-msgid "Permissions"
-msgstr "권한"
-
 msgid "Person"
 msgstr "담당자"
 
@@ -20070,9 +20067,6 @@ msgstr "범위 서명됨"
 
 msgid "Scope Summary"
 msgstr "범위 요약"
-
-msgid "Scopes"
-msgstr "범위"
 
 msgid "Scrap"
 msgstr "스크랩"

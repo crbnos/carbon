@@ -24,12 +24,13 @@ const mockApiKeys: ApiKey[] = [
     name: "Production",
     keyHash: "",
     keyPreview: "a1b2",
-    scopes: {
-      sales: ["read", "write"],
-      purchasing: ["read"],
-      inventory: ["read", "write"],
-      production: ["read"]
-    } as any,
+    permission: [
+      { module: "Sales", page: null, level: "Edit" },
+      { module: "Purchasing", page: null, level: "View" },
+      { module: "Inventory", page: null, level: "Edit" },
+      { module: "Production", page: null, level: "View" }
+    ],
+    scopes: {},
     rateLimit: 60,
     rateLimitWindow: "1m",
     expiresAt: null,
@@ -44,10 +45,11 @@ const mockApiKeys: ApiKey[] = [
     name: "Staging",
     keyHash: "",
     keyPreview: "9c4e",
-    scopes: {
-      sales: ["read"],
-      inventory: ["read"]
-    } as any,
+    permission: [
+      { module: "Sales", page: null, level: "View" },
+      { module: "Inventory", page: null, level: "View" }
+    ],
+    scopes: {},
     rateLimit: 60,
     rateLimitWindow: "1m",
     expiresAt: "2026-12-31T23:59:59Z",
@@ -62,9 +64,8 @@ const mockApiKeys: ApiKey[] = [
     name: "CI Pipeline",
     keyHash: "",
     keyPreview: "f0a1",
-    scopes: {
-      production: ["read"]
-    } as any,
+    permission: [{ module: "Production", page: null, level: "View" }],
+    scopes: {},
     rateLimit: 30,
     rateLimitWindow: "1m",
     expiresAt: null,
@@ -79,10 +80,11 @@ const mockApiKeys: ApiKey[] = [
     name: "Reporting",
     keyHash: "",
     keyPreview: "7d2b",
-    scopes: {
-      sales: ["read"],
-      purchasing: ["read"]
-    } as any,
+    permission: [
+      { module: "Sales", page: null, level: "View" },
+      { module: "Purchasing", page: null, level: "View" }
+    ],
+    scopes: {},
     rateLimit: 10,
     rateLimitWindow: "1m",
     expiresAt: "2026-06-15T00:00:00Z",

@@ -494,6 +494,9 @@ msgstr "{count, plural, one {Liberato # lotto di produzione} other {Liberati # l
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {Rilasciato # ordine di produzione} other {Rilasciati # ordini di produzione}}"
 
+msgid "{count} grants"
+msgstr ""
+
 msgid "{count} of {total} units"
 msgstr "{count} di {total} unità"
 
@@ -659,9 +662,6 @@ msgstr "{resourceCount} risorse · {reservationCount} prenotazioni · {jobCount}
 
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} sarà riaperto per la pianificazione come prossima revisione. Il documento già inviato al fornitore rimane invariato fino a quando non finalizzi e reinvii l'ordine."
-
-msgid "{scopeCount} permissions"
-msgstr "{scopeCount} autorizzazioni"
 
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} righe"
@@ -16685,9 +16685,6 @@ msgstr "Elimina definitivamente"
 msgid "Permission groups for granting access in bulk"
 msgstr "Gruppi di autorizzazione per concedere accesso in blocco"
 
-msgid "Permissions"
-msgstr "Autorizzazioni"
-
 msgid "Person"
 msgstr "Persona"
 
@@ -20070,9 +20067,6 @@ msgstr "Ambito firmato"
 
 msgid "Scope Summary"
 msgstr "Riepilogo dell'ambito"
-
-msgid "Scopes"
-msgstr "Ambiti"
 
 msgid "Scrap"
 msgstr "Scarto"

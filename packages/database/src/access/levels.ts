@@ -34,24 +34,3 @@ export function roundUp(flags: Partial<Record<Action, boolean>>): Level {
 export function lowerLevel(a: Level, b: Level): Level {
   return LEVELS.indexOf(a) <= LEVELS.indexOf(b) ? a : b;
 }
-
-/**
- * Flat `<module>_<action>` keys (an API key's old scopes) as one level per
- * module, for the keys that name the company.
- */
-export function levelsFromKeys(
-  keys: Record<string, unknown>,
-  companyId: string
-): Record<string, Level> {
-  const flags: Record<string, Partial<Record<Action, boolean>>> = {};
-  for (const [key, companies] of Object.entries(keys)) {
-    const match = key.match(/^(.+)_(view|create|update|delete)$/);
-    if (!match || !Array.isArray(companies) || !companies.includes(companyId))
-      continue;
-    const [, module, action] = match as [string, string, Action];
-    flags[module] = { ...flags[module], [action]: true };
-  }
-  return Object.fromEntries(
-    Object.entries(flags).map(([module, f]) => [module, roundUp(f)])
-  );
-}

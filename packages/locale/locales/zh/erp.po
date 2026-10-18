@@ -494,6 +494,9 @@ msgstr "{count, plural, one {已发布 # 生产批次} other {已发布 # 生产
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {已下达 # 工单} other {已下达 # 工单}}"
 
+msgid "{count} grants"
+msgstr ""
+
 msgid "{count} of {total} units"
 msgstr "{count} / {total} 件"
 
@@ -659,9 +662,6 @@ msgstr "{resourceCount} 个资源 · {reservationCount} 个预留 · {jobCount} 
 
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} 将作为其下一个修订版重新打开以进行计划。已发送给供应商的文件在您最终确定并重新发送订单之前保持不变。"
-
-msgid "{scopeCount} permissions"
-msgstr "{scopeCount} 个权限"
 
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} 行"
@@ -16685,9 +16685,6 @@ msgstr "永久删除"
 msgid "Permission groups for granting access in bulk"
 msgstr "用于批量授予访问权限的权限组"
 
-msgid "Permissions"
-msgstr "权限"
-
 msgid "Person"
 msgstr "个人"
 
@@ -20070,9 +20067,6 @@ msgstr "范围已签署"
 
 msgid "Scope Summary"
 msgstr "范围总结"
-
-msgid "Scopes"
-msgstr "范围"
 
 msgid "Scrap"
 msgstr "报废"

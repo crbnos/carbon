@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getBrowserEnv } from "@carbon/auth";
+import { moduleOf, PAGES } from "@carbon/database/access";
 import { DateTimePicker, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -29,36 +30,43 @@ import {
   today
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { LuCheck, LuClipboard, LuLock } from "react-icons/lu";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
-import PermissionMatrix from "~/components/PermissionMatrix";
 import { usePermissions } from "~/hooks";
 import {
-  fromApiKeyScopes,
-  toApiKeyScopes,
-  usePermissionMatrix
-} from "~/hooks/usePermissionMatrix";
-import {
-  apiKeyOptInPermissionKeys,
-  apiKeyPermissionModules,
+  apiKeyModules,
   apiKeyValidator
 } from "~/modules/settings/settings.models";
+import AccessGrid, {
+  type AccessGrant
+} from "~/modules/users/ui/components/AccessGrid.ee";
 import { path } from "~/utils/path";
-import { copyToClipboard } from "~/utils/string";
+import { capitalize, copyToClipboard } from "~/utils/string";
+
+const keyPages = PAGES.filter((page) =>
+  (apiKeyModules as readonly string[]).includes(moduleOf(page.id))
+);
+
+/** Full on every module, Edit on Accounting: deleting accounting data through
+ *  the API stays a choice made on its own row. */
+const selectAllGrants = (): AccessGrant[] =>
+  apiKeyModules.map((module) => ({
+    module: capitalize(module),
+    page: null,
+    level: module === "accounting" ? "Edit" : "Full"
+  }));
 
 type ApiKeyFormProps = {
-  initialValues: z.infer<typeof apiKeyValidator>;
-  companyId?: string;
-  existingScopes?: Record<string, string[]> | null;
+  initialValues: Omit<z.infer<typeof apiKeyValidator>, "grants">;
+  existingGrants?: AccessGrant[];
   onClose: () => void;
 };
 
 const ApiKeyForm = ({
   initialValues,
-  companyId,
-  existingScopes,
+  existingGrants = [],
   onClose
 }: ApiKeyFormProps) => {
   const { t } = useLingui();
@@ -74,25 +82,8 @@ const ApiKeyForm = ({
 
   const [key, setKey] = useState<string | null>(null);
 
-  const initialScopeState = useMemo(
-    () =>
-      isEditing
-        ? fromApiKeyScopes(existingScopes, apiKeyPermissionModules)
-        : fromApiKeyScopes(null, apiKeyPermissionModules),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [existingScopes, isEditing]
-  );
-
-  const matrix = usePermissionMatrix({
-    modules: apiKeyPermissionModules,
-    initialState: initialScopeState,
-    bulkExcludedKeys: apiKeyOptInPermissionKeys
-  });
-
-  // Serialize scopes to JSONB format for form submission
-  const scopesJsonb = companyId
-    ? JSON.stringify(toApiKeyScopes(matrix.permissions, companyId))
-    : "{}";
+  // The person's edits; the route remounts the form for another key.
+  const [grants, setGrants] = useState(existingGrants);
 
   return (
     <>
@@ -123,7 +114,7 @@ const ApiKeyForm = ({
             </ModalHeader>
             <ModalBody>
               <Hidden name="id" />
-              <Hidden name="scopes" value={scopesJsonb} />
+              <Hidden name="grants" value={JSON.stringify(grants)} />
               <VStack spacing={4}>
                 <Input name="name" label={t`Name`} />
 
@@ -133,7 +124,23 @@ const ApiKeyForm = ({
                   minValue={toCalendarDateTime(today(getLocalTimeZone()))}
                 />
 
-                <PermissionMatrix matrix={matrix} isDisabled={isDisabled} />
+                <div className="flex w-full justify-end">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    isDisabled={isDisabled}
+                    onClick={() => setGrants(selectAllGrants())}
+                  >
+                    <Trans>Select all</Trans>
+                  </Button>
+                </div>
+                <AccessGrid
+                  pages={keyPages}
+                  value={grants}
+                  onChange={setGrants}
+                  label={t`Access`}
+                  isDisabled={isDisabled}
+                />
               </VStack>
             </ModalBody>
             <ModalFooter>

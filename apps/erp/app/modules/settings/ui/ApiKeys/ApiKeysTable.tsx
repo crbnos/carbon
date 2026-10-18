@@ -36,18 +36,9 @@ type ApiKeysTableProps = {
   count: number;
 };
 
-// `apiKey.scopes` is a `Json` column; narrow it to the scope map shape once so
-// the cell and the CSV export read it the same way without an `as any` cast.
-function getScopes(apiKey: ApiKey): Record<string, string[]> | null {
-  const { scopes } = apiKey;
-  return scopes && typeof scopes === "object" && !Array.isArray(scopes)
-    ? (scopes as Record<string, string[]>)
-    : null;
-}
-
-function getScopeCount(scopes: Record<string, string[]> | null): number {
-  if (!scopes) return 0;
-  return Object.keys(scopes).length;
+/** The key's grants that give access (a None grant gives none). */
+function grantCount(apiKey: ApiKey): number {
+  return (apiKey.permission ?? []).filter((g) => g.level !== "None").length;
 }
 
 function formatRateLimit(limit: number, window: string): string {
@@ -96,22 +87,20 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
       },
       {
         id: "scopes",
-        header: t`Scopes`,
+        header: t`Access`,
         cell: ({ row }) => {
-          const scopeCount = getScopeCount(getScopes(row.original));
+          const count = grantCount(row.original);
           return (
             <Badge variant="secondary">
-              {scopeCount === 0 ? t`No Access` : t`${scopeCount} permissions`}
+              {count === 0 ? t`No Access` : t`${count} grants`}
             </Badge>
           );
         },
         meta: {
           icon: <LuShield />,
           exportValue: (row) => {
-            const scopeCount = getScopeCount(getScopes(row));
-            return scopeCount === 0
-              ? t`No Access`
-              : t`${scopeCount} permissions`;
+            const count = grantCount(row);
+            return count === 0 ? t`No Access` : t`${count} grants`;
           }
         }
       },

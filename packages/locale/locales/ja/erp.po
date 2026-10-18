@@ -494,6 +494,9 @@ msgstr "{count, plural, one {# バッチがリリース済} other {# バッチ�
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {# 製造指図がリリース済} other {# 製造指図がリリース済}}"
 
+msgid "{count} grants"
+msgstr ""
+
 msgid "{count} of {total} units"
 msgstr "{count} ／ {total} 個"
 
@@ -659,9 +662,6 @@ msgstr "{resourceCount} リソース · {reservationCount} 予約 · {jobCount} 
 
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel}は次のリビジョンとして計画のために再オープンされます。仕入先に送付済みの文書は、確定して発注書を再度送信するまで変更されません。"
-
-msgid "{scopeCount} permissions"
-msgstr "{scopeCount} 個の権限"
 
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} 明細"
@@ -16685,9 +16685,6 @@ msgstr "完全に削除"
 msgid "Permission groups for granting access in bulk"
 msgstr "アクセスを一括付与するための権限グループ"
 
-msgid "Permissions"
-msgstr "権限"
-
 msgid "Person"
 msgstr "担当者"
 
@@ -20070,9 +20067,6 @@ msgstr "スコープ署名済み"
 
 msgid "Scope Summary"
 msgstr "スコープサマリー"
-
-msgid "Scopes"
-msgstr "スコープ"
 
 msgid "Scrap"
 msgstr "スクラップ"

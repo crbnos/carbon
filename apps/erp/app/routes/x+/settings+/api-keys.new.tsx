@@ -7,13 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useRouteData } from "~/hooks";
 import {
   apiKeyFields,
   apiKeyValidator
 } from "~/modules/settings/settings.models";
 import { ApiKeyForm } from "~/modules/settings/ui";
-import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
@@ -32,17 +30,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function NewApiKeyRoute() {
   const closeRoute = useCloseRoute();
-  const routeData = useRouteData<{ companyId: string }>(path.to.apiKeys);
-
-  const initialValues = {
-    name: ""
-  };
-
   return (
-    <ApiKeyForm
-      onClose={() => closeRoute()}
-      initialValues={initialValues}
-      companyId={routeData?.companyId}
-    />
+    <ApiKeyForm onClose={() => closeRoute()} initialValues={{ name: "" }} />
   );
 }

@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import cases from "./cases.json";
-import { levelsFromKeys, roundUp } from "./levels";
+import { roundUp } from "./levels";
 import { clampLevel, PAGES, REGISTRY_HASH } from "./registry";
 import {
   claimKeys,
@@ -117,26 +117,6 @@ describe("holdsAny", () => {
     expect(holdsAny(expanded, "inventory", "create", "c1")).toBe(false);
     expect(holdsAny(expanded, "inventory", "view", "c2")).toBe(false);
     expect(holdsAny(expanded, "accounting", "view", "c1")).toBe(false);
-  });
-});
-
-describe("levelsFromKeys", () => {
-  it("rounds each module's keys for the company up to one level", () => {
-    expect(
-      levelsFromKeys(
-        {
-          sales_view: ["c1"],
-          sales_update: ["c1"],
-          accounting_view: ["c1"],
-          accounting_delete: ["c1"],
-          parts_view: ["c2"],
-          inventory_view: ["0"],
-          users: ["c1"],
-          people_view: "c1"
-        },
-        "c1"
-      )
-    ).toEqual({ sales: "Edit", accounting: "Full" });
   });
 });
 

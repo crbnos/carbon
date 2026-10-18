@@ -35,9 +35,7 @@ export async function action(args: ActionFunctionArgs) {
 export default function EditApiKeyRoute() {
   const closeRoute = useCloseRoute();
   const params = useParams();
-  const routeData = useRouteData<{ apiKeys: ApiKey[]; companyId: string }>(
-    path.to.apiKeys
-  );
+  const routeData = useRouteData<{ apiKeys: ApiKey[] }>(path.to.apiKeys);
 
   const apiKey = routeData?.apiKeys.find((apiKey) => apiKey.id === params.id);
   if (!apiKey) throw new Error("API key not found");
@@ -45,15 +43,14 @@ export default function EditApiKeyRoute() {
   const initialValues = {
     id: apiKey?.id ?? undefined,
     name: apiKey?.name ?? "",
-    expiresAt: (apiKey as any)?.expiresAt ?? undefined
+    expiresAt: apiKey.expiresAt ?? undefined
   };
 
   return (
     <ApiKeyForm
       key={initialValues.id}
       initialValues={initialValues}
-      companyId={routeData?.companyId}
-      existingScopes={(apiKey as any)?.scopes ?? null}
+      existingGrants={apiKey.permission ?? []}
       onClose={() => closeRoute()}
     />
   );

@@ -82,6 +82,7 @@ import {
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
 import { fromServerFn } from "../shared/shared.service";
+import { permissionsValidator } from "../users/users.models";
 import {
   accountMappingEntrySchema,
   apiKeyValidator,
@@ -1540,9 +1541,8 @@ export const removeDocumentSection = defineServiceFn({
 const apiKeyFields = {
   name: apiKeyValidator.shape.name,
   expiresAt: apiKeyValidator.shape.expiresAt,
-  /** The actions the key may run, as `{ "sales_view": [companyId] }`. Each
-   *  module is stored as the lowest level holding all of its actions. */
-  scopes: z.record(z.string(), z.array(z.string()))
+  /** What the key may do: one level per module or page. */
+  grants: permissionsValidator.shape.grants
 };
 /**
  * Create an API key.
@@ -1555,7 +1555,7 @@ const apiKeyFields = {
 export const createApiKey = defineServiceFn({
   input: z.object(apiKeyFields),
   permission: { update: "users" },
-  async run(ctx, { name, scopes, expiresAt }) {
+  async run(ctx, { name, grants, expiresAt }) {
     // The grants are written without RLS, which asks this of an apiKey write.
     if (!ctx.can({ create: "settings" })) {
       return ctx.error("forbidden", "You do not have permission to do this");
@@ -1565,7 +1565,6 @@ export const createApiKey = defineServiceFn({
     try {
       created = await upsertApiKey(ctx.asCaller.supabase, {
         name,
-        scopes,
         expiresAt: expiresAt || undefined,
         rawKey,
         keyHash: hashApiKey(rawKey),
@@ -1587,7 +1586,7 @@ export const createApiKey = defineServiceFn({
       {
         companyId: ctx.company.id,
         apiKeyId,
-        grants: service.apiKeyGrants(scopes, ctx.company.id),
+        grants,
         actorId: ctx.auditUserId
       }
     ).catch((err) => ({ error: err as { message: string } }));
@@ -1606,16 +1605,16 @@ export const createApiKey = defineServiceFn({
 });
 
 /**
- * Update an API key's name, scopes and expiry.
+ * Update an API key's name, grants and expiry.
  *
  * @remarks
  * The key itself never changes. Its cached authentication is dropped, so a
- * narrower scope or an earlier expiry applies at once.
+ * narrower grant or an earlier expiry applies at once.
  */
 export const updateApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1), ...apiKeyFields }),
   permission: { update: "users" },
-  async run(ctx, { id, name, scopes, expiresAt }) {
+  async run(ctx, { id, name, grants, expiresAt }) {
     // The grants are written without RLS, which asks this of an apiKey write.
     if (!ctx.can({ update: "settings" })) {
       return ctx.error("forbidden", "You do not have permission to do this");
@@ -1625,7 +1624,6 @@ export const updateApiKey = defineServiceFn({
       updated = await upsertApiKey(ctx.asCaller.supabase, {
         id,
         name,
-        scopes,
         expiresAt: expiresAt || undefined
       });
     } catch (err) {
@@ -1642,7 +1640,7 @@ export const updateApiKey = defineServiceFn({
         {
           companyId: ctx.company.id,
           apiKeyId: id,
-          grants: service.apiKeyGrants(scopes, ctx.company.id),
+          grants,
           actorId: ctx.auditUserId
         }
       );

@@ -494,6 +494,9 @@ msgstr "{count, plural, one {# बैच जारी} other {# बैच जा
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {# जॉब जारी} other {# जॉब जारी}}"
 
+msgid "{count} grants"
+msgstr ""
+
 msgid "{count} of {total} units"
 msgstr "{count} का {total} इकाइयों में से"
 
@@ -659,9 +662,6 @@ msgstr "{resourceCount} संसाधन · {reservationCount} आरक्ष
 
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} को योजना के लिए फिर से खोला जाएगा क्योंकि यह इसका अगला रिवीजन है। आपूर्तिकर्ता को भेजा गया दस्तावेज़ तब तक अपरिवर्तित रहता है जब तक आप अंतिम रूप नहीं देते और ऑर्डर फिर से भेजते हैं।"
-
-msgid "{scopeCount} permissions"
-msgstr "{scopeCount} अनुमतियाँ"
 
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} पंक्तियाँ"
@@ -16685,9 +16685,6 @@ msgstr "स्थायी रूप से हटाएं"
 msgid "Permission groups for granting access in bulk"
 msgstr "बल्क में एक्सेस प्रदान करने के लिए अनुमति समूह"
 
-msgid "Permissions"
-msgstr "अनुमतियाँ"
-
 msgid "Person"
 msgstr "व्यक्ति"
 
@@ -20070,9 +20067,6 @@ msgstr "स्कोप पर हस्ताक्षर किए गए"
 
 msgid "Scope Summary"
 msgstr "स्कोप सारांश"
-
-msgid "Scopes"
-msgstr "स्कोप"
 
 msgid "Scrap"
 msgstr "स्क्रैप"

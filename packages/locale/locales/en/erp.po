@@ -494,6 +494,9 @@ msgstr "{count, plural, one {Released # batch} other {Released # batches}}"
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {Released # job} other {Released # jobs}}"
 
+msgid "{count} grants"
+msgstr "{count} grants"
+
 msgid "{count} of {total} units"
 msgstr "{count} of {total} units"
 
@@ -659,9 +662,6 @@ msgstr "{resourceCount} resources · {reservationCount} reservations · {jobCoun
 
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
-
-msgid "{scopeCount} permissions"
-msgstr "{scopeCount} permissions"
 
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} lines"
@@ -16685,9 +16685,6 @@ msgstr "Permanently Delete"
 msgid "Permission groups for granting access in bulk"
 msgstr "Permission groups for granting access in bulk"
 
-msgid "Permissions"
-msgstr "Permissions"
-
 msgid "Person"
 msgstr "Person"
 
@@ -20070,9 +20067,6 @@ msgstr "Scope signed"
 
 msgid "Scope Summary"
 msgstr "Scope Summary"
-
-msgid "Scopes"
-msgstr "Scopes"
 
 msgid "Scrap"
 msgstr "Scrap"

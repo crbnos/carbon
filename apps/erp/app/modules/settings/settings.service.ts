@@ -20,14 +20,7 @@ import {
 import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
-import {
-  Constants,
-  type Database,
-  getCompanyTimeZone,
-  type Json
-} from "@carbon/database";
-import { levelsFromKeys } from "@carbon/database/access";
-import type { GrantInput, GrantModule } from "@carbon/database/access-write";
+import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { single, updateRows } from "@carbon/database/rows";
@@ -267,7 +260,7 @@ import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { capitalize, interpolateSequenceDate } from "~/utils/string";
+import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
   type CompanyBackupSummary,
@@ -323,7 +316,7 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
-    .select("*", { count: LIST_COUNT })
+    .select("*, permission(module, page, level)", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -2031,28 +2024,6 @@ export async function getOeeDevicesTabData(
 }
 
 const INTEGRATION_CACHE_TTL = 3600;
-
-const MODULES = new Set<string>(Constants.public.Enums.module);
-
-/**
- * An API key form's flat scopes (`{ "sales_view": [companyId] }`) as module
- * grants: the lowest level holding every checked action. Accounting is Full
- * only when `accounting_delete` was checked, which the form never does for
- * "select all".
- */
-export function apiKeyGrants(
-  scopes: Record<string, string[]>,
-  companyId: string
-): GrantInput[] {
-  return Object.entries(levelsFromKeys(scopes, companyId)).flatMap(
-    ([module, level]) => {
-      const name = capitalize(module);
-      return MODULES.has(name) && level !== "None"
-        ? [{ module: name as GrantModule, page: null, level }]
-        : [];
-    }
-  );
-}
 
 /**
  * Drop the cached auth record for an API key so a scope change or revocation

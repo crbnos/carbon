@@ -26,8 +26,9 @@ import { requireEntitlement } from "./entitlements.server";
  * `entitlements.server`) so it cannot be stripped from open-licensed app code.
  */
 
-// Minimal input shape — the validator's `Omit<…, "id" | "scopes" | "expiresAt">`
-// leaves only `name` (redefined here so `@carbon/ee` never imports `~/`).
+// Minimal input shape — the validator's `Omit<…, "id" | "grants" | "expiresAt">`
+// leaves only `name` (redefined here so `@carbon/ee` never imports `~/`). A
+// key's access is its grants (`replaceApiKeyGrants`).
 type ApiKeyInput = { name: string };
 
 export async function upsertApiKey(
@@ -36,7 +37,6 @@ export async function upsertApiKey(
     | (ApiKeyInput & {
         createdBy: string;
         companyId: string;
-        scopes: Record<string, string[]>;
         expiresAt?: string;
         rawKey: string;
         keyHash: string;
@@ -44,7 +44,6 @@ export async function upsertApiKey(
       })
     | (ApiKeyInput & {
         id: string;
-        scopes: Record<string, string[]>;
         expiresAt?: string;
       })
 ) {
@@ -53,7 +52,6 @@ export async function upsertApiKey(
     // Create: store the hash, return the raw key (caller generates both)
     // Strip rateLimit/rateLimitWindow — these are platform-controlled, not user-configurable
     const {
-      scopes,
       expiresAt,
       rawKey,
       keyHash,
@@ -68,7 +66,6 @@ export async function upsertApiKey(
         sanitize({
           ...rest,
           keyHash,
-          scopes: scopes as any,
           expiresAt: expiresAt || null
         }) as any
       )
@@ -100,10 +97,9 @@ export async function upsertApiKey(
 
   await requireEntitlement(client, existing.data.companyId, "API_KEYS");
 
-  // Update: update name, scopes, expiration (never the key itself)
+  // Update: update name and expiration (never the key itself)
   // Strip rateLimit/rateLimitWindow — these are platform-controlled, not user-configurable
   const {
-    scopes,
     expiresAt,
     rateLimit: _rl,
     rateLimitWindow: _rlw,
@@ -114,7 +110,6 @@ export async function upsertApiKey(
     .update(
       sanitize({
         ...rest,
-        scopes: scopes as any,
         expiresAt: expiresAt || null
       }) as any
     )

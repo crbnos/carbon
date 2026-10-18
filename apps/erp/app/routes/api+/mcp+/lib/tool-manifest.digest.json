@@ -1514,7 +1514,7 @@
     {"name":"settings_enableCompanyAuditLog","classification":"WRITE","schema":"31b84d65b2ac","response":"a369dbcd055c","permission":"settings:update","paginates":false},
     {"name":"settings_getAccountsPayableBillingAddress","classification":"READ","schema":"31b84d65b2ac","response":"7c0b9dc6d441","permission":"settings:view","paginates":false},
     {"name":"settings_getAccountsReceivableBillingAddress","classification":"READ","schema":"31b84d65b2ac","response":"7c0b9dc6d441","permission":"settings:view","paginates":false},
-    {"name":"settings_getApiKeys","classification":"WRITE","schema":"e2389bb135b5","response":"2a06e5e88ab4","permission":"users:update","paginates":true},
+    {"name":"settings_getApiKeys","classification":"WRITE","schema":"e2389bb135b5","response":"e53d54996f42","permission":"users:update","paginates":true},
     {"name":"settings_getCompanies","classification":"READ","schema":"31b84d65b2ac","response":"5783a32e0f4a","permission":"settings:view","paginates":false},
     {"name":"settings_getCompany","classification":"READ","schema":"31b84d65b2ac","response":"81a93f0029ec","permission":"none","paginates":false},
     {"name":"settings_getCompanySettings","classification":"READ","schema":"31b84d65b2ac","response":"689a7e333d99","permission":"none","paginates":false},

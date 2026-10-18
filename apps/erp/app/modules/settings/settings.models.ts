@@ -46,37 +46,28 @@ export const purchasePriceUpdateTimingTypes = [
   "Purchase Order Finalize"
 ] as const;
 
-/** All permission modules with their available CRUD actions */
-export const apiKeyPermissionModules = {
-  accounting: ["view", "create", "update", "delete"],
-  documents: ["view", "create", "update", "delete"],
-  inventory: ["view", "create", "update", "delete"],
-  invoicing: ["view", "create", "update", "delete"],
-  parts: ["view", "create", "update", "delete"],
-  people: ["view", "create", "update", "delete"],
-  production: ["view", "create", "update", "delete"],
-  purchasing: ["view", "create", "update", "delete"],
-  quality: ["view", "create", "update", "delete"],
-  resources: ["view", "create", "update", "delete"],
-  sales: ["view", "create", "update", "delete"],
-  settings: ["view", "create", "update", "delete"],
-  users: ["view", "create", "update", "delete"]
-} as const;
-
-export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
-
-/**
- * Permission keys (`${module}_${action}`) that are opt-in only: they must be
- * enabled by clicking their own cell and are never turned on by the "all
- * modules" or per-row select-all checkboxes. Deleting accounting data via the
- * API is high-risk, so it stays deselected unless explicitly chosen.
- */
-export const apiKeyOptInPermissionKeys = ["accounting_delete"] as const;
+/** The modules an API key can be given access to. */
+export const apiKeyModules = [
+  "accounting",
+  "documents",
+  "inventory",
+  "invoicing",
+  "parts",
+  "people",
+  "production",
+  "purchasing",
+  "quality",
+  "resources",
+  "sales",
+  "settings",
+  "users"
+] as const;
 
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
-  scopes: zfd.text(z.string().optional()),
+  /** The key's grants, as JSON. */
+  grants: zfd.text(z.string().optional()),
   expiresAt: zfd.text(
     z
       .string()
@@ -87,15 +78,12 @@ export const apiKeyValidator = z.object({
   )
 });
 
-/** An API key form's fields as saved: the form posts its scopes as one JSON string. */
+/** An API key form's fields as saved: the form posts its grants as one JSON string. */
 export function apiKeyFields({
-  scopes,
+  grants,
   ...form
 }: z.output<typeof apiKeyValidator>) {
-  return {
-    ...form,
-    scopes: (scopes ? JSON.parse(scopes) : {}) as Record<string, string[]>
-  };
+  return { ...form, grants: grants ? JSON.parse(grants) : [] };
 }
 
 const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
