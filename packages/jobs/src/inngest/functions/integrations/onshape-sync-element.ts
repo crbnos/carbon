@@ -178,7 +178,10 @@ export async function runOnshapeElementSync(
 ): Promise<ElementSyncResult> {
   const label = input.assetBaseName ?? input.modelElementId;
 
-  const planned = await step.run(`${prefix}-existing`, async () => {
+  const planned: {
+    sourceId: string | null;
+    existing: { id: string; name: string | null } | null;
+  } = await step.run(`${prefix}-existing`, async () => {
     assertSelection(input);
     const sourceId = partSourceId(input);
     if (!sourceId) return { sourceId: null, existing: null };
@@ -197,7 +200,10 @@ export async function runOnshapeElementSync(
     };
   });
 
-  const started = await step.run(`${prefix}-translate`, () =>
+  const started: {
+    model: string | null;
+    drawings: { elementId: string; id: string }[];
+  } = await step.run(`${prefix}-translate`, () =>
     withRateLimitRetry(async () => {
       const client = await onshapeClient(carbon, input);
       const [model, drawings] = await Promise.all([
@@ -244,7 +250,7 @@ export async function runOnshapeElementSync(
   let staged: StagedModel | null = null;
   if (modelTranslation) {
     const stagedPath = `${input.companyId}/models/onshape-fetch-${modelTranslation.id}.step`;
-    const fetched = assemblerEnabled()
+    const fetched: StagedModel | { tooLarge: true } = assemblerEnabled()
       ? await fetchWithAssembler(
           step,
           carbon,
@@ -273,7 +279,7 @@ export async function runOnshapeElementSync(
     staged = fetched;
   }
 
-  const drawingDocumentIds =
+  const drawingDocumentIds: string[] =
     started.drawings.length === 0
       ? []
       : await step.run(`${prefix}-drawings`, () =>
@@ -301,28 +307,30 @@ export async function runOnshapeElementSync(
           }, `drawings ${label}`)
         );
 
-  const attached = await step.run(`${prefix}-attach`, () =>
-    attachOnshapeAssetsToItem(carbon, {
-      companyId: input.companyId,
-      createdBy: input.userId,
-      itemId: input.itemId,
-      sourceDocument: input.sourceDocument,
-      ...(staged
-        ? {
-            model: {
-              fileName: `${baseName}.step`,
-              ...staged,
-              sourceId: planned.sourceId ?? undefined
+  const attached: AttachOnshapeAssetsResult = await step.run(
+    `${prefix}-attach`,
+    () =>
+      attachOnshapeAssetsToItem(carbon, {
+        companyId: input.companyId,
+        createdBy: input.userId,
+        itemId: input.itemId,
+        sourceDocument: input.sourceDocument,
+        ...(staged
+          ? {
+              model: {
+                fileName: `${baseName}.step`,
+                ...staged,
+                sourceId: planned.sourceId ?? undefined
+              }
             }
-          }
-        : { existingModelId: planned.existing!.id })
-    })
+          : { existingModelId: planned.existing!.id })
+      })
   );
 
   // The element-thumbnail endpoint cannot select a part or configuration.
   // Keep it only for a new model of an unconfigured assembly. All other
   // thumbnails are rendered from the selected model by the optimise itself.
-  const thumbnailAttached =
+  const thumbnailAttached: boolean =
     attached.modelUploadId !== null &&
     staged !== null &&
     input.modelElementKind === "assembly" &&
@@ -449,18 +457,20 @@ async function waitForTranslations(
         `Onshape translations ${waiting.join(", ")} did not finish after ${POLL_MAX_ATTEMPTS} polls`
       );
     }
-    const polled = await step.run(`${prefix}-poll-${attempt}`, () =>
-      withRateLimitRetry(
-        async () => {
-          const client = await onshapeClient(carbon, input);
-          return Promise.all(
-            waiting.map(async (id) =>
-              finishedTranslation(await client.getTranslation(id))
-            )
-          );
-        },
-        `poll ${input.assetBaseName ?? input.modelElementId}`
-      )
+    const polled: (FinishedTranslation | null)[] = await step.run(
+      `${prefix}-poll-${attempt}`,
+      () =>
+        withRateLimitRetry(
+          async () => {
+            const client = await onshapeClient(carbon, input);
+            return Promise.all(
+              waiting.map(async (id) =>
+                finishedTranslation(await client.getTranslation(id))
+              )
+            );
+          },
+          `poll ${input.assetBaseName ?? input.modelElementId}`
+        )
     );
     for (const translation of polled) {
       if (translation) finished[translation.id] = translation;
