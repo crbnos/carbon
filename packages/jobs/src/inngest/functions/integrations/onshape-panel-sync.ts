@@ -6,7 +6,6 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import { z } from "zod";
 import { inngest } from "../../client";
-import { ASSEMBLER_CONCURRENCY } from "../tasks/assembler-client";
 import {
   runOnshapeElementSync,
   syncOnshapeDrawingAssetsToItem
@@ -36,10 +35,7 @@ export const onshapePanelSyncFunction = inngest.createFunction(
   {
     id: "onshape-panel-sync",
     retries: 1,
-    concurrency: [
-      { key: "event.data.itemId", limit: 1 },
-      ...ASSEMBLER_CONCURRENCY
-    ]
+    concurrency: { key: "event.data.itemId", limit: 1 }
   },
   { event: "carbon/onshape-panel-sync" },
   async ({ event, step }) => {

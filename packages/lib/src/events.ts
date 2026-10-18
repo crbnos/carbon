@@ -709,6 +709,20 @@ export type Events = {
     };
   };
 
+  // The assembler copies one finished Onshape translation into staging
+  // (step.invoked by the element sync)
+  "carbon/onshape-fetch": {
+    data: {
+      companyId: string;
+      userId: string;
+      integrationId?: string;
+      translationId: string;
+      documentId: string;
+      foreignId: string;
+      stagedPath: string;
+    };
+  };
+
   // Onshape released-asset backfill / reconcile
   "carbon/onshape-backfill": {
     data: {

@@ -5,7 +5,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { OnshapeOAuthIntegrationId } from "@carbon/ee/onshape/integration-id";
 import { inngest } from "../../client";
-import { ASSEMBLER_CONCURRENCY } from "../tasks/assembler-client";
 import { runOnshapeElementSync } from "./onshape-sync-element";
 
 /**
@@ -18,10 +17,7 @@ export const onshapeElementSyncFunction = inngest.createFunction(
   {
     id: "onshape-element-sync",
     retries: 3,
-    concurrency: [
-      { key: "event.data.itemId", limit: 1 },
-      ...ASSEMBLER_CONCURRENCY
-    ]
+    concurrency: { key: "event.data.itemId", limit: 1 }
   },
   { event: "carbon/onshape-element-sync" },
   async ({ event, step }) =>

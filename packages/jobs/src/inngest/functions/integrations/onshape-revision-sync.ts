@@ -11,7 +11,6 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { inngest } from "../../client";
-import { ASSEMBLER_CONCURRENCY } from "../tasks/assembler-client";
 import {
   isOnshapeAssetSyncEnabled,
   resolveOnshapeCompanyId
@@ -277,10 +276,7 @@ export const onshapeRevisionSyncFunction = inngest.createFunction(
     retries: 3,
     idempotency: "event.data.messageId",
     // One in-flight sync per released element; different elements run in parallel.
-    concurrency: [
-      { key: "event.data.elementId", limit: 1 },
-      ...ASSEMBLER_CONCURRENCY
-    ]
+    concurrency: { key: "event.data.elementId", limit: 1 }
   },
   { event: "carbon/onshape-revision-sync" },
   async ({ event, step }) => {

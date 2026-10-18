@@ -18,18 +18,18 @@ import { TEMP_STAGING_BUCKET } from "@carbon/files";
 import { getFileSizeLimit } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError } from "inngest";
-import {
-  AssemblerJobError,
-  assemblerEnabled,
-  runAssemblerJob,
-  type StepTools,
-  signUploadUrls
-} from "../tasks/assembler-client";
+import { assemblerEnabled } from "../tasks/assembler-client";
 import {
   type AttachOnshapeAssetsResult,
   attachModelThumbnail,
   attachOnshapeAssetsToItem
 } from "./onshape-attach";
+import {
+  type OnshapeFetchInput,
+  onshapeFetchFunction,
+  RAW_MODEL_MAX_BYTES,
+  type StagedModel
+} from "./onshape-fetch";
 import { withRateLimitRetry } from "./onshape-rate-limit";
 
 // Export→stage→attach for ONE Onshape element, released or in a workspace
@@ -75,7 +75,6 @@ const POLL_MAX_DELAY_MS = 15000;
 // cap is the temp-staging cap (2.5GB); exports past it are skipped permanently
 // (drawing PDFs still attach — they are separate elements). Output size is the
 // assembler's problem, not ours.
-const RAW_MODEL_MAX_BYTES = getFileSizeLimit("CAD_MODEL_UPLOAD").bytes;
 const DOCUMENT_MAX_BYTES = getFileSizeLimit("DOCUMENT_UPLOAD").bytes;
 
 async function waitForTranslation(
@@ -124,8 +123,13 @@ async function downloadTranslationBytes(
 }
 
 /** The Inngest step tools the pipeline needs. */
-export type ElementSyncStep = StepTools & {
+export type ElementSyncStep = {
+  run: (id: string, fn: () => unknown) => Promise<any>;
   sleep: (id: string, duration: number) => Promise<unknown>;
+  invoke: (
+    id: string,
+    opts: { function: typeof onshapeFetchFunction; data: OnshapeFetchInput }
+  ) => Promise<any>;
 };
 
 export type ElementSyncResult = AttachOnshapeAssetsResult & {
@@ -141,11 +145,6 @@ type FinishedTranslation = {
   foreignId: string;
   name: string | null;
 };
-
-type StagedModel = { stagedPath: string; size: number; contentHash: string };
-
-// How long the assembler may take to copy one export into staging.
-const FETCH_MAX_WAIT_MS = 30 * 60 * 1000;
 
 /**
  * Export one element's model (and any drawings) from Onshape onto an item, as
@@ -250,15 +249,21 @@ export async function runOnshapeElementSync(
   let staged: StagedModel | null = null;
   if (modelTranslation) {
     const stagedPath = `${input.companyId}/models/onshape-fetch-${modelTranslation.id}.step`;
+    // The fetch runs as its own `onshape-fetch` run: it alone holds the
+    // shared assembler concurrency, not this run's Onshape polls.
     const fetched: StagedModel | { tooLarge: true } = assemblerEnabled()
-      ? await fetchWithAssembler(
-          step,
-          carbon,
-          input,
-          prefix,
-          modelTranslation,
-          stagedPath
-        )
+      ? await step.invoke(`${prefix}-fetch`, {
+          function: onshapeFetchFunction,
+          data: {
+            companyId: input.companyId,
+            userId: input.userId,
+            integrationId: input.integrationId,
+            translationId: modelTranslation.id,
+            documentId: modelTranslation.documentId,
+            foreignId: modelTranslation.foreignId,
+            stagedPath
+          }
+        })
       : await step.run(`${prefix}-download`, () =>
           withRateLimitRetry(
             () =>
@@ -503,63 +508,6 @@ function finishedTranslation(
     foreignId,
     name: typeof translation.name === "string" ? translation.name : null
   };
-}
-
-/** The assembler copies the export from Onshape into staging. */
-async function fetchWithAssembler(
-  step: ElementSyncStep,
-  carbon: CarbonClient,
-  input: SyncOnshapeElementInput,
-  prefix: string,
-  translation: FinishedTranslation,
-  stagedPath: string
-): Promise<StagedModel | { tooLarge: true }> {
-  try {
-    const job = await runAssemblerJob(step, {
-      idPrefix: `${prefix}-fetch`,
-      action: "fetch",
-      jobId: `onshape-fetch-${translation.id}`,
-      maxWaitMs: FETCH_MAX_WAIT_MS,
-      logger: console,
-      // Inside the submit step, so every (re)submit sends a fresh token.
-      buildBody: async () => {
-        const client = await onshapeClient(carbon, input);
-        const download = client.externalDataDownload(
-          translation.documentId,
-          translation.foreignId
-        );
-        return {
-          source: { url: download.url, authorization: download.authorization },
-          maxBytes: RAW_MODEL_MAX_BYTES,
-          output: { path: stagedPath, contentType: "application/step" }
-        };
-      },
-      mintUploadUrls: () =>
-        signUploadUrls({
-          raw: {
-            bucket: carbon.storage.from(TEMP_STAGING_BUCKET),
-            path: stagedPath
-          }
-        })
-    });
-    const result = job.result as {
-      contentHash?: string;
-      outputs?: { raw?: { bytes?: number } };
-    } | null;
-    if (!result?.contentHash) {
-      throw new NonRetriableError("assembler fetch returned no content hash");
-    }
-    return {
-      stagedPath,
-      size: result.outputs?.raw?.bytes ?? 0,
-      contentHash: result.contentHash
-    };
-  } catch (error) {
-    if (error instanceof AssemblerJobError && error.code === "LIMIT_EXCEEDED") {
-      return { tooLarge: true };
-    }
-    throw error;
-  }
 }
 
 /** No assembler configured: download the export here and stage it. Hashes the

@@ -21,7 +21,7 @@ const mocks = vi.hoisted(() => ({
   attach: vi.fn(),
   thumbnail: vi.fn(),
   assemblerEnabled: vi.fn(),
-  runAssemblerJob: vi.fn(),
+  invoke: vi.fn(),
   existingModel: null as { id: string; name: string } | null
 }));
 vi.mock("@carbon/ee/onshape", () => ({
@@ -35,28 +35,19 @@ vi.mock("./onshape-attach", () => ({
   attachOnshapeAssetsToItem: mocks.attach,
   attachModelThumbnail: mocks.thumbnail
 }));
-vi.mock("../tasks/assembler-client", () => {
-  class AssemblerJobError extends Error {
-    constructor(
-      message: string,
-      readonly code?: string
-    ) {
-      super(message);
-    }
-  }
-  return {
-    AssemblerJobError,
-    assemblerEnabled: mocks.assemblerEnabled,
-    runAssemblerJob: mocks.runAssemblerJob,
-    signUploadUrls: vi.fn(async () => ({ raw: "https://storage.test/put" }))
-  };
-});
+vi.mock("../tasks/assembler-client", () => ({
+  assemblerEnabled: mocks.assemblerEnabled
+}));
+vi.mock("./onshape-fetch", () => ({
+  onshapeFetchFunction: { id: "onshape-fetch" },
+  RAW_MODEL_MAX_BYTES: 100000
+}));
 
 // Runs each step at once, in order: the pipeline's logic, not Inngest's.
 const step = {
   run: async (_id: string, fn: () => unknown) => fn(),
   sleep: vi.fn(async () => undefined),
-  waitForEvent: async () => null
+  invoke: mocks.invoke
 };
 
 const carbon = {
@@ -270,27 +261,24 @@ describe("export economy", () => {
 describe("with the assembler", () => {
   beforeEach(() => {
     mocks.assemblerEnabled.mockReturnValue(true);
-    mocks.runAssemblerJob.mockResolvedValue({
-      result: { contentHash: "xxh3-hash", outputs: { raw: { bytes: 13 } } },
-      stats: {}
+    mocks.invoke.mockResolvedValue({
+      stagedPath: "company/models/onshape-fetch-model-t.step",
+      size: 13,
+      contentHash: "xxh3-hash"
     });
   });
 
-  it("has the assembler fetch the export with Onshape's bearer; nothing is downloaded here", async () => {
+  it("hands the fetch to its own run; nothing is downloaded here", async () => {
     await sync();
     expect(mocks.client.downloadExternalDataToFile).not.toHaveBeenCalled();
-    const spec = mocks.runAssemblerJob.mock.calls[0]![1];
-    expect(spec).toMatchObject({
-      action: "fetch",
-      jobId: "onshape-fetch-model-t"
-    });
-    expect(await spec.buildBody()).toMatchObject({
-      source: {
-        url: expect.stringContaining("/externaldata/"),
-        authorization: "Bearer onshape-token"
-      },
-      maxBytes: 100000,
-      output: { path: "company/models/onshape-fetch-model-t.step" }
+    expect(mocks.invoke).toHaveBeenCalledWith("element-fetch", {
+      function: { id: "onshape-fetch" },
+      data: expect.objectContaining({
+        translationId: "model-t",
+        documentId: "export-document",
+        foreignId: "file-model-t",
+        stagedPath: "company/models/onshape-fetch-model-t.step"
+      })
     });
     expect(attachedModel()).toMatchObject({
       size: 13,
@@ -298,11 +286,8 @@ describe("with the assembler", () => {
     });
   });
 
-  it("skips an export past the upload limit without failing", async () => {
-    const { AssemblerJobError } = await import("../tasks/assembler-client");
-    mocks.runAssemblerJob.mockRejectedValue(
-      new AssemblerJobError("too large", "LIMIT_EXCEEDED")
-    );
+  it("skips an export the fetch found past the upload limit", async () => {
+    mocks.invoke.mockResolvedValue({ tooLarge: true });
     const result = await sync();
     expect(result.tooLarge).toBe(true);
     expect(mocks.attach).not.toHaveBeenCalled();
