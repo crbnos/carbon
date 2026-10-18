@@ -10,10 +10,10 @@
 // per-operation check is the service function's gate, which reads the scopes we attach here.
 // The MCP endpoint also accepts an OAuth connector token (`authenticateOAuthToken`).
 
+import { authorize } from "@carbon/api/carbon.server";
 import {
   getCompanyIdFromAPIKey,
-  hashOAuthSecret,
-  requirePermissions
+  hashOAuthSecret
 } from "@carbon/auth/auth.server";
 import {
   getCarbonServiceRole,
@@ -43,8 +43,10 @@ export async function authenticateApiKey(
 ): Promise<AuthedContext> {
   const authHeaders = new Headers();
   authHeaders.set("carbon-key", rawKey);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(new Request(url, { headers: authHeaders }), {});
+  const { client, companyId, companyGroupId, userId } = await authorize(
+    new Request(url, { headers: authHeaders }),
+    {}
+  );
 
   const { data: keyRow } = await getCompanyIdFromAPIKey(rawKey);
 

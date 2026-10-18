@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import {
@@ -32,7 +31,7 @@ import { path } from "~/utils/path";
  * checked here too so the modal never opens for a reset the action refuses.
  */
 async function requireResetPinPermission(request: Request, operatorId: string) {
-  const { client } = await requirePermissions(request, {
+  const { client } = await authorize(request, {
     update: "users"
   });
 
@@ -50,7 +49,7 @@ async function requireResetPinPermission(request: Request, operatorId: string) {
   }
 
   if (!user.data.isConsoleOperator) {
-    await requirePermissions(request, { update: "settings" });
+    await authorize(request, { update: "settings" });
   }
 
   return { operator: user.data };
@@ -73,7 +72,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["operatorId"] });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.users.resetConsoleOperatorPin({
     operatorId: input.params.operatorId
   });

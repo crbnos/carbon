@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { datetime, getErrorMessage, redirect } from "@carbon/utils";
@@ -24,7 +24,7 @@ import { path, requestReferrer } from "~/utils/path";
  *  and a flash, so typing across a row does not toast per cell. */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await authorize(request, {
     update: "sales"
   });
 

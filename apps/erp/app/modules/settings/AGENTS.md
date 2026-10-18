@@ -67,7 +67,7 @@ pnpm run lint
 
 ## Operations (`settings.server.ts`)
 
-Each operation is one `defineServiceFn` const in `settings.server.ts`. A route calls it through `carbon(request)` as `api.settings.<name>(input)` and makes no other write; the API and MCP publish the ones tagged `@mcp` as `settings_<name>`.
+Each operation is one `defineServiceFn` const in `settings.server.ts`. A route calls it through `authorize(request)` as `api.settings.<name>(input)` and makes no other write; the API and MCP publish the ones tagged `@mcp` as `settings_<name>`.
 
 A settings page has ONE update operation, `update<Page>Settings` (`updateAccountingSettings`, `updateInventorySettings`, …), for `accounting`, `inventory`, `invoicing`, `items`, `people`, `planning`, `production`, `purchasing`, `quality`, `resources`, `sales` and `security`. It takes the page's fields, all optional, writes the ones sent (`saveCompanySettings`, as the caller) and returns them; a call that sends none is refused. The route parses its card's form with one `z.discriminatedUnion("intent", …)` per page (`settingsToggle(intent, field)` in `settings.models.ts` is a switch's form) and the component toasts from the returned fields.
 

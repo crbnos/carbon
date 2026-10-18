@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -31,7 +31,7 @@ export async function action(args: ActionFunctionArgs) {
   if (intent === "start") {
     const input = await validator().request(args, { params: ["dispatchId"] });
     if ("invalid" in input) return input.invalid;
-    const api = await carbon(args.request);
+    const { api } = await authorize(args.request);
     return api.resources.startMaintenanceEvent({
       dispatchId: input.params.dispatchId
     });
@@ -43,7 +43,7 @@ export async function action(args: ActionFunctionArgs) {
       { params: ["dispatchId"] }
     );
     if ("invalid" in input) return input.invalid;
-    const api = await carbon(args.request);
+    const { api } = await authorize(args.request);
     return api.resources.stopMaintenanceEvent({
       dispatchId: input.params.dispatchId,
       eventId: input.data.eventId
@@ -58,7 +58,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id, ...event } = input.data;
   const maintenanceDispatchId = input.params.dispatchId;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return id
     ? api.resources.updateMaintenanceEvent({
         ...event,

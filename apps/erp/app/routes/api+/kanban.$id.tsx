@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { Loading } from "@carbon/react";
 import { Suspense } from "react";
@@ -37,7 +37,7 @@ function destination(kanbanId: string, scan: KanbanScan): string {
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Writes on GET: a link on another site must not trigger it.
   rejectCrossSiteNavigation(request);
-  const auth = await requirePermissions(request, { role: "employee" });
+  const auth = await authorize(request, { role: "employee" });
 
   const { id } = params;
   if (!id) throw notFound("id not found");

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -15,7 +15,7 @@ const adjustForm = z.object({ asOfDate: zfd.text(z.string().optional()) });
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(adjustForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.invoicing.adjustReceivables(input.data);
   if (!result.data) {
     return respond(args.request, result).redirect(path.to.receivables);

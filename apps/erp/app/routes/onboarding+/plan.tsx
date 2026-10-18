@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { CarbonEdition, getUser } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
@@ -86,9 +85,7 @@ function usePlans() {
 }
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const auth = await requirePermissions(request, {});
-  const { companyId } = auth;
-  const api = carbonFor(auth);
+  const { companyId, api } = await authorize(request, {});
   if (CarbonEdition !== Edition.Cloud) {
     throw redirect(path.to.authenticatedRoot);
   }
@@ -107,7 +104,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await authorize(request, {});
   const formData = await request.formData();
   const planId = String(formData.get("planId"));
 

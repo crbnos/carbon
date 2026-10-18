@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { RecordOutlet, useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -16,12 +15,10 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: "inventory",
     role: "employee"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
 
   const { storageUnitId } = params;
   if (!storageUnitId) throw notFound("storageUnitId not found");
@@ -60,7 +57,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { id: _, ...storageUnit } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.inventory.updateStorageUnit({
     ...storageUnit,
     id: input.params.storageUnitId,

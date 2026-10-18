@@ -108,11 +108,11 @@ Routes live under `apps/erp/app/routes/` using `remix-flat-routes` conventions.
 ### Loader Pattern
 
 ```typescript
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const items = await api.items.getItems({});
   return { items: items.data ?? [] };
 }
@@ -121,14 +121,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 ### Action Pattern
 
 ```typescript
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(itemValidator).request(args, { params: ["itemId"] });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.items.updateItem({ ...input.data, id: input.params.itemId });
   return respond(args.request, result).redirect(path.to.item(input.params.itemId), {
     message: "Updated item"
@@ -138,7 +138,7 @@ export async function action(args: ActionFunctionArgs) {
 
 **Key rules:**
 - `validator(schema).request(args, { params })` checks the method (POST by default), the route params and the form, before any auth
-- One call through `carbon(request)`; the operation runs the permission gate
+- One call through `authorize(request)`; the operation runs the permission gate
 - A fetcher form returns the result (the component's `useAction` toasts it); a navigating form uses `respond(request, result).redirect(to, { message, onError })`
 
 ## Database Tables

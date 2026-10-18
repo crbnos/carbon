@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { randomBytes } from "node:crypto";
+import { authorize } from "@carbon/api/carbon.server";
 import type { AuthSession } from "@carbon/auth";
 import { hasPermission } from "@carbon/auth";
 import { logAuthEvent } from "@carbon/auth/auth-events.server";
@@ -142,11 +143,20 @@ async function requirePanelSession(token: string): Promise<PanelSession> {
 }
 
 /**
- * Panel counterpart of `requirePermissions` with the same return shape.
- * Employees only, the acting user is always the session user, and failures are
- * 401 or 403, never redirects, since every caller is an iframe fetch.
+ * `authorize` for the Onshape panel: the caller of the `cps_` bearer session,
+ * refused unless they hold `requiredPermissions`, with the operations bound to
+ * them. Employees only, the acting user is always the session user, and
+ * failures are 401 or 403, never redirects, since every caller is an iframe
+ * fetch.
  */
-export async function requireOnshapePanelPermissions(
+export async function authorizePanel(
+  request: Request,
+  requiredPermissions: Parameters<typeof panelCaller>[1] = {}
+) {
+  return authorize(await panelCaller(request, requiredPermissions));
+}
+
+async function panelCaller(
   request: Request,
   requiredPermissions: {
     view?: string | string[];

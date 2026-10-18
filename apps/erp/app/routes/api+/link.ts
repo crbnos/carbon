@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
@@ -135,7 +135,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     client,
     companyId: sessionCompanyId,
     userId
-  } = await requirePermissions(request, {
+  } = await authorize(request, {
     // Notification links switch to the linked company, which must work from a
     // portal company session too.
     allowPortalAccounts: true

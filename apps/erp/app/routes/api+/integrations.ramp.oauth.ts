@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { getAppUrl } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { Ramp } from "@carbon/ee";
@@ -95,7 +95,7 @@ async function readAccountingConnectionProvider(
  * mapping happens afterwards in the integration's Details drawer.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {
+  const { userId, companyId } = await authorize(request, {
     update: "settings"
   });
 

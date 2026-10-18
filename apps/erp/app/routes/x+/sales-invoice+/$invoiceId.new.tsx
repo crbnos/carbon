@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -23,7 +23,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { invoiceId } = input.params;
   const formData = input.formData ?? new FormData();
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.invoicing.createSalesInvoiceLine({
     ...input.data,
     // The URL invoice, not the form's copy.

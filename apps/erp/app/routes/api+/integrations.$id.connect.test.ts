@@ -4,7 +4,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-const requirePermissions = vi.hoisted(() => vi.fn());
+const authorize = vi.hoisted(() => vi.fn());
 // Role-aware, because the guard compares the incumbent row against the ids of
 // that ROLE. "brex" stands in for a second spend provider: with only Ramp
 // registered today a spend role conflict is unreachable, so the guard would
@@ -46,7 +46,7 @@ vi.mock("@carbon/auth", () => ({
   getAppUrl: () => "https://erp.example.com",
   getMESUrl: () => "https://mes.example.com"
 }));
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions }));
+vi.mock("@carbon/api/carbon.server", () => ({ authorize }));
 vi.mock("@carbon/ee", () => ({
   integrations: [RAMP],
   getIntegrationIdsByRole
@@ -65,7 +65,7 @@ function activeRows(rows: Array<{ id: string }>) {
 }
 
 async function connect(mode: string | null, rows: Array<{ id: string }> = []) {
-  requirePermissions.mockResolvedValue({
+  authorize.mockResolvedValue({
     userId: "user-1",
     companyId: "company-1",
     client: activeRows(rows)

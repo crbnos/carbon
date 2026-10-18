@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -25,7 +25,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("rfqId not found");
   }
 
-  const { client: viewClient } = await requirePermissions(request, {
+  const { client: viewClient } = await authorize(request, {
     view: "sales"
   });
 
@@ -37,7 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await authorize(request, {
     create: "sales"
   });
 

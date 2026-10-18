@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
@@ -13,7 +13,7 @@ export const meta: MetaFunction = () => {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  await authorize(request, {
     view: "people"
   });
 

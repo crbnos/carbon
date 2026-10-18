@@ -204,7 +204,7 @@ function (`<module>.server.ts`), so the API, MCP and workflows run the same logi
 See `module-files.md`.
 
 ```typescript
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { thingValidator } from "~/modules/things/things.models";
@@ -217,7 +217,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
 
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.things.updateThing({
     ...input.data,
     id: input.params.thingId,
@@ -239,7 +239,7 @@ export async function action(args: ActionFunctionArgs) {
 |------|---------|
 | Check the request | `validator(schema).request(args, { method?, params? })` (`@carbon/form`): the method (default POST, else 405), the named route params (400), then the body (form data or JSON). Pass no schema when the action reads no body |
 | Invalid body | `if ("invalid" in input) return input.invalid` (the 422 `validationError`) |
-| Auth | `carbon(args.request)` (`@carbon/api/carbon.server`) authenticates the caller. The service function's `permission` is the gate, so the route has no `requirePermissions` |
+| Auth | `authorize(args.request)` (`@carbon/api/carbon.server`) authenticates the caller. The service function's `permission` is the gate, so the action passes no gate of its own |
 | One call | `api.<module>.<name>(input)`. No write in the route itself (a `.from(...)` write, Kysely, `invokePosting`): the `route-action-shape` check fails it |
 | Custom fields | `setCustomFields(input.formData)` (`~/utils/form`) when the body is form data |
 | Fetcher form | `return result` |
@@ -251,7 +251,7 @@ that is the old Remix helper and is not used here.
 ### Legacy shape
 
 Many actions still call a building block directly. They keep the old order until
-their module migrates: `assertIsPost(request)` → `requirePermissions(request, { create | update: "module" })`
+their module migrates: `assertIsPost(request)` → `authorize(request, { create | update: "module" })`
 → `const formData = await request.formData()` → `validator(schema).validate(formData)`
 → `return validationError(validation.error)` on failure → the service call →
 `return data({}, await flash(request, error(...)))` on failure, or
@@ -374,7 +374,7 @@ const fetcher = useAction<typeof action>({
 - [ ] Validator imported from `~/modules/{module}/{module}.models` (modules have no barrel)
 - [ ] Form component with `ValidatedForm`, raw schema in `validator` prop
 - [ ] Props typed with `z.infer<typeof validator>`; `<Hidden name="id" />` present
-- [ ] Route action: `validator(schema).request(args, …)` → `carbon(request)` →
+- [ ] Route action: `validator(schema).request(args, …)` → `authorize(request)` →
       one service-function call → return the result or `respond(...).redirect(...)`
 - [ ] `setCustomFields(formData)` + `<CustomFormFields table="..." />` if the
       table has custom fields

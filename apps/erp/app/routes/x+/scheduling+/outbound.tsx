@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
@@ -34,11 +33,9 @@ export const handle: Handle = {
 const logger = getLogger("erp", "scheduling", "outbound");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, userId, api } = await authorize(request, {
     view: "production"
   });
-  const { client, companyId, userId } = auth;
-  const api = carbonFor(auth);
 
   const searchParams = new URL(request.url).searchParams;
   const locationId = await resolveLocationId(client, request, {

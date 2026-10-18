@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { workflowValidator } from "~/modules/workflows/workflows.models";
@@ -11,7 +11,7 @@ import { workflowValidator } from "~/modules/workflows/workflows.models";
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(workflowValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const { name, description } = input.data;
   return api.workflows.createWorkflow({ name, description });
 }

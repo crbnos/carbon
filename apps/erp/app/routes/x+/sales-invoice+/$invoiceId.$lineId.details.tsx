@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
+import { authorize, dataOrThrow } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { RecordOutlet } from "@carbon/react";
@@ -25,11 +24,10 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "invoicing",
     role: "employee"
   });
-  const api = carbonFor(auth);
 
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");
@@ -55,7 +53,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { invoiceId, lineId } = input.params;
   const formData = input.formData ?? new FormData();
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.invoicing.updateSalesInvoiceLine({
     ...input.data,
     id: lineId,

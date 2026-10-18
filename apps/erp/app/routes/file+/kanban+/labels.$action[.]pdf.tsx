@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, dataOrThrow } from "@carbon/api/carbon.server";
 import { KanbanLabelPDF } from "@carbon/documents/pdf";
 import { getLogger } from "@carbon/logger";
 import { getRequestOrigin } from "@carbon/utils";
@@ -13,11 +12,9 @@ import type { LoaderFunctionArgs } from "react-router";
 const logger = getLogger("erp", "labels-action-pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, api } = await authorize(request, {
     view: "inventory"
   });
-  const { client } = auth;
-  const api = carbonFor(auth);
 
   const company = await api.settings.getCompany({});
   if (company.error) {

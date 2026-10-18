@@ -18,7 +18,7 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
 
 Every action below makes ONE call to an operation in
 `apps/erp/app/modules/inventory/inventory.server.ts` (`api.inventory.<name>` through
-`carbon(request)`; the names are flat, such as `createShipment`, `updateReceipt`,
+`authorize(request)`; the names are flat, such as `createShipment`, `updateReceipt`,
 `setReceiptLineBatch`); the logic described here lives in that operation, so the API and MCP
 run the same checks. The route only parses the form, and takes the document id from the URL.
 

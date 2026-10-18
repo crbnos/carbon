@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -46,10 +45,9 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "invoicing"
   });
-  const api = carbonFor(auth);
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
@@ -84,7 +82,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find invoiceId");
 
   // Check if PI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  const { client: viewClient } = await authorize(request, {
     view: "invoicing"
   });
 
@@ -106,7 +104,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, userId } = await authorize(request, {
     update: "invoicing"
   });
 

@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -27,11 +26,9 @@ import { path } from "~/utils/path";
  * Select tab, not just Scan — the same contract the picking-list picker uses.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: "inventory"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
 
   const { lineId } = params;
   if (!lineId) throw new Response("Not found", { status: 404 });
@@ -92,7 +89,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { trackedEntityId, quantity, locationId } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.inventory.pickStockTransferLineEntity({
     lineId: input.params.lineId,
     trackedEntityId,

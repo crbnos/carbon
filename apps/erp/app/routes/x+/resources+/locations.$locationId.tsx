@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
@@ -18,10 +17,9 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "resources"
   });
-  const api = carbonFor(auth);
 
   const { locationId } = params;
   if (!locationId) throw notFound("Location ID was not found");
@@ -45,7 +43,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["locationId"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.resources.updateLocation({
     ...input.data,
     id: input.params.locationId,

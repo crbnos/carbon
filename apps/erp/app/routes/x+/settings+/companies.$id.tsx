@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { isInternalEmail, redirect } from "@carbon/utils";
@@ -16,7 +15,7 @@ import { CompanyForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, email } = await requirePermissions(request, {
+  const { client, email } = await authorize(request, {
     view: "settings"
   });
 
@@ -44,7 +43,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["id"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.settings.updateSubsidiaryDetails({
     ...input.data,
     id: input.params.id

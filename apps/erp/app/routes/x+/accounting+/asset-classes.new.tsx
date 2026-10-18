@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
@@ -20,11 +19,9 @@ import { AssetClassForm } from "~/modules/accounting/ui/FixedAssets";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     create: "accounting"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
 
   const [defaults, companySettings] = await Promise.all([
     getDefaultAccounts(client, companyId),
@@ -40,7 +37,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await authorize(request, {
     create: "accounting"
   });
 

@@ -2,14 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  carbon,
-  carbonFor,
-  dataOrThrow,
-  respond
-} from "@carbon/api/carbon.server";
+import { authorize, dataOrThrow, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -60,12 +54,10 @@ import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: "production",
     bypassRls: true
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -155,7 +147,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { jobId } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.production.updateJobDetails({
     ...input.data,
     id: jobId,

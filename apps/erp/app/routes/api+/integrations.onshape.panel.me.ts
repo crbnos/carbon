@@ -5,7 +5,7 @@
 import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { OnshapePanelMe } from "@carbon/ee";
-import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { authorizePanel } from "@carbon/ee/onshape/panel-session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -16,7 +16,7 @@ export const config = {
 /** The panel user and company, and whether they may edit the Fields page. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId, sessionUserId, email } =
-    await requireOnshapePanelPermissions(request, {});
+    await authorizePanel(request, {});
 
   // `requireOnshapePanelPermissions` throws on a denial, so the Fields
   // permission is read from the claims directly.

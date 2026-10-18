@@ -74,7 +74,7 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 
 ## Operations (`workflows.server.ts`)
 
-Each is a `defineServiceFn` const; the route calls it through `carbon(request)` (`api.workflows.createWorkflow(input)`). Neither is published (no `@mcp`). Every function under Key Service Functions is a building block in `workflows.service.ts`.
+Each is a `defineServiceFn` const; the route calls it through `authorize(request)` (`api.workflows.createWorkflow(input)`). Neither is published (no `@mcp`). Every function under Key Service Functions is a building block in `workflows.service.ts`.
 
 - `createWorkflow` (`x+/workflows+/new.tsx`) — inserts the workflow (the creator is its owner) and version 1 with one trigger node; the New Workflow modal opens the builder on the returned `id`.
 - `deleteWorkflow` (`x+/workflows+/delete.$id.tsx`) — deletes the workflow, then `syncAfterWorkflowDelete` reconciles the company's event subscriptions.

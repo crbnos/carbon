@@ -3,9 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { AccountNotificationsData } from "@carbon/account";
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
@@ -18,9 +17,7 @@ import { upsertNotificationPreference } from "~/modules/users/users.service";
 
 // Data and writes for the Notifications pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {});
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
+  const { client, companyId, api } = await authorize(request, {});
 
   const [preferences, slackIntegration, emailPlanEnabled] = await Promise.all([
     api.users.getNotificationPreferences({}),
@@ -49,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, companyId } = await requirePermissions(request, {});
+  const { client, userId, companyId } = await authorize(request, {});
 
   const validation = await validator(notificationPreferenceValidator).validate(
     await request.formData()

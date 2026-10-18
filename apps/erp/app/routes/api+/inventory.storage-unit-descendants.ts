@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { LoaderFunctionArgs } from "react-router";
 
 /**
@@ -14,8 +13,7 @@ import type { LoaderFunctionArgs } from "react-router";
  * client-side gives a cleaner UX than a round-trip rejection.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, { view: "inventory" });
-  const api = carbonFor(auth);
+  const { api } = await authorize(request, { view: "inventory" });
 
   const url = new URL(request.url);
   const id = url.searchParams.get("id");

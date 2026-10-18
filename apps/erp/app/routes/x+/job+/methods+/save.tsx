@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -27,7 +27,7 @@ export async function action(args: ActionFunctionArgs) {
       workInstructions: parts.workInstructions
     }
   };
-  const production = (await carbon(args.request)).production;
+  const production = (await authorize(args.request)).api.production;
 
   if (type === "job") {
     return production.upsertMakeMethodFromJob(method);

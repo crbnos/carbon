@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -150,12 +149,10 @@ function formatWeekLabel(weekKey: string, locale?: string): string {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, userId, companyId, api } = await authorize(request, {
     view: "quality",
     role: "employee"
   });
-  const { client, userId, companyId } = auth;
-  const api = carbonFor(auth);
 
   const [
     openIssues,

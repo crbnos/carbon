@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
 
   // First check with view permission to verify PO status
-  const { client: viewClient } = await requirePermissions(request, {
+  const { client: viewClient } = await authorize(request, {
     view: "purchasing"
   });
 
@@ -54,7 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await authorize(request, {
     create: "purchasing"
   });
 

@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useMount, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -15,11 +14,10 @@ import { JobDag } from "~/modules/production/ui/Jobs";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "production",
     role: "employee"
   });
-  const api = carbonFor(auth);
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");

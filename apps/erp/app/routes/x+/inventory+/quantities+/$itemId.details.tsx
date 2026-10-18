@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
@@ -31,11 +30,9 @@ import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, userId, api } = await authorize(request, {
     view: "inventory"
   });
-  const { client, companyId, userId } = auth;
-  const api = carbonFor(auth);
 
   const { itemId } = params;
   if (!itemId) throw notFound("itemId not found");

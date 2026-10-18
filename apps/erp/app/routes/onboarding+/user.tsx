@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { destroyAuthSession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
@@ -37,7 +37,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "user");
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { userId } = await requirePermissions(request, {
+  const { userId } = await authorize(request, {
     // Onboarding acts on the user's own account: a portal-only user may still
     // create a company of their own.
     allowPortalAccounts: true
@@ -53,7 +53,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  const { userId } = await authorize(request, {
     // Onboarding acts on the user's own account: a portal-only user may still
     // create a company of their own.
     allowPortalAccounts: true

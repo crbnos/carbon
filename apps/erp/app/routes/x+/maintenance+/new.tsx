@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -22,11 +21,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, userId, api } = await authorize(request, {
     create: "resources"
   });
-  const { client, companyId, userId } = auth;
-  const api = carbonFor(auth);
 
   const [failureModes, defaults] = await Promise.all([
     api.resources.getFailureModesList({}),
@@ -42,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(maintenanceDispatchValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.resources.createMaintenanceDispatch(input.data);
   return respond(args.request, result).redirect(
     result.data

@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -15,11 +14,10 @@ import { groupValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "users",
     role: "employee"
   });
-  const api = carbonFor(auth);
 
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
@@ -60,7 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(groupValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.users.updateGroup(input.data);
   return respond(args.request, result).redirect(path.to.groups, {
     message: "Group updated successfully"

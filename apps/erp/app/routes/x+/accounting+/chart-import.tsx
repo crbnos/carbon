@@ -8,9 +8,8 @@
 // files would do; `apply` runs the same plan in one transaction through the
 // apply-account-import server function.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   type AccountImportResolutions,
@@ -68,11 +67,9 @@ function returnPath(params: URLSearchParams) {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { companyId, api } = await authorize(request, {
     update: "accounting"
   });
-  const { companyId } = auth;
-  const api = carbonFor(auth);
   const settings = await api.settings.getCompanySettings({});
   if (settings.error) {
     logger.error("Failed to read the company settings", {
@@ -118,7 +115,7 @@ function readFile<Row>(
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { companyId, companyGroupId } = await requirePermissions(request, {
+  const { companyId, companyGroupId } = await authorize(request, {
     update: "accounting"
   });
 
@@ -138,7 +135,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const resolutions = readResolutions(formData.get("resolutions"));
 
   if (formData.get("intent") === "apply") {
-    const api = await carbon(request);
+    const { api } = await authorize(request);
     const result = await api.accounting.importChartOfAccounts({
       chart: chart.rows,
       defaults: defaults.rows,

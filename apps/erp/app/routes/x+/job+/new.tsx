@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -27,10 +26,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId } = await authorize(request, {
     view: "production"
   });
-  const { client, companyId } = auth;
   // The Complete To pickers. A CIP class is the holding account a job's cost
   // sits in, never a target, so it is filtered out here rather than by name.
   const [fixedAssetClasses, underConstructionAssets] = await Promise.all([
@@ -72,7 +70,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(jobValidator).request(args);
   if ("invalid" in input) return input.invalid;
 
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.production.createJob({
     ...input.data,
     customFields: input.formData ? setCustomFields(input.formData) : undefined

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -24,7 +24,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id: leaseId, lineId: leaseLineId } = input.params;
   const to =
     requestReferrer(args.request) ?? path.to.leaseSetup(leaseId, "accounting");
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
 
   if ("intent" in input.data) {
     const result = await api.purchasing.removeLeaseLineClassificationOverride({

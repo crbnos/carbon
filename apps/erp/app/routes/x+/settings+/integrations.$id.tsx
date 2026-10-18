@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
@@ -466,11 +465,9 @@ async function getDimensionSyncTabData(
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, companyGroupId, api } = await authorize(request, {
     update: "settings"
   });
-  const { client, companyId, companyGroupId } = auth;
-  const api = carbonFor(auth);
 
   const { id: integrationId } = params;
   if (!integrationId) throw new Error("Integration ID not found");
@@ -1019,7 +1016,7 @@ export async function action(args: ActionFunctionArgs) {
         params
       );
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.transitionSyncOperations(input.data);
     }
     case "ai-suggest-account-mappings": {
@@ -1028,7 +1025,7 @@ export async function action(args: ActionFunctionArgs) {
         params
       );
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.suggestAccountMappings(input.data);
     }
     case "bulk-upsert-account-mappings": {
@@ -1037,7 +1034,7 @@ export async function action(args: ActionFunctionArgs) {
         params
       );
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.saveAccountMappings({
         integrationId: input.params.id,
         mappings: input.data.mappings
@@ -1049,7 +1046,7 @@ export async function action(args: ActionFunctionArgs) {
         params
       );
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.updateDimensionSync({
         ...input.data,
         integrationId: input.params.id
@@ -1061,7 +1058,7 @@ export async function action(args: ActionFunctionArgs) {
       ).request(args, params);
       if ("invalid" in input) return input.invalid;
       const { intent: _, ...mapping } = input.data;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.saveDimensionValueMappings({
         integrationId: input.params.id,
         mappings: [mapping]
@@ -1072,7 +1069,7 @@ export async function action(args: ActionFunctionArgs) {
         dimensionValueMappingBulkUpsertValidator
       ).request(args, params);
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.saveDimensionValueMappings({
         integrationId: input.params.id,
         mappings: input.data.mappings
@@ -1081,7 +1078,7 @@ export async function action(args: ActionFunctionArgs) {
     case "update-sync-enabled": {
       const input = await validator(syncEnabledValidator).request(args, params);
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.setIntegrationSyncEnabled({
         integrationId: input.params.id,
         syncEnabled: input.data.syncEnabled
@@ -1093,7 +1090,7 @@ export async function action(args: ActionFunctionArgs) {
         params
       );
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.updatePostingSync({
         ...input.data,
         integrationId: input.params.id
@@ -1105,7 +1102,7 @@ export async function action(args: ActionFunctionArgs) {
         params
       );
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.saveOeeDeviceMapping({
         integrationId: input.params.id,
         externalDeviceId: input.data.externalDeviceId,
@@ -1125,7 +1122,7 @@ export async function action(args: ActionFunctionArgs) {
  */
 async function installIntegration({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await authorize(request, {
     update: "settings"
   });
 

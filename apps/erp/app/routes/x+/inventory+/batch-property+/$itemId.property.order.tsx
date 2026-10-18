@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { batchPropertyOrderValidator } from "~/modules/inventory/inventory.models";
@@ -10,6 +10,6 @@ import { batchPropertyOrderValidator } from "~/modules/inventory/inventory.model
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(batchPropertyOrderValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.inventory.updateBatchPropertyOrder(input.data);
 }

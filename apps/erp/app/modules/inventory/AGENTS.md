@@ -61,7 +61,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 
 ## Operations (`inventory.server.ts`)
 
-Each operation is one `defineServiceFn` const in `inventory.server.ts`. A route action calls it through `carbon(request)` as `api.inventory.<name>(input)` and makes no other write (one route is left: `api+/kanban.collision.$id.tsx` still clears the job with `updateKanbanJob` from `production.service.ts`). A document id comes from the URL, never the form body; the API and MCP publish the ones tagged `@mcp` as `inventory_<name>`. Every check the route used to make is in the function.
+Each operation is one `defineServiceFn` const in `inventory.server.ts`. A route action calls it through `authorize(request)` as `api.inventory.<name>(input)` and makes no other write (one route is left: `api+/kanban.collision.$id.tsx` still clears the job with `updateKanbanJob` from `production.service.ts`). A document id comes from the URL, never the form body; the API and MCP publish the ones tagged `@mcp` as `inventory_<name>`. Every check the route used to make is in the function.
 
 | Operation | Route | What it holds |
 |---|---|---|

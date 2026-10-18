@@ -20,7 +20,7 @@ import * as users from "./users/users.server";
 import * as workflows from "./workflows/workflows.server";
 
 /**
- * Every module's operations. Routes call them through `carbon(request)`; the
+ * Every module's operations. Routes call them through `authorize(request)`; the
  * API and MCP publish the ones tagged `@mcp`.
  */
 export const router = {

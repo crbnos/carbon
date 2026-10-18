@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -19,11 +18,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Required action ID is required");
 
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "quality",
     role: "employee"
   });
-  const api = carbonFor(auth);
 
   const result = await api.quality.getRequiredAction({ requiredActionId: id });
   if (!result.data) {
@@ -41,7 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Required action ID is required");
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, userId } = await authorize(request, {
     update: "quality"
   });
 

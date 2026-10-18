@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -31,7 +30,7 @@ import { path } from "~/utils/path";
  * reads nothing but the status.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId } = await authorize(request, {
     update: "invoicing"
   });
 
@@ -91,7 +90,7 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const reimbursement = {
     ...input.data,
     // The URL reimbursement, not the form's copy.

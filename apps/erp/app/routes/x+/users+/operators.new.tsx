@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { ValidatedForm, validator } from "@carbon/form";
 import {
   Button,
@@ -28,14 +27,14 @@ import { createOperatorValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, { create: "users" });
+  await authorize(request, { create: "users" });
   return null;
 }
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(createOperatorValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.users.addConsoleOperator(input.data);
   // The PIN is generated on the server and stored only as a hash; the result
   // carries it so the modal can show it to the admin exactly once.

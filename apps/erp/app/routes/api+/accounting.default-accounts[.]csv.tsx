@@ -2,10 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 // The default accounts template of the chart of accounts import: one row per
 // default role and fixed asset class account, with the account it uses now.
-
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { loadAccountImportContext } from "@carbon/database/account-import-reads";
 import { CSV_CONTENT_TYPE, encodeCsv } from "@carbon/files/csv";
 import { getLogger } from "@carbon/logger";
@@ -19,7 +18,7 @@ import { getDatabaseClient } from "~/services/database.server";
 const logger = getLogger("erp", "api/accounting/default-accounts.csv");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, companyGroupId } = await requirePermissions(request, {
+  const { companyId, companyGroupId } = await authorize(request, {
     view: "accounting"
   });
 

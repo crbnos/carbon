@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   // Check if PI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  const { client: viewClient } = await authorize(request, {
     view: "invoicing"
   });
 
@@ -55,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await authorize(request, {
     create: "invoicing"
   });
 

@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { SUPABASE_URL } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   loadSalesInvoiceDocument,
   renderSalesInvoicePdf
@@ -12,12 +12,9 @@ import { getPreferenceHeaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "sales"
-    }
-  );
+  const { client, companyId, companyGroupId } = await authorize(request, {
+    view: "sales"
+  });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

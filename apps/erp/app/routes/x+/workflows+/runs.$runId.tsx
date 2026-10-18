@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import {
   Drawer,
@@ -27,7 +27,7 @@ import { MAX_RUN_STEPS } from "~/modules/workflows/workflows.utils";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId } = await authorize(request, {
     view: "workflows",
     role: "employee"
   });

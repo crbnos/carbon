@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import {
   ForbiddenError,
   InvalidInputError,
@@ -18,7 +19,6 @@ import type {
   ErrorCategory,
   ServiceContext
 } from "@carbon/api/service-fn.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
@@ -9612,7 +9612,7 @@ export async function applyCtaToReportPeriodSeriesForReport(
   reportingCompanyId: string,
   args: Parameters<typeof applyCtaToReportPeriodSeries>[3]
 ) {
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const { client, companyGroupId } = await authorize(request, {
     view: "accounting",
     role: "employee",
     bypassRls: true

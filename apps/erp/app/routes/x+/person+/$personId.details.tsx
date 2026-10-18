@@ -3,9 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ProfileForm } from "@carbon/account/ui";
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -14,10 +13,9 @@ import { useUser } from "~/hooks";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "people"
   });
-  const api = carbonFor(auth);
 
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");

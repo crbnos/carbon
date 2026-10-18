@@ -2,19 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { stockMovementCorrectionValidator } from "~/modules/inventory/inventory.models";
+
 // The modal pre-fills its corrected-quantity field from this — the page's
 // visible rows can miss off-page corrections (or descendants of a correction
 // row), so the client never derives the effective quantity itself.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "inventory"
   });
-  const api = carbonFor(auth);
 
   const { ledgerId } = params;
   if (!ledgerId) throw new Error("Could not find ledgerId");
@@ -35,7 +34,7 @@ export async function action(args: ActionFunctionArgs) {
     { params: ["ledgerId"] }
   );
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   // Returned to the modal's fetcher: it toasts a refusal and stays open, and
   // closes itself on success. The table follows itemLedger through realtime.
   return api.inventory.correctStockMovement({

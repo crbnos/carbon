@@ -48,13 +48,14 @@ rules — this file does not repeat them:
   at the call site. Leaving the origin on purpose (OAuth provider, Stripe, ERP ↔
   MES) is `redirectExternal`, with a URL the server built. Enforced by the
   `no-raw-redirect` check (`@carbon/checks`).
-- Server-only auth helpers come from subpaths:
-  `@carbon/auth/auth.server` (`requirePermissions`), `@carbon/auth/session.server`
-  (`flash`), and `@carbon/auth` (`error`, `success`, `assertIsPost`).
+- ERP code authenticates a request with `authorize` (`@carbon/api/carbon.server`);
+  MES, academy and starter call `requirePermissions` (`@carbon/auth/auth.server`).
+  Other server-only auth helpers: `@carbon/auth/session.server` (`flash`) and
+  `@carbon/auth` (`error`, `success`, `assertIsPost`).
 
 ```typescript
 import { Button, VStack } from "@carbon/react";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { usePermissions } from "~/hooks";
 ```
@@ -102,15 +103,15 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   `_index.tsx`, `_layout.tsx` and `_public+/` (pathless), `x+/`, `api+/`, `file+/`
   (folder groups), `$param` (dynamic segments), `[.]pdf` (escaped literals).
 - Loaders/actions destructure args typed by `react-router`. The first thing an
-  authenticated loader does is `await requirePermissions(request, { ... })`,
-  destructuring `{ client, companyId, userId }` (also `email`, `companyGroupId`).
+  authenticated ERP loader does is `await authorize(request, { ... })`,
+  destructuring `{ api, client, companyId, userId }` (also `email`, `companyGroupId`).
 - An action checks the request with `validator(schema).request(args, …)`
-  (`@carbon/form`), calls ONE service function through `carbon(request)`
+  (`@carbon/form`), calls ONE service function through `authorize(request)`
   (`@carbon/api/carbon.server`) and returns its result, or
   `respond(request, result).redirect(...)` for a navigating form. The service
   function holds the permission and the write. See
   [conventions-forms.md](conventions-forms.md) and [module-files.md](module-files.md).
-  Older actions still run `assertIsPost` → `requirePermissions` → a building block.
+  Older actions still run `assertIsPost` → `authorize(request, gate)` → a building block.
 - Loaders/actions return **plain objects** or `data(value, responseInit)`.
   Do NOT use `json(...)` — that is the old Remix helper and is not the convention here.
 - A layout does NOT export `shouldRevalidate` to skip its loader. Single fetch

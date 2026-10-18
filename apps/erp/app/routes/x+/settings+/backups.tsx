@@ -4,8 +4,8 @@
 
 // Settings → Backups (company export / in-place restore).
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { convertKbToString } from "@carbon/files";
@@ -144,7 +144,7 @@ async function clearStaleExportFailure(
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
+  const { client, companyId, email } = await authorize(request, {
     update: "settings"
   });
   // Business/Enterprise feature, plus an internal/local-dev escape hatch.
@@ -169,12 +169,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId, email } = await requirePermissions(
-    request,
-    {
-      update: "settings"
-    }
-  );
+  const { client, companyId, userId, email } = await authorize(request, {
+    update: "settings"
+  });
   if (!(await canManageBackups(client, companyId, email))) {
     throw redirect(path.to.settings);
   }

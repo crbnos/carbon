@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
@@ -17,7 +17,7 @@ export async function loader({ request, params }: ActionFunctionArgs) {
   if (!id) throw notFound("id not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const [lines, stockTransfer] = await Promise.all([
     api.inventory.getStockTransferLines({ stockTransferId: id }),
     api.inventory.getStockTransfer({ stockTransferId: id })

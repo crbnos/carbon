@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
+import { authorize, dataOrThrow } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { FundingSource } from "@carbon/utils";
@@ -49,11 +48,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: "invoicing"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
   const { paymentId } = params;
   if (!paymentId) throw notFound("Missing paymentId");
   const [payment, applications] = await Promise.all([
@@ -222,7 +219,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await authorize(request, {
     update: "invoicing"
   });
   const { paymentId } = params;

@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { ScrollArea, useCloseRoute, useViewport } from "@carbon/react";
@@ -22,10 +22,9 @@ import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflow
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId } = await authorize(request, {
     create: "quality"
   });
-  const { client, companyId } = auth;
   const requiredActions = await getRequiredActionsList(client, companyId);
 
   return {
@@ -35,7 +34,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await authorize(request, {
     create: "quality"
   });
   const formData = await request.formData();

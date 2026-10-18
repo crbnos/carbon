@@ -62,14 +62,15 @@ Kysely has neither: it is bounded by the process pool below.
 
 ### Getting a client in a route
 
-Loaders/actions never construct a client directly. They call `requirePermissions`
-(`packages/auth/src/services/auth.server.ts`), which authenticates the request and returns the
-right client plus context:
+Loaders/actions never construct a client directly. An ERP route calls `authorize`
+(`@carbon/api/carbon.server`), which runs `requirePermissions`
+(`packages/auth/src/services/auth.server.ts`) and returns the right client plus context and
+`api`; MES calls `requirePermissions` itself:
 
 ```typescript
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 
-const { client, companyId, userId } = await requirePermissions(request, {
+const { client, companyId, userId } = await authorize(request, {
   view: "sales",          // permission_action, e.g. "sales_view" is checked internally
 });
 ```
@@ -78,7 +79,7 @@ const { client, companyId, userId } = await requirePermissions(request, {
   denial**. It also handles the `carbon-key` API-key path (rate limiting, scope checks).
 - Pass `bypassRls: true` to get `getCarbonServiceRole()` instead (only honored for `employee` role).
 - `userId` is the effective user (respects console/impersonation); `sessionUserId` is the raw session user.
-- A migrated action calls `carbon(request)` (`@carbon/api/carbon.server`) instead. It runs
+- A migrated action calls `authorize(request)` with no gate. It runs
   `requirePermissions(request, {})` and the service function gets its clients from its context
   (`ctx.asCaller.supabase`, `ctx.asSystem.supabase`, `ctx.asSystem.pg`).
 
@@ -247,14 +248,14 @@ document id is an ordinary input field.
 
 `x+/purchase-order+/$orderId.line-order.tsx` still calls the building block directly (the
 legacy shape). A migrated action calls the service function instead:
-`(await carbon(request)).purchasing.updatePurchaseOrderLineOrder({ purchaseOrderId, updates })`.
+`(await authorize(request)).api.purchasing.updatePurchaseOrderLineOrder({ purchaseOrderId, updates })`.
 
 ```typescript
 import { getDatabaseClient } from "~/services/database.server";
 import { updatePurchaseOrderLineOrder } from "~/modules/purchasing/purchasing.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, { update: "purchasing" });
+  const { companyId, userId } = await authorize(request, { update: "purchasing" });
   if (!params.orderId) throw new Error("Could not find orderId");
   // ... build `updates` from formData ...
   try {

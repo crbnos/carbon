@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/specs/2026-10-18-page-level-permissions.md" />
-<meta name="explain-source-hash" content="55b02361a441606e5fbd0cfa37e458f6ba3521d8" />
+<meta name="explain-source-hash" content="2e0cbfa0c100c3b15a43ba24049fab95359761b7" />
 <title>Page-Level Permissions</title>
 <style>
   :root {
@@ -191,6 +191,8 @@
       <li>The top-level nav shows a module when the person has View on any of its pages.</li>
       <li>Reference data that every employee may read needs only the <code>"employee"</code> permission.</li>
       <li>Pages that share a table, such as the five item types, are told apart by a column RLS checks.</li>
+      <li>A gate names a page and its lowest level, such as <code>{ "inventory.receipts": "Edit" }</code>. The database keeps action keys such as <code>inventory.receipts_update</code>.</li>
+      <li>ERP code authenticates with one function, <code>authorize(request, gate?)</code>. It returns the caller and <code>api</code>, the service functions bound to that caller.</li>
       <li>Every module moves to page keys in one deploy; after it, no check names a module key.</li>
     </ol>
   </section>
@@ -271,6 +273,18 @@
       <summary>Do module keys survive? <span class="choice">No. A conformance check fails one after the switch.</span></summary>
       <div>
         <p>Why: before the switch a module's one page has the module's name. The nav uses <code>holdsAny</code> instead.</p>
+      </div>
+    </details>
+    <details>
+      <summary>What does a gate look like? <span class="choice">A page and its lowest level: <code>{ "inventory.receipts": "Edit" }</code>.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: admins set levels, so code asks for levels too. <code>{ create: "parts", update: "parts" }</code> meant <code>{ parts: "Edit" }</code>. The database keeps action keys, and each action maps to one level.</p>
+      </div>
+    </details>
+    <details>
+      <summary>How does a route authenticate? <span class="choice">With one <code>authorize</code>; the Onshape panel with <code>authorizePanel</code>.</span><span class="tag human">human</span></summary>
+      <div>
+        <p>Why: <code>carbon</code>, <code>carbonFor</code> and <code>requirePermissions</code> did one job. The panel keeps its own <code>cps_</code> token, so a leaked panel token reaches only the panel routes.</p>
       </div>
     </details>
     <details>
@@ -391,7 +405,8 @@
       <li>A buyer with no level on Payment Terms selects payment terms on a purchase order.</li>
       <li>A customer portal account gets <code>forbidden</code> from an <code>"employee"</code>-gated service function.</li>
       <li>Every row of <code>cases.json</code> passes against <code>holds</code> and the SQL resolver.</li>
-      <li><code>{ update: "inventory.receiptz" }</code> fails typecheck, and a module key fails the module-key check.</li>
+      <li><code>{ "inventory.receiptz": "Edit" }</code> fails typecheck, and a module in a gate fails the module-key check.</li>
+      <li>No ERP file outside the tests imports <code>requirePermissions</code>, <code>carbon</code> or <code>carbonFor</code>.</li>
       <li>The access view shows each page's level and source, and lists everyone with Edit on Receipts.</li>
       <li>A role edit writes one audit event with the affected count.</li>
       <li>The SQL helper adds less than 1 ms to a receipts list query.</li>
@@ -409,7 +424,8 @@
       <dt>Override</dt><dd>A person's own grant; it wins over the role and can add or remove access.</dd>
       <dt>Page registry</dt><dd>The list of modules and pages in <code>packages/database/src/access/registry.ts</code>.</dd>
       <dt>Resolver</dt><dd>The function that answers "does this person hold this action here", in SQL and in TS.</dd>
-      <dt>Page key</dt><dd>A permission key of the form <code>inventory.receipts_update</code>.</dd>
+      <dt>Gate</dt><dd>The access a route or service function needs: each page it names and the lowest level there.</dd>
+      <dt>Page key</dt><dd>An action key of the form <code>inventory.receipts_update</code>, as RLS and the claims use it.</dd>
       <dt>Module key</dt><dd>A permission key of the form <code>inventory_update</code>; no check names one after the switch.</dd>
       <dt><code>"employee"</code></dt><dd>A service function permission that admits any employee or API key of the company and refuses portal accounts.</dd>
       <dt>RLS</dt><dd>Row-level security: the Postgres policies that decide which rows a caller reads and writes.</dd>

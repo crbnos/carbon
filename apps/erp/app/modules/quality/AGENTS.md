@@ -59,7 +59,7 @@ pnpm --filter erp test
 
 ## Operations (`quality.server.ts`)
 
-Each operation is one `defineServiceFn` const in `quality.server.ts`. A route calls it through `carbon(request)` as `api.quality.<name>(input)` and makes no other write; the API and MCP publish the ones tagged `@mcp` as `quality_<name>`. Every check the route used to make is in the function.
+Each operation is one `defineServiceFn` const in `quality.server.ts`. A route calls it through `authorize(request)` as `api.quality.<name>(input)` and makes no other write; the API and MCP publish the ones tagged `@mcp` as `quality_<name>`. Every check the route used to make is in the function.
 
 | Operation | Route | What it holds |
 |---|---|---|

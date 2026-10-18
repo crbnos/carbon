@@ -5,7 +5,7 @@
 import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const requirePermissions = vi.hoisted(() => vi.fn());
+const authorize = vi.hoisted(() => vi.fn());
 const getCarbonServiceRole = vi.hoisted(() =>
   vi.fn(() => ({ role: "service" }))
 );
@@ -36,7 +36,7 @@ vi.mock("@carbon/auth", () => ({
   getAppUrl: () => "https://erp.example.com",
   getMESUrl: () => "https://mes.example.com"
 }));
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions }));
+vi.mock("@carbon/api/carbon.server", () => ({ authorize }));
 vi.mock("@carbon/auth/client.server", () => ({ getCarbonServiceRole }));
 vi.mock("@carbon/ee", () => ({ Ramp: { id: "ramp" } }));
 vi.mock("@carbon/ee/ramp/hooks.server", () => ({ rampOnInstall }));
@@ -105,7 +105,7 @@ async function run(request: Request) {
 describe("Ramp OAuth callback", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    requirePermissions.mockResolvedValue({
+    authorize.mockResolvedValue({
       client: { role: "user" },
       userId: identity.userId,
       companyId: identity.companyId

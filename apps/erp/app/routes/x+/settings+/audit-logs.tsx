@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   enableAuditLog,
@@ -36,7 +35,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId } = await authorize(request, {
     view: "settings"
   });
 
@@ -103,7 +102,7 @@ const auditLogForm = z.discriminatedUnion("action", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(auditLogForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   switch (input.data.action) {
     case "enable":
       return respond(

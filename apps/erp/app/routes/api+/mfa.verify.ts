@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, RATE_LIMIT, success } from "@carbon/auth";
-import { makeAuthSession, requirePermissions } from "@carbon/auth/auth.server";
+import { makeAuthSession } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { verifyTotpChallenge } from "@carbon/auth/mfa.server";
 import {
@@ -18,7 +19,7 @@ import { sendMfaEnabledEmail } from "~/services/mfa-email.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  await requirePermissions(request, {});
+  await authorize(request, {});
   const authSession = await requireAuthSession(request);
 
   const ip = getClientIp(request) ?? "127.0.0.1";

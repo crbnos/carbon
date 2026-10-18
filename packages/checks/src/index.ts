@@ -11,6 +11,7 @@ export type {
 } from "./check";
 export { findClobbers, objectRefs } from "./clobber";
 export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
+export { erpAuthorizeOnly } from "./conformance/erp-authorize-only";
 export { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 export { journalStatusFilter } from "./conformance/journal-status-filter";
 export { moduleShape } from "./conformance/module-shape";

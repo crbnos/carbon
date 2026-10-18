@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { Button, RecordOutlet, useDisclosure } from "@carbon/react";
 import { equals, redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
@@ -25,7 +25,7 @@ import { path } from "~/utils/path";
 /** The setup wizard is for a Draft: once confirmed, a contract is worked on
  *  from its page and changed with Amend. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId } = await authorize(request, {
     update: "sales"
   });
 

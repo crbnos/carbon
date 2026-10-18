@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { isAccountInUse } from "@carbon/database/account-import-reads";
 import { getLogger } from "@carbon/logger";
@@ -27,9 +26,9 @@ const IN_USE_MESSAGE =
   "This account is used by documents, journals or default accounts, so it cannot be deleted.";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, { view: "accounting" });
-  const { companyId, companyGroupId } = auth;
-  const api = carbonFor(auth);
+  const { companyId, companyGroupId, api } = await authorize(request, {
+    view: "accounting"
+  });
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");
 
@@ -65,7 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client } = await authorize(request, {
     delete: "accounting"
   });
 

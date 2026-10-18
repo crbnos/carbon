@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import type { JobReleaseReadiness } from "~/modules/production/production.service";
@@ -13,11 +12,9 @@ import type { JobReleaseReadiness } from "~/modules/production/production.servic
 // (the builder's selection, before the batch exists). Already-released jobs are
 // left out — their outside operations were handled when they were released.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: "production"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const batchId = url.searchParams.get("batchId");

@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -21,10 +21,9 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client } = await authorize(request, {
     delete: "sales"
   });
-  const { client } = auth;
   const { lineId, orderId } = params;
   if (!lineId) throw notFound("lineId not found");
   if (!orderId) throw notFound("orderId not found");
@@ -48,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw notFound("Could not find lineId");
   if (!orderId) throw notFound("Could not find orderId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  const { client: viewClient } = await authorize(request, {
     view: "sales"
   });
 
@@ -60,7 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot delete lines on a locked sales order. Reopen it first."
   });
 
-  const { client } = await requirePermissions(request, {
+  const { client } = await authorize(request, {
     delete: "sales"
   });
 

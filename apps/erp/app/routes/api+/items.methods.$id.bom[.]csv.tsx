@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { Database } from "@carbon/database";
 import { pluckUnique } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -59,11 +58,9 @@ const operationHeaders = [
 ];
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: "parts"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
 
   const { id } = params;
   const withOperations = request.url.includes("withOperations=true");

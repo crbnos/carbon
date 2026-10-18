@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { isAccountingSyncEnabled, ProviderID } from "@carbon/ee/accounting";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -51,7 +51,7 @@ const EntitySettingsSchema = z.object({
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId } = await authorize(request, {
     update: "settings"
   });
 

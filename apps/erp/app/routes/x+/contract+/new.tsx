@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { redirect, suggestContractType } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -30,10 +29,9 @@ export const handle: Handle = {
 /** A contract started from a customer (`?customerId=`) opens with that
  *  customer's currency and suggested type already filled in. */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId } = await authorize(request, {
     create: "sales"
   });
-  const { client, companyId } = auth;
   const customerId = new URL(request.url).searchParams.get("customerId");
   if (!customerId) return { customerId: null, currencyCode: null, type: null };
 
@@ -60,7 +58,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(customerContractValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.sales.createContract({
     ...input.data,
     customFields: input.formData ? setCustomFields(input.formData) : undefined

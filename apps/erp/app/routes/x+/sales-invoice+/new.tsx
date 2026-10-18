@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
@@ -35,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Writes on GET: a link on another site must not trigger it.
   rejectCrossSiteNavigation(request);
   // we don't use the client here -- if they have this permission, we'll upgrade to a service role if needed
-  const { companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await authorize(request, {
     create: "invoicing"
   });
 
@@ -104,10 +104,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
+  const { client, companyId, companyGroupId, userId } = await authorize(
+    request,
+    {
       create: "invoicing"
-    });
+    }
+  );
 
   const formData = await request.formData();
   const validation = await validator(salesInvoiceValidator).validate(formData);

@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { AccountSecurityData, Passkey } from "@carbon/account";
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getTotpFactors } from "@carbon/auth/mfa.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,7 +13,7 @@ import { data } from "react-router";
 
 // Data and writes for the Security pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { userId } = await requirePermissions(request, {});
+  const { userId } = await authorize(request, {});
   const serviceRole = getCarbonServiceRole();
   const [passkeysResult, totpFactors] = await Promise.all([
     (serviceRole as any)
@@ -32,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {});
+  const { userId } = await authorize(request, {});
   const formData = await request.formData();
 
   if (formData.get("intent") === "deletePasskey") {

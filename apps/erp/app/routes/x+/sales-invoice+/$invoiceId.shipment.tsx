@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   // Check if SI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  const { client: viewClient } = await authorize(request, {
     view: "invoicing"
   });
 
@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales invoice. Reopen it first."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await authorize(request, {
     update: "invoicing"
   });
 

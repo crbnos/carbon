@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -108,11 +107,9 @@ function formatDay(dateStr: string, locale: string) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: "people"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
 
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
@@ -194,7 +191,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { personId } = input.params;
   const form = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
 
   switch (form.intent) {
     case "clockIn":

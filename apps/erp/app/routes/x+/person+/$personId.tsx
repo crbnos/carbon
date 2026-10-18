@@ -3,9 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { accountProfileValidator } from "@carbon/account";
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { RecordOutlet } from "@carbon/react";
@@ -33,11 +32,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: "people"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
 
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
@@ -68,7 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client } = await authorize(request, {
     update: "people"
   });
   const { personId } = params;

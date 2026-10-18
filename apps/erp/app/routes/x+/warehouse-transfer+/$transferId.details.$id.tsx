@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
@@ -31,10 +30,9 @@ const warehouseTransferLineActionValidator = z.discriminatedUnion("type", [
 ]);
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client } = await authorize(request, {
     update: "inventory"
   });
-  const { client } = auth;
   const { transferId, id } = params;
   if (!transferId) throw new Error("transferId not found");
   if (!id) throw new Error("id not found");
@@ -67,7 +65,7 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const { transferId, id } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const { data } = input;
   const result =
     data.type === "delete"

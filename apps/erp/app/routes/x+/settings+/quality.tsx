@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   Hidden,
@@ -65,10 +64,9 @@ const samplingStandardValidator = z.object({
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "settings"
   });
-  const api = carbonFor(auth);
 
   const companySettings = await api.settings.getCompanySettings({});
 
@@ -98,7 +96,7 @@ const qualitySettingsForm = z.discriminatedUnion("intent", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(qualitySettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.settings.updateQualitySettings(input.data);
 }
 

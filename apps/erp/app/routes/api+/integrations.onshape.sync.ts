@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { onShapeDataValidator } from "@carbon/ee/onshape";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -21,7 +21,7 @@ const onshapeSyncForm = z.object({
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(onshapeSyncForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const { rows, ...ids } = input.data;
   // The operation checks `rows` with its own schema; the panel toasts what is wrong.
   return api.items.syncOnshapeMethod({

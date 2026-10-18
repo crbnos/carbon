@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getOnshapeIntegration } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
@@ -19,7 +19,7 @@ export const config = {
 // (companyIntegration.metadata.assetSyncEnabled) so it can't be run unless the
 // company has turned Onshape asset sync on.
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await authorize(request, {
     update: "settings"
   });
 

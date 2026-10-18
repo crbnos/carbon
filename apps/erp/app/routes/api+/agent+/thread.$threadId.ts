@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { getDisplayMessages, getThread } from "~/modules/agent/agent.service";
@@ -10,7 +10,7 @@ import { getDisplayMessages, getThread } from "~/modules/agent/agent.service";
 const logger = getLogger("erp", "agent-thread");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await authorize(request, {});
   const threadId = params.threadId;
   if (!threadId) throw new Response("Conversation not found", { status: 404 });
 

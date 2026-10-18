@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
@@ -40,7 +39,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.quality.decideQualityDocumentApproval({
     ...input.data,
     qualityDocumentId: id
@@ -51,12 +50,10 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { companyId, userId, api } = await authorize(request, {
     view: "quality",
     bypassRls: true
   });
-  const { companyId, userId } = auth;
-  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

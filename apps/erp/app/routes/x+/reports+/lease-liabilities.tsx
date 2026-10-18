@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getLogger } from "@carbon/logger";
 import {
   Alert,
@@ -69,12 +68,10 @@ function parseDateParam(raw: string | null): string | null {
 export async function loader({ request }: LoaderFunctionArgs) {
   // The lease tables' RLS is purchasing_view: without it every lease reads
   // as absent and the report would show no liability at all.
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: ["accounting", "purchasing"],
     role: "employee"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const asOf =

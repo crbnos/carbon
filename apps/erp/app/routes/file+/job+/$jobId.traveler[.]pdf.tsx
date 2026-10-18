@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { JobTravelerMaterial } from "@carbon/documents/pdf";
 import {
@@ -48,7 +48,7 @@ import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 const logger = getLogger("erp", "job-traveler", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId } = await authorize(request, {});
   const { locale } = getPreferenceHeaders(request);
 
   const { jobId } = params;

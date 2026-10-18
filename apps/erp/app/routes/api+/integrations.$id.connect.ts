@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { getAppUrl } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { getIntegrationIdsByRole, integrations } from "@carbon/ee";
 import { redirectExternal } from "@carbon/utils";
@@ -29,7 +29,7 @@ export const config = {
  * parameter the callback reads back.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { userId, companyId, client } = await requirePermissions(request, {
+  const { userId, companyId, client } = await authorize(request, {
     update: "settings"
   });
 

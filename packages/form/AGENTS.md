@@ -8,7 +8,7 @@ Form system — `ValidatedForm`, field components, validation helpers, and serve
 - **Pass raw zod schema to `ValidatedForm`** via `validator={mySchema}`. The `validator()` wrapper is only used in route actions: `validator(schema).request(args, …)` (legacy: `validator(schema).validate(formData)`).
 - **Import fields from `~/components/Form`** in apps (barrel re-exports all `@carbon/form` fields + domain selectors). Never import deep paths from `@carbon/form/src/components/...`.
 - **Include `<Hidden name="id" />` and `<CustomFormFields table="..." />`** in edit forms. Type form props with `z.infer<typeof validator>`.
-- **Route action pattern**: check the request first with `validator(schema?).request(args, { method?, params? })`: the method (default POST, else a 405), the named route params (a 400), then the body (form data or JSON). It returns `{ data, params, formData }` or `{ invalid }` (the `validationError` to return). Without a schema it reads no body. Then make one service-function call through `carbon(request)` and return its result (see `.claude/rules/conventions-forms.md`).
+- **Route action pattern**: check the request first with `validator(schema?).request(args, { method?, params? })`: the method (default POST, else a 405), the named route params (a 400), then the body (form data or JSON). It returns `{ data, params, formData }` or `{ invalid }` (the `validationError` to return). Without a schema it reads no body. Then make one service-function call through `authorize(request)` and return its result (see `.claude/rules/conventions-forms.md`).
 - **Legacy actions** (not yet migrated) run `assertIsPost` → `requirePermissions` → `validator(schema).validate(formData)` → service call → `flash`/`redirect`, returning `validationError(validation.error)` on failure. Do not write new ones.
 
 ## Ask First
@@ -53,7 +53,7 @@ import { Hidden, Input, Number, Submit } from "~/components/Form";
 import { validator } from "@carbon/form";
 const input = await validator(thingValidator).request(args, { params: ["thingId"] });
 if ("invalid" in input) return input.invalid;
-const api = await carbon(args.request); // @carbon/api/carbon.server
+const { api } = await authorize(args.request); // @carbon/api/carbon.server
 return api.things.updateThing({ ...input.data, id: input.params.thingId });
 ```
 

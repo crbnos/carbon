@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { PrintingSettings } from "@carbon/printing";
@@ -31,11 +30,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, userId, api } = await authorize(request, {
     view: "settings"
   });
-  const { client, companyId, userId } = auth;
-  const api = carbonFor(auth);
 
   const [companySettings, printerRoutes, workCenters, locations, userDefaults] =
     await Promise.all([
@@ -81,7 +78,7 @@ const printingForm = z.discriminatedUnion("intent", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(printingForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   switch (input.data.intent) {
     case "upsertRoute":
       return api.settings.savePrinterRoute(input.data);

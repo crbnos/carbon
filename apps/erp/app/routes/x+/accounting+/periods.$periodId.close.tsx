@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
@@ -71,12 +70,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
-  });
-  const { client, companyId, companyGroupId, userId } = auth;
-  const api = carbonFor(auth);
+  const { client, companyId, companyGroupId, userId, api } = await authorize(
+    request,
+    {
+      view: "accounting",
+      role: "employee"
+    }
+  );
 
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");
@@ -135,7 +135,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { periodId } = input.params;
   const { intent, taskId = "", notes, skippedReason = "" } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
 
   switch (intent) {
     case "completeTask":

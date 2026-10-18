@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { BACKUP_SUMMARY_GROUPS } from "~/modules/settings/backups.areas";
@@ -29,7 +29,7 @@ async function countEntity(
 // Lazy-loaded by the backup-contents popover (only when opened). Returns a
 // headline row count per entity, grouped, plus a grand total.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId, email } = await requirePermissions(
+  const { client, companyId, companyGroupId, email } = await authorize(
     request,
     { view: "settings" }
   );

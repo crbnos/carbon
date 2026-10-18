@@ -2,13 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { getItemMpnsList } from "~/modules/items/items.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {});
-  const { client, companyId } = auth;
+  const { client, companyId } = await authorize(request, {});
   const result = await getItemMpnsList(client, companyId);
 
   // Dedupe distinct MPN values for the filter dropdown.

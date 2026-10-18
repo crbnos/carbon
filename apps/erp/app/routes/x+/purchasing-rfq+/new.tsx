@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
@@ -24,7 +24,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(purchasingRfqValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const { id: _id, ...rfq } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.purchasing.createPurchasingRfq({
     ...rfq,
     customFields: input.formData && setCustomFields(input.formData)

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { DOCUMENT_CATALOG } from "@carbon/documents/template";
 import { Badge, Button, cn, ScrollArea, VStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -28,7 +28,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, { view: "settings", role: "employee" });
+  await authorize(request, { view: "settings", role: "employee" });
   return null;
 }
 

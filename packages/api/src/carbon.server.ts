@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// What a route calls: `carbon(request)` for the operations bound to its
-// caller, and `respond(request, result)` for a form that navigates. The app
-// registers its router once (`registerCarbon`), and states its type through
-// `Register`, so this package never imports app code.
+// What a route calls: `authorize(request, gate?)` for its caller and the
+// operations bound to them, and `respond(request, result)` for a form that
+// navigates. The app registers its router once (`registerCarbon`), and states
+// its type through `Register`, so this package never imports app code.
 
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
@@ -83,27 +83,49 @@ export function bindServiceFns<T extends object>(
   }) as Api<T>;
 }
 
-/**
- * The operations, bound to this request's caller: `api.production.cancelJob(input)`.
- * Each call is checked against its own permission, and returns its result as
- * the route sends it.
- */
-export async function carbon(request: Request): Promise<Api<RegisteredRouter>> {
-  return carbonFor(await requirePermissions(request, {}));
-}
+/** What a route gate asks for: `{ view: "sales" }`, plus `role` and `bypassRls`. */
+export type Gate = Parameters<typeof requirePermissions>[1];
+
+/** A caller, with the operations bound to them. */
+export type Authorized<A extends CallerAuth> = A & {
+  api: Api<RegisteredRouter>;
+};
 
 /**
- * `carbon()` for a caller a route authenticated another way, such as the
- * Onshape panel's bearer token (`requireOnshapePanelPermissions`).
+ * The caller of this request, refused unless they hold `gate`, with the
+ * operations bound to them: `const { api, companyId } = await authorize(request, { view: "sales" })`.
+ * With no gate, any employee or API key of the company passes; each call on
+ * `api` is still checked against its own permission.
  */
-export function carbonFor(auth: CallerAuth): Api<RegisteredRouter> {
-  if (!registered) {
-    throw new Error("carbon(): the app has not called registerCarbon");
-  }
-  return bindServiceFns(
-    registered.router as RegisteredRouter & object,
-    registered.context(auth)
-  );
+export function authorize(
+  request: Request,
+  gate?: Gate
+): Promise<Authorized<Awaited<ReturnType<typeof requirePermissions>>>>;
+/** The same, for a caller another gate authenticated: the Onshape panel's bearer token (`authorizePanel`). */
+export function authorize<A extends CallerAuth>(
+  caller: A
+): Promise<Authorized<A>>;
+export async function authorize(
+  from: Request | CallerAuth,
+  gate: Gate = {}
+): Promise<Authorized<CallerAuth>> {
+  const auth =
+    from instanceof Request ? await requirePermissions(from, gate) : from;
+  let api: Api<RegisteredRouter> | undefined;
+  // Bound on first read: most loaders never call a service function.
+  return Object.defineProperty({ ...auth }, "api", {
+    enumerable: true,
+    get() {
+      if (!registered) {
+        throw new Error("authorize(): the app has not called registerCarbon");
+      }
+      api ??= bindServiceFns(
+        registered.router as RegisteredRouter & object,
+        registered.context(auth)
+      );
+      return api;
+    }
+  }) as Authorized<CallerAuth>;
 }
 
 /**

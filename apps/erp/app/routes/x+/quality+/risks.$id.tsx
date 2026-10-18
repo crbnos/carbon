@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -14,11 +13,10 @@ import RiskRegisterForm from "~/modules/quality/ui/RiskRegister/RiskRegisterForm
 import { getParams, path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "quality",
     role: "employee"
   });
-  const api = carbonFor(auth);
   const { id } = params;
   invariant(id, "id is required");
 
@@ -36,7 +34,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { id: _, severity, likelihood, ...risk } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.quality.updateRisk({
     ...risk,
     id: input.params.id,

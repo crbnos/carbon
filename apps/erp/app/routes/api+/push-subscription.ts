@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { pushEndpointCookie } from "@carbon/auth/session.server";
 import { isPushConfigured } from "@carbon/env/push.server";
@@ -31,7 +31,7 @@ const rememberEndpoint = async (endpoint: string) => ({
 // GET ?endpoint= — are browser notifications on in this browser for the
 // signed-in user? Read-only: opening a page never claims the browser.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await authorize(request, {});
 
   if (!isPushConfigured()) return { enabled: false };
 
@@ -67,7 +67,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 // PUT saves it (also from push-worker.js after a pushsubscriptionchange),
 // DELETE removes it.
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await authorize(request, {});
 
   if (!isPushConfigured()) {
     return data({ error: "Push is not configured" }, { status: 404 });

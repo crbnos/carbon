@@ -2,15 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { upsertModulePreferences } from "~/modules/users/users.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, companyId } = await requirePermissions(request, {});
+  const { client, userId, companyId } = await authorize(request, {});
 
   const body = (await request.json()) as {
     preferences: { module: string; position: number; hidden: boolean }[];

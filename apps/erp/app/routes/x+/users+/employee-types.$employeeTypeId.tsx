@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { actionsGained, pageById } from "@carbon/database/access";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validator } from "@carbon/form";
@@ -15,12 +14,10 @@ import { employeeTypeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: "users",
     role: "employee"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
 
   await requireFeature({
     request,
@@ -61,7 +58,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id, name, data: grants } = input.data;
   if (!id) throw notFound("id not found");
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.users.updateEmployeeType({
     id,
     name,

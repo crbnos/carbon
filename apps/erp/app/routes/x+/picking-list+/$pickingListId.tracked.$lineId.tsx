@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, dataOrThrow } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -14,11 +13,9 @@ import { zfd } from "zod-form-data";
  * smart-ordered for the TrackedEntityPicker. POST: pick/unpick a chosen lot.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: "inventory"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
   const { lineId } = params;
   if (!lineId) throw new Response("Not found", { status: 404 });
 
@@ -90,7 +87,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
 
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.inventory.pickPickingListLineEntity({
     pickingListId: input.params.pickingListId,
     pickingListLineId: input.params.lineId,

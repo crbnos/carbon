@@ -32,7 +32,7 @@ import {
   selectInBatches,
   withRefusedMethods
 } from "@carbon/ee/onshape";
-import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { authorizePanel } from "@carbon/ee/onshape/panel-session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -57,15 +57,12 @@ const MAX_PLAN_PARTS = 1500;
 
 /** Plan an assembly push without writing; the apply reuses the stored plan. */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requireOnshapePanelPermissions(
-    request,
-    {
-      create: "parts",
-      update: "parts",
-      // Re-pushing replaces the BOM lines an earlier push wrote.
-      delete: "parts"
-    }
-  );
+  const { client, companyId, userId } = await authorizePanel(request, {
+    create: "parts",
+    update: "parts",
+    // Re-pushing replaces the BOM lines an earlier push wrote.
+    delete: "parts"
+  });
 
   const parsed = payloadSchema.safeParse(
     await request.json().catch(() => null)

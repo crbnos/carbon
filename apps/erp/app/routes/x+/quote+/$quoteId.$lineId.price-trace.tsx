@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type {
   ActionFunctionArgs,
@@ -27,12 +26,10 @@ export const shouldRevalidate: ShouldRevalidateFunction = () => false;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Read-only: explains the stored prices, writes nothing.
-  const auth = await requirePermissions(request, {
+  const { companyId, api } = await authorize(request, {
     view: "sales",
     role: "employee"
   });
-  const { companyId } = auth;
-  const api = carbonFor(auth);
 
   const { quoteId, lineId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -62,7 +59,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 // Reprice: store what today's rules give, with the trace that explains it.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await authorize(request, {
     update: "sales",
     role: "employee"
   });

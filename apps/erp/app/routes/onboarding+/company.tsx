@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
@@ -41,7 +41,7 @@ import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await authorize(request, {});
 
   const company = await getCompany(client, companyId ?? 1);
   const draft = await getOnboardingDraft(request);
@@ -58,7 +58,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  await requirePermissions(request, {});
+  await authorize(request, {});
 
   const formData = await request.formData();
 

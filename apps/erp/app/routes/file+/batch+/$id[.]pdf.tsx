@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { BatchListMember } from "@carbon/documents/pdf";
 import { BatchListPDF } from "@carbon/documents/pdf";
@@ -19,7 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Permissionless like the job traveler: shop-floor people without ERP
   // permissions still print the load sheet. Tenant safety comes from the
   // explicit companyId on every fetch below (service-role client).
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId } = await authorize(request, {});
 
   const { id } = params;
   if (!id) throw new Error("Could not find batch id");

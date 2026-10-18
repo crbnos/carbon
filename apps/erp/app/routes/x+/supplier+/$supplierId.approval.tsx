@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -22,7 +22,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { supplierId } = input.params;
   const to = path.to.supplier(supplierId);
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
 
   if ("intent" in input.data) {
     if (input.data.intent === "request-approval") {

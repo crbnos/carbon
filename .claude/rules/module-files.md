@@ -100,23 +100,24 @@ function kept its logic as is:
 |---|---|
 | `defineServiceFn`, `CarbonError`, `ServiceContext`, `toResult` | `@carbon/api/service-fn.server` |
 | `payload`, `unwrap`, `paged`, `run`, `attempt` | `@carbon/api/service-tools.server` |
-| `carbon`, `carbonFor`, `dataOrThrow`, `respond` | `@carbon/api/carbon.server` |
+| `authorize`, `dataOrThrow`, `respond` | `@carbon/api/carbon.server` |
 
-The ERP hands `carbon()` its router and caller context once
+The ERP hands `authorize` its router and caller context once
 (`registerCarbon`, in `apps/erp/app/modules/carbon.server.ts`, imported by
 `entry.server.tsx`) and its router type through `Register`.
 
 ## A route loader
 
 A loader reads through the service functions too, so it passes the same gate
-an API or MCP caller does. Bind `api` to the loader's own caller: `carbon(request)`
-would authenticate a second time, and for a `bypassRls: true` route it would
-replace the service-role client with the user's.
+an API or MCP caller does. Take `api` from the loader's own `authorize` call:
+a second `authorize(request)` would authenticate again, and for a
+`bypassRls: true` route its `api` would run with the user's client instead of
+the service role. `api` is bound on first read, so a loader that never calls a
+service function pays nothing for it.
 
 ```ts
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, { view: "sales" });
-  const api = carbonFor(auth);
+  const { api } = await authorize(request, { view: "sales" });
   const [customer, locations] = await Promise.all([
     api.sales.getCustomer({ customerId: params.customerId! }),
     api.resources.getLocationsList({})
@@ -149,7 +150,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(jobValidator).request(args, { params: ["jobId"] });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.production.cancelJob({ jobId: input.params.jobId });
   return result; // a fetcher form: the component's useAction toasts it
   // a navigating form instead:
@@ -170,3 +171,4 @@ elsewhere.
 | `no-server-code-in-client` | a value import of a `.service` or `.server` file from components, hooks, `ui/`, models, utils or types |
 | `route-action-shape` | a write made in a route instead of a service function |
 | `loader-reads-through-api` | a loader calling a building block that a service function wraps (`service.<name>(…)` in `<module>.server.ts`) |
+| `erp-authorize-only` | an ERP import of `requirePermissions`, `carbon` or `carbonFor`: ERP code authenticates with `authorize` |

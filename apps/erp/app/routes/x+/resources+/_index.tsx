@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -67,9 +67,7 @@ import type { maintenanceSource } from "~/modules/resources/resources.models";
 import { MaintenanceKPIs } from "~/modules/resources/resources.models";
 import MaintenanceSource from "~/modules/resources/ui/Maintenance/MaintenanceSource";
 import MaintenanceStatus from "~/modules/resources/ui/Maintenance/MaintenanceStatus";
-
 import type { loader as kpiLoader } from "~/routes/api+/resources.kpi.$key";
-
 import { path } from "~/utils/path";
 
 const OPEN_STATUSES = ["Open", "Assigned", "In Progress"] as const;
@@ -81,7 +79,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { client, userId, companyId } = await authorize(request, {
     view: "resources"
   });
 

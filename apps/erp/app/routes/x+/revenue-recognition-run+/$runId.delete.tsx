@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -16,11 +15,10 @@ import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "accounting",
     role: "employee"
   });
-  const api = carbonFor(auth);
 
   const { runId } = params;
   if (!runId) throw notFound("runId not found");
@@ -43,7 +41,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["runId"] });
   if ("invalid" in input) return input.invalid;
   const { runId } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.accounting.deleteRevenueRecognitionRun({ runId });
   // Back to the list of the run's own type.
   return respond(args.request, result).redirect(

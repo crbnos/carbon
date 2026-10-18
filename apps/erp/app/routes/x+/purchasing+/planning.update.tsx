@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -48,7 +48,7 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
   const request = input.data;
-  const purchasing = (await carbon(args.request)).purchasing;
+  const purchasing = (await authorize(args.request)).api.purchasing;
 
   switch (request.action) {
     case "order":

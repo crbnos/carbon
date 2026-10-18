@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
@@ -27,7 +27,7 @@ export async function action(args: ActionFunctionArgs) {
   // The transfer in the URL is the one updated, whatever the form's id says.
   const { id: _, transferId: readableId, ...transfer } = input.data;
   const { transferId } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.inventory.updateWarehouseTransfer({
     ...transfer,
     id: transferId,

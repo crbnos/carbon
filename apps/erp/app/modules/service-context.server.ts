@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { CallerAuth } from "@carbon/api/carbon.server";
 import type { ModulePermissions } from "@carbon/api/permissions";
 import {
   createServiceContext,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
-import type { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { redis } from "@carbon/kv";
@@ -98,16 +98,7 @@ export async function shareLinkContext(record: {
   });
 }
 
-type Auth = Pick<
-  Awaited<ReturnType<typeof requirePermissions>>,
-  | "client"
-  | "companyId"
-  | "companyGroupId"
-  | "userId"
-  | "caller"
-  | "permissions"
-  | "role"
->;
+type Auth = CallerAuth;
 
 /** The context for a request, built from what `requirePermissions` returned. */
 export function serviceContext(auth: Auth): ServiceContext {

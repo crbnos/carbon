@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
@@ -46,8 +46,10 @@ function refuse(error: string, status = 400, issues: WorkflowIssue[] = []) {
 /** The run acts as the owner, so anyone else firing it would be borrowing the owner's
  * permissions. This is the authorization boundary, not a UI nicety. */
 async function requireOwnedWorkflow(request: Request, id: string | undefined) {
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, { update: "workflows" });
+  const { client, companyId, companyGroupId, userId } = await authorize(
+    request,
+    { update: "workflows" }
+  );
   await requireFeature({
     request,
     client,

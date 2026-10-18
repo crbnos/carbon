@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, isAuthProviderEnabled } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getPasskeyRegistrationOptions } from "@carbon/auth/passkey.server";
 import type { ActionFunctionArgs } from "react-router";
@@ -16,7 +16,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(error(null, "Passkeys are disabled"), { status: 404 });
   }
 
-  const { userId, email } = await requirePermissions(request, {});
+  const { userId, email } = await authorize(request, {});
 
   const serviceRole = getCarbonServiceRole();
 

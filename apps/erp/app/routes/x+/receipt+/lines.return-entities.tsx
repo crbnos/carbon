@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { getShippedTrackedEntitiesForCustomer } from "~/modules/sales/sales.service";
 
@@ -14,10 +14,9 @@ import { getShippedTrackedEntitiesForCustomer } from "~/modules/sales/sales.serv
 // additionally returns the entities currently assigned to that receipt line
 // (attributes "Receipt Line").
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId } = await authorize(request, {
     view: "inventory"
   });
-  const { client, companyId } = auth;
   const url = new URL(request.url);
   const lineId = url.searchParams.get("lineId");
   const receiptLineId = url.searchParams.get("receiptLineId");

@@ -73,7 +73,7 @@ No new tables or columns.
 
 ## API / Service Changes
 
-All panel routes use `requireOnshapePanelPermissions` (bearer token, employees only, 401 or 403, no redirect).
+All panel routes use `authorizePanel` (bearer token, employees only, 401 or 403, no redirect).
 
 | Route | Method | Permission | Does |
 |---|---|---|---|

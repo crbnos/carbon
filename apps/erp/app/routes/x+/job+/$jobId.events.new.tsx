@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -13,10 +12,9 @@ import { ProductionEventForm } from "~/modules/production/ui/Jobs";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     create: "production"
   });
-  const api = carbonFor(auth);
 
   const { jobId } = params;
   if (!jobId) throw notFound("jobId not found");
@@ -38,7 +36,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["jobId"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.production.createProductionEvent(input.data);
   const postingError = result.data?.postingError;
   return respond(

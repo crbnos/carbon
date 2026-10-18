@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { touchAuthSession } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -15,7 +15,7 @@ import { data } from "react-router";
 // re-auth clears the lock. Its job is to keep an ACTIVE session from ever locking.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  await requirePermissions(request, {});
+  await authorize(request, {});
   const cookie = await touchAuthSession(request);
   return data(
     { ok: Boolean(cookie) },

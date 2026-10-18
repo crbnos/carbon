@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   getLegacyDocumentCounts,
@@ -102,11 +101,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { companyId, client, api } = await authorize(request, {
     view: "settings"
   });
-  const { companyId, client } = auth;
-  const api = carbonFor(auth);
 
   const [companySettings, accountDefaults] = await Promise.all([
     api.settings.getCompanySettings({}),
@@ -172,7 +169,7 @@ const accountingSettingsForm = z.discriminatedUnion("intent", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(accountingSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   if ("writeMissingJournals" in input.data) {
     return api.settings.writeMissingJournals({});
   }

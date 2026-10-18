@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { createGzip } from "node:zlib";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
@@ -46,7 +46,7 @@ const DOWNLOAD_CONCURRENCY = 6;
  * gzip tar, which `backups-archive.server.ts` unpacks on re-import.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
+  const { client, companyId, email } = await authorize(request, {
     view: "settings"
   });
   if (!(await canManageBackups(client, companyId, email)))

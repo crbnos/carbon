@@ -86,7 +86,7 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 ## Operations (`sales.server.ts`)
 
 Every route action that writes calls one `defineServiceFn` operation through
-`carbon(request)` (`api.sales.setQuoteStatus(input)`); the API and MCP publish
+`authorize(request)` (`api.sales.setQuoteStatus(input)`); the API and MCP publish
 the ones tagged `@mcp` as `sales_<name>`:
 
 - RFQs: `createSalesRfq`, `updateSalesRfqField`, `setSalesRfqStatus`, `convertSalesRfq`,

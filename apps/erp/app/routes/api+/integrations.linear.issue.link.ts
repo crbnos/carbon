@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import {
   actionTaskPermissions,
   isActionTaskEntityType
@@ -25,12 +24,12 @@ export async function action(args: ActionFunctionArgs) {
       method: "DELETE"
     });
     if ("invalid" in input) return input.invalid;
-    const api = await carbon(args.request);
+    const { api } = await authorize(args.request);
     return api.shared.unlinkLinearIssue(input.data);
   }
   const input = await validator(linkLinearIssue.input).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.shared.linkLinearIssue(input.data);
 }
 
@@ -43,7 +42,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     return { issues: [] };
   }
 
-  const { companyId } = await requirePermissions(
+  const { companyId } = await authorize(
     request,
     actionTaskPermissions(entityType)
   );

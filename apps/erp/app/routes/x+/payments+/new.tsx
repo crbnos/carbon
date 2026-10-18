@@ -2,14 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  carbon,
-  carbonFor,
-  dataOrThrow,
-  respond
-} from "@carbon/api/carbon.server";
+import { authorize, dataOrThrow, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import {
@@ -45,9 +39,9 @@ import { path } from "~/utils/path";
 //   amount      -> fallback total when no invoiceId is supplied
 //   salesOrderId / rentalAgreementId -> seeds the deposit document
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, { create: "invoicing" });
-  const { client, companyId, companyGroupId } = auth;
-  const api = carbonFor(auth);
+  const { client, companyId, companyGroupId, api } = await authorize(request, {
+    create: "invoicing"
+  });
 
   const url = new URL(request.url);
   const customerId = url.searchParams.get("customerId");
@@ -147,7 +141,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action(args: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(args.request, {
+  const { client, companyId } = await authorize(args.request, {
     create: "invoicing"
   });
   const input = await validator(paymentValidator).request(args);
@@ -163,7 +157,7 @@ export async function action(args: ActionFunctionArgs) {
     return validationError({ fieldErrors: { depositDocument: depositError } });
   }
   const formData = input.formData ?? new FormData();
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.invoicing.createPayment({
     ...input.data,
     customFields: setCustomFields(formData),

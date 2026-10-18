@@ -76,11 +76,11 @@ export const cancelJob = defineServiceFn({
 - **Transactions**: `ctx.transaction(async (tx) => …)` on `asSystem.pg`. A
   returned `CarbonError` rolls back; a nested call joins the open
   transaction; `tx.asCaller` throws, because that client is outside it.
-- **Routes**: `const api = await carbon(request)` (`@carbon/api/carbon.server`)
-  authenticates the caller and returns the router: `api.production.cancelJob(input)`
+- **Routes**: `const { api } = await authorize(request, gate?)` (`@carbon/api/carbon.server`)
+  authenticates the caller and returns it with the router: `api.production.cancelJob(input)`
   resolves to the result, its error a plain `{ category, message, status }`.
-  A route that needs the auth result for more than the call (a role gate, a
-  stream) builds the context with `serviceContext(auth)`
+  A route that needs the context itself (a stream, a building block that takes
+  `ctx`) builds it with `serviceContext(auth)`
   (`modules/service-context.server.ts`); a caller with no session (a public
   share link) uses `systemContext({ companyId, companyGroupId, onBehalfOf })`.
 - **Published**: `@mcp` in the TSDoc publishes the const as the MCP tool

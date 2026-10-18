@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
@@ -32,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Writes on GET: a link on another site must not trigger it.
   rejectCrossSiteNavigation(request);
   // we don't use the client here -- if they have this permission, we'll upgrade to a service role if needed
-  const { companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await authorize(request, {
     create: "invoicing"
   });
 
@@ -79,7 +78,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(purchaseInvoiceValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const formData = input.formData ?? new FormData();
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.invoicing.createPurchaseInvoice({
     ...input.data,
     customFields: setCustomFields(formData),

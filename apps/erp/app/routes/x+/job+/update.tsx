@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { CarbonError, toResult } from "@carbon/api/service-fn.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -40,7 +40,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(updateForm).request(args);
   if ("invalid" in input) return input.invalid;
   const { ids, field, value } = input.data;
-  const job = (await carbon(args.request)).production;
+  const job = (await authorize(args.request)).api.production;
 
   switch (field) {
     case "delete":

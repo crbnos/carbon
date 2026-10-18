@@ -4,9 +4,8 @@
 
 import type { AccountProfileData } from "@carbon/account";
 import { accountProfileValidator } from "@carbon/account";
-import { carbon, carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -18,9 +17,7 @@ const logger = getLogger("erp", "account-profile");
 
 // Data and writes for the Profile pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {});
-  const { userId } = auth;
-  const api = carbonFor(auth);
+  const { userId, api } = await authorize(request, {});
   const user = await api.users.getAccount({ id: userId });
 
   if (user.error) {
@@ -40,7 +37,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const form = input.data;
 
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   if (form.intent === "photo") {
     return api.users.updateOwnAvatar({ path: form.path });
   }

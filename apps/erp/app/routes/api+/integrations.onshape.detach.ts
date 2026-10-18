@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -13,7 +13,7 @@ export const config = {
 /** Remove an item's Onshape panel link (`detachOnshapeItem`). */
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.settings.detachOnshapeItem({
     itemId: String(formData.get("itemId") ?? "")
   });

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Readable } from "node:stream";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { TEMP_STAGING_BUCKET } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
@@ -27,7 +27,7 @@ const logger = getLogger("erp", "settings-backup-upload");
  *    staged object. Returns the folder name.
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
+  const { client, companyId, email } = await authorize(request, {
     update: "settings"
   });
   if (!(await canManageBackups(client, companyId, email)))

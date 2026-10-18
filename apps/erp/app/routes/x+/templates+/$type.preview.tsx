@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { DOCUMENT_PDFS, ensureFont } from "@carbon/documents/pdf";
 import {
   blockSchema,
@@ -30,7 +30,7 @@ import {
  * Buffer/streams) and guarantees the preview matches the real PDF route.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId } = await authorize(request, {
     view: "settings"
   });
 

@@ -35,8 +35,9 @@ siblings in this directory — grep `.claude/rules/` by topic.
   `@carbon/database` types + a Kysely client. Never hand-edit generated types.
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`.
 - **Imports**: `~/*` → app code (`./app/*`); `@carbon/*` → workspace packages.
-  Server-only auth helpers from `@carbon/auth/auth.server` (`requirePermissions`)
-  and `@carbon/auth/session.server` (`flash`).
+  ERP code authenticates with `authorize` (`@carbon/api/carbon.server`); MES uses
+  `requirePermissions` (`@carbon/auth/auth.server`). `flash` is in
+  `@carbon/auth/session.server`.
 - **ERP module layout**: `apps/erp/app/modules/{module}/` with `.server.ts`
   (`defineServiceFn` operations), `.service.ts` (building blocks), `.models.ts`
   (zod validators), `ui/`; no barrel ([module-files.md](module-files.md)).
@@ -52,7 +53,7 @@ siblings in this directory — grep `.claude/rules/` by topic.
 5. **Forms**: `ValidatedForm` + zod validator + route action; validate with
    `validator(schema).request(args, …)`, not `schema.parse()`.
 6. **Transactions**: Kysely for multi-row writes, not `Promise.all`.
-7. **Route actions**: validate, then one call through `carbon(request)`; return
+7. **Route actions**: validate, then one call through `authorize(request)`; return
    the result to a fetcher, or `respond(request, result).redirect(to, { message })`.
 8. **Migrations**: create with `pnpm db:migrate:new <name>` (the root `db:migrate`
    runs `crbn migrate` to apply). Full DB checklist in conventions-database.md.

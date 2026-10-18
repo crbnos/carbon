@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -14,7 +13,7 @@ import { KanbanForm } from "~/modules/inventory/ui";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  await authorize(request, {
     create: "inventory"
   });
 
@@ -25,7 +24,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(kanbanValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const { id: _, ...kanban } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.inventory.createKanban(kanban);
   const { pathname, search } = new URL(args.request.url);
   return respond(args.request, result).redirect(

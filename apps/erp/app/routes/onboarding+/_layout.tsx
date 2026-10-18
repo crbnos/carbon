@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { CarbonEdition } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { TooltipProvider } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import { Edition, redirect } from "@carbon/utils";
@@ -19,9 +18,7 @@ import { onboardingSequence, path } from "~/utils/path";
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {});
-  const { companyId, userId } = auth;
-  const api = carbonFor(auth);
+  const { companyId, userId, api } = await authorize(request, {});
 
   const [company, stripeCustomer, locations] = await Promise.all([
     api.settings.getCompany({}),

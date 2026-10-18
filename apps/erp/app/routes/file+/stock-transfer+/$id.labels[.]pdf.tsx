@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { ProductLabelPDF } from "@carbon/documents/pdf";
 import { labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
@@ -16,11 +15,9 @@ import {
 import { getStockTransferLabelItems } from "./labels.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: "inventory"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

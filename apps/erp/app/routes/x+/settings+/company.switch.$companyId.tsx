@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import {
   destroyAuthSession,
@@ -20,7 +20,7 @@ export async function loader() {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { client, userId } = await authorize(request, {
     // Switching away from a portal company must work: a user can be an
     // employee of one company and a customer or supplier of another.
     allowPortalAccounts: true

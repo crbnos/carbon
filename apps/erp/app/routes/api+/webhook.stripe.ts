@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getLogger } from "@carbon/logger";
 import {
   getStripeCustomerId,
@@ -17,7 +17,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "webhook-stripe");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId } = await authorize(request, {});
 
   const customerId = await getStripeCustomerId(companyId);
   if (customerId) {

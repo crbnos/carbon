@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
 
@@ -11,7 +11,7 @@ const escapeAttribute = (value: string) =>
   value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 export let loader = async ({ request }: LoaderFunctionArgs) => {
-  await requirePermissions(request, {
+  await authorize(request, {
     view: "documents"
   });
   const url = new URL(request.url);

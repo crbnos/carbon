@@ -7,7 +7,7 @@ import { createServiceContext } from "@carbon/api/service-fn.server";
 
 /**
  * A route test that mocks building blocks and runs a loader: the loader reads
- * through `carbonFor(auth)`, so the modules it calls must be registered
+ * through `api` from `authorize`, so the modules it calls must be registered
  * (`registerTestCarbon({ sales })`, a namespace import of `sales.server`).
  * The gate is not under test, so the caller acts as the system, with the
  * route's own client as its caller client.

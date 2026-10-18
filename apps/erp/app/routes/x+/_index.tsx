@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { CONTROLLED_ENVIRONMENT, getAppUrl } from "@carbon/env";
 import {
@@ -81,7 +81,7 @@ const AGENT_WIDGET_COOKIE = "onboardAgentDismissed";
 // finished) it surfaces as a primary-nav item (`getImplementationNavItem`) and a
 // summary card below — it never replaces the home page for anyone.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await authorize(request, {});
 
   // Compute the greeting on the server so SSR and hydration render the SAME
   // line — no client-side randomness, so no flash on refresh. `pick` is the

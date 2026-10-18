@@ -49,7 +49,7 @@ export const LOADER_READS_THROUGH_API = "loader-reads-through-api";
 
 /**
  * An ERP route loader reads through the service functions
- * (`api.<module>.<fn>(input)`, `api = carbonFor(auth)`), never by calling a
+ * (`api.<module>.<fn>(input)`, `const { api } = await authorize(request, gate)`), never by calling a
  * building block that a service function wraps: the loader and an API or
  * MCP caller then pass the same permission gate.
  */
@@ -61,7 +61,7 @@ export function loaderReadsThroughApi(wrapped: Set<string>): ConformanceCheck {
     provenance: {
       deprecates:
         "a loader that calls a `.service` building block a service function wraps",
-      replacedBy: "`api.<module>.<fn>(input)` with `api = carbonFor(auth)`",
+      replacedBy: "`api.<module>.<fn>(input)` from `authorize(request, gate)`",
       since: "2026-10-18"
     },
     scan(file: string, contents: string): Violation[] {
@@ -103,7 +103,7 @@ export function loaderReadsThroughApi(wrapped: Set<string>): ConformanceCheck {
                 source.getLineAndCharacterOfPosition(node.getStart(source))
                   .line + 1,
               snippet: block,
-              message: `Call ${block} through its service function: api.${block}(input), with api = carbonFor(auth)`
+              message: `Call ${block} through its service function: api.${block}(input), with api from authorize(request, gate)`
             });
           }
         }

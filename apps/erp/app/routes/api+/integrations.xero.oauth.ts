@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getAppUrl, XERO_CLIENT_ID, XERO_CLIENT_SECRET } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { Xero } from "@carbon/ee";
 import {
@@ -29,7 +28,7 @@ export const config = {
 const logger = getLogger("erp", "xero", "oauth");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const caller = await requirePermissions(request, {
+  const caller = await authorize(request, {
     update: "settings"
   });
   const { client, userId, companyId } = caller;
@@ -199,7 +198,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     // Sync starts off on a new connection so accounts can be mapped first; a
     // reconnect to the same organization keeps the switch where it was.
-    const existing = await carbonFor(caller).settings.getIntegration({
+    const existing = await caller.api.settings.getIntegration({
       id: Xero.id
     });
     const syncEnabled = syncEnabledOnConnect(existing.data?.metadata, tenantId);

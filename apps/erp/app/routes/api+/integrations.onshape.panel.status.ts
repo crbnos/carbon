@@ -23,7 +23,7 @@ import {
   onshapeFailure,
   selectInBatches
 } from "@carbon/ee/onshape";
-import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { authorizePanel } from "@carbon/ee/onshape/panel-session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -33,12 +33,9 @@ export const config = {
 
 /** Carbon status for the current Onshape element: its parts or its BOM. */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requireOnshapePanelPermissions(
-    request,
-    {
-      view: "parts"
-    }
-  );
+  const { client, companyId, userId } = await authorizePanel(request, {
+    view: "parts"
+  });
 
   const url = new URL(request.url);
   const documentId = url.searchParams.get("documentId");

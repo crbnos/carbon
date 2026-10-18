@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { draftRentalAgreementSetupPath } from "~/modules/sales/sales.service";
@@ -11,7 +11,7 @@ import { path } from "~/utils/path";
 /** Opening an agreement: a Draft continues its setup, anything else shows
  *  its page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await authorize(request, {
     view: "sales"
   });
   const { id } = params;

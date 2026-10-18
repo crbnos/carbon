@@ -24,15 +24,16 @@ Phases 1 and 2 — grants, resolver, editors (one release)
 - [ ] Task 12: Build the API key grid
 - [x] Task 13: Build the access view
 - [ ] Task 14: Update dev bootstrap, company seed and demo datasets
+- [x] Task 14a: Replace the ERP auth entry points with `authorize`
 - [ ] Task 15: Rewrite the permissions docs and glossary
 - [ ] Task 16: Verify phases 1 and 2 in the browser
 
 Phase 3 — every module to page keys (one deploy)
 - [ ] Task 17: Define the pages of all 14 modules in the registry
 - [ ] Task 18: Render RLS rules with page keys from the registry
-- [ ] Task 19: Move service function permissions to page keys
-- [ ] Task 20: Move ERP and MES route gates to page keys
-- [ ] Task 21: Move client permission checks to page keys
+- [ ] Task 19: Move service function permissions to pages and levels
+- [ ] Task 20: Move ERP and MES route gates to pages and levels
+- [ ] Task 21: Move client permission checks to pages and levels
 - [ ] Task 22: Drive the sidebar and the nav from page views
 - [ ] Task 23: Move workflow event permissions and the MCP manifest to page keys
 - [ ] Task 24: Add the module-key conformance check
@@ -48,7 +49,7 @@ Phase 4 — cleanup
 - Task 4 needs Task 3 (the `module` values). Tasks 5 and 6 need Task 4 and generated types.
 - Task 7 needs Task 6. Task 8 needs Tasks 3 and 6.
 - Task 9 needs Task 8. Tasks 10 to 13 need Task 9. Tasks 10 to 13 are independent of each other after Task 10 creates `AccessGrid`.
-- Tasks 14 and 15 need Task 9. Task 16 needs Tasks 7 to 15.
+- Tasks 14 and 15 need Task 9. Task 14a needs no other task, but run it alone: it touches about 1,190 files. Task 16 needs Tasks 7 to 15 and 14a.
 - Phase 3 needs Phases 1 and 2 committed and verified (Task 16). Task 17 comes first. Tasks 18 to 23 need Task 17 and are independent of each other, but Tasks 19 to 21 each touch many files: run them one at a time in one worktree. Task 24 needs Tasks 18 to 23. Task 25 needs Task 24.
 - Task 26 needs Phase 3 released.
 
@@ -545,6 +546,56 @@ pnpm db:check:datasets
 
 **Out of scope:** dropping the old tables (Task 26).
 
+## Task 14a: Replace the ERP auth entry points with `authorize`
+
+**Depends on:** none. Run it alone in this worktree.
+**Files:**
+- Modify: `packages/api/src/carbon.server.ts` — add `authorize`; delete `carbon` and `carbonFor`
+- Modify: `packages/ee/src/onshape/panel/session.server.ts` — rename `requireOnshapePanelPermissions` to `authorizePanel`
+- Modify: every non-test file under `apps/erp/app` that calls `requirePermissions`, `carbon` or `carbonFor`
+- Modify: `apps/erp/app/modules/service-context.server.ts` — type its argument as `CallerAuth`
+- Create: `scripts/.tmp/authorize-codemod.ts` (delete after the task)
+- Create: `packages/checks/src/conformance/erp-authorize-only.ts` and its test
+- Modify: `packages/checks/src/run.ts`, `packages/checks/AGENTS.md`
+- Modify: `packages/checks/src/conformance/route-action-shape.ts` and `loader-reads-through-api.ts` — their messages name `authorize`
+- Modify: the rules and AGENTS files that name `carbon(request)`, `carbonFor` or `requirePermissions` as the route entry
+- Copy from (precedent): `packages/checks/src/conformance/no-raw-redirect.ts`
+
+**Steps:**
+1. In `carbon.server.ts`, add `authorize(request, gate?)`. It calls `requirePermissions(request, gate ?? {})` and returns the result plus `api`.
+2. Add the overload `authorize(caller)` for a `CallerAuth` that another gate made. It returns the caller plus `api`.
+3. Rename the panel gate to `authorizePanel`. Its body ends with `return authorize(caller)`.
+4. Write a ts-morph codemod over `apps/erp/app`. Skip `*.test.*` files.
+5. In the codemod, rewrite each `requirePermissions(` call to `authorize(`.
+6. Rewrite `const api = await carbon(x)` to `const { api } = await authorize(x)`.
+7. Rewrite `const api = carbonFor(e)` to `const { api } = e`. Rewrite any other `carbonFor(e)` to `e.api`.
+8. Merge `const auth = await authorize(…)` and its `const { … } = auth` lines into one destructuring when `auth` has no other use.
+9. Fix the imports: drop the old names, add `authorize` or `authorizePanel`.
+10. Delete `carbon` and `carbonFor` from `carbon.server.ts`.
+11. Run Biome on the changed files.
+12. Add `erp-authorize-only`: fail an import of `requirePermissions`, `carbon` or `carbonFor` in non-test ERP code. Register it with an empty baseline.
+13. Update each rule and AGENTS file that shows the old entry points.
+
+**Verify:**
+```bash
+grep -rlE "carbonFor\(|await carbon\(|requirePermissions\(" apps/erp/app --include="*.ts" --include="*.tsx" | grep -v "\.test\." | wc -l
+# Expected: 0
+pnpm exec turbo run typecheck --filter=@carbon/api --filter=@carbon/ee --filter=erp --concurrency=1
+# Expected: no "error TS" lines outside docs/content
+pnpm --filter erp test
+# Expected: the same passed and skipped counts as before the task
+pnpm --filter @carbon/checks test
+# Expected: all tests pass, including run.test.ts "no new violations"
+```
+
+**Out of scope:** the gate shape (Tasks 19 to 21). MES, academy and starter keep `requirePermissions`.
+
+**As built:**
+1. `authorize` binds `api` on first read. A loader with no service-function call needs no registered router.
+2. `no-server-code-in-client` skips JSX text. The OAuth consent copy "Only authorize it" read as a use of `authorize`.
+3. Two Onshape install routes had a local `authorize` helper. It is now `beginAuthorization`.
+4. Seven route tests mocked `requirePermissions`. Two now mock `authorize`; the lazy `api` fixed the other five.
+
 ## Task 15: Rewrite the permissions docs and glossary
 
 **Depends on:** Task 9
@@ -654,56 +705,69 @@ pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -
 
 **Out of scope:** the `"employee"` and portal actors. They do not change.
 
-## Task 19: Move service function permissions to page keys
+## Task 19: Move service function permissions to pages and levels
 
 **Depends on:** Task 17
 **Files:**
 - Create: `scripts/.tmp/permission-pages.ts` (delete after the task)
 - Modify: every `apps/erp/app/modules/*/*.server.ts`
+- Modify: `packages/api/src/permissions.ts` — a `RequiredPermissions` is `Partial<Record<PageId, Level>>`
+- Modify: `packages/api/src/service-fn.server.ts` — `ctx.can` takes the same shape
+- Modify: `apps/erp/app/modules/shared/shared.service.ts` — `authorizePostingCaller` and the posting permission constants
+- Modify: `scripts/lib/service-fn-metadata.ts` — derive `actions` from the level
 
 **Steps:**
 1. Write a ts-morph script. For each `defineServiceFn`, read `permission`.
 2. Follow `service.<fn>` calls in `run` into the module's `.service.ts`.
 3. Collect the tables each building block writes and reads.
 4. Map the written tables, else the read tables, to pages with the registry.
-5. If exactly one page results, rewrite `{ <action>: "<module>" }` to `{ <action>: "<page>" }`.
+5. If exactly one page results, rewrite `{ <action>: "<module>" }` to `{ "<page>": "<level>" }`.
+   Take the level from `ACTION_LEVEL`. If the rule names two actions on one page, keep the higher level.
 6. For a shared table, pick the page from the function's input when the input names the type.
 7. If the input does not name the type, list the function.
 8. Print every function with zero or several pages.
 9. Resolve each listed function by hand: read its route callers and pick the page they render.
-10. Run `pnpm run generate:mcp`.
+10. Rewrite each `ctx.can({ <action>: … })` call the same way.
+11. Change `hasPermissions` to check each entry with `levelHolds` on the resolved level.
+12. Run `pnpm run generate:mcp`. The digest changes only where a page replaces a module.
 
 **Verify:**
 ```bash
-grep -rnE '(view|create|update|delete): "(accounting|documents|inventory|invoicing|parts|people|production|purchasing|quality|resources|sales|settings|users|workflows)"' apps/erp/app/modules/*/*.server.ts | wc -l
+grep -rnE '(view|create|update|delete): "' apps/erp/app/modules/*/*.server.ts | wc -l
 # Expected: 0
+pnpm --filter erp test -- posting-permissions
+# Expected: passes
 pnpm exec turbo run typecheck --filter=erp --concurrency=1
 # Expected: no "error TS" lines outside docs/content
 ```
 
 **Out of scope:** `"employee"` and `"system"` permissions.
 
-## Task 20: Move ERP and MES route gates to page keys
+## Task 20: Move ERP and MES route gates to pages and levels
 
 **Depends on:** Task 17
 **Files:**
 - Create: `scripts/.tmp/route-pages.ts` (delete after the task)
-- Modify: every route under `apps/erp/app/routes` and `apps/mes/app/routes` that passes a module key to `requirePermissions`
+- Modify: every route under `apps/erp/app/routes` that passes a module to `authorize`
+- Modify: every route under `apps/mes/app/routes` that passes a module to `requirePermissions`
+- Modify: `packages/auth/src/services/auth.server.ts` — `requirePermissions(request, gate, options?)`
+- Modify: `packages/api/src/carbon.server.ts` — `authorize(request, gate?, options?)`
 
 **Steps:**
 1. Map each route file to a URL path. A `+` folder adds its name as a segment.
 2. In a file name, `.` separates segments, `$name` is a parameter, and `_index` and `_layout` add nothing.
 3. Example: `x+/inventory+/receipts.tsx` is `/x/inventory/receipts`.
-4. Find the page whose `paths` match. Rewrite the module key in `requirePermissions` to that page.
-5. For `api+` routes, use the page of the service function the route calls (Task 19).
-6. Print every route with no page or several pages.
-7. Resolve each listed route by hand from what it reads and writes.
-8. Do the 14 MES routes by hand: job operations, events and batches → `production.jobs`.
-9. MES inspection lots and issues → `quality.inspections` and `quality.issues`.
+4. Find the page whose `paths` match. Rewrite `{ <action>: "<module>" }` to `{ "<page>": "<level>" }`, with the level from `ACTION_LEVEL`.
+5. Move `bypassRls`, `role` and `allowPortalAccounts` into the third argument.
+6. For `api+` routes, use the page of the service function the route calls (Task 19).
+7. Print every route with no page or several pages.
+8. Resolve each listed route by hand from what it reads and writes.
+9. Do the 14 MES routes by hand: job operations, events and batches → `production.jobs`.
+10. MES inspection lots and issues → `quality.inspections` and `quality.issues`.
 
 **Verify:**
 ```bash
-grep -rlE '(view|create|update|delete): "(accounting|documents|inventory|invoicing|parts|people|production|purchasing|quality|resources|sales|settings|users|workflows)"' apps/erp/app/routes apps/mes/app | wc -l
+grep -rlE '(view|create|update|delete): "' apps/erp/app/routes apps/mes/app | wc -l
 # Expected: 0
 pnpm exec turbo run typecheck --filter=erp --concurrency=1
 # Expected: no "error TS" lines outside docs/content
@@ -713,25 +777,26 @@ pnpm exec turbo run typecheck --filter=mes --concurrency=1
 
 **Out of scope:** `role` and `allowPortalAccounts` options.
 
-## Task 21: Move client permission checks to page keys
+## Task 21: Move client permission checks to pages and levels
 
 **Depends on:** Task 17
 **Files:**
 - Create: `scripts/.tmp/can-pages.ts` (delete after the task)
 - Modify: every file under `apps/erp/app` and `apps/mes/app` that calls `permissions.can` with a module
-- Modify: `apps/erp/app/hooks/usePermissions.tsx` — `can` takes `PermissionKey` parts; add `canAny`
+- Modify: `apps/erp/app/hooks/usePermissions.tsx` — add `has(gate)` and `hasAny(module, level)`; delete `can`
 
 **Steps:**
-1. Type `can(action, page: PageId)`. Add `canAny(action, module)` that calls `holdsAny`.
-2. In a route file, rewrite `can(action, "<module>")` to the route's page from Task 20.
+1. Add `has(gate)`, with the gate type of Task 19. Add `hasAny(module, level)`, which calls `holdsAny`.
+2. In a route file, rewrite `can(action, "<module>")` to `has({ "<page>": "<level>" })`, with the route's page from Task 20.
 3. In `modules/<module>/ui/<Folder>/`, map the folder to a page by name; write the map in the script.
 4. Print every call the script cannot map.
 5. Resolve each listed call by hand: pick the page whose records the button or field acts on.
-6. Use `canAny` where a component asks "anything in this module" (for example a module dashboard).
+6. Use `hasAny` where a component asks "anything in this module" (for example a module dashboard).
+7. Delete `can` from `usePermissions.tsx`.
 
 **Verify:**
 ```bash
-grep -rnE 'can\("(view|create|update|delete)", "(accounting|documents|inventory|invoicing|parts|people|production|purchasing|quality|resources|sales|settings|users|workflows)"\)' apps/erp/app apps/mes/app | wc -l
+grep -rnE 'permissions\.can\(' apps/erp/app apps/mes/app | wc -l
 # Expected: 0
 pnpm exec turbo run typecheck --filter=erp --concurrency=1
 # Expected: no "error TS" lines outside docs/content
@@ -748,9 +813,9 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
 
 **Steps:**
 1. Give every sidebar route entry a `page` field with its page id.
-2. Show an entry only when `permissions.can("view", entry.page)`.
+2. Show an entry only when `permissions.has({ [entry.page]: "View" })`.
 3. Keep the existing `role` and integration filters.
-4. In `useModules.tsx`, show a module when `permissions.canAny("view", item.permission)`.
+4. In `useModules.tsx`, show a module when `permissions.hasAny(item.permission, "View")`.
 
 **Verify:**
 ```bash
@@ -800,7 +865,7 @@ pnpm --filter erp test -- mcp
 - Copy from (precedent): `packages/checks/src/conformance/route-action-shape.ts`
 
 **Steps:**
-1. Fail a `{ <action>: "<module>" }` permission, a `"<module>_<action>"` string and a `can(action, "<module>")` call.
+1. Fail a gate entry whose key is a module (`{ inventory: "Edit" }`), a `"<module>_<action>"` string and a `has` call that names a module.
 2. Scan ERP modules and routes, MES, `packages/database/src/authz/manifest.ts` and the workflow catalog.
 3. Read the module list from `PAGES` ids without a `.`; there are none after Task 17.
 4. Register it in `run.ts` with an empty baseline.

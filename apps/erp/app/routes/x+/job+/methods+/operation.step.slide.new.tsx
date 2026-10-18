@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -18,7 +18,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // matching permission so a create-only user can't edit an existing slide by passing an `id`.
   const formData = await request.formData();
   const isUpdate = Boolean(formData.get("id"));
-  const { client, companyId, userId } = await requirePermissions(
+  const { client, companyId, userId } = await authorize(
     request,
     isUpdate ? { update: "production" } : { create: "production" }
   );

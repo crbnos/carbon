@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -15,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
     z.object({ id: zfd.repeatable(z.array(z.string().min(1)).min(1)) })
   ).request(args, { params: ["jobId"] });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.production.deleteJobMaterials({
     jobId: input.params.jobId,
     ids: input.data.id

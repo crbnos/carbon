@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { rentalAgreementLineClassificationValidator } from "~/modules/sales/sales.models";
@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   ).request(args, { params: ["id", "lineId"] });
   if ("invalid" in input) return input.invalid;
   const { id, lineId } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.sales.classifyRentalUnit({
     ...input.data,
     rentalAgreementId: id,

@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -22,11 +21,9 @@ export async function loader({
   request,
   params
 }: LoaderFunctionArgs): Promise<{ stripeCustomerLinked: boolean }> {
-  const auth = await requirePermissions(request, {
+  const { companyId, api } = await authorize(request, {
     view: "sales"
   });
-  const { companyId } = auth;
-  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -65,7 +62,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.sales.confirmContract({ id, ...input.data });
   // Straight to the contract page, never back to the referrer: from the
   // setup wizard that is a second redirect, and the contract layout does not

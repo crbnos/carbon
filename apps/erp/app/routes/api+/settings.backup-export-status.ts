@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { getCompanyExportRun } from "~/modules/settings/backups.service";
 import { canManageBackups } from "~/modules/settings/settings.service";
@@ -13,7 +13,7 @@ import { canManageBackups } from "~/modules/settings/settings.service";
 // `status` means the run hasn't written its first heartbeat yet OR has finished;
 // the modal uses the backup list appearing to confirm completion.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
+  const { client, companyId, email } = await authorize(request, {
     update: "settings"
   });
   if (!(await canManageBackups(client, companyId, email)))

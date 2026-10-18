@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
@@ -20,7 +20,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "settings-companies-delete");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, email } = await requirePermissions(request, {
+  const { client, email } = await authorize(request, {
     view: "settings"
   });
 
@@ -44,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { companyGroupId, email } = await requirePermissions(request, {
+  const { companyGroupId, email } = await authorize(request, {
     delete: "settings"
   });
 

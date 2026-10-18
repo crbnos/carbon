@@ -32,7 +32,7 @@ import {
   onshapeFailure,
   selectInBatches
 } from "@carbon/ee/onshape";
-import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { authorizePanel } from "@carbon/ee/onshape/panel-session.server";
 import { readPartProperties } from "@carbon/ee/onshape.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -50,15 +50,12 @@ const payloadSchema = z.object({
 
 /** Plan a release push without writing; the apply makes no Onshape call. */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requireOnshapePanelPermissions(
-    request,
-    {
-      create: "parts",
-      update: "parts",
-      // Re-pushing replaces the BOM lines an earlier push wrote.
-      delete: "parts"
-    }
-  );
+  const { client, companyId, userId } = await authorizePanel(request, {
+    create: "parts",
+    update: "parts",
+    // Re-pushing replaces the BOM lines an earlier push wrote.
+    delete: "parts"
+  });
 
   const parsed = payloadSchema.safeParse(
     await request.json().catch(() => null)

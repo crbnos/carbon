@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type {
   DocumentSectionPlacement,
   HeaderOptions
@@ -51,11 +50,10 @@ type Section = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "settings",
     role: "employee"
   });
-  const api = carbonFor(auth);
 
   const sections = await api.settings.getDocumentSections({});
   return {
@@ -72,12 +70,12 @@ export async function action(args: ActionFunctionArgs) {
   if (intent === "delete") {
     const input = await validator(deleteSectionForm).request(args);
     if ("invalid" in input) return input.invalid;
-    const api = await carbon(args.request);
+    const { api } = await authorize(args.request);
     return api.settings.removeDocumentSection(input.data);
   }
   const input = await validator(documentSectionValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.settings.saveDocumentSection(input.data);
 }
 

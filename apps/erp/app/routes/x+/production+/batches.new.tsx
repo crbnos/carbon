@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useCloseRoute } from "@carbon/react";
 import type { BatchRules } from "@carbon/utils";
@@ -20,11 +19,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // The wizard's mutations submit to batching.update (update: "production") and
   // the batch-operations server fn also requires update: "production"; gate the
   // wizard on the same permission so opening it never dead-ends at submit.
-  const auth = await requirePermissions(request, {
+  const { client, companyId, userId, api } = await authorize(request, {
     update: "production"
   });
-  const { client, companyId, userId } = auth;
-  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const batchId = url.searchParams.get("batchId");

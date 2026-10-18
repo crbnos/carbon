@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -40,7 +40,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "sales-rfq-line-details");
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {
+  const { companyId } = await authorize(request, {
     view: "sales"
   });
 
@@ -85,7 +85,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  const { client: viewClient } = await authorize(request, {
     view: "sales"
   });
 
@@ -97,7 +97,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, userId } = await authorize(request, {
     create: "sales"
   });
 

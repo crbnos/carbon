@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -32,11 +31,9 @@ export const handle: Handle = {
 /** The enable wizard is for a company with no cutover. Once accounting is set
  *  up it is one-way, so the wizard sends the user to the periods. */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { client, companyId, api } = await authorize(request, {
     view: "accounting"
   });
-  const { client, companyId } = auth;
-  const api = carbonFor(auth);
 
   const settings = await api.settings.getCompanySettings({});
   if (settings.error) {

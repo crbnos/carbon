@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -18,7 +18,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // (create: "accounting"); the RPC re-checks group membership from userId. The
   // RPC stays SECURITY INVOKER so a direct client.rpc call from a normal user
   // runs under their own RLS and cannot post eliminations for a foreign group.
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { client, companyGroupId, userId } = await authorize(request, {
     create: "accounting",
     bypassRls: true
   });

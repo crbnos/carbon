@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
@@ -21,13 +20,11 @@ const LEDGER_PAGE_SIZE = 50;
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // bypassRls matches the chart of accounts page, whose balances span every
   // company in the group regardless of the user's per-company roles
-  const auth = await requirePermissions(request, {
+  const { client, companyGroupId, api } = await authorize(request, {
     view: "accounting",
     role: "employee",
     bypassRls: true
   });
-  const { client, companyGroupId } = auth;
-  const api = carbonFor(auth);
 
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");

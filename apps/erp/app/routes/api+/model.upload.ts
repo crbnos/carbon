@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -26,7 +26,7 @@ const modelUploadForm = z.object({
 // operation.
 export async function action(args: ActionFunctionArgs) {
   // Authenticate before the multipart body is read.
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const input = await validator(modelUploadForm).request(args);
   if ("invalid" in input) return input.invalid;
   const { modelPath, ...rest } = input.data;

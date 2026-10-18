@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import { authorize, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -29,10 +28,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     create: "sales"
   });
-  const api = carbonFor(auth);
 
   const companySettings = await api.settings.getCompanySettings({});
 
@@ -48,7 +46,7 @@ export async function action(args: ActionFunctionArgs) {
   const formData = input.formData ?? new FormData();
   // The fleet register's Rent action opens this form with the unit to rent.
   const fixedAssetId = formData.get("fixedAssetId");
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.sales.createRentalAgreement({
     ...input.data,
     fixedAssetId:

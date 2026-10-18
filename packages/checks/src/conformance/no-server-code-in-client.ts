@@ -62,12 +62,16 @@ function importedNames(clause: string): string[] {
 /** The browser half of a route, comments removed. */
 function browserCode(contents: string): string {
   const masked = maskClientCode(contents).split("\n");
-  return contents
-    .split("\n")
-    .filter((line, i) => masked[i] !== line)
-    .join("\n")
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/(^|[^:"'`\\])\/\/.*$/gm, "$1");
+  return (
+    contents
+      .split("\n")
+      .filter((line, i) => masked[i] !== line)
+      .join("\n")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|[^:"'`\\])\/\/.*$/gm, "$1")
+      // JSX text is prose: "Only authorize it" is not a use of `authorize`.
+      .replace(/>([^<>{}()=;]*)</g, "><")
+  );
 }
 
 /** `const name`, or `name` inside a destructuring: a local that shadows the import. */

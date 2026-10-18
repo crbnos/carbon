@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
+import { authorize, dataOrThrow } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -37,13 +36,11 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "purchase-order-line-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { companyId, api } = await authorize(request, {
     view: "purchasing",
     role: "employee",
     bypassRls: true
   });
-  const { companyId } = auth;
-  const api = carbonFor(auth);
 
   const { orderId, lineId } = params;
   if (!orderId) throw notFound("orderId not found");
@@ -89,7 +86,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw new Error("Could not find lineId");
 
   // First check with view permission to get the PO status
-  const { client: viewClient } = await requirePermissions(request, {
+  const { client: viewClient } = await authorize(request, {
     view: "purchasing"
   });
 
@@ -126,7 +123,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, userId } = await authorize(request, {
     update: "purchasing"
   });
 

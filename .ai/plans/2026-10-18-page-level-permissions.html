@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/plans/2026-10-18-page-level-permissions.md" />
-<meta name="explain-source-hash" content="d5aac80118b61b92b623a0774c0333d2d48a0464" />
+<meta name="explain-source-hash" content="1e25d0264a1a8240f0e21e0f35a75351d0c5013b" />
 <title>Page-Level Permissions plan</title>
 <style>
   :root {
@@ -106,15 +106,15 @@
   <header>
     <p class="kicker">Plan · claude/service-function-wrapping-13f04f · 2026-10-18 · <code>.ai/plans/2026-10-18-page-level-permissions.md</code></p>
     <h1>Page-Level Permissions — implementation plan</h1>
-    <p class="tldr">When the plan is done, one permission table holds every role, person and API key level, and every module checks page keys. A browser test of each of the 158 pages with a one-page role proves it.</p>
-    <div class="progress"><span style="width: 38%"></span></div>
-    <p class="kicker">10 of 26 tasks done · spec: <code>.ai/specs/2026-10-18-page-level-permissions.md</code></p>
+    <p class="tldr">When the plan is done, one permission table holds every role, person and API key level, and every gate names a page and its lowest level. A browser test of each of the 158 pages with a one-page role proves it.</p>
+    <div class="progress"><span style="width: 41%"></span></div>
+    <p class="kicker">11 of 27 tasks done · spec: <code>.ai/specs/2026-10-18-page-level-permissions.md</code></p>
   </header>
 
   <section>
     <h2>Task graph</h2>
     <figure>
-      <svg class="diagram" viewBox="0 0 3240 478" style="min-width:3240px" role="img" aria-label="Dependency graph of the 26 tasks in 16 layers, from the Phase 0 fix to dropping the old storage.">
+      <svg class="diagram" viewBox="0 0 3240 484" style="min-width:3240px" role="img" aria-label="Dependency graph of the 27 tasks in 16 layers, from the Phase 0 fix to dropping the old storage.">
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" /></marker>
         </defs>
@@ -169,6 +169,7 @@
         <path class="edge" d="M2400,344 L2420,344 L2420,442 L2620,442 L2620,64 L2638,64" marker-end="url(#arrow)" />
         <path class="edge" d="M2800,64 L2838,64" marker-end="url(#arrow)" />
         <path class="edge" d="M3000,64 L3038,64" marker-end="url(#arrow)" />
+        <path class="edge" d="M1600,274 L1620,274 L1620,448 L1820,448 L1820,64 L1838,64" marker-end="url(#arrow)" />
         <rect class="box new" x="40" y="40" width="160" height="48" rx="8" />
         <text x="120" y="69" text-anchor="middle">1 · employee perm</text>
         <rect class="box new" x="240" y="40" width="160" height="48" rx="8" />
@@ -221,6 +222,8 @@
         <text x="2920" y="69" text-anchor="middle">25 · every page</text>
         <rect class="box risk" x="3040" y="40" width="160" height="48" rx="8" />
         <text x="3120" y="69" text-anchor="middle">26 · drop old</text>
+        <rect class="box new" x="1440" y="250" width="160" height="48" rx="8" />
+        <text x="1520" y="279" text-anchor="middle">14a · authorize</text>
       </svg>
       <figcaption>Tasks in the same column can run in parallel; in Layer 11, run Tasks 19 to 21 one at a time because they touch many files. Long arrows run below the boxes.</figcaption>
     </figure>
@@ -447,6 +450,25 @@ pnpm --filter @carbon/database test -- access
         
       </div>
     </details>
+    <details class="task done">
+      <summary><b>14a.</b> Replace the ERP auth entry points with <code>authorize</code></summary>
+      <div>
+        <p class="meta">Depends on: none. Run it alone in this worktree.</p>
+        <p>ERP code authenticates through one authorize function, which returns the caller and the bound service functions. carbon, carbonFor and requirePermissions leave ERP code, and a check keeps them out.</p>
+        <p class="meta">Files</p>
+        <ul><li>Modify: <code>packages/api/src/carbon.server.ts</code> — add <code>authorize</code>; delete <code>carbon</code> and <code>carbonFor</code></li><li>Modify: <code>packages/ee/src/onshape/panel/session.server.ts</code> — rename <code>requireOnshapePanelPermissions</code> to <code>authorizePanel</code></li><li>Modify: every non-test file under <code>apps/erp/app</code> that calls <code>requirePermissions</code>, <code>carbon</code> or <code>carbonFor</code></li><li>Modify: <code>apps/erp/app/modules/service-context.server.ts</code> — type its argument as <code>CallerAuth</code></li><li>Create: <code>scripts/.tmp/authorize-codemod.ts</code> (delete after the task)</li><li>Create: <code>packages/checks/src/conformance/erp-authorize-only.ts</code> and its test</li><li>Modify: <code>packages/checks/src/run.ts</code>, <code>packages/checks/AGENTS.md</code></li><li>Modify: <code>packages/checks/src/conformance/route-action-shape.ts</code> and <code>loader-reads-through-api.ts</code> — their messages name <code>authorize</code></li><li>Modify: the rules and AGENTS files that name <code>carbon(request)</code>, <code>carbonFor</code> or <code>requirePermissions</code> as the route entry</li><li>Copy from (precedent): <code>packages/checks/src/conformance/no-raw-redirect.ts</code></li></ul>
+        <p class="meta">Verify</p>
+        <pre>grep -rlE &quot;carbonFor\(|await carbon\(|requirePermissions\(&quot; apps/erp/app --include=&quot;*.ts&quot; --include=&quot;*.tsx&quot; | grep -v &quot;\.test\.&quot; | wc -l
+# Expected: 0
+pnpm exec turbo run typecheck --filter=@carbon/api --filter=@carbon/ee --filter=erp --concurrency=1
+# Expected: no &quot;error TS&quot; lines outside docs/content
+pnpm --filter erp test
+# Expected: the same passed and skipped counts as before the task
+pnpm --filter @carbon/checks test
+# Expected: all tests pass, including run.test.ts &quot;no new violations&quot;</pre>
+        
+      </div>
+    </details>
     <details class="task">
       <summary><b>15.</b> Rewrite the permissions docs and glossary</summary>
       <div>
@@ -503,29 +525,31 @@ pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -
       </div>
     </details>
     <details class="task">
-      <summary><b>19.</b> Move service function permissions to page keys</summary>
+      <summary><b>19.</b> Move service function permissions to pages and levels</summary>
       <div>
         <p class="meta">Depends on: Task 17</p>
-        <p>A script maps each service function&#x27;s permission to the page that owns its tables, and lists what it cannot map.</p>
+        <p>A script maps each service function&#x27;s permission to the page that owns its tables, as a page and its lowest level, and lists what it cannot map.</p>
         <p class="meta">Files</p>
-        <ul><li>Create: <code>scripts/.tmp/permission-pages.ts</code> (delete after the task)</li><li>Modify: every <code>apps/erp/app/modules/*/*.server.ts</code></li></ul>
+        <ul><li>Create: <code>scripts/.tmp/permission-pages.ts</code> (delete after the task)</li><li>Modify: every <code>apps/erp/app/modules/*/*.server.ts</code></li><li>Modify: <code>packages/api/src/permissions.ts</code> — a <code>RequiredPermissions</code> is <code>Partial&lt;Record&lt;PageId, Level&gt;&gt;</code></li><li>Modify: <code>packages/api/src/service-fn.server.ts</code> — <code>ctx.can</code> takes the same shape</li><li>Modify: <code>apps/erp/app/modules/shared/shared.service.ts</code> — <code>authorizePostingCaller</code> and the posting permission constants</li><li>Modify: <code>scripts/lib/service-fn-metadata.ts</code> — derive <code>actions</code> from the level</li></ul>
         <p class="meta">Verify</p>
-        <pre>grep -rnE &#x27;(view|create|update|delete): &quot;(accounting|documents|inventory|invoicing|parts|people|production|purchasing|quality|resources|sales|settings|users|workflows)&quot;&#x27; apps/erp/app/modules/*/*.server.ts | wc -l
+        <pre>grep -rnE &#x27;(view|create|update|delete): &quot;&#x27; apps/erp/app/modules/*/*.server.ts | wc -l
 # Expected: 0
+pnpm --filter erp test -- posting-permissions
+# Expected: passes
 pnpm exec turbo run typecheck --filter=erp --concurrency=1
 # Expected: no &quot;error TS&quot; lines outside docs/content</pre>
         
       </div>
     </details>
     <details class="task">
-      <summary><b>20.</b> Move ERP and MES route gates to page keys</summary>
+      <summary><b>20.</b> Move ERP and MES route gates to pages and levels</summary>
       <div>
         <p class="meta">Depends on: Task 17</p>
-        <p>A script maps each ERP route to its page by URL. MES routes are mapped by hand.</p>
+        <p>A script maps each ERP route to its page by URL, as a page and its lowest level. MES routes are mapped by hand.</p>
         <p class="meta">Files</p>
-        <ul><li>Create: <code>scripts/.tmp/route-pages.ts</code> (delete after the task)</li><li>Modify: every route under <code>apps/erp/app/routes</code> and <code>apps/mes/app/routes</code> that passes a module key to <code>requirePermissions</code></li></ul>
+        <ul><li>Create: <code>scripts/.tmp/route-pages.ts</code> (delete after the task)</li><li>Modify: every route under <code>apps/erp/app/routes</code> that passes a module to <code>authorize</code></li><li>Modify: every route under <code>apps/mes/app/routes</code> that passes a module to <code>requirePermissions</code></li><li>Modify: <code>packages/auth/src/services/auth.server.ts</code> — <code>requirePermissions(request, gate, options?)</code></li><li>Modify: <code>packages/api/src/carbon.server.ts</code> — <code>authorize(request, gate?, options?)</code></li></ul>
         <p class="meta">Verify</p>
-        <pre>grep -rlE &#x27;(view|create|update|delete): &quot;(accounting|documents|inventory|invoicing|parts|people|production|purchasing|quality|resources|sales|settings|users|workflows)&quot;&#x27; apps/erp/app/routes apps/mes/app | wc -l
+        <pre>grep -rlE &#x27;(view|create|update|delete): &quot;&#x27; apps/erp/app/routes apps/mes/app | wc -l
 # Expected: 0
 pnpm exec turbo run typecheck --filter=erp --concurrency=1
 # Expected: no &quot;error TS&quot; lines outside docs/content
@@ -535,14 +559,14 @@ pnpm exec turbo run typecheck --filter=mes --concurrency=1
       </div>
     </details>
     <details class="task">
-      <summary><b>21.</b> Move client permission checks to page keys</summary>
+      <summary><b>21.</b> Move client permission checks to pages and levels</summary>
       <div>
         <p class="meta">Depends on: Task 17</p>
-        <p>A script maps each client permission check to a page, and the hook gains canAny for module-wide checks.</p>
+        <p>A script rewrites each client permission check to has({ page: level }), and the hook gains hasAny for module-wide checks.</p>
         <p class="meta">Files</p>
-        <ul><li>Create: <code>scripts/.tmp/can-pages.ts</code> (delete after the task)</li><li>Modify: every file under <code>apps/erp/app</code> and <code>apps/mes/app</code> that calls <code>permissions.can</code> with a module</li><li>Modify: <code>apps/erp/app/hooks/usePermissions.tsx</code> — <code>can</code> takes <code>PermissionKey</code> parts; add <code>canAny</code></li></ul>
+        <ul><li>Create: <code>scripts/.tmp/can-pages.ts</code> (delete after the task)</li><li>Modify: every file under <code>apps/erp/app</code> and <code>apps/mes/app</code> that calls <code>permissions.can</code> with a module</li><li>Modify: <code>apps/erp/app/hooks/usePermissions.tsx</code> — add <code>has(gate)</code> and <code>hasAny(module, level)</code>; delete <code>can</code></li></ul>
         <p class="meta">Verify</p>
-        <pre>grep -rnE &#x27;can\(&quot;(view|create|update|delete)&quot;, &quot;(accounting|documents|inventory|invoicing|parts|people|production|purchasing|quality|resources|sales|settings|users|workflows)&quot;\)&#x27; apps/erp/app apps/mes/app | wc -l
+        <pre>grep -rnE &#x27;permissions\.can\(&#x27; apps/erp/app apps/mes/app | wc -l
 # Expected: 0
 pnpm exec turbo run typecheck --filter=erp --concurrency=1
 # Expected: no &quot;error TS&quot; lines outside docs/content</pre>
@@ -582,7 +606,7 @@ pnpm --filter erp test -- mcp
       <summary><b>24.</b> Add the module-key conformance check</summary>
       <div>
         <p class="meta">Depends on: Tasks 18 to 23</p>
-        <p>A conformance check fails any module key left in code, RLS or the workflow catalog.</p>
+        <p>A conformance check fails any module left in a gate, in RLS or in the workflow catalog.</p>
         <p class="meta">Files</p>
         <ul><li>Create: <code>packages/checks/src/conformance/no-module-permission-key.ts</code> and its test</li><li>Modify: <code>packages/checks/src/run.ts</code></li><li>Modify: <code>packages/checks/AGENTS.md</code></li><li>Copy from (precedent): <code>packages/checks/src/conformance/route-action-shape.ts</code></li></ul>
         <p class="meta">Verify</p>
@@ -633,7 +657,7 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
 
   <section>
     <h2>Out of scope</h2>
-    <ul><li>the RLS <code>&quot;member&quot;</code> actor in <code>packages/database/src/authz/rules.ts</code>. It is a different thing and stays. <span class="meta">(Task 1)</span></li><li>the 43 functions that were <code>{}</code> before this branch. They keep <code>&quot;employee&quot;</code>. <span class="meta">(Task 2)</span></li><li>any page below module grain. Task 17 adds them. <span class="meta">(Task 3)</span></li><li>dropping <code>employeeTypePermission</code>. Task 26 does that. <span class="meta">(Task 4)</span></li><li>page keys in these rules. Task 18 changes them. <span class="meta">(Task 5)</span></li><li>the portal helpers <code>get_customer_ids_with_customer_permission</code> and <code>get_supplier_ids_with_supplier_permission</code>. They keep reading <code>userPermission</code>. <span class="meta">(Task 6)</span></li><li>dropping the old columns and tables. Task 26 does that. <span class="meta">(Task 7)</span></li><li>the portal key typo <code>documents_udpate</code>. The planned portal-roles spec fixes it. <span class="meta">(Task 8)</span></li><li>the editor UI. Tasks 10 to 12 build it. <span class="meta">(Task 9)</span></li><li>pages below module grain; Task 17 adds them and the grid shows them with no change. <span class="meta">(Task 10)</span></li><li>the access view. Task 13 builds it. <span class="meta">(Task 11)</span></li><li>API keys that take a role (a planned extension). <span class="meta">(Task 12)</span></li><li>exports of the access review. <span class="meta">(Task 13)</span></li><li>dropping the old tables (Task 26). <span class="meta">(Task 14)</span></li><li>the changelog entry. Write it only when the user asks. <span class="meta">(Task 15)</span></li><li>page-level criteria. Task 25 runs them. <span class="meta">(Task 16)</span></li><li>changing any check. Tasks 18 to 23 do that. <span class="meta">(Task 17)</span></li><li>the <code>&quot;employee&quot;</code> and portal actors. They do not change. <span class="meta">(Task 18)</span></li><li><code>&quot;employee&quot;</code> and <code>&quot;system&quot;</code> permissions. <span class="meta">(Task 19)</span></li><li><code>role</code> and <code>allowPortalAccounts</code> options. <span class="meta">(Task 20)</span></li><li><code>permissions.is(role)</code> calls. <span class="meta">(Task 21)</span></li><li>the Shop Floor nav entry (<code>role: &quot;employee&quot;</code>). <span class="meta">(Task 22)</span></li><li>the changelog lines for the contract change. Write them only when the user asks. <span class="meta">(Task 23)</span></li><li>portal keys in <code>userPermission</code>. <span class="meta">(Task 24)</span></li><li>the staging soak. The user runs it before release. <span class="meta">(Task 25)</span></li><li><code>userPermission</code> itself. It stays for portal accounts. <span class="meta">(Task 26)</span></li></ul>
+    <ul><li>the RLS <code>&quot;member&quot;</code> actor in <code>packages/database/src/authz/rules.ts</code>. It is a different thing and stays. <span class="meta">(Task 1)</span></li><li>the 43 functions that were <code>{}</code> before this branch. They keep <code>&quot;employee&quot;</code>. <span class="meta">(Task 2)</span></li><li>any page below module grain. Task 17 adds them. <span class="meta">(Task 3)</span></li><li>dropping <code>employeeTypePermission</code>. Task 26 does that. <span class="meta">(Task 4)</span></li><li>page keys in these rules. Task 18 changes them. <span class="meta">(Task 5)</span></li><li>the portal helpers <code>get_customer_ids_with_customer_permission</code> and <code>get_supplier_ids_with_supplier_permission</code>. They keep reading <code>userPermission</code>. <span class="meta">(Task 6)</span></li><li>dropping the old columns and tables. Task 26 does that. <span class="meta">(Task 7)</span></li><li>the portal key typo <code>documents_udpate</code>. The planned portal-roles spec fixes it. <span class="meta">(Task 8)</span></li><li>the editor UI. Tasks 10 to 12 build it. <span class="meta">(Task 9)</span></li><li>pages below module grain; Task 17 adds them and the grid shows them with no change. <span class="meta">(Task 10)</span></li><li>the access view. Task 13 builds it. <span class="meta">(Task 11)</span></li><li>API keys that take a role (a planned extension). <span class="meta">(Task 12)</span></li><li>exports of the access review. <span class="meta">(Task 13)</span></li><li>dropping the old tables (Task 26). <span class="meta">(Task 14)</span></li><li>the gate shape (Tasks 19 to 21). MES, academy and starter keep <code>requirePermissions</code>. <span class="meta">(Task 14a)</span></li><li>the changelog entry. Write it only when the user asks. <span class="meta">(Task 15)</span></li><li>page-level criteria. Task 25 runs them. <span class="meta">(Task 16)</span></li><li>changing any check. Tasks 18 to 23 do that. <span class="meta">(Task 17)</span></li><li>the <code>&quot;employee&quot;</code> and portal actors. They do not change. <span class="meta">(Task 18)</span></li><li><code>&quot;employee&quot;</code> and <code>&quot;system&quot;</code> permissions. <span class="meta">(Task 19)</span></li><li><code>role</code> and <code>allowPortalAccounts</code> options. <span class="meta">(Task 20)</span></li><li><code>permissions.is(role)</code> calls. <span class="meta">(Task 21)</span></li><li>the Shop Floor nav entry (<code>role: &quot;employee&quot;</code>). <span class="meta">(Task 22)</span></li><li>the changelog lines for the contract change. Write them only when the user asks. <span class="meta">(Task 23)</span></li><li>portal keys in <code>userPermission</code>. <span class="meta">(Task 24)</span></li><li>the staging soak. The user runs it before release. <span class="meta">(Task 25)</span></li><li><code>userPermission</code> itself. It stays for portal accounts. <span class="meta">(Task 26)</span></li></ul>
   </section>
 
   <footer>

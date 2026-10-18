@@ -2,19 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/api/carbon.server";
 import type { Level } from "@carbon/database/access";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
+  const { api } = await authorize(request, {
     view: "users",
     role: "employee"
   });
   const params = new URL(request.url).searchParams;
-  const result = await carbonFor(auth).users.getPageAccessHolders({
+  const result = await api.users.getPageAccessHolders({
     page: params.get("page") ?? "",
     // The service function checks both against the registry and the levels.
     level: (params.get("level") ?? "View") as Level
