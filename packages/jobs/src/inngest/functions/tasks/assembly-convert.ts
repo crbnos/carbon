@@ -94,8 +94,6 @@ export const assemblyConvertFunction = inngest.createFunction(
     const glbPath = `${companyId}/models/${modelUploadId}/${job.id}/model.glb`;
     const graphPath = `${companyId}/models/${modelUploadId}/${job.id}/graph.json`;
 
-    // Router: sync inline on Lambda (default when enabled) or async submit->poll
-    // on the standing service / dev container. Sync off => today's async path.
     // Each attempt mints a fresh signed source URL (retries never reuse an
     // expired one) and fresh signed upload URLs for both artifacts (late-mint).
     const convert = await runAssemblerJob(step, {

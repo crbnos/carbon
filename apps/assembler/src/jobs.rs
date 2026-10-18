@@ -48,8 +48,6 @@ struct JobRecord {
     stats: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<Value>, // { code, message }
-    #[serde(skip_serializing_if = "Option::is_none")]
-    meta: Option<Value>,
     /// Signed PUT URLs handed over AT SUBMIT (name → URL), one per output.
     /// Never rendered.
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -231,7 +229,6 @@ impl JobStore {
         &self,
         id: &str,
         action: &str,
-        meta: Option<Value>,
         upload_urls: HashMap<String, String>,
         callback_url: Option<String>,
     ) {
@@ -243,7 +240,6 @@ impl JobStore {
                 result: None,
                 stats: None,
                 error: None,
-                meta,
                 upload_urls: (!upload_urls.is_empty()).then_some(upload_urls),
                 callback_url,
             },
@@ -336,9 +332,6 @@ impl JobStore {
         }
         if let Some(e) = &rec.error {
             job["error"] = e.clone();
-        }
-        if let Some(m) = &rec.meta {
-            job["meta"] = m.clone();
         }
         json!({ "ok": true, "job": job })
     }

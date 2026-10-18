@@ -11,6 +11,12 @@ use crate::error::ApiError;
 // value; unused knobs are just misconfiguration surface. Revisit a constant
 // when a real deployment proves it wrong, not before.
 
+/// The tessellation every nodeId derives from. nodeIds hash the tessellated
+/// vertex positions, so convert's graph.json and plan's plan.json must use the
+/// same one or their nodeIds disagree. 0.5 rad is what every stored plan used.
+pub const TESSELLATION_LINEAR: f64 = 0.1;
+pub const TESSELLATION_ANGULAR: f64 = 0.5;
+
 /// Max source-download size: unlimited. The download streams to a temp file and
 /// the storage bucket already bounds upload size — no in-service cap.
 pub fn max_source_bytes() -> usize {

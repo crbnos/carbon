@@ -7,7 +7,6 @@
 //!
 //!   POST /v1/convert | /v1/optimize | /v1/plan | /v1/compact | /v1/thumbnail
 //!                                                → 202 { ok, job }   (create, async)
-//!                          ...?sync              → 200 { ok, job }   (run inline; Lambda)
 //!   GET  /v1/jobs/{id}?wait=N                     → 200 { ok, job }   (poll)
 //!   POST /v1/jobs/{id}/cancel                     → 200 { ok, job }
 //!   POST /v1/cache/invalidate                     → 200 { ok, cleared }
@@ -28,7 +27,7 @@ mod formats;
 mod http;
 mod jobs;
 mod progress;
-mod run;
+mod request;
 mod telemetry;
 
 use axum::{
@@ -42,13 +41,12 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 use tower_http::compression::{predicate::SizeAbove, CompressionLayer};
 
 const VERSION: &str = "0.1.0";
-/// Default optimise output ceiling (encoded bytes) — the served-bucket safety net.
-const DEFAULT_MAX_OUTPUT_BYTES: u64 = 52_428_800; // 50 MiB
-/// Default decoded (render-weight) ceiling — guards viewer hangs on huge meshes.
-const DEFAULT_MAX_RENDER_WEIGHT_BYTES: u64 = 419_430_400; // 400 MiB
+/// How long the Lambda worker waits for its job: Lambda's own hard timeout.
+const WORKER_MAX_WAIT: Duration = Duration::from_secs(900);
 
 // jemalloc on the Linux deploy target: the planner's blocking tasks allocate
 // heavily from many threads (rayon sweeps + tokio workers); glibc malloc is the
@@ -79,18 +77,11 @@ fn main() {
         .max_blocking_threads(config::blocking_threads())
         .build()
         .expect("tokio runtime");
-    // `assembler run-job <spec.json>` — one-shot job runner (no HTTP server), the
-    // ECS Fargate overflow / any-invoke path. Exits the process. Otherwise serve.
-    if std::env::args().nth(1).as_deref() == Some("run-job") {
-        rt.block_on(run::run_job_cli());
-    } else {
-        rt.block_on(serve());
-    }
+    rt.block_on(serve());
 }
 
-/// Build the shared service state. Used by the HTTP server (`serve`) and the
-/// one-shot `run-job` CLI so both share one JobStore + cache + concurrency.
-pub async fn build_state() -> AppState {
+/// Build the shared service state: one JobStore + cache + concurrency.
+async fn build_state() -> AppState {
     AppState {
         admission: admission::Admission::from_env(),
         jobs: jobs::JobStore::from_env().await,
@@ -110,11 +101,7 @@ async fn serve() {
     let app = Router::new()
         .route("/health", get(health))
         .route("/v1", get(discovery))
-        .route("/v1/convert", post(create_convert))
-        .route("/v1/optimize", post(create_optimize))
-        .route("/v1/plan", post(create_plan))
-        .route("/v1/compact", post(create_compact))
-        .route("/v1/thumbnail", post(create_thumbnail))
+        .route("/v1/:action", post(create_job))
         .route("/v1/jobs/:job_id", get(get_job))
         .route("/v1/jobs/:job_id/cancel", post(cancel_job))
         .route("/v1/cache/invalidate", post(cache_invalidate))
@@ -220,14 +207,14 @@ async fn discovery(headers: HeaderMap) -> Result<Json<Value>, ApiError> {
         .collect();
     Ok(Json(json!({
         "version": VERSION,
-        "actions": ["convert", "optimize", "plan", "compact", "thumbnail"],
+        "actions": request::ACTIONS,
         "input_formats": input_formats,
         "codecs": ["meshopt", "draco", "none"],
         "limits": {
             "max_parts": config::max_parts(),
             "max_source_bytes": config::max_source_bytes(),
-            "max_output_bytes": DEFAULT_MAX_OUTPUT_BYTES,
-            "max_render_weight_bytes": DEFAULT_MAX_RENDER_WEIGHT_BYTES,
+            "max_output_bytes": request::DEFAULT_MAX_OUTPUT_BYTES,
+            "max_render_weight_bytes": request::DEFAULT_MAX_RENDER_WEIGHT_BYTES,
             "max_long_poll_secs": config::max_long_poll_secs(),
         },
     })))
@@ -336,51 +323,49 @@ fn parse_body(
         .map_err(|_| ApiError::invalid("invalid JSON body"))
 }
 
-#[derive(serde::Deserialize)]
-struct CreateQuery {
-    /// `?sync` (bare / `=true` / `=1`) runs the job **inline** and returns the
-    /// terminal `{ok, job}` in one response — the Lambda path (Lambda freezes
-    /// after the response, so a detached job would never finish). Absent => the
-    /// default async 202 + poll (what the standing ECS service uses).
-    sync: Option<String>,
-}
-
-fn sync_flag(q: &CreateQuery) -> bool {
-    matches!(q.sync.as_deref(), Some("" | "true" | "1" | "yes"))
-}
-
-/// Finalize a create request. Sync mode drives the just-spawned (or already
-/// running) job to terminal inline, uploading its outputs to the caller's
-/// per-request signed URLs via the same finalize path the async poll uses, and
-/// returns the terminal `{ok, job}` (200, same envelope as `GET /v1/jobs/{id}`).
-/// Async mode returns the uniform 202 + `Location`.
-async fn respond(
-    state: &AppState,
-    _headers: &HeaderMap,
-    job_id: &str,
-    action: &str,
-    sync: bool,
+/// Create a job for any action (`POST /v1/{action}`). The body is parsed and
+/// validated before anything is recorded, so a bad request leaves no job.
+/// A re-POST with the same `Idempotency-Key` attaches to the active job.
+async fn create_job(
+    State(state): State<AppState>,
+    Path(action): Path<String>,
+    headers: HeaderMap,
+    body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
 ) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
-    if !sync {
-        return Ok(created(job_id, action, "queued"));
+    require_auth(&headers)?;
+    let req = parse_body(body)?;
+    let parsed = request::parse(&action, &req)?;
+    let job_id = resolve_job_id(&headers);
+    let (upload_urls, callback_url) = submit_plumbing(&headers, &req)?;
+
+    if let Some(status) = state.jobs.existing_active(&job_id).await {
+        return Ok(created(&job_id, &action, &status));
     }
-    let result = run::run_to_completion(state, job_id).await;
-    Ok((StatusCode::OK, HeaderMap::new(), Json(result)))
+    state
+        .jobs
+        .set_pending(&job_id, &action, upload_urls.clone(), callback_url)
+        .await;
+    if dispatch::from_env() == dispatch::Dispatch::Lambda {
+        lambda_dispatch(&state, &job_id, &action, &req, &upload_urls).await?;
+    } else {
+        eprintln!("[{job_id}] {action} queued");
+        request::spawn(&state, &job_id, parsed);
+    }
+    Ok(created(&job_id, &action, "queued"))
 }
 
 /// Lambda-mode create path: instead of spawning in-process (this instance
 /// freezes after the response), fire the job as an Event-type self-invocation
-/// carrying a run-job spec — the request body plus `action`/`job_id`, the
+/// carrying a worker spec — the request body plus `action`/`job_id`, the
 /// submit-time signed upload URLs, and the bearer for the worker inlet. A failed
 /// dispatch fails the job loudly (never a forever-"pending" record).
 async fn lambda_dispatch(
     state: &AppState,
-    headers: &HeaderMap,
     job_id: &str,
     action: &str,
     req: &Value,
+    urls: &HashMap<String, String>,
 ) -> Result<(), ApiError> {
-    let urls = parse_upload_urls(headers)?;
     let mut spec = req.clone();
     spec["action"] = action.into();
     spec["job_id"] = job_id.into();
@@ -429,9 +414,9 @@ async fn worker_events(
             // Take the job before the long download and admission wait, so a
             // second delivery in that window sees it as taken.
             state.jobs.set_status(&job_id, "starting").await;
-            if let Err(m) = run::spawn_from_spec(&state, &job_id, &action, &spec) {
-                state.jobs.set_error(&job_id, "invalid_input", m.clone()).await;
-                return Err(ApiError::invalid(m));
+            if let Err(e) = spawn_traced(&state, &job_id, &action, &spec) {
+                state.jobs.set_error(&job_id, "invalid_input", e.message.clone()).await;
+                return Err(e);
             }
             eprintln!("[{job_id}] worker running {action}");
         }
@@ -442,7 +427,7 @@ async fn worker_events(
         }
     }
 
-    let result = run::run_to_completion(&state, &job_id).await;
+    let result = run_to_completion(&state, &job_id).await;
     // The worker invocation owns the Lambda lifetime: the action task's inline
     // callback send may be killed by the post-response freeze, so (re)send here
     // before returning. Duplicate deliveries are harmless — the receiver's
@@ -455,389 +440,29 @@ async fn worker_events(
     Ok(Json(result))
 }
 
-async fn create_convert(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Query(q): Query<CreateQuery>,
-    body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
-) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
-    require_auth(&headers)?;
-    let req = parse_body(body)?;
-
-    let source_url = req["source"]["url"]
-        .as_str()
-        .ok_or_else(|| ApiError::invalid("missing source.url"))?;
-    config::validate_url(source_url)?;
-    let job_id = resolve_job_id(&headers);
-    let sync = sync_flag(&q);
-    let (submit_urls, callback_url) = submit_plumbing(&headers, &req)?;
-
-    match state.jobs.existing_active(&job_id).await {
-        Some(status) if !sync => return Ok(created(&job_id, "convert", &status)),
-        Some(_) => {} // sync: attach to the running job, don't re-spawn
-        None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
-            state
-                .jobs
-                .set_pending(&job_id, "convert", optional_meta(&req), submit_urls.clone(), callback_url.clone())
-                .await;
-            lambda_dispatch(&state, &headers, &job_id, "convert", &req).await?;
-        }
-        None => {
-            let declared_hash = req["source"]["contentHash"]
-                .as_str()
-                .map(str::trim)
-                .filter(|s| !s.is_empty() && s.len() <= 128)
-                .map(str::to_string);
-            let meta = optional_meta(&req);
-            state.jobs.set_pending(&job_id, "convert", meta, submit_urls.clone(), callback_url.clone()).await;
-            eprintln!("[{job_id}] convert queued");
-            actions::convert::spawn(
-                &state,
-                &job_id,
-                actions::convert::ConvertReq {
-                    source_url: source_url.to_string(),
-                    declared_hash,
-                    glb_path: req["outputs"]["glb"]["path"].as_str().map(str::to_string),
-                    graph_path: req["outputs"]["graph"]["path"].as_str().map(str::to_string),
-                    lin: req["options"]["linearDeflection"].as_f64().unwrap_or(0.1),
-                    // Matches the optimize default: 0.15 rad ≈ 42 segments per
-                    // circle (0.25 gave 25, 0.5 a blocky 13). Angular deflection
-                    // is the ONLY scale-invariant constraint, so this is what a
-                    // small hole/groove's roundness actually comes from — sag
-                    // never binds on a small radius. Also part of the convert
-                    // result-cache key, so older coarse results aren't reused.
-                    ang: req["options"]["angularDeflection"].as_f64().unwrap_or(0.15),
-                    optimize: req["options"]["optimize"].as_bool().unwrap_or(true),
-                },
-            );
-        }
-    }
-    respond(&state, &headers, &job_id, "convert", sync).await
+/// Parse and spawn the worker's job under the submitting request's trace, when
+/// the spec carries it. Sync: the trace guard cannot be held across an await.
+fn spawn_traced(state: &AppState, job_id: &str, action: &str, spec: &Value) -> Result<(), ApiError> {
+    let _trace = telemetry::attach(spec);
+    request::spawn(state, job_id, request::parse(action, spec)?);
+    Ok(())
 }
 
-async fn create_optimize(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Query(q): Query<CreateQuery>,
-    body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
-) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
-    require_auth(&headers)?;
-    let req = parse_body(body)?;
-
-    let source_url = req["source"]["url"]
-        .as_str()
-        .ok_or_else(|| ApiError::invalid("missing source.url"))?;
-    config::validate_url(source_url)?;
-    let job_id = resolve_job_id(&headers);
-    let sync = sync_flag(&q);
-    let (submit_urls, callback_url) = submit_plumbing(&headers, &req)?;
-
-    match state.jobs.existing_active(&job_id).await {
-        Some(status) if !sync => return Ok(created(&job_id, "optimize", &status)),
-        Some(_) => {} // sync: attach to the running job, don't re-spawn
-        None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
-            state
-                .jobs
-                .set_pending(&job_id, "optimize", optional_meta(&req), submit_urls.clone(), callback_url.clone())
-                .await;
-            lambda_dispatch(&state, &headers, &job_id, "optimize", &req).await?;
+/// Wait for a spawned job to reach a terminal state, or the worker's ceiling.
+async fn run_to_completion(state: &AppState, job_id: &str) -> Value {
+    let deadline = Instant::now() + WORKER_MAX_WAIT;
+    loop {
+        match state.jobs.poll(job_id, Some(Duration::from_secs(30))).await {
+            None => {
+                return json!({ "ok": false,
+                    "error": { "code": "not_found", "message": "job vanished" } })
+            }
+            Some(v) => match v["job"]["status"].as_str() {
+                Some("succeeded" | "failed" | "canceled") => return v,
+                _ if Instant::now() >= deadline => return v,
+                _ => continue,
+            },
         }
-        None => {
-            let opts = optimize_opts(&req["output"], &req["quality"]);
-            // `auto` (the default) content-detects the format in the action.
-            let format = req["source"]["format"]
-                .as_str()
-                .unwrap_or("auto")
-                .to_string();
-            let meta = optional_meta(&req);
-            state.jobs.set_pending(&job_id, "optimize", meta, submit_urls.clone(), callback_url.clone()).await;
-            eprintln!("[{job_id}] optimize queued (format={format})");
-            let (compact, thumbnail) = optimize_ingest(&req);
-            actions::optimize::spawn(
-                &state,
-                &job_id,
-                actions::optimize::OptimizeReq {
-                    source_url: source_url.to_string(),
-                    format,
-                    glb_path: req["output"]["path"].as_str().map(str::to_string),
-                    opts,
-                    compact,
-                    thumbnail,
-                },
-            );
-        }
-    }
-    respond(&state, &headers, &job_id, "optimize", sync).await
-}
-
-/// The simplify ladder: `quality.ladder` (array of number|null) if present, else
-/// a single rung from `quality.simplify`, else an aggressive default ladder
-/// (performance-first: walk down until the output fits the size/render gates).
-/// Build the optimise `Opts` from the request/spec JSON (`output` + `quality`
-/// objects, snake_case). Shared by the HTTP handler and the `run-job` CLI.
-pub fn optimize_opts(out: &Value, q: &Value) -> actions::optimize::Opts {
-    actions::optimize::Opts {
-        codec: out["codec"]
-            .as_str()
-            .and_then(optimize::Codec::from_str_opt)
-            .unwrap_or_default(),
-        ladder: parse_ladder(q),
-        simplify_aggressive: q["simplify_aggressive"].as_bool().unwrap_or(false),
-        weld: q["weld"].as_bool().unwrap_or(true),
-        reorder: q["reorder"].as_bool().unwrap_or(true),
-        // The quality/perf knob: max simplify deviation in mm. Absent = ratio-only.
-        tolerance: q["tolerance_mm"].as_f64().map(|f| f as f32),
-        // Auto mode by default (scale-invariant, per-mesh adaptive); `auto_error: 0`
-        // disables it for a lossless optimise (weld/reorder/encode only).
-        auto_error: Some(
-            q["auto_error"]
-                .as_f64()
-                .unwrap_or(optimize::DEFAULT_AUTO_ERROR as f64) as f32,
-        )
-        .filter(|&e| e > 0.0),
-        // Size-adaptive quality applies only when the caller pinned no explicit
-        // quality knob (the eager-optimise job's case). Any explicit ladder /
-        // simplify / tolerance / auto_error is a full override and disables it.
-        auto_scale: q["ladder"].is_null()
-            && q["simplify"].is_null()
-            && q["tolerance_mm"].is_null()
-            && q["auto_error"].is_null(),
-        draco_bits: (
-            q["draco_position_bits"].as_i64().unwrap_or(14) as i32,
-            q["draco_normal_bits"].as_i64().unwrap_or(10) as i32,
-            q["draco_texcoord_bits"].as_i64().unwrap_or(12) as i32,
-        ),
-        quantize_normals: q["quantize_normals"].as_bool().unwrap_or(true),
-        merge_primitives: q["merge_primitives"].as_bool().unwrap_or(true),
-        max_packed: out["max_render_weight_bytes"]
-            .as_u64()
-            .unwrap_or(DEFAULT_MAX_RENDER_WEIGHT_BYTES) as usize,
-        max_output: out["max_bytes"]
-            .as_u64()
-            .unwrap_or(DEFAULT_MAX_OUTPUT_BYTES) as usize,
-        lin: q["linear_deflection"].as_f64().unwrap_or(0.1),
-        // 0.15 rad → ≈ 42 segments per circle (0.25 gave 25, 0.5 a blocky 13).
-        // Angular deflection is the only SCALE-INVARIANT constraint: a small
-        // hole's sag budget is satisfied after a handful of chords, so segment
-        // count on holes/grooves/fillets comes from this value alone. The bridge
-        // also scales linear deflection to each shape, which covers the large
-        // curved faces where sag does bind.
-        ang: q["angular_deflection"].as_f64().unwrap_or(0.15),
-        // Per-request budget wins; else the env default (set on the Lambda path).
-        budget: q["time_budget_secs"]
-            .as_u64()
-            .filter(|&s| s > 0)
-            .or_else(config::optimize_budget_secs)
-            .map(std::time::Duration::from_secs),
-        // Turned into an absolute deadline in `optimize::spawn` (charges the
-        // download + tessellation already spent).
-        deadline: None,
-    }
-}
-
-fn parse_ladder(quality: &Value) -> Vec<Option<f32>> {
-    if let Some(arr) = quality["ladder"].as_array() {
-        return arr.iter().map(|v| v.as_f64().map(|f| f as f32)).collect();
-    }
-    match quality["simplify"].as_f64() {
-        Some(f) => vec![Some(f as f32)],
-        None => vec![None, Some(0.5), Some(0.25), Some(0.1)],
-    }
-}
-
-async fn create_plan(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Query(q): Query<CreateQuery>,
-    body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
-) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
-    require_auth(&headers)?;
-    let req = parse_body(body)?;
-
-    let source_url = req["source"]["url"]
-        .as_str()
-        .ok_or_else(|| ApiError::invalid("missing source.url"))?;
-    config::validate_url(source_url)?;
-    let job_id = resolve_job_id(&headers);
-    let sync = sync_flag(&q);
-    let (submit_urls, callback_url) = submit_plumbing(&headers, &req)?;
-
-    match state.jobs.existing_active(&job_id).await {
-        Some(status) if !sync => return Ok(created(&job_id, "plan", &status)),
-        Some(_) => {} // sync: attach to the running job, don't re-spawn
-        None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
-            state
-                .jobs
-                .set_pending(&job_id, "plan", optional_meta(&req), submit_urls.clone(), callback_url.clone())
-                .await;
-            lambda_dispatch(&state, &headers, &job_id, "plan", &req).await?;
-        }
-        None => {
-            let meta = optional_meta(&req);
-            let plan_path = meta
-                .as_ref()
-                .and_then(|m| m["planPath"].as_str())
-                .map(str::to_string);
-            let model_upload_id = meta
-                .as_ref()
-                .and_then(|m| m["modelUploadId"].as_str())
-                .map(str::to_string);
-            state.jobs.set_pending(&job_id, "plan", meta, submit_urls.clone(), callback_url.clone()).await;
-            eprintln!(
-                "[{job_id}] plan queued (model={})",
-                model_upload_id.as_deref().unwrap_or("?")
-            );
-            actions::plan::spawn(
-                &state,
-                &job_id,
-                actions::plan::PlanReq {
-                    source_url: source_url.to_string(),
-                    plan_path,
-                    model_upload_id,
-                    options: req["options"].clone(),
-                },
-            );
-        }
-    }
-    respond(&state, &headers, &job_id, "plan", sync).await
-}
-
-async fn create_compact(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Query(q): Query<CreateQuery>,
-    body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
-) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
-    require_auth(&headers)?;
-    let req = parse_body(body)?;
-
-    let source_url = req["source"]["url"]
-        .as_str()
-        .ok_or_else(|| ApiError::invalid("missing source.url"))?;
-    config::validate_url(source_url)?;
-    let mode = actions::compact::Mode::from_str(req["mode"].as_str().unwrap_or("xbf"))
-        .ok_or_else(|| ApiError::invalid("mode must be 'xbf' or 'zstd'"))?;
-    let job_id = resolve_job_id(&headers);
-    let sync = sync_flag(&q);
-    let (submit_urls, callback_url) = submit_plumbing(&headers, &req)?;
-
-    match state.jobs.existing_active(&job_id).await {
-        Some(status) if !sync => return Ok(created(&job_id, "compact", &status)),
-        Some(_) => {} // sync: attach to the running job, don't re-spawn
-        None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
-            state
-                .jobs
-                .set_pending(&job_id, "compact", optional_meta(&req), submit_urls.clone(), callback_url.clone())
-                .await;
-            lambda_dispatch(&state, &headers, &job_id, "compact", &req).await?;
-        }
-        None => {
-            let meta = optional_meta(&req);
-            state.jobs.set_pending(&job_id, "compact", meta, submit_urls.clone(), callback_url.clone()).await;
-            eprintln!("[{job_id}] compact queued");
-            actions::compact::spawn(
-                &state,
-                &job_id,
-                actions::compact::CompactReq {
-                    source_url: source_url.to_string(),
-                    mode,
-                    raw_path: req["output"]["path"].as_str().map(str::to_string),
-                },
-            );
-        }
-    }
-    respond(&state, &headers, &job_id, "compact", sync).await
-}
-
-async fn create_thumbnail(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Query(q): Query<CreateQuery>,
-    body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
-) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
-    require_auth(&headers)?;
-    let req = parse_body(body)?;
-
-    let source_url = req["source"]["url"]
-        .as_str()
-        .ok_or_else(|| ApiError::invalid("missing source.url"))?;
-    config::validate_url(source_url)?;
-    let job_id = resolve_job_id(&headers);
-    let sync = sync_flag(&q);
-    let (submit_urls, callback_url) = submit_plumbing(&headers, &req)?;
-
-    match state.jobs.existing_active(&job_id).await {
-        Some(status) if !sync => return Ok(created(&job_id, "thumbnail", &status)),
-        Some(_) => {} // sync: attach to the running job, don't re-spawn
-        None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
-            state
-                .jobs
-                .set_pending(&job_id, "thumbnail", optional_meta(&req), submit_urls.clone(), callback_url.clone())
-                .await;
-            lambda_dispatch(&state, &headers, &job_id, "thumbnail", &req).await?;
-        }
-        None => {
-            let meta = optional_meta(&req);
-            state.jobs.set_pending(&job_id, "thumbnail", meta, submit_urls.clone(), callback_url.clone()).await;
-            eprintln!("[{job_id}] thumbnail queued");
-            actions::thumbnail::spawn(&state, &job_id, thumbnail_req(source_url, &req["output"]));
-        }
-    }
-    respond(&state, &headers, &job_id, "thumbnail", sync).await
-}
-
-/// The ingest outputs an optimize may also write: `compact: { path? }` (the
-/// retained raw's compact form, output `raw`) and `thumbnail: { path?, size?,
-/// direction? }` (output `thumbnail`). Shared by the HTTP body and the run-job
-/// spec.
-pub fn optimize_ingest(
-    req: &Value,
-) -> (Option<Option<String>>, Option<actions::optimize::ThumbnailOut>) {
-    let compact = req["compact"]
-        .is_object()
-        .then(|| req["compact"]["path"].as_str().map(str::to_string));
-    let thumbnail = req["thumbnail"].is_object().then(|| {
-        let t = thumbnail_req("", &req["thumbnail"]);
-        actions::optimize::ThumbnailOut {
-            path: t.path,
-            size: t.size,
-            direction: t.direction,
-        }
-    });
-    (compact, thumbnail)
-}
-
-/// `output: { path?, size?, direction? }` — shared by the HTTP body and the
-/// run-job spec. `direction` is `[x, y, z]`, model towards camera.
-pub fn thumbnail_req(source_url: &str, output: &Value) -> actions::thumbnail::ThumbnailReq {
-    actions::thumbnail::ThumbnailReq {
-        source_url: source_url.to_string(),
-        size: output["size"]
-            .as_u64()
-            .map_or(thumbnail::DEFAULT_SIZE, |s| s.min(u32::MAX as u64) as u32),
-        path: output["path"].as_str().map(str::to_string),
-        direction: view_direction(&output["direction"]),
-    }
-}
-
-/// Three finite numbers that are not all zero, else the viewer's home direction.
-fn view_direction(value: &Value) -> [f32; 3] {
-    let parsed: Option<Vec<f32>> = value
-        .as_array()
-        .filter(|a| a.len() == 3)
-        .and_then(|a| a.iter().map(|n| n.as_f64().map(|n| n as f32)).collect());
-    match parsed.as_deref() {
-        Some(&[x, y, z]) if [x, y, z].iter().all(|c| c.is_finite()) && (x, y, z) != (0.0, 0.0, 0.0) => {
-            [x, y, z]
-        }
-        _ => thumbnail::DEFAULT_DIRECTION,
-    }
-}
-
-fn optional_meta(req: &Value) -> Option<Value> {
-    match &req["meta"] {
-        Value::Null => None,
-        m => Some(m.clone()),
     }
 }
 
@@ -855,9 +480,7 @@ async fn get_job(
 ) -> Result<Json<Value>, ApiError> {
     require_auth(&headers)?;
     let max = match q.wait {
-        Some(secs) if secs > 0 => Some(std::time::Duration::from_secs(
-            secs.min(config::max_long_poll_secs()),
-        )),
+        Some(secs) if secs > 0 => Some(Duration::from_secs(secs.min(config::max_long_poll_secs()))),
         _ => None,
     };
     let mut v = state
@@ -877,8 +500,7 @@ async fn get_job(
 }
 
 /// Parse the submit-time signed upload URLs: the `X-Carbon-Upload-Urls` JSON
-/// header `{"glb":"…","graph":"…"}`. Also accepts the single-output legacy
-/// `X-Plan-Upload-Url` (→ `{"plan": …}`).
+/// header `{"glb":"…","graph":"…"}`.
 fn parse_upload_urls(headers: &HeaderMap) -> Result<HashMap<String, String>, ApiError> {
     let mut out = HashMap::new();
     if let Some(raw) = headers
@@ -892,14 +514,6 @@ fn parse_upload_urls(headers: &HeaderMap) -> Result<HashMap<String, String>, Api
             config::validate_url(&url)?;
             out.insert(name, url);
         }
-    }
-    if let Some(url) = headers
-        .get("x-plan-upload-url")
-        .and_then(|v| v.to_str().ok())
-        .filter(|s| !s.is_empty())
-    {
-        config::validate_url(url)?;
-        out.insert("plan".into(), url.to_string());
     }
     Ok(out)
 }

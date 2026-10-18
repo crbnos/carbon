@@ -3,9 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 //! `plan` action — collision-free disassembly motion planning. Async: the job
-//! runs detached, the caller long-polls. On completion the plan.json is either
-//! uploaded to its submit-time URL (a `planPath` was given) or returned inline
-//! in the result.
+//! runs detached, the caller long-polls. On completion the plan.json is
+//! uploaded to its submit-time URL.
 
 use crate::jobs::{opts_hash, Done, Output};
 use crate::{admission, config, http, telemetry, AppState};
@@ -18,7 +17,7 @@ pub struct PlanReq {
     pub source_url: String,
     /// Storage path recorded in the completion pointer (what the app persists).
     /// The plan.json is PUT to the submit-time signed URL, key `plan`.
-    pub plan_path: Option<String>,
+    pub plan_path: String,
     /// Scopes the content-hash result cache; None disables caching for this job.
     pub model_upload_id: Option<String>,
     pub options: Value,
@@ -123,50 +122,36 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                     .as_ref()
                     .map(|m| (m.clone(), content_hash, opts_h));
 
-                match &req.plan_path {
-                    // Offload: upload the plan.json.
-                    Some(path) => {
-                        let bytes = match serde_json::to_vec(&r.plan) {
-                            Ok(b) => b,
-                            Err(e) => {
-                                jobs.set_error(
-                                    &job_id,
-                                    "TESSELLATION_FAILED",
-                                    format!("serialize plan: {e}"),
-                                )
-                                .await;
-                                return;
-                            }
-                        };
-                        let done = Done {
-                            result: json!({
-                                "planPath": path,
-                                "componentCount": r.component_count,
-                                "plannedCount": r.planned_count,
-                            }),
-                            stats,
-                        };
-                        let outputs = vec![Output {
-                            name: "plan".into(),
-                            content_type: "application/json".into(),
-                            bytes: bytes.into(),
-                        }];
-                        jobs.finish(&job_id, outputs, done, cache).await;
+                let (component_count, planned_count) = (r.component_count, r.planned_count);
+                let bytes = serde_json::to_vec(&r.plan);
+                // The serialized copy is all that is uploaded; free the plan.
+                drop(r);
+                let bytes = match bytes {
+                    Ok(b) => b,
+                    Err(e) => {
+                        jobs.set_error(
+                            &job_id,
+                            "TESSELLATION_FAILED",
+                            format!("serialize plan: {e}"),
+                        )
+                        .await;
+                        return;
                     }
-                    // Inline: return the plan in the result for the app to persist.
-                    None => {
-                        let done = Done {
-                            result: json!({
-                                "plan": r.plan,
-                                "componentCount": r.component_count,
-                                "plannedCount": r.planned_count,
-                            }),
-                            stats,
-                        };
-                        jobs.set_done(&job_id, done).await;
-                jobs.send_callback(&job_id).await;
-                    }
-                }
+                };
+                let done = Done {
+                    result: json!({
+                        "planPath": req.plan_path,
+                        "componentCount": component_count,
+                        "plannedCount": planned_count,
+                    }),
+                    stats,
+                };
+                let outputs = vec![Output {
+                    name: "plan".into(),
+                    content_type: "application/json".into(),
+                    bytes: bytes.into(),
+                }];
+                jobs.finish(&job_id, outputs, done, cache).await;
             }
             Ok(Err(e)) => {
                 eprintln!("[{job_id}] plan failed: {}", e.message);
@@ -193,8 +178,12 @@ type Opts = (
 );
 
 fn parse_options(options: &Value) -> Opts {
-    let lin = options["linearDeflection"].as_f64().unwrap_or(0.1);
-    let ang = options["angularDeflection"].as_f64().unwrap_or(0.5);
+    let lin = options["linearDeflection"]
+        .as_f64()
+        .unwrap_or(config::TESSELLATION_LINEAR);
+    let ang = options["angularDeflection"]
+        .as_f64()
+        .unwrap_or(config::TESSELLATION_ANGULAR);
     let clearance = options["clearance"].as_f64().unwrap_or(0.5);
     let path_samples = options["pathSamples"].as_u64().unwrap_or(60) as usize;
     let tolerance = options["tolerance"].as_f64();

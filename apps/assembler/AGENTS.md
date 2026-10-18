@@ -118,9 +118,9 @@ One trace per job: the caller's `traceparent` → the request span
 - **A job is spawned with `telemetry::spawn_job`, never bare `tokio::spawn`.**
   The job outlives its request, so the span context has to travel with the task;
   a bare spawn starts a job whose spans belong to no trace.
-- **Across the Lambda self-invoke the parent rides in the run-job spec**
+- **Across the Lambda self-invoke the parent rides in the worker spec**
   (`traceparent`, written by `telemetry::inject` in `lambda_dispatch`, restored
-  by `telemetry::attach` in `run::spawn_from_spec`). A spec built anywhere else
+  by `telemetry::attach` in `main::spawn_traced`). A spec built anywhere else
   can carry the same key.
 - **Outbound requests go through `http::{download_hashed, upload, post_json}`**,
   which record the host only. The URLs are signed, and error text that quotes
@@ -173,8 +173,15 @@ A PUT that fails is retried after 1, 2 and 4 s; still failing (or a missing
 URL), the job fails with `UPLOAD_FAILED` and the caller resubmits with fresh
 URLs. Outputs are never parked for a later poll: a late-mint hand-off used to
 keep them on disk, or in Redis on Lambda, which put whole models in a shared
-Redis. (Legacy: a plan with no `planPath` returns the plan inline in the job
-record.)
+Redis.
+
+**One parser per action** (`src/request.rs`). `POST /v1/{action}` and the
+Lambda worker both parse the body through `request::parse`, so a default
+cannot differ between runtimes. Convert and plan share one tessellation
+(`config::TESSELLATION_*`): nodeIds hash the tessellated positions, so a
+graph.json and a plan.json made at different deflections disagree. A plan
+needs `meta.planPath` (400 without); there is no inline plan result, no
+`?sync` mode and no `run-job` CLI.
 
 **Content-hash result cache** (`asm:result:{model}:{contentHash}:{optsHash}:v{CODE_VERSION}`
 → pointer, 24 h): a repeat of the same model + bytes + options + code version

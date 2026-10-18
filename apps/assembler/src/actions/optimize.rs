@@ -764,7 +764,7 @@ mod tests {
     use super::*;
 
     fn default_opts() -> Opts {
-        crate::optimize_opts(&serde_json::json!({}), &serde_json::json!({}))
+        crate::request::optimize_opts(&serde_json::json!({}), &serde_json::json!({}))
     }
 
     fn fixture_step(name: &str, boxes: u32) -> String {
@@ -841,7 +841,7 @@ mod tests {
     #[ignore = "scratch probe: needs real STEP files in .ai/scratch/"]
     fn probe_real_model() {
         let scratch = concat!(env!("CARGO_MANIFEST_DIR"), "/../../.ai/scratch");
-        let opts = crate::optimize_opts(&serde_json::json!({}), &serde_json::json!({}));
+        let opts = crate::request::optimize_opts(&serde_json::json!({}), &serde_json::json!({}));
         eprintln!(
             "PROBE opts lin={} ang={} auto_scale={} max_packed={} max_output={}",
             opts.lin, opts.ang, opts.auto_scale, opts.max_packed, opts.max_output
@@ -866,7 +866,7 @@ mod tests {
                 // Force the measured-overshoot predictor path.
                 ("tight-gates", 8 * 1024 * 1024, 2 * 1024 * 1024),
             ] {
-                let mut o = crate::optimize_opts(&serde_json::json!({}), &serde_json::json!({}));
+                let mut o = crate::request::optimize_opts(&serde_json::json!({}), &serde_json::json!({}));
                 o.max_packed = max_packed;
                 o.max_output = max_output;
                 let t0 = std::time::Instant::now();
