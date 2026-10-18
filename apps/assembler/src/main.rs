@@ -101,6 +101,9 @@ async fn serve() {
     http::clear_stale_sources();
     let state = build_state().await;
     let admission = state.admission.clone();
+    // Renews the lease of every job this process runs, and relays cancels.
+    let heartbeat = state.jobs.clone();
+    tokio::spawn(async move { heartbeat.heartbeat().await });
     let app = Router::new()
         .route("/health", get(health))
         .route("/v1", get(discovery))
@@ -404,8 +407,9 @@ async fn lambda_dispatch(
 /// Worker inlet for the Lambda self-invoke (LWA pass-through). Runs the spec's
 /// action to completion in THIS invocation — its own 900s window — uploading via
 /// the submit-time URLs; state lives in the shared (Redis) JobStore so any
-/// instance's poll can answer. Async-retry deliveries are deduped by job status:
-/// pending → run; anything else → no-op.
+/// instance's poll can answer. A delivery runs the job when it can claim the
+/// job's lease: a pending job, or one whose worker stopped renewing it (a
+/// crashed or timed-out invocation Lambda redelivers). Otherwise it is a no-op.
 async fn worker_events(
     State(state): State<AppState>,
     body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
@@ -416,14 +420,22 @@ async fn worker_events(
     if job_id.is_empty() {
         return Err(ApiError::invalid("missing job_id"));
     }
-    match state.jobs.internal_active(&job_id).await.as_deref() {
-        Some("pending") => {
-            // Taking the request is the claim (GETDEL): of two deliveries of
-            // one job, exactly one gets the body and runs it.
-            let Some(req) = state.jobs.take_request(&job_id).await else {
-                eprintln!("[{job_id}] worker no-op (request already taken or expired)");
+    match state.jobs.internal_active(&job_id).await {
+        Some(status) => {
+            // The lease is the claim: of two deliveries one wins, and while a
+            // live worker renews it every other delivery is a no-op.
+            if !state.jobs.claim_lease(&job_id).await {
+                eprintln!("[{job_id}] worker no-op (another worker holds it)");
                 return Ok(Json(json!({ "ok": true, "noop": true })));
+            }
+            let Some(req) = state.jobs.read_request(&job_id).await else {
+                let message = "the request expired before a worker took it".to_string();
+                state.jobs.set_error(&job_id, "dispatch_failed", message.clone()).await;
+                return Err(ApiError::new(410, "dispatch_failed", message));
             };
+            if status != "pending" {
+                eprintln!("[{job_id}] worker taking over a job left {status}");
+            }
             // Mark it taken before the long download and admission wait.
             state.jobs.set_status(&job_id, "starting").await;
             if let Err(e) = spawn_traced(&state, &job_id, &action, &spec, &req) {
@@ -432,9 +444,8 @@ async fn worker_events(
             }
             eprintln!("[{job_id}] worker running {action}");
         }
-        other => {
-            // Another live worker owns it, or it is terminal/unknown: no-op.
-            eprintln!("[{job_id}] worker no-op (status {other:?})");
+        None => {
+            eprintln!("[{job_id}] worker no-op (job ended or unknown)");
             return Ok(Json(json!({ "ok": true, "noop": true })));
         }
     }

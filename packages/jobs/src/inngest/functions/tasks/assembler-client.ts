@@ -439,14 +439,16 @@ export type StepTools = {
 
 /**
  * Failures a resubmit can fix: the source or an output could not travel, the
- * service could not start the job, or it gave no reason. Any other failure is
- * the input's, and a resubmit only repeats it.
+ * service could not start the job, the process running it died
+ * (`WORKER_LOST`: its lease ran out), or it gave no reason. Any other failure
+ * is the input's, and a resubmit only repeats it.
  */
 const TRANSIENT_FAILURES = new Set([
   "READ_FAILED",
   "UPLOAD_FAILED",
   "BUSY",
-  "DISPATCH_FAILED"
+  "DISPATCH_FAILED",
+  "WORKER_LOST"
 ]);
 
 export type JobDecision =

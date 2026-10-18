@@ -217,6 +217,7 @@ where
         ])
         .start(&tracer);
     let cx = Context::current_with_span(span);
+    let job = crate::jobs::track(job_id, job);
     tokio::spawn(
         async move {
             job.await;

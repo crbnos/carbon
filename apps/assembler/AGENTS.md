@@ -183,6 +183,28 @@ graph.json and a plan.json made at different deflections disagree. A plan
 needs `meta.planPath` (400 without); there is no inline plan result, no
 `?sync` mode and no `run-job` CLI.
 
+**Job state is a Redis hash, changed only while the job is active.** A
+record is `asm:job2:{id}` (fields `action`, `status`, `result`, `stats`,
+`error`, `upload_urls`, `callback_url`). Every status change goes through one
+Lua script (`TRANSITION`) that checks the job is still pending, starting,
+running or uploading before it writes, so a finish can never overwrite a cancel
+that landed meanwhile.
+
+**Leases: who is running a job.** A working job (not `pending`) holds
+`asm:lease:{id}` (30 s), renewed every 10 s by the process's `heartbeat` for
+every job `jobs::track` lists (`telemetry::spawn_job` tracks each job). A poll
+that finds a working job with no lease ends it `WORKER_LOST`, which the caller
+resubmits: the process running it died. On Lambda the lease is the worker's
+claim (`SET NX`): of two deliveries one runs, and a redelivery after a crashed
+or timed-out invocation takes the job over; the request body stays in
+`asm:req:{id}` until the job ends so it can.
+
+**Cancel stops transfers.** `track` gives each job a cancel token; `cancel`
+fires it at once on the replica running the job, and the heartbeat fires it on
+any other within 10 s. Downloads and uploads race it (`http::unless_canceled`)
+and fail `canceled`. A compute already running is not interrupted; its result
+is dropped.
+
 **Secrets stay out of payloads, records and errors.**
 - The Lambda self-invoke spec is `{ action, job_id, traceparent }` and nothing
   else. The request body waits in Redis (`asm:req:{id}`, 15 min) until the

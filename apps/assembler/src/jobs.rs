@@ -22,12 +22,13 @@ use crate::{cache::CODE_VERSION, config, http};
 use bytes::Bytes;
 use dashmap::DashMap;
 use redis::AsyncCommands;
-use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::future::Future;
+use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 use tokio::sync::Notify;
+use tokio_util::sync::CancellationToken;
 
 /// Waits between upload attempts: four tries in all, about seven seconds.
 const UPLOAD_RETRY_DELAYS: [Duration; 3] = [
@@ -36,29 +37,104 @@ const UPLOAD_RETRY_DELAYS: [Duration; 3] = [
     Duration::from_secs(4),
 ];
 
-/// One job's persisted state, stored in Redis as a JSON blob. `result`/`stats`
-/// hold the completion POINTER (paths + counts) — never the artifact bytes.
-#[derive(Clone, Serialize, Deserialize)]
+/// One job's state: a Redis HASH (one field each), so a status change can be
+/// made conditional on the current status in one script without decoding the
+/// rest. `result`/`stats` hold the completion POINTER (paths + counts) — never
+/// the artifact bytes.
+#[derive(Clone)]
 struct JobRecord {
     action: String, // one of `request::ACTIONS`
-    status: String, // pending | running | uploading | done | error | canceled
-    #[serde(skip_serializing_if = "Option::is_none")]
+    status: String, // pending | starting | running | uploading | done | error | canceled
     result: Option<Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     stats: Option<Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<Value>, // { code, message }
     /// Signed PUT URLs handed over AT SUBMIT (name → URL), one per output.
     /// Never rendered; cleared once the job ends (they are bearer tokens).
     /// `callback_url` stays: the Lambda worker re-sends the callback after the
     /// job ends, and it only lets its holder report this one job.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
     upload_urls: Option<HashMap<String, String>>,
     /// Completion webhook minted by the caller at submit: the terminal job
     /// envelope is POSTed here (fire-with-retries) so the caller's workflow
     /// wakes on an event instead of polling. Never rendered.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
     callback_url: Option<String>,
+}
+
+impl JobRecord {
+    fn from_fields(mut fields: HashMap<String, String>) -> Option<Self> {
+        fn json<T: serde::de::DeserializeOwned>(v: Option<String>) -> Option<T> {
+            v.and_then(|s| serde_json::from_str(&s).ok())
+        }
+        Some(JobRecord {
+            action: fields.remove("action")?,
+            status: fields.remove("status")?,
+            result: json(fields.remove("result")),
+            stats: json(fields.remove("stats")),
+            error: json(fields.remove("error")),
+            upload_urls: json(fields.remove("upload_urls")),
+            callback_url: fields.remove("callback_url"),
+        })
+    }
+}
+
+/// Change a job only while it is still active (the one status check and the
+/// write are a single atomic script, so a finish can never overwrite a cancel
+/// that landed meanwhile). ARGV: ttl, n, then n field/value pairs to set, then
+/// fields to delete. Returns 1 when it changed the job.
+static TRANSITION: LazyLock<redis::Script> = LazyLock::new(|| {
+    redis::Script::new(
+        r"
+        local s = redis.call('HGET', KEYS[1], 'status')
+        if s ~= 'pending' and s ~= 'starting' and s ~= 'running' and s ~= 'uploading' then
+            return 0
+        end
+        local n = tonumber(ARGV[2])
+        for i = 0, n - 1 do
+            redis.call('HSET', KEYS[1], ARGV[3 + 2 * i], ARGV[4 + 2 * i])
+        end
+        for i = 3 + 2 * n, #ARGV do
+            redis.call('HDEL', KEYS[1], ARGV[i])
+        end
+        redis.call('EXPIRE', KEYS[1], ARGV[1])
+        return 1
+        ",
+    )
+});
+
+/// How long a running job's lease lives, and how often its worker renews it.
+/// A poll that finds an active job with no lease ends it as `WORKER_LOST`: the
+/// process running it died (a restart, an OOM kill, a Lambda timeout).
+const LEASE_TTL_SECS: u64 = 30;
+const LEASE_RENEW_EVERY: Duration = Duration::from_secs(10);
+
+/// The jobs this process is running, with each one's cancel token.
+static RUNNING: LazyLock<DashMap<String, CancellationToken>> = LazyLock::new(DashMap::new);
+
+tokio::task_local! {
+    /// The running job's cancel token, for the downloads and uploads it makes.
+    static JOB_CANCEL: CancellationToken;
+}
+
+/// Run `job` as job `id` of this process: listed for the lease heartbeat, and
+/// with a cancel token its transfers watch (`current_cancel`).
+pub fn track<F: Future>(id: &str, job: F) -> impl Future<Output = F::Output> {
+    struct Untrack(String);
+    impl Drop for Untrack {
+        fn drop(&mut self) {
+            RUNNING.remove(&self.0);
+        }
+    }
+    let token = CancellationToken::new();
+    RUNNING.insert(id.to_string(), token.clone());
+    let untrack = Untrack(id.to_string());
+    JOB_CANCEL.scope(token, async move {
+        let _untrack = untrack;
+        job.await
+    })
+}
+
+/// The cancel token of the job this task is running, if it is one.
+pub fn current_cancel() -> Option<CancellationToken> {
+    JOB_CANCEL.try_with(CancellationToken::clone).ok()
 }
 
 /// One artifact to upload (name → bytes + content type). `Bytes`, so handing it
@@ -184,9 +260,9 @@ impl JobStore {
     /// it does not have.
     async fn try_read(&self, id: &str) -> Result<Option<JobRecord>, ()> {
         let mut c = self.conn.clone();
-        match c.get::<_, Option<String>>(job_key(id)).await {
-            Ok(Some(s)) => Ok(serde_json::from_str(&s).ok()),
-            Ok(None) => Ok(None),
+        match c.hgetall::<_, HashMap<String, String>>(job_key(id)).await {
+            Ok(fields) if fields.is_empty() => Ok(None),
+            Ok(fields) => Ok(JobRecord::from_fields(fields)),
             Err(e) => {
                 eprintln!("assembler: redis job read failed: {e}");
                 Err(())
@@ -194,16 +270,24 @@ impl JobStore {
         }
     }
 
-    async fn write(&self, id: &str, rec: &JobRecord) {
-        let Ok(payload) = serde_json::to_string(rec) else {
-            return;
-        };
+    /// Apply `set` and `delete` to an active job; false when the job is gone
+    /// or already ended (canceled included), so nothing was changed.
+    async fn transition(&self, id: &str, set: &[(&str, String)], delete: &[&str]) -> bool {
+        let mut invocation = TRANSITION.key(job_key(id));
+        invocation.arg(config::job_ttl_secs()).arg(set.len());
+        for (field, value) in set {
+            invocation.arg(*field).arg(value);
+        }
+        for field in delete {
+            invocation.arg(*field);
+        }
         let mut c = self.conn.clone();
-        if let Err(e) = c
-            .set_ex::<_, _, ()>(job_key(id), payload, config::job_ttl_secs())
-            .await
-        {
-            eprintln!("assembler: redis job write failed: {e}");
+        match invocation.invoke_async::<i64>(&mut c).await {
+            Ok(changed) => changed == 1,
+            Err(e) => {
+                eprintln!("assembler: redis job transition failed: {e}");
+                false
+            }
         }
     }
 
@@ -216,10 +300,8 @@ impl JobStore {
     }
 
     /// The INTERNAL status of an active job (pending/starting/running/uploading).
-    /// The worker inlet dedupes deliveries on these exact names — the external
-    /// mapping folds pending/starting->queued and uploading->running, which
-    /// would make the worker's pending/uploading branches unreachable (every
-    /// Lambda job no-op'd forever).
+    /// The worker inlet decides on these exact names — the external mapping
+    /// folds pending/starting->queued and uploading->running.
     pub async fn internal_active(&self, id: &str) -> Option<String> {
         self.read(id)
             .await
@@ -234,30 +316,40 @@ impl JobStore {
         upload_urls: HashMap<String, String>,
         callback_url: Option<String>,
     ) {
-        self.write(
-            id,
-            &JobRecord {
-                action: action.to_string(),
-                status: "pending".into(),
-                result: None,
-                stats: None,
-                error: None,
-                upload_urls: (!upload_urls.is_empty()).then_some(upload_urls),
-                callback_url,
-            },
-        )
-        .await;
+        let mut fields = vec![
+            ("action", action.to_string()),
+            ("status", "pending".to_string()),
+        ];
+        if !upload_urls.is_empty() {
+            fields.push(("upload_urls", json!(upload_urls).to_string()));
+        }
+        if let Some(url) = callback_url {
+            fields.push(("callback_url", url));
+        }
+        let key = job_key(id);
+        let mut c = self.conn.clone();
+        let written = redis::pipe()
+            .atomic()
+            .del(&key)
+            .ignore()
+            .hset_multiple(&key, &fields)
+            .ignore()
+            .expire(&key, config::job_ttl_secs() as i64)
+            .ignore()
+            .query_async::<()>(&mut c)
+            .await;
+        if let Err(e) = written {
+            eprintln!("assembler: redis job write failed: {e}");
+        }
     }
 
+    /// Move an active job to `status`. A job that is working (not `pending`)
+    /// holds a lease, renewed by `heartbeat` while this process runs it.
     pub async fn set_status(&self, id: &str, status: &str) {
-        if let Some(mut rec) = self.read(id).await {
-            // Canceled is terminal: a compute task that raced past its
-            // is_canceled check must not resurrect the job.
-            if rec.status == "canceled" {
-                return;
-            }
-            rec.status = status.to_string();
-            self.write(id, &rec).await;
+        if self.transition(id, &[("status", status.to_string())], &[]).await
+            && status != "pending"
+        {
+            self.renew_lease(id).await;
         }
     }
 
@@ -265,33 +357,36 @@ impl JobStore {
     /// callback; its owner sends it: `finish()`, the plan action's cache-hit
     /// publish, and the Lambda worker after `run_to_completion`.
     pub async fn set_done(&self, id: &str, done: Done) {
-        if let Some(mut rec) = self.read(id).await {
-            if rec.status == "canceled" {
-                return;
-            }
-            rec.status = "done".into();
-            rec.result = Some(done.result);
-            rec.stats = Some(done.stats);
-            rec.error = None;
-            rec.upload_urls = None;
-            self.write(id, &rec).await;
+        let set = [
+            ("status", "done".to_string()),
+            ("result", done.result.to_string()),
+            ("stats", done.stats.to_string()),
+        ];
+        if self.transition(id, &set, &["error", "upload_urls"]).await {
+            self.ended(id).await;
         }
         self.wake(id);
     }
 
     pub async fn set_error(&self, id: &str, code: &str, message: String) {
         crate::telemetry::record_error(code, &message);
-        if let Some(mut rec) = self.read(id).await {
-            if rec.status == "canceled" {
-                return;
-            }
-            rec.status = "error".into();
-            rec.error = Some(json!({ "code": code, "message": message }));
-            rec.upload_urls = None;
-            self.write(id, &rec).await;
+        let set = [
+            ("status", "error".to_string()),
+            ("error", json!({ "code": code, "message": message }).to_string()),
+        ];
+        if self.transition(id, &set, &["upload_urls"]).await {
+            self.ended(id).await;
         }
         self.notify(id);
         self.wake(id);
+    }
+
+    /// A job ended: drop its lease and the request a Lambda worker read.
+    async fn ended(&self, id: &str) {
+        let mut c = self.conn.clone();
+        if let Err(e) = c.del::<_, ()>(&[lease_key(id), request_key(id)]).await {
+            eprintln!("assembler: redis job cleanup failed: {e}");
+        }
     }
 
     /// Deliver the callback in its own task: its retries can take ~36 s, and
@@ -300,6 +395,102 @@ impl JobStore {
         let store = self.clone();
         let id = id.to_string();
         tokio::spawn(async move { store.send_callback(&id).await });
+    }
+
+    // --- leases: who is running a job --------------------------------------
+
+    /// Take a job no live worker holds (a Lambda worker's claim: of two
+    /// deliveries one wins, and a redelivery after a crash takes over).
+    pub async fn claim_lease(&self, id: &str) -> bool {
+        let mut c = self.conn.clone();
+        let claimed: redis::RedisResult<Option<String>> = redis::cmd("SET")
+            .arg(lease_key(id))
+            .arg(1)
+            .arg("NX")
+            .arg("EX")
+            .arg(LEASE_TTL_SECS)
+            .query_async(&mut c)
+            .await;
+        claimed.map_or_else(
+            |e| {
+                eprintln!("assembler: redis lease claim failed: {e}");
+                false
+            },
+            |reply| reply.is_some(),
+        )
+    }
+
+    async fn renew_lease(&self, id: &str) {
+        let mut c = self.conn.clone();
+        if let Err(e) = c
+            .set_ex::<_, _, ()>(lease_key(id), 1, LEASE_TTL_SECS)
+            .await
+        {
+            eprintln!("assembler: redis lease renew failed: {e}");
+        }
+    }
+
+    /// Whether a live worker holds the job. A Redis that cannot be asked
+    /// answers yes: a job is never ended over one failed read.
+    async fn lease_alive(&self, id: &str) -> bool {
+        let mut c = self.conn.clone();
+        c.exists::<_, bool>(lease_key(id)).await.unwrap_or(true)
+    }
+
+    /// Every `LEASE_RENEW_EVERY`: renew the lease of each job this process
+    /// runs, and cancel the token of any that was canceled (from any replica).
+    /// Runs for the life of the process.
+    pub async fn heartbeat(&self) {
+        loop {
+            tokio::time::sleep(LEASE_RENEW_EVERY).await;
+            let running: Vec<(String, CancellationToken)> = RUNNING
+                .iter()
+                .map(|e| (e.key().clone(), e.value().clone()))
+                .collect();
+            if running.is_empty() {
+                continue;
+            }
+            let mut pipe = redis::pipe();
+            for (id, _) in &running {
+                pipe.set_ex(lease_key(id), 1, LEASE_TTL_SECS).ignore();
+                pipe.hget(job_key(id), "status");
+            }
+            let mut c = self.conn.clone();
+            match pipe.query_async::<Vec<Option<String>>>(&mut c).await {
+                Ok(statuses) => {
+                    for ((_, token), status) in running.iter().zip(statuses) {
+                        if status.as_deref() == Some("canceled") {
+                            token.cancel();
+                        }
+                    }
+                }
+                Err(e) => eprintln!("assembler: redis heartbeat failed: {e}"),
+            }
+        }
+    }
+
+    // --- Lambda requests ----------------------------------------------------
+
+    /// Hold a Lambda job's request body for its worker. The worker spec carries
+    /// only ids, so signed URLs and caller tokens never ride in the Invoke
+    /// payload (which AWS keeps for its async retries). Kept until the job
+    /// ends, so a redelivery after a crashed worker can run it again.
+    pub async fn put_request(&self, id: &str, body: &Value) -> Result<(), String> {
+        let mut c = self.conn.clone();
+        c.set_ex::<_, _, ()>(request_key(id), body.to_string(), REQUEST_TTL_SECS)
+            .await
+            .map_err(|e| format!("could not store the request: {e}"))
+    }
+
+    /// A Lambda job's request body; `None` once the job ended or it expired.
+    pub async fn read_request(&self, id: &str) -> Option<Value> {
+        let mut c = self.conn.clone();
+        let raw: Option<String> = c
+            .get(request_key(id))
+            .await
+            .map_err(|e| eprintln!("assembler: redis request read failed: {e}"))
+            .ok()?;
+        serde_json::from_str(&raw?).ok()
     }
 
     /// Hold the create window for `id`, so two POSTs with one Idempotency-Key
@@ -332,18 +523,23 @@ impl JobStore {
         }
     }
 
-    /// Best-effort cancel: mark canceled only if still active. The running task
-    /// isn't forcibly killed — it drops its result when it finds the job canceled.
+    /// Cancel an active job. Its downloads and uploads stop at once on this
+    /// replica, or within a heartbeat on another; a compute already running
+    /// finishes and its result is dropped.
     pub async fn cancel(&self, id: &str) -> Option<Value> {
-        let mut rec = self.read(id).await?;
-        if is_active(&rec.status) {
-            rec.status = "canceled".into();
-            rec.upload_urls = None;
-            self.write(id, &rec).await;
+        if self
+            .transition(id, &[("status", "canceled".to_string())], &["upload_urls"])
+            .await
+        {
+            if let Some(token) = RUNNING.get(id) {
+                token.cancel();
+            }
+            self.ended(id).await;
             // Wake the event-driven waiter immediately (terminal state).
             self.notify(id);
             self.wake(id);
         }
+        let rec = self.read(id).await?;
         Some(Self::render(id, &rec))
     }
 
@@ -385,7 +581,15 @@ impl JobStore {
         let deadline = max.map(|m| Instant::now() + m);
         let mut watch = None;
         loop {
-            let rec = self.read(id).await?;
+            let mut rec = self.read(id).await?;
+            // Working, but no process holds its lease: whatever ran it died.
+            if matches!(rec.status.as_str(), "starting" | "running" | "uploading")
+                && !self.lease_alive(id).await
+            {
+                self.set_error(id, "WORKER_LOST", "the worker running this job stopped".into())
+                    .await;
+                rec = self.read(id).await?;
+            }
             if matches!(rec.status.as_str(), "done" | "error" | "canceled") {
                 return Some(Self::render(id, &rec));
             }
@@ -487,28 +691,6 @@ impl JobStore {
             self.result_put(&model, content, opts, pointer).await;
         }
         self.set_done(id, done).await;
-    }
-
-    /// Hold a Lambda job's request body until its worker takes it. The worker
-    /// spec carries only ids, so signed URLs and caller tokens never ride in
-    /// the Invoke payload (which AWS keeps for its async retries).
-    pub async fn put_request(&self, id: &str, body: &Value) -> Result<(), String> {
-        let mut c = self.conn.clone();
-        c.set_ex::<_, _, ()>(request_key(id), body.to_string(), REQUEST_TTL_SECS)
-            .await
-            .map_err(|e| format!("could not store the request: {e}"))
-    }
-
-    /// Take a Lambda job's request body; `None` once taken or expired.
-    pub async fn take_request(&self, id: &str) -> Option<Value> {
-        let mut c = self.conn.clone();
-        let raw: Option<String> = redis::cmd("GETDEL")
-            .arg(request_key(id))
-            .query_async(&mut c)
-            .await
-            .map_err(|e| eprintln!("assembler: redis request read failed: {e}"))
-            .ok()?;
-        serde_json::from_str(&raw?).ok()
     }
 
     // --- content-hash result-pointer cache (CODE_VERSION-stamped) ----------
@@ -615,13 +797,19 @@ fn external_status(internal: &str) -> &'static str {
     }
 }
 
+/// `asm:job2`: the record became a hash (it was a JSON string under
+/// `asm:job`), and a new prefix keeps the two from meeting during a deploy.
 fn job_key(id: &str) -> String {
-    format!("asm:job:{id}")
+    format!("asm:job2:{id}")
 }
 
-/// How long a Lambda job's request waits for its worker. The worker is
-/// invoked at once; this only bounds a delivery AWS retries much later.
-const REQUEST_TTL_SECS: u64 = 15 * 60;
+fn lease_key(id: &str) -> String {
+    format!("asm:lease:{id}")
+}
+
+/// How long a Lambda job's request is kept at most (it is deleted when the job
+/// ends): long enough for AWS's async retries to redeliver a crashed job.
+const REQUEST_TTL_SECS: u64 = 2 * 60 * 60;
 
 /// How long a create may hold its window; released as soon as it is done.
 const CREATE_CLAIM_TTL_SECS: u64 = 30;
@@ -790,13 +978,75 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_lambda_request_is_taken_exactly_once() {
+    async fn a_lambda_request_is_kept_until_its_job_ends() {
         let Some(store) = redis_store().await else { return };
         let id = unique("request");
         let body = json!({ "source": { "url": "https://storage.test/m.step" } });
+        store.set_pending(&id, "thumbnail", HashMap::new(), None).await;
         store.put_request(&id, &body).await.unwrap();
-        assert_eq!(store.take_request(&id).await, Some(body));
-        assert_eq!(store.take_request(&id).await, None);
+        assert_eq!(store.read_request(&id).await, Some(body.clone()));
+        assert_eq!(store.read_request(&id).await, Some(body), "a redelivery reads it too");
+        store.set_error(&id, "thumbnail_failed", "x".into()).await;
+        assert_eq!(store.read_request(&id).await, None);
+    }
+
+    #[tokio::test]
+    async fn one_worker_claims_a_job_and_a_crashed_one_releases_it() {
+        let Some(store) = redis_store().await else { return };
+        let id = unique("lease");
+        assert!(store.claim_lease(&id).await);
+        assert!(!store.claim_lease(&id).await, "a second delivery is a no-op");
+        let mut c = store.conn.clone();
+        let _: () = c.del(lease_key(&id)).await.unwrap(); // the lease ran out
+        assert!(store.claim_lease(&id).await, "a redelivery takes over");
+    }
+
+    #[tokio::test]
+    async fn a_job_whose_worker_died_ends_as_worker_lost() {
+        let Some(store) = redis_store().await else { return };
+        let id = unique("lost");
+        store.set_pending(&id, "thumbnail", HashMap::new(), None).await;
+        store.set_status(&id, "running").await;
+        let job = store.poll(&id, None).await.unwrap();
+        assert_eq!(job["job"]["status"], "running", "its lease is live");
+
+        let mut c = store.conn.clone();
+        let _: () = c.del(lease_key(&id)).await.unwrap(); // no renewal came
+        let job = store.poll(&id, None).await.unwrap();
+        assert_eq!(job["job"]["status"], "failed");
+        assert_eq!(job["job"]["error"]["code"], "WORKER_LOST");
+    }
+
+    #[tokio::test]
+    async fn a_finish_never_overwrites_a_cancel() {
+        let Some(store) = redis_store().await else { return };
+        let id = unique("cancel");
+        store.set_pending(&id, "thumbnail", HashMap::new(), None).await;
+        store.set_status(&id, "running").await;
+        store.cancel(&id).await;
+        store.set_done(&id, Done { result: json!({}), stats: json!({}) }).await;
+        store.set_error(&id, "thumbnail_failed", "late".into()).await;
+        store.set_status(&id, "uploading").await;
+        let job = store.poll(&id, None).await.unwrap();
+        assert_eq!(job["job"]["status"], "canceled");
+    }
+
+    #[tokio::test]
+    async fn a_cancel_fires_the_running_jobs_token() {
+        let Some(store) = redis_store().await else { return };
+        let id = unique("token");
+        store.set_pending(&id, "thumbnail", HashMap::new(), None).await;
+        let (fired_tx, fired_rx) = tokio::sync::oneshot::channel();
+        let job = track(&id, async move {
+            current_cancel().unwrap().cancelled().await;
+            let _ = fired_tx.send(());
+        });
+        let running = tokio::spawn(job);
+        tokio::task::yield_now().await;
+        store.cancel(&id).await;
+        tokio::time::timeout(Duration::from_secs(1), fired_rx).await.unwrap().unwrap();
+        running.await.unwrap();
+        assert!(!RUNNING.contains_key(&id), "an ended job is untracked");
     }
 
     #[tokio::test]

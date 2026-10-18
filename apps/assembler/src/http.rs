@@ -143,7 +143,21 @@ pub async fn download_with(
         .map_or(config::max_source_bytes(), |b| b as usize);
     let span = if opts.passthrough { "fetch source" } else { "download source" };
     let download = download(request.timeout(DOWNLOAD_DEADLINE), dest, progress, limit, !opts.passthrough);
-    telemetry::outbound(span, url, download).await
+    telemetry::outbound(span, url, unless_canceled(download)).await
+}
+
+/// Run a transfer for the current job, giving up the moment the job is
+/// canceled (`jobs::track`'s token): a canceled job stops moving bytes.
+async fn unless_canceled<T>(
+    transfer: impl std::future::Future<Output = Result<T, ApiError>>,
+) -> Result<T, ApiError> {
+    let Some(token) = crate::jobs::current_cancel() else {
+        return transfer.await;
+    };
+    tokio::select! {
+        result = transfer => result,
+        _ = token.cancelled() => Err(ApiError::new(409, "canceled", "the job was canceled")),
+    }
 }
 
 /// `limit` 0 = unlimited.
@@ -288,7 +302,8 @@ pub async fn upload(
     body: impl Into<reqwest::Body>,
     content_type: &str,
 ) -> Result<(), ApiError> {
-    telemetry::outbound("upload artifact", url, put(url, body.into(), content_type)).await
+    let put = put(url, body.into(), content_type);
+    telemetry::outbound("upload artifact", url, unless_canceled(put)).await
 }
 
 async fn put(url: &str, body: reqwest::Body, content_type: &str) -> Result<(), ApiError> {
@@ -440,6 +455,39 @@ mod tests {
         let addr = listener.local_addr().unwrap();
         tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
         (format!("http://{addr}"), leaked)
+    }
+
+    #[tokio::test]
+    async fn a_canceled_job_stops_its_download_at_once() {
+        // A source that sends headers and then nothing: the download would sit
+        // in its 60 s read timeout.
+        let app = axum::Router::new().route(
+            "/slow",
+            axum::routing::get(|| async {
+                let stream = futures_util::stream::pending::<Result<bytes::Bytes, std::io::Error>>();
+                axum::body::Body::from_stream(stream)
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+
+        let dest = temp_path("step");
+        let url = format!("http://{addr}/slow");
+        let job = crate::jobs::track("cancel-download", async move {
+            let token = crate::jobs::current_cancel().unwrap();
+            tokio::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                token.cancel();
+            });
+            download_with(&url, &dest, None, &DownloadOpts::default()).await
+        });
+        let err = tokio::time::timeout(std::time::Duration::from_secs(5), job)
+            .await
+            .expect("the download stopped")
+            .err()
+            .unwrap();
+        assert_eq!(err.code, "canceled");
     }
 
     fn fetch_opts(auth: Option<&str>, max_bytes: Option<u64>) -> DownloadOpts<'_> {
