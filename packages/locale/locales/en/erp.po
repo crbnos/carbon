@@ -643,10 +643,6 @@ msgstr "{orderLabel} will be reopened for editing as revision {0}. The document 
 msgid "{overrides} overridden"
 msgstr "{overrides} overridden"
 
-#. placeholder {0}: module.pages.length
-msgid "{pagesGranted}/{0} pages"
-msgstr "{pagesGranted}/{0} pages"
-
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# part} other {# parts}}"
 
@@ -661,6 +657,10 @@ msgstr "{position} of {total}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
+
+#. placeholder {0}: module.rows.length
+msgid "{reached}/{0} pages"
+msgstr "{reached}/{0} pages"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# phase left} other {# phases left}}"
@@ -4930,6 +4930,9 @@ msgstr "Chart of Accounts"
 msgid "Chat"
 msgstr "Chat"
 
+msgid "Check a module to override the type on all its pages, or expand it to override one page."
+msgstr "Check a module to override the type on all its pages, or expand it to override one page."
+
 msgid "Check operations on the left to build the batch."
 msgstr "Check operations on the left to build the batch."
 
@@ -5074,9 +5077,6 @@ msgstr "Clearing account for goods received / invoice received matching"
 
 msgid "Clearing demo data"
 msgstr "Clearing demo data"
-
-msgid "Click a cell to override the type for one module. Each level includes the ones before it."
-msgstr "Click a cell to override the type for one module. Each level includes the ones before it."
 
 msgid "Click again to disconnect"
 msgstr "Click again to disconnect"
@@ -9440,9 +9440,6 @@ msgstr "Every unit has a rate."
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Everyone must set up an authenticator app before opening this company."
-
-msgid "Everyone with this type gets these levels, and a change reaches them on their next request."
-msgstr "Everyone with this type gets these levels, and a change reaches them on their next request."
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
@@ -16736,6 +16733,9 @@ msgstr "Permanently Delete"
 msgid "Permission groups for granting access in bulk"
 msgstr "Permission groups for granting access in bulk"
 
+msgid "Permissions"
+msgstr "Permissions"
+
 msgid "Person"
 msgstr "Person"
 
@@ -20386,6 +20386,10 @@ msgstr "Select account"
 msgid "Select all"
 msgstr "Select all"
 
+#. placeholder {0}: module.row.label
+msgid "Select all in {0}"
+msgstr "Select all in {0}"
+
 msgid "Select an action…"
 msgstr "Select an action…"
 
@@ -20765,12 +20769,13 @@ msgstr "Set demand forecast values for each week"
 msgid "Set due date"
 msgstr "Set due date"
 
-#. placeholder {0}: stepLabel[step]
-msgid "Set every module to {0}"
-msgstr "Set every module to {0}"
+#. placeholder {0}: module.row.label
+#. placeholder {1}: stepLabel[step]
+msgid "Set every page of {0} to {1}"
+msgstr "Set every page of {0} to {1}"
 
-msgid "Set here"
-msgstr "Set here"
+msgid "Set module-level access, then expand a module to fine-tune each of its pages. A change reaches everyone with this type on their next request."
+msgstr "Set module-level access, then expand a module to fine-tune each of its pages. A change reaches everyone with this type on their next request."
 
 msgid "Set Pricing"
 msgstr "Set Pricing"

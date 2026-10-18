@@ -11,23 +11,17 @@ import {
   type Page
 } from "@carbon/database/access";
 import {
+  Checkbox,
   cn,
   IconButton,
   LabelWithHelp,
-  Table,
-  Tbody,
-  Td,
-  Th,
-  Thead,
   Tooltip,
   TooltipContent,
-  TooltipTrigger,
-  Tr,
-  useViewport
+  TooltipTrigger
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { type KeyboardEvent, useState } from "react";
-import { LuCheck, LuChevronRight, LuUndo2 } from "react-icons/lu";
+import { useState } from "react";
+import { LuChevronRight, LuUndo2 } from "react-icons/lu";
 import { capitalize } from "~/utils/string";
 
 /** One grant as the grid edits it. `module` is the `module` enum value. */
@@ -49,8 +43,8 @@ type AccessGridProps = {
   inheritsFrom?: string;
   /** A note per module or page id, such as access that grew in the conversion. */
   notes?: Record<string, string>;
-  /** The most a column header may set on a module: an API key's "set all"
-   *  never gives Full on Accounting. */
+  /** The most "select all" may set on a module: an API key's never gives Full
+   *  on Accounting. */
   columnCaps?: Record<string, Level>;
   onChange: (grants: AccessGrant[]) => void;
   label?: string;
@@ -58,18 +52,19 @@ type AccessGridProps = {
   isDisabled?: boolean;
 };
 
-/** The bar's steps; step N is the level LEVELS[N]. */
+/** The checkbox columns; column N holds level LEVELS[N]. */
 const STEPS = [1, 2, 3, 4] as const;
 
 const index = (level: Level) => LEVELS.indexOf(level);
 
 const lower = (a: Level, b: Level) => (index(a) <= index(b) ? a : b);
 
-/** Clicking step N sets level N; clicking the top filled step steps down. */
+/** Checking column N sets level N; unchecking it drops to the level below. */
 const target = (current: number, step: number) =>
-  step === current ? step - 1 : step;
+  step <= current ? step - 1 : step;
 
-/** A row of the grid: a module (`page` null) or one of its pages. */
+/** A row of a module's table: one of its pages, or the module itself (`page`
+ *  null) while it has no pages. */
 type Row = { page: string | null; label: string; max: Level };
 
 const AccessGrid = ({
@@ -87,9 +82,8 @@ const AccessGrid = ({
   isDisabled
 }: AccessGridProps) => {
   const { t } = useLingui();
-  const { isPhone } = useViewport();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  // The row and step under the pointer: the bar previews the click.
+  // The cell under the pointer: the row previews what clicking it would set.
   const [hover, setHover] = useState<{ key: string; step: number } | null>(
     null
   );
@@ -103,18 +97,20 @@ const AccessGrid = ({
 
   const modules = [...new Set(pages.map((page) => moduleOf(page.id)))].map(
     (id) => {
-      const page = pages.find((p) => p.id === id);
+      const own = pages.find((p) => p.id === id);
+      const row: Row = {
+        page: null,
+        label: own?.label ?? capitalize(id),
+        max: own?.maxLevel ?? "Full"
+      };
+      const pageRows = pages
+        .filter((p) => p.id !== id && moduleOf(p.id) === id)
+        .map((p): Row => ({ page: p.id, label: p.label, max: p.maxLevel }));
       return {
         id,
         enumValue: capitalize(id),
-        row: {
-          page: null,
-          label: page?.label ?? capitalize(id),
-          max: page?.maxLevel ?? "Full"
-        } satisfies Row,
-        pages: pages
-          .filter((p) => p.id !== id && moduleOf(p.id) === id)
-          .map((p) => ({ page: p.id, label: p.label, max: p.maxLevel }))
+        row,
+        rows: pageRows.length > 0 ? pageRows : [row]
       };
     }
   );
@@ -160,32 +156,61 @@ const AccessGrid = ({
       : [...rest, { module: module.enumValue, page: row.page, level }];
   };
 
-  const setLevel = (module: Module, row: Row, level: Level) =>
-    onChange(withLevel(value, module, row, level));
-
   // Only a person's rows inherit: a role or a key row simply clears.
   const inherits = showInherited && inheritsFrom !== undefined;
   // A row can go back to something only on a person (the type) or in a bulk
-  // edit (no change); a role or a key row just steps down.
+  // edit (no change); a role or a key row just unchecks.
   const resettable = inherits || !showInherited;
   const resetLabel = inheritLabel ?? (inherits ? t`Inherit` : t`Clear`);
+  const canSetColumn = !inherits && !isDisabled;
 
-  /** A column header sets every module to that level, or clears them all
-   *  when they already hold it. Not on a person: there it would override all. */
-  const setColumn = (step: number) => {
-    const all = modules.every(
-      (module) => index(effective(module, module.row)) === step
-    );
-    let grants = value;
-    for (const module of modules) {
-      const cap = Math.min(
-        index(module.row.max),
-        index(columnCaps[module.id] ?? "Full")
+  /** The most "select all" sets on a row. */
+  const capOf = (module: Module, row: Row) =>
+    lower(row.max, columnCaps[module.id] ?? "Full");
+
+  /** Every row of a module to one level each. A role, key or bulk edit sets a
+   *  module with pages through its module grant, which also covers pages added
+   *  later; a person sets each row, so each one compares with its own default. */
+  const setModule = (module: Module, levelOf: (row: Row) => Level) => {
+    if (!inherits && module.rows[0]?.page !== null) {
+      const level = levelOf(module.row);
+      const rest = value.filter((g) => g.module !== module.enumValue);
+      onChange(
+        level === "None" && showInherited
+          ? rest
+          : [...rest, { module: module.enumValue, page: null, level }]
       );
-      const level = LEVELS[Math.min(all ? 0 : step, cap)]!;
-      grants = withLevel(grants, module, module.row, level);
+      return;
     }
-    onChange(grants);
+    onChange(
+      module.rows.reduce(
+        (grants, row) => withLevel(grants, module, row, levelOf(row)),
+        value
+      )
+    );
+  };
+
+  const moduleState = (module: Module) => {
+    const levels = module.rows.map((row) => effective(module, row));
+    if (module.rows.every((row, i) => levels[i] === capOf(module, row)))
+      return "all";
+    return levels.some((level) => level !== "None") ? "some" : "none";
+  };
+
+  const toggleModule = (module: Module) => {
+    const all = moduleState(module) === "all";
+    setModule(module, (row) => (all ? "None" : capOf(module, row)));
+  };
+
+  /** A column header sets every row of the module to that level, or clears
+   *  them when they already hold it. Not on a person: there it would override all. */
+  const setColumn = (module: Module, step: number) => {
+    const all = module.rows.every(
+      (row) => index(effective(module, row)) === step
+    );
+    setModule(module, (row) =>
+      lower(LEVELS[all ? 0 : step]!, capOf(module, row))
+    );
   };
 
   const toggleExpanded = (id: string) =>
@@ -196,160 +221,14 @@ const AccessGrid = ({
       return next;
     });
 
-  /** Arrow keys move the level; Home and End go to none and the most allowed. */
-  const onKeyDown = (
-    event: KeyboardEvent<HTMLDivElement>,
-    module: Module,
-    row: Row
-  ) => {
-    const level = index(effective(module, row));
-    const max = index(row.max);
-    const next = {
-      ArrowRight: Math.min(level + 1, max),
-      ArrowUp: Math.min(level + 1, max),
-      ArrowLeft: Math.max(level - 1, 0),
-      ArrowDown: Math.max(level - 1, 0),
-      Home: 0,
-      End: max
-    }[event.key];
-    if (next === undefined || isDisabled) return;
-    event.preventDefault();
-    if (next !== level) setLevel(module, row, LEVELS[next]!);
-    const radios =
-      event.currentTarget.querySelectorAll<HTMLButtonElement>("[role=radio]");
-    radios[Math.max(next, 1) - 1]?.focus();
-  };
-
-  const granted = modules.filter(
-    (module) => effective(module, module.row) !== "None"
+  const granted = modules.filter((module) =>
+    module.rows.some((row) => effective(module, row) !== "None")
   ).length;
   const overrides = inherits ? value.length : 0;
 
-  const bar = (module: Module, row: Row) => {
-    const key = `${module.id}:${row.page ?? ""}`;
-    const own = grantFor(module.enumValue, row.page);
-    const level = index(effective(module, row));
-    const max = index(row.max);
-    const preview = hover?.key === key ? target(level, hover.step) : undefined;
-    // In a bulk edit a row with no grant is "no change", not None.
-    const unset = !own && !showInherited;
-    // Solid where this grid sets the level; tinted where the row inherits it.
-    const solid = Boolean(own) || !showInherited;
-    return (
-      <>
-        {/* One cell spanning the step columns, so the row is one radio group:
-            one tab stop, arrow keys to move. */}
-        <Td colSpan={STEPS.length} className="px-0 py-1.5">
-          <div
-            role="radiogroup"
-            aria-label={row.label}
-            onKeyDown={(event) => onKeyDown(event, module, row)}
-            className="flex"
-          >
-            {STEPS.map((step) => {
-              const filled = step <= level;
-              const capped = step > max;
-              const blocked = isDisabled || capped;
-              // While the pointer rests on the row, the cells preview the click.
-              const adding =
-                preview !== undefined && !filled && step <= preview;
-              const removing =
-                preview !== undefined && filled && step > preview;
-              return (
-                <div key={step} className="flex flex-1 justify-center">
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-label={`${row.label}: ${stepLabel[step]}`}
-                    aria-checked={step === level}
-                    tabIndex={step === Math.max(level, 1) ? 0 : -1}
-                    disabled={blocked}
-                    onClick={() =>
-                      setLevel(module, row, LEVELS[target(level, step)]!)
-                    }
-                    onPointerEnter={() => setHover({ key, step })}
-                    onPointerLeave={() => setHover(null)}
-                    className={cn(
-                      "relative flex size-7 items-center justify-center rounded-md",
-                      "transition-[background-color,color,box-shadow,opacity,transform] duration-150 ease-out motion-reduce:transition-none",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      capped && "invisible",
-                      filled
-                        ? solid
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "bg-primary/10 text-primary ring-1 ring-inset ring-primary/25"
-                        : adding
-                          ? "text-primary outline-1 outline-dashed -outline-offset-1 outline-primary/50"
-                          : "text-muted-foreground",
-                      removing && "opacity-35",
-                      !blocked && "cursor-pointer active:scale-[0.92]",
-                      blocked && "cursor-default"
-                    )}
-                    // Granting cascades left to right: each step includes the ones before it.
-                    style={{
-                      transitionDelay: filled ? `${(step - 1) * 20}ms` : "0ms"
-                    }}
-                  >
-                    <LuCheck
-                      strokeWidth={3}
-                      className={cn(
-                        "absolute size-3.5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none",
-                        filled || adding
-                          ? "scale-100 opacity-100"
-                          : "scale-50 opacity-0",
-                        adding && "opacity-50"
-                      )}
-                    />
-                    <span
-                      className={cn(
-                        "absolute rounded-full transition-opacity duration-150",
-                        unset
-                          ? "size-1.5 ring-1 ring-muted-foreground/40"
-                          : "size-1 bg-muted-foreground/35",
-                        filled || adding ? "opacity-0" : "opacity-100"
-                      )}
-                    />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </Td>
-        {inherits ? (
-          <Td className="truncate">
-            {own ? (
-              <span className="rounded-md bg-primary px-1.5 py-0.5 text-[11px] font-medium text-primary-foreground">
-                <Trans>Override</Trans>
-              </span>
-            ) : level > 0 ? (
-              <span className="text-xs text-muted-foreground">
-                {inheritsFrom}
-              </span>
-            ) : null}
-          </Td>
-        ) : null}
-        <Td className="px-1 text-center">
-          {own && resettable ? (
-            <IconButton
-              aria-label={resetLabel}
-              title={resetLabel}
-              icon={<LuUndo2 />}
-              variant="ghost"
-              size="sm"
-              isDisabled={isDisabled}
-              onClick={() =>
-                onChange(without(value, module.enumValue, row.page))
-              }
-            />
-          ) : null}
-        </Td>
-      </>
-    );
-  };
-
-  /** A small amber mark beside a row's name, with its note on hover. */
-  const note = (id: string) =>
-    notes[id] ? (
+  /** A small amber mark beside a name, with its note on hover. */
+  const note = (id: string | null) =>
+    id && notes[id] ? (
       <Tooltip>
         <TooltipTrigger>
           <span
@@ -362,23 +241,54 @@ const AccessGrid = ({
       </Tooltip>
     ) : null;
 
-  /** A module's name, muted while it grants nothing, so granted ones stand out. */
-  const moduleName = (module: Module) => (
-    <span
-      className={cn(
-        "text-sm font-medium transition-colors duration-150",
-        effective(module, module.row) === "None" && "text-muted-foreground"
-      )}
-    >
-      {module.row.label}
-      {note(module.id)}
-    </span>
-  );
-
-  const sticky =
-    "max-md:sticky max-md:left-0 max-md:z-10 max-md:bg-card text-left";
   const header = "text-xs font-medium uppercase tracking-wide";
-  const canSetColumn = !inherits && !isDisabled;
+
+  /** The module grant a page row follows when it has no grant of its own. */
+  const covering = (module: Module, row: Row) =>
+    row.page === null ? undefined : grantFor(module.enumValue, null);
+
+  const cells = (module: Module, row: Row) => {
+    const key = `${module.id}:${row.page ?? ""}`;
+    const own = grantFor(module.enumValue, row.page);
+    const level = index(effective(module, row));
+    const max = index(row.max);
+    const preview = hover?.key === key ? target(level, hover.step) : undefined;
+    // A person's row with no override of its own or of its module shows the
+    // role's level, lighter.
+    const inheritedRow = inherits && !own && !covering(module, row);
+    return STEPS.map((step) => {
+      const checked = step <= level;
+      const adding = preview !== undefined && !checked && step <= preview;
+      const removing = preview !== undefined && checked && step > preview;
+      return (
+        <td key={step} className="w-16 py-2 text-center">
+          {step <= max ? (
+            <Checkbox
+              aria-label={`${row.label}: ${stepLabel[step]}`}
+              checked={checked}
+              disabled={isDisabled}
+              onCheckedChange={() =>
+                onChange(
+                  withLevel(value, module, row, LEVELS[target(level, step)]!)
+                )
+              }
+              onPointerEnter={() => setHover({ key, step })}
+              onPointerLeave={() => setHover(null)}
+              className={cn(
+                "align-middle transition-[background-color,border-color,opacity,transform] duration-150 ease-out motion-reduce:transition-none",
+                !isDisabled && "active:scale-[0.9]",
+                checked &&
+                  inheritedRow &&
+                  "data-[state=checked]:border-primary/40 data-[state=checked]:bg-primary/40 dark:data-[state=checked]:bg-primary/40",
+                adding && "border-primary bg-primary/15",
+                removing && "opacity-40"
+              )}
+            />
+          ) : null}
+        </td>
+      );
+    });
+  };
 
   return (
     <div className="w-full">
@@ -401,120 +311,188 @@ const AccessGrid = ({
             </>
           ) : null}
         </span>
-        {/* A key to the cells, where a row can be in more than one state. */}
-        {resettable ? (
+        {/* A key to the checkboxes, where a row can be in more than one state. */}
+        {inherits ? (
           <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span className="flex items-center gap-1.5">
-              <span className="flex size-3.5 items-center justify-center rounded-[4px] bg-primary text-primary-foreground">
-                <LuCheck strokeWidth={3} className="size-2.5" />
-              </span>
-              {inherits ? <Trans>Override</Trans> : <Trans>Set here</Trans>}
+              <Checkbox checked tabIndex={-1} aria-hidden />
+              <Trans>Override</Trans>
             </span>
-            {inherits ? (
-              <span className="flex items-center gap-1.5">
-                <span className="flex size-3.5 items-center justify-center rounded-[4px] bg-primary/10 text-primary ring-1 ring-inset ring-primary/25">
-                  <LuCheck strokeWidth={3} className="size-2.5" />
-                </span>
-                {inheritsFrom}
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5">
-                <span className="size-1.5 rounded-full ring-1 ring-muted-foreground/40" />
-                <Trans>No change</Trans>
-              </span>
-            )}
+            <span className="flex items-center gap-1.5">
+              <Checkbox
+                checked
+                tabIndex={-1}
+                aria-hidden
+                className="data-[state=checked]:border-primary/40 data-[state=checked]:bg-primary/40 dark:data-[state=checked]:bg-primary/40"
+              />
+              {inheritsFrom}
+            </span>
           </span>
         ) : null}
       </div>
-      {/* Wide: clip, not scroll, so the header can stick to the dialog's scroll.
-          Compact: this div scrolls sideways and the module column stays pinned. */}
-      <div className="rounded-lg border md:overflow-clip max-md:overflow-x-auto max-md:scroll-fade-x">
-        <Table full={isPhone} className="table-fixed">
-          <Thead className="md:sticky md:top-0 md:z-20 md:bg-card">
-            <Tr>
-              <Th className={cn(sticky, header, "w-[180px] md:w-auto")}>
-                <Trans>Module</Trans>
-              </Th>
-              {STEPS.map((step) => (
-                <Th
-                  key={step}
-                  className={cn(header, "w-[76px] px-0 text-center")}
+      <div className="divide-y overflow-hidden rounded-lg border">
+        {modules.map((module) => {
+          const isOpen = expanded.has(module.id);
+          const state = moduleState(module);
+          const reached = module.rows.filter(
+            (row) => effective(module, row) !== "None"
+          ).length;
+          const hasGrants = value.some((g) => g.module === module.enumValue);
+          return (
+            <section key={module.id}>
+              <div className="flex h-12 items-center gap-3 bg-muted/40 pr-4">
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  onClick={() => toggleExpanded(module.id)}
+                  className="flex h-full min-w-0 flex-1 items-center gap-2 pl-4 text-left transition-colors duration-100 hover:bg-muted/60"
                 >
-                  {canSetColumn ? (
-                    <button
-                      type="button"
-                      title={t`Set every module to ${stepLabel[step]}`}
-                      onClick={() => setColumn(step)}
-                      className="rounded px-1.5 py-0.5 uppercase tracking-wide transition-colors duration-100 hover:bg-foreground/5 hover:text-foreground active:scale-[0.97]"
-                    >
-                      {stepLabel[step]}
-                    </button>
-                  ) : (
-                    stepLabel[step]
-                  )}
-                </Th>
-              ))}
-              {inherits ? (
-                <Th className={cn(header, "w-[120px]")}>
-                  <Trans>From</Trans>
-                </Th>
-              ) : null}
-              <Th className="w-[44px]" />
-            </Tr>
-          </Thead>
-          <Tbody>
-            {modules.map((module) => {
-              const isOpen = expanded.has(module.id);
-              const pagesGranted = module.pages.filter(
-                (row) => effective(module, row) !== "None"
-              ).length;
-              return [
-                <Tr key={module.id}>
-                  <Td className={sticky}>
-                    {module.pages.length > 0 ? (
-                      <button
-                        type="button"
-                        className="flex items-center gap-2"
-                        aria-expanded={isOpen}
-                        onClick={() => toggleExpanded(module.id)}
-                      >
-                        <LuChevronRight
-                          className={cn(
-                            "size-4 text-muted-foreground transition-transform duration-150 ease-out motion-reduce:transition-none",
-                            isOpen && "rotate-90"
-                          )}
-                        />
-                        {moduleName(module)}
-                        <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
-                          {t`${pagesGranted}/${module.pages.length} pages`}
-                        </span>
-                      </button>
-                    ) : (
-                      moduleName(module)
+                  <LuChevronRight
+                    className={cn(
+                      "size-4 shrink-0 text-muted-foreground transition-transform duration-150 ease-out motion-reduce:transition-none",
+                      isOpen && "rotate-90"
                     )}
-                  </Td>
-                  {bar(module, module.row)}
-                </Tr>,
-                ...(isOpen
-                  ? module.pages.map((row) => (
-                      <Tr key={row.page}>
-                        <Td
-                          className={cn(
-                            sticky,
-                            "pl-12 text-sm text-muted-foreground"
-                          )}
-                        >
-                          {row.label}
-                          {note(row.page)}
-                        </Td>
-                        {bar(module, row)}
-                      </Tr>
-                    ))
-                  : [])
-              ];
-            })}
-          </Tbody>
-        </Table>
+                  />
+                  <span
+                    className={cn(
+                      "truncate text-sm font-medium",
+                      state === "none" && "text-muted-foreground"
+                    )}
+                  >
+                    {module.row.label}
+                  </span>
+                  {note(module.id)}
+                  {inherits && hasGrants ? (
+                    <span className="rounded-md bg-primary px-1.5 py-0.5 text-[11px] font-medium text-primary-foreground">
+                      <Trans>Override</Trans>
+                    </span>
+                  ) : null}
+                </button>
+                {resettable && hasGrants ? (
+                  <IconButton
+                    aria-label={`${resetLabel}: ${module.row.label}`}
+                    title={resetLabel}
+                    icon={<LuUndo2 />}
+                    variant="ghost"
+                    size="sm"
+                    isDisabled={isDisabled}
+                    onClick={() =>
+                      onChange(
+                        value.filter((g) => g.module !== module.enumValue)
+                      )
+                    }
+                  />
+                ) : null}
+                <span className="rounded-full border bg-background px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
+                  {t`${reached}/${module.rows.length} pages`}
+                </span>
+                <Checkbox
+                  aria-label={t`Select all in ${module.row.label}`}
+                  checked={
+                    state === "all"
+                      ? true
+                      : state === "some"
+                        ? "indeterminate"
+                        : false
+                  }
+                  isIndeterminate={state === "some"}
+                  disabled={isDisabled}
+                  onCheckedChange={() => toggleModule(module)}
+                  className={cn(!isDisabled && "active:scale-[0.9]")}
+                />
+              </div>
+              {isOpen ? (
+                <div className="overflow-x-auto pb-2 pl-10 pr-4">
+                  <table className="w-full min-w-[480px] table-fixed text-sm">
+                    <thead>
+                      <tr className="text-muted-foreground">
+                        <th className={cn(header, "py-2.5 text-left")}>
+                          <Trans>Page</Trans>
+                        </th>
+                        {STEPS.map((step) => (
+                          <th
+                            key={step}
+                            className={cn(header, "w-16 py-2.5 text-center")}
+                          >
+                            {canSetColumn ? (
+                              <button
+                                type="button"
+                                title={t`Set every page of ${module.row.label} to ${stepLabel[step]}`}
+                                onClick={() => setColumn(module, step)}
+                                className="rounded px-1 py-0.5 uppercase tracking-wide transition-colors duration-100 hover:bg-foreground/5 hover:text-foreground active:scale-[0.97]"
+                              >
+                                {stepLabel[step]}
+                              </button>
+                            ) : (
+                              stepLabel[step]
+                            )}
+                          </th>
+                        ))}
+                        {inherits ? (
+                          <th className={cn(header, "w-28 py-2.5 text-left")}>
+                            <Trans>From</Trans>
+                          </th>
+                        ) : null}
+                        {resettable ? <th className="w-10" /> : null}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {module.rows.map((row) => {
+                        const own = grantFor(module.enumValue, row.page);
+                        return (
+                          <tr
+                            key={row.page ?? module.id}
+                            className="border-t border-border/60"
+                          >
+                            <td className="truncate py-2 pr-2">
+                              {row.label}
+                              {note(row.page)}
+                            </td>
+                            {cells(module, row)}
+                            {inherits ? (
+                              <td className="truncate py-2 text-xs text-muted-foreground">
+                                {own || covering(module, row) ? (
+                                  <span className="rounded-md bg-primary px-1.5 py-0.5 text-[11px] font-medium text-primary-foreground">
+                                    <Trans>Override</Trans>
+                                  </span>
+                                ) : effective(module, row) !== "None" ? (
+                                  inheritsFrom
+                                ) : null}
+                              </td>
+                            ) : null}
+                            {resettable ? (
+                              <td className="py-1 text-right">
+                                {own ? (
+                                  <IconButton
+                                    aria-label={resetLabel}
+                                    title={resetLabel}
+                                    icon={<LuUndo2 />}
+                                    variant="ghost"
+                                    size="sm"
+                                    isDisabled={isDisabled}
+                                    onClick={() =>
+                                      onChange(
+                                        without(
+                                          value,
+                                          module.enumValue,
+                                          row.page
+                                        )
+                                      )
+                                    }
+                                  />
+                                ) : null}
+                              </td>
+                            ) : null}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </section>
+          );
+        })}
       </div>
     </div>
   );

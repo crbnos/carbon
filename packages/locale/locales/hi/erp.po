@@ -643,10 +643,6 @@ msgstr "{orderLabel} को रिवीजन {0} के रूप में �
 msgid "{overrides} overridden"
 msgstr ""
 
-#. placeholder {0}: module.pages.length
-msgid "{pagesGranted}/{0} pages"
-msgstr ""
-
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# पार्ट} other {# पार्ट्स}}"
 
@@ -661,6 +657,10 @@ msgstr "{position} में से {total}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थायी रूप से हटाएँ?} other {# पंक्तियों को स्थायी रूप से हटाएँ?}}"
+
+#. placeholder {0}: module.rows.length
+msgid "{reached}/{0} pages"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
@@ -4930,6 +4930,9 @@ msgstr "खातों का चार्ट"
 msgid "Chat"
 msgstr "चैट"
 
+msgid "Check a module to override the type on all its pages, or expand it to override one page."
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "बैच बनाने के लिए बाईं ओर ऑपरेशन की जांच करें।"
 
@@ -5074,9 +5077,6 @@ msgstr "माल की प्राप्ति / चालान प्रा
 
 msgid "Clearing demo data"
 msgstr "डेमो डेटा साफ कर रहे हैं"
-
-msgid "Click a cell to override the type for one module. Each level includes the ones before it."
-msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "डिस्कनेक्ट करने के लिए फिर से क्लिक करें"
@@ -9440,9 +9440,6 @@ msgstr "प्रत्येक इकाई की एक दर है।"
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "इस कंपनी को खोलने से पहले सभी को प्रमाणकर्ता ऐप सेट अप करना होगा।"
-
-msgid "Everyone with this type gets these levels, and a change reaches them on their next request."
-msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "जो कोई भी आपके चुने गए सप्ताह के किसी भी दिन काम कर रहा है वह आपके द्वारा निर्धारित घंटों तक अपनी शिफ्ट के बाद रहता है। केवल आप जिन विभागों और शिफ्ट को फ़िल्टर कर रहे हैं वे प्रभावित होते हैं।"
@@ -16736,6 +16733,9 @@ msgstr "स्थायी रूप से हटाएं"
 msgid "Permission groups for granting access in bulk"
 msgstr "बल्क में एक्सेस प्रदान करने के लिए अनुमति समूह"
 
+msgid "Permissions"
+msgstr ""
+
 msgid "Person"
 msgstr "व्यक्ति"
 
@@ -20386,6 +20386,10 @@ msgstr "खाता चुनें"
 msgid "Select all"
 msgstr "सभी का चयन करें"
 
+#. placeholder {0}: module.row.label
+msgid "Select all in {0}"
+msgstr ""
+
 msgid "Select an action…"
 msgstr "एक क्रिया चुनें…"
 
@@ -20765,11 +20769,12 @@ msgstr "प्रत्येक सप्ताह के लिए मां�
 msgid "Set due date"
 msgstr "नियत तिथि सेट करें"
 
-#. placeholder {0}: stepLabel[step]
-msgid "Set every module to {0}"
+#. placeholder {0}: module.row.label
+#. placeholder {1}: stepLabel[step]
+msgid "Set every page of {0} to {1}"
 msgstr ""
 
-msgid "Set here"
+msgid "Set module-level access, then expand a module to fine-tune each of its pages. A change reaches everyone with this type on their next request."
 msgstr ""
 
 msgid "Set Pricing"

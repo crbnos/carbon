@@ -19,11 +19,11 @@ The modules are Accounting, Documents, Inventory, Invoicing, Items, People, Prin
   <Field name="Full">Everything Edit allows, plus deleting records.</Field>
 </FieldTable>
 
-Every access editor in Carbon is the same grid: one row per module, with a cell under **View**, **Create**, **Update** and **Delete**. A check marks each action the level allows. Click a cell to set the level, and each level includes the ones before it: a check under Update is Edit, and one under Delete is Full. Click the last checked cell to step back down.
+Every access editor in Carbon is the same list: one row per module, which expands to show the module's pages. Each page has a checkbox under **View**, **Create**, **Update** and **Delete**, and each box includes the ones before it: Update is Edit and Delete is Full. Unchecking a box also unchecks the ones after it.
 
-A module that has pages expands to show them, each with its own cells. On an employee type, an API key or a bulk edit, clicking a column heading sets every module to that level, and clicking it again clears them. From the keyboard, each row is one stop: the arrow keys move the level. The employee type editor, a person's Access tab, the bulk editor and the API key form all use this grid.
+The checkbox on a module's row gives every page of the module its highest level at once, and the badge beside it counts the pages that have access. On an employee type, an API key or a bulk edit, clicking a column heading sets every page of that module to that level, and clicking it again clears them. The employee type editor, a person's Access tab, the bulk editor and the API key form all use this list.
 
-<Screenshot label="Users → Employee Types: the employee type editor with the Access grid, one row of View, Create, Update and Delete checks per module" />
+<Screenshot label="Users → Employee Types: the employee type editor with its Permissions list, one module expanded to its pages with View, Create, Update and Delete checkboxes" />
 
 <Callout type="note" title="Levels belong to one company">
 Each company keeps its own levels, so one person can have Full on Accounting in one company and View in another. You always edit the levels of the company you are signed in to. See [multi-company setup](/docs/reference/intercompany) for how a person spans several companies.
@@ -56,13 +56,13 @@ Before levels, access was four checkboxes per module. Carbon converted each type
 
 ## Personal overrides and bulk edits
 
-A person's **Access** tab, under **Users → Accounts**, shows the same grid. A row you have not changed follows the person's employee type: its checks are outlined, not filled, and the **From** column names the type. Click a cell to override it. The override wins over the type, so it can add access or remove it. The row then says **Override**, and its **Role default** button removes it again.
+A person's **Access** tab, under **Users → Accounts**, shows the same grid. A row you have not changed follows the person's employee type: its checkboxes are lighter, and the **From** column names the type. Click a checkbox to override that page, or check the module's own box to override all its pages. The override wins over the type, so it can add access or remove it. The row then says **Override**, and its **Role default** button removes it again.
 
 Changing a person's employee type changes what they inherit. Their overrides stay.
 
 **Reset all overrides** removes every override at once. A person on the Admin type sees a notice instead of the grid: Admin has every level on every module, and overrides don't apply.
 
-To change many people at once, use the bulk editor from the accounts list. Select the users and a **Type of Permission Update**, then click the cells on the modules you want to change. Rows you do not touch keep what each person has, and a row's **No change** button returns it to that.
+To change many people at once, use the bulk editor from the accounts list. Select the users and a **Type of Permission Update**, then set the modules and pages you want to change. Rows you do not touch keep what each person has, and a row's **No change** button returns it to that.
 
 <FieldTable>
   <Field name="Add Permissions">Raise each chosen module to at least the level you set. A person who already has a higher level keeps it.</Field>

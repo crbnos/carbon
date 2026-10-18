@@ -643,10 +643,6 @@ msgstr "{orderLabel} revizyon {0} olarak düzenlenmek üzere yeniden açılacakt
 msgid "{overrides} overridden"
 msgstr ""
 
-#. placeholder {0}: module.pages.length
-msgid "{pagesGranted}/{0} pages"
-msgstr ""
-
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# parça} other {# parça}}"
 
@@ -661,6 +657,10 @@ msgstr "{position} / {total}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# satırı kalıcı olarak sil?} other {# satırı kalıcı olarak sil?}}"
+
+#. placeholder {0}: module.rows.length
+msgid "{reached}/{0} pages"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
@@ -4930,6 +4930,9 @@ msgstr "Hesap Planı"
 msgid "Chat"
 msgstr "Sohbet"
 
+msgid "Check a module to override the type on all its pages, or expand it to override one page."
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "Toplu işi oluşturmak için sol tarafta operasyonları kontrol edin."
 
@@ -5074,9 +5077,6 @@ msgstr "Mal alımı / fatura alımı eşleştirmesi için mahsup hesabı"
 
 msgid "Clearing demo data"
 msgstr "Demo verisi temizleniyor"
-
-msgid "Click a cell to override the type for one module. Each level includes the ones before it."
-msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "Bağlantıyı kesmek için yeniden tıklayın"
@@ -9440,9 +9440,6 @@ msgstr "Her adetin bir oranı vardır."
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Herkes bu şirketi açmadan önce bir kimlik doğrulaması uygulaması kurması gerekir."
-
-msgid "Everyone with this type gets these levels, and a change reaches them on their next request."
-msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Seçtiğiniz haftanın herhangi bir gününde çalışan herkes, kendi vardiyalarının ötesinde belirlediğiniz saatler kadar kalır. Yalnızca filtrelediğiniz departmanlar ve vardiyalar etkilenir."
@@ -16736,6 +16733,9 @@ msgstr "Kalıcı Olarak Sil"
 msgid "Permission groups for granting access in bulk"
 msgstr "Toplu erişim vermek için izin grupları"
 
+msgid "Permissions"
+msgstr ""
+
 msgid "Person"
 msgstr "Kişi"
 
@@ -20386,6 +20386,10 @@ msgstr "Hesap Seç"
 msgid "Select all"
 msgstr "Tümünü seç"
 
+#. placeholder {0}: module.row.label
+msgid "Select all in {0}"
+msgstr ""
+
 msgid "Select an action…"
 msgstr "Bir eylem seçin…"
 
@@ -20765,11 +20769,12 @@ msgstr "Her hafta için talep tahmin değerlerini ayarlayın"
 msgid "Set due date"
 msgstr "Son son tarihi belirle"
 
-#. placeholder {0}: stepLabel[step]
-msgid "Set every module to {0}"
+#. placeholder {0}: module.row.label
+#. placeholder {1}: stepLabel[step]
+msgid "Set every page of {0} to {1}"
 msgstr ""
 
-msgid "Set here"
+msgid "Set module-level access, then expand a module to fine-tune each of its pages. A change reaches everyone with this type on their next request."
 msgstr ""
 
 msgid "Set Pricing"

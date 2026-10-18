@@ -643,10 +643,6 @@ msgstr "{orderLabel} zostanie ponownie otwarty do edycji jako rewizja {0}. Dokum
 msgid "{overrides} overridden"
 msgstr ""
 
-#. placeholder {0}: module.pages.length
-msgid "{pagesGranted}/{0} pages"
-msgstr ""
-
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# Część} other {# Części}}"
 
@@ -661,6 +657,10 @@ msgstr "{position} z {total}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Trwale usuń # wiersz?} other {Trwale usuń # wierszy?}}"
+
+#. placeholder {0}: module.rows.length
+msgid "{reached}/{0} pages"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# faza pozostała} other {# faz pozostało}}"
@@ -4930,6 +4930,9 @@ msgstr "Plan kont"
 msgid "Chat"
 msgstr "Czat"
 
+msgid "Check a module to override the type on all its pages, or expand it to override one page."
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "Zaznacz operacje po lewej stronie, aby zbudować wsad."
 
@@ -5074,9 +5077,6 @@ msgstr "Konto rozliczeniowe dla odboru towaru / dopasowania odboru faktury"
 
 msgid "Clearing demo data"
 msgstr "Czyszczenie danych demonstracyjnych"
-
-msgid "Click a cell to override the type for one module. Each level includes the ones before it."
-msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "Kliknij ponownie, aby rozłączyć"
@@ -9440,9 +9440,6 @@ msgstr "Każda sztuka ma stawkę."
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Każdy musi skonfigurować aplikację uwierzytelniającą przed otwarciem tej firmy."
-
-msgid "Everyone with this type gets these levels, and a change reaches them on their next request."
-msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Wszyscy pracujący w dowolnym dniu wybranego tygodnia zostają dłużej po swoją zmianę o liczbę godzin, którą ustawisz. Dotyczy to tylko działów i zmian, które filtrują."
@@ -16736,6 +16733,9 @@ msgstr "Trwale usunąć"
 msgid "Permission groups for granting access in bulk"
 msgstr "Grupy uprawnień do przyznawania dostępu zbiorczo"
 
+msgid "Permissions"
+msgstr ""
+
 msgid "Person"
 msgstr "Osoba"
 
@@ -20386,6 +20386,10 @@ msgstr "Wybierz konto"
 msgid "Select all"
 msgstr "Zaznacz wszystko"
 
+#. placeholder {0}: module.row.label
+msgid "Select all in {0}"
+msgstr ""
+
 msgid "Select an action…"
 msgstr "Wybierz akcję…"
 
@@ -20765,11 +20769,12 @@ msgstr "Ustaw wartości prognozy zapotrzebowania na każdy tydzień"
 msgid "Set due date"
 msgstr "Ustaw datę terminu"
 
-#. placeholder {0}: stepLabel[step]
-msgid "Set every module to {0}"
+#. placeholder {0}: module.row.label
+#. placeholder {1}: stepLabel[step]
+msgid "Set every page of {0} to {1}"
 msgstr ""
 
-msgid "Set here"
+msgid "Set module-level access, then expand a module to fine-tune each of its pages. A change reaches everyone with this type on their next request."
 msgstr ""
 
 msgid "Set Pricing"

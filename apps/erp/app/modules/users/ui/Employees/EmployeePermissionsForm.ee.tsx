@@ -160,13 +160,13 @@ const EmployeePermissionsForm = ({
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <h3 className="text-sm font-medium">
-                    <Trans>Access</Trans>
+                    <Trans>Permissions</Trans>
                   </h3>
                   {isAdmin ? null : (
                     <p className="text-xs text-muted-foreground">
                       <Trans>
-                        Click a cell to override the type for one module. Each
-                        level includes the ones before it.
+                        Check a module to override the type on all its pages, or
+                        expand it to override one page.
                       </Trans>
                     </p>
                   )}

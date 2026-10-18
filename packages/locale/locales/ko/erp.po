@@ -643,10 +643,6 @@ msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열�
 msgid "{overrides} overridden"
 msgstr ""
 
-#. placeholder {0}: module.pages.length
-msgid "{pagesGranted}/{0} pages"
-msgstr ""
-
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# 부품} other {# 부품}}"
 
@@ -661,6 +657,10 @@ msgstr "{position}/{total}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} other {# 행을 영구 삭제하시겠습니까?}}"
+
+#. placeholder {0}: module.rows.length
+msgid "{reached}/{0} pages"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
@@ -4930,6 +4930,9 @@ msgstr "계정과목표"
 msgid "Chat"
 msgstr "채팅"
 
+msgid "Check a module to override the type on all its pages, or expand it to override one page."
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "왼쪽의 공정을 확인하여 배치를 빌드합니다."
 
@@ -5074,9 +5077,6 @@ msgstr "입고 / 송장 수령 매칭을 위한 상계 계정"
 
 msgid "Clearing demo data"
 msgstr "데모 데이터 삭제 중"
-
-msgid "Click a cell to override the type for one module. Each level includes the ones before it."
-msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "다시 클릭하여 연결 해제"
@@ -9440,9 +9440,6 @@ msgstr "모든 단위에 요율이 있습니다."
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "이 회사를 열기 전에 모든 사람이 인증기 앱을 설정해야 합니다."
-
-msgid "Everyone with this type gets these levels, and a change reaches them on their next request."
-msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "선택한 주의 어느 날이든 근무하는 모든 사람이 설정한 시간만큼 교대조를 초과 근무합니다. 필터링하는 부서 및 교대조만 영향을 받습니다."
@@ -16736,6 +16733,9 @@ msgstr "영구 삭제"
 msgid "Permission groups for granting access in bulk"
 msgstr "일괄 접근 권한 부여를 위한 권한 그룹"
 
+msgid "Permissions"
+msgstr ""
+
 msgid "Person"
 msgstr "담당자"
 
@@ -20386,6 +20386,10 @@ msgstr "계정 선택"
 msgid "Select all"
 msgstr "전체 선택"
 
+#. placeholder {0}: module.row.label
+msgid "Select all in {0}"
+msgstr ""
+
 msgid "Select an action…"
 msgstr "작업 선택…"
 
@@ -20765,11 +20769,12 @@ msgstr "각 주별 소요량 예측값 설정"
 msgid "Set due date"
 msgstr "마감일 설정"
 
-#. placeholder {0}: stepLabel[step]
-msgid "Set every module to {0}"
+#. placeholder {0}: module.row.label
+#. placeholder {1}: stepLabel[step]
+msgid "Set every page of {0} to {1}"
 msgstr ""
 
-msgid "Set here"
+msgid "Set module-level access, then expand a module to fine-tune each of its pages. A change reaches everyone with this type on their next request."
 msgstr ""
 
 msgid "Set Pricing"

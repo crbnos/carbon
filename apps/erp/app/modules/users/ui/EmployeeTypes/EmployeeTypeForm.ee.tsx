@@ -95,12 +95,13 @@ const EmployeeTypeForm = ({
             <section className="flex flex-col gap-3">
               <div>
                 <h3 className="text-sm font-medium">
-                  <Trans>Access</Trans>
+                  <Trans>Permissions</Trans>
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   <Trans>
-                    Everyone with this type gets these levels, and a change
-                    reaches them on their next request.
+                    Set module-level access, then expand a module to fine-tune
+                    each of its pages. A change reaches everyone with this type
+                    on their next request.
                   </Trans>
                 </p>
               </div>

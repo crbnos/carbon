@@ -436,16 +436,19 @@ four forms with their own checkbox tables.
 ## UI Changes
 
 - **Role grid** (archetype: settings form, as `EmployeeTypeForm`): one row per
-  module with four steps under View, Create, Update and Delete. Clicking a step
-  sets the level (each step includes the ones before it, so Update is Edit and
-  Delete is Full); clicking the highest filled step steps down. A module with
-  pages expands to them, each with its own steps and an "N/M pages" badge. A
-  step above the page's `maxLevel` is disabled. The Admin type shows a notice
-  instead of the grid.
+  module, as the mockup shows. A row has a chevron, the module name, an "N/M
+  pages" badge (pages with any access) and a "select all" checkbox. The
+  checkbox gives every page its highest level, or clears them all. A module
+  expands to a table of its pages with four checkboxes: View, Create, Update
+  and Delete. Checking a box sets that level, and each box includes the ones
+  before it, so Update is Edit and Delete is Full. Unchecking a box drops the
+  page to the level below it. A box above the page's `maxLevel` does not show.
+  The column headings set every page of the module. The Admin type shows a
+  notice instead of the grid.
 - **Person dialog**: a header with the person, the employee type select, and
-  the grid. A row without an override shows the type's level in a lighter
-  shade, with the type's name in a "From" column; an override is solid, says
-  "Override" and has a "Role default" button. "Reset all overrides" clears
+  the grid. A page without an override shows the type's level with lighter
+  checkboxes, and the type's name in a "From" column. An override is solid,
+  says "Override" and has a "Role default" button; so does the module row. "Reset all overrides" clears
   them. Conversion growth is an amber mark on the row. An Admin sees a notice
   instead of the grid.
 - **API key form**: the same grid. "Select all" never sets Full on Accounting
