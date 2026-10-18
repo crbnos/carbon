@@ -213,7 +213,11 @@ const salesInvoiceLineInput = salesInvoiceLineValidator.safeExtend({
  * @mcp
  */
 export const createSalesInvoiceLine = defineServiceFn({
-  input: salesInvoiceLineInput,
+  // A plain string, not the form validator's text field: the route sends
+  // "" for a code the user cleared, which must not read as "not sent".
+  input: salesInvoiceLineInput.safeExtend({
+    taxCodeId: z.string().optional()
+  }),
   permission: { create: "invoicing" },
 
   async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
