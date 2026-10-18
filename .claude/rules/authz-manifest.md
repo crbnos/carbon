@@ -64,6 +64,24 @@ note: policies({
 - `custom(reason, sql)` — last resort (3 today). The rendered SQL must parse to only
   `CREATE POLICY` on its own table.
 
+## Page keys
+
+A rule names a module (`company("inventory")`), but `render()` writes the key of the
+page that owns the table in the access registry (`placeOf`, `@carbon/database/access`):
+
+- An owned table checks `<page>_<action>`, for example `inventory.receipts_update`.
+- A restricted read also admits every page that lists the table in `readers`
+  (`anyOf(<page>_view, <reader>_view …)`).
+- A shared table (`where` on several pages) gets one branch per page:
+  `<column> = <value>` (or `<column> IS NOT NULL` when `where` has no value) AND that page's key.
+- A child table (`children` of a shared table) checks through its parent with `EXISTS`.
+- A key with a dot is already a page key and renders as written. `"employee"`, portal and
+  `false` actors do not change.
+
+`util.access_level` resolves a page key: a page grant wins, else the module grant
+(the text before the first dot), so a module grant covers every page. `registry.test.ts`
+fails when a policy checks a key that is not a page id.
+
 ## Shipping a change
 
 1. Migration creates the table (no policies).

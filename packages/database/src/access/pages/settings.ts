@@ -6,7 +6,8 @@ import type { Page } from "../registry";
 
 // The pages that configure a module (Settings → Inventory and the others) stay
 // Settings pages. Each writes its own columns of the one companySettings row,
-// which Company owns.
+// which Company owns. Company also owns the company-wide records no sidebar
+// entry manages: the tag list every page adds to, and the Implementation Hub.
 export const SETTINGS_PAGES = [
   {
     id: "settings.billing",
@@ -23,7 +24,11 @@ export const SETTINGS_PAGES = [
       "company",
       "companySettings",
       "companyAccountsPayableBillingAddress",
-      "companyAccountsReceivableBillingAddress"
+      "companyAccountsReceivableBillingAddress",
+      "tag",
+      "implementationHub",
+      "implementationCheckState",
+      "implementationFieldValue"
     ],
     paths: ["/x/settings/company"]
   },

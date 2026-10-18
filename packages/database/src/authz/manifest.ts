@@ -4,6 +4,9 @@
 
 // The authorization rules for every public table. `authz sync` makes a database match this
 // file; `authz migration` ships a change to databases that do not sync yet (see migration.ts).
+// A module key (`parts_update`) renders as the key of the page that owns the table
+// (access/registry.ts; rules.ts `render`). A page key (`purchasing.suppliers_create`) is a
+// grant to a page that does not own the table, and renders as written.
 import {
   always,
   and,
@@ -76,7 +79,7 @@ const ownAttribute = through(
   )
 );
 
-/** The value's attribute belongs to a category the caller manages (resources_update). */
+/** The value's attribute belongs to a category the caller manages (Attributes at Edit). */
 const managedAttribute = through(
   "userAttributeId",
   "userAttribute",
@@ -88,6 +91,20 @@ const managedAttribute = through(
     inCompany("companyId", "resources_update")
   )
 );
+
+/** Who manages a grant row: the page of its subject column. */
+const grantRows = (apiKeyAction: "view" | "create" | "update" | "delete") =>
+  or(
+    and(isNotNull("userId"), inCompany("companyId", "users.accounts_update")),
+    and(
+      isNotNull("employeeTypeId"),
+      inCompany("companyId", "users.employeeTypes_update")
+    ),
+    and(
+      isNotNull("apiKeyId"),
+      inCompany("companyId", `settings.apiKeys_${apiKeyAction}`)
+    )
+  );
 
 export const manifest = {
   ability: company("resources", {
@@ -117,11 +134,12 @@ export const manifest = {
     update: false,
     delete: false
   }),
-  address: policies({
-    select: inCompany("companyId", anyOf("sales_view", "purchasing_view")),
-    insert: inCompany("companyId", anyOf("sales_create", "purchasing_create")),
-    update: inCompany("companyId", anyOf("sales_update", "purchasing_update")),
-    delete: inCompany("companyId", anyOf("sales_delete", "purchasing_delete"))
+  // Customers owns it; Suppliers writes the addresses of its own locations.
+  address: company("sales", {
+    create: anyOf("sales_create", "purchasing.suppliers_create"),
+    update: anyOf("sales_update", "purchasing.suppliers_update"),
+    delete: anyOf("sales_delete", "purchasing.suppliers_delete"),
+    read: "sales_view"
   }),
   agentMessage: policies({
     select: and(
@@ -268,12 +286,8 @@ export const manifest = {
   configurationParameterGroup: company("parts", { read: "member" }),
   configurationRule: company("parts", { read: "parts_view" }),
   consumable: company("parts"),
-  contact: policies({
-    select: inCompany("companyId", anyOf("sales_view", "purchasing_view")),
-    insert: inCompany("companyId", anyOf("sales_create", "purchasing_create")),
-    update: inCompany("companyId", anyOf("sales_update", "purchasing_update")),
-    delete: inCompany("companyId", anyOf("sales_delete", "purchasing_delete"))
-  }),
+  // Customers and Suppliers share it by isCustomer (the registry).
+  contact: company("sales", { read: "sales_view" }),
   contractor: company("resources", { read: "resources_view" }),
   contractorAbility: policies({
     select: viaParent("contractorId", "contractor", "resources_view"),
@@ -355,40 +369,28 @@ export const manifest = {
   }),
   customerPartToItem: policies({
     select: or(
-      or(
-        inCompany("companyId", "sales_view"),
-        inCompany("companyId", "parts_view")
-      ),
+      inCompany("companyId", "parts_view"),
       or(
         portal.customer("customerId", "sales_view"),
         portal.customer("customerId", "parts_view")
       )
     ),
     insert: or(
-      or(
-        inCompany("companyId", "sales_create"),
-        inCompany("companyId", "parts_create")
-      ),
+      inCompany("companyId", "parts_create"),
       or(
         portal.customer("customerId", "sales_create"),
         portal.customer("customerId", "parts_create")
       )
     ),
     update: or(
-      or(
-        inCompany("companyId", "sales_update"),
-        inCompany("companyId", "parts_update")
-      ),
+      inCompany("companyId", "parts_update"),
       or(
         portal.customer("customerId", "sales_update"),
         portal.customer("customerId", "parts_update")
       )
     ),
     delete: or(
-      or(
-        inCompany("companyId", "sales_delete"),
-        inCompany("companyId", "parts_delete")
-      ),
+      inCompany("companyId", "parts_delete"),
       or(
         portal.customer("customerId", "sales_delete"),
         portal.customer("customerId", "parts_delete")
@@ -414,15 +416,7 @@ export const manifest = {
   customerType: company("sales", { read: "member" }),
   customField: company("settings", { read: "member" }),
   customFieldTable: policies({ select: authenticated }),
-  demandActual: policies({
-    select: or(
-      inCompany("companyId", "parts_view"),
-      inCompany("companyId", "inventory_view")
-    ),
-    insert: inCompany("companyId", "inventory_create"),
-    update: inCompany("companyId", "inventory_update"),
-    delete: inCompany("companyId", "inventory_delete")
-  }),
+  demandActual: company("production", { read: "production_view" }),
   demandForecast: company("inventory", {
     read: "inventory_view"
   }),
@@ -479,114 +473,35 @@ export const manifest = {
   employeeTypePermission: policies({
     all: viaParent("employeeTypeId", "employeeType", "users_update")
   }),
-  enforcementRule: policies({
-    select: inCompany("companyId", "employee"),
-    insert: or(
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "storage")),
-        inCompany("companyId", "inventory_create")
-      ),
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "sales")),
-        inCompany("companyId", "sales_create")
-      )
-    ),
-    update: or(
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "storage")),
-        inCompany("companyId", "inventory_update")
-      ),
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "sales")),
-        inCompany("companyId", "sales_update")
-      )
-    ),
-    delete: or(
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "storage")),
-        inCompany("companyId", "inventory_delete")
-      ),
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "sales")),
-        inCompany("companyId", "sales_delete")
-      )
-    )
-  }),
+  // Storage Rules and Sales Rules share it by family, and its assignments and
+  // acknowledgments through ruleId (the registry).
+  enforcementRule: company("inventory"),
   enforcementRuleAcknowledgment: company("sales", {
     update: false,
     delete: false
   }),
-  enforcementRuleItemAssignment: policies({
-    select: inCompany("companyId", "employee"),
-    insert: exists(
-      "enforcementRule",
-      "ruleId",
-      or(
-        and(
-          where<"enforcementRule">((eb) => eb("family", "=", "storage")),
-          inCompany("companyId", "parts_create")
-        ),
-        and(
-          where<"enforcementRule">((eb) => eb("family", "=", "sales")),
-          inCompany("companyId", "sales_create")
-        )
-      ),
-      { sameCompany: true }
-    ),
-    update: exists(
-      "enforcementRule",
-      "ruleId",
-      or(
-        and(
-          where<"enforcementRule">((eb) => eb("family", "=", "storage")),
-          inCompany("companyId", "parts_update")
-        ),
-        and(
-          where<"enforcementRule">((eb) => eb("family", "=", "sales")),
-          inCompany("companyId", "sales_update")
-        )
-      ),
-      { sameCompany: true }
-    ),
-    delete: exists(
-      "enforcementRule",
-      "ruleId",
-      or(
-        and(
-          where<"enforcementRule">((eb) => eb("family", "=", "storage")),
-          inCompany("companyId", "parts_delete")
-        ),
-        and(
-          where<"enforcementRule">((eb) => eb("family", "=", "sales")),
-          inCompany("companyId", "sales_delete")
-        )
-      ),
-      { sameCompany: true }
-    )
-  }),
+  enforcementRuleItemAssignment: company("inventory"),
   enforcementRuleWorkCenterAssignment: policies({
     select: inCompany("companyId", "employee"),
-    insert: exists(
-      "enforcementRule",
-      "ruleId",
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "storage")),
+    insert: and(
+      exists(
+        "enforcementRule",
+        "ruleId",
         where<"enforcementRule">((eb) => eb("targetType", "=", "workCenter")),
-        inCompany("companyId", "resources_create")
+        { sameCompany: true }
       ),
-      { sameCompany: true }
+      inCompany("companyId", "inventory_create")
     ),
-    update: exists(
-      "enforcementRule",
-      "ruleId",
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "storage")),
+    update: and(
+      exists(
+        "enforcementRule",
+        "ruleId",
         where<"enforcementRule">((eb) => eb("targetType", "=", "workCenter")),
-        inCompany("companyId", "resources_update")
+        { sameCompany: true }
       ),
-      { sameCompany: true }
+      inCompany("companyId", "inventory_update")
     ),
-    delete: inCompany("companyId", "resources_delete")
+    delete: inCompany("companyId", "inventory_delete")
   }),
   eventSystemSubscription: company("settings"),
   exchangeRate: policies({ select: always, to: "authenticated" }),
@@ -598,19 +513,25 @@ export const manifest = {
     select: inCompany("companyId", "employee"),
     insert: inCompany("companyId", "employee")
   }),
-  externalLink: policies({
-    select: inCompany("companyId", "employee"),
-    insert: inCompany(
-      "companyId",
-      anyOf("sales_create", "purchasing_create", "quality_create")
+  // Portals owns it; Quotes, Supplier Quotes and Issues share their own documents.
+  externalLink: company("sales", {
+    create: anyOf(
+      "sales_create",
+      "sales.quotes_create",
+      "purchasing.supplierQuotes_create",
+      "quality.issues_create"
     ),
-    update: inCompany(
-      "companyId",
-      anyOf("sales_update", "purchasing_update", "quality_update")
+    update: anyOf(
+      "sales_update",
+      "sales.quotes_update",
+      "purchasing.supplierQuotes_update",
+      "quality.issues_update"
     ),
-    delete: inCompany(
-      "companyId",
-      anyOf("sales_delete", "purchasing_delete", "quality_delete")
+    delete: anyOf(
+      "sales_delete",
+      "sales.quotes_delete",
+      "purchasing.supplierQuotes_delete",
+      "quality.issues_delete"
     )
   }),
   feedback: serviceOnly(),
@@ -740,10 +661,7 @@ export const manifest = {
   }),
   itemCost: policies({
     select: or(
-      or(
-        inCompany("companyId", "parts_view"),
-        inCompany("companyId", "sales_view")
-      ),
+      inCompany("companyId", "parts_view"),
       through(
         "itemId",
         "supplierPart",
@@ -1108,31 +1026,13 @@ export const manifest = {
   peopleAbsence: company("production"),
   peopleAssignment: company("production"),
   period: policies({ select: authenticated }),
-  // A role's or a person's grant is a users setting; an API key's is a settings one,
-  // as the apiKey rule is.
+  // A person's grants are an Accounts setting and a role's an Employee Types one, at Edit
+  // for every command; an API key's are API Keys ones, as the apiKey rule is.
   permission: policies({
-    select: or(
-      and(isNull("apiKeyId"), inCompany("companyId", "users_update")),
-      and(isNotNull("apiKeyId"), inCompany("companyId", "settings_view"))
-    ),
-    insert: or(
-      and(isNull("apiKeyId"), inCompany("companyId", "users_update")),
-      and(isNotNull("apiKeyId"), inCompany("companyId", "settings_create"))
-    ),
-    update: {
-      using: or(
-        and(isNull("apiKeyId"), inCompany("companyId", "users_update")),
-        and(isNotNull("apiKeyId"), inCompany("companyId", "settings_update"))
-      ),
-      check: or(
-        and(isNull("apiKeyId"), inCompany("companyId", "users_update")),
-        and(isNotNull("apiKeyId"), inCompany("companyId", "settings_update"))
-      )
-    },
-    delete: or(
-      and(isNull("apiKeyId"), inCompany("companyId", "users_update")),
-      and(isNotNull("apiKeyId"), inCompany("companyId", "settings_delete"))
-    )
+    select: grantRows("view"),
+    insert: grantRows("create"),
+    update: { using: grantRows("update"), check: grantRows("update") },
+    delete: grantRows("delete")
   }),
   periodCloseTask: company("accounting"),
   periodCloseTaskDefinition: company("accounting"),
@@ -1361,8 +1261,8 @@ export const manifest = {
     "two-hop parent check: the dimension's line's reimbursement must still be Draft",
     (t) => `
     CREATE POLICY "SELECT" ON ${t} AS PERMISSIVE FOR SELECT TO public USING (("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
-    CREATE POLICY "INSERT" ON ${t} AS PERMISSIVE FOR INSERT TO public WITH CHECK ((EXISTS (SELECT 1 FROM public."reimbursementLine" l JOIN public."reimbursement" h ON ((h.id = l."reimbursementId") AND (h."companyId" = l."companyId")) WHERE ((l.id = ${t}."reimbursementLineId") AND (l."companyId" = ${t}."companyId") AND (h.status = 'Draft'::"reimbursementStatus"))) AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing_create'::text))::text[]))));
-    CREATE POLICY "DELETE" ON ${t} AS PERMISSIVE FOR DELETE TO public USING ((EXISTS (SELECT 1 FROM public."reimbursementLine" l JOIN public."reimbursement" h ON ((h.id = l."reimbursementId") AND (h."companyId" = l."companyId")) WHERE ((l.id = ${t}."reimbursementLineId") AND (l."companyId" = ${t}."companyId") AND (h.status = 'Draft'::"reimbursementStatus"))) AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing_delete'::text))::text[]))));
+    CREATE POLICY "INSERT" ON ${t} AS PERMISSIVE FOR INSERT TO public WITH CHECK ((EXISTS (SELECT 1 FROM public."reimbursementLine" l JOIN public."reimbursement" h ON ((h.id = l."reimbursementId") AND (h."companyId" = l."companyId")) WHERE ((l.id = ${t}."reimbursementLineId") AND (l."companyId" = ${t}."companyId") AND (h.status = 'Draft'::"reimbursementStatus"))) AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.reimbursements_create'::text))::text[]))));
+    CREATE POLICY "DELETE" ON ${t} AS PERMISSIVE FOR DELETE TO public USING ((EXISTS (SELECT 1 FROM public."reimbursementLine" l JOIN public."reimbursement" h ON ((h.id = l."reimbursementId") AND (h."companyId" = l."companyId")) WHERE ((l.id = ${t}."reimbursementLineId") AND (l."companyId" = ${t}."companyId") AND (h.status = 'Draft'::"reimbursementStatus"))) AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.reimbursements_delete'::text))::text[]))));
   `
   ),
   rentalAgreement: company("sales", { read: "sales_view" }),
@@ -1527,10 +1427,11 @@ export const manifest = {
     create: false,
     delete: false
   }),
+  // Processes owns it; Suppliers edits a supplier's processes.
   supplierProcess: company("resources", {
-    read: anyOf("purchasing_view", "resources_view", "sales_view"),
-    create: anyOf("purchasing_update", "resources_update"),
-    delete: anyOf("purchasing_delete", "resources_delete")
+    read: "resources_view",
+    create: anyOf("resources_update", "purchasing.suppliers_update"),
+    delete: anyOf("resources_delete", "purchasing.suppliers_delete")
   }),
   supplierQuote: company("purchasing", { read: "purchasing_view" }),
   supplierQuoteFavorite: policies({
@@ -1556,15 +1457,7 @@ export const manifest = {
     delete: false
   }),
   supplierType: company("purchasing", { read: "member" }),
-  supplyActual: policies({
-    select: or(
-      inCompany("companyId", "parts_view"),
-      inCompany("companyId", "inventory_view")
-    ),
-    insert: inCompany("companyId", "inventory_create"),
-    update: inCompany("companyId", "inventory_update"),
-    delete: inCompany("companyId", "inventory_delete")
-  }),
+  supplyActual: company("production", { read: "production_view" }),
   supplyForecast: company("inventory", {
     read: "inventory_view"
   }),
@@ -1586,6 +1479,7 @@ export const manifest = {
     },
     delete: owner("createdBy")
   }),
+  // Every page tags its records; deleting a tag is a Company setting (the registry).
   tag: company("settings", {
     create: "employee",
     update: false,
@@ -1636,7 +1530,7 @@ export const manifest = {
   }),
   unitOfMeasure: company("parts", { read: "member" }),
   user: custom(
-    "bespoke: five overlapping policies — self, shared company membership, employee/customer/supplier accounts, users_update, and an API-key EXISTS on userToCompany",
+    "bespoke: five overlapping policies — self, shared company membership, employee/customer/supplier accounts, Accounts Edit, and an API-key EXISTS on userToCompany",
     (t) => `
     CREATE POLICY "Employees can view users with an account in their company" ON ${t} AS PERMISSIVE FOR SELECT TO public USING (((id IN ( SELECT employee.id
    FROM employee
@@ -1645,11 +1539,11 @@ export const manifest = {
   WHERE ("customerAccount"."companyId" = ANY (( SELECT get_companies_with_employee_role() AS get_companies_with_employee_role)::text[])))) OR (id IN ( SELECT "supplierAccount".id
    FROM "supplierAccount"
   WHERE ("supplierAccount"."companyId" = ANY (( SELECT get_companies_with_employee_role() AS get_companies_with_employee_role)::text[]))))));
-    CREATE POLICY "Employees with users_update can update users in their company" ON ${t} AS PERMISSIVE FOR UPDATE TO public USING ((id IN ( SELECT "userToCompany"."userId"
+    CREATE POLICY "Employees with Accounts Edit can update users in their company" ON ${t} AS PERMISSIVE FOR UPDATE TO public USING ((id IN ( SELECT "userToCompany"."userId"
    FROM "userToCompany"
-  WHERE ("userToCompany"."companyId" = ANY (( SELECT get_companies_with_employee_permission('users_update'::text) AS get_companies_with_employee_permission)::text[]))))) WITH CHECK ((id IN ( SELECT "userToCompany"."userId"
+  WHERE ("userToCompany"."companyId" = ANY (( SELECT get_companies_with_employee_permission('users.accounts_update'::text) AS get_companies_with_employee_permission)::text[]))))) WITH CHECK ((id IN ( SELECT "userToCompany"."userId"
    FROM "userToCompany"
-  WHERE ("userToCompany"."companyId" = ANY (( SELECT get_companies_with_employee_permission('users_update'::text) AS get_companies_with_employee_permission)::text[])))));
+  WHERE ("userToCompany"."companyId" = ANY (( SELECT get_companies_with_employee_permission('users.accounts_update'::text) AS get_companies_with_employee_permission)::text[])))));
     CREATE POLICY "Requests with an API key can select users from their company" ON ${t} AS PERMISSIVE FOR SELECT TO public USING ((EXISTS ( SELECT 1
    FROM "userToCompany"
   WHERE (("userToCompany"."userId" = "user".id) AND ("userToCompany"."companyId" = get_company_id_from_api_key())))));
@@ -1663,7 +1557,7 @@ export const manifest = {
   ),
   // Employees read the attributes they manage for themselves, so the self-service path of
   // userAttributeValue (which reads these rows under the caller's RLS) works without
-  // resources_view; every other attribute still needs it.
+  // Attributes at View; every other attribute still needs it.
   userAttribute: policies({
     select: or(
       through(
@@ -1710,9 +1604,9 @@ export const manifest = {
     delete: inCompany("companyId", "resources_delete")
   }),
   // A user reads, writes and clears their own values of self-managed attributes, in a
-  // company they belong to; resources_update manages everyone's. (The imported "insert"
+  // company they belong to; Attributes at Edit manages everyone's. (The imported "insert"
   // policy was FOR UPDATE with no USING, so the account page could not save a value without
-  // resources_update.)
+  // Attributes at Edit.)
   userAttributeValue: policies({
     all: or(and(owner("userId"), ownAttribute), managedAttribute)
   }),
@@ -1724,7 +1618,8 @@ export const manifest = {
   // service role. Through the API an admin could otherwise attach any user to their company
   // and then read that user's profile and permissions.
   userToCompany: company("users", { create: false, update: false }),
-  warehouse: company("parts"),
+  // Unused since the parts schema: nothing writes it, so the API cannot either.
+  warehouse: company("parts", { create: false, update: false, delete: false }),
   warehouseTransfer: company("inventory", { read: "inventory_view" }),
   warehouseTransferLine: company("inventory", { read: "inventory_view" }),
   webhook: company("settings", { read: "settings_view" }),

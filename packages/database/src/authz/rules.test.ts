@@ -4,6 +4,7 @@
 
 import { describe, expect, test } from "vitest";
 import {
+  anyOf,
   company,
   custom,
   group,
@@ -13,14 +14,16 @@ import {
   serviceOnly
 } from "./rules";
 
+// "widget" is on no page, so its module keys render as written: these tests are
+// about the pieces. The page tests below use tables the registry places.
 describe("render", () => {
   test("company: the canonical four", () => {
-    expect(render(company("parts"), "item")).toBe(
+    expect(render(company("parts"), "widget")).toBe(
       [
-        `CREATE POLICY "SELECT" ON "public"."item" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));`,
-        `CREATE POLICY "INSERT" ON "public"."item" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_create'))::text[]));`,
-        `CREATE POLICY "UPDATE" ON "public"."item" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_update'))::text[]));`,
-        `CREATE POLICY "DELETE" ON "public"."item" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_delete'))::text[]));`
+        `CREATE POLICY "SELECT" ON "public"."widget" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));`,
+        `CREATE POLICY "INSERT" ON "public"."widget" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_create'))::text[]));`,
+        `CREATE POLICY "UPDATE" ON "public"."widget" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_update'))::text[]));`,
+        `CREATE POLICY "DELETE" ON "public"."widget" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_delete'))::text[]));`
       ].join("\n")
     );
   });
@@ -30,7 +33,7 @@ describe("render", () => {
       company<"journal">("accounting", {
         where: { update: (eb) => eb("status", "=", "Draft") }
       }),
-      "journal"
+      "widget"
     );
     expect(sql).toContain(
       `FOR UPDATE USING (("status" = 'Draft' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_update'))::text[]))) WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_update'))::text[]));`
@@ -39,14 +42,14 @@ describe("render", () => {
 
   test("company: a read permission replaces the employee read", () => {
     expect(
-      render(company("inventory", { read: "inventory_view" }), "pickingList")
+      render(company("inventory", { read: "inventory_view" }), "widget")
     ).toContain(
       `FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory_view'))::text[]));`
     );
   });
 
   test("group: scoped by companyGroupId through the group helpers", () => {
-    const sql = render(group("accounting"), "dimension");
+    const sql = render(group("accounting"), "widget");
     expect(sql).toContain(
       `FOR SELECT USING ("companyGroupId" = ANY ((SELECT get_company_groups_for_employee())::text[]));`
     );
@@ -60,10 +63,10 @@ describe("render", () => {
       parent("pickingListLine", "pickingListLineId", "inventory", {
         read: "inventory_view"
       }),
-      "pickingListLineTrackedEntity"
+      "widgetLine"
     );
     expect(sql).toContain(
-      `CREATE POLICY "INSERT" ON "public"."pickingListLineTrackedEntity" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."pickingListLine" p WHERE "p"."id" = "pickingListLineTrackedEntity"."pickingListLineId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory_create'))::text[])));`
+      `CREATE POLICY "INSERT" ON "public"."widgetLine" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."pickingListLine" p WHERE "p"."id" = "widgetLine"."pickingListLineId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory_create'))::text[])));`
     );
     expect(sql).toContain(
       `get_companies_with_employee_permission('inventory_view')`
@@ -109,7 +112,7 @@ describe("render", () => {
           update: (eb) => eb("status", "in", ["Draft", "O'Brien"] as never)
         }
       }),
-      "journal"
+      "widget"
     );
     expect(sql).toContain(`"status" in ('Draft', 'O''Brien')`);
     expect(sql).not.toMatch(/\$\d/);
@@ -124,6 +127,85 @@ describe("render", () => {
       }
     });
     expect(render(rule, "journal")).toBe(render(rule, "journal"));
+  });
+});
+
+const key = (permission: string) =>
+  `get_companies_with_employee_permission('${permission}')`;
+const policy = (sql: string, command: string) =>
+  sql.split("\n").find((line) => line.includes(`FOR ${command}`)) ?? "";
+
+describe("render: module keys become page keys", () => {
+  test("the page that owns the table decides, whatever module the rule names", () => {
+    const sql = render(company("parts"), "storageUnit");
+    expect(policy(sql, "INSERT")).toContain(
+      key("inventory.storageUnits_create")
+    );
+    expect(sql).not.toContain("parts_");
+    expect(policy(sql, "SELECT")).toContain(
+      "get_companies_with_employee_role()"
+    );
+  });
+
+  test("a restricted read also admits every page that lists the table in readers", () => {
+    const select = policy(
+      render(
+        company("purchasing", { read: "purchasing_view" }),
+        "purchaseOrder"
+      ),
+      "SELECT"
+    );
+    expect(select).toBe(
+      `CREATE POLICY "SELECT" ON "public"."purchaseOrder" FOR SELECT USING (("companyId" = ANY ((SELECT ${key("purchasing.purchaseOrders_view")})::text[]) OR "companyId" = ANY ((SELECT ${key("inventory.receipts_view")})::text[]) OR "companyId" = ANY ((SELECT ${key("invoicing.purchaseInvoices_view")})::text[])));`
+    );
+  });
+
+  test("module keys of two modules that resolve to one page render once", () => {
+    const select = policy(
+      render(
+        company("sales", { read: anyOf("sales_view", "purchasing_view") }),
+        "address"
+      ),
+      "SELECT"
+    );
+    expect(select.split(key("sales.customers_view")).length).toBe(2);
+  });
+
+  test("a shared table checks the page whose rows it is: by value, or by a column that is set", () => {
+    expect(policy(render(company("parts"), "item"), "UPDATE")).toContain(
+      `("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT ${key("parts.tools_update")})::text[]))`
+    );
+    expect(policy(render(company("invoicing"), "memo"), "UPDATE")).toBe(
+      `CREATE POLICY "UPDATE" ON "public"."memo" FOR UPDATE USING ((("memo"."supplierId" IS NOT NULL AND "companyId" = ANY ((SELECT ${key("invoicing.supplierCredits_update")})::text[])) OR ("memo"."customerId" IS NOT NULL AND "companyId" = ANY ((SELECT ${key("invoicing.creditMemos_update")})::text[]))));`
+    );
+  });
+
+  test("a child table checks its parent row's page, in the row's own company", () => {
+    expect(policy(render(company("parts"), "itemCost"), "INSERT")).toContain(
+      `WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemCost"."itemId" AND "item"."companyId" = "itemCost"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT ${key("parts.parts_create")})::text[]))`
+    );
+  });
+
+  test("a page key renders as written", () => {
+    expect(
+      policy(
+        render(
+          company("sales", { create: "purchasing.suppliers_create" }),
+          "address"
+        ),
+        "INSERT"
+      )
+    ).toBe(
+      `CREATE POLICY "INSERT" ON "public"."address" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT ${key("purchasing.suppliers_create")})::text[]));`
+    );
+  });
+
+  test("a group table takes its owner's key", () => {
+    expect(
+      policy(render(group("accounting"), "dimension"), "DELETE")
+    ).toContain(
+      `get_company_groups_for_root_permission('accounting.dimensions_delete')`
+    );
   });
 });
 

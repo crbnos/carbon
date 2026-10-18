@@ -15,6 +15,12 @@ import {
   type SqlBool,
   sql
 } from "kysely";
+import {
+  type PermissionKey,
+  placeOf,
+  readersOf,
+  type TablePlace
+} from "../access/registry";
 import type { KyselyDatabase } from "../client";
 import type { Database } from "../types";
 
@@ -23,7 +29,13 @@ type Public = Database["public"];
 export type Table = keyof Public["Tables"] & keyof KyselyDatabase;
 type Column<T extends Table> = keyof Public["Tables"][T]["Row"] & string;
 export type Module = Lowercase<Public["Enums"]["module"]>;
-export type Permission = `${Module}_${"view" | "create" | "update" | "delete"}`;
+type Action = "view" | "create" | "update" | "delete";
+/**
+ * A module key (`parts_update`) or a page key (`parts.tools_update`). A module
+ * key renders as the key of the page that owns the table (see `render`); a page
+ * key renders as written.
+ */
+export type Permission = `${Module}_${Action}` | PermissionKey;
 
 // ─── Who: the companies a caller belongs to ──────────────────────────────────
 
@@ -52,23 +64,93 @@ const pred = (build: (table: string) => RawBuilder<unknown>): Pred => ({
 const isPred = (value: unknown): value is Pred =>
   typeof value === "object" && value !== null && "sql" in value;
 
-const companySet = (who: Exclude<Who, { anyOf: Permission[] }>) => {
-  if (who === "employee") return sql`get_companies_with_employee_role()`;
-  if (who === "member") return sql`get_companies_with_any_role()`;
-  return sql`get_companies_with_employee_permission(${sql.lit(who)})`;
+// The table `render` is compiling. A module key in its rules resolves to the
+// page that owns the table (access/registry.ts), wherever in the rule it sits.
+let rendering: string | undefined;
+
+/** The action of a module key (`parts_update`); undefined for a page key. */
+const moduleAction = (permission: string) =>
+  /^[a-z]+_(view|create|update|delete)$/.exec(permission)?.[1] as
+    | Action
+    | undefined;
+
+/** `subject` is one of the companies where the caller holds `key`. */
+const holds = (subject: RawBuilder<unknown>, key: string) =>
+  sql`${subject} = ANY ((SELECT get_companies_with_employee_permission(${sql.lit(key)}))::text[])`;
+
+const either = (terms: RawBuilder<unknown>[]) =>
+  terms.length === 1 && terms[0]
+    ? terms[0]
+    : sql`(${sql.join(terms, sql` OR `)})`;
+
+/**
+ * A shared table's rows, one branch per page: the page's rows and the page's
+ * key. A child table reaches its parent row through `via` and checks the
+ * parent's branches; the parent is in the row's own company.
+ */
+const branches = (
+  subject: RawBuilder<unknown>,
+  table: string,
+  place: Exclude<TablePlace, { kind: "page" }>,
+  action: Action
+) => {
+  const owner = place.kind === "child" ? place.parent : table;
+  const arms = either(
+    place.branches.map((branch) => {
+      const column = sql.ref(`${owner}.${branch.column}`);
+      return sql`(${
+        branch.value === undefined
+          ? sql`${column} IS NOT NULL`
+          : sql`${column} = ${sql.lit(branch.value)}`
+      } AND ${holds(subject, `${branch.page}_${action}`)})`;
+    })
+  );
+  if (place.kind === "shared") return arms;
+  return sql`EXISTS (SELECT 1 FROM ${sql.id("public", owner)} WHERE ${sql.ref(`${owner}.id`)} = ${sql.ref(`${table}.${place.via}`)} AND ${sql.ref(`${owner}.companyId`)} = ${sql.ref(`${table}.companyId`)} AND ${arms})`;
 };
 
-/** `subject` is one of the caller's companies (or, for anyOf, satisfies any of them). */
+/**
+ * `subject` is one of the caller's companies (or, for anyOf, satisfies any of
+ * them). A module key checks the page that owns the table instead, and a view
+ * on it also admits every page that lists the table in `readers`.
+ */
 const belongsTo = (
   subject: RawBuilder<unknown>,
   who: Who
-): RawBuilder<unknown> =>
-  typeof who === "object" && "anyOf" in who
-    ? sql`(${sql.join(
-        who.anyOf.map((p) => belongsTo(subject, p)),
-        sql` OR `
-      )})`
-    : sql`${subject} = ANY ((SELECT ${companySet(who)})::text[])`;
+): RawBuilder<unknown> => {
+  if (who === "employee")
+    return sql`${subject} = ANY ((SELECT get_companies_with_employee_role())::text[])`;
+  if (who === "member")
+    return sql`${subject} = ANY ((SELECT get_companies_with_any_role())::text[])`;
+  const terms: RawBuilder<unknown>[] = [];
+  const seen = new Set<string>();
+  const add = (key: string, term: () => RawBuilder<unknown>) => {
+    if (seen.has(key)) return;
+    seen.add(key);
+    terms.push(term());
+  };
+  const table = rendering;
+  const place = table ? placeOf(table) : undefined;
+  for (const permission of typeof who === "object" ? who.anyOf : [who]) {
+    const action = moduleAction(permission);
+    if (!action || !table || !place) {
+      add(permission, () => holds(subject, permission));
+      continue;
+    }
+    if (place.kind === "page") {
+      const key = `${place.page}_${action}`;
+      add(key, () => holds(subject, key));
+    } else {
+      add(`:${action}`, () => branches(subject, table, place, action));
+    }
+    if (action === "view")
+      for (const reader of readersOf(table)) {
+        const key = `${reader}_view`;
+        add(key, () => holds(subject, key));
+      }
+  }
+  return either(terms);
+};
 
 /** The row's own company column is one of the caller's companies. */
 export const inCompany = (column: string, who: Who): Pred =>
@@ -81,9 +163,23 @@ export const inGroup = (column: string, who: "employee" | Permission): Pred =>
       sql`${sql.ref(column)} = ANY ((SELECT ${
         who === "employee"
           ? sql`get_company_groups_for_employee()`
-          : sql`get_company_groups_for_root_permission(${sql.lit(who)})`
+          : sql`get_company_groups_for_root_permission(${sql.lit(groupKey(who))})`
       })::text[])`
   );
+
+// ponytail: every group table sits on one page and every employee reads it, so
+// a module key maps to the owner's key alone; branches and readers throw.
+const groupKey = (permission: Permission) => {
+  const action = moduleAction(permission);
+  const place = rendering ? placeOf(rendering) : undefined;
+  if (!action || !rendering || !place) return permission;
+  if (
+    place.kind !== "page" ||
+    (action === "view" && readersOf(rendering).length)
+  )
+    throw new Error(`authz: group table ${rendering} needs one page`);
+  return `${place.page}_${action}`;
+};
 
 /** The company of the parent row `fk` points at, resolved by get_company_id_from_foreign_key. */
 export const viaParent = (fk: string, parentTable: Table, who: Who): Pred =>
@@ -417,20 +513,26 @@ export function render(
       const using = (p: Pred) => sql`USING (${p.sql(table)})`;
       const check = (p: Pred) => sql`WITH CHECK (${p.sql(table)})`;
       const { select, insert, update, delete: remove } = rule;
-      return [
-        select && policy("SELECT", using(select)),
-        insert && policy("INSERT", check(insert)),
-        update &&
-          policy(
-            "UPDATE",
-            isPred(update)
-              ? using(update)
-              : sql`${using(update.using)} ${check(update.check)}`
-          ),
-        remove && policy("DELETE", using(remove))
-      ]
-        .filter(Boolean)
-        .join("\n");
+      const outer = rendering;
+      rendering = table;
+      try {
+        return [
+          select && policy("SELECT", using(select)),
+          insert && policy("INSERT", check(insert)),
+          update &&
+            policy(
+              "UPDATE",
+              isPred(update)
+                ? using(update)
+                : sql`${using(update.using)} ${check(update.check)}`
+            ),
+          remove && policy("DELETE", using(remove))
+        ]
+          .filter(Boolean)
+          .join("\n");
+      } finally {
+        rendering = outer;
+      }
     }
   }
 }

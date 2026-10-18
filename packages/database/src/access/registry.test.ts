@@ -28,21 +28,6 @@ const SPEC_PAGE_COUNTS: Record<string, number> = {
 };
 
 /**
- * Tables whose rule names a module but whose data no page in the spec manages.
- * Each needs a decision: a page in the spec, or a rule that names no module.
- */
-export const PENDING_TABLES: Record<string, string> = {
-  warehouse: "Unused since the parts schema; no route reads or writes it.",
-  tag: "Every list page tags its records through /x/settings/tags, which has no sidebar entry.",
-  implementationHub:
-    "The Implementation Hub (/x/get-started) has no sidebar entry.",
-  implementationCheckState:
-    "The Implementation Hub (/x/get-started) has no sidebar entry.",
-  implementationFieldValue:
-    "The Implementation Hub (/x/get-started) has no sidebar entry."
-};
-
-/**
  * Routes under `x+` that belong to no one page, with the reason. A key that
  * ends with `/` covers every route below it; any other key is one route.
  */
@@ -126,14 +111,19 @@ const policiesOf = (table: string) =>
     "\n"
   );
 
-/** Whether SQL checks a `<module>_<action>` permission. */
-const namesModule = (sql: string) =>
-  /get_(?:companies_with_employee_permission|company_groups_for_root_permission)\('\w+_(?:view|create|update|delete)'\)/.test(
-    sql
-  );
+/** Every `<key>_<action>` an employee permission check in SQL names. */
+const checkedKeys = (sql: string) =>
+  [
+    ...sql.matchAll(
+      /get_(?:companies_with_employee_permission|company_groups_for_root_permission)\('([\w.]+)_(?:view|create|update|delete)'/g
+    )
+  ].map((match) => match[1] as string);
+
+/** Whether SQL checks a permission, not only "employee". */
+const namesPermission = (sql: string) => checkedKeys(sql).length > 0;
 
 const NAMED_TABLES = Object.keys(manifest).filter((table) =>
-  policiesOf(table).some(namesModule)
+  policiesOf(table).some(namesPermission)
 );
 
 /** The URL a flat-routes file serves: `receipt+/$receiptId.details.tsx` → `/x/receipt/$receiptId/details`. */
@@ -264,14 +254,24 @@ describe("PAGES", () => {
           policy.includes("FOR SELECT")
         );
         if (own) problems.push(`${page.id}: ${table} is its own table`);
-        else if (!select || !namesModule(select))
+        else if (!select || !namesPermission(select))
           problems.push(`${page.id}: every employee reads ${table}`);
       }
     }
     expect(problems).toEqual([]);
   });
 
-  it("puts each table that names a module on one page or one shared entry", () => {
+  it("checks a page key, never a module key, in every policy", () => {
+    const pageIds = new Set<string>(PAGES.map((page) => page.id));
+    const problems = Object.keys(manifest).flatMap((table) =>
+      checkedKeys(policiesOf(table).join("\n"))
+        .filter((key) => !pageIds.has(key))
+        .map((key) => `${table}: ${key}`)
+    );
+    expect([...new Set(problems)]).toEqual([]);
+  });
+
+  it("puts each table that checks a permission on one page or one shared entry", () => {
     const problems: string[] = [];
     for (const table of NAMED_TABLES) {
       const owners = PAGES.filter((page) =>
@@ -281,11 +281,6 @@ describe("PAGES", () => {
         (page) =>
           "children" in page && page.children.some((c) => c.table === table)
       );
-      if (table in PENDING_TABLES) {
-        if (owners.length || parents.length)
-          problems.push(`${table}: placed, so drop it from PENDING_TABLES`);
-        continue;
-      }
       if (owners.length && parents.length)
         problems.push(`${table}: both owned and a child`);
       else if (!owners.length && !parents.length)

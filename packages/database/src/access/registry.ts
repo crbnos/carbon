@@ -94,6 +94,87 @@ export function moduleOf(pageId: string): string {
   return dot === -1 ? pageId : pageId.slice(0, dot);
 }
 
+/** One page's rows of a shared table: the column, and the value that picks them. */
+export type Branch = { page: string; column: string; value?: string };
+
+/**
+ * Where a table sits in the registry, which decides what a module key in its
+ * RLS rule resolves to: the page that owns it, one branch per page of a shared
+ * table, or the branches of the shared table it hangs off.
+ */
+export type TablePlace =
+  | { kind: "page"; page: string }
+  | { kind: "shared"; branches: Branch[] }
+  | { kind: "child"; parent: string; via: string; branches: Branch[] };
+
+let built:
+  | { places: Map<string, TablePlace>; readers: Map<string, string[]> }
+  | undefined;
+
+// Built on first use, so a registry mistake fails the RLS render and its
+// tests, not every importer of the registry.
+function index() {
+  if (built) return built;
+  const places = new Map<string, TablePlace>();
+  const readers = new Map<string, string[]>();
+  const put = (table: string, next: TablePlace) => {
+    const prev = places.get(table);
+    if (!prev) {
+      places.set(table, next);
+      return;
+    }
+    if (
+      prev.kind === "page" ||
+      next.kind === "page" ||
+      prev.kind !== next.kind ||
+      (prev.kind === "child" &&
+        next.kind === "child" &&
+        (prev.parent !== next.parent || prev.via !== next.via))
+    )
+      throw new Error(`registry: ${table} sits on more than one page`);
+    prev.branches.push(...next.branches);
+  };
+  for (const page of PAGES as readonly Page[]) {
+    const where = page.where;
+    const branch = where && {
+      page: page.id,
+      column: where.column,
+      value: where.value
+    };
+    for (const table of page.tables)
+      put(
+        table,
+        branch && where?.table === table
+          ? { kind: "shared", branches: [branch] }
+          : { kind: "page", page: page.id }
+      );
+    for (const child of page.children ?? []) {
+      if (!branch || !where)
+        throw new Error(`registry: ${page.id} has children but no where`);
+      put(child.table, {
+        kind: "child",
+        parent: where.table,
+        via: child.via,
+        branches: [branch]
+      });
+    }
+    for (const table of page.readers ?? [])
+      readers.set(table, [...(readers.get(table) ?? []), page.id]);
+  }
+  built = { places, readers };
+  return built;
+}
+
+/** The table's place in the registry; undefined when no page lists it. */
+export function placeOf(table: string): TablePlace | undefined {
+  return index().places.get(table);
+}
+
+/** The pages that list the table in `readers`. */
+export function readersOf(table: string): readonly string[] {
+  return index().readers.get(table) ?? [];
+}
+
 /** A level at most the page's `maxLevel`. Grant writers call it; the resolver does not. */
 export function clampLevel(pageId: string, level: Level): Level {
   const page = PAGE_BY_ID.get(pageId);

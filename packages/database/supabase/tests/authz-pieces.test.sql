@@ -40,7 +40,10 @@ DECLARE
   w text := gen_random_uuid()::text;  -- employee of A, no permissions
   v text := gen_random_uuid()::text;  -- employee of B only
   c text := gen_random_uuid()::text;  -- customer-portal user of A, bound to customer_a
+  t text := gen_random_uuid()::text;  -- employee of A: Tools at Edit over Parts at View
+  m text := gen_random_uuid()::text;  -- employee of A: Credit Memos at Edit, Supplier Credits at View
   customer_a text; customer_other text; customer_b text;
+  tool_item text; part_item text;
   a jsonb; b jsonb;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Pieces A ' || id(), 'system') RETURNING id INTO group_a;
@@ -52,15 +55,27 @@ BEGIN
 
   INSERT INTO "user" (id, email) VALUES
     (u, u || '@authz.invalid'), (w, w || '@authz.invalid'),
-    (v, v || '@authz.invalid'), (c, c || '@authz.invalid');
+    (v, v || '@authz.invalid'), (c, c || '@authz.invalid'),
+    (t, t || '@authz.invalid'), (m, m || '@authz.invalid');
   INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES
     (u, company_a, 'employee'), (w, company_a, 'employee'),
-    (v, company_b, 'employee'), (c, company_a, 'customer');
+    (v, company_b, 'employee'), (c, company_a, 'customer'),
+    (t, company_a, 'employee'), (m, company_a, 'employee');
   INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
     (company_a, u, 'Accounting', 'Edit', 'system'),
     (company_b, u, 'Accounting', 'Edit', 'system'),  -- B: not a member there
     (company_a, u, 'Parts', 'View', 'system'),
     (company_a, u, 'Sales', 'Edit', 'system');
+  INSERT INTO permission ("companyId", "userId", module, page, level, "createdBy") VALUES
+    (company_a, t, 'Parts', NULL, 'View', 'system'),
+    (company_a, t, 'Parts', 'parts.tools', 'Edit', 'system'),
+    (company_a, m, 'Invoicing', 'invoicing.creditMemos', 'Edit', 'system'),
+    (company_a, m, 'Invoicing', 'invoicing.supplierCredits', 'View', 'system');
+
+  INSERT INTO item ("readableId", name, type, "itemTrackingType", "companyId", "createdBy")
+    VALUES ('PIECES-TOOL', 'Pieces tool', 'Tool', 'Inventory', company_a, 'system') RETURNING id INTO tool_item;
+  INSERT INTO item ("readableId", name, type, "itemTrackingType", "companyId", "createdBy")
+    VALUES ('PIECES-PART', 'Pieces part', 'Part', 'Inventory', company_a, 'system') RETURNING id INTO part_item;
 
   INSERT INTO customer (name, "readableId", "companyId", "createdBy") VALUES ('Pieces customer', 'customer_a', company_a, 'system')
     RETURNING id INTO customer_a;
@@ -150,6 +165,41 @@ BEGIN
   ASSERT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public."approvalRequest"'::regclass),
     'RLS is on, so no policy means no rows';
   RAISE NOTICE 'PASS serviceOnly';
+
+  -- A page grant beats its module grant. A shared table checks the page of the row's own
+  -- type (item); its child checks the page of its parent row (itemCost through itemId).
+  PERFORM pg_temp.act_as(t);
+  ASSERT pg_temp.allows('item', 'UPDATE', 'using', jsonb_build_object('id', tool_item, 'type', 'Tool', 'companyId', company_a)),
+    'Tools at Edit changes a tool';
+  ASSERT NOT pg_temp.allows('item', 'UPDATE', 'using', jsonb_build_object('id', part_item, 'type', 'Part', 'companyId', company_a)),
+    'Parts at View does not change a part';
+  ASSERT pg_temp.allows('itemCost', 'UPDATE', 'using', jsonb_build_object('itemId', tool_item, 'companyId', company_a)),
+    'Tools at Edit changes a tool''s cost';
+  ASSERT NOT pg_temp.allows('itemCost', 'UPDATE', 'using', jsonb_build_object('itemId', part_item, 'companyId', company_a)),
+    'Parts at View does not change a part''s cost';
+  ASSERT pg_temp.allows('itemCost', 'SELECT', 'using', jsonb_build_object('itemId', part_item, 'companyId', company_a)),
+    'Parts at View reads a part''s cost';
+  PERFORM pg_temp.act_as(w);
+  ASSERT NOT pg_temp.allows('itemCost', 'SELECT', 'using', jsonb_build_object('itemId', part_item, 'companyId', company_a)),
+    'no grant reads no cost';
+  RAISE NOTICE 'PASS page keys on a shared table and its child (Tools Edit, Parts View)';
+
+  -- memo: the party column that is set picks the page (customerId: Credit Memos,
+  -- supplierId: Supplier Credits). Every employee still reads it.
+  PERFORM pg_temp.act_as(m);
+  ASSERT pg_temp.allows('memo', 'UPDATE', 'using', jsonb_build_object('customerId', customer_a, 'companyId', company_a)),
+    'Credit Memos at Edit changes a customer''s memo';
+  ASSERT pg_temp.allows('memo', 'INSERT', 'check', jsonb_build_object('customerId', customer_a, 'companyId', company_a)),
+    'Credit Memos at Edit creates a customer''s memo';
+  ASSERT NOT pg_temp.allows('memo', 'UPDATE', 'using', jsonb_build_object('supplierId', 'pieces-supplier', 'companyId', company_a)),
+    'Supplier Credits at View does not change a supplier''s memo';
+  ASSERT NOT pg_temp.allows('memo', 'INSERT', 'check', jsonb_build_object('supplierId', 'pieces-supplier', 'companyId', company_a)),
+    'Supplier Credits at View does not create a supplier''s memo';
+  ASSERT NOT pg_temp.allows('memo', 'DELETE', 'using', jsonb_build_object('customerId', customer_a, 'status', 'Draft', 'companyId', company_a)),
+    'Edit does not delete';
+  ASSERT pg_temp.allows('memo', 'SELECT', 'using', jsonb_build_object('supplierId', 'pieces-supplier', 'companyId', company_a)),
+    'every employee reads memos';
+  RAISE NOTICE 'PASS page keys on a shared table by party (Credit Memos Edit, Supplier Credits View)';
   RESET ROLE;
 END
 $proof$;
