@@ -189,7 +189,7 @@ export async function runOnshapeRevisionSync(
     }
   }
 
-  // MODEL (elementType 0 = part studio, 1 = assembly): export compressed GLB + attach.
+  // MODEL (elementType 0 = part studio, 1 = assembly): export STEP + attach.
   const modelElementKind = modelKindForElementType(input.elementType);
   if (!modelElementKind) {
     return { synced: false, skippedReason: "unknown-element" };

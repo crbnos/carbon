@@ -111,16 +111,15 @@ async function downloadTranslationBytes(
   return new Uint8Array(buffer);
 }
 
-// The one and only model export path: export GLTF from Onshape and stream it
-// to disk (a whole-vehicle export can be >1.5GB — it is never buffered in
-// memory). The raw export is attached as-is; the assembler pipeline
-// ("carbon/model-optimize", started by the new model row) turns it into the
-// meshopt-compressed viewer GLB, so no local compression happens here. STEP
-// export was deliberately dropped: real assemblies produce multi-GB STEP
-// files, and Onshape stays the CAD system of record. Throws
+// The one and only model export path: export STEP from Onshape and stream it
+// to disk (a whole-vehicle export can be several GB — it is never buffered in
+// memory). The raw export is attached as-is, like a manual STEP upload: the
+// assembler pipeline ("carbon/model-optimize", started by the new model row)
+// builds the viewer GLB and compacts the raw into the company bucket, and an
+// assembly instruction can convert and plan it. Throws
 // OnshapeAssetTooLargeError (from the download helper) past the raw cap;
 // callers treat that as a permanent skip.
-async function exportRawGltfModel(
+async function exportStepModel(
   client: OnshapeClient,
   input: SyncOnshapeElementInput,
   scratchDir: string
@@ -141,14 +140,14 @@ async function exportRawGltfModel(
     throw new Error("Invalid released Onshape configuration");
   }
   const configuration = input.configuration ?? undefined;
-  const gltfTranslation =
+  const translation =
     input.modelElementKind === "assembly"
       ? await client.createAssemblyTranslation(
           input.documentId,
           input.versionId,
           input.modelElementId,
           {
-            formatName: "GLTF",
+            formatName: "STEP",
             storeInDocument: false,
             configuration,
             wvm: input.sourceWvm ?? "v"
@@ -159,49 +158,52 @@ async function exportRawGltfModel(
           input.versionId,
           input.modelElementId,
           {
-            formatName: "GLTF",
+            formatName: "STEP",
             storeInDocument: false,
             configuration,
             partIds: input.partId!,
             wvm: input.sourceWvm ?? "v"
           }
         );
-  const gltfDone = await waitForTranslation(client, gltfTranslation.id);
+  const done = await waitForTranslation(client, translation.id);
   const baseName =
     input.assetBaseName ??
-    (typeof gltfDone.name === "string" ? gltfDone.name : "model");
-  const foreignId = gltfDone.resultExternalDataIds?.[0];
-  const resultDocumentId = gltfDone.resultDocumentId;
+    (typeof done.name === "string" ? done.name : "model");
+  const foreignId = done.resultExternalDataIds?.[0];
+  const resultDocumentId = done.resultDocumentId;
   if (!foreignId || !resultDocumentId) {
     throw new Error(
-      `Onshape GLTF translation ${gltfDone.id} DONE but has no resultExternalDataIds/resultDocumentId`
+      `Onshape STEP translation ${done.id} DONE but has no resultExternalDataIds/resultDocumentId`
     );
   }
 
-  const gltfPath = join(scratchDir, "model.gltf");
+  const stepPath = join(scratchDir, "model.step");
   await client.downloadExternalDataToFile(
     resultDocumentId,
     foreignId,
-    gltfPath,
+    stepPath,
     { maxBytes: RAW_MODEL_MAX_BYTES }
   );
-  const { size } = await stat(gltfPath);
+  const { size } = await stat(stepPath);
   return {
-    fileName: `${baseName}.gltf`,
-    localPath: gltfPath,
+    fileName: `${baseName}.step`,
+    localPath: stepPath,
     size,
     // Immutable generation: old optimizer/thumbnail/compact jobs can only
     // finish against their old model ID. Replays of this exact released source
     // share one ID; a different part/configuration cannot reuse its artifacts.
     // A whole assembly, or a workspace part with no microversion, has no fixed
-    // source to name; the attach names it by its bytes instead.
+    // source to name; the attach names it by its bytes instead. The tag
+    // changed with the export format: a GLTF generation of the same source
+    // already holds the "selected-part-v1" id, and reusing it would fail the
+    // attach's identity check.
     sourceId:
       input.modelElementKind === "partstudio" &&
       (input.sourceWvm !== "w" || input.sourceMicroversionId)
         ? `onshape-${createHash("sha256")
             .update(
               JSON.stringify([
-                "selected-part-v1",
+                "selected-part-step-v1",
                 input.companyId,
                 input.itemId,
                 input.documentId,
@@ -233,15 +235,15 @@ export async function syncOnshapeElementAssetsToItem(
   }
   const client = onshape.client;
 
-  const scratchDir = await mkdtemp(join(tmpdir(), "onshape-gltf-"));
+  const scratchDir = await mkdtemp(join(tmpdir(), "onshape-step-"));
   try {
-    // Raw GLTF is the only model export (STEP was deliberately dropped — see
-    // exportRawGltfModel). The assembler pipeline does the compression; a new
-    // model row starts it.
+    // STEP is the only model export (see exportStepModel). The assembler
+    // pipeline builds the preview and compacts the raw; a new model row
+    // starts it.
     // Throws OnshapeAssetTooLargeError past the raw cap; callers treat that as
     // a permanent skip.
-    const model = await exportRawGltfModel(client, input, scratchDir);
-    const baseName = model.fileName.replace(/\.gltf$/, "");
+    const model = await exportStepModel(client, input, scratchDir);
+    const baseName = model.fileName.replace(/\.step$/, "");
 
     // Drawings -> PDF (optional; same translation flow, not yet exercised
     // against a live DRAWING element).

@@ -76,11 +76,14 @@ describe("released model exports", () => {
       input.versionId,
       input.modelElementId,
       expect.objectContaining({
+        formatName: "STEP",
         partIds: "saddle-only",
         configuration: input.configuration
       })
     );
     expect(mocks.client.createAssemblyTranslation).not.toHaveBeenCalled();
+    // A STEP raw is what lets an assembly instruction convert the model.
+    expect(mocks.attach.mock.calls[0]![1].model.fileName).toBe("SADDLE.A.step");
   });
 
   it("never attaches a whole-studio thumbnail to a part", async () => {

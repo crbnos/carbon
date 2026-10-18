@@ -7,6 +7,7 @@ import { openAsBlob } from "node:fs";
 import type { Database } from "@carbon/database";
 import {
   getCompanyPrivateBucket,
+  getContentType,
   storage,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
@@ -21,7 +22,7 @@ import { resolveModelSourceBucket } from "../tasks/assembler-client";
 // The caller (release-sync job) is responsible for:
 //   - resolving `itemId` by matching the Onshape part number + revision against
 //     item.readableIdWithRevision (LINK-ONLY: skip if no match, do NOT create);
-//   - downloading the GLTF/PDF from Onshape (OnshapeClient export methods).
+//   - downloading the STEP/PDF from Onshape (OnshapeClient export methods).
 // A new modelUpload row starts the model pipeline itself (the
 // `queue_model_pipeline` statement handler), so no caller sends model-optimize.
 
@@ -34,7 +35,7 @@ export interface OnshapeAssetFile {
 }
 
 // Raw model export on disk. Streamed into storage via openAsBlob — a
-// whole-vehicle GLTF export reaches 1.7GB and must never be buffered in memory.
+// whole-vehicle STEP export reaches several GB and must never be buffered in memory.
 export interface OnshapeModelFile {
   fileName: string;
   localPath: string;
@@ -49,7 +50,7 @@ export interface AttachOnshapeAssetsInput {
   createdBy: string; // userId for audit (the Onshape integration installer)
   itemId: string; // resolved Carbon item (caller guarantees it exists)
   sourceDocument: DocumentSourceType; // e.g. "Part"
-  model?: OnshapeModelFile; // raw GLTF -> item's modelUpload (optimized by the assembler)
+  model?: OnshapeModelFile; // raw STEP -> item's modelUpload (optimized by the assembler)
   documents?: OnshapeAssetFile[]; // drawing PDFs -> item documents
 }
 
@@ -57,10 +58,6 @@ export interface AttachOnshapeAssetsResult {
   modelUploadId: string | null;
   documentIds: string[];
   preservedPriorModelAsDocument: boolean;
-}
-
-function modelContentType(extension: string): string {
-  return extension === "glb" ? "model/gltf-binary" : "model/gltf+json";
 }
 
 function fileExtension(fileName: string): string {
@@ -119,9 +116,9 @@ async function ensureImmutableModel(
   };
   if (await lookup()) return modelId;
 
-  const extension = fileExtension(input.model.fileName) || "gltf";
+  const extension = fileExtension(input.model.fileName) || "step";
   const modelPath = `${input.companyId}/models/${modelId}.${extension}`;
-  const contentType = modelContentType(extension);
+  const contentType = getContentType(extension);
   const rawBlob = await openAsBlob(input.model.localPath, {
     type: contentType
   });
