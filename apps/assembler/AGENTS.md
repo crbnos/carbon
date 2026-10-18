@@ -166,21 +166,15 @@ retries a lost connection with delays that double from 1 s to 5 s, so the
 service is healthy again within seconds of Redis returning. The crate's
 defaults wait forever and back off to a minute or two.
 
-**Outputs go from memory to storage.** The service has no storage credentials.
-When the submit carried a URL for every output, `finish()` PUTs them straight
-from `Bytes` and stores nothing. Otherwise (no URLs at submit, or that upload
-failed) the outputs are **parked** and the job stays `uploading` until a poll
-brings fresh URLs (late-mint):
-
-- on a standing service, as files under `<tmp>/asm-pending/<hash of job id>/`,
-  memory-mapped for the upload and swept after the pending TTL;
-- on Lambda, in Redis (`asm:pending:{jobId}`, same TTL), because the poll there
-  is answered by a different invocation than the one that computed.
-
-A parked job not drained within the TTL is abandoned (the caller resubmits).
-Disk parking is per instance: with more than one standing replica a late-mint
-poll must reach the replica that computed, so pass the URLs at submit. (Legacy:
-a plan with no `planPath` returns the plan inline in the job record.)
+**Outputs go from memory to storage, never through Redis.** The service has no
+storage credentials: the caller signs one upload URL per output at submit
+(`X-Carbon-Upload-Urls`), and `finish()` PUTs each output straight from `Bytes`.
+A PUT that fails is retried after 1, 2 and 4 s; still failing (or a missing
+URL), the job fails with `UPLOAD_FAILED` and the caller resubmits with fresh
+URLs. Outputs are never parked for a later poll: a late-mint hand-off used to
+keep them on disk, or in Redis on Lambda, which put whole models in a shared
+Redis. (Legacy: a plan with no `planPath` returns the plan inline in the job
+record.)
 
 **Content-hash result cache** (`asm:result:{model}:{contentHash}:{optsHash}:v{CODE_VERSION}`
 → pointer, 24 h): a repeat of the same model + bytes + options + code version
@@ -244,8 +238,8 @@ Built to sit as a small always-on pod beside other workloads.
   prints its settings at exit.
 - **The convert result cache** is files under `<tmp>/asm-cache` (2 GiB LRU, off
   on Lambda), memory-mapped when a hit is served and cleared at startup.
-- **`<tmp>` must be real disk** with room for the cache, parked outputs and
-  downloaded sources. A memory-backed `emptyDir` would charge all of it to the
+- **`<tmp>` must be real disk** with room for the cache and downloaded
+  sources. A memory-backed `emptyDir` would charge all of it to the
   pod's memory limit. The server clears downloaded sources (`geometry-*`) left
   by an earlier process when it starts: a killed container skips its own
   cleanup and the volume outlives the restart.
@@ -259,7 +253,7 @@ Built to sit as a small always-on pod beside other workloads.
 
 `POST /v1/thumbnail` `{ source: { url }, output: { path?, size?, direction? } }`
 renders the GLB at `source.url` to a square PNG (300 px unless `size` says
-otherwise) and late-mint uploads it as the `thumbnail` output.
+otherwise) and uploads it as the `thumbnail` output.
 
 The camera is the viewer's: a 45° perspective looking at the centre of the
 bounding box, standing back far enough to fit the bounding sphere (`FOV_DEGREES`

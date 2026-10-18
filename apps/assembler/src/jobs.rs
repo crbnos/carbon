@@ -3,36 +3,38 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 //! Async job store shared by every action (convert / optimize / plan / compact / thumbnail).
-//! One lifecycle for all actions: create -> compute -> finalize (submit-time
-//! URLs) -> completion callback; GET /v1/jobs/{id}?wait= serves status and the
-//! late-mint fallback.
+//! One lifecycle for all actions: create -> compute -> upload to the submit-time
+//! URLs -> completion callback; GET /v1/jobs/{id}?wait= serves status.
 //!
 //! Redis-backed, and Redis is REQUIRED (`REDIS_URL`): status +
-//! pointers (never artifact bytes) live in Redis, so a restart, a sibling
-//! replica, or a different Lambda invocation can still answer the poll — the
-//! service is stateless. Boot fails loudly when Redis is missing/unreachable;
-//! a silent in-memory fallback would strand cross-instance polls (Lambda
-//! dispatch depends on shared state) and hide the misconfiguration.
+//! pointers live in Redis, so a restart, a sibling replica, or a different
+//! Lambda invocation can still answer the poll — the service is stateless.
+//! Boot fails loudly when Redis is missing/unreachable; a silent in-memory
+//! fallback would strand cross-instance polls (Lambda dispatch depends on
+//! shared state) and hide the misconfiguration.
 //!
-//! Artifacts are PUT to caller-signed URLs straight from memory when the submit
-//! carried the URLs; only a `{result, stats}` POINTER is stored. Outputs that
-//! could not be uploaded yet (no URL at submit, or the upload failed) are parked
-//! for a late-mint poll: as files under the temp dir on a standing service, so
-//! a large model never lands in a Redis the apps share, or in Redis on Lambda,
-//! where the poll is answered by a different invocation than the one that
-//! computed.
+//! Artifacts are PUT to the caller's signed URLs straight from memory; only a
+//! `{result, stats}` POINTER is stored. Artifact bytes never go to Redis: an
+//! upload that still fails after its retries fails the job with
+//! `UPLOAD_FAILED`, and the caller resubmits with fresh URLs.
 
-use crate::{cache::CODE_VERSION, config, dispatch, http};
+use crate::{cache::CODE_VERSION, config, http};
 use bytes::Bytes;
 use dashmap::DashMap;
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Notify;
+
+/// Waits between upload attempts: four tries in all, about seven seconds.
+const UPLOAD_RETRY_DELAYS: [Duration; 3] = [
+    Duration::from_secs(1),
+    Duration::from_secs(2),
+    Duration::from_secs(4),
+];
 
 /// One job's persisted state, stored in Redis as a JSON blob. `result`/`stats`
 /// hold the completion POINTER (paths + counts) — never the artifact bytes.
@@ -48,9 +50,8 @@ struct JobRecord {
     error: Option<Value>, // { code, message }
     #[serde(skip_serializing_if = "Option::is_none")]
     meta: Option<Value>,
-    /// Signed PUT URLs handed over AT SUBMIT (name → URL). Lets the job finalize
-    /// the moment compute ends — no poll needed to deliver upload URLs. Fresh
-    /// per-poll URLs remain the retry path if these expired. Never rendered.
+    /// Signed PUT URLs handed over AT SUBMIT (name → URL), one per output.
+    /// Never rendered.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     upload_urls: Option<HashMap<String, String>>,
     /// Completion webhook minted by the caller at submit: the terminal job
@@ -76,17 +77,11 @@ pub struct Done {
     pub stats: Value,
 }
 
-/// A parked job: its outputs, terminal pointer, and result-cache key.
-type Parked = (Vec<Output>, Done, Option<(String, u128, u64)>);
-
 /// Shared job + content-hash result store. Cloned into every handler via
 /// `AppState`; inner state is `Arc`/manager-cloned so clones share one store.
 #[derive(Clone)]
 pub struct JobStore {
     conn: redis::aio::ConnectionManager,
-    /// Where outputs wait for a late-minted URL: this directory, or Redis when
-    /// `None` (Lambda — see the module doc).
-    park_dir: Option<PathBuf>,
     /// Per-job in-process wakeups so a same-replica long-poll returns the instant
     /// the worker finishes (cross-replica completion caught by the Redis re-check).
     notifiers: Notifiers,
@@ -134,17 +129,6 @@ impl Drop for Watch {
     }
 }
 
-/// Outcome of a finalize attempt during a long-poll.
-pub enum Finalize {
-    /// Uploaded — the job is now `done`.
-    Uploaded,
-    /// Nothing to upload here (already finalized, missing a URL, or on another
-    /// replica) — keep waiting.
-    NotPending,
-    /// Upload failed transiently; artifacts kept for the next poll to retry.
-    Retry,
-}
-
 impl JobStore {
     /// Build from env. Redis is REQUIRED — a missing or unreachable
     /// `REDIS_URL` refuses to boot (fail loud; a memory fallback would
@@ -161,8 +145,6 @@ impl JobStore {
                 eprintln!("assembler: redis job store connected");
                 JobStore {
                     conn,
-                    park_dir: (dispatch::from_env() == dispatch::Dispatch::Local)
-                        .then(config::pending_dir),
                     notifiers: Notifiers::default(),
                 }
             }
@@ -281,13 +263,9 @@ impl JobStore {
         }
     }
 
-    /// Publish a terminal `done` pointer. Deliberately does NOT deliver the
-    /// completion callback: this runs on the poll path too (a late-mint
-    /// `try_finalize` inside GET /v1/jobs), where awaiting callback retries
-    /// would blow the poll's own timeout — and the poller already receives the
-    /// result synchronously. Owners that need the notification send it
-    /// explicitly: `finish()` on the direct-upload path, the plan action's
-    /// inline/cache-hit publishes, and the worker/CLI after run_to_completion.
+    /// Publish a terminal `done` pointer. Does NOT deliver the completion
+    /// callback; its owner sends it: `finish()`, the plan action's cache-hit
+    /// publish, and the Lambda worker after `run_to_completion`.
     pub async fn set_done(&self, id: &str, done: Done) {
         if let Some(mut rec) = self.read(id).await {
             if rec.status == "canceled" {
@@ -323,7 +301,6 @@ impl JobStore {
         if is_active(&rec.status) {
             rec.status = "canceled".into();
             self.write(id, &rec).await;
-            self.unpark(id).await;
             // Wake the event-driven waiter immediately (terminal state).
             self.send_callback(id).await;
             self.wake(id);
@@ -366,29 +343,15 @@ impl JobStore {
         json!({ "ok": true, "job": job })
     }
 
-    /// Long-poll a job to a terminal state. `upload_urls` (name→signed PUT URL,
-    /// minted fresh by the caller each poll) drain a computed-but-unuploaded job
-    /// the instant it's ready. With `max`, holds until terminal or the deadline;
-    /// without, a single shot. `None` only if the job is unknown.
-    pub async fn poll(
-        &self,
-        id: &str,
-        upload_urls: &HashMap<String, String>,
-        max: Option<Duration>,
-    ) -> Option<Value> {
+    /// Long-poll a job to a terminal state. With `max`, holds until terminal or
+    /// the deadline; without, a single shot. `None` only if the job is unknown.
+    pub async fn poll(&self, id: &str, max: Option<Duration>) -> Option<Value> {
         let deadline = max.map(|m| Instant::now() + m);
         let mut watch = None;
         loop {
             let rec = self.read(id).await?;
-            match rec.status.as_str() {
-                "done" | "error" | "canceled" => return Some(Self::render(id, &rec)),
-                "uploading" if !upload_urls.is_empty() => {
-                    if let Finalize::Uploaded = self.try_finalize(id, upload_urls).await {
-                        // re-read → the now-`done` record renders on the next loop
-                        continue;
-                    }
-                }
-                _ => {}
+            if matches!(rec.status.as_str(), "done" | "error" | "canceled") {
+                return Some(Self::render(id, &rec));
             }
             let Some(dl) = deadline else {
                 return Some(Self::render(id, &rec)); // single shot
@@ -410,11 +373,10 @@ impl JobStore {
         self.notifiers.wake(id);
     }
 
-    /// Complete a computed job. When the submit handed over an upload URL for
-    /// every output, upload them straight from memory and publish the terminal
-    /// pointer + completion callback — nothing is stored anywhere. Otherwise
-    /// (no URLs at submit, or that upload failed) park the outputs and leave the
-    /// job `uploading` for a late-mint poll to drain.
+    /// Complete a computed job: upload every output to its submit-time URL,
+    /// then publish the terminal pointer and deliver the callback. An upload
+    /// that fails after its retries fails the job with `UPLOAD_FAILED`; the
+    /// outputs are dropped, never kept for later.
     pub async fn finish(
         &self,
         id: &str,
@@ -433,17 +395,21 @@ impl JobStore {
             .await
             .and_then(|r| r.upload_urls)
             .unwrap_or_default();
-        if has_every_url(&outputs, &urls) && upload_all(id, &outputs, &urls).await {
-            self.publish(id, done, cache).await;
-            // Terminal — deliver the callback from the action task, which owns
-            // the process lifetime on the server path (the Lambda worker
-            // re-sends after run_to_completion regardless).
-            self.send_callback(id).await;
-            self.wake(id);
-            return;
+        let uploaded = upload_all(id, &outputs, &urls, &UPLOAD_RETRY_DELAYS).await;
+        // Nothing reads the bytes past this point; don't hold them through
+        // the callback's retries.
+        drop(outputs);
+        match uploaded {
+            Ok(()) => {
+                self.publish(id, done, cache).await;
+                // Terminal — deliver the callback from the action task, which
+                // owns the process lifetime on the server path (the Lambda
+                // worker re-sends after run_to_completion regardless).
+                self.send_callback(id).await;
+                self.wake(id);
+            }
+            Err(message) => self.set_error(id, "UPLOAD_FAILED", message).await,
         }
-        self.park(id, &outputs, &done, &cache).await;
-        self.wake(id);
     }
 
     /// POST the terminal job envelope to the submit-time callback URL, if any.
@@ -476,119 +442,6 @@ impl JobStore {
             }
         }
         eprintln!("[{id}] completion callback undelivered; caller falls back to poll");
-    }
-
-    // --- late-mint hand-off -------------------------------------------------
-
-    /// Hold computed-but-unuploaded outputs until a poll brings URLs for them.
-    /// A failure is logged only: the job then sits `uploading` with nothing to
-    /// drain until the caller times out and resubmits, as with an expired TTL.
-    async fn park(
-        &self,
-        id: &str,
-        outputs: &[Output],
-        done: &Done,
-        cache: &Option<(String, u128, u64)>,
-    ) {
-        let manifest = json!({
-            "outputs": outputs
-                .iter()
-                .map(|o| json!({ "name": o.name, "contentType": o.content_type }))
-                .collect::<Vec<_>>(),
-            "done": { "result": done.result, "stats": done.stats },
-            "cache": cache.as_ref().map(|(m, ch, op)| format!("{m}|{ch:032x}|{op}")),
-        })
-        .to_string();
-        let Some(dir) = self.park_path(id) else {
-            let mut c = self.conn.clone();
-            let mut pipe = redis::pipe();
-            pipe.hset(pending_key(id), "manifest", manifest).ignore();
-            for o in outputs {
-                pipe.hset(pending_key(id), format!("b:{}", o.name), o.bytes.as_ref())
-                    .ignore();
-            }
-            pipe.expire(pending_key(id), config::pending_ttl_secs() as i64)
-                .ignore();
-            if let Err(e) = pipe.query_async::<()>(&mut c).await {
-                eprintln!("assembler: redis park failed: {e}");
-            }
-            return;
-        };
-        if let Err(e) = park_on_disk(&dir, &manifest, outputs).await {
-            eprintln!("[{id}] could not park outputs in {}: {e}", dir.display());
-            let _ = tokio::fs::remove_dir_all(&dir).await;
-        }
-    }
-
-    /// The parked outputs of a job, if any are parked here.
-    async fn parked(&self, id: &str) -> Option<Parked> {
-        let Some(dir) = self.park_path(id) else {
-            let mut c = self.conn.clone();
-            let manifest: Option<String> = c
-                .hget(pending_key(id), "manifest")
-                .await
-                .map_err(|e| eprintln!("assembler: redis parked read failed: {e}"))
-                .ok()?;
-            let manifest: Value = serde_json::from_str(&manifest?).ok()?;
-            let mut outputs = Vec::new();
-            for (name, content_type) in manifest_outputs(&manifest)? {
-                let bytes: Option<Vec<u8>> =
-                    c.hget(pending_key(id), format!("b:{name}")).await.ok()?;
-                outputs.push(Output {
-                    name,
-                    content_type,
-                    bytes: bytes?.into(),
-                });
-            }
-            return Some((outputs, manifest_done(&manifest), manifest_cache(&manifest)));
-        };
-        parked_on_disk(&dir).await
-    }
-
-    async fn unpark(&self, id: &str) {
-        let Some(dir) = self.park_path(id) else {
-            let mut c = self.conn.clone();
-            if let Err(e) = c.del::<_, ()>(pending_key(id)).await {
-                eprintln!("assembler: redis unpark failed: {e}");
-            }
-            return;
-        };
-        let _ = tokio::fs::remove_dir_all(&dir).await;
-    }
-
-    /// The directory a job's outputs park in. Job ids are caller-chosen
-    /// (`Idempotency-Key`), so the name is a hash of the id, never the id.
-    fn park_path(&self, id: &str) -> Option<PathBuf> {
-        let name = format!("{:032x}", xxhash_rust::xxh3::xxh3_128(id.as_bytes()));
-        self.park_dir.as_ref().map(|dir| dir.join(name))
-    }
-
-    /// Delete parked outputs older than the pending TTL — the job they belong to
-    /// was never drained and has been (or will be) resubmitted. Redis expires
-    /// its own keys, so this is the disk half of that TTL.
-    pub async fn sweep_parked(&self) {
-        let Some(dir) = &self.park_dir else {
-            return;
-        };
-        sweep_dir(dir, Duration::from_secs(config::pending_ttl_secs())).await;
-    }
-
-    /// Drain parked outputs to fresh signed URLs (from a long-poll). Every
-    /// output must have a matching URL; on success publishes the terminal
-    /// pointer, else keeps the outputs for the next poll to retry.
-    pub async fn try_finalize(&self, id: &str, urls: &HashMap<String, String>) -> Finalize {
-        let Some((outputs, done, cache)) = self.parked(id).await else {
-            return Finalize::NotPending;
-        };
-        if !has_every_url(&outputs, urls) {
-            return Finalize::NotPending;
-        }
-        if !upload_all(id, &outputs, urls).await {
-            return Finalize::Retry;
-        }
-        self.unpark(id).await;
-        self.publish(id, done, cache).await;
-        Finalize::Uploaded
     }
 
     /// Every output is uploaded: record the result pointer and mark the job done.
@@ -713,109 +566,39 @@ fn result_key(model: &str, content: u128, opts: u64) -> String {
     format!("asm:result:{model}:{content:032x}:{opts:016x}:v{CODE_VERSION}")
 }
 
-fn pending_key(id: &str) -> String {
-    format!("asm:pending:{id}")
-}
-
-async fn park_on_disk(
-    dir: &std::path::Path,
-    manifest: &str,
+/// PUT every output to its URL, retrying each one after every wait in
+/// `delays`. An output with no URL, or one still failing after its retries,
+/// is the error (the message names the output).
+async fn upload_all(
+    id: &str,
     outputs: &[Output],
-) -> std::io::Result<()> {
-    tokio::fs::create_dir_all(dir).await?;
-    for (i, o) in outputs.iter().enumerate() {
-        tokio::fs::write(dir.join(i.to_string()), &o.bytes).await?;
-    }
-    // The manifest is written last, under its final name by rename, so a reader
-    // never sees a job whose output files are still being written.
-    tokio::fs::write(dir.join("manifest.tmp"), manifest).await?;
-    tokio::fs::rename(dir.join("manifest.tmp"), dir.join("manifest.json")).await
-}
-
-async fn parked_on_disk(dir: &std::path::Path) -> Option<Parked> {
-    let manifest = tokio::fs::read(dir.join("manifest.json")).await.ok()?;
-    let manifest: Value = serde_json::from_slice(&manifest).ok()?;
-    let mut outputs = Vec::new();
-    for (i, (name, content_type)) in manifest_outputs(&manifest)?.into_iter().enumerate() {
-        outputs.push(Output {
-            name,
-            content_type,
-            bytes: http::map_file(&dir.join(i.to_string())).ok()?,
-        });
-    }
-    Some((outputs, manifest_done(&manifest), manifest_cache(&manifest)))
-}
-
-/// Remove every entry of `dir` last modified more than `ttl` ago.
-async fn sweep_dir(dir: &std::path::Path, ttl: Duration) {
-    let Ok(mut entries) = tokio::fs::read_dir(dir).await else {
-        return;
-    };
-    while let Ok(Some(entry)) = entries.next_entry().await {
-        let age = entry
-            .metadata()
-            .await
-            .and_then(|m| m.modified())
-            .ok()
-            .and_then(|modified| modified.elapsed().ok());
-        if age.is_some_and(|age| age > ttl) {
-            let _ = tokio::fs::remove_dir_all(entry.path()).await;
-        }
-    }
-}
-
-fn has_every_url(outputs: &[Output], urls: &HashMap<String, String>) -> bool {
-    outputs.iter().all(|o| urls.contains_key(&o.name))
-}
-
-/// PUT every output to its URL. False on the first failure (logged).
-async fn upload_all(id: &str, outputs: &[Output], urls: &HashMap<String, String>) -> bool {
+    urls: &HashMap<String, String>,
+    delays: &[Duration],
+) -> Result<(), String> {
     for o in outputs {
-        if let Err(e) = http::upload(&urls[&o.name], o.bytes.clone(), &o.content_type).await {
-            eprintln!(
-                "[{id}] output '{}' upload failed (a poll retries with fresh URLs): {}",
-                o.name, e.message
-            );
-            return false;
+        let Some(url) = urls.get(&o.name) else {
+            return Err(format!("no upload URL for output '{}'", o.name));
+        };
+        let mut waits = delays.iter();
+        loop {
+            match http::upload(url, o.bytes.clone(), &o.content_type).await {
+                Ok(()) => break,
+                Err(e) => match waits.next() {
+                    Some(wait) => {
+                        eprintln!(
+                            "[{id}] output '{}' upload failed, retrying in {wait:?}: {}",
+                            o.name, e.message
+                        );
+                        tokio::time::sleep(*wait).await;
+                    }
+                    None => {
+                        return Err(format!("output '{}' upload failed: {}", o.name, e.message))
+                    }
+                },
+            }
         }
     }
-    true
-}
-
-fn manifest_outputs(manifest: &Value) -> Option<Vec<(String, String)>> {
-    manifest["outputs"]
-        .as_array()?
-        .iter()
-        .map(|o| {
-            Some((
-                o["name"].as_str()?.to_string(),
-                o["contentType"]
-                    .as_str()
-                    .unwrap_or("application/octet-stream")
-                    .to_string(),
-            ))
-        })
-        .collect()
-}
-
-fn manifest_done(manifest: &Value) -> Done {
-    Done {
-        result: manifest["done"]["result"].clone(),
-        stats: manifest["done"]["stats"].clone(),
-    }
-}
-
-fn manifest_cache(manifest: &Value) -> Option<(String, u128, u64)> {
-    manifest["cache"].as_str().map(str::to_string).and_then(parse_cache)
-}
-
-/// Parse a `"model|contentHex|opts"` cache tuple stored alongside a pending job.
-fn parse_cache(s: String) -> Option<(String, u128, u64)> {
-    let mut it = s.splitn(3, '|');
-    let model = it.next()?.to_string();
-    let content = u128::from_str_radix(it.next()?, 16).ok()?;
-    let opts = it.next()?.parse().ok()?;
-    Some((model, content, opts))
+    Ok(())
 }
 
 /// Stable hash of an options object. `serde_json` serializes object keys sorted,
@@ -827,14 +610,7 @@ pub fn opts_hash(options: &Value) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn output(name: &str, bytes: &'static [u8]) -> Output {
-        Output {
-            name: name.into(),
-            content_type: "application/octet-stream".into(),
-            bytes: Bytes::from_static(bytes),
-        }
-    }
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
     fn a_wakeup_lives_only_while_a_poll_waits_on_it() {
@@ -849,37 +625,6 @@ mod tests {
         assert!(notifiers.0.is_empty());
     }
 
-    #[tokio::test]
-    async fn parked_outputs_come_back_from_disk_as_they_went_in() {
-        let dir = tempfile::tempdir().unwrap();
-        let job = dir.path().join("job");
-        let manifest = json!({
-            "outputs": [
-                { "name": "glb", "contentType": "model/gltf-binary" },
-                { "name": "graph", "contentType": "application/json" },
-                { "name": "empty", "contentType": "text/plain" },
-            ],
-            "done": { "result": { "componentCount": 3 }, "stats": { "ms": 7 } },
-            "cache": "model-1|000000000000000000000000000000ff|42",
-        })
-        .to_string();
-        let outputs = [output("glb", b"glTF-bytes"), output("graph", b"{}"), output("empty", b"")];
-
-        assert!(parked_on_disk(&job).await.is_none());
-        park_on_disk(&job, &manifest, &outputs).await.unwrap();
-
-        let (back, done, cache) = parked_on_disk(&job).await.unwrap();
-        let names: Vec<_> = back.iter().map(|o| (o.name.as_str(), &o.bytes[..])).collect();
-        assert_eq!(
-            names,
-            [("glb", &b"glTF-bytes"[..]), ("graph", &b"{}"[..]), ("empty", &b""[..])]
-        );
-        assert_eq!(back[0].content_type, "model/gltf-binary");
-        assert_eq!(done.result["componentCount"], 3);
-        assert_eq!(done.stats["ms"], 7);
-        assert_eq!(cache, Some(("model-1".to_string(), 0xff, 42)));
-    }
-
     #[test]
     fn a_taken_job_is_still_queued_to_callers_and_active() {
         // A worker took it but has not been granted memory: callers must not
@@ -889,26 +634,60 @@ mod tests {
         assert!(!is_active("canceled"));
     }
 
+    /// A storage stand-in that answers 503 to the first `failures` PUTs and
+    /// 200 after, counting every attempt.
+    async fn flaky_storage(failures: usize) -> (String, Arc<AtomicUsize>) {
+        let attempts = Arc::new(AtomicUsize::new(0));
+        let seen = attempts.clone();
+        let app = axum::Router::new().route(
+            "/upload",
+            axum::routing::put(move || {
+                let seen = seen.clone();
+                async move {
+                    if seen.fetch_add(1, Ordering::SeqCst) < failures {
+                        axum::http::StatusCode::SERVICE_UNAVAILABLE
+                    } else {
+                        axum::http::StatusCode::OK
+                    }
+                }
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+        (format!("http://{addr}/upload"), attempts)
+    }
+
+    fn glb() -> Vec<Output> {
+        vec![Output {
+            name: "glb".into(),
+            content_type: "model/gltf-binary".into(),
+            bytes: Bytes::from_static(b"glTF"),
+        }]
+    }
+
+    const NO_WAIT: [Duration; 3] = [Duration::ZERO; 3];
+
     #[tokio::test]
-    async fn a_job_without_its_manifest_is_not_parked() {
-        // Output files land before the manifest; a reader in between sees nothing.
-        let dir = tempfile::tempdir().unwrap();
-        let job = dir.path().join("job");
-        tokio::fs::create_dir_all(&job).await.unwrap();
-        tokio::fs::write(job.join("0"), b"half-written").await.unwrap();
-        assert!(parked_on_disk(&job).await.is_none());
+    async fn an_upload_that_fails_twice_then_lands_succeeds() {
+        let (url, attempts) = flaky_storage(2).await;
+        let urls = HashMap::from([("glb".to_string(), url)]);
+        assert_eq!(upload_all("job", &glb(), &urls, &NO_WAIT).await, Ok(()));
+        assert_eq!(attempts.load(Ordering::SeqCst), 3);
     }
 
     #[tokio::test]
-    async fn the_sweep_removes_only_what_outlived_the_ttl() {
-        let dir = tempfile::tempdir().unwrap();
-        let manifest = json!({ "outputs": [], "done": {} }).to_string();
-        park_on_disk(&dir.path().join("old"), &manifest, &[]).await.unwrap();
+    async fn an_upload_still_failing_after_its_retries_is_an_error() {
+        let (url, attempts) = flaky_storage(usize::MAX).await;
+        let urls = HashMap::from([("glb".to_string(), url)]);
+        let err = upload_all("job", &glb(), &urls, &NO_WAIT).await.unwrap_err();
+        assert!(err.starts_with("output 'glb' upload failed"), "{err}");
+        assert_eq!(attempts.load(Ordering::SeqCst), 4, "one try plus three retries");
+    }
 
-        sweep_dir(dir.path(), Duration::from_secs(3600)).await;
-        assert!(dir.path().join("old").exists());
-
-        sweep_dir(dir.path(), Duration::ZERO).await;
-        assert!(!dir.path().join("old").exists());
+    #[tokio::test]
+    async fn an_output_without_a_url_is_an_error_not_a_wait() {
+        let err = upload_all("job", &glb(), &HashMap::new(), &NO_WAIT).await.unwrap_err();
+        assert_eq!(err, "no upload URL for output 'glb'");
     }
 }

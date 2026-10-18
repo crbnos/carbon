@@ -16,8 +16,7 @@
 //!
 //! Every heavy action creates a job (holding a concurrency slot). Artifacts
 //! upload via submit-time signed URLs and completion POSTs to a submit-time
-//! callback URL; the poll endpoint remains for status + as the late-mint
-//! fallback. Wires the `converter` and `planner` crates via `actions::*`.
+//! callback URL; the poll endpoint remains for status. Wires the `converter` and `planner` crates via `actions::*`.
 
 mod actions;
 mod admission;
@@ -108,15 +107,6 @@ async fn serve() {
     http::clear_stale_sources();
     let state = build_state().await;
     let admission = state.admission.clone();
-    // Parked outputs nobody drained (see `jobs.rs`): the disk half of the
-    // pending TTL, including whatever a previous process left behind.
-    let sweeper = state.jobs.clone();
-    tokio::spawn(async move {
-        loop {
-            sweeper.sweep_parked().await;
-            tokio::time::sleep(std::time::Duration::from_secs(60)).await;
-        }
-    });
     let app = Router::new()
         .route("/health", get(health))
         .route("/v1", get(discovery))
@@ -366,7 +356,7 @@ fn sync_flag(q: &CreateQuery) -> bool {
 /// Async mode returns the uniform 202 + `Location`.
 async fn respond(
     state: &AppState,
-    headers: &HeaderMap,
+    _headers: &HeaderMap,
     job_id: &str,
     action: &str,
     sync: bool,
@@ -374,8 +364,7 @@ async fn respond(
     if !sync {
         return Ok(created(job_id, action, "queued"));
     }
-    let urls = parse_upload_urls(headers)?;
-    let result = run::run_to_completion(state, job_id, &urls).await;
+    let result = run::run_to_completion(state, job_id).await;
     Ok((StatusCode::OK, HeaderMap::new(), Json(result)))
 }
 
@@ -419,7 +408,7 @@ async fn lambda_dispatch(
 /// action to completion in THIS invocation — its own 900s window — uploading via
 /// the submit-time URLs; state lives in the shared (Redis) JobStore so any
 /// instance's poll can answer. Async-retry deliveries are deduped by job status:
-/// pending → run; uploading → finalize only; running/terminal → no-op.
+/// pending → run; anything else → no-op.
 async fn worker_events(
     State(state): State<AppState>,
     body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
@@ -435,8 +424,6 @@ async fn worker_events(
     if job_id.is_empty() {
         return Err(ApiError::invalid("missing job_id"));
     }
-    let urls = run::upload_urls(&spec);
-
     match state.jobs.internal_active(&job_id).await.as_deref() {
         Some("pending") => {
             // Take the job before the long download and admission wait, so a
@@ -448,17 +435,14 @@ async fn worker_events(
             }
             eprintln!("[{job_id}] worker running {action}");
         }
-        Some("uploading") => {
-            eprintln!("[{job_id}] worker resuming finalize");
-        }
         other => {
-            // running (another live worker owns it) or terminal/unknown: no-op.
+            // Another live worker owns it, or it is terminal/unknown: no-op.
             eprintln!("[{job_id}] worker no-op (status {other:?})");
             return Ok(Json(json!({ "ok": true, "noop": true })));
         }
     }
 
-    let result = run::run_to_completion(&state, &job_id, &urls).await;
+    let result = run::run_to_completion(&state, &job_id).await;
     // The worker invocation owns the Lambda lifetime: the action task's inline
     // callback send may be killed by the post-response freeze, so (re)send here
     // before returning. Duplicate deliveries are harmless — the receiver's
@@ -870,11 +854,6 @@ async fn get_job(
     Query(q): Query<WaitQuery>,
 ) -> Result<Json<Value>, ApiError> {
     require_auth(&headers)?;
-    // Late-mint offload: the caller hands FRESH signed upload URLs on each poll
-    // (one per pending output, keyed by output name), so the service PUTs the
-    // finished artifacts with tokens minted seconds ago. Absent for callers that
-    // don't offload.
-    let upload_urls = parse_upload_urls(&headers)?;
     let max = match q.wait {
         Some(secs) if secs > 0 => Some(std::time::Duration::from_secs(
             secs.min(config::max_long_poll_secs()),
@@ -883,7 +862,7 @@ async fn get_job(
     };
     let mut v = state
         .jobs
-        .poll(&job_id, &upload_urls, max)
+        .poll(&job_id, max)
         .await
         .ok_or_else(|| ApiError::new(404, "not_found", format!("no job {job_id}")))?;
     // Best-effort live progress (same replica only): merge the convert phase
@@ -897,9 +876,9 @@ async fn get_job(
     Ok(Json(v))
 }
 
-/// Parse fresh per-poll signed upload URLs. Preferred: the
-/// `X-Carbon-Upload-Urls` JSON header `{"glb":"…","graph":"…"}`. Also accepts the
-/// single-output legacy `X-Plan-Upload-Url` (→ `{"plan": …}`).
+/// Parse the submit-time signed upload URLs: the `X-Carbon-Upload-Urls` JSON
+/// header `{"glb":"…","graph":"…"}`. Also accepts the single-output legacy
+/// `X-Plan-Upload-Url` (→ `{"plan": …}`).
 fn parse_upload_urls(headers: &HeaderMap) -> Result<HashMap<String, String>, ApiError> {
     let mut out = HashMap::new();
     if let Some(raw) = headers

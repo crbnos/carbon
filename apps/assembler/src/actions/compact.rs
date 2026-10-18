@@ -12,7 +12,8 @@
 //!   - `zstd` (mesh sources: glTF/GLB/STL): plain zstd of the raw — nothing to
 //!            re-topologise, but reoptimise still needs the bytes.
 //!
-//! Async job; the single compressed `raw` output is late-mint uploaded. The
+//! Async job; the single compressed `raw` output is uploaded to its
+//! submit-time URL. The
 //! caller then repoints `modelUpload.modelPath` at it and deletes the fat
 //! original. `download_hashed` decompresses any `.zst` source transparently, so
 //! re-running compact on an already-compacted model is a no-op-safe passthrough.
@@ -44,7 +45,7 @@ pub struct CompactReq {
     pub source_url: String,
     pub mode: Mode,
     /// Storage path recorded in the completion pointer (the app persists it and
-    /// repoints modelPath); the signed PUT URL is late-minted per poll, key `raw`.
+    /// repoints modelPath); the signed PUT URL comes with the submit, key `raw`.
     pub raw_path: Option<String>,
 }
 

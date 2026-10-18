@@ -66,7 +66,7 @@ pub async fn run_job_cli() -> ! {
         fail(&m);
     }
 
-    let result = run_to_completion(&state, &job_id, &urls).await;
+    let result = run_to_completion(&state, &job_id).await;
     // The CLI owns the process lifetime — (re)deliver the completion callback
     // before exiting (no-op if none / already delivered semantics are idempotent
     // for the receiver).
@@ -163,18 +163,13 @@ pub fn spawn_from_spec(
     Ok(())
 }
 
-/// Drive a spawned job to a terminal state, uploading its outputs to the given
-/// signed URLs via the same finalize path the HTTP poll uses. Shared by the CLI
-/// here and the sync-HTTP path (`?sync`, the Lambda handler in `main::respond`).
-pub async fn run_to_completion(
-    state: &AppState,
-    job_id: &str,
-    urls: &HashMap<String, String>,
-) -> Value {
+/// Wait for a spawned job to reach a terminal state. Shared by the CLI here,
+/// the Lambda worker and the sync-HTTP path (`?sync`, `main::respond`).
+pub async fn run_to_completion(state: &AppState, job_id: &str) -> Value {
     let deadline = Instant::now() + Duration::from_secs(RUN_JOB_MAX_SECS);
     let step = Duration::from_secs(30);
     loop {
-        match state.jobs.poll(job_id, urls, Some(step)).await {
+        match state.jobs.poll(job_id, Some(step)).await {
             None => {
                 return json!({ "ok": false,
                     "error": { "code": "not_found", "message": "job vanished" } })

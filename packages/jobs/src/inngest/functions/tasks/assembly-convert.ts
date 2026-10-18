@@ -15,7 +15,8 @@ import {
   internalizeStorageUrl,
   requireModelSourceBucket,
   runAssemblerJob,
-  signSourceUrl
+  signSourceUrl,
+  signUploadUrls
 } from "./assembler-client";
 import {
   getModelUpload,
@@ -147,22 +148,12 @@ export const assemblyConvertFunction = inngest.createFunction(
           }
         };
       },
-      mintUploadUrls: async () => {
-        const client = getCarbonServiceRole();
-        const [glbUpload, graphUpload] = await Promise.all([
-          storage(client)
-            .company(companyId)
-            .createSignedUploadUrl(glbPath, { upsert: true }),
-          storage(client)
-            .company(companyId)
-            .createSignedUploadUrl(graphPath, { upsert: true })
-        ]);
-        const urls: Record<string, string> = {};
-        if (glbUpload.data)
-          urls.glb = internalizeStorageUrl(glbUpload.data.signedUrl);
-        if (graphUpload.data)
-          urls.graph = internalizeStorageUrl(graphUpload.data.signedUrl);
-        return urls;
+      mintUploadUrls: () => {
+        const bucket = storage(getCarbonServiceRole()).company(companyId);
+        return signUploadUrls({
+          glb: { bucket, path: glbPath },
+          graph: { bucket, path: graphPath }
+        });
       }
     });
     const componentCount =

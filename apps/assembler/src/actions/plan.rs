@@ -4,7 +4,8 @@
 
 //! `plan` action — collision-free disassembly motion planning. Async: the job
 //! runs detached, the caller long-polls. On completion the plan.json is either
-//! late-mint uploaded (a `planPath` was given) or returned inline in the result.
+//! uploaded to its submit-time URL (a `planPath` was given) or returned inline
+//! in the result.
 
 use crate::jobs::{opts_hash, Done, Output};
 use crate::{admission, config, http, telemetry, AppState};
@@ -16,7 +17,7 @@ use std::time::Instant;
 pub struct PlanReq {
     pub source_url: String,
     /// Storage path recorded in the completion pointer (what the app persists).
-    /// The plan.json is PUT here later via a per-poll signed URL (late-mint).
+    /// The plan.json is PUT to the submit-time signed URL, key `plan`.
     pub plan_path: Option<String>,
     /// Scopes the content-hash result cache; None disables caching for this job.
     pub model_upload_id: Option<String>,
@@ -123,7 +124,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                     .map(|m| (m.clone(), content_hash, opts_h));
 
                 match &req.plan_path {
-                    // Offload: late-mint upload the plan.json.
+                    // Offload: upload the plan.json.
                     Some(path) => {
                         let bytes = match serde_json::to_vec(&r.plan) {
                             Ok(b) => b,

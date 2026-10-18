@@ -5,8 +5,8 @@
 //! `thumbnail` action — a model's GLB → a square PNG preview, rendered on the
 //! CPU by `crates/thumbnail` (no GPU, no browser). The source is a GLB this
 //! service wrote: the optimised one (`EXT_meshopt_compression`) or the lossless
-//! `convert` output. Async job; the single `thumbnail` output is late-mint
-//! uploaded.
+//! `convert` output. Async job; the single `thumbnail` output is uploaded to
+//! its submit-time URL.
 
 use crate::jobs::{Done, Output};
 use crate::{admission, http, telemetry, AppState};
@@ -20,8 +20,8 @@ pub struct ThumbnailReq {
     /// Where the camera stands: model towards camera, Z up. The viewer's home
     /// direction unless the caller captured another.
     pub direction: [f32; 3],
-    /// Storage path recorded in the completion pointer; the signed PUT URL is
-    /// late-minted per poll, key `thumbnail`.
+    /// Storage path recorded in the completion pointer; the signed PUT URL
+    /// comes with the submit, key `thumbnail`.
     pub path: Option<String>,
 }
 

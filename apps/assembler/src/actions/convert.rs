@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-//! `convert` action — STEP → GLB + graph.json. Async job: the caller long-polls
-//! and hands fresh signed upload URLs (`glb`, `graph`) per poll (late-mint). The
+//! `convert` action — STEP → GLB + graph.json. Async job: the caller hands the
+//! signed upload URLs (`glb`, `graph`) at submit and long-polls. The
 //! in-process result cache still skips re-tessellation for repeated content; the
 //! artifacts are re-uploaded to each job's own paths.
 
@@ -20,7 +20,7 @@ pub struct ConvertReq {
     /// Caller-declared content identity (storage etag); a hit skips the download.
     pub declared_hash: Option<String>,
     /// Storage paths recorded in the completion pointer (the app persists these);
-    /// the actual signed PUT URLs are late-minted per poll, keyed `glb`/`graph`.
+    /// the signed PUT URLs come with the submit, keyed `glb`/`graph`.
     pub glb_path: Option<String>,
     pub graph_path: Option<String>,
     pub lin: f64,
@@ -152,7 +152,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
     });
 }
 
-/// Enforce the part-count limit, then hold the GLB + graph for late-mint upload.
+/// Enforce the part-count limit, then upload the GLB + graph.
 async fn complete(
     jobs: &crate::jobs::JobStore,
     job_id: &str,

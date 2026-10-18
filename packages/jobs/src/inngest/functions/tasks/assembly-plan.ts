@@ -15,7 +15,8 @@ import {
   internalizeStorageUrl,
   requireModelSourceBucket,
   runAssemblerJob,
-  signSourceUrl
+  signSourceUrl,
+  signUploadUrls
 } from "./assembler-client";
 import { getModelUpload, insertPlanJob, updatePlanJobs } from "./model-rows";
 import { loadPlanUnits } from "./plan-units";
@@ -194,16 +195,13 @@ export const assemblyPlanFunction = inngest.createFunction(
               : {})
         };
       },
-      mintUploadUrls: async () => {
-        const client = getCarbonServiceRole();
-        const upload = await storage(client)
-          .company(companyId)
-          .createSignedUploadUrl(planPath, { upsert: true });
-        const urls: Record<string, string> = {};
-        if (upload.data)
-          urls.plan = internalizeStorageUrl(upload.data.signedUrl);
-        return urls;
-      }
+      mintUploadUrls: () =>
+        signUploadUrls({
+          plan: {
+            bucket: storage(getCarbonServiceRole()).company(companyId),
+            path: planPath
+          }
+        })
     });
 
     const planResult = (plan.result ?? {}) as {

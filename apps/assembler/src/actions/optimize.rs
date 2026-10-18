@@ -8,7 +8,7 @@
 //! glTF to GLB via a streaming base64 decode), then runs the
 //! meshopt geometry passes + codec encode (via `crates/optimize`), walking a
 //! simplify ladder until the render-weight + output-size gates pass. Async job;
-//! late-mint uploads the single `glb` output. Fails loud with a typed error
+//! uploads the single `glb` output to its submit-time URL. Fails loud with a typed error
 //! (`unsupported_format` / `ambiguous_format` / `tessellation_failed` /
 //! `cannot_fit_budget`) rather than storing an over-cap or wrong result.
 
@@ -22,7 +22,7 @@ pub struct OptimizeReq {
     pub source_url: String,
     /// Declared source format, or `"auto"` / empty to content-detect.
     pub format: String,
-    /// Storage path recorded in the completion pointer (late-mint uploads here).
+    /// Storage path recorded in the completion pointer (the `glb` upload).
     pub glb_path: Option<String>,
     pub opts: Opts,
     /// Ingest: also write the retained raw's compact form (output `raw`), from

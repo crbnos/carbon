@@ -117,8 +117,7 @@ describe("pollAssemblerJobOnce", () => {
     );
     return pollAssemblerJobOnce({
       jobId: "optimize-m1",
-      baseUrl: "http://assembler.test",
-      mintUploadUrls: async () => ({})
+      baseUrl: "http://assembler.test"
     });
   };
 
