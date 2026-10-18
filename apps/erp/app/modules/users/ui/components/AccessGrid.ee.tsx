@@ -6,6 +6,7 @@ import type { TermId } from "@carbon/content/glossary";
 import {
   LEVELS,
   type Level,
+  MODULES,
   moduleOf,
   PAGES,
   type Page
@@ -95,12 +96,13 @@ const AccessGrid = ({
     4: t`Delete`
   };
 
-  const modules = [...new Set(pages.map((page) => moduleOf(page.id)))].map(
-    (id) => {
+  const present = new Set(pages.map((page) => moduleOf(page.id)));
+  const modules = MODULES.filter((module) => present.has(module.id)).map(
+    ({ id, label: moduleLabel }) => {
       const own = pages.find((p) => p.id === id);
       const row: Row = {
         page: null,
-        label: own?.label ?? capitalize(id),
+        label: moduleLabel,
         max: own?.maxLevel ?? "Full"
       };
       const pageRows = pages
@@ -230,7 +232,7 @@ const AccessGrid = ({
   const note = (id: string | null) =>
     id && notes[id] ? (
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger asChild>
           <span
             role="img"
             aria-label={notes[id]}

@@ -3,11 +3,29 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type Action, type Level, lowerLevel } from "./levels";
+import { ACCOUNTING_PAGES } from "./pages/accounting";
+import { DOCUMENTS_PAGES } from "./pages/documents";
+import { INVENTORY_PAGES } from "./pages/inventory";
+import { INVOICING_PAGES } from "./pages/invoicing";
+import { PARTS_PAGES } from "./pages/parts";
+import { PEOPLE_PAGES } from "./pages/people";
+import { PRODUCTION_PAGES } from "./pages/production";
+import { PURCHASING_PAGES } from "./pages/purchasing";
+import { QUALITY_PAGES } from "./pages/quality";
+import { RESOURCES_PAGES } from "./pages/resources";
+import { SALES_PAGES } from "./pages/sales";
+import { SETTINGS_PAGES } from "./pages/settings";
+import { USERS_PAGES } from "./pages/users";
+import { WORKFLOWS_PAGES } from "./pages/workflows";
 
-/** Two or more pages share a table: the column and value that pick this page's rows. */
-export type SharedTable = { table: string; column: string; value: string };
+/**
+ * Two or more pages share a table: the column and value that pick this page's
+ * rows. Without a value, the page's rows are the ones where the column is set
+ * (a memo's `supplierId`, a grant's `apiKeyId`).
+ */
+export type SharedTable = { table: string; column: string; value?: string };
 
-/** A permission subject: one sidebar entry, or a whole module until it is split. */
+/** A permission subject: one sidebar entry (`use<Module>Submodules.tsx`). */
 export type Page = {
   /** `<module>.<page>`, or the module key for a module that has one page. */
   id: string;
@@ -25,32 +43,40 @@ export type Page = {
   paths: readonly string[];
 };
 
-const modulePage = (id: string, label: string) =>
-  ({
-    id,
-    label,
-    maxLevel: "Full",
-    tables: [],
-    paths: [`/x/${id}`]
-  }) as const satisfies Page;
+/** The permission modules, in sidebar order. Items keeps its permission name, `parts`. */
+export const MODULES: readonly { id: string; label: string }[] = [
+  { id: "accounting", label: "Accounting" },
+  { id: "documents", label: "Documents" },
+  { id: "inventory", label: "Inventory" },
+  { id: "invoicing", label: "Invoicing" },
+  { id: "parts", label: "Items" },
+  { id: "people", label: "People" },
+  { id: "production", label: "Production" },
+  { id: "purchasing", label: "Purchasing" },
+  { id: "quality", label: "Quality" },
+  { id: "resources", label: "Resources" },
+  { id: "sales", label: "Sales" },
+  { id: "settings", label: "Settings" },
+  { id: "users", label: "Users" },
+  { id: "workflows", label: "Workflows" }
+];
 
-/** Every page. Until a module is split, it has one page named after it. */
+/** Every page, module by module in sidebar order. */
 export const PAGES = [
-  modulePage("accounting", "Accounting"),
-  modulePage("documents", "Documents"),
-  modulePage("inventory", "Inventory"),
-  modulePage("invoicing", "Invoicing"),
-  modulePage("parts", "Items"),
-  modulePage("people", "People"),
-  modulePage("printing", "Printing"),
-  modulePage("production", "Production"),
-  modulePage("purchasing", "Purchasing"),
-  modulePage("quality", "Quality"),
-  modulePage("resources", "Resources"),
-  modulePage("sales", "Sales"),
-  modulePage("settings", "Settings"),
-  modulePage("users", "Users"),
-  modulePage("workflows", "Workflows")
+  ...ACCOUNTING_PAGES,
+  ...DOCUMENTS_PAGES,
+  ...INVENTORY_PAGES,
+  ...INVOICING_PAGES,
+  ...PARTS_PAGES,
+  ...PEOPLE_PAGES,
+  ...PRODUCTION_PAGES,
+  ...PURCHASING_PAGES,
+  ...QUALITY_PAGES,
+  ...RESOURCES_PAGES,
+  ...SALES_PAGES,
+  ...SETTINGS_PAGES,
+  ...USERS_PAGES,
+  ...WORKFLOWS_PAGES
 ] as const satisfies readonly Page[];
 
 export type PageId = (typeof PAGES)[number]["id"];

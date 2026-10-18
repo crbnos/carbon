@@ -29,7 +29,7 @@ Phases 1 and 2 — grants, resolver, editors (one release)
 - [x] Task 16: Verify phases 1 and 2 in the browser
 
 Phase 3 — every module to page keys (one deploy)
-- [ ] Task 17: Define the pages of all 14 modules in the registry
+- [x] Task 17: Define the pages of all 14 modules in the registry
 - [ ] Task 18: Render RLS rules with page keys from the registry
 - [ ] Task 19: Move service function permissions to pages and levels
 - [ ] Task 20: Move ERP and MES route gates to pages and levels
@@ -677,6 +677,14 @@ pnpm --filter @carbon/database test -- registry
 ```
 
 **Out of scope:** changing any check. Tasks 18 to 23 do that.
+
+**As built (2026-10-19):**
+1. `memo` has no `direction` split: both pages hold both directions. Supplier Credits owns the rows with `supplierId` set, Credit Memos the rows with `customerId` set. `SharedTable.value` is optional; no value means "the column is set". Task 18 renders it as `IS NOT NULL`.
+2. Four more shared tables: `revenueRecognitionRun` (`type`), `enforcementRule` (`family`), `contact` (`isCustomer`) and `permission` (`userId`, `employeeTypeId`, `apiKeyId`).
+3. `PENDING_TABLES` in `registry.test.ts` lists 5 tables with no page: `warehouse`, `tag`, `implementationHub`, `implementationCheckState`, `implementationFieldValue`. Task 18 decides their rules.
+4. 27 tables sit on a page of another module than their rule names (for example `storageUnit`, rule `parts`, on Inventory). Task 18 converts these too.
+5. Reporting is capped at Full, Payables and Receivables at Create, Audit Logs at Edit: their routes have actions. Ten other pages without actions cap at View.
+6. `MODULES` lists the 14 modules with their labels. `expandClaims` keeps the 15 module keys (`MODULE_KEYS`, `resolve.ts`) from module grants until Task 24 deletes them.
 
 ## Task 18: Render RLS rules with page keys from the registry
 

@@ -119,13 +119,16 @@ entries that share a path are filters of one list and form one page.
   others) stay Settings pages. An admin can give an inventory manager
   `settings.inventory` alone.
 - The plan sets each page's `maxLevel` from the actions its routes offer.
-  Pages with no editing (Reporting, Traceability, Payables, Receivables,
-  Audit Logs) cap at View.
+  Pages whose routes have no action cap at View (Traceability, Sync Tie-Out,
+  Fleet and seven more). Reporting caps at Full, Payables and Receivables at
+  Create and Audit Logs at Edit, because their routes have actions.
 
 ### Pages that share a table
 
 Two cases are known: the five item types share `item` (column `type`), and
-Supplier Credits and Credit Memos share `memo` (column `direction`). The plan
+Supplier Credits and Credit Memos share `memo`: the party column picks the
+page (`supplierId` or `customerId` set), because both pages hold both
+directions. The plan
 lists every other case from the registry, because a table in the `tables` of
 two pages fails the registry's own test unless both pages give `where`.
 

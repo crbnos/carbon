@@ -2,14 +2,22 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { LEVELS, type Level, PAGES } from "@carbon/database/access";
+import {
+  LEVELS,
+  type Level,
+  MODULES,
+  moduleOf,
+  PAGES
+} from "@carbon/database/access";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Avatar,
   cn,
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue
 } from "@carbon/react";
@@ -98,10 +106,15 @@ const AccessHolders = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {PAGES.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.label}
-              </SelectItem>
+            {MODULES.map((module) => (
+              <SelectGroup key={module.id}>
+                <SelectLabel>{module.label}</SelectLabel>
+                {PAGES.filter((p) => moduleOf(p.id) === module.id).map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             ))}
           </SelectContent>
         </Select>
