@@ -4,14 +4,14 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-const requirePermissions = vi.hoisted(() => vi.fn());
+const authorize = vi.hoisted(() => vi.fn());
 const getIntegrationsWithHealth = vi.hoisted(() => vi.fn());
 
 vi.mock("@carbon/auth", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   error: vi.fn()
 }));
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize }));
 vi.mock("@carbon/auth/session.server", () => ({ flash: vi.fn() }));
 vi.mock("@carbon/ee", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/ee")>()),
@@ -56,7 +56,7 @@ import { loader } from "./integrations";
  */
 describe("integrations loader", () => {
   it("issues no OAuth state of its own", async () => {
-    requirePermissions.mockResolvedValue({
+    authorize.mockResolvedValue({
       client: {},
       userId: "user-1",
       companyId: "company-1"
@@ -80,7 +80,7 @@ describe("integrations loader", () => {
     // EVERY OAuth install now starts at the connect route, which issues a signed,
     // browser-bound, single-use state. A value handed out here would be unsigned
     // and unbound — reintroducing one is a downgrade, not a convenience.
-    requirePermissions.mockResolvedValue({
+    authorize.mockResolvedValue({
       client: {},
       userId: "user-1",
       companyId: "company-1"

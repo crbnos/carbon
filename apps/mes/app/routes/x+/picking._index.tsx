@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import {
   Card,
   CardContent,
@@ -28,7 +28,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { client, userId } = await authorize(request, {});
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
 
   const pickingLists = await getAssignedPickingLists(client, effectiveUserId);

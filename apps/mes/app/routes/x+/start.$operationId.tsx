@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
@@ -30,7 +30,7 @@ const logger = getLogger("mes", "start-operation");
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Writes on GET: a link on another site must not trigger it.
   rejectCrossSiteNavigation(request);
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, companyId } = await authorize(request, {});
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
 
@@ -250,7 +250,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const machineWorkCenterId =
     type === "Machine" ? jobOperation.data.workCenterId : null;
   if (machineWorkCenterId) {
-    await requirePermissions(request, { create: "production" });
+    await authorize(request, { create: "production" });
   }
 
   const db = getDatabaseClient();

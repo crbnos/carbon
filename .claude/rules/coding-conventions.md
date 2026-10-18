@@ -48,14 +48,13 @@ rules — this file does not repeat them:
   at the call site. Leaving the origin on purpose (OAuth provider, Stripe, ERP ↔
   MES) is `redirectExternal`, with a URL the server built. Enforced by the
   `no-raw-redirect` check (`@carbon/checks`).
-- ERP code authenticates a request with `authorize` (`@carbon/api/carbon.server`);
-  MES, academy and starter call `requirePermissions` (`@carbon/auth/auth.server`).
+- Every app authenticates a request with `authorize` (`@carbon/auth/auth.server`).
   Other server-only auth helpers: `@carbon/auth/session.server` (`flash`) and
   `@carbon/auth` (`error`, `success`, `assertIsPost`).
 
 ```typescript
 import { Button, VStack } from "@carbon/react";
-import { authorize } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { usePermissions } from "~/hooks";
 ```

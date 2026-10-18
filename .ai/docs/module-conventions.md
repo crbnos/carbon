@@ -108,7 +108,7 @@ Routes live under `apps/erp/app/routes/` using `remix-flat-routes` conventions.
 ### Loader Pattern
 
 ```typescript
-import { authorize } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -121,7 +121,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 ### Action Pattern
 
 ```typescript
-import { authorize, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 

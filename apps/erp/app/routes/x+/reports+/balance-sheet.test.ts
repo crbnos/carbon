@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
@@ -19,7 +19,10 @@ import {
 import type { ChartPeriodSeries } from "~/modules/accounting/types";
 import { NET_INCOME_ACCOUNT_ID } from "~/modules/accounting/types";
 import { exportPeriodReport } from "~/modules/accounting/ui/Reports/exportReport";
-import { registerTestCarbon } from "../../../../test/register-carbon";
+import {
+  registerTestCarbon,
+  withTestApi
+} from "../../../../test/register-carbon";
 import { loader } from "./balance-sheet";
 import { loader as incomeStatementLoader } from "./income-statement";
 import { loader as trialBalanceLoader } from "./trial-balance";
@@ -37,7 +40,7 @@ vi.mock("@carbon/auth", async (importOriginal) => ({
   getMESUrl: () => "http://localhost",
   CARBON_API_URL: "http://localhost"
 }));
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize: vi.fn() }));
 vi.mock("@carbon/auth/session.server", () => ({
   flash: vi.fn(async () => ({}))
 }));
@@ -278,12 +281,14 @@ beforeEach(() => {
       return builder;
     }
   } as unknown as SupabaseClient<Database>;
-  vi.mocked(requirePermissions).mockResolvedValue({
-    client,
-    companyId: "child",
-    companyGroupId: "group",
-    userId: "user"
-  } as Awaited<ReturnType<typeof requirePermissions>>);
+  vi.mocked(authorize).mockResolvedValue(
+    withTestApi({
+      client,
+      companyId: "child",
+      companyGroupId: "group",
+      userId: "user"
+    }) as Awaited<ReturnType<typeof authorize>>
+  );
   vi.mocked(getCompaniesInGroup).mockResolvedValue({
     data: companies,
     error: null
@@ -352,14 +357,14 @@ describe("balance sheet configured CTA", () => {
         })
       })
     } as unknown as SupabaseClient<Database>;
-    vi.mocked(requirePermissions).mockImplementation(
+    vi.mocked(authorize).mockImplementation(
       async (_request, permissions) =>
-        ({
-          client: permissions.bypassRls ? client : deniedClient,
+        withTestApi({
+          client: permissions?.bypassRls ? client : deniedClient,
           companyId: "child",
           companyGroupId: "group",
           userId: "user"
-        }) as Awaited<ReturnType<typeof requirePermissions>>
+        }) as Awaited<ReturnType<typeof authorize>>
     );
     const result = await runLoader("child");
     expect(amount(result.balanceSheet, "custom-cta")).toBe(40);
@@ -391,7 +396,7 @@ describe("balance sheet configured CTA", () => {
   });
 
   it("does not read root configuration after permission denial", async () => {
-    vi.mocked(requirePermissions).mockRejectedValue(
+    vi.mocked(authorize).mockRejectedValue(
       new Response("Forbidden", { status: 403 })
     );
     await expect(runLoader("child")).rejects.toMatchObject({ status: 403 });

@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { getStorageRulesDataForTarget } from "@carbon/ee/rules.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";

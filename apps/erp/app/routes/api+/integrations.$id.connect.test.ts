@@ -46,7 +46,7 @@ vi.mock("@carbon/auth", () => ({
   getAppUrl: () => "https://erp.example.com",
   getMESUrl: () => "https://mes.example.com"
 }));
-vi.mock("@carbon/api/carbon.server", () => ({ authorize }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize }));
 vi.mock("@carbon/ee", () => ({
   integrations: [RAMP],
   getIntegrationIdsByRole

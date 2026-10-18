@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { logAuthEvent, requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, logAuthEvent } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setConsolePinIn } from "@carbon/auth/console-pin.server";
 import { verifyEmployeePin } from "@carbon/ee/console.server";
@@ -46,7 +46,7 @@ const LOCKED_PIN_ERROR =
 
 export async function action({ request, context }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, sessionUserId, consoleMode } = await requirePermissions(
+  const { companyId, sessionUserId, consoleMode } = await authorize(
     request,
     {}
   );

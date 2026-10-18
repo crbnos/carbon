@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { getPickedTrackedEntitiesForMaterial } from "~/services/inventory.service";
 
@@ -12,7 +12,7 @@ import { getPickedTrackedEntitiesForMaterial } from "~/services/inventory.servic
  * the session, never trusted from the client.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await authorize(request, {});
 
   const url = new URL(request.url);
   const jobMaterialId = url.searchParams.get("jobMaterialId");

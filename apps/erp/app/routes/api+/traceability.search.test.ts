@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { describe, expect, it, vi } from "vitest";
 import { loader } from "./traceability.search";
 
 vi.mock("@carbon/auth/auth.server", () => ({
-  requirePermissions: vi.fn()
+  authorize: vi.fn()
 }));
 
 describe("traceability search loader", () => {
@@ -26,7 +26,7 @@ describe("traceability search loader", () => {
       throw new Error(`Unexpected table query: ${table}`);
     });
 
-    vi.mocked(requirePermissions).mockResolvedValue({
+    vi.mocked(authorize).mockResolvedValue({
       client: { from },
       companyId: "company-1"
     } as any);

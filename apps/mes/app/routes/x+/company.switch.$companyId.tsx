@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, getCompanies } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import {
   destroyAuthSession,
@@ -16,7 +16,7 @@ import { getLocation, setLocation } from "~/services/location.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { client, userId } = await authorize(request, {
     // Switching away from a portal company must work: a user can be an
     // employee of one company and a customer or supplier of another.
     allowPortalAccounts: true

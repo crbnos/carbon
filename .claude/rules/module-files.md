@@ -100,7 +100,8 @@ function kept its logic as is:
 |---|---|
 | `defineServiceFn`, `CarbonError`, `ServiceContext`, `toResult` | `@carbon/api/service-fn.server` |
 | `payload`, `unwrap`, `paged`, `run`, `attempt` | `@carbon/api/service-tools.server` |
-| `authorize`, `dataOrThrow`, `respond` | `@carbon/api/carbon.server` |
+| `authorize` | `@carbon/auth/auth.server` |
+| `dataOrThrow`, `respond`, `registerCarbon` | `@carbon/api/carbon.server` |
 
 The ERP hands `authorize` its router and caller context once
 (`registerCarbon`, in `apps/erp/app/modules/carbon.server.ts`, imported by
@@ -171,4 +172,3 @@ elsewhere.
 | `no-server-code-in-client` | a value import of a `.service` or `.server` file from components, hooks, `ui/`, models, utils or types |
 | `route-action-shape` | a write made in a route instead of a service function |
 | `loader-reads-through-api` | a loader calling a building block that a service function wraps (`service.<name>(…)` in `<module>.server.ts`) |
-| `erp-authorize-only` | an ERP import of `requirePermissions`, `carbon` or `carbonFor`: ERP code authenticates with `authorize` |

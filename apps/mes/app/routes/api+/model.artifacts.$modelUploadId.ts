@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ASSEMBLER_SERVICE_URL } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { findStorageObjectBuckets } from "@carbon/database/storage-objects";
 import { getCompanyPrivateBucket, TEMP_STAGING_BUCKET } from "@carbon/files";
 import type { LoaderFunctionArgs } from "react-router";
@@ -17,7 +17,7 @@ import { getDatabaseClient } from "~/services/database.server";
 // Returns only paths; the bytes are still served through the auth-checked
 // /file/preview proxy, scoped to the company.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await authorize(request, {});
   const { modelUploadId } = params;
   if (!modelUploadId) throw new Response("Not found", { status: 404 });
 

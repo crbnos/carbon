@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { CompanyBucket } from "@carbon/files";
 import {
@@ -27,7 +27,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   // Employees only: the read below uses the service role, so this is the whole
   // gate. A customer or supplier portal account is also a session in the company
   // and would otherwise read every private file it has.
-  const { companyId } = await requirePermissions(request, { role: "employee" });
+  const { companyId } = await authorize(request, { role: "employee" });
   const { bucket } = params;
   let path = params["*"];
 

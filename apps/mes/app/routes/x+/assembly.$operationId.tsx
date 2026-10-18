@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
@@ -43,7 +43,7 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 const logger = getLogger("mes", "assembly");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, companyId } = await authorize(request, {});
 
   // Manager-only "complete all steps" override is gated on the Production DELETE permission:
   // operators hold view/create/update (they record steps) but not delete, so delete cleanly

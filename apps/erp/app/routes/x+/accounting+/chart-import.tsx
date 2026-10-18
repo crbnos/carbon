@@ -8,8 +8,9 @@
 // files would do; `apply` runs the same plan in one transaction through the
 // apply-account-import server function.
 
-import { authorize, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   type AccountImportResolutions,

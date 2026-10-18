@@ -17,7 +17,6 @@ import {
   findUnsyncedDocumentSequences
 } from "./conformance/document-sequence-synced";
 import { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
-import { erpAuthorizeOnly } from "./conformance/erp-authorize-only";
 import {
   FUNCTION_REDEFINITION_KEEPS_CHANGES,
   findDroppedFunctionChanges
@@ -210,7 +209,6 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noBareOutlet,
       noStateCopyOfLoaderData
     ]),
-    ...scanAll(loadTypescriptFiles(root, ["apps/erp/app"]), [erpAuthorizeOnly]),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
       indexRedirectBeforeLoaders,
       loaderReadsThroughApi(

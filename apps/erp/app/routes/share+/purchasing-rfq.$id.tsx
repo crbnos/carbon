@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize, dataOrThrow } from "@carbon/api/carbon.server";
+import { dataOrThrow } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -32,6 +33,7 @@ import { useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import type { PurchasingRFQLine } from "~/modules/purchasing/types";
 import type { Company } from "~/modules/settings/types";
+
 export const meta = () => {
   return [{ title: "RFQ Preview" }];
 };

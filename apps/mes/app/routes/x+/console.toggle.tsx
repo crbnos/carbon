@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { clearConsolePinIn } from "@carbon/auth/console-pin.server";
 import { updateSessionConsole } from "@carbon/auth/session.server";
 import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
@@ -20,7 +20,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // user, never a pinned operator). Leaving it only drops back to the session
   // user's own identity and stays open to anyone, so a terminal is never stuck
   // in console mode.
-  const { client, companyId } = await requirePermissions(
+  const { client, companyId } = await authorize(
     request,
     enabled ? { update: "settings" } : {}
   );

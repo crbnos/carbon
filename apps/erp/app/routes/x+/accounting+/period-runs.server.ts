@@ -6,7 +6,8 @@
 // (spec `.ai/specs/2026-10-11-lessee-leases.md` §6) — share their list loader
 // and their "New run" action. Each takes the run type.
 
-import { authorize, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { RunType } from "@carbon/database/run-type";
 import { runLabelSentence } from "@carbon/database/run-type";
 import { validator } from "@carbon/form";

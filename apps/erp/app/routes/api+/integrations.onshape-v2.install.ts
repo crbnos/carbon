@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape";
 import { beginOnshapeAuthorization } from "@carbon/ee/onshape.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";

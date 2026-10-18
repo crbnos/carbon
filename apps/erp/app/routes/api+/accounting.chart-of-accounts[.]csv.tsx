@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/api/carbon.server";
 // The chart template of the chart of accounts import: the group's current
 // chart in the columns the import reads.
+
+import { authorize } from "@carbon/auth/auth.server";
 import { loadAccountImportContext } from "@carbon/database/account-import-reads";
 import { CSV_CONTENT_TYPE, encodeCsv } from "@carbon/files/csv";
 import { getLogger } from "@carbon/logger";

@@ -6,7 +6,7 @@ import type { Database } from "@carbon/database";
 import { createClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const requirePermissions = vi.hoisted(() => vi.fn());
+const authorize = vi.hoisted(() => vi.fn());
 const getCharge = vi.hoisted(() => vi.fn());
 const flash = vi.hoisted(() => vi.fn(async () => ({})));
 const EmptyComponent = vi.hoisted(() => () => null);
@@ -18,7 +18,7 @@ vi.mock("@carbon/auth", async (importOriginal) => ({
   // PUBLIC_STORAGE_URL_PREFIX); the mock must export it or the module errors.
   SUPABASE_URL: "https://example.supabase.co"
 }));
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize }));
 vi.mock("@carbon/auth/session.server", () => ({ flash }));
 vi.mock("@carbon/react", () => ({
   Button: EmptyComponent,
@@ -72,7 +72,10 @@ vi.mock("~/utils/path", () => ({
 }));
 
 import * as invoicing from "~/modules/invoicing/invoicing.server";
-import { registerTestCarbon } from "../../../../test/register-carbon";
+import {
+  registerTestCarbon,
+  withTestApi
+} from "../../../../test/register-carbon";
 import { loader } from "./charges.$id";
 
 registerTestCarbon({ invoicing });
@@ -117,11 +120,13 @@ function clientFor(failingTable: FailingTable = null) {
 }
 
 async function runLoader(client: ReturnType<typeof clientFor>["client"]) {
-  requirePermissions.mockResolvedValue({
-    client,
-    companyId: "company-a",
-    companyGroupId: "group-a"
-  });
+  authorize.mockResolvedValue(
+    withTestApi({
+      client,
+      companyId: "company-a",
+      companyGroupId: "group-a"
+    })
+  );
   return loader({
     request: new Request("http://localhost/x/invoicing/charges/card-1"),
     params: { id: "card-1" },

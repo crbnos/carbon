@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Combobox, Heading } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -25,7 +25,7 @@ import { path } from "~/utils/path";
  * centers at whichever location is picked.
  */
 export async function loader({ context, request }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId } = await authorize(request, {});
   const sessionLocationId = context.get(userContext)?.locationId;
   if (!sessionLocationId) throw notFound("Location not found");
 

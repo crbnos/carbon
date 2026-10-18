@@ -53,7 +53,7 @@ import { Hidden, Input, Number, Submit } from "~/components/Form";
 import { validator } from "@carbon/form";
 const input = await validator(thingValidator).request(args, { params: ["thingId"] });
 if ("invalid" in input) return input.invalid;
-const { api } = await authorize(args.request); // @carbon/api/carbon.server
+const { api } = await authorize(args.request); // @carbon/auth/auth.server
 return api.things.updateThing({ ...input.data, id: input.params.thingId });
 ```
 

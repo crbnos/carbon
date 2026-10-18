@@ -203,7 +203,7 @@ function companyRole(
     : null;
 }
 
-export async function requirePermissions(
+async function requirePermissions(
   request: Request,
   requiredPermissions: {
     view?: string | string[];
@@ -458,6 +458,78 @@ export async function requirePermissions(
     permissions: myClaims.permissions,
     role: companyRole(myClaims.role)
   };
+}
+
+/** What a gate asks for: `{ view: "sales" }`, plus `role` and `bypassRls`. */
+export type Gate = Parameters<typeof requirePermissions>[1];
+
+/** The caller `requirePermissions` authenticated. */
+export type Caller = Awaited<ReturnType<typeof requirePermissions>>;
+
+/** What a caller's operations need, as another gate can also state it. */
+export type CallerAuth = Pick<
+  Caller,
+  | "client"
+  | "companyId"
+  | "companyGroupId"
+  | "userId"
+  | "caller"
+  | "permissions"
+  | "role"
+>;
+
+/**
+ * The app's operations, as `authorize` returns them. An app with service
+ * functions states their type once:
+ * `declare module "@carbon/auth/auth.server" { interface Register { api: Api<Router> } }`.
+ */
+// biome-ignore lint/suspicious/noEmptyInterface: augmented by the app
+export interface Register {}
+
+type RegisteredApi = Register extends { api: infer A } ? A : never;
+
+/** A caller, with the operations bound to them. */
+export type Authorized<A extends CallerAuth> = A & { api: RegisteredApi };
+
+let bindApi: ((auth: CallerAuth) => unknown) | null = null;
+
+/** Called once at server start: how `api` is built for a caller. */
+export function registerApi(bind: (auth: CallerAuth) => unknown) {
+  bindApi = bind;
+}
+
+/** `authorize` for a caller another gate authenticated: the Onshape panel's bearer token (`authorizePanel`). */
+export function authorize<A extends CallerAuth>(
+  caller: A
+): Promise<Authorized<A>>;
+/**
+ * The caller of this request, refused unless they hold `gate`, with the
+ * operations bound to them: `const { api, companyId } = await authorize(request, { view: "sales" })`.
+ * With no gate, any employee or API key of the company passes; each call on
+ * `api` is still checked against its own permission.
+ */
+export function authorize(
+  request: Request,
+  gate?: Gate
+): Promise<Authorized<Caller>>;
+export async function authorize(
+  from: Request | CallerAuth,
+  gate: Gate = {}
+): Promise<Authorized<CallerAuth>> {
+  const auth =
+    from instanceof Request ? await requirePermissions(from, gate) : from;
+  let api: unknown;
+  // Bound on first read: most loaders never call a service function.
+  return Object.defineProperty({ ...auth }, "api", {
+    enumerable: true,
+    get() {
+      if (!bindApi) {
+        throw new Error("authorize(): the app has not called registerApi");
+      }
+      api ??= bindApi(auth);
+      return api;
+    }
+  }) as Authorized<CallerAuth>;
 }
 
 export async function resetPassword(accessToken: string, password: string) {

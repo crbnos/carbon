@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/specs/2026-10-18-page-level-permissions.md" />
-<meta name="explain-source-hash" content="2e0cbfa0c100c3b15a43ba24049fab95359761b7" />
+<meta name="explain-source-hash" content="03a181d6daa89c8aa5a175bf82d05f7c8e6c39e0" />
 <title>Page-Level Permissions</title>
 <style>
   :root {
@@ -192,7 +192,7 @@
       <li>Reference data that every employee may read needs only the <code>"employee"</code> permission.</li>
       <li>Pages that share a table, such as the five item types, are told apart by a column RLS checks.</li>
       <li>A gate names a page and its lowest level, such as <code>{ "inventory.receipts": "Edit" }</code>. The database keeps action keys such as <code>inventory.receipts_update</code>.</li>
-      <li>ERP code authenticates with one function, <code>authorize(request, gate?)</code>. It returns the caller and <code>api</code>, the service functions bound to that caller.</li>
+      <li>Every app authenticates with one function, <code>authorize(request, gate?)</code> from <code>@carbon/auth/auth.server</code>. It returns the caller and <code>api</code>, the service functions bound to that caller.</li>
       <li>Every module moves to page keys in one deploy; after it, no check names a module key.</li>
     </ol>
   </section>
@@ -406,7 +406,7 @@
       <li>A customer portal account gets <code>forbidden</code> from an <code>"employee"</code>-gated service function.</li>
       <li>Every row of <code>cases.json</code> passes against <code>holds</code> and the SQL resolver.</li>
       <li><code>{ "inventory.receiptz": "Edit" }</code> fails typecheck, and a module in a gate fails the module-key check.</li>
-      <li>No ERP file outside the tests imports <code>requirePermissions</code>, <code>carbon</code> or <code>carbonFor</code>.</li>
+      <li>Every app route authenticates with <code>authorize</code>; <code>requirePermissions</code> is not exported from <code>@carbon/auth</code>.</li>
       <li>The access view shows each page's level and source, and lists everyone with Edit on Receipts.</li>
       <li>A role edit writes one audit event with the affected count.</li>
       <li>The SQL helper adds less than 1 ms to a receipts list query.</li>

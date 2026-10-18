@@ -235,7 +235,7 @@ apps/erp/app/modules/{module}/
 ```
 
 No barrel: import from the file that defines the thing. Routes call operations
-through `authorize(request)` (`@carbon/api/carbon.server`). See `.claude/rules/module-files.md`.
+through `authorize(request)` (`@carbon/auth/auth.server`). See `.claude/rules/module-files.md`.
 
 MES is lighter: services in `apps/mes/app/services/`, components in `apps/mes/app/components/`.
 

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { redirect, requiresItarEntityCertification } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -17,10 +17,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("mes", "acknowledge");
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId, email } = await requirePermissions(
-    request,
-    {}
-  );
+  const { client, companyId, userId, email } = await authorize(request, {});
 
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
@@ -55,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // never renders Screen 1 (that is an ERP admin action), but this endpoint is
     // still live and writes via the service-role client (RLS bypassed), so
     // enforce the same permission the ERP action does.
-    await requirePermissions(request, { update: "users" });
+    await authorize(request, { update: "users" });
 
     // Carbon staff hold users_update in every tenant they provisioned, so the
     // permission check alone would let us bind a customer to a document only

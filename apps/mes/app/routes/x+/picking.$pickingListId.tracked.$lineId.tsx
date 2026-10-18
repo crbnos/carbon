@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -22,7 +22,7 @@ const logger = getLogger("mes", "picking-tracked-line");
  * smart-ordered for the TrackedEntityPicker. POST: pick/unpick a chosen lot.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await authorize(request, {});
   const { lineId } = params;
   if (!lineId) throw new Response("Not found", { status: 404 });
 
@@ -87,7 +87,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ context, request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, companyId } = await authorize(request, {});
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
   const serviceRole = getCarbonServiceRole();
 

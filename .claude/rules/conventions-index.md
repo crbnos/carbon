@@ -35,9 +35,8 @@ siblings in this directory — grep `.claude/rules/` by topic.
   `@carbon/database` types + a Kysely client. Never hand-edit generated types.
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`.
 - **Imports**: `~/*` → app code (`./app/*`); `@carbon/*` → workspace packages.
-  ERP code authenticates with `authorize` (`@carbon/api/carbon.server`); MES uses
-  `requirePermissions` (`@carbon/auth/auth.server`). `flash` is in
-  `@carbon/auth/session.server`.
+  Every app authenticates a request with `authorize` (`@carbon/auth/auth.server`);
+  `flash` is in `@carbon/auth/session.server`.
 - **ERP module layout**: `apps/erp/app/modules/{module}/` with `.server.ts`
   (`defineServiceFn` operations), `.service.ts` (building blocks), `.models.ts`
   (zod validators), `ui/`; no barrel ([module-files.md](module-files.md)).

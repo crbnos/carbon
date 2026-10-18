@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { DOCUMENT_CATALOG } from "@carbon/documents/template";
 import { Badge, Button, cn, ScrollArea, VStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";

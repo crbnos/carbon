@@ -2,13 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as salesServer from "~/modules/sales/sales.server";
 import * as sales from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import { registerTestCarbon } from "../../../../test/register-carbon";
+import {
+  registerTestCarbon,
+  withTestApi
+} from "../../../../test/register-carbon";
 import { loader } from "./$orderId";
 
 registerTestCarbon({ sales: salesServer });
@@ -17,7 +20,7 @@ vi.mock("@carbon/auth", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   error: (cause: unknown, message: string) => ({ cause, message })
 }));
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize: vi.fn() }));
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: vi.fn()
 }));
@@ -72,10 +75,12 @@ const getSalesOrderInvoicePaymentsByIds = vi.mocked(
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requirePermissions).mockResolvedValue({
-    client: {},
-    companyId: "company-1"
-  } as Awaited<ReturnType<typeof requirePermissions>>);
+  vi.mocked(authorize).mockResolvedValue(
+    withTestApi({
+      client: {},
+      companyId: "company-1"
+    }) as Awaited<ReturnType<typeof authorize>>
+  );
   vi.mocked(getCarbonServiceRole).mockReturnValue({} as never);
   vi.mocked(sales.getSalesOrder).mockResolvedValue({
     data: {

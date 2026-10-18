@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/plans/2026-10-18-page-level-permissions.md" />
-<meta name="explain-source-hash" content="cab6dc1ffd9c1c9e4cfd9f99e5b372996180644b" />
+<meta name="explain-source-hash" content="48be6d3ec4c1311a894cba9804ca13196b222df3" />
 <title>Page-Level Permissions plan</title>
 <style>
   :root {
@@ -547,7 +547,7 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
         <p class="meta">Depends on: Task 17</p>
         <p>A script maps each ERP route to its page by URL, as a page and its lowest level. MES routes are mapped by hand.</p>
         <p class="meta">Files</p>
-        <ul><li>Create: <code>scripts/.tmp/route-pages.ts</code> (delete after the task)</li><li>Modify: every route under <code>apps/erp/app/routes</code> that passes a module to <code>authorize</code></li><li>Modify: every route under <code>apps/mes/app/routes</code> that passes a module to <code>requirePermissions</code></li><li>Modify: <code>packages/auth/src/services/auth.server.ts</code> — <code>requirePermissions(request, gate, options?)</code></li><li>Modify: <code>packages/api/src/carbon.server.ts</code> — <code>authorize(request, gate?, options?)</code></li></ul>
+        <ul><li>Create: <code>scripts/.tmp/route-pages.ts</code> (delete after the task)</li><li>Modify: every route under <code>apps/erp/app/routes</code> that passes a module to <code>authorize</code></li><li>Modify: every route under <code>apps/mes/app/routes</code> that passes a module to <code>authorize</code></li><li>Modify: <code>packages/auth/src/services/auth.server.ts</code> — <code>authorize(request, gate?, options?)</code> and the internal <code>requirePermissions</code></li></ul>
         <p class="meta">Verify</p>
         <pre>grep -rlE &#x27;(view|create|update|delete): &quot;&#x27; apps/erp/app/routes apps/mes/app | wc -l
 # Expected: 0

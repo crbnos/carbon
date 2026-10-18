@@ -204,7 +204,8 @@ function (`<module>.server.ts`), so the API, MCP and workflows run the same logi
 See `module-files.md`.
 
 ```typescript
-import { authorize, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { thingValidator } from "~/modules/things/things.models";
@@ -239,7 +240,7 @@ export async function action(args: ActionFunctionArgs) {
 |------|---------|
 | Check the request | `validator(schema).request(args, { method?, params? })` (`@carbon/form`): the method (default POST, else 405), the named route params (400), then the body (form data or JSON). Pass no schema when the action reads no body |
 | Invalid body | `if ("invalid" in input) return input.invalid` (the 422 `validationError`) |
-| Auth | `authorize(args.request)` (`@carbon/api/carbon.server`) authenticates the caller. The service function's `permission` is the gate, so the action passes no gate of its own |
+| Auth | `authorize(args.request)` (`@carbon/auth/auth.server`) authenticates the caller. The service function's `permission` is the gate, so the action passes no gate of its own |
 | One call | `api.<module>.<name>(input)`. No write in the route itself (a `.from(...)` write, Kysely, `invokePosting`): the `route-action-shape` check fails it |
 | Custom fields | `setCustomFields(input.formData)` (`~/utils/form`) when the body is form data |
 | Fetcher form | `return result` |

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { cn, DatePicker, HStack, VStack } from "@carbon/react";
 import { datetime, formatDate, round } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";

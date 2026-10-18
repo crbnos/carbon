@@ -595,6 +595,8 @@ pnpm --filter @carbon/checks test
 2. `no-server-code-in-client` skips JSX text. The OAuth consent copy "Only authorize it" read as a use of `authorize`.
 3. Two Onshape install routes had a local `authorize` helper. It is now `beginAuthorization`.
 4. Seven route tests mocked `requirePermissions`. Two now mock `authorize`; the lazy `api` fixed the other five.
+5. A follow-up moved `authorize` to `@carbon/auth/auth.server`, beside `requirePermissions`, which is no longer exported. `registerCarbon` hands the `api` binding to `registerApi`, and the ERP states `api`'s type on `Register` there.
+6. MES, academy and starter call `authorize` too. The compiler now refuses the old names, so `erp-authorize-only` was removed. Route tests mock `authorize` and build `api` with `withTestApi` (`apps/erp/test/register-carbon.ts`).
 
 ## Task 15: Rewrite the permissions docs and glossary
 
@@ -749,9 +751,8 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
 **Files:**
 - Create: `scripts/.tmp/route-pages.ts` (delete after the task)
 - Modify: every route under `apps/erp/app/routes` that passes a module to `authorize`
-- Modify: every route under `apps/mes/app/routes` that passes a module to `requirePermissions`
-- Modify: `packages/auth/src/services/auth.server.ts` — `requirePermissions(request, gate, options?)`
-- Modify: `packages/api/src/carbon.server.ts` — `authorize(request, gate?, options?)`
+- Modify: every route under `apps/mes/app/routes` that passes a module to `authorize`
+- Modify: `packages/auth/src/services/auth.server.ts` — `authorize(request, gate?, options?)` and the internal `requirePermissions`
 
 **Steps:**
 1. Map each route file to a URL path. A `+` folder adds its name as a segment.

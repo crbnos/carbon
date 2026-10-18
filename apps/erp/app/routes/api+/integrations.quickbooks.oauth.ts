@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/api/carbon.server";
 import {
   getAppUrl,
   QUICKBOOKS_CLIENT_ID,
   QUICKBOOKS_CLIENT_SECRET
 } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { QuickBooks } from "@carbon/ee";
 import {

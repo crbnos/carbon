@@ -374,9 +374,10 @@ Supabase's `auth.mfa_factors` — no app table.
 ## Permissions & RLS gating (`auth.server.ts` → `requirePermissions`)
 
 `requirePermissions(request, { view?, create?, update?, delete?, role?, bypassRls?, allowPortalAccounts? })` is
-the gate used in every loader/action. ERP code calls it through `authorize`
-(`@carbon/api/carbon.server`), which returns its result plus `api`, the service functions bound
-to that caller (`erp-authorize-only` fails a direct import in ERP code). Two paths:
+the gate behind every loader/action. It is internal to `@carbon/auth`: apps call `authorize`
+(same module), which runs it and returns its result plus `api`, the service functions bound to
+that caller (bound on first read; the ERP registers the binding with `registerCarbon`, which
+calls `registerApi`). Two paths:
 
 1. **`carbon-key` header present** → API-key auth (see below).
 2. **Otherwise** → `requireAuthSession`, then `getUserClaims(userId, companyId)`.

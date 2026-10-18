@@ -62,13 +62,12 @@ Kysely has neither: it is bounded by the process pool below.
 
 ### Getting a client in a route
 
-Loaders/actions never construct a client directly. An ERP route calls `authorize`
-(`@carbon/api/carbon.server`), which runs `requirePermissions`
-(`packages/auth/src/services/auth.server.ts`) and returns the right client plus context and
-`api`; MES calls `requirePermissions` itself:
+Loaders/actions never construct a client directly. They call `authorize`
+(`packages/auth/src/services/auth.server.ts`), which authenticates the request and returns the
+right client plus context, and in the ERP `api`, the service functions bound to the caller:
 
 ```typescript
-import { authorize } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 
 const { client, companyId, userId } = await authorize(request, {
   view: "sales",          // permission_action, e.g. "sales_view" is checked internally

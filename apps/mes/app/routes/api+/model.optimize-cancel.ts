@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -13,7 +13,7 @@ import { data } from "react-router";
 // Stamps the row Failed so the viewer settles immediately, and best-effort
 // cancels the assembler job so the waiting Inngest run fails non-retriably.
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await authorize(request, {});
 
   const formData = await request.formData();
   const modelUploadId = formData.get("modelUploadId") as string | null;

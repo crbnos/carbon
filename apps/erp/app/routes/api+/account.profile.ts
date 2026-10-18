@@ -4,8 +4,8 @@
 
 import type { AccountProfileData } from "@carbon/account";
 import { accountProfileValidator } from "@carbon/account";
-import { authorize } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";

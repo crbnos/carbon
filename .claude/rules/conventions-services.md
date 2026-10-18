@@ -76,7 +76,7 @@ export const cancelJob = defineServiceFn({
 - **Transactions**: `ctx.transaction(async (tx) => …)` on `asSystem.pg`. A
   returned `CarbonError` rolls back; a nested call joins the open
   transaction; `tx.asCaller` throws, because that client is outside it.
-- **Routes**: `const { api } = await authorize(request, gate?)` (`@carbon/api/carbon.server`)
+- **Routes**: `const { api } = await authorize(request, gate?)` (`@carbon/auth/auth.server`)
   authenticates the caller and returns it with the router: `api.production.cancelJob(input)`
   resolves to the result, its error a plain `{ category, message, status }`.
   A route that needs the context itself (a stream, a building block that takes

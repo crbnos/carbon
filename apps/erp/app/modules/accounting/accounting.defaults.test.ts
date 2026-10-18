@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -25,7 +25,7 @@ vi.mock("@carbon/auth", async (importOriginal) => ({
   error: (cause: unknown, message: string) => ({ cause, message }),
   success: (message: string) => ({ message })
 }));
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize: vi.fn() }));
 vi.mock("@carbon/auth/session.server", () => ({
   flash: vi.fn(async () => ({}))
 }));
@@ -146,7 +146,7 @@ function payload(overrides: Record<string, string> = {}) {
 describe("shipping revenue defaults", () => {
   it("the real defaults action rejects an invalid shipping mapping before either section writes", async () => {
     const { client, writes } = database({ ...shipping, active: false });
-    vi.mocked(requirePermissions).mockResolvedValue({
+    vi.mocked(authorize).mockResolvedValue({
       client,
       companyId: "company",
       userId: "user"
@@ -264,7 +264,7 @@ describe("shipping revenue defaults", () => {
 
 describe("combined defaults action", () => {
   async function submit(client: SupabaseClient<Database>) {
-    vi.mocked(requirePermissions).mockResolvedValue({
+    vi.mocked(authorize).mockResolvedValue({
       client,
       companyId: "company",
       userId: "user"

@@ -2,13 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchJobStepRecords } from "~/modules/inventory/inventory.service";
 import { loader } from "./traceability.sidebar";
 
 vi.mock("@carbon/auth/auth.server", () => ({
-  requirePermissions: vi.fn()
+  authorize: vi.fn()
 }));
 vi.mock("~/modules/inventory/inventory.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -37,7 +37,7 @@ function setup({ activity, job }: { activity: Row; job: Row }) {
     }),
     rpc: vi.fn()
   };
-  vi.mocked(requirePermissions).mockResolvedValue({
+  vi.mocked(authorize).mockResolvedValue({
     client,
     companyId: "company-1"
   } as any);

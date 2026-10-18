@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { AccountSecurityData, Passkey } from "@carbon/account";
-import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getTotpFactors } from "@carbon/auth/mfa.server";
 import { flash } from "@carbon/auth/session.server";

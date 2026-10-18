@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { CONTROLLED_ENVIRONMENT, getAppUrl } from "@carbon/env";
 import {

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { datetime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -26,7 +26,7 @@ import type { WorkAlertReason } from "~/utils/display";
 import { getWorkDisplayState } from "~/utils/display";
 
 export async function loader({ context, params, request }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId } = await authorize(request, {});
   const { workCenterId } = params;
   if (!workCenterId) throw notFound("workCenterId not found");
 

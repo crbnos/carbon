@@ -954,7 +954,7 @@ export async function acceptInvite(
     });
 
     // Post-commit and failure-tolerant: the grants just written are cached by
-    // requirePermissions, so a stale entry would outlive the acceptance.
+    // authorize, so a stale entry would outlive the acceptance.
     try {
       await redis.del(getPermissionCacheKey(userId));
     } catch (err) {

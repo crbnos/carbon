@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { cn } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -28,7 +28,7 @@ interface ActionData {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { client, userId } = await authorize(request, {
     // Records the learner's own progress, whatever their role in the company.
     allowPortalAccounts: true
   });

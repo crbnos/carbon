@@ -179,7 +179,7 @@ every TypeScript gate has this shape:
 | Where | Gate |
 |---|---|
 | ERP route | `authorize(request, { "inventory.receipts": "Edit" })`; options such as `bypassRls` go in a third argument |
-| MES route | `requirePermissions(request, { "production.jobs": "Edit" })`; options in a third argument |
+| MES route | `authorize(request, { "production.jobs": "Edit" })`; options in a third argument |
 | Service function | `permission: { "production.jobs": "Edit" }`, or `"employee"` or `"system"` |
 | A check inside `run` | `ctx.can({ "inventory.transfers": "Full" })` |
 | Client | `permissions.has({ sales: "View" })` |
@@ -201,21 +201,23 @@ person has View on any of its pages.
 
 ### Route entry: `authorize`
 
-ERP code authenticates a request with one function, `authorize`
-(`@carbon/api/carbon.server`). It replaces `carbon(request)`,
-`carbonFor(auth)` and `requirePermissions` in ERP code:
+Every app authenticates a request with one function, `authorize`
+(`@carbon/auth/auth.server`). It replaces `carbon(request)`,
+`carbonFor(auth)` and the exported `requirePermissions`:
 
 1. `authorize(request, gate?)` runs `requirePermissions` and returns its
    result plus `api`, the service functions bound to that caller.
-2. With no gate, any employee or API key of the company passes. Each service
+2. `api` is built on first read by the binding the ERP registers with
+   `registerApi` (through `registerCarbon`, `@carbon/api/carbon.server`).
+   `@carbon/auth` never imports `@carbon/api`, which depends on it.
+3. With no gate, any employee or API key of the company passes. Each service
    function still checks its own permission.
-3. The Onshape panel calls `authorizePanel(request, gate)`
+4. The Onshape panel calls `authorizePanel(request, gate)`
    (`@carbon/ee/onshape/panel-session.server`). It reads the panel's `cps_`
    bearer session and returns the same shape as `authorize`.
-4. MES, academy and starter keep `requirePermissions`. They have no service
-   functions to bind.
-5. A conformance check fails ERP code that imports `requirePermissions`,
-   `carbon` or `carbonFor`.
+5. MES, academy and starter call `authorize` too. They read no `api`.
+6. `requirePermissions` is internal to `@carbon/auth`, and `carbon` and
+   `carbonFor` are gone, so the compiler refuses all three.
 
 The panel keeps its own credential on purpose. No other route reads a `cps_`
 token, so a leaked panel token reaches only the panel routes. Until phase 3,
@@ -318,9 +320,9 @@ at the same time.
 | Admin employee type | `systemType = 'Admin'` resolves to Full on every page with no grant rows | New pages and modules are covered without a migration |
 | Reference reads | `"employee"` gate for tables RLS lets every employee read; `anyOf` page views for restricted tables | Matches RLS; Odoo `base.group_user`, Business Central D365 BASIC |
 | Postings | Unchanged: the gate checks the source document, the posting writes as the system | Business Central "indirect", Odoo `sudo()` |
-| Route gates | Each ERP route names its pages and levels in `authorize`, each MES route in `requirePermissions`; typed; no gate derived from the URL | Explicit and greppable; the same pattern as today |
+| Route gates | Each ERP and MES route names its pages and levels in `authorize`; typed; no gate derived from the URL | Explicit and greppable; the same pattern as today |
 | Gate shape | A page and its lowest level (`{ "inventory.receipts": "Edit" }`), not an action and a page; the database keeps action keys | Admins set levels, so code asks for levels too. `{ create: "parts", update: "parts" }` meant `{ parts: "Edit" }`. Answered by the user |
-| Route entry | One `authorize(request, gate?)` returns the caller and `api`; the Onshape panel calls `authorizePanel` | Three entry points (`carbon`, `carbonFor`, `requirePermissions`) did one job. Answered by the user |
+| Route entry | One `authorize(request, gate?)` in `@carbon/auth/auth.server` returns the caller and `api`; the app registers the binding with `registerApi`; the Onshape panel calls `authorizePanel` | Three entry points (`carbon`, `carbonFor`, `requirePermissions`) did one job. Answered by the user |
 | Sidebar | A page shows only when the person has View on it | Today most sidebar entries check only `role: "employee"` |
 | Settings pages for a module | Stay in Settings (`settings.inventory`) | Today they need `settings`; page grain already lets an admin grant one of them |
 | Who edits grants | Role grants: `users.employeeTypes` at Edit. Person overrides: `users.accounts` at Edit. API key grants: `settings.apiKeys` at Edit | The pages where an admin edits each subject today |
@@ -401,19 +403,19 @@ module.
 | `@carbon/auth` `api-key.server.ts` | `getApiKeyRecord` reads the key's scopes from grants, so every key check downstream stays as it is |
 | `packages/database/src/authz/rules.ts`, `manifest.ts` | A rule that names a module renders with the keys of the page that owns its table, from the registry; a restricted read renders `anyOf` the page and its readers; a shared table renders its `where` check. Rules that name a `<module>_<action>` key explicitly move to page keys by hand (795 permission references today) |
 | `@carbon/api` `permissions.ts` | `hasPermissions` calls `holds`; `Permissions` gains `"employee"` and loses `"member"`; from phase 3 a gate is page to level |
-| `@carbon/api` `carbon.server.ts` | `authorize(request, gate?)` replaces `carbon` and `carbonFor`; it returns the `requirePermissions` result plus `api` |
+| `@carbon/api` `carbon.server.ts` | `carbon` and `carbonFor` go; `registerCarbon` hands `registerApi` the router binding |
 | `@carbon/ee` `onshape/panel/session.server.ts` | `requireOnshapePanelPermissions` becomes `authorizePanel`, which returns the same shape as `authorize` |
 | `@carbon/api` `service-fn.server.ts` | The user actor carries its `role`, so `"employee"` refuses a portal account |
-| `@carbon/auth` `auth.server.ts` | `requirePermissions` calls `holds`; the claims cache key carries the registry hash |
+| `@carbon/auth` `auth.server.ts` | `authorize(request, gate?)` and `registerApi`; `requirePermissions` becomes internal and calls `holds`; the claims cache key carries the registry hash |
 | `@carbon/ee` `permissions.server.ts` | `upsertEmployeeTypePermissions`, `updatePermissions`, `updateEmployee` write `permission`; the bulk edit writes overrides for many people; each busts the affected cache keys and writes the audit event |
 | `users.server.ts` | New operations: `getEffectiveAccess`, `getPageAccessHolders`, `upsertAccessGrants` (role or person), `deleteAccessGrant` |
 | `settings.server.ts` | API key create and update write the key's `permission` rows |
 | Every module's `*.server.ts` | Pages and levels in `permission` and `ctx.can` (1,607 permission references today) |
-| ERP and MES routes | ERP: `authorize` in place of `carbon`, `carbonFor` and `requirePermissions` (about 1,190 files). Phase 3: pages and levels in `authorize` and in MES `requirePermissions` (1,088 ERP and 14 MES route files with a module key today) |
+| ERP and MES routes | ERP, MES, academy and starter: `authorize` in place of `carbon`, `carbonFor` and `requirePermissions` (about 1,560 files). Phase 3: pages and levels in `authorize` (1,088 ERP and 14 MES route files with a module key today) |
 | `ui/` and components | `permissions.has({ <page>: <level> })` in place of `permissions.can` (1,258 calls today); `hasAny(module, level)` in `usePermissions.tsx`; `useModules.tsx` uses `hasAny`; each `use<Module>Submodules.tsx` entry names its page |
 | Workflow event catalog (`packages/ee/src/workflows/catalog/`) | An event's `permission` (106 events today) becomes the page that owns its table, from the registry's `tables`; regenerate `events.generated.ts` |
 | `scripts/lib/service-fn-metadata.ts` | Publishes `"employee"` as membership and a page gate as `{ module, page, actions }`, the actions derived from the level |
-| `@carbon/checks` | New conformance checks: no `requirePermissions`, `carbon` or `carbonFor` import in ERP code; no module in a gate after phase 3 |
+| `@carbon/checks` | New conformance check: no module in a gate after phase 3 |
 | Docs | Rewrite `docs/content/docs/reference/permissions.mdx` (the module-action model, employee types, per-person overrides) and the glossary entries "Default Permissions" and the employee-permissions entries in `docs/content/src/glossary/terms.ts` |
 
 ## Closest Sibling
@@ -486,8 +488,8 @@ four forms with their own checkbox tables.
 - [ ] `{ "inventory.receiptz": "Edit" }` in a service function fails
       typecheck, and `{ inventory: "Edit" }` after phase 3 fails the
       module-key check.
-- [ ] No ERP file outside the tests imports `requirePermissions`, `carbon` or
-      `carbonFor`, and the conformance check fails a new import.
+- [ ] Every app route authenticates with `authorize`; `requirePermissions` is
+      not exported from `@carbon/auth`.
 - [ ] The access view shows each page's level and source for a person, and
       lists everyone with at least Edit on Receipts.
 - [ ] A role edit writes one audit event with the role, the page, the old and
@@ -549,3 +551,4 @@ approval rules cover "who may approve". The key format leaves room to add them.
 - 2026-10-18: Planning: removed the `permissionPage` table (the resolver needs no copy of the registry; writers clamp to `maxLevel`); defined `accessMigrationReport`; added the registry `paths` field; RLS rules take their page from the registry by table; API key scopes come from grants through `get_api_key_scopes` and `getApiKeyRecord`.
 - 2026-10-18: Scope widened to every module in one deploy (158 pages in 14 modules), with page-enforced shared tables (`item.type`, `memo.direction`). Module keys removed after the switch. Docs and glossary added to the change list. Fixed the name of the function that copies a role at invite (`createEmployeeAccount`).
 - 2026-10-18: From phase 3 a gate names a page and its lowest level (`{ "inventory.receipts": "Edit" }`); the database keeps action keys. ERP code authenticates through one `authorize`, which replaces `carbon`, `carbonFor` and `requirePermissions`; the Onshape panel's gate becomes `authorizePanel`. Answered by the user.
+- 2026-10-18: `authorize` lives in `@carbon/auth/auth.server`, next to `requirePermissions`, which becomes internal; the ERP registers the `api` binding with `registerApi`. MES, academy and starter use `authorize` too, so the import check is not needed. Answered by the user.

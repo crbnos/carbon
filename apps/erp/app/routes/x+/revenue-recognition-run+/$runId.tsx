@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize, dataOrThrow } from "@carbon/api/carbon.server";
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { RunType } from "@carbon/database/run-type";
 import {

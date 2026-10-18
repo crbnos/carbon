@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/api/carbon.server";
 import { assertIsPost, error, RATE_LIMIT, success } from "@carbon/auth";
-import { makeAuthSession } from "@carbon/auth/auth.server";
+import { authorize, makeAuthSession } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { verifyTotpChallenge } from "@carbon/auth/mfa.server";
 import {

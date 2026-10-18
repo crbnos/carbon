@@ -3,9 +3,9 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { randomBytes } from "node:crypto";
-import { authorize } from "@carbon/api/carbon.server";
 import type { AuthSession } from "@carbon/auth";
 import { hasPermission } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { logAuthEvent } from "@carbon/auth/auth-events.server";
 import {
   getCarbonServiceRole,
