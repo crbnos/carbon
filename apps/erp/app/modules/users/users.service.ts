@@ -8,6 +8,7 @@ import type {
 } from "@carbon/api/service-fn.server";
 import {
   CONTROLLED_ENVIRONMENT,
+  getPermissionCacheKey,
   hasPermission,
   ITAR_RIDER_SHA256,
   ITAR_RIDER_VERSION
@@ -1544,10 +1545,6 @@ export async function getClaims(
   company?: string
 ) {
   return client.rpc("get_claims", { uid, company: company ?? "" });
-}
-
-export function getPermissionCacheKey(userId: string) {
-  return `permissions:${userId}`;
 }
 
 export async function getUser(client: SupabaseClient<Database>, id: string) {

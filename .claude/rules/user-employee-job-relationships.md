@@ -44,20 +44,25 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 ## How permissions / claims are derived
 
 1. Membership: `userToCompany` gives the user's `role` in a company.
-2. Grants: `employee.employeeTypeId → employeeType → employeeTypePermission` defines what each
-   employee type can do per module/action, scoped to company IDs.
-3. Flattened: those grants are materialized into `userPermission.permissions` (JSONB,
-   `<module>_<action>` → company-ID array).
-4. Claims: SQL `get_claims(uid, company)` (latest: `20260925121735_rpc-function-guards.sql`) reads `role` from
-   `userToCompany` and `permissions` from `userPermission`, then returns
-   `(jsonb_build_object('role', role) || permissions)`. Called through the API it answers only for
+2. Grants: one `permission` row per grant — a role's (`employeeTypeId`), a person's override
+   (`userId`) or an API key's (`apiKeyId`) — with a `module`, an optional `page` (NULL covers the
+   module) and a `level` (`None`/`View`/`Create`/`Edit`/`Full`). The Admin employee type
+   (`systemType = 'Admin'`) resolves to Full with no rows. Precedence: person page, person module,
+   role page, role module (a key has only its own). `util.access_level` (SQL) and `resolveLevel`
+   (`@carbon/database/access`) are the two copies, pinned to `access/cases.json`.
+3. `employeeTypePermission` and `userPermission` were converted to grants
+   (`20261018093518_convert-permissions-to-grants.sql`); `userPermission` is still read for
+   customer and supplier portal keys.
+4. Claims: SQL `get_claims(uid, company)` (`authz/helpers/get_claims.sql`) returns
+   `{ role, admin, grants, portal }` for that company; `portal` holds the `userPermission` keys
+   naming the company, for a portal account only. Called through the API it answers only for
    the caller's own `uid`, or for someone in a company where the caller holds `users_view` or
    `users_update`; service role and direct connections are unrestricted. RLS helpers like
-   `get_companies_with_employee_role()`, and `get_companies_with_employee_permission('<module>_<action>')`
+   `get_companies_with_employee_role()`, and `get_companies_with_employee_permission('<page>_<action>')`
    enforce this in policies (helpers re-defined in later migrations — read the newest).
-5. App layer (`packages/auth/src/services/`): `getUserClaims()` caches claims in Redis at
-   `permissions:${userId}` (falls back to the RPC); `makePermissionsFromClaims()` (`users.ts`) parses
-   them into `{ permissions, role }`; `requirePermissions(request, { view?, create?, update?, delete?, role? })`
+5. App layer (`packages/auth/src/services/`): `getUserClaims()` caches claims in a Redis hash at
+   `getPermissionCacheKey(userId)`, one field per company (falls back to the RPC);
+   `makePermissionsFromClaims(claims, companyId)` (`users.ts`) expands them into `{ permissions, role }`; `requirePermissions(request, { view?, create?, update?, delete?, role? })`
    in `auth.server.ts` is the route gate. Active company comes from a `companyId` cookie via
    `getCompanyId`/`setCompanyId` (`company.server.ts`).
 

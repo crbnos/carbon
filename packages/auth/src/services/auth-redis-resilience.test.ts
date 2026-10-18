@@ -12,7 +12,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@carbon/kv", () => ({
   redis: {
     get: vi.fn().mockResolvedValue(null),
+    hget: vi.fn().mockResolvedValue(null),
     set: vi.fn().mockResolvedValue(null),
+    // Redis down: a transaction's exec resolves [] (withResilience).
+    multi: vi.fn(() => {
+      const tx = {
+        hset: () => tx,
+        expire: () => tx,
+        exec: vi.fn().mockResolvedValue([])
+      };
+      return tx;
+    }),
     del: vi.fn().mockResolvedValue(null),
     getdel: vi.fn().mockResolvedValue(null)
   }
@@ -96,14 +106,14 @@ beforeEach(() => {
 });
 
 describe("auth Redis-down resilience", () => {
-  it("[case 1] getUserClaims falls through to the DB when redis.get is null", async () => {
+  it("[case 1] getUserClaims falls through to the DB when redis.hget is null", async () => {
     const claims = await getUserClaims("user-1", "company-1");
 
     // Cache miss (Redis down) → DB lookup → correct claims, no throw.
-    expect(redis.get).toHaveBeenCalledWith("permissions:user-1");
+    expect(redis.hget).toHaveBeenCalledWith("permissions:user-1", "company-1");
     expect(claims).toMatchObject({ role: "employee" });
-    // Best-effort cache write was attempted but its null return didn't abort.
-    expect(redis.set).toHaveBeenCalled();
+    // Best-effort cache write was attempted but its empty result didn't abort.
+    expect(redis.multi).toHaveBeenCalled();
   });
 
   it("[case 2] sendVerificationCode returns false without throwing when redis.set fails", async () => {

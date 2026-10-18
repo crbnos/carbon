@@ -12,6 +12,7 @@ import type {
 } from "@carbon/api/service-fn.server";
 import {
   CONTROLLED_ENVIRONMENT,
+  getPermissionCacheKey,
   SUPABASE_INTERNAL_URL,
   SUPABASE_URL,
   VERCEL_URL
@@ -256,7 +257,6 @@ import {
 import type { Integration } from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import * as sharedService from "~/modules/shared/shared.service";
-import { getPermissionCacheKey } from "~/modules/users/users.service";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters } from "~/utils/query";

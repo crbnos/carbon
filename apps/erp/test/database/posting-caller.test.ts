@@ -8,7 +8,10 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import { createClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { describe, expect, it, vi } from "vitest";
-import { resolvePermissions } from "@carbon/api/permissions";
+import {
+  permissionsFromClaims,
+  resolvePermissions
+} from "@carbon/api/permissions";
 import {
   connectLocalTestDatabase,
   databaseTest
@@ -145,11 +148,13 @@ describe("authorizePostingCaller (API key)", () => {
     })
   );
 
-  databaseTest("passes a key whose scopes cover the requirement", () =>
+  databaseTest("passes a key whose grants cover the requirement", () =>
     withApiKey({ scopes: {}, expiresAt: null }, async (ctx, companyId) => {
-      await sql`UPDATE "apiKey" SET scopes = ${JSON.stringify({
-        inventory_update: [companyId]
-      })}::jsonb WHERE name = 'authorize test'`.execute(ctx.db);
+      await sql`
+        INSERT INTO "permission" ("companyId", "apiKeyId", "module", "level", "createdBy")
+        SELECT ${companyId}, id, 'Inventory', 'Edit', "createdBy"
+        FROM "apiKey" WHERE name = 'authorize test'
+      `.execute(ctx.db);
       await expect(
         authorize(ctx, { update: "inventory" })
       ).resolves.toBeUndefined();
@@ -190,14 +195,11 @@ describe("authorizePostingCaller (user)", () => {
         FROM "userToCompany" WHERE "role" = 'employee' LIMIT 20
       `.execute(db);
       for (const { companyId, userId, claims } of rows) {
-        const held = Object.entries(claims).find(
-          ([key, companies]) =>
-            key.endsWith("_update") &&
-            Array.isArray(companies) &&
-            companies.includes(companyId)
-        );
+        const held = Object.entries(
+          permissionsFromClaims(claims, companyId)
+        ).find(([, permission]) => permission.update.includes(companyId));
         if (held) {
-          return await fn({ db, companyId, userId }, held[0].split("_")[0]!);
+          return await fn({ db, companyId, userId }, held[0]);
         }
       }
       throw new Error("No employee with an update permission to test with");

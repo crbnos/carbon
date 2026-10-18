@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { holds } from "@carbon/database/access";
 import {
   ApiKeyNotFoundError,
   checkApiKeyRateLimit
@@ -43,7 +44,7 @@ import {
   flash,
   requireAuthSession
 } from "./session.server";
-import { getCompaniesForUser, makePermissionsFromClaims } from "./users";
+import { getCompaniesForUser } from "./users";
 import { getUserClaims } from "./users.server";
 
 const log = getLogger("auth");
@@ -288,8 +289,8 @@ export async function requirePermissions(
         });
       }
 
-      // Check scopes against required permissions
-      const scopes = apiKeyData.scopes ?? {};
+      // Check the key's grants against required permissions
+      const scopes = apiKeyData.permissions ?? {};
       const scopeCheckPassed = Object.entries(requiredPermissions).every(
         ([action, permission]) => {
           if (
@@ -298,16 +299,10 @@ export async function requirePermissions(
             action === "allowPortalAccounts"
           )
             return true;
-          if (typeof permission === "string") {
-            const scopeKey = `${permission}_${action}`;
-            return scopeKey in scopes && scopes[scopeKey]?.includes(companyId);
-          } else if (Array.isArray(permission)) {
-            return permission.every((p) => {
-              const scopeKey = `${p}_${action}`;
-              return (
-                scopeKey in scopes && scopes[scopeKey]?.includes(companyId)
-              );
-            });
+          if (typeof permission === "string" || Array.isArray(permission)) {
+            return (
+              Array.isArray(permission) ? permission : [permission]
+            ).every((p) => holds(scopes, `${p}_${action}`, companyId));
           }
           return false;
         }
@@ -353,7 +348,7 @@ export async function requirePermissions(
         email: "",
         consoleMode: false,
         caller: "apiKey",
-        permissions: makePermissionsFromClaims(scopes)?.permissions ?? {},
+        permissions: scopes,
         role: null
       };
     }
@@ -413,20 +408,15 @@ export async function requirePermissions(
         if (action === "role") {
           return myClaims.role === permission;
         }
-        if (!(permission in myClaims.permissions)) return false;
-        const permissionForCompany =
-          myClaims.permissions[permission]?.[
-            action as "view" | "create" | "update" | "delete"
-          ];
-        return permissionForCompany?.includes(companyId) || false;
+        return holds(
+          myClaims.permissions,
+          `${permission}_${action}`,
+          companyId
+        );
       } else if (Array.isArray(permission)) {
-        return permission.every((p) => {
-          const permissionForCompany =
-            myClaims.permissions[p]?.[
-              action as "view" | "create" | "update" | "delete"
-            ];
-          return permissionForCompany?.includes(companyId) ?? false;
-        });
+        return permission.every((p) =>
+          holds(myClaims.permissions, `${p}_${action}`, companyId)
+        );
       } else {
         return false;
       }

@@ -56,16 +56,33 @@ const mockRedis = redis as unknown as {
   del: ReturnType<typeof vi.fn>;
 };
 
-const ROW: ApiKeyRecord = {
+const KEY_ROW = {
   id: "key1",
   companyId: "c1",
   companyGroupId: "g1",
   createdBy: "u1",
-  scopes: { sales_view: ["c1"] },
   rateLimit: 60,
   rateLimitWindow: "1m",
   expiresAt: null
 };
+
+// What the select returns: the key with its grants embedded. A grant naming
+// another company is ignored.
+const DB_ROW = {
+  ...KEY_ROW,
+  permission: [
+    { companyId: "c1", module: "Sales", page: null, level: "View" },
+    { companyId: "c2", module: "Parts", page: null, level: "Full" }
+  ]
+};
+
+const ROW = {
+  ...KEY_ROW,
+  permissions: expect.objectContaining({
+    sales: { view: ["c1"], create: [], update: [], delete: [] },
+    parts: { view: [], create: [], update: [], delete: [] }
+  })
+} as unknown as ApiKeyRecord;
 
 const KEY = "crbn_test_key";
 const CACHE_KEY = apiKeyCacheKey(hashApiKey(KEY));
@@ -75,7 +92,7 @@ beforeEach(() => {
   mockRedis.get.mockResolvedValue(null);
   mockRedis.set.mockResolvedValue("OK");
   mockRedis.del.mockResolvedValue(1);
-  db.single.mockResolvedValue({ data: ROW, error: null });
+  db.single.mockResolvedValue({ data: DB_ROW, error: null });
 });
 
 describe("getApiKeyRecord", () => {
@@ -85,16 +102,17 @@ describe("getApiKeyRecord", () => {
     expect(db.single).toHaveBeenCalledTimes(1);
     expect(mockRedis.set).toHaveBeenCalledWith(
       CACHE_KEY,
-      JSON.stringify(ROW),
+      JSON.stringify(record),
       "EX",
       30
     );
   });
 
   it("cache hit: returns the cached record with zero DB reads", async () => {
-    mockRedis.get.mockResolvedValue(JSON.stringify(ROW));
+    const cached = { ...KEY_ROW, permissions: {} };
+    mockRedis.get.mockResolvedValue(JSON.stringify(cached));
     const record = await getApiKeyRecord(KEY);
-    expect(record).toEqual(ROW);
+    expect(record).toEqual(cached);
     expect(db.single).not.toHaveBeenCalled();
   });
 
@@ -132,6 +150,8 @@ describe("getApiKeyRecord", () => {
 describe("bustApiKeyCache", () => {
   it("deletes the cache entry for the key hash", async () => {
     await bustApiKeyCache("abc");
-    expect(mockRedis.del).toHaveBeenCalledWith("apikey:auth:abc");
+    expect(mockRedis.del).toHaveBeenCalledWith(
+      expect.stringMatching(/^apikey:auth:[0-9a-f]{8}:abc$/)
+    );
   });
 });

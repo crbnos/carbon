@@ -387,9 +387,14 @@ the gate used in every loader/action. Two paths:
      the service role. Opted in: onboarding, company switch (erp/mes/starter),
      `api+/link.ts`, academy challenge — each acts on the user's own identity. A 403, not a
      redirect: the MES `/x` middleware calls `requirePermissions`, so a redirect there loops.
-   - Claims are `{ role, permissions }`. Cached in **Redis** (`@carbon/kv`) at key
-     `permissions:${userId}`; on miss, fetched via the `get_claims(uid, company)` RPC
-     (`getCarbonServiceRole`) and cached. `makePermissionsFromClaims` shapes the result.
+   - Claims are `{ role, permissions }` for ONE company. `get_claims(uid, company)`
+     returns `{ role, admin, grants, portal }` (the `permission` rows of the user and
+     their employee type); `makePermissionsFromClaims(claims, companyId)` expands them
+     per page with `expandClaims` (`@carbon/database/access`). Cached in a **Redis**
+     hash (`@carbon/kv`) at `getPermissionCacheKey(userId)` =
+     `permissions:<REGISTRY_HASH>:<userId>`, one field per company, so
+     `redis.del(getPermissionCacheKey(userId))` clears every company. On a miss it
+     reads `get_claims` (`getCarbonServiceRole`) and writes the field.
    - `getUserClaims` is additionally memoized **per read request** via
      `oncePerRead` (`@carbon/logger/middleware.server`), so the several loaders a
      page matches share one Redis GET. Read-gated on purpose: an action and its
@@ -397,8 +402,8 @@ the gate used in every loader/action. Two paths:
      gate pass on claims the action just revoked. The Supabase clients
      `requirePermissions` returns are memoized per request too (`oncePerRequest`),
      which needs no gate — a client is not database state.
-   - Each required permission checks `permissions[name][action]` contains the active
-     `companyId` (or `"0"` wildcard = all companies). `role` is matched directly.
+   - Each required permission is checked with `holds(permissions, "<page>_<action>",
+     companyId)`. `role` is matched directly.
    - On failure: if `role === null` destroy session → `/`; else flash "Access Denied"
      → authenticated root.
    - Returns `{ client, companyId, companyGroupId, email, userId, sessionUserId,
@@ -455,9 +460,10 @@ writer is the 30s TTL. Then:
   key, so the Node path and the edge functions both record it. (The app used to build
   this update with `void client.from(…).update(…)`, which never sends: a supabase-js
   builder only runs when awaited.)
-- Scope check: `scopes` is JSONB `{ "<permission>_<action>": [companyIds] }`; required
-  perms must be present and include the active company. `{}` is NOT full access here —
-  an empty scope set fails the check. 403 on failure.
+- Scope check: the key's `permission` rows (`apiKeyId`), embedded in the
+  `getApiKeyRecord` select and expanded into `record.permissions`; each required
+  permission must `holds` for the key's company. A key with no grants fails every
+  check — no grants is NOT full access. 403 on failure.
 - Cloud edition: Starter-plan companies are blocked from API access (Business+ only),
   except `STRIPE_BYPASS_COMPANY_IDS`. The plan comes from the cached `getCompanyPlanId`
   (see `billing-system.md`), so a plan change made outside the Stripe sync can take up to 5 minutes to bite.
@@ -546,6 +552,6 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 - ERP code imports `getUserClaims` from `@carbon/auth/users.server`; the ERP used to
   carry a drifted copy that missed the cache TTL. Don't reintroduce one.
 - Service-role clients bypass RLS — only use behind `bypassRls` + employee role.
-- API key `scopes: {}` denies, not grants. Don't assume empty = full access.
+- An API key with no grants denies, not grants. Don't assume empty = full access.
 - Edition matters: Enterprise rejects unknown-user login; Cloud gates API keys by plan
   and enforces the bot check (BotID on Vercel, Turnstile elsewhere).

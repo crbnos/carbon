@@ -6,7 +6,7 @@
 // workflow caller: the same function, with the same checks, the route calls.
 
 import type { ManifestEntry } from "@carbon/api";
-import { permissionsFromClaims } from "@carbon/api/permissions";
+import { permissionsFromScopes } from "@carbon/api/permissions";
 import type {
   ErrorCategory,
   ServiceContext,
@@ -54,7 +54,7 @@ export function contextFromAuthed(context: AuthedContext): ServiceContext {
     kind: context.authKind === "api-key" ? "apiKey" : "user",
     userId: context.userId,
     // Scopes are claims-shaped: `<module>_<action>` → company ids.
-    permissions: permissionsFromClaims(context.scopes),
+    permissions: permissionsFromScopes(context.scopes),
     companyId: context.companyId,
     companyGroupId: context.companyGroupId,
     client: scopedToCompany(context.client, context.companyId, COMPANY_TABLES),

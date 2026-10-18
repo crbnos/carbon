@@ -8,7 +8,8 @@ import {
   type Permission
 } from "@carbon/auth";
 import { getUserScopedClient } from "@carbon/auth/client.server";
-import type { Database, Json } from "@carbon/database";
+import type { Database } from "@carbon/database";
+import { holds } from "@carbon/database/access";
 import type { PermissionAction } from "@carbon/ee/workflows";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -71,7 +72,7 @@ export async function readOwnerPermissions(
     return null;
   }
 
-  const claims = makePermissionsFromClaims(rawClaims.data as Json[]);
+  const claims = makePermissionsFromClaims(rawClaims.data, companyId);
   // A workflow acts as its owner only while the owner is an employee: a
   // customer or supplier portal account runs nothing.
   if (claims?.role !== "employee") {
@@ -91,7 +92,5 @@ export function hasPermission(
   action: PermissionAction,
   companyId: string
 ): boolean {
-  const granted = permissions[module]?.[action];
-  if (!Array.isArray(granted)) return false;
-  return granted.includes(companyId);
+  return holds(permissions, `${module}_${action}`, companyId);
 }

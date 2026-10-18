@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ACTIONS, type Action, type Level, levelHolds } from "./levels";
+import { ACTIONS, type Action, LEVELS, type Level, levelHolds } from "./levels";
 import { moduleOf, PAGES } from "./registry";
 
 /** One row of the `permission` table, as the resolver reads it. */
@@ -56,6 +56,38 @@ export type RawClaims = {
   /** Portal accounts' keys, still held in `userPermission`. */
   portal: Record<string, string[]>;
 };
+
+const LEVEL_SET = new Set<string>(LEVELS);
+const SUBJECTS = new Set<string>(["person", "role", "key"]);
+
+/** The `get_claims` jsonb as RawClaims; anything malformed is left out. */
+export function claimsFromJson(json: unknown): RawClaims {
+  const value =
+    typeof json === "object" && json !== null && !Array.isArray(json)
+      ? (json as Record<string, unknown>)
+      : {};
+  const grants = (Array.isArray(value.grants) ? value.grants : []).filter(
+    (g): g is Grant =>
+      typeof g === "object" &&
+      g !== null &&
+      SUBJECTS.has((g as Grant).subject) &&
+      typeof (g as Grant).module === "string" &&
+      ((g as Grant).page === null || typeof (g as Grant).page === "string") &&
+      LEVEL_SET.has((g as Grant).level)
+  );
+  const portal =
+    typeof value.portal === "object" &&
+    value.portal !== null &&
+    !Array.isArray(value.portal)
+      ? (value.portal as Record<string, string[]>)
+      : {};
+  return {
+    role: typeof value.role === "string" ? value.role : null,
+    admin: value.admin === true,
+    grants,
+    portal
+  };
+}
 
 export type ExpandedPermission = Record<Action, string[]>;
 /** `{ [pageId]: { view, create, update, delete } }`, each a list of company ids. */

@@ -16266,14 +16266,15 @@ export async function authorizePostingCaller(
   if (claims.role === "customer" || claims.role === "supplier") {
     throw new ForbiddenError();
   }
-  if (!hasPermissions(permissionsFromClaims(claims), companyId, needed)) {
+  if (
+    !hasPermissions(permissionsFromClaims(claims, companyId), companyId, needed)
+  ) {
     throw new ForbiddenError();
   }
 }
 
-/** A key of this company, unexpired, whose scopes (`<module>_<action>` →
- *  company ids, shaped like claims) cover `required`. Rate limiting stays with
- *  the route that authenticated the key. */
+/** A key of this company, unexpired, whose grants cover `required`. Rate
+ *  limiting stays with the route that authenticated the key. */
 async function authorizeApiKey(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -16282,7 +16283,7 @@ async function authorizeApiKey(
 ): Promise<void> {
   const key = await db
     .selectFrom("apiKey")
-    .select("scopes")
+    .select("id")
     .where(
       "keyHash",
       "=",
@@ -16298,8 +16299,15 @@ async function authorizeApiKey(
     .executeTakeFirst();
   if (!key) throw new ForbiddenError("Invalid API key");
   if (Object.keys(required).length === 0) return;
+  const grants = await db
+    .selectFrom("permission")
+    .select(["module", "page", "level"])
+    .where("apiKeyId", "=", key.id)
+    .where("companyId", "=", companyId)
+    .execute();
   const scopes = permissionsFromClaims(
-    (key.scopes ?? {}) as Record<string, unknown>
+    { grants: grants.map((grant) => ({ subject: "key", ...grant })) },
+    companyId
   );
   if (!hasPermissions(scopes, companyId, required)) {
     throw new ForbiddenError("API key lacks required permissions");

@@ -9,6 +9,7 @@ import {
   type ModulePermissions,
   type PermissionRule,
   permissionsFromClaims,
+  permissionsFromScopes,
   resolvePermissions
 } from "./permissions";
 
@@ -86,10 +87,10 @@ describe("hasPermissions", () => {
   });
 });
 
-describe("permissionsFromClaims", () => {
-  it("groups <module>_<action> claims by module and ignores the rest", () => {
+describe("permissionsFromScopes", () => {
+  it("groups <page>_<action> scopes by page and ignores the rest", () => {
     expect(
-      permissionsFromClaims({
+      permissionsFromScopes({
         role: "employee",
         inventory_update: ["co1"],
         inventory_view: ["co1", "co2"],
@@ -105,5 +106,35 @@ describe("permissionsFromClaims", () => {
         delete: []
       }
     });
+  });
+});
+
+describe("permissionsFromClaims", () => {
+  it("resolves get_claims grants for the company", () => {
+    const permissions = permissionsFromClaims(
+      {
+        role: "employee",
+        admin: false,
+        grants: [
+          { subject: "role", module: "Inventory", page: null, level: "Edit" },
+          { subject: "person", module: "Sales", page: null, level: "None" },
+          { subject: "role", module: "Sales", page: null, level: "Full" }
+        ],
+        portal: {}
+      },
+      "co1"
+    );
+    expect(hasPermissions(permissions, "co1", { update: "inventory" })).toBe(
+      true
+    );
+    expect(hasPermissions(permissions, "co1", { delete: "inventory" })).toBe(
+      false
+    );
+    expect(hasPermissions(permissions, "co1", { view: "sales" })).toBe(false);
+  });
+
+  it("reads malformed claims as no access", () => {
+    const permissions = permissionsFromClaims({ grants: "nope" }, "co1");
+    expect(hasPermissions(permissions, "co1", {})).toBe(false);
   });
 });

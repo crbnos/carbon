@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { claimsFromJson, expandClaims, holds } from "@carbon/database/access";
 import { InvalidInputError } from "./errors";
 
 type Action = "view" | "create" | "update" | "delete";
@@ -74,20 +75,25 @@ export function hasPermissions(
   }
   return entries.every(([action, modules]) =>
     (typeof modules === "string" ? [modules] : modules).every((module) =>
-      claims[module]?.[action]?.includes(companyId)
+      holds(claims, `${module}_${action}`, companyId)
     )
   );
 }
 
-/**
- * A user's claims (the `get_claims` jsonb: `<module>_<action>` → company ids,
- * plus `role`) as permissions per module.
- */
+/** The `get_claims` jsonb for one company as permissions per page. */
 export function permissionsFromClaims(
-  claims: Record<string, unknown>
+  claims: unknown,
+  companyId: string
+): ModulePermissions {
+  return expandClaims(claimsFromJson(claims), companyId);
+}
+
+/** Flat scopes (`<page>_<action>` → company ids) as permissions per page. */
+export function permissionsFromScopes(
+  scopes: Record<string, unknown>
 ): ModulePermissions {
   const permissions: ModulePermissions = {};
-  for (const [key, value] of Object.entries(claims)) {
+  for (const [key, value] of Object.entries(scopes)) {
     const parts = key.split("_");
     if (parts.length !== 2 || !Array.isArray(value)) continue;
     const [module, action] = parts as [string, Action];

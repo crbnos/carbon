@@ -3,14 +3,22 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { createHash } from "node:crypto";
+import {
+  expandClaims,
+  type Grant,
+  type Level,
+  REGISTRY_HASH
+} from "@carbon/database/access";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRequest } from "@carbon/logger/middleware.server";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
+import type { Permission } from "../types";
 
 const log = getLogger("auth");
 
-const API_KEY_CACHE_PREFIX = "apikey:auth:";
+// The registry hash retires records whose permissions a deploy reshaped.
+const API_KEY_CACHE_PREFIX = `apikey:auth:${REGISTRY_HASH}:`;
 // Short on purpose: the record carries scopes/expiry/rate-limit config, so a
 // revoked or re-scoped key can act for at most this long (the api-keys routes
 // additionally bust the entry on edit/revoke). Negative results are cached too —
@@ -29,7 +37,8 @@ export type ApiKeyRecord = {
   companyId: string;
   companyGroupId: string;
   createdBy: string;
-  scopes: Record<string, string[]>;
+  /** The key's grants, expanded per page for its company. */
+  permissions: Record<string, Permission>;
   rateLimit: number;
   rateLimitWindow: "1m" | "1h" | "1d";
   expiresAt: string | null;
@@ -64,12 +73,12 @@ async function loadApiKeyRecord(keyHash: string): Promise<ApiKeyRecord | null> {
   const { data, error } = await getCarbonServiceRole()
     .from("apiKey")
     .select(
-      "id, companyId, ...company(companyGroupId), createdBy, scopes, rateLimit, rateLimitWindow, expiresAt"
+      "id, companyId, ...company(companyGroupId), createdBy, rateLimit, rateLimitWindow, expiresAt, permission(companyId, module, page, level)"
     )
     .eq("keyHash", keyHash)
     .single();
 
-  const record = (data as unknown as ApiKeyRecord | null) ?? null;
+  const record = data ? toApiKeyRecord(data) : null;
 
   // Only cache a verdict the database actually gave. `.single()` reports "no rows"
   // as PGRST116; any other error also yields a null row, and caching THAT would
@@ -93,6 +102,41 @@ async function loadApiKeyRecord(keyHash: string): Promise<ApiKeyRecord | null> {
   }
 
   return record;
+}
+
+function toApiKeyRecord(row: {
+  id: string;
+  companyId: string;
+  companyGroupId: string | null;
+  createdBy: string;
+  rateLimit: number;
+  rateLimitWindow: string;
+  expiresAt: string | null;
+  permission: {
+    companyId: string;
+    module: string;
+    page: string | null;
+    level: string;
+  }[];
+}): ApiKeyRecord {
+  const { permission, ...key } = row;
+  const grants: Grant[] = permission
+    .filter((grant) => grant.companyId === key.companyId)
+    .map((grant) => ({
+      subject: "key",
+      module: grant.module,
+      page: grant.page,
+      level: grant.level as Level
+    }));
+  return {
+    ...key,
+    companyGroupId: key.companyGroupId as string,
+    rateLimitWindow: key.rateLimitWindow as ApiKeyRecord["rateLimitWindow"],
+    permissions: expandClaims(
+      { role: null, admin: false, grants, portal: {} },
+      key.companyId
+    )
+  };
 }
 
 /** Drop the cached record for a key hash — call when the key is edited or revoked. */

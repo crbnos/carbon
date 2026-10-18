@@ -54,7 +54,7 @@ export async function authenticateApiKey(
     companyGroupId,
     userId,
     authKind: "api-key",
-    scopes: keyRow?.scopes ?? {}
+    scopes: keyRow ? scopesFromPermissions(keyRow.permissions, companyId) : {}
   };
 }
 

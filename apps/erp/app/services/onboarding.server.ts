@@ -9,7 +9,7 @@ import {
   makePermissionsFromClaims
 } from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database, Json } from "@carbon/database";
+import type { Database } from "@carbon/database";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { Edition } from "@carbon/utils";
@@ -155,7 +155,7 @@ async function assertCanUpdateCompany(
   const rawClaims = await getClaims(serviceRole, userId, companyId);
   const claims = rawClaims.error
     ? null
-    : makePermissionsFromClaims(rawClaims.data as Json[]);
+    : makePermissionsFromClaims(rawClaims.data, companyId);
 
   const allowed =
     claims?.role === "employee" &&

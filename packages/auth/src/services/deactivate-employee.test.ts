@@ -43,6 +43,7 @@ vi.mock("./auth-events.server", () => ({
   logPermissionChange: vi.fn()
 }));
 
+import { getPermissionCacheKey } from "./users";
 import { deactivateEmployee } from "./users.server";
 
 const USER = "usr_1";
@@ -135,7 +136,7 @@ describe("deactivateEmployee", () => {
     // requirePermissions reads this cache (1h TTL) before the database, and the
     // create*Account rollbacks call this function directly rather than through
     // deactivateUser — so the invalidation has to live here.
-    expect(redisDel).toHaveBeenCalledWith(`permissions:${USER}`);
+    expect(redisDel).toHaveBeenCalledWith(getPermissionCacheKey(USER));
   });
 
   it("strips only the deactivating company from the permission map", async () => {

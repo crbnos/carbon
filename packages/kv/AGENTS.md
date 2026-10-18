@@ -40,6 +40,6 @@ pnpm --filter @carbon/kv typecheck
 
 ## Cross-References
 
-- `packages/auth/` — uses Redis for permission claim caching (`permissions:${userId}` keys)
+- `packages/auth/` — uses Redis for permission claim caching (a hash per user at `getPermissionCacheKey(userId)`, one field per company)
 - `packages/database/src/ratelimit.ts` — separate API key rate limiting via Postgres RPC (not Redis)
 - `packages/env/` — provides `REDIS_URL`

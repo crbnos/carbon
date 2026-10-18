@@ -203,7 +203,6 @@ export async function requireOnshapePanelPermissions(
             ? permission
             : null;
       if (!permissions) return false;
-      // `hasPermission` honours the "0" all-companies scope.
       return permissions.every((p) =>
         hasPermission(
           myClaims.permissions,

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database, Json } from "@carbon/database";
+import type { Database } from "@carbon/database";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
@@ -55,7 +55,10 @@ async function loadUserClaims(userId: string, companyId: string) {
   } | null = null;
 
   try {
-    const cachedClaims = await redis.get(getPermissionCacheKey(userId));
+    const cachedClaims = await redis.hget(
+      getPermissionCacheKey(userId),
+      companyId
+    );
     if (cachedClaims) {
       claims = JSON.parse(cachedClaims) as {
         permissions: Record<string, Permission>;
@@ -79,18 +82,21 @@ async function loadUserClaims(userId: string, companyId: string) {
       }
 
       // convert rawClaims to permissions
-      claims = makePermissionsFromClaims(rawClaims.data as Json[]);
+      claims = makePermissionsFromClaims(rawClaims.data, companyId);
 
       // store claims in redis — best-effort. A null/failed write (Redis down,
       // fail-soft via @carbon/kv withResilience) must not abort the in-flight
       // request; we already have the claims from the DB.
       try {
-        await redis.set(
-          getPermissionCacheKey(userId),
-          JSON.stringify(claims),
-          "EX",
-          PERMISSION_CACHE_TTL_SECONDS
-        );
+        await redis
+          .multi()
+          .hset(
+            getPermissionCacheKey(userId),
+            companyId,
+            JSON.stringify(claims)
+          )
+          .expire(getPermissionCacheKey(userId), PERMISSION_CACHE_TTL_SECONDS)
+          .exec();
       } catch (e) {
         log.error("Failed to cache claims in redis", { error: e });
       }
