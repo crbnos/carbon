@@ -118,18 +118,6 @@ export const employeeTypeValidator = z.object({
     .endsWith("]", { message: "Invalid JSON" })
 });
 
-export const employeeTypePermissionsValidator = z.array(
-  z.object({
-    name: z.string(),
-    permission: z.object({
-      view: z.boolean(),
-      create: z.boolean(),
-      update: z.boolean(),
-      delete: z.boolean()
-    })
-  })
-);
-
 export const employeeValidator = z.object({
   id: z.string(),
   employeeType: z.string().min(1, { message: "Employee type is required" }),

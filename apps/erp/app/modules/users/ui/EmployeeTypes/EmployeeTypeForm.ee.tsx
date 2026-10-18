@@ -16,29 +16,17 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
+import { useState } from "react";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
-import PermissionMatrix from "~/components/PermissionMatrix";
 import { usePermissions } from "~/hooks";
-import {
-  fromEmployeeTypePermissions,
-  toEmployeeTypePermissions,
-  usePermissionMatrix
-} from "~/hooks/usePermissionMatrix";
-import type { CompanyPermission } from "~/modules/users/types";
 import { employeeTypeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
+import AccessGrid, { type AccessGrant } from "../components/AccessGrid.ee";
 
 type EmployeeTypeFormProps = {
-  initialValues: z.infer<typeof employeeTypeValidator> & {
-    permissions: Record<
-      string,
-      {
-        name: string;
-        permission: CompanyPermission;
-      }
-    >;
+  initialValues: Omit<z.infer<typeof employeeTypeValidator>, "data"> & {
+    grants: AccessGrant[];
   };
 };
 
@@ -48,26 +36,13 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
   const closeRoute = useCloseRoute();
   const onClose = () => closeRoute();
 
-  const { state: initialState, modules } = useMemo(
-    () => fromEmployeeTypePermissions(initialValues.permissions),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [initialValues.permissions]
-  );
-
-  const matrix = usePermissionMatrix({
-    modules,
-    initialState
-  });
+  // The person's edits; the route remounts the form for another type.
+  const [grants, setGrants] = useState(initialValues.grants);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
     ? !userPermissions.can("update", "users")
     : !userPermissions.can("create", "users");
-
-  // Serialize permissions to the format expected by the action
-  const permissionsData = JSON.stringify(
-    Object.values(toEmployeeTypePermissions(matrix.permissions))
-  );
 
   return (
     <Modal
@@ -100,12 +75,13 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
             <Hidden name="id" />
             <VStack spacing={4}>
               <Input name="name" label={t`Employee Type`} />
-              <Hidden name="data" value={permissionsData} />
+              <Hidden name="data" value={JSON.stringify(grants)} />
             </VStack>
             <div className="mt-4">
-              <PermissionMatrix
-                matrix={matrix}
-                label={t`Default Permissions`}
+              <AccessGrid
+                value={grants}
+                onChange={setGrants}
+                label={t`Access`}
                 termId="employee-type-default-permissions"
                 isDisabled={isDisabled}
               />

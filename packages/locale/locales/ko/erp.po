@@ -669,6 +669,9 @@ msgstr "{sectionLineCount} 라인"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount}개 선택됨"
 
+msgid "{set} of {total}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -1598,6 +1601,9 @@ msgstr "승인 통과"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "수락됨 {0}"
+
+msgid "Access"
+msgstr ""
 
 msgid "Account"
 msgstr "계정"
@@ -10496,6 +10502,9 @@ msgstr "시작:"
 msgid "Fulfillment Location"
 msgstr "출하 사업장"
 
+msgid "Full"
+msgstr ""
+
 msgid "Full name"
 msgstr "전체 이름"
 
@@ -11532,6 +11541,10 @@ msgstr "인프라"
 
 msgid "Inherit"
 msgstr "상속"
+
+#. placeholder {0}: levelLabel[lower(fallback, max)]
+msgid "Inherit ({0})"
+msgstr ""
 
 msgid "Inherit document default"
 msgstr "문서 기본값 상속"
@@ -16322,6 +16335,9 @@ msgstr "페이지"
 
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "{documentPageCount}페이지 중 {pdfViewPage}페이지"
+
+msgid "Pages"
+msgstr ""
 
 msgid "Paid Amount:"
 msgstr "지급액:"

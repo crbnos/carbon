@@ -12,8 +12,7 @@ import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
 import {
   insertEmployeeType,
   updateEmployee,
-  upsertEmployeeType,
-  upsertEmployeeTypePermissions
+  upsertEmployeeType
 } from "@carbon/ee/permissions.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { batchTrigger } from "@carbon/jobs";
@@ -30,7 +29,6 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import {
   createOperatorValidator,
-  employeeTypePermissionsValidator,
   itarEntityCertificationValidator,
   itarUserCertificationValidator,
   permissionsValidator,
@@ -563,16 +561,16 @@ export const bulkUpdatePermissions = defineServiceFn({
  * Create an employee type with its permissions.
  *
  * @remarks
- * Needs role authoring (the PERMISSIONS feature). The type and its
- * permissions are two writes: when the permissions fail, the type stays.
+ * Needs role authoring (the PERMISSIONS feature). The type and its grants
+ * are two writes: when the grants fail, the type stays.
  */
 export const createEmployeeType = defineServiceFn({
   input: z.object({
     name: z.string().trim().min(1),
-    permissions: employeeTypePermissionsValidator
+    grants: permissionsValidator.shape.grants
   }),
   permission: { create: "users" },
-  async run(ctx, { name, permissions }) {
+  async run(ctx, { name, grants }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
     // The grants are written without RLS, which asks this of a grant write.
@@ -592,24 +590,18 @@ export const createEmployeeType = defineServiceFn({
       );
     }
 
-    const saved = await upsertEmployeeTypePermissions(client, ctx.asSystem.pg, {
-      employeeTypeId,
-      companyId,
-      permissions,
-      actorId: ctx.auditUserId
+    const refused = await service.saveAccessGrants(ctx, {
+      subjectType: "role",
+      subjectId: employeeTypeId,
+      grants
     });
-    if (!saved.success) {
-      return service.permissionsWriteError(
-        ctx,
-        saved.message ?? "Failed to insert employee type permissions"
-      );
-    }
+    if (refused) return refused;
     return { id: employeeTypeId };
   }
 });
 
 /**
- * Rename an employee type and change its permissions.
+ * Rename an employee type and replace its grants.
  *
  * @remarks
  * Needs role authoring (the PERMISSIONS feature). Two writes, as for
@@ -619,10 +611,10 @@ export const updateEmployeeType = defineServiceFn({
   input: z.object({
     id: z.string().min(1),
     name: z.string().trim().min(1),
-    permissions: employeeTypePermissionsValidator
+    grants: permissionsValidator.shape.grants
   }),
   permission: { update: "users" },
-  async run(ctx, { id, name, permissions }) {
+  async run(ctx, { id, name, grants }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
 
@@ -636,18 +628,12 @@ export const updateEmployeeType = defineServiceFn({
       );
     }
 
-    const saved = await upsertEmployeeTypePermissions(client, ctx.asSystem.pg, {
-      employeeTypeId: id,
-      companyId: ctx.company.id,
-      permissions,
-      actorId: ctx.auditUserId
+    const refused = await service.saveAccessGrants(ctx, {
+      subjectType: "role",
+      subjectId: id,
+      grants
     });
-    if (!saved.success) {
-      return service.permissionsWriteError(
-        ctx,
-        saved.message ?? "Failed to update employee type permissions"
-      );
-    }
+    if (refused) return refused;
     return { id };
   }
 });
@@ -657,6 +643,25 @@ const grantSubjectRules = {
   person: { update: "users" },
   key: { update: "settings" }
 } as const;
+
+/** The grants of a role, a person or an API key in the company. */
+export const getAccessGrants = defineServiceFn({
+  input: z.object({
+    subjectType: permissionsValidator.shape.subjectType,
+    subjectId: z.string().min(1)
+  }),
+  permission: {
+    by: "subjectType",
+    rules: {
+      role: { view: "users" },
+      person: { view: "users" },
+      key: { view: "settings" }
+    }
+  },
+  async run(ctx, { subjectType, subjectId }) {
+    return service.readAccessGrants(ctx, subjectType, subjectId);
+  }
+});
 
 /**
  * Replace the grants of a role, a person or an API key with the given set.

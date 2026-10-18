@@ -425,15 +425,15 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
 5. A page row with no grant shows the module level in grey.
 6. Use `Select` and `Table` from `@carbon/react`. Grep `packages/react/src/` before writing anything new.
 7. Serialize the grid into one hidden `grants` field as JSON for the validator.
-8. In the route loader, read the role's grants through a service function.
-9. In the action, call `api.users.upsertAccessGrants` and return its result.
+8. In the route loader, read the role's grants through `api.users.getAccessGrants`.
+9. In the action, call `api.users.updateEmployeeType` (or `createEmployeeType`) with `grants`: one call saves the name and the grants, through `saveAccessGrants`.
 
 **Verify:**
 ```bash
 pnpm exec turbo run typecheck --filter=erp --concurrency=1
 # Expected: no "error TS" lines outside docs/content
 ```
-Browser: open Users → Employee Types → a type. Set Inventory to View and Receipts to Edit. Save and reload. Expected: both levels show.
+Browser: open Users → Employee Types → a type. Set Inventory to View and Sales to Full. Save and reload. Expected: both levels show. Page rows (Receipts) need Task 17.
 
 **Out of scope:** pages below module grain; Task 17 adds them and the grid shows them with no change.
 

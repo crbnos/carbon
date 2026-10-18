@@ -669,6 +669,9 @@ msgstr "{sectionLineCount} satır"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} seçildi"
 
+msgid "{set} of {total}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -1598,6 +1601,9 @@ msgstr "Kabul geçti"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "{0} tarihinde kabul edildi"
+
+msgid "Access"
+msgstr ""
 
 msgid "Account"
 msgstr "Hesap"
@@ -10496,6 +10502,9 @@ msgstr "Başlangıç:"
 msgid "Fulfillment Location"
 msgstr "Sevkiyat lokasyonu"
 
+msgid "Full"
+msgstr ""
+
 msgid "Full name"
 msgstr "Tam adı"
 
@@ -11532,6 +11541,10 @@ msgstr "Altyapı"
 
 msgid "Inherit"
 msgstr "Devral"
+
+#. placeholder {0}: levelLabel[lower(fallback, max)]
+msgid "Inherit ({0})"
+msgstr ""
 
 msgid "Inherit document default"
 msgstr "Belge varsayılanını devral"
@@ -16322,6 +16335,9 @@ msgstr "Sayfa"
 
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Sayfa {pdfViewPage} / {documentPageCount}"
+
+msgid "Pages"
+msgstr ""
 
 msgid "Paid Amount:"
 msgstr "Ödenen Tutar:"

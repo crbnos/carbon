@@ -669,6 +669,9 @@ msgstr "{sectionLineCount} строк"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} выбрано"
 
+msgid "{set} of {total}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -1598,6 +1601,9 @@ msgstr "Приемка пройдена"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Принята {0}"
+
+msgid "Access"
+msgstr ""
 
 msgid "Account"
 msgstr "Счет"
@@ -10496,6 +10502,9 @@ msgstr "От:"
 msgid "Fulfillment Location"
 msgstr "Площадка отгрузки"
 
+msgid "Full"
+msgstr ""
+
 msgid "Full name"
 msgstr "Полное имя"
 
@@ -11532,6 +11541,10 @@ msgstr "Инфраструктура"
 
 msgid "Inherit"
 msgstr "Наследовать"
+
+#. placeholder {0}: levelLabel[lower(fallback, max)]
+msgid "Inherit ({0})"
+msgstr ""
 
 msgid "Inherit document default"
 msgstr "Наследовать документ по умолчанию"
@@ -16322,6 +16335,9 @@ msgstr "Страница"
 
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Страница {pdfViewPage} из {documentPageCount}"
+
+msgid "Pages"
+msgstr ""
 
 msgid "Paid Amount:"
 msgstr "Оплаченная сумма:"

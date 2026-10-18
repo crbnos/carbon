@@ -669,6 +669,9 @@ msgstr "{sectionLineCount} 明細"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 件が選択されています"
 
+msgid "{set} of {total}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -1598,6 +1601,9 @@ msgstr "承諾合格"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "承諾済 {0}"
+
+msgid "Access"
+msgstr ""
 
 msgid "Account"
 msgstr "アカウント"
@@ -10496,6 +10502,9 @@ msgstr "開始："
 msgid "Fulfillment Location"
 msgstr "出荷拠点"
 
+msgid "Full"
+msgstr ""
+
 msgid "Full name"
 msgstr "氏名"
 
@@ -11532,6 +11541,10 @@ msgstr "インフラストラクチャ"
 
 msgid "Inherit"
 msgstr "継承"
+
+#. placeholder {0}: levelLabel[lower(fallback, max)]
+msgid "Inherit ({0})"
+msgstr ""
 
 msgid "Inherit document default"
 msgstr "文書のデフォルトを継承"
@@ -16322,6 +16335,9 @@ msgstr "ページ"
 
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "ページ {pdfViewPage} / {documentPageCount}"
+
+msgid "Pages"
+msgstr ""
 
 msgid "Paid Amount:"
 msgstr "支払済み金額:"

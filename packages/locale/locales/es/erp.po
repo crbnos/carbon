@@ -669,6 +669,9 @@ msgstr "{sectionLineCount} líneas"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} seleccionados"
 
+msgid "{set} of {total}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -1598,6 +1601,9 @@ msgstr "Aceptación superada"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Aceptada el {0}"
+
+msgid "Access"
+msgstr ""
 
 msgid "Account"
 msgstr "Cuenta"
@@ -10496,6 +10502,9 @@ msgstr "De:"
 msgid "Fulfillment Location"
 msgstr "Ubicación de despacho"
 
+msgid "Full"
+msgstr ""
+
 msgid "Full name"
 msgstr "Nombre completo"
 
@@ -11532,6 +11541,10 @@ msgstr "Infraestructura"
 
 msgid "Inherit"
 msgstr "Heredar"
+
+#. placeholder {0}: levelLabel[lower(fallback, max)]
+msgid "Inherit ({0})"
+msgstr ""
 
 msgid "Inherit document default"
 msgstr "Heredar valor predeterminado del documento"
@@ -16322,6 +16335,9 @@ msgstr "Página"
 
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Página {pdfViewPage} de {documentPageCount}"
+
+msgid "Pages"
+msgstr ""
 
 msgid "Paid Amount:"
 msgstr "Monto Pagado:"

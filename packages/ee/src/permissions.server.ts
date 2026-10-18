@@ -157,52 +157,6 @@ export async function upsertEmployeeType(
     .single();
 }
 
-/**
- * A role's module checkboxes as module grants: the lowest level holding every
- * checked box. Unchecked is no grant. Page grants and modules the form leaves
- * out are kept.
- */
-export async function upsertEmployeeTypePermissions(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  {
-    employeeTypeId,
-    companyId,
-    permissions,
-    actorId,
-    ip
-  }: {
-    employeeTypeId: string;
-    companyId: string;
-    permissions: { name: string; permission: CompanyPermission }[];
-    actorId: string;
-    ip?: string;
-  }
-): Promise<Result> {
-  await requireEntitlement(client, companyId, "PERMISSIONS");
-  const edited = new Map<GrantModule, Level>();
-  for (const { name, permission } of permissions) {
-    const module = toModule(name);
-    if (module) edited.set(module, roundUp(permission));
-  }
-  const existing = await readGrants(db, companyId, { employeeTypeId });
-  const grants: GrantInput[] = [
-    ...existing.filter((g) => g.page !== null || !edited.has(g.module)),
-    ...[...edited].map(([module, level]) => ({
-      module,
-      page: null,
-      level: level === "None" ? null : level
-    }))
-  ];
-  return replaceAccessGrants(client, db, {
-    companyId,
-    subject: { employeeTypeId },
-    grants,
-    actorId,
-    ip
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Permission-object translators (claims / employee-type / UI grid shapes)
 // ---------------------------------------------------------------------------

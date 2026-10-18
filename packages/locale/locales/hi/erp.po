@@ -669,6 +669,9 @@ msgstr "{sectionLineCount} पंक्तियाँ"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} चयनित"
 
+msgid "{set} of {total}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -1598,6 +1601,9 @@ msgstr "स्वीकृति उत्तीर्ण"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "{0} को स्वीकृत"
+
+msgid "Access"
+msgstr ""
 
 msgid "Account"
 msgstr "खाता"
@@ -10496,6 +10502,9 @@ msgstr "से:"
 msgid "Fulfillment Location"
 msgstr "पूर्ति स्थान"
 
+msgid "Full"
+msgstr ""
+
 msgid "Full name"
 msgstr "पूरा नाम"
 
@@ -11532,6 +11541,10 @@ msgstr "बुनियादी ढांचा"
 
 msgid "Inherit"
 msgstr "विरासत"
+
+#. placeholder {0}: levelLabel[lower(fallback, max)]
+msgid "Inherit ({0})"
+msgstr ""
 
 msgid "Inherit document default"
 msgstr "दस्तावेज़ डिफ़ॉल्ट को विरासत में लें"
@@ -16322,6 +16335,9 @@ msgstr "पृष्ठ"
 
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "पृष्ठ {pdfViewPage} का {documentPageCount}"
+
+msgid "Pages"
+msgstr ""
 
 msgid "Paid Amount:"
 msgstr "भुगतान की गई राशि:"

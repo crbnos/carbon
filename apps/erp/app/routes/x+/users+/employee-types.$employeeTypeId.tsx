@@ -5,7 +5,6 @@
 import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { makeCompanyPermissionsFromEmployeeType } from "@carbon/ee/permissions.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -33,30 +32,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { employeeTypeId } = params;
   if (!employeeTypeId) throw notFound("employeeTypeId not found");
 
-  const [employeeType, employeeTypePermissions] = await Promise.all([
+  const [employeeType, grants] = await Promise.all([
     api.users.getEmployeeType({ employeeTypeId }),
-    api.users.getPermissionsByEmployeeType({ employeeTypeId })
+    api.users.getAccessGrants({
+      subjectType: "role",
+      subjectId: employeeTypeId
+    })
   ]);
 
   return {
     employeeType: employeeType?.data,
-    employeeTypePermissions: makeCompanyPermissionsFromEmployeeType(
-      employeeTypePermissions.data ?? [],
-      companyId
-    )
+    grants: grants.data ?? []
   };
 }
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(employeeTypeValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const { id, name, data: permissions } = input.data;
+  const { id, name, data: grants } = input.data;
   if (!id) throw notFound("id not found");
   const api = await carbon(args.request);
   const result = await api.users.updateEmployeeType({
     id,
     name,
-    permissions: JSON.parse(permissions)
+    grants: JSON.parse(grants)
   });
   return respond(args.request, result).redirect(path.to.employeeTypes, {
     message: "Updated employee type",
@@ -65,20 +64,15 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function EditEmployeeTypesRoute() {
-  const { employeeType, employeeTypePermissions } =
-    useLoaderData<typeof loader>();
+  const { employeeType, grants } = useLoaderData<typeof loader>();
 
   const initialValues = {
     id: employeeType?.id ?? "",
     name: employeeType?.name ?? "",
-    permissions: employeeTypePermissions
+    grants
   };
 
   return (
-    <EmployeeTypeForm
-      key={initialValues.id}
-      // @ts-expect-error
-      initialValues={initialValues}
-    />
+    <EmployeeTypeForm key={initialValues.id} initialValues={initialValues} />
   );
 }
