@@ -302,10 +302,6 @@ msgstr "{0} ऑपरेशन"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} ऑपरेशन · {1} टुकड़े"
 
-#. placeholder {0}: levelLabel[l]
-msgid "{0} or more"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"
@@ -405,12 +401,6 @@ msgstr "{0} को {name} के रूप में सहेजा जाए�
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-वर्ष"
-
-#. placeholder {0}: row.label
-#. placeholder {1}: row.level
-#. placeholder {2}: row.gained.join(", ")
-msgid "{0}: {1}, gained {2}"
-msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -546,7 +536,8 @@ msgstr "{from}–{to} में से {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{count} ऑपरेशन में से {from}–{to}"
 
-msgid "{granted}/{total} pages"
+#. placeholder {0}: module.pages.length
+msgid "{granted}/{0} pages"
 msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
@@ -2331,7 +2322,10 @@ msgstr "समायोजन"
 msgid "Admin"
 msgstr "प्रशासक"
 
-msgid "Admin employee type"
+msgid "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
+msgstr ""
+
+msgid "Admin has full access"
 msgstr ""
 
 msgid "Advance"
@@ -2825,10 +2819,6 @@ msgstr "API कुंजी"
 
 msgid "API Key"
 msgstr "API कुंजी"
-
-#. placeholder {0}: key.name
-msgid "API key {0}"
-msgstr ""
 
 msgid "API Keys"
 msgstr "API कुंजियाँ"
@@ -4464,6 +4454,18 @@ msgstr "Carbon में एक विधि कहा जाता है — �
 msgid "Camera"
 msgstr "कैमरा"
 
+msgid "can create"
+msgstr ""
+
+msgid "can delete"
+msgstr ""
+
+msgid "can update"
+msgstr ""
+
+msgid "can view"
+msgstr ""
+
 msgid "Can't be restored"
 msgstr "पुनः स्थापित नहीं किया जा सकता"
 
@@ -5065,6 +5067,9 @@ msgstr "माल की प्राप्ति / चालान प्रा
 
 msgid "Clearing demo data"
 msgstr "डेमो डेटा साफ कर रहे हैं"
+
+msgid "Click a step to override the type for one module. Each step includes the ones before it."
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "डिस्कनेक्ट करने के लिए फिर से क्लिक करें"
@@ -5797,9 +5802,6 @@ msgstr "MRP सुझावों को क्रय आदेश और जॉ
 
 msgid "Convert to Quote"
 msgstr "उद्धरण में परिवर्तित करें"
-
-msgid "Converted access that grew"
-msgstr ""
 
 msgid "Converted Total Price"
 msgstr "परिवर्तित कुल मूल्य"
@@ -6655,9 +6657,6 @@ msgstr "वर्तमान"
 
 msgid "Current"
 msgstr "वर्तमान"
-
-msgid "Current access"
-msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "वर्तमान शुद्ध बही मूल्य:"
@@ -8387,6 +8386,9 @@ msgstr "उदा. Suite 200"
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "उदाहरण के लिए पहले 3 से 4 सप्ताह"
 
+msgid "e.g. Warehouse Supervisor"
+msgstr ""
+
 msgid "e.g. Zebra 2x1"
 msgstr "उदाहरण के लिए Zebra 2x1"
 
@@ -9402,6 +9404,9 @@ msgstr "प्रत्येक डिलीवरी इस रहस्य �
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "आपकी कॉन्फ़िगर की गई सिस्टम में, आपके डेटा के साथ, हर स्कोप में आने वाला टेस्ट पास होता है।"
 
+msgid "Every level on every module, including modules added later. There is nothing to set."
+msgstr ""
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "प्रत्येक पंक्ति पूरी तरह से चालान किया गया है और जो बिल करती है उसे स्वीकार करती है।"
 
@@ -9428,6 +9433,9 @@ msgstr "प्रत्येक इकाई की एक दर है।"
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "इस कंपनी को खोलने से पहले सभी को प्रमाणकर्ता ऐप सेट अप करना होगा।"
+
+msgid "Everyone with this type gets these levels, and a change reaches them on their next request."
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "जो कोई भी आपके चुने गए सप्ताह के किसी भी दिन काम कर रहा है वह आपके द्वारा निर्धारित घंटों तक अपनी शिफ्ट के बाद रहता है। केवल आप जिन विभागों और शिफ्ट को फ़िल्टर कर रहे हैं वे प्रभावित होते हैं।"
@@ -10525,11 +10533,7 @@ msgstr "से:"
 msgid "Fulfillment Location"
 msgstr "पूर्ति स्थान"
 
-msgid "Full"
-msgstr ""
-
-#. placeholder {0}: module.label
-msgid "Full access to {0}"
+msgid "Full access through the Admin type"
 msgstr ""
 
 msgid "Full name"
@@ -10572,7 +10576,7 @@ msgid "Gain/Loss"
 msgstr "लाभ/हानि"
 
 #. placeholder {0}: row.gained.join(", ")
-msgid "Gained {0} in the conversion"
+msgid "Gained {0} when permissions became levels"
 msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
@@ -10902,6 +10906,9 @@ msgstr "ग्रेड"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "सभी को पूर्ण पहुंच देने के बजाय प्रत्येक उपयोगकर्ता को बारीक-दानेदार, प्रति-मॉड्यूल अनुमतियां प्रदान करें।"
+
+msgid "Granted"
+msgstr ""
 
 msgid "Grants Ability"
 msgstr "कौशल प्रदान करता है"
@@ -11400,6 +11407,9 @@ msgstr "अपना चार्ट आयात करें"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "स्प्रेडशीट से अपना खातों का चार्ट आयात करें"
+
+msgid "in"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -12696,9 +12706,6 @@ msgstr "आइए अपना खाता सेट अप करें"
 
 msgid "Letter"
 msgstr "अक्षर"
-
-msgid "Level"
-msgstr ""
 
 msgid "Liability"
 msgstr "देयता"
@@ -14834,9 +14841,6 @@ msgstr "कोई गेज चयनित नहीं"
 msgid "No gauges found."
 msgstr "कोई गेज नहीं मिले।"
 
-msgid "No grant"
-msgstr ""
-
 msgid "No grouped notifications"
 msgstr "कोई समूहीकृत सूचनाएं नहीं"
 
@@ -15291,7 +15295,7 @@ msgstr "इस स्थान पर कोई वर्क सेंटर न
 msgid "No work centers exist"
 msgstr "कोई वर्क सेंटर मौजूद नहीं है"
 
-msgid "Nobody"
+msgid "Nobody yet."
 msgstr ""
 
 msgid "Nom"
@@ -16293,9 +16297,6 @@ msgstr "{0} का वर्गीकरण ओवरराइड करें"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "ओवरराइड के लिए inventory:update अनुमति और कारण की आवश्यकता है।"
-
-msgid "Override on this page"
-msgstr ""
 
 msgid "Override Price"
 msgstr "ओवरराइड मूल्य"
@@ -19098,6 +19099,9 @@ msgstr "आरक्षित"
 msgid "Reset"
 msgstr "रीसेट करें"
 
+msgid "Reset all overrides"
+msgstr ""
+
 msgid "Reset PIN"
 msgstr "PIN रीसेट करें"
 
@@ -19577,9 +19581,6 @@ msgid "Role"
 msgstr "भूमिका"
 
 msgid "Role default"
-msgstr ""
-
-msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -20759,9 +20760,6 @@ msgstr "प्रत्येक सप्ताह के लिए मां�
 
 msgid "Set due date"
 msgstr "नियत तिथि सेट करें"
-
-msgid "Set module-level access, then expand a module to fine-tune access for each of its pages."
-msgstr ""
 
 msgid "Set Pricing"
 msgstr "मूल्य निर्धारण सेट करें"
@@ -23647,6 +23645,9 @@ msgstr "ट्रैवलर सामग्री सूची पर प्�
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "ट्रैवलर प्रत्येक रूटिंग ऑपरेशन को उसके अपेक्षित समय और स्कैन बारकोड के साथ सूचीबद्ध करता है।"
 
+msgid "The type sets this person's access, and changes to it reach them too."
+msgstr ""
+
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "इस प्रक्रिया के लिए इस आपूर्तिकर्ता को काम भेजने और इसे वापस पाने के बीच दिनों की विशिष्ट संख्या; योजना आपूर्तिकर्ता चुनते समय इस मात्रा से मांग को ऑफसेट करती है।"
 
@@ -26351,6 +26352,9 @@ msgstr "यह कौन-सा ऑपरेशन था?"
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "जबकि यह रखरखाव कार्य खुला है, वर्क सेंटर शेड्यूल के लिए अनुपलब्ध है (योजनाबद्ध समाप्ति समय तक, या जब तक रखरखाव कार्य पूर्ण नहीं हो जाता)।"
 
+msgid "Who"
+msgstr ""
+
 msgid "Who Can Approve"
 msgstr "कौन अनुमोदन कर सकता है"
 
@@ -26362,9 +26366,6 @@ msgstr "छह चरणों में कौन क्या करता ह
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "कौन किस पर प्रशिक्षण पाता है, किस प्रारूप में। आपका हिस्सा: अपने चैंपियन के कैलेंडर पर हाथों-हाथ सत्र का समय जल्दी सुरक्षित रखें। यह वह है जो कंपनियों के व्यस्त होने पर सबसे अधिक फिसलता है।"
-
-msgid "Who has access"
-msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "किसे कोटेशन, आदेश, और क्रय को अनुमोदन करना है — और कब"

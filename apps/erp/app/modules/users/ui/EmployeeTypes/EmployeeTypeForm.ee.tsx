@@ -4,6 +4,9 @@
 
 import { ValidatedForm } from "@carbon/form";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   HStack,
   Modal,
@@ -12,11 +15,11 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  useCloseRoute,
-  VStack
+  useCloseRoute
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
+import { LuShieldCheck } from "react-icons/lu";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -29,12 +32,15 @@ type EmployeeTypeFormProps = {
   initialValues: Omit<z.infer<typeof employeeTypeValidator>, "data"> & {
     grants: AccessGrant[];
   };
-  /** The role's converted grants that hold more than their old checkboxes. */
-  convertedGrowth?: { label: string; level: string; gained: string[] }[];
+  /** The Admin type has Full on every module, whatever its grants say. */
+  isAdmin?: boolean;
+  /** Per module or page id, what the role gained when permissions became levels. */
+  convertedGrowth?: { id: string; gained: string[] }[];
 };
 
 const EmployeeTypeForm = ({
   initialValues,
+  isAdmin = false,
   convertedGrowth = []
 }: EmployeeTypeFormProps) => {
   const { t } = useLingui();
@@ -68,6 +74,8 @@ const EmployeeTypeForm = ({
           }
           defaultValues={initialValues}
         >
+          <Hidden name="id" />
+          <Hidden name="data" value={JSON.stringify(grants)} />
           <ModalHeader>
             <ModalTitle>
               {isEditing ? (
@@ -77,40 +85,55 @@ const EmployeeTypeForm = ({
               )}
             </ModalTitle>
           </ModalHeader>
-          <ModalBody>
-            <Hidden name="id" />
-            <VStack spacing={4}>
-              <Input name="name" label={t`Employee Type`} />
-              <Hidden name="data" value={JSON.stringify(grants)} />
-            </VStack>
-            <div className="mt-4">
-              <AccessGrid
-                value={grants}
-                onChange={setGrants}
-                label={t`Access`}
-                termId="employee-type-default-permissions"
-                isDisabled={isDisabled}
-              />
-              {convertedGrowth.length > 0 ? (
-                <div className="mt-4 rounded-md border border-yellow-500/40 p-3 text-sm">
-                  <p className="font-medium mb-1">
-                    <Trans>Converted access that grew</Trans>
-                  </p>
-                  <ul className="list-disc pl-5 text-muted-foreground">
-                    {convertedGrowth.map((row) => (
-                      <li key={row.label}>
-                        {t`${row.label}: ${row.level}, gained ${row.gained.join(", ")}`}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              {isEditing ? (
-                <div className="mt-4">
-                  <AccessHolders />
-                </div>
-              ) : null}
-            </div>
+          <ModalBody className="flex flex-col gap-8">
+            <Input
+              name="name"
+              label={t`Employee Type`}
+              placeholder={t`e.g. Warehouse Supervisor`}
+            />
+
+            <section className="flex flex-col gap-3">
+              <div>
+                <h3 className="text-sm font-medium">
+                  <Trans>Access</Trans>
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  <Trans>
+                    Everyone with this type gets these levels, and a change
+                    reaches them on their next request.
+                  </Trans>
+                </p>
+              </div>
+              {isAdmin ? (
+                <Alert>
+                  <LuShieldCheck />
+                  <AlertTitle>
+                    <Trans>Admin has full access</Trans>
+                  </AlertTitle>
+                  <AlertDescription>
+                    <Trans>
+                      Every level on every module, including modules added
+                      later. There is nothing to set.
+                    </Trans>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <AccessGrid
+                  value={grants}
+                  onChange={setGrants}
+                  termId="employee-type-default-permissions"
+                  notes={Object.fromEntries(
+                    convertedGrowth.map((row) => [
+                      row.id,
+                      t`Gained ${row.gained.join(", ")} when permissions became levels`
+                    ])
+                  )}
+                  isDisabled={isDisabled}
+                />
+              )}
+            </section>
+
+            {isEditing ? <AccessHolders /> : null}
           </ModalBody>
           <ModalFooter>
             <HStack>

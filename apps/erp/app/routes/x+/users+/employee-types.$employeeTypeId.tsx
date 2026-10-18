@@ -5,7 +5,7 @@
 import { respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
-import { actionsGained, pageById } from "@carbon/database/access";
+import { actionsGained } from "@carbon/database/access";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -46,10 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     convertedGrowth: rows.flatMap((row) => {
       const gained = actionsGained(row.level, row.convertedFrom);
       if (gained.length === 0) return [];
-      const id = row.page ?? row.module.toLowerCase();
-      return [
-        { label: pageById(id)?.label ?? row.module, level: row.level, gained }
-      ];
+      return [{ id: row.page ?? row.module.toLowerCase(), gained }];
     })
   };
 }
@@ -85,6 +82,7 @@ export default function EditEmployeeTypesRoute() {
     <EmployeeTypeForm
       key={initialValues.id}
       initialValues={initialValues}
+      isAdmin={employeeType?.systemType === "Admin"}
       convertedGrowth={convertedGrowth}
     />
   );

@@ -438,7 +438,7 @@ Browser: open Users → Employee Types → a type. Set Inventory to View and Sal
 
 **Out of scope:** pages below module grain; Task 17 adds them and the grid shows them with no change.
 
-**As built:** the grid follows the user's mockup: modules are collapsible rows with an "N/M pages" badge and a checkbox for Full on the module. Pages have View, Create, Update and Delete checkboxes that form a ladder over the stored level.
+**As built:** access is set per module: each module row has a four-step level meter (View, Create, Update, Delete); a module with pages expands to them. The person and role dialogs were redesigned around it (header, From column, Reset all overrides, Admin notice, conversion marks).
 
 ## Task 11: Build the person Access tab and bulk overrides
 

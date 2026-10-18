@@ -156,7 +156,11 @@ export default function UsersEmployeeRoute() {
   return (
     <EmployeePermissionsForm
       key={initialValues.id}
-      name={employee?.name || ""}
+      employee={{
+        name: employee?.name || "",
+        email: employee?.email ?? null,
+        avatarUrl: employee?.avatarUrl ?? null
+      }}
       employeeTypes={employeeTypes}
       roleGrants={roleGrants}
       effectiveAccess={effectiveAccess}

@@ -302,10 +302,6 @@ msgstr "{0} operazioni"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} ops · {1} pz"
 
-#. placeholder {0}: levelLabel[l]
-msgid "{0} or more"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ordini"
@@ -405,12 +401,6 @@ msgstr "{0} verrà salvato come {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-Anno"
-
-#. placeholder {0}: row.label
-#. placeholder {1}: row.level
-#. placeholder {2}: row.gained.join(", ")
-msgid "{0}: {1}, gained {2}"
-msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -546,7 +536,8 @@ msgstr "{from}–{to} di {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} di {count} operazioni"
 
-msgid "{granted}/{total} pages"
+#. placeholder {0}: module.pages.length
+msgid "{granted}/{0} pages"
 msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
@@ -2331,7 +2322,10 @@ msgstr "Rettifiche"
 msgid "Admin"
 msgstr "Amministratore"
 
-msgid "Admin employee type"
+msgid "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
+msgstr ""
+
+msgid "Admin has full access"
 msgstr ""
 
 msgid "Advance"
@@ -2825,10 +2819,6 @@ msgstr "Chiave API"
 
 msgid "API Key"
 msgstr "Chiave API"
-
-#. placeholder {0}: key.name
-msgid "API key {0}"
-msgstr ""
 
 msgid "API Keys"
 msgstr "Chiavi API"
@@ -4464,6 +4454,18 @@ msgstr "Chiamata una metodo in Carbon — i componenti più le operazioni che pr
 msgid "Camera"
 msgstr "Fotocamera"
 
+msgid "can create"
+msgstr ""
+
+msgid "can delete"
+msgstr ""
+
+msgid "can update"
+msgstr ""
+
+msgid "can view"
+msgstr ""
+
 msgid "Can't be restored"
 msgstr "Non può essere ripristinato"
 
@@ -5065,6 +5067,9 @@ msgstr "Conto di compensazione per ricevimento merce / abbinamento ricevimento f
 
 msgid "Clearing demo data"
 msgstr "Cancellazione dei dati demo"
+
+msgid "Click a step to override the type for one module. Each step includes the ones before it."
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "Fai clic di nuovo per disconnettere"
@@ -5797,9 +5802,6 @@ msgstr "Converti le proposte MRP in ordini di acquisto e ordini di produzione."
 
 msgid "Convert to Quote"
 msgstr "Converti in Preventivo"
-
-msgid "Converted access that grew"
-msgstr ""
 
 msgid "Converted Total Price"
 msgstr "Prezzo totale convertito"
@@ -6655,9 +6657,6 @@ msgstr "attuale"
 
 msgid "Current"
 msgstr "Attuale"
-
-msgid "Current access"
-msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "Valore Netto Contabile Corrente:"
@@ -8387,6 +8386,9 @@ msgstr "ad es. Suite 200"
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "ad es. le prime 3-4 settimane"
 
+msgid "e.g. Warehouse Supervisor"
+msgstr ""
+
 msgid "e.g. Zebra 2x1"
 msgstr "ad es. Zebra 2x1"
 
@@ -9402,6 +9404,9 @@ msgstr "Ogni consegna contiene un'intestazione Carbon-Signature firmata con ques
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Ogni test nell'ambito passa nel tuo sistema configurato, con i tuoi dati."
 
+msgid "Every level on every module, including modules added later. There is nothing to set."
+msgstr ""
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "Ogni riga è completamente fatturata e riconosce quello che fattura."
 
@@ -9428,6 +9433,9 @@ msgstr "Ogni unità ha un tasso."
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Tutti devono configurare un'app autenticatore prima di aprire questa azienda."
+
+msgid "Everyone with this type gets these levels, and a change reaches them on their next request."
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Chiunque lavori in qualsiasi giorno della settimana scelta rimane oltre il turno delle ore che imposti. Solo i reparti e i turni per cui stai filtrando sono interessati."
@@ -10525,11 +10533,7 @@ msgstr "Da:"
 msgid "Fulfillment Location"
 msgstr "Ubicazione di spedizione"
 
-msgid "Full"
-msgstr ""
-
-#. placeholder {0}: module.label
-msgid "Full access to {0}"
+msgid "Full access through the Admin type"
 msgstr ""
 
 msgid "Full name"
@@ -10572,7 +10576,7 @@ msgid "Gain/Loss"
 msgstr "Guadagno/Perdita"
 
 #. placeholder {0}: row.gained.join(", ")
-msgid "Gained {0} in the conversion"
+msgid "Gained {0} when permissions became levels"
 msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
@@ -10902,6 +10906,9 @@ msgstr "Gradi"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Concedi a ogni utente autorizzazioni granulari per modulo invece di dare l'accesso completo a tutti."
+
+msgid "Granted"
+msgstr ""
 
 msgid "Grants Ability"
 msgstr "Assegna Competenza"
@@ -11400,6 +11407,9 @@ msgstr "Importa il tuo piano"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "Importa il tuo piano dei conti da un foglio di calcolo"
+
+msgid "in"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -12696,9 +12706,6 @@ msgstr "Configuriamo il tuo account"
 
 msgid "Letter"
 msgstr "Lettera"
-
-msgid "Level"
-msgstr ""
 
 msgid "Liability"
 msgstr "Passività"
@@ -14834,9 +14841,6 @@ msgstr "Nessuno strumento di misura selezionato"
 msgid "No gauges found."
 msgstr "Nessuno strumento di misura trovato."
 
-msgid "No grant"
-msgstr ""
-
 msgid "No grouped notifications"
 msgstr "Nessuna notifica raggruppata"
 
@@ -15291,7 +15295,7 @@ msgstr "Nessun centro di lavoro in questa ubicazione"
 msgid "No work centers exist"
 msgstr "Non esistono centri di lavoro"
 
-msgid "Nobody"
+msgid "Nobody yet."
 msgstr ""
 
 msgid "Nom"
@@ -16293,9 +16297,6 @@ msgstr "Forzatura della classificazione di {0}"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "La forzatura richiede l'autorizzazione inventory:update e un motivo."
-
-msgid "Override on this page"
-msgstr ""
 
 msgid "Override Price"
 msgstr "Forzatura Prezzo"
@@ -19098,6 +19099,9 @@ msgstr "Impegnato"
 msgid "Reset"
 msgstr "Ripristina"
 
+msgid "Reset all overrides"
+msgstr ""
+
 msgid "Reset PIN"
 msgstr "Ripristina PIN"
 
@@ -19577,9 +19581,6 @@ msgid "Role"
 msgstr "Ruolo"
 
 msgid "Role default"
-msgstr ""
-
-msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -20759,9 +20760,6 @@ msgstr "Imposta valori di previsione dei fabbisogni per ogni settimana"
 
 msgid "Set due date"
 msgstr "Imposta data di scadenza"
-
-msgid "Set module-level access, then expand a module to fine-tune access for each of its pages."
-msgstr ""
 
 msgid "Set Pricing"
 msgstr "Imposta Determinazione dei prezzi"
@@ -23647,6 +23645,9 @@ msgstr "Il cartellino di produzione elenca ogni articolo nella distinta base con
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "Il cartellino di produzione elenca ogni operazione del ciclo di lavorazione con i tempi previsti e i codici a barre da scansionare."
 
+msgid "The type sets this person's access, and changes to it reach them too."
+msgstr ""
+
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "Il numero tipico di giorni tra l'invio del lavoro a questo fornitore per questo processo e il ritorno; la pianificazione anticipa il fabbisogno di questo importo quando si seleziona un fornitore."
 
@@ -26351,6 +26352,9 @@ msgstr "Di quale operazione si trattava?"
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Mentre questo dispatch è aperto, il centro di lavoro non è disponibile per la pianificazione (fino all'ora di fine pianificata, o fino al completamento del dispatch)."
 
+msgid "Who"
+msgstr ""
+
 msgid "Who Can Approve"
 msgstr "Chi Può Approvare"
 
@@ -26362,9 +26366,6 @@ msgstr "Chi fa cosa, in tutti i sei passi. Il tuo lato è evidenziato in alto. P
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Chi riceve la formazione su cosa, in quale formato. La tua parte: proteggi il tempo della sessione pratica nei calendari dei tuoi champion in anticipo. È quello che scivola di più quando le aziende sono occupate."
-
-msgid "Who has access"
-msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Chi deve approvare preventivi, ordini e acquisti — e quando"

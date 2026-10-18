@@ -5,6 +5,10 @@
 import { type Level, moduleOf, PAGES } from "@carbon/database/access";
 import { ValidatedForm } from "@carbon/form";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Avatar,
   Button,
   HStack,
   Modal,
@@ -13,18 +17,17 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  useCloseRoute,
-  VStack
+  useCloseRoute
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
+import { LuShieldCheck } from "react-icons/lu";
 import type { z } from "zod";
 import { Hidden, Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { employeeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 import AccessGrid, { type AccessGrant } from "../components/AccessGrid.ee";
-import EffectiveAccess, { type EffectiveAccessRow } from "./EffectiveAccess.ee";
 
 type EmployeeType = { id: string; name: string; systemType: string | null };
 
@@ -36,12 +39,12 @@ type RoleGrant = {
 };
 
 type EmployeePermissionsFormProps = {
-  name: string;
+  employee: { name: string; email: string | null; avatarUrl: string | null };
   employeeTypes: EmployeeType[];
   /** Every role's grants, so a new type shows its levels at once. */
   roleGrants: RoleGrant[];
-  /** What the person can do as saved. */
-  effectiveAccess: EffectiveAccessRow[];
+  /** Access as saved, per page: what grew in the conversion. */
+  effectiveAccess: { page: string; gained: string[] }[];
   initialValues: Omit<z.infer<typeof employeeValidator>, "data"> & {
     /** The person's own overrides. */
     grants: AccessGrant[];
@@ -67,7 +70,7 @@ function roleLevels(
 }
 
 const EmployeePermissionsForm = ({
-  name,
+  employee,
   employeeTypes,
   roleGrants,
   effectiveAccess,
@@ -78,12 +81,7 @@ const EmployeePermissionsForm = ({
   const permissions = usePermissions();
   const onClose = () => closeRoute();
 
-  const canEditPermissions = permissions.can("update", "users");
-
-  const employeeTypeOptions = employeeTypes.map((et) => ({
-    value: et.id,
-    label: et.name
-  }));
+  const canEdit = permissions.can("update", "users");
 
   // The person's edits; the route remounts the form for another person.
   const [grants, setGrants] = useState(initialValues.grants);
@@ -91,9 +89,21 @@ const EmployeePermissionsForm = ({
   const [employeeTypeId, setEmployeeTypeId] = useState(
     initialValues.employeeType
   );
-  const inherited = roleLevels(
-    employeeTypes.find((et) => et.id === employeeTypeId),
-    roleGrants
+  const type = employeeTypes.find((et) => et.id === employeeTypeId);
+  const isAdmin = type?.systemType === "Admin";
+  const inherited = roleLevels(type, roleGrants);
+
+  const isDirty =
+    employeeTypeId !== initialValues.employeeType ||
+    JSON.stringify(grants) !== JSON.stringify(initialValues.grants);
+
+  const notes = Object.fromEntries(
+    effectiveAccess
+      .filter((row) => row.gained.length > 0)
+      .map((row) => [
+        row.page,
+        t`Gained ${row.gained.join(", ")} when permissions became levels`
+      ])
   );
 
   return (
@@ -110,37 +120,97 @@ const EmployeePermissionsForm = ({
           action={path.to.employeeAccount(initialValues.id)}
           defaultValues={initialValues}
         >
+          <Hidden name="id" />
+          <Hidden name="data" value={JSON.stringify(grants)} />
           <ModalHeader>
-            <ModalTitle>{name}</ModalTitle>
+            <div className="flex items-center gap-3">
+              <Avatar
+                size="sm"
+                name={employee.name}
+                src={employee.avatarUrl ?? undefined}
+              />
+              <div className="min-w-0">
+                <ModalTitle className="truncate">{employee.name}</ModalTitle>
+                {employee.email ? (
+                  <p className="truncate text-sm text-muted-foreground">
+                    {employee.email}
+                  </p>
+                ) : null}
+              </div>
+            </div>
           </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <Select
-                name="employeeType"
-                label={t`Employee Type`}
-                termId="employee-permissions-employee-type-override"
-                options={employeeTypeOptions}
-                placeholder={t`Select Employee Type`}
-                onChange={(option) => {
-                  if (option) setEmployeeTypeId(option.value);
-                }}
-              />
-              <AccessGrid
-                value={grants}
-                onChange={setGrants}
-                inherited={inherited}
-                inheritLabel={t`Role default`}
-                label={t`Access`}
-                isDisabled={!canEditPermissions}
-              />
-              <EffectiveAccess rows={effectiveAccess} />
-              <Hidden name="id" />
-              <Hidden name="data" value={JSON.stringify(grants)} />
-            </VStack>
+          <ModalBody className="flex flex-col gap-8">
+            <Select
+              name="employeeType"
+              label={t`Employee Type`}
+              termId="employee-permissions-employee-type-override"
+              helperText={t`The type sets this person's access, and changes to it reach them too.`}
+              options={employeeTypes.map((et) => ({
+                value: et.id,
+                label: et.name
+              }))}
+              placeholder={t`Select Employee Type`}
+              isReadOnly={!canEdit}
+              onChange={(option) => {
+                if (option) setEmployeeTypeId(option.value);
+              }}
+            />
+
+            <section className="flex flex-col gap-3">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-medium">
+                    <Trans>Access</Trans>
+                  </h3>
+                  {isAdmin ? null : (
+                    <p className="text-xs text-muted-foreground">
+                      <Trans>
+                        Click a step to override the type for one module. Each
+                        step includes the ones before it.
+                      </Trans>
+                    </p>
+                  )}
+                </div>
+                {grants.length > 0 && !isAdmin && canEdit ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setGrants([])}
+                  >
+                    <Trans>Reset all overrides</Trans>
+                  </Button>
+                ) : null}
+              </div>
+              {isAdmin ? (
+                <Alert>
+                  <LuShieldCheck />
+                  <AlertTitle>
+                    <Trans>Full access through the Admin type</Trans>
+                  </AlertTitle>
+                  <AlertDescription>
+                    <Trans>
+                      Admin has every level on every module, including modules
+                      added later. Overrides don't apply while this person is an
+                      Admin.
+                    </Trans>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <AccessGrid
+                  value={grants}
+                  onChange={setGrants}
+                  inherited={inherited}
+                  inheritsFrom={type?.name ?? t`Role`}
+                  inheritLabel={t`Role default`}
+                  notes={notes}
+                  isDisabled={!canEdit}
+                />
+              )}
+            </section>
           </ModalBody>
           <ModalFooter>
             <HStack>
-              <Submit isDisabled={!canEditPermissions}>
+              <Submit isDisabled={!canEdit || !isDirty}>
                 <Trans>Save</Trans>
               </Submit>
               <Button size="md" variant="solid" onClick={onClose}>

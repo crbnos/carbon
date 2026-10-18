@@ -302,10 +302,6 @@ msgstr "{0} 工序"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} 道工序 · {1} 件"
 
-#. placeholder {0}: levelLabel[l]
-msgid "{0} or more"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} 个订单"
@@ -405,12 +401,6 @@ msgstr "{0} 将被保存为 {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0} 年"
-
-#. placeholder {0}: row.label
-#. placeholder {1}: row.level
-#. placeholder {2}: row.gained.join(", ")
-msgid "{0}: {1}, gained {2}"
-msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -546,7 +536,8 @@ msgstr "{from}–{to} 共 {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "第{from}–{to}个工序（共{count}个）"
 
-msgid "{granted}/{total} pages"
+#. placeholder {0}: module.pages.length
+msgid "{granted}/{0} pages"
 msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
@@ -2331,7 +2322,10 @@ msgstr "调整"
 msgid "Admin"
 msgstr "管理员"
 
-msgid "Admin employee type"
+msgid "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
+msgstr ""
+
+msgid "Admin has full access"
 msgstr ""
 
 msgid "Advance"
@@ -2825,10 +2819,6 @@ msgstr "API密钥"
 
 msgid "API Key"
 msgstr "API密钥"
-
-#. placeholder {0}: key.name
-msgid "API key {0}"
-msgstr ""
 
 msgid "API Keys"
 msgstr "API密钥"
@@ -4464,6 +4454,18 @@ msgstr "在Carbon中称为方法 — 生产一个零件的组成部分和工序�
 msgid "Camera"
 msgstr "摄像头"
 
+msgid "can create"
+msgstr ""
+
+msgid "can delete"
+msgstr ""
+
+msgid "can update"
+msgstr ""
+
+msgid "can view"
+msgstr ""
+
 msgid "Can't be restored"
 msgstr "无法恢复"
 
@@ -5065,6 +5067,9 @@ msgstr "商品收据/发票收据匹配的清算账户"
 
 msgid "Clearing demo data"
 msgstr "正在清除演示数据"
+
+msgid "Click a step to override the type for one module. Each step includes the ones before it."
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "再次单击以断开连接"
@@ -5797,9 +5802,6 @@ msgstr "将MRP建议转换为采购订单和工单。"
 
 msgid "Convert to Quote"
 msgstr "转换为报价"
-
-msgid "Converted access that grew"
-msgstr ""
 
 msgid "Converted Total Price"
 msgstr "转换后的总价格"
@@ -6655,9 +6657,6 @@ msgstr "当前"
 
 msgid "Current"
 msgstr "当前"
-
-msgid "Current access"
-msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "当前账面净值："
@@ -8387,6 +8386,9 @@ msgstr "例：Suite 200"
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "例如前3到4周"
 
+msgid "e.g. Warehouse Supervisor"
+msgstr ""
+
 msgid "e.g. Zebra 2x1"
 msgstr "例如 Zebra 2x1"
 
@@ -9402,6 +9404,9 @@ msgstr "每个投递都携带使用此密钥签名的 Carbon-Signature 标头。
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了您的数据。"
 
+msgid "Every level on every module, including modules added later. There is nothing to set."
+msgstr ""
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "每行都完全开票并确认其计费内容"
 
@@ -9428,6 +9433,9 @@ msgstr "每件都有费率。"
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "每个人在打开此公司之前都必须设置身份验证器应用程序。"
+
+msgid "Everyone with this type gets these levels, and a change reaches them on their next request."
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "您选择的该周任何一天工作的所有人都将在他们的班次后延长您设置的小时数。只有您筛选的部门和班次会受到影响。"
@@ -10525,11 +10533,7 @@ msgstr "来源："
 msgid "Fulfillment Location"
 msgstr "发货地点"
 
-msgid "Full"
-msgstr ""
-
-#. placeholder {0}: module.label
-msgid "Full access to {0}"
+msgid "Full access through the Admin type"
 msgstr ""
 
 msgid "Full name"
@@ -10572,7 +10576,7 @@ msgid "Gain/Loss"
 msgstr "收益/损失"
 
 #. placeholder {0}: row.gained.join(", ")
-msgid "Gained {0} in the conversion"
+msgid "Gained {0} when permissions became levels"
 msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
@@ -10902,6 +10906,9 @@ msgstr "等级"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "向每个用户授予细粒度、按模块权限，而不是给予所有人完全访问权。"
+
+msgid "Granted"
+msgstr ""
 
 msgid "Grants Ability"
 msgstr "授予能力"
@@ -11400,6 +11407,9 @@ msgstr "导入您的会计科目表"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "从电子表格导入您的会计科目表"
+
+msgid "in"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -12696,9 +12706,6 @@ msgstr "让我们设置您的账户"
 
 msgid "Letter"
 msgstr "字母"
-
-msgid "Level"
-msgstr ""
 
 msgid "Liability"
 msgstr "负债"
@@ -14834,9 +14841,6 @@ msgstr "未选择量具"
 msgid "No gauges found."
 msgstr "未找到量具。"
 
-msgid "No grant"
-msgstr ""
-
 msgid "No grouped notifications"
 msgstr "没有分组通知"
 
@@ -15291,7 +15295,7 @@ msgstr "此地点没有工作中心"
 msgid "No work centers exist"
 msgstr "没有工作中心存在"
 
-msgid "Nobody"
+msgid "Nobody yet."
 msgstr ""
 
 msgid "Nom"
@@ -16293,9 +16297,6 @@ msgstr "覆盖 {0} 的分类"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "覆盖需要库存管理:更新权限和原因。"
-
-msgid "Override on this page"
-msgstr ""
 
 msgid "Override Price"
 msgstr "覆盖价格"
@@ -19098,6 +19099,9 @@ msgstr "已预留"
 msgid "Reset"
 msgstr "重置"
 
+msgid "Reset all overrides"
+msgstr ""
+
 msgid "Reset PIN"
 msgstr "重置PIN"
 
@@ -19577,9 +19581,6 @@ msgid "Role"
 msgstr "角色"
 
 msgid "Role default"
-msgstr ""
-
-msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -20759,9 +20760,6 @@ msgstr "为每周设置需求预测值"
 
 msgid "Set due date"
 msgstr "设置到期日"
-
-msgid "Set module-level access, then expand a module to fine-tune access for each of its pages."
-msgstr ""
 
 msgid "Set Pricing"
 msgstr "设置定价"
@@ -23647,6 +23645,9 @@ msgstr "流转卡列出物料清单上的每个物料及其数量。"
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "流转卡列出每个工艺路线工序及其预期时间和扫码条码。"
 
+msgid "The type sets this person's access, and changes to it reach them too."
+msgstr ""
+
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "将工作发送给此供应商进行此工艺和取回之间的典型天数;选择供应商时计划以此偏移需求。"
 
@@ -26351,6 +26352,9 @@ msgstr "这是哪个工序?"
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "当此派遣打开时，工作中心对计划不可用（直到计划结束时间或派遣完成）。"
 
+msgid "Who"
+msgstr ""
+
 msgid "Who Can Approve"
 msgstr "谁可以审批"
 
@@ -26362,9 +26366,6 @@ msgstr "谁在六个步骤中做什么。您的部分在上面突出显示。做
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "谁接受什么培训，采用什么形式。你的职责：尽早在你的冠军们的日程表上保护动手操作的会议时间。这是公司忙碌时最容易被推迟的事情。"
-
-msgid "Who has access"
-msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "谁必须审批报价单、订单和采购——以及何时"

@@ -302,10 +302,6 @@ msgstr "{0} ops"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} ops · {1} pcs"
 
-#. placeholder {0}: levelLabel[l]
-msgid "{0} or more"
-msgstr "{0} or more"
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} orders"
@@ -405,12 +401,6 @@ msgstr "{0} will be saved as {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-Year"
-
-#. placeholder {0}: row.label
-#. placeholder {1}: row.level
-#. placeholder {2}: row.gained.join(", ")
-msgid "{0}: {1}, gained {2}"
-msgstr "{0}: {1}, gained {2}"
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -546,8 +536,9 @@ msgstr "{from}–{to} of {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} of {count} operations"
 
-msgid "{granted}/{total} pages"
-msgstr "{granted}/{total} pages"
+#. placeholder {0}: module.pages.length
+msgid "{granted}/{0} pages"
+msgstr "{granted}/{0} pages"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {And # more record.} other {And # more records.}}"
@@ -2331,8 +2322,11 @@ msgstr "Adjustments"
 msgid "Admin"
 msgstr "Admin"
 
-msgid "Admin employee type"
-msgstr "Admin employee type"
+msgid "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
+msgstr "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
+
+msgid "Admin has full access"
+msgstr "Admin has full access"
 
 msgid "Advance"
 msgstr "Advance"
@@ -2825,10 +2819,6 @@ msgstr "API key"
 
 msgid "API Key"
 msgstr "API Key"
-
-#. placeholder {0}: key.name
-msgid "API key {0}"
-msgstr "API key {0}"
 
 msgid "API Keys"
 msgstr "API Keys"
@@ -4464,6 +4454,18 @@ msgstr "Called a method in Carbon — the components plus operations that produc
 msgid "Camera"
 msgstr "Camera"
 
+msgid "can create"
+msgstr "can create"
+
+msgid "can delete"
+msgstr "can delete"
+
+msgid "can update"
+msgstr "can update"
+
+msgid "can view"
+msgstr "can view"
+
 msgid "Can't be restored"
 msgstr "Can't be restored"
 
@@ -5065,6 +5067,9 @@ msgstr "Clearing account for goods received / invoice received matching"
 
 msgid "Clearing demo data"
 msgstr "Clearing demo data"
+
+msgid "Click a step to override the type for one module. Each step includes the ones before it."
+msgstr "Click a step to override the type for one module. Each step includes the ones before it."
 
 msgid "Click again to disconnect"
 msgstr "Click again to disconnect"
@@ -5797,9 +5802,6 @@ msgstr "Convert MRP suggestions into purchase orders and jobs."
 
 msgid "Convert to Quote"
 msgstr "Convert to Quote"
-
-msgid "Converted access that grew"
-msgstr "Converted access that grew"
 
 msgid "Converted Total Price"
 msgstr "Converted Total Price"
@@ -6655,9 +6657,6 @@ msgstr "current"
 
 msgid "Current"
 msgstr "Current"
-
-msgid "Current access"
-msgstr "Current access"
 
 msgid "Current Net Book Value:"
 msgstr "Current Net Book Value:"
@@ -8387,6 +8386,9 @@ msgstr "e.g. Suite 200"
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "e.g. the first 3 to 4 weeks"
 
+msgid "e.g. Warehouse Supervisor"
+msgstr "e.g. Warehouse Supervisor"
+
 msgid "e.g. Zebra 2x1"
 msgstr "e.g. Zebra 2x1"
 
@@ -9402,6 +9404,9 @@ msgstr "Every delivery carries a Carbon-Signature header signed with this secret
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Every in-scope test passes in your configured system, with your data."
 
+msgid "Every level on every module, including modules added later. There is nothing to set."
+msgstr "Every level on every module, including modules added later. There is nothing to set."
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "Every line is fully invoiced and recognizes what it bills."
 
@@ -9428,6 +9433,9 @@ msgstr "Every unit has a rate."
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Everyone must set up an authenticator app before opening this company."
+
+msgid "Everyone with this type gets these levels, and a change reaches them on their next request."
+msgstr "Everyone with this type gets these levels, and a change reaches them on their next request."
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
@@ -10525,12 +10533,8 @@ msgstr "From:"
 msgid "Fulfillment Location"
 msgstr "Fulfillment Location"
 
-msgid "Full"
-msgstr "Full"
-
-#. placeholder {0}: module.label
-msgid "Full access to {0}"
-msgstr "Full access to {0}"
+msgid "Full access through the Admin type"
+msgstr "Full access through the Admin type"
 
 msgid "Full name"
 msgstr "Full name"
@@ -10572,8 +10576,8 @@ msgid "Gain/Loss"
 msgstr "Gain/Loss"
 
 #. placeholder {0}: row.gained.join(", ")
-msgid "Gained {0} in the conversion"
-msgstr "Gained {0} in the conversion"
+msgid "Gained {0} when permissions became levels"
+msgstr "Gained {0} when permissions became levels"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Gains recognized on disposal of fixed assets"
@@ -10902,6 +10906,9 @@ msgstr "Grades"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
+
+msgid "Granted"
+msgstr "Granted"
 
 msgid "Grants Ability"
 msgstr "Grants Ability"
@@ -11400,6 +11407,9 @@ msgstr "Import your chart"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "Import your chart of accounts from a spreadsheet"
+
+msgid "in"
+msgstr "in"
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -12696,9 +12706,6 @@ msgstr "Let's setup your account"
 
 msgid "Letter"
 msgstr "Letter"
-
-msgid "Level"
-msgstr "Level"
 
 msgid "Liability"
 msgstr "Liability"
@@ -14834,9 +14841,6 @@ msgstr "No Gauge Selected"
 msgid "No gauges found."
 msgstr "No gauges found."
 
-msgid "No grant"
-msgstr "No grant"
-
 msgid "No grouped notifications"
 msgstr "No grouped notifications"
 
@@ -15291,8 +15295,8 @@ msgstr "No work centers at this location"
 msgid "No work centers exist"
 msgstr "No work centers exist"
 
-msgid "Nobody"
-msgstr "Nobody"
+msgid "Nobody yet."
+msgstr "Nobody yet."
 
 msgid "Nom"
 msgstr "Nom"
@@ -16293,9 +16297,6 @@ msgstr "Override Classification of {0}"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Override needs the inventory:update permission and a reason."
-
-msgid "Override on this page"
-msgstr "Override on this page"
 
 msgid "Override Price"
 msgstr "Override Price"
@@ -19098,6 +19099,9 @@ msgstr "Reserved"
 msgid "Reset"
 msgstr "Reset"
 
+msgid "Reset all overrides"
+msgstr "Reset all overrides"
+
 msgid "Reset PIN"
 msgstr "Reset PIN"
 
@@ -19578,9 +19582,6 @@ msgstr "Role"
 
 msgid "Role default"
 msgstr "Role default"
-
-msgid "Role, this page"
-msgstr "Role, this page"
 
 msgid "Role:"
 msgstr "Role:"
@@ -20759,9 +20760,6 @@ msgstr "Set demand forecast values for each week"
 
 msgid "Set due date"
 msgstr "Set due date"
-
-msgid "Set module-level access, then expand a module to fine-tune access for each of its pages."
-msgstr "Set module-level access, then expand a module to fine-tune access for each of its pages."
 
 msgid "Set Pricing"
 msgstr "Set Pricing"
@@ -23647,6 +23645,9 @@ msgstr "The traveler lists each item on the bill of materials with its quantity.
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "The traveler lists each routing operation with its expected times and scan barcodes."
 
+msgid "The type sets this person's access, and changes to it reach them too."
+msgstr "The type sets this person's access, and changes to it reach them too."
+
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 
@@ -26351,6 +26352,9 @@ msgstr "Which operation was this?"
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 
+msgid "Who"
+msgstr "Who"
+
 msgid "Who Can Approve"
 msgstr "Who Can Approve"
 
@@ -26362,9 +26366,6 @@ msgstr "Who does what, across the six steps. Your side is highlighted up top. Ow
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
-
-msgid "Who has access"
-msgstr "Who has access"
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Who has to approve quotes, orders, and purchases — and when"

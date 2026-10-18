@@ -302,10 +302,6 @@ msgstr "{0} 工程"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} 作業 · {1} 個"
 
-#. placeholder {0}: levelLabel[l]
-msgid "{0} or more"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0}件の注文"
@@ -405,12 +401,6 @@ msgstr "{0} は {name} として保存されます"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0} 年"
-
-#. placeholder {0}: row.label
-#. placeholder {1}: row.level
-#. placeholder {2}: row.gained.join(", ")
-msgid "{0}: {1}, gained {2}"
-msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -546,7 +536,8 @@ msgstr "{from}–{to} / {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 件の工程"
 
-msgid "{granted}/{total} pages"
+#. placeholder {0}: module.pages.length
+msgid "{granted}/{0} pages"
 msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
@@ -2331,7 +2322,10 @@ msgstr "調整"
 msgid "Admin"
 msgstr "管理者"
 
-msgid "Admin employee type"
+msgid "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
+msgstr ""
+
+msgid "Admin has full access"
 msgstr ""
 
 msgid "Advance"
@@ -2825,10 +2819,6 @@ msgstr "APIキー"
 
 msgid "API Key"
 msgstr "APIキー"
-
-#. placeholder {0}: key.name
-msgid "API key {0}"
-msgstr ""
 
 msgid "API Keys"
 msgstr "APIキー"
@@ -4464,6 +4454,18 @@ msgstr "Carbonで「製法」と呼ばれるもの — 部品を製造するた�
 msgid "Camera"
 msgstr "カメラ"
 
+msgid "can create"
+msgstr ""
+
+msgid "can delete"
+msgstr ""
+
+msgid "can update"
+msgstr ""
+
+msgid "can view"
+msgstr ""
+
 msgid "Can't be restored"
 msgstr "復元できません"
 
@@ -5065,6 +5067,9 @@ msgstr "商品受領/請求書受領照合用相殺勘定"
 
 msgid "Clearing demo data"
 msgstr "デモデータをクリア中"
+
+msgid "Click a step to override the type for one module. Each step includes the ones before it."
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "再度クリックして切断"
@@ -5797,9 +5802,6 @@ msgstr "MRP提案を発注書と製造指図に変換します。"
 
 msgid "Convert to Quote"
 msgstr "見積に変換"
-
-msgid "Converted access that grew"
-msgstr ""
 
 msgid "Converted Total Price"
 msgstr "変換後の合計価格"
@@ -6655,9 +6657,6 @@ msgstr "現在"
 
 msgid "Current"
 msgstr "現在"
-
-msgid "Current access"
-msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "現在の未償却残高:"
@@ -8387,6 +8386,9 @@ msgstr "例：Suite 200"
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "例：最初の3～4週間"
 
+msgid "e.g. Warehouse Supervisor"
+msgstr ""
+
 msgid "e.g. Zebra 2x1"
 msgstr "例：Zebra 2x1"
 
@@ -9402,6 +9404,9 @@ msgstr "すべての配信にはこのシークレットで署名されたCarbon
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "スコープ内のすべてのテストが、設定されたシステムで、あなたのデータを使用して合格します。"
 
+msgid "Every level on every module, including modules added later. There is nothing to set."
+msgstr ""
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "すべての明細は完全に請求済みであり、請求する金額を認識しています。"
 
@@ -9428,6 +9433,9 @@ msgstr "すべての個にレートが設定されています。"
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "この会社を開く前に、誰もが認証器アプリをセットアップする必要があります。"
+
+msgid "Everyone with this type gets these levels, and a change reaches them on their next request."
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "選択した週のどの日でも勤務している全員が、設定した時間分シフトを超えて勤務します。フィルタリングしている部門とシフトのみが影響を受けます。"
@@ -10525,11 +10533,7 @@ msgstr "開始："
 msgid "Fulfillment Location"
 msgstr "出荷拠点"
 
-msgid "Full"
-msgstr ""
-
-#. placeholder {0}: module.label
-msgid "Full access to {0}"
+msgid "Full access through the Admin type"
 msgstr ""
 
 msgid "Full name"
@@ -10572,7 +10576,7 @@ msgid "Gain/Loss"
 msgstr "利益/損失"
 
 #. placeholder {0}: row.gained.join(", ")
-msgid "Gained {0} in the conversion"
+msgid "Gained {0} when permissions became levels"
 msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
@@ -10902,6 +10906,9 @@ msgstr "等級"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "全員にフルアクセスを付与するのではなく、各ユーザーに細粒度で、モジュール単位の権限を付与します。"
+
+msgid "Granted"
+msgstr ""
 
 msgid "Grants Ability"
 msgstr "スキルを付与"
@@ -11400,6 +11407,9 @@ msgstr "あなたの勘定科目表をインポート"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "スプレッドシートからあなたの勘定科目表をインポート"
+
+msgid "in"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -12696,9 +12706,6 @@ msgstr "アカウントをセットアップしましょう"
 
 msgid "Letter"
 msgstr "文字"
-
-msgid "Level"
-msgstr ""
 
 msgid "Liability"
 msgstr "負債"
@@ -14834,9 +14841,6 @@ msgstr "測定器が選択されていません"
 msgid "No gauges found."
 msgstr "測定器が見つかりません。"
 
-msgid "No grant"
-msgstr ""
-
 msgid "No grouped notifications"
 msgstr "グループ化された通知がありません"
 
@@ -15291,7 +15295,7 @@ msgstr "この拠点には作業区がありません"
 msgid "No work centers exist"
 msgstr "作業区がありません"
 
-msgid "Nobody"
+msgid "Nobody yet."
 msgstr ""
 
 msgid "Nom"
@@ -16293,9 +16297,6 @@ msgstr "{0}の分類を上書き"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "上書きにはinventory:update権限と理由が必要です。"
-
-msgid "Override on this page"
-msgstr ""
 
 msgid "Override Price"
 msgstr "上書き価格"
@@ -19098,6 +19099,9 @@ msgstr "引当済"
 msgid "Reset"
 msgstr "リセット"
 
+msgid "Reset all overrides"
+msgstr ""
+
 msgid "Reset PIN"
 msgstr "PINをリセット"
 
@@ -19577,9 +19581,6 @@ msgid "Role"
 msgstr "役割"
 
 msgid "Role default"
-msgstr ""
-
-msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -20759,9 +20760,6 @@ msgstr "毎週の所要量予測値を設定"
 
 msgid "Set due date"
 msgstr "期日を設定"
-
-msgid "Set module-level access, then expand a module to fine-tune access for each of its pages."
-msgstr ""
 
 msgid "Set Pricing"
 msgstr "価格設定"
@@ -23647,6 +23645,9 @@ msgstr "現品票は部品表上の各品目をその数量と共にリストし
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "現品票は各工順工程とその予想時間及びスキャンバーコードをリストアップします。"
 
+msgid "The type sets this person's access, and changes to it reach them too."
+msgstr ""
+
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "この工法のためにこの仕入先に作業を送ってから返ってくるまでの一般的な日数。計画機能は仕入先を選択する際、需要をこの日数だけオフセットします。"
 
@@ -26351,6 +26352,9 @@ msgstr "これはどの工程でしたか?"
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "このディスパッチがオープンの間、作業区はスケジュールに対して利用できません（計画終了時刻まで、またはディスパッチが完了するまで）。"
 
+msgid "Who"
+msgstr ""
+
 msgid "Who Can Approve"
 msgstr "誰が承認できるか"
 
@@ -26362,9 +26366,6 @@ msgstr "6つのステップ全体で誰が何をするかを示します。あ�
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "誰が何をどのような形式で訓練を受けるか。あなたの役割：チャンピオンのカレンダーで実践的なセッション時間を早期に確保する。企業が忙しくなると、これが最も遅れやすい。"
-
-msgid "Who has access"
-msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "見積、注文、購買の承認が必要な人と時期"

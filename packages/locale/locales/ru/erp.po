@@ -302,10 +302,6 @@ msgstr "{0} операции"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} опер. · {1} шт"
 
-#. placeholder {0}: levelLabel[l]
-msgid "{0} or more"
-msgstr ""
-
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} заказов"
@@ -405,12 +401,6 @@ msgstr "{0} будет сохранено как {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-летний"
-
-#. placeholder {0}: row.label
-#. placeholder {1}: row.level
-#. placeholder {2}: row.gained.join(", ")
-msgid "{0}: {1}, gained {2}"
-msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -546,7 +536,8 @@ msgstr "{from}–{to} из {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} из {count} операций"
 
-msgid "{granted}/{total} pages"
+#. placeholder {0}: module.pages.length
+msgid "{granted}/{0} pages"
 msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
@@ -2331,7 +2322,10 @@ msgstr "Корректировки"
 msgid "Admin"
 msgstr "Администратор"
 
-msgid "Admin employee type"
+msgid "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
+msgstr ""
+
+msgid "Admin has full access"
 msgstr ""
 
 msgid "Advance"
@@ -2825,10 +2819,6 @@ msgstr "API-ключ"
 
 msgid "API Key"
 msgstr "API-ключ"
-
-#. placeholder {0}: key.name
-msgid "API key {0}"
-msgstr ""
 
 msgid "API Keys"
 msgstr "API-ключи"
@@ -4464,6 +4454,18 @@ msgstr "Называется метод в Carbon — компоненты пл�
 msgid "Camera"
 msgstr "Камера"
 
+msgid "can create"
+msgstr ""
+
+msgid "can delete"
+msgstr ""
+
+msgid "can update"
+msgstr ""
+
+msgid "can view"
+msgstr ""
+
 msgid "Can't be restored"
 msgstr "Невозможно восстановить"
 
@@ -5065,6 +5067,9 @@ msgstr "Счет учета для согласования поступлени
 
 msgid "Clearing demo data"
 msgstr "Удаление демо-данных"
+
+msgid "Click a step to override the type for one module. Each step includes the ones before it."
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "Нажмите еще раз, чтобы отключить"
@@ -5797,9 +5802,6 @@ msgstr "Преобразовывать предложения MRP в заказ�
 
 msgid "Convert to Quote"
 msgstr "Преобразовать в предложение"
-
-msgid "Converted access that grew"
-msgstr ""
 
 msgid "Converted Total Price"
 msgstr "Преобразованная общая цена"
@@ -6655,9 +6657,6 @@ msgstr "текущий"
 
 msgid "Current"
 msgstr "Текущее"
-
-msgid "Current access"
-msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "Текущая остаточная стоимость:"
@@ -8387,6 +8386,9 @@ msgstr "например Suite 200"
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "например, первые 3-4 недели"
 
+msgid "e.g. Warehouse Supervisor"
+msgstr ""
+
 msgid "e.g. Zebra 2x1"
 msgstr "например Zebra 2x1"
 
@@ -9402,6 +9404,9 @@ msgstr "Каждая доставка содержит заголовок Carbon
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Все тесты в области действия проходят в вашей настроенной системе с вашими данными."
 
+msgid "Every level on every module, including modules added later. There is nothing to set."
+msgstr ""
+
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "По каждой строке полностью выставлена счет-фактура и полностью признана выручка."
 
@@ -9428,6 +9433,9 @@ msgstr "Каждая единица имеет ставку."
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Все должны установить приложение-аутентификатор перед открытием этой организации."
+
+msgid "Everyone with this type gets these levels, and a change reaches them on their next request."
+msgstr ""
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Все работающие в любой день недели, который вы выберете, остаются после смены на количество часов, которые вы установите. Затронуты только отделы и смены, по которым вы фильтруете."
@@ -10525,11 +10533,7 @@ msgstr "От:"
 msgid "Fulfillment Location"
 msgstr "Площадка отгрузки"
 
-msgid "Full"
-msgstr ""
-
-#. placeholder {0}: module.label
-msgid "Full access to {0}"
+msgid "Full access through the Admin type"
 msgstr ""
 
 msgid "Full name"
@@ -10572,7 +10576,7 @@ msgid "Gain/Loss"
 msgstr "Прибыль/Убыток"
 
 #. placeholder {0}: row.gained.join(", ")
-msgid "Gained {0} in the conversion"
+msgid "Gained {0} when permissions became levels"
 msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
@@ -10902,6 +10906,9 @@ msgstr "Сорта"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Предоставить каждому пользователю детальные права доступа по модулям вместо предоставления полного доступа всем."
+
+msgid "Granted"
+msgstr ""
 
 msgid "Grants Ability"
 msgstr "Предоставляет Навык"
@@ -11400,6 +11407,9 @@ msgstr "Импортируйте свой план счетов"
 
 msgid "Import your chart of accounts from a spreadsheet"
 msgstr "Импортируйте свой план счетов из электронной таблицы"
+
+msgid "in"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -12696,9 +12706,6 @@ msgstr "Давайте настроим вашу учетную запись"
 
 msgid "Letter"
 msgstr "Буква"
-
-msgid "Level"
-msgstr ""
 
 msgid "Liability"
 msgstr "Обязательство"
@@ -14834,9 +14841,6 @@ msgstr "Средство измерения не выбрано"
 msgid "No gauges found."
 msgstr "Средства измерения не найдены."
 
-msgid "No grant"
-msgstr ""
-
 msgid "No grouped notifications"
 msgstr "Нет сгруппированных уведомлений"
 
@@ -15291,7 +15295,7 @@ msgstr "На этой площадке нет рабочих центров"
 msgid "No work centers exist"
 msgstr "Рабочих центров не существует"
 
-msgid "Nobody"
+msgid "Nobody yet."
 msgstr ""
 
 msgid "Nom"
@@ -16293,9 +16297,6 @@ msgstr "Переопределение классификации {0}"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Для переопределения требуется право доступа inventory:update и причина."
-
-msgid "Override on this page"
-msgstr ""
 
 msgid "Override Price"
 msgstr "Цена переопределения"
@@ -19098,6 +19099,9 @@ msgstr "Зарезервировано"
 msgid "Reset"
 msgstr "Сброс"
 
+msgid "Reset all overrides"
+msgstr ""
+
 msgid "Reset PIN"
 msgstr "Сброс PIN"
 
@@ -19577,9 +19581,6 @@ msgid "Role"
 msgstr "Роль"
 
 msgid "Role default"
-msgstr ""
-
-msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -20759,9 +20760,6 @@ msgstr "Установить значения прогноза потребно�
 
 msgid "Set due date"
 msgstr "Установить срок выполнения"
-
-msgid "Set module-level access, then expand a module to fine-tune access for each of its pages."
-msgstr ""
 
 msgid "Set Pricing"
 msgstr "Установить ценообразование"
@@ -23647,6 +23645,9 @@ msgstr "Маршрутный лист содержит каждый элемен
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "Маршрутный лист перечисляет каждую операцию маршрута с ожидаемыми временами и сканируемыми штрих-кодами."
 
+msgid "The type sets this person's access, and changes to it reach them too."
+msgstr ""
+
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "Типичное количество дней между отправкой работы этому поставщику для этого процесса и ее возвратом; планирование смещает спрос на эту величину при выборе поставщика."
 
@@ -26351,6 +26352,9 @@ msgstr "Какая это была операция?"
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Пока это отправление открыто, рабочий центр недоступен для расписания (до запланированного времени окончания или до завершения отправления)."
 
+msgid "Who"
+msgstr ""
+
 msgid "Who Can Approve"
 msgstr "Кто может утвердить"
 
@@ -26362,9 +26366,6 @@ msgstr "Кто что делает во всех шести шагах. Ваша
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Кто получает обучение, по каким темам и в каком формате. Ваша задача: зарезервируйте время практических занятий в календарях ваших ключевых сотрудников заранее. Это то, что чаще всего откладывается, когда компании становятся загруженными."
-
-msgid "Who has access"
-msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Кто должен утвердить коммерческие предложения, заказы и закупки — и когда"

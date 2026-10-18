@@ -435,16 +435,19 @@ four forms with their own checkbox tables.
 
 ## UI Changes
 
-- **Role grid** (archetype: settings form, as `EmployeeTypeForm`; layout from
-  the user's mockup): one collapsible row per module with an "N/M pages" badge
-  and a checkbox that gives Full on the whole module. Expanding a row shows its
-  pages, each with View, Create, Update and Delete checkboxes. The checkboxes
-  are a ladder over the stored level: ticking Update ticks View and Create
-  (Edit), unticking View clears the row. A box above the page's `maxLevel` is
-  disabled. A page row without its own grant shows the module level, faded.
-- **Person Access tab**: the same grid. A row without an override shows the
-  role's level, faded; a row with one shows a "Role default" button that
-  removes it.
+- **Role grid** (archetype: settings form, as `EmployeeTypeForm`): one row per
+  module with four steps under View, Create, Update and Delete. Clicking a step
+  sets the level (each step includes the ones before it, so Update is Edit and
+  Delete is Full); clicking the highest filled step steps down. A module with
+  pages expands to them, each with its own steps and an "N/M pages" badge. A
+  step above the page's `maxLevel` is disabled. The Admin type shows a notice
+  instead of the grid.
+- **Person dialog**: a header with the person, the employee type select, and
+  the grid. A row without an override shows the type's level in a lighter
+  shade, with the type's name in a "From" column; an override is solid, says
+  "Override" and has a "Role default" button. "Reset all overrides" clears
+  them. Conversion growth is an amber mark on the row. An Admin sees a notice
+  instead of the grid.
 - **API key form**: the same grid. "Select all" never sets Full on Accounting
   pages.
 - **Access view**: on the person page, a read-only grid of effective levels
@@ -557,3 +560,4 @@ approval rules cover "who may approve". The key format leaves room to add them.
 - 2026-10-18: From phase 3 a gate names a page and its lowest level (`{ "inventory.receipts": "Edit" }`); the database keeps action keys. ERP code authenticates through one `authorize`, which replaces `carbon`, `carbonFor` and `requirePermissions`; the Onshape panel's gate becomes `authorizePanel`. Answered by the user.
 - 2026-10-18: `authorize` lives in `@carbon/auth/auth.server`, next to `requirePermissions`, which becomes internal; the ERP registers the `api` binding with `registerApi`. MES, academy and starter use `authorize` too, so the import check is not needed. Answered by the user.
 - 2026-10-18: The grid follows the user's mockup: modules as collapsible rows with an "N/M pages" badge and a select-all checkbox (Full on the module), pages with View, Create, Update and Delete checkboxes that form a ladder over the stored level. Answered by the user.
+- 2026-10-18: Access is set per module, not per page: each module row carries a four-step level meter (View, Create, Update, Delete), and pages appear only as an expansion of a module that has them. The person and role dialogs were redesigned around it; the person dialog's separate Current access table became the grid's From column. Answered by the user.
