@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,10 +15,7 @@ import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import {
-  getPartDocuments,
-  getProductionDataByOperations
-} from "~/modules/production/production.service";
+import { getPartDocuments } from "~/modules/production/production.service";
 import type { Job } from "~/modules/production/types";
 import {
   JobBillOfMaterial,
@@ -27,10 +24,7 @@ import {
   JobEstimatesVsActuals
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
-import {
-  getModelByItemId,
-  requireCompanyRecord
-} from "~/modules/shared/shared.service";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -118,12 +112,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workInstruction: o.workInstruction as JSONContent | null
       })) ?? [],
     makeMethod: makeMethod.data,
-    productionData: getProductionDataByOperations(
-      client,
-      operations?.data?.map((o) => o.id)
-    ),
+    productionData: api.production
+      .getProductionDataByOperations({
+        jobOperationIds: operations?.data?.map((o) => o.id)
+      })
+      .then(dataOrThrow),
     files: getPartDocuments(client, companyId, makeMethod.data),
-    model: getModelByItemId(client, makeMethod.data.itemId!),
+    model: api.shared
+      .getModelByItemId({ itemId: makeMethod.data.itemId! })
+      .then(dataOrThrow),
     tags: tags.data ?? []
   };
 }

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,11 +12,9 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import { getCompanyHasOpenCredits } from "~/modules/invoicing/invoicing.service";
 import { PurchaseInvoiceHeader } from "~/modules/invoicing/ui";
 import PurchaseInvoiceExplorer from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceExplorer";
 import PurchaseInvoiceProperties from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties";
-import { getSupplierInteractionDocuments } from "~/modules/purchasing/purchasing.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -77,7 +75,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       api.purchasing.getSupplierInteraction({
         opportunityId: purchaseInvoice.data.supplierInteractionId!
       }),
-      getCompanyHasOpenCredits(client, companyId, "purchase"),
+      api.invoicing
+        .getCompanyHasOpenCredits({ side: "purchase" })
+        .then(dataOrThrow),
       purchaseInvoice.data?.currencyCode
         ? api.accounting.getCurrencyByCode({
             currencyCode: purchaseInvoice.data.currencyCode
@@ -100,11 +100,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     currency: currency?.data ?? null,
     purchaseInvoiceLines: purchaseInvoiceLines.data ?? [],
     purchaseInvoiceDelivery: purchaseInvoiceDelivery.data,
-    files: getSupplierInteractionDocuments(
-      client,
-      companyId,
-      purchaseInvoice.data.supplierInteractionId!
-    ),
+    files: api.purchasing
+      .getSupplierInteractionDocuments({
+        interactionId: purchaseInvoice.data.supplierInteractionId!
+      })
+      .then(dataOrThrow),
     interaction: interaction.data,
     supplier: supplier?.data ?? null,
     orgHasCredits,

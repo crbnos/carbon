@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import {
+  carbon,
+  carbonFor,
+  dataOrThrow,
+  respond
+} from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -22,7 +27,6 @@ import {
   partValidator
 } from "~/modules/items/items.models";
 import {
-  getConfigurationRules,
   getItemChangeNoticeDataOnce,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
@@ -113,7 +117,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       partManufacturing.data?.requiresConfiguration
         ? Promise.all([
             getConfigurationParameters(client, itemId, companyId),
-            getConfigurationRules(client, itemId, companyId)
+            api.items.getConfigurationRules({ itemId }).then(dataOrThrow)
           ]).then(([configurationParametersAndGroups, configurationRules]) => ({
             configurationParametersAndGroups,
             configurationRules

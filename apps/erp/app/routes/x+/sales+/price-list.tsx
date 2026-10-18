@@ -2,15 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getBaseCatalog,
-  resolvePriceList
-} from "~/modules/sales/sales.service";
+import { resolvePriceList } from "~/modules/sales/sales.service";
 import PriceListTable from "~/modules/sales/ui/Pricing/PriceOverridesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -22,10 +20,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -58,13 +58,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
         sorts,
         filters
       })
-    : getBaseCatalog(client, companyId, {
-        search: search ?? undefined,
-        limit,
-        offset,
-        sorts,
-        filters
-      });
+    : api.sales
+        .getBaseCatalog({
+          search: search ?? undefined,
+          limit,
+          offset,
+          sorts,
+          filters
+        })
+        .then(dataOrThrow);
 
   const [list, groupsResult] = await Promise.all([
     listPromise,

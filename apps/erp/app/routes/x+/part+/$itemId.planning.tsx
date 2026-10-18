@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import {
+  carbon,
+  carbonFor,
+  dataOrThrow,
+  respond
+} from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -19,7 +24,6 @@ import {
   itemSupersessionValidator,
   predecessorSupersessionValidator
 } from "~/modules/items/items.models";
-import { getSupersessionChain } from "~/modules/items/items.service";
 import {
   ItemPlanningForm,
   ItemSupersessionForm
@@ -77,7 +81,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     await Promise.all([
       api.items.getItemPlanning({ itemId, locationId }),
       api.items.getItemSupersession({ itemId }),
-      getSupersessionChain(client, itemId, companyId),
+      api.items.getSupersessionChain({ itemId }).then(dataOrThrow),
       api.items.getItemQuantities({ itemId, locationId })
     ]);
 

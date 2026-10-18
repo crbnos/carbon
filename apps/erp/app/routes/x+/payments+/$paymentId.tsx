@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -68,11 +68,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     if (applications.error) throw new Error(applications.error.message);
     const [configuration, depositDocuments] = await Promise.all([
-      getPaymentCurrencyConfiguration(
-        client,
-        companyId,
-        payment.data.currencyCode
-      ),
+      api.invoicing
+        .getPaymentCurrencyConfiguration({
+          currencyCode: payment.data.currencyCode
+        })
+        .then(dataOrThrow),
       // The payment's own document stays listed even once it is closed.
       getDepositDocuments(client, companyId, [payment.data.salesOrderId])
     ]);

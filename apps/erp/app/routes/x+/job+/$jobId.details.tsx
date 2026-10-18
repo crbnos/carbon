@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import {
+  carbon,
+  carbonFor,
+  dataOrThrow,
+  respond
+} from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -37,10 +42,6 @@ import {
   JOB_LOCKED_MESSAGE,
   jobValidator
 } from "~/modules/production/production.models";
-import {
-  getJobDocumentsWithItemId,
-  getProductionDataByOperations
-} from "~/modules/production/production.service";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production/types";
 import {
   JobBillOfMaterial,
@@ -133,16 +134,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workInstruction: o.workInstruction as JSONContent
       })) ?? [],
     makeMethod: makeMethod.data ?? null,
-    files: getJobDocumentsWithItemId(
-      client,
-      companyId,
-      job.data,
-      rootMethod.data.itemId
-    ),
-    productionData: getProductionDataByOperations(
-      client,
-      operations?.data?.map((o) => o.id) ?? []
-    ),
+    files: api.production
+      .getJobDocumentsWithItemId({
+        job: job.data,
+        itemId: rootMethod.data.itemId
+      })
+      .then(dataOrThrow),
+    productionData: api.production
+      .getProductionDataByOperations({
+        jobOperationIds: operations?.data?.map((o) => o.id) ?? []
+      })
+      .then(dataOrThrow),
     tags: tags.data ?? []
   };
 }

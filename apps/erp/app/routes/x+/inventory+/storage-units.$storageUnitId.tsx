@@ -10,7 +10,6 @@ import { RecordOutlet, useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { storageUnitValidator } from "~/modules/inventory/inventory.models";
-import { getEffectiveWorkCenterId } from "~/modules/inventory/inventory.service";
 import { StorageUnitForm } from "~/modules/inventory/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -20,7 +19,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "inventory",
     role: "employee"
   });
-  const { client } = auth;
   const api = carbonFor(auth);
 
   const { storageUnitId } = params;
@@ -28,7 +26,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [storageUnit, effectiveWorkCenter, workCenters] = await Promise.all([
     api.inventory.getStorageUnit({ storageUnitId }),
-    getEffectiveWorkCenterId(client, storageUnitId),
+    api.inventory.getEffectiveWorkCenterId({ storageUnitId }),
     api.resources.getWorkCentersList({})
   ]);
 

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -16,14 +16,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
-import { getCompanyHasOpenCredits } from "~/modules/invoicing/invoicing.service";
 import SalesInvoiceExplorer from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceExplorer";
 import SalesInvoiceHeader from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceHeader";
 import SalesInvoiceProperties from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties";
-import {
-  getCustomer,
-  getOpportunityDocuments
-} from "~/modules/sales/sales.service";
+import { getCustomer } from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -88,7 +84,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           })
         : null,
       getCompanySettings(serviceRole, companyId),
-      getCompanyHasOpenCredits(client, companyId, "sales"),
+      api.invoicing
+        .getCompanyHasOpenCredits({ side: "sales" })
+        .then(dataOrThrow),
       salesInvoice.data?.currencyCode
         ? getCurrencyByCode(
             serviceRole,
@@ -124,11 +122,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     salesInvoiceLines: salesInvoiceLines.data ?? [],
     salesInvoiceShipment: salesInvoiceShipment.data,
     files: salesInvoice.data?.opportunityId
-      ? getOpportunityDocuments(
-          client,
-          companyId,
-          salesInvoice.data.opportunityId
-        )
+      ? api.sales
+          .getOpportunityDocuments({
+            opportunityId: salesInvoice.data.opportunityId
+          })
+          .then(dataOrThrow)
       : Promise.resolve([]),
     opportunity: opportunity?.data ?? null,
     customer: customer?.data ?? null,

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,7 +15,6 @@ import {
 import { pluckUnique, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { expandStorageUnitIdsWithDescendants } from "~/modules/inventory/inventory.service";
 import type { InventoryItem } from "~/modules/inventory/types";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
 import { getUserDefaults } from "~/modules/users/users.service";
@@ -47,7 +46,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   if (storageUnitFilter?.value) {
     const ids = storageUnitFilter.value.split(",");
-    const expanded = await expandStorageUnitIdsWithDescendants(client, ids);
+    const expanded = dataOrThrow(
+      await api.inventory.expandStorageUnitIdsWithDescendants({
+        storageUnitIds: ids
+      })
+    );
     storageUnitFilter.value = expanded.join(",");
   }
 

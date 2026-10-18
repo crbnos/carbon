@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -22,7 +22,6 @@ import { DateTime, Hyperlink } from "~/components";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { useSettings, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
-import { getPeriodRunRelatedItems } from "~/modules/accounting/accounting.service";
 import { depreciationRunLineDisplay } from "~/modules/accounting/accounting.utils";
 import {
   DepreciationRunDocuments,
@@ -52,7 +51,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     view: "accounting"
   });
-  const { client, companyId } = auth;
   const api = carbonFor(auth);
 
   const { depreciationRunId } = params;
@@ -84,12 +82,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     run: run.data,
     lines: lines.data ?? [],
-    relatedItems: getPeriodRunRelatedItems(
-      client,
-      companyId,
-      run.data.periodEnd,
-      journalIds.length <= MAX_LISTED_JOURNALS ? journalIds : []
-    )
+    relatedItems: api.accounting
+      .getPeriodRunRelatedItems({
+        periodEnd: run.data.periodEnd,
+        journalIds: journalIds.length <= MAX_LISTED_JOURNALS ? journalIds : []
+      })
+      .then(dataOrThrow)
   };
 }
 

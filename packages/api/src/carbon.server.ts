@@ -19,6 +19,8 @@ import {
   toResult
 } from "./service-fn.server";
 
+export { dataOrThrow } from "./service-fn.server";
+
 /**
  * The app's router type. The app adds it once:
  * `declare module "@carbon/api/carbon.server" { interface Register { router: Router } }`.

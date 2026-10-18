@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
@@ -16,7 +16,6 @@ import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { salesInvoiceLineValidator } from "~/modules/invoicing/invoicing.models";
 import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
-import { getOpportunityLineDocuments } from "~/modules/sales/sales.service";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -30,7 +29,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "invoicing",
     role: "employee"
   });
-  const { client, companyId } = auth;
   const api = carbonFor(auth);
 
   const { lineId } = params;
@@ -44,7 +42,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     salesInvoiceLine: salesInvoiceLine?.data ?? null,
-    files: getOpportunityLineDocuments(client, companyId, lineId, itemId)
+    files: api.sales
+      .getOpportunityLineDocuments({ lineId, itemId })
+      .then(dataOrThrow)
   };
 }
 

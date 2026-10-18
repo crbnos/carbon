@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -23,7 +23,6 @@ import {
 import {
   getPurchaseOrder,
   getPurchaseOrderLine,
-  getSupplierInteractionLineDocuments,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
@@ -43,7 +42,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     role: "employee",
     bypassRls: true
   });
-  const { client, companyId } = auth;
+  const { companyId } = auth;
   const api = carbonFor(auth);
 
   const { orderId, lineId } = params;
@@ -76,7 +75,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     line: line?.data ?? null,
-    files: getSupplierInteractionLineDocuments(client, companyId, lineId)
+    files: api.purchasing
+      .getSupplierInteractionLineDocuments({ lineId })
+      .then(dataOrThrow)
   };
 }
 

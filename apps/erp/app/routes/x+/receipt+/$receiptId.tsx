@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -17,7 +18,6 @@ import {
   getReceipt,
   getReceiptFiles,
   getReceiptLines,
-  getReceiptRelatedItems,
   getRentalReceiptLines,
   getShelfLifeForItems
 } from "~/modules/inventory/inventory.service";
@@ -45,9 +45,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory"
   });
+  const { companyId } = auth;
+  const api = carbonFor(auth);
 
   const serviceRole = await getCarbonServiceRole();
 
@@ -201,14 +203,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       [],
     companySettings: getCompanySettings(serviceRole, companyId),
     itemShelfLife: await getShelfLifeForItems(serviceRole, trackedItemIds),
-    relatedItems: getReceiptRelatedItems(
-      client,
-      companyId,
-      receipt.data.supplierInteractionId,
-      receipt.data.sourceDocument === "Sales Return Order"
-        ? receipt.data.sourceDocumentId
-        : null
-    )
+    relatedItems: api.inventory
+      .getReceiptRelatedItems({
+        supplierInteractionId: receipt.data.supplierInteractionId,
+        salesReturnOrderId:
+          receipt.data.sourceDocument === "Sales Return Order"
+            ? receipt.data.sourceDocumentId
+            : null
+      })
+      .then(dataOrThrow)
   };
 }
 

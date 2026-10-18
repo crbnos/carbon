@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -24,10 +24,7 @@ import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { revenueScheduleTypes } from "~/modules/accounting/accounting.models";
-import {
-  getCompanyToday,
-  getPeriodRunRelatedItems
-} from "~/modules/accounting/accounting.service";
+import { getCompanyToday } from "~/modules/accounting/accounting.service";
 import {
   getNextPeriodEnd,
   isFutureRunPeriod
@@ -179,19 +176,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       getNextPeriodEnd(run.data.periodEnd),
       companyToday
     ),
-    relatedItems: getPeriodRunRelatedItems(
-      client,
-      companyId,
-      run.data.periodEnd,
-      // One journal per month: every journal the run's rows posted.
-      [
-        ...new Set(
-          (lines.data ?? []).flatMap((line) =>
-            line.schedule?.journalId ? [line.schedule.journalId] : []
+    relatedItems: api.accounting
+      .getPeriodRunRelatedItems({
+        periodEnd: run.data.periodEnd,
+        journalIds: [
+          ...new Set(
+            (lines.data ?? []).flatMap((line) =>
+              line.schedule?.journalId ? [line.schedule.journalId] : []
+            )
           )
-        )
-      ]
-    )
+        ]
+      })
+      .then(dataOrThrow)
   };
 }
 

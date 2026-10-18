@@ -2,13 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import type { UnreleasedChangeOrderItem } from "~/modules/items/items.service";
 import {
   getConsumable,
-  getItemFiles,
   getMaterial,
   getPart,
   getTool,
@@ -91,7 +90,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     api.items.getPickMethods({ itemId }),
     api.shared.getTagsList({ table: tagTable }),
     needsMakeMethods ? api.items.getMakeMethods({ itemId }) : null,
-    getItemFiles(client, itemId, companyId),
+    api.items.getItemFiles({ itemId }).then(dataOrThrow),
     api.resources.getLocationsList({}),
     getUnreleasedChangeOrderForItem(client, { itemId, companyId })
   ]);

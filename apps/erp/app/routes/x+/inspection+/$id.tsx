@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -14,7 +14,6 @@ import { data, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 import {
   getBalloons,
-  getInspection,
   getInspectionDocument,
   getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
@@ -56,7 +55,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(id, "id is required");
 
   const [inspection, settings, issueTypes] = await Promise.all([
-    getInspection(client, id),
+    api.quality.getInspection({ id }).then(dataOrThrow),
     api.settings.getCompanySettings({}),
     api.quality.getIssueTypesList({})
   ]);

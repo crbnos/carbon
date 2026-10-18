@@ -446,3 +446,16 @@ export function toResult<T, E extends CarbonError>(
     error: { category, message, status }
   } as RouteResult<Result<T, E>>;
 }
+
+/**
+ * The data of a read a loader cannot do without, or its refusal thrown, as
+ * the building block's own throw was: `dataOrThrow(await api.items.getItemUsedIn(input))`.
+ */
+export function dataOrThrow<R extends { data: unknown; error: unknown }>(
+  result: R
+): Extract<R, { error: null }>["data"] {
+  if (result.error) {
+    throw new Error((result.error as { message: string }).message);
+  }
+  return result.data as Extract<R, { error: null }>["data"];
+}

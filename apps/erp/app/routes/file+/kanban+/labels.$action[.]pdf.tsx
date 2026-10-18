@@ -2,14 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { KanbanLabelPDF } from "@carbon/documents/pdf";
 import { getLogger } from "@carbon/logger";
 import { getRequestOrigin } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 const logger = getLogger("erp", "labels-action-pdf");
 
@@ -71,7 +70,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (Object.keys(thumbnailPaths).length > 0) {
     const thumbnailPromises = Object.entries(thumbnailPaths).map(
       async ([id, path]) => {
-        const base64 = await getBase64ImageFromSupabase(client, path);
+        const base64 = dataOrThrow(
+          await api.shared.getBase64ImageFromSupabase({ path })
+        );
         return { id, data: base64 };
       }
     );

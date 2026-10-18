@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -14,11 +14,7 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
-import {
-  getItemFiles,
-  getMaterialUsedIn,
-  streamItemSupersession
-} from "~/modules/items/items.service";
+import { streamItemSupersession } from "~/modules/items/items.service";
 import type { ConsumableSummary, ItemFile } from "~/modules/items/types";
 import {
   ConsumableHeader,
@@ -76,11 +72,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     consumableSummary: consumableSummary.data,
     supersession,
     supersededBy,
-    files: getItemFiles(client, itemId, companyId),
+    files: api.items.getItemFiles({ itemId }).then(dataOrThrow),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
     tags: tags.data ?? [],
-    usedIn: getMaterialUsedIn(client, itemId, companyId)
+    usedIn: api.items.getMaterialUsedIn({ itemId }).then(dataOrThrow)
   };
 }
 

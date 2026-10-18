@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -33,8 +33,6 @@ import { useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import type { PurchasingRFQLine } from "~/modules/purchasing/types";
 import type { Company } from "~/modules/settings/types";
-import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
-
 export const meta = () => {
   return [{ title: "RFQ Preview" }];
 };
@@ -52,7 +50,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     view: "purchasing"
   });
-  const { client } = auth;
   const api = carbonFor(auth);
 
   const [rfqResult, linesResult, company] = await Promise.all([
@@ -84,10 +81,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       ? await Promise.all(
           Object.entries(thumbnailPaths).map(([lineId, path]) => {
             if (!path) return null;
-            return getBase64ImageFromSupabase(client, path).then((data) => ({
-              id: lineId,
-              data
-            }));
+            return api.shared
+              .getBase64ImageFromSupabase({ path })
+              .then(dataOrThrow)
+              .then((data) => ({
+                id: lineId,
+                data
+              }));
           })
         )
       : []

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ensureFont, IssuePDF } from "@carbon/documents/pdf";
 import {
@@ -14,7 +14,6 @@ import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getIssueAssociations } from "~/modules/quality/quality.service";
 import { resolveSections } from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "issue", "pdf");
@@ -50,7 +49,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   // Get associations separately (returns plain object, not wrapped in { data })
-  const associations = await getIssueAssociations(client, id, companyId);
+  const associations = dataOrThrow(
+    await api.quality.getIssueAssociations({ nonConformanceId: id })
+  );
 
   // Get job operation step records for action tasks
   const actionTaskIds = actionTasks.data?.map((task) => task.id) ?? [];

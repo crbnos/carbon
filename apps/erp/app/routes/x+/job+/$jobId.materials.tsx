@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,8 +13,7 @@ import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
 import {
   type getJob,
-  getJobMaterialsWithQuantityOnHand,
-  getJobOrderStatusMap
+  getJobMaterialsWithQuantityOnHand
 } from "~/modules/production/production.service";
 import { JobMaterialsTable } from "~/modules/production/ui/Jobs";
 import { getLocationTimeZone } from "~/modules/shared/shared.service";
@@ -115,15 +114,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         nearExpiryWarningDays,
         locationId
       ),
-      getJobOrderStatusMap(
-        client,
-        jobId,
-        companyId,
-        locationId,
-        job.data.status,
-        rows,
-        today
-      ),
+      api.production
+        .getJobOrderStatusMap({
+          jobId,
+          locationId,
+          jobStatus: job.data.status,
+          materials: rows,
+          asOfDate: today
+        })
+        .then(dataOrThrow),
       api.items.getItemSupersessionsForItems({ itemIds: materialItemIds })
     ]);
   if (supersessions.error) {

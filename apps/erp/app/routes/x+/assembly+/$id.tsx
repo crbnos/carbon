@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -44,8 +44,6 @@ import {
   isAssemblyPlanRunning
 } from "~/modules/production/production.models";
 import {
-  getAssemblyPlanJson,
-  getFlattenedBomMaterials,
   isAssemblerServiceHealthy,
   upsertAssemblyInstruction
 } from "~/modules/production/production.service";
@@ -78,7 +76,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "production",
     role: "employee"
   });
-  const { client, companyId } = auth;
   const api = carbonFor(auth);
 
   const { id } = params;
@@ -128,7 +125,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     api.production.getAssemblyInstructionStepSlides({ stepIds }),
     api.production.getAssemblyInstructionStepTools({ stepIds }),
     instruction.data.modelUploadId
-      ? getAssemblyPlanJson(client, instruction.data.modelUploadId)
+      ? api.production
+          .getAssemblyPlanJson({
+            modelUploadId: instruction.data.modelUploadId
+          })
+          .then(dataOrThrow)
       : Promise.resolve(null),
     instruction.data.modelUploadId
       ? api.production.getLatestAssemblyPlanJob({
@@ -146,7 +147,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         })
       : Promise.resolve({ data: [] }),
     instruction.data.itemId
-      ? getFlattenedBomMaterials(client, instruction.data.itemId, companyId)
+      ? api.production
+          .getFlattenedBomMaterials({ itemId: instruction.data.itemId })
+          .then(dataOrThrow)
       : Promise.resolve([]),
     isAssemblerServiceHealthy(),
     api.production.getAssemblyInstructionVersions(instruction.data)

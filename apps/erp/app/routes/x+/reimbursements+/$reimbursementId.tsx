@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,10 +12,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
-import {
-  type getOpenReimbursementsForEmployee,
-  getReimbursementRelatedItems
-} from "~/modules/invoicing/invoicing.service";
+import type { getOpenReimbursementsForEmployee } from "~/modules/invoicing/invoicing.service";
 import {
   ReimbursementDocuments,
   ReimbursementHeader
@@ -152,11 +149,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     dimensions: dimensions.data ?? [],
     balanceDue,
     defaultBankAccount: defaults.data?.bankCashAccount ?? "",
-    relatedItems: getReimbursementRelatedItems(
-      client,
-      companyId,
-      reimbursementId
-    )
+    relatedItems: api.invoicing
+      .getReimbursementRelatedItems({ reimbursementId })
+      .then(dataOrThrow)
   };
 }
 

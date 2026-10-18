@@ -13,6 +13,7 @@ import {
   type Actor,
   CarbonError,
   createServiceContext,
+  dataOrThrow,
   defineServiceFn,
   type Result,
   type RouteResult,
@@ -332,5 +333,23 @@ describe("ctx.transaction", () => {
       error: null
     });
     expect(outcomes).toEqual(["commit"]);
+  });
+});
+
+describe("dataOrThrow", () => {
+  it("returns the data of a result with no error", () => {
+    expect(dataOrThrow({ data: { id: "a" }, error: null })).toEqual({
+      id: "a"
+    });
+    expect(dataOrThrow({ data: null, error: null })).toBeNull();
+  });
+
+  it("throws the refusal's message", () => {
+    expect(() =>
+      dataOrThrow({
+        data: null,
+        error: { category: "internal", message: "Something went wrong" }
+      })
+    ).toThrow("Something went wrong");
   });
 });

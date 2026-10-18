@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ProductLabelPDF } from "@carbon/documents/pdf";
 import { getLogger } from "@carbon/logger";
@@ -13,7 +13,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getShipmentTracking } from "~/modules/inventory/inventory.utils";
 import {
   getCompanyLogoForLabel,
-  getDocumentTemplateConfig,
   resolveLabelLogo
 } from "~/modules/settings/settings.service";
 
@@ -130,10 +129,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const template = await getDocumentTemplateConfig(
-    client,
-    companyId,
-    "trackingLabel"
+  const template = dataOrThrow(
+    await api.settings.getDocumentTemplateConfig({
+      documentType: "trackingLabel"
+    })
   );
 
   const companyLogo = await getCompanyLogoForLabel(client, companyId);

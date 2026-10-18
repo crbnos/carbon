@@ -2,13 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { getPickOrder } from "~/modules/inventory/inventory.service";
 
 /**
  * GET: available tracked lots for a picking line (non-lineside, deduped),
@@ -55,7 +54,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : { data: [] },
     api.settings.getCompanySettings({}),
     locationId
-      ? getPickOrder(client, { itemId: line.itemId, locationId, companyId })
+      ? api.inventory
+          .getPickOrder({ itemId: line.itemId, locationId, companyId })
+          .then(dataOrThrow)
       : ("Default" as const)
   ]);
   const shelfLife = (settings.data?.inventoryShelfLife ?? {}) as {

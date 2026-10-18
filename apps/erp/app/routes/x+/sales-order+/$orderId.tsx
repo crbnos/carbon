@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -13,11 +13,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import {
-  getCustomer,
-  getOpportunityDocuments,
-  getSalesOrderRelatedItems
-} from "~/modules/sales/sales.service";
+import { getCustomer } from "~/modules/sales/sales.service";
 import {
   SalesOrderExplorer,
   SalesOrderHeader,
@@ -219,12 +215,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     salesOrder: salesOrder.data,
     lines: lines.data ?? [],
-    files: getOpportunityDocuments(client, companyId, opportunity.data.id),
-    relatedItems: getSalesOrderRelatedItems(
-      client,
-      orderId,
-      opportunity.data.id
-    ),
+    files: api.sales
+      .getOpportunityDocuments({ opportunityId: opportunity.data.id })
+      .then(dataOrThrow),
+    relatedItems: api.sales
+      .getSalesOrderRelatedItems({
+        salesOrderId: orderId,
+        opportunityId: opportunity.data.id
+      })
+      .then(dataOrThrow),
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
     quote: quote?.data ?? null,

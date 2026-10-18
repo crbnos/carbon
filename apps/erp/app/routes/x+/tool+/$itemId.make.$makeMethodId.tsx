@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -23,7 +23,6 @@ import {
   BillOfProcess,
   MakeMethodTools
 } from "~/modules/items/ui/Item";
-import { getModelByItemId } from "~/modules/shared/shared.service";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
@@ -102,7 +101,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workCenterId: operation.workCenterId ?? undefined,
         workInstruction: operation.workInstruction as JSONContent | null
       })) ?? [],
-    model: getModelByItemId(client, makeMethod.data.itemId),
+    model: api.shared
+      .getModelByItemId({ itemId: makeMethod.data.itemId })
+      .then(dataOrThrow),
     makeMethods: api.items.getMakeMethods({ itemId: makeMethod.data.itemId }),
     tags: tags.data ?? [],
     revisionStatus: revisionLock.revisionStatus,

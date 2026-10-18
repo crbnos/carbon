@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -20,14 +20,12 @@ import {
   QuoteBillOfProcess,
   QuoteMakeMethodTools
 } from "~/modules/sales/ui/Quotes";
-import { getModelByItemId } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     view: "sales"
   });
-  const { client } = auth;
   const api = carbonFor(auth);
 
   const { quoteId, lineId, methodId } = params;
@@ -97,7 +95,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         tags: o.tags ?? []
       })) ?? [],
     tags: tags.data ?? [],
-    model: getModelByItemId(client, makeMethod.data.itemId!)
+    model: api.shared
+      .getModelByItemId({ itemId: makeMethod.data.itemId! })
+      .then(dataOrThrow)
   };
 }
 

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ensureFont, StockTransferPDF } from "@carbon/documents/pdf";
 import {
@@ -15,7 +15,6 @@ import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { resolveSections } from "~/modules/settings/settings.service";
-import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 const logger = getLogger("erp", "stock-transfer", "pdf");
 
@@ -106,10 +105,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             if (!path) {
               return null;
             }
-            return getBase64ImageFromSupabase(client, path).then((data) => ({
-              id,
-              data
-            }));
+            return api.shared
+              .getBase64ImageFromSupabase({ path })
+              .then(dataOrThrow)
+              .then((data) => ({
+                id,
+                data
+              }));
           })
         )
       : []

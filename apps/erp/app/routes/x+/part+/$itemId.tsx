@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -31,10 +31,8 @@ import { flattenTree } from "~/components/TreeView";
 import { isChangeNoticeOpen } from "~/modules/items/items.models";
 import {
   findChangeNoticesForItemOnce,
-  getItemFiles,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
-  getPartUsedIn,
   getUnreleasedChangeOrderForItem,
   streamItemSupersession
 } from "~/modules/items/items.service";
@@ -164,12 +162,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     partSummary: partSummary.data,
     supersession,
     supersededBy,
-    files: getItemFiles(client, itemId, companyId),
+    files: api.items.getItemFiles({ itemId }).then(dataOrThrow),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
     makeMethods: makeMethodsPromise,
     tags: tags.data ?? [],
-    usedIn: getPartUsedIn(client, itemId, companyId),
+    usedIn: api.items.getPartUsedIn({ itemId }).then(dataOrThrow),
     methodTree,
     changeNotices,
     openChangeNotices,

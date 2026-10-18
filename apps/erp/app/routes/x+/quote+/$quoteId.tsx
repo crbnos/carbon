@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
+import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -17,11 +17,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams, useSubmit } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
-import {
-  getCustomer,
-  getOpportunityDocuments,
-  getSalesOrderLines
-} from "~/modules/sales/sales.service";
+import { getCustomer, getSalesOrderLines } from "~/modules/sales/sales.service";
 import {
   getQuoteLinePricesByQuoteId,
   getQuoteLines
@@ -189,7 +185,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     customer: customer.data,
     lines: lines.data ?? [],
     methods: methodTrees,
-    files: getOpportunityDocuments(client, companyId, quote.data.opportunityId),
+    files: api.sales
+      .getOpportunityDocuments({ opportunityId: quote.data.opportunityId })
+      .then(dataOrThrow),
     prices: prices.data ?? [],
     shipment: shipment.data,
     payment: payment.data,

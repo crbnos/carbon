@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import {
+  carbon,
+  carbonFor,
+  dataOrThrow,
+  respond
+} from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -23,7 +28,6 @@ import { paymentValidator } from "~/modules/invoicing/invoicing.models";
 import {
   checkDepositDocument,
   getDepositDocuments,
-  getPaymentCurrencyConfiguration,
   getSeedableOpenInvoices,
   getSeededDiscounts
 } from "~/modules/invoicing/invoicing.service";
@@ -94,10 +98,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
             error(null, "Selected invoices must use the same currency")
           )
         );
-      const configuration = await getPaymentCurrencyConfiguration(
-        client,
-        companyId,
-        currencyCode
+      const configuration = dataOrThrow(
+        await api.invoicing.getPaymentCurrencyConfiguration({ currencyCode })
       );
       // Net of any early-payment discount the invoice's terms grant as of the
       // payment date, so a "2/10 net 30" invoice paid today pre-fills the
