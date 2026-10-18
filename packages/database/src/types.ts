@@ -43786,6 +43786,202 @@ export type Database = {
           }
         ]
       }
+      permission: {
+        Row: {
+          apiKeyId: string | null
+          companyId: string
+          convertedFrom: string[] | null
+          createdAt: string
+          createdBy: string
+          employeeTypeId: string | null
+          id: string
+          level: Database["public"]["Enums"]["permissionLevel"]
+          module: Database["public"]["Enums"]["module"]
+          page: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+          userId: string | null
+        }
+        Insert: {
+          apiKeyId?: string | null
+          companyId: string
+          convertedFrom?: string[] | null
+          createdAt?: string
+          createdBy: string
+          employeeTypeId?: string | null
+          id?: string
+          level: Database["public"]["Enums"]["permissionLevel"]
+          module: Database["public"]["Enums"]["module"]
+          page?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userId?: string | null
+        }
+        Update: {
+          apiKeyId?: string | null
+          companyId?: string
+          convertedFrom?: string[] | null
+          createdAt?: string
+          createdBy?: string
+          employeeTypeId?: string | null
+          id?: string
+          level?: Database["public"]["Enums"]["permissionLevel"]
+          module?: Database["public"]["Enums"]["module"]
+          page?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_apiKeyId_fkey"
+            columns: ["apiKeyId"]
+            isOneToOne: false
+            referencedRelation: "apiKey"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "permission_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "permission_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "permission_employeeTypeId_fkey"
+            columns: ["employeeTypeId"]
+            isOneToOne: false
+            referencedRelation: "employeeType"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "permission_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       pickingList: {
         Row: {
           assignee: string | null
@@ -95458,6 +95654,7 @@ export type Database = {
       paymentType: "Receipt" | "Disbursement"
       periodCloseStatus: "Open" | "Locked" | "Closed"
       periodType: "Week" | "Day" | "Month"
+      permissionLevel: "None" | "View" | "Create" | "Edit" | "Full"
       pickingListLineStatus: "Pending" | "Picked" | "Short" | "Cancelled"
       pickingListStatus:
         | "Draft"
@@ -97014,6 +97211,7 @@ export const Constants = {
       paymentType: ["Receipt", "Disbursement"],
       periodCloseStatus: ["Open", "Locked", "Closed"],
       periodType: ["Week", "Day", "Month"],
+      permissionLevel: ["None", "View", "Create", "Edit", "Full"],
       pickingListLineStatus: ["Pending", "Picked", "Short", "Cancelled"],
       pickingListStatus: [
         "Draft",
