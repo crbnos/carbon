@@ -42,12 +42,23 @@ impl Sources {
         ext: &str,
         progress: Option<&JobProgress>,
     ) -> Result<Source, ApiError> {
+        self.download_with(url, ext, progress, &http::DownloadOpts::default())
+            .await
+    }
+
+    pub async fn download_with(
+        &self,
+        url: &str,
+        ext: &str,
+        progress: Option<&JobProgress>,
+        opts: &http::DownloadOpts<'_>,
+    ) -> Result<Source, ApiError> {
         let slot = Arc::clone(&self.slots)
             .acquire_owned()
             .await
             .expect("source semaphore is never closed");
         let path = http::temp_path(ext);
-        match http::download_hashed(url, &path, progress).await {
+        match http::download_with(url, &path, progress, opts).await {
             Ok(hash) => Ok(Source {
                 path,
                 hash,

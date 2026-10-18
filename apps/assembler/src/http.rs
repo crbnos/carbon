@@ -74,6 +74,44 @@ fn client() -> &'static reqwest::Client {
     })
 }
 
+/// The `fetch` action's client: it follows redirects (a CAD system may answer
+/// a download with one to its object store), but only to URLs that pass
+/// `config::validate_url`, and at most five. reqwest drops the Authorization
+/// header on a redirect to another host.
+fn fetch_client() -> &'static reqwest::Client {
+    static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+    CLIENT.get_or_init(|| {
+        let policy = reqwest::redirect::Policy::custom(|attempt| {
+            if attempt.previous().len() >= 5 {
+                attempt.error("too many redirects")
+            } else if config::validate_url(attempt.url().as_str()).is_err() {
+                attempt.error("redirect to a host that is not allowed")
+            } else {
+                attempt.follow()
+            }
+        });
+        reqwest::Client::builder()
+            .redirect(policy)
+            .danger_accept_invalid_certs(!config::verify_tls())
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .read_timeout(std::time::Duration::from_secs(60))
+            .build()
+            .expect("reqwest client")
+    })
+}
+
+/// What a download may do beyond the default (the `fetch` action's).
+#[derive(Default)]
+pub struct DownloadOpts<'a> {
+    /// Sent as the `Authorization` header, marked sensitive.
+    pub authorization: Option<&'a str>,
+    /// Refuse a body past this many bytes (413 `LIMIT_EXCEEDED`).
+    pub max_bytes: Option<u64>,
+    /// Write the bytes exactly as served: no zstd decoding, and follow
+    /// validated redirects.
+    pub passthrough: bool,
+}
+
 /// Stream the source to disk, hashing as it flows — one pass, no full-body RAM
 /// buffer, and the content hash comes out free for the result-cache key.
 /// `progress` (when given) is ticked with bytes done/total for live status.
@@ -83,27 +121,45 @@ fn client() -> &'static reqwest::Client {
 /// compacted `raw.xbf.zst`) lands on disk as the real STEP/XBF/mesh and every
 /// action consumes it unchanged. The hash + size guard are over the
 /// DECOMPRESSED bytes, so the result-cache key tracks geometry, not container.
-pub async fn download_hashed(
+pub async fn download_with(
     url: &str,
     dest: &std::path::Path,
     progress: Option<&crate::progress::JobProgress>,
+    opts: &DownloadOpts<'_>,
 ) -> Result<u128, ApiError> {
-    telemetry::outbound("download source", url, download(url, dest, progress)).await
+    let mut request = if opts.passthrough {
+        fetch_client().get(url)
+    } else {
+        client().get(url)
+    };
+    if let Some(auth) = opts.authorization {
+        let mut value = reqwest::header::HeaderValue::from_str(auth)
+            .map_err(|_| ApiError::invalid("invalid source.authorization"))?;
+        value.set_sensitive(true);
+        request = request.header(reqwest::header::AUTHORIZATION, value);
+    }
+    let limit = opts
+        .max_bytes
+        .map_or(config::max_source_bytes(), |b| b as usize);
+    let span = if opts.passthrough { "fetch source" } else { "download source" };
+    let download = download(request.timeout(DOWNLOAD_DEADLINE), dest, progress, limit, !opts.passthrough);
+    telemetry::outbound(span, url, download).await
 }
 
+/// `limit` 0 = unlimited.
 async fn download(
-    url: &str,
+    request: reqwest::RequestBuilder,
     dest: &std::path::Path,
     progress: Option<&crate::progress::JobProgress>,
+    limit: usize,
+    decode_zstd: bool,
 ) -> Result<u128, ApiError> {
     use async_compression::tokio::bufread::ZstdDecoder;
     use futures_util::StreamExt;
     use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
 
-    let limit = config::max_source_bytes();
-    let resp = client()
-        .get(url)
-        .timeout(DOWNLOAD_DEADLINE)
+    let too_large = || ApiError::new(413, "LIMIT_EXCEEDED", "source file exceeds the size limit");
+    let resp = request
         .send()
         .await
         .map_err(|e| {
@@ -119,6 +175,9 @@ async fn download(
             "READ_FAILED",
             format!("could not download source: {}", resp.status()),
         ));
+    }
+    if limit > 0 && resp.content_length().is_some_and(|len| len > limit as u64) {
+        return Err(too_large());
     }
     // content-length is the on-the-wire (possibly compressed) size — advisory for
     // progress only; the real cap is the decompressed `written` counter below.
@@ -154,7 +213,7 @@ async fn download(
                 format!("could not download source: {e}"),
             )
         })?;
-        head.len() >= 4 && head[0..4] == [0x28, 0xB5, 0x2F, 0xFD]
+        decode_zstd && head.len() >= 4 && head[0..4] == [0x28, 0xB5, 0x2F, 0xFD]
     };
     // multiple_members: tolerate a source written as concatenated zstd frames.
     let mut input: std::pin::Pin<Box<dyn tokio::io::AsyncRead + Send>> = if is_zstd {
@@ -186,11 +245,7 @@ async fn download(
         written += n;
         if limit > 0 && written > limit {
             let _ = tokio::fs::remove_file(dest).await;
-            return Err(ApiError::new(
-                413,
-                "LIMIT_EXCEEDED",
-                "source file exceeds the size limit",
-            ));
+            return Err(too_large());
         }
         if let Some(p) = progress {
             p.done
@@ -307,7 +362,7 @@ mod tests {
         // would normally quote the whole URL, token included.
         let url = "http://127.0.0.1:1/object/sign/m.step?token=secret-token";
         let dest = temp_path("step");
-        let download = download_hashed(url, &dest, None).await.err().unwrap();
+        let download = download_with(url, &dest, None, &DownloadOpts::default()).await.err().unwrap();
         let upload = upload(url, bytes::Bytes::new(), "application/step").await.err().unwrap();
         let callback = post_json(url, &serde_json::json!({})).await.err().unwrap();
         for message in [download.message, upload.message, callback.message] {
@@ -331,11 +386,110 @@ mod tests {
         tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
 
         let dest = temp_path("step");
-        let err = download_hashed(&format!("http://{addr}/object"), &dest, None)
+        let err = download_with(&format!("http://{addr}/object"), &dest, None, &DownloadOpts::default())
             .await
             .err()
             .unwrap();
         assert!(err.message.contains("302"), "{}", err.message);
+    }
+
+    /// A CAD system's download stand-in: `/export` needs the bearer and
+    /// redirects to `/blob` on the SAME host; `/elsewhere` redirects to a
+    /// second listener, which records whether an Authorization header came.
+    async fn cad_system(body: &'static [u8]) -> (String, std::sync::Arc<std::sync::atomic::AtomicBool>) {
+        use axum::http::{HeaderMap, StatusCode};
+        use std::sync::atomic::{AtomicBool, Ordering};
+        let leaked = std::sync::Arc::new(AtomicBool::new(false));
+        let seen = leaked.clone();
+        let other = axum::Router::new().route(
+            "/blob",
+            axum::routing::get(move |headers: HeaderMap| {
+                let seen = seen.clone();
+                async move {
+                    seen.store(headers.contains_key("authorization"), Ordering::SeqCst);
+                    body
+                }
+            }),
+        );
+        let other_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let other_addr = other_listener.local_addr().unwrap();
+        tokio::spawn(async move { axum::serve(other_listener, other).await.unwrap() });
+
+        let app = axum::Router::new()
+            .route(
+                "/export",
+                axum::routing::get(|headers: HeaderMap| async move {
+                    if headers.get("authorization").and_then(|v| v.to_str().ok())
+                        == Some("Bearer onshape-token")
+                    {
+                        (StatusCode::FOUND, [("location", "/blob")]).into_response()
+                    } else {
+                        StatusCode::UNAUTHORIZED.into_response()
+                    }
+                }),
+            )
+            .route("/blob", axum::routing::get(move || async move { body }))
+            .route(
+                "/elsewhere",
+                axum::routing::get(move || async move {
+                    (StatusCode::FOUND, [("location", format!("http://{other_addr}/blob"))])
+                }),
+            );
+        use axum::response::IntoResponse;
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+        (format!("http://{addr}"), leaked)
+    }
+
+    fn fetch_opts(auth: Option<&str>, max_bytes: Option<u64>) -> DownloadOpts<'_> {
+        // The stand-ins are plain http on 127.0.0.1, which `validate_url` (and
+        // so the redirect policy) allows only in dev mode, as in local dev.
+        std::env::set_var("ASSEMBLER_DEV_MODE", "true");
+        DownloadOpts { authorization: auth, max_bytes, passthrough: true }
+    }
+
+    #[tokio::test]
+    async fn a_fetch_sends_its_bearer_and_writes_the_bytes_unchanged() {
+        // zstd magic first: a passthrough must not decode it.
+        let body: &'static [u8] = &[0x28, 0xB5, 0x2F, 0xFD, 1, 2, 3];
+        let (base, _) = cad_system(body).await;
+        let dest = temp_path("fetch");
+        let hash = download_with(&format!("{base}/export"), &dest, None, &fetch_opts(Some("Bearer onshape-token"), None))
+            .await
+            .unwrap();
+        assert_eq!(std::fs::read(&dest).unwrap(), body);
+        assert_eq!(hash, xxhash_rust::xxh3::xxh3_128(body));
+        let _ = std::fs::remove_file(&dest);
+
+        let refused = download_with(&format!("{base}/export"), &dest, None, &fetch_opts(None, None))
+            .await
+            .err()
+            .unwrap();
+        assert!(refused.message.contains("401"), "{}", refused.message);
+    }
+
+    #[tokio::test]
+    async fn a_fetch_redirected_to_another_host_does_not_carry_the_bearer() {
+        let (base, leaked) = cad_system(b"ISO-10303-21;").await;
+        let dest = temp_path("fetch");
+        download_with(&format!("{base}/elsewhere"), &dest, None, &fetch_opts(Some("Bearer onshape-token"), None))
+            .await
+            .unwrap();
+        let _ = std::fs::remove_file(&dest);
+        assert!(!leaked.load(std::sync::atomic::Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn a_fetch_past_its_cap_is_refused() {
+        let (base, _) = cad_system(b"ISO-10303-21; far too long").await;
+        let dest = temp_path("fetch");
+        let err = download_with(&format!("{base}/export"), &dest, None, &fetch_opts(Some("Bearer onshape-token"), Some(4)))
+            .await
+            .err()
+            .unwrap();
+        assert_eq!((err.status, err.code.as_str()), (413, "LIMIT_EXCEEDED"));
+        assert!(!dest.exists());
     }
 
     #[test]

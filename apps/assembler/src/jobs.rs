@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-//! Async job store shared by every action (convert / optimize / plan / compact / thumbnail).
+//! Async job store shared by every action (`request::ACTIONS`).
 //! One lifecycle for all actions: create -> compute -> upload to the submit-time
 //! URLs -> completion callback; GET /v1/jobs/{id}?wait= serves status.
 //!
@@ -40,7 +40,7 @@ const UPLOAD_RETRY_DELAYS: [Duration; 3] = [
 /// hold the completion POINTER (paths + counts) — never the artifact bytes.
 #[derive(Clone, Serialize, Deserialize)]
 struct JobRecord {
-    action: String, // convert | optimize | plan | compact | thumbnail
+    action: String, // one of `request::ACTIONS`
     status: String, // pending | running | uploading | done | error | canceled
     #[serde(skip_serializing_if = "Option::is_none")]
     result: Option<Value>,

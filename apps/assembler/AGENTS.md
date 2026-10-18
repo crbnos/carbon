@@ -283,6 +283,24 @@ Built to sit as a small always-on pod beside other workloads.
 - **CI + registry** — no workflow yet builds/publishes the `carbon-occt` base or
   the `carbon-assembler` image, or deploys the container.
 
+## Fetch
+
+`POST /v1/fetch` `{ source: { url, authorization? }, maxBytes?, output: { path?,
+contentType? } }` copies the file at `source.url` into storage unchanged, as the
+`raw` output, and returns `{ contentHash, outputs: { raw: { path, bytes } } }`
+(`contentHash` = xxh3-128 hex). It exists so a caller never holds a large file:
+the Onshape sync has the assembler pull a STEP export straight from Onshape into
+staging instead of streaming it through the app's function.
+
+- `authorization` is sent as the `Authorization` header (marked sensitive) and
+  lives only in the request: never in the job record, a log or a span.
+- `fetch` alone follows redirects, at most five and each to a URL that passes
+  `validate_url`; reqwest drops `Authorization` on a redirect to another host.
+- `maxBytes` fails the job `LIMIT_EXCEEDED` (413), from `Content-Length` when
+  sent, else as the bytes cross it.
+- No zstd decoding: the stored bytes are exactly what the source served.
+- No memory grant (no compute); it takes a source slot like every download.
+
 ## Thumbnails
 
 `POST /v1/thumbnail` `{ source: { url }, output: { path?, size?, direction? } }`

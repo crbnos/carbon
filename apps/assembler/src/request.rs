@@ -17,7 +17,7 @@ pub const DEFAULT_MAX_OUTPUT_BYTES: u64 = 52_428_800; // 50 MiB
 pub const DEFAULT_MAX_RENDER_WEIGHT_BYTES: u64 = 419_430_400; // 400 MiB
 
 /// The actions a job can run.
-pub const ACTIONS: [&str; 5] = ["convert", "optimize", "plan", "compact", "thumbnail"];
+pub const ACTIONS: [&str; 6] = ["convert", "optimize", "plan", "compact", "thumbnail", "fetch"];
 
 /// A parsed request, ready to spawn.
 pub enum ActionReq {
@@ -26,6 +26,7 @@ pub enum ActionReq {
     Plan(actions::plan::PlanReq),
     Compact(actions::compact::CompactReq),
     Thumbnail(actions::thumbnail::ThumbnailReq),
+    Fetch(actions::fetch::FetchReq),
 }
 
 /// Parse and validate a create body for `action`. Errors are 400s (an
@@ -86,6 +87,19 @@ pub fn parse(action: &str, req: &Value) -> Result<ActionReq, ApiError> {
                 .ok_or_else(|| ApiError::invalid("mode must be 'xbf' or 'zstd'"))?,
             raw_path: path(&req["output"]["path"]),
         }),
+        "fetch" => ActionReq::Fetch(actions::fetch::FetchReq {
+            source_url,
+            authorization: req["source"]["authorization"]
+                .as_str()
+                .filter(|s| !s.is_empty())
+                .map(str::to_string),
+            max_bytes: req["maxBytes"].as_u64().filter(|&b| b > 0),
+            content_type: req["output"]["contentType"]
+                .as_str()
+                .unwrap_or("application/octet-stream")
+                .to_string(),
+            path: path(&req["output"]["path"]),
+        }),
         _ => ActionReq::Thumbnail(thumbnail_req(&source_url, &req["output"])),
     })
 }
@@ -98,6 +112,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ActionReq) {
         ActionReq::Plan(r) => actions::plan::spawn(state, job_id, r),
         ActionReq::Compact(r) => actions::compact::spawn(state, job_id, r),
         ActionReq::Thumbnail(r) => actions::thumbnail::spawn(state, job_id, r),
+        ActionReq::Fetch(r) => actions::fetch::spawn(state, job_id, r),
     }
 }
 
