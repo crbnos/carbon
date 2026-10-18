@@ -1615,6 +1615,9 @@ msgstr "Принята {0}"
 msgid "Access"
 msgstr ""
 
+msgid "Access level"
+msgstr ""
+
 msgid "Account"
 msgstr "Счет"
 
@@ -2159,6 +2162,9 @@ msgstr "Добавить свойство"
 
 msgid "Add Question"
 msgstr "Добавить вопрос"
+
+msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
+msgstr ""
 
 msgid "Add Receipt"
 msgstr "Добавить приходную накладную"
@@ -7207,9 +7213,6 @@ msgstr "способ обеспечения по умолчанию"
 
 msgid "Default Method Type"
 msgstr "Способ обеспечения по умолчанию"
-
-msgid "Default Permissions"
-msgstr "Права доступа по умолчанию"
 
 msgid "Default Priority"
 msgstr "Приоритет по умолчанию"
@@ -15672,6 +15675,9 @@ msgstr "1 {0} — это сколько {1}?"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Одно выполнение рабочего процесса, записанное пошагово со значениями, использованными и созданными каждым шагом, выполняющееся с правами доступа владельца рабочего процесса."
 
+msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
+msgstr ""
+
 msgid "One or more quantities cannot meet this date"
 msgstr "Одно или несколько количеств не могут соответствовать этой дате"
 
@@ -22282,8 +22288,8 @@ msgstr "Переключиться на письменный контент"
 msgid "Switch users over and confirm access"
 msgstr "Переключите пользователей и подтвердите доступ"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "Изменение типа сотрудника здесь не изменяет его существующие права доступа; модальное окно, которое следует, спрашивает, следует ли перезаписать текущий набор значениями по умолчанию для нового типа."
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr ""
 
 msgid "Sync"
 msgstr "Синхронизация"
@@ -23125,6 +23131,9 @@ msgstr "Актив арендатора для права использован
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "Актив лизингодателя при финансовой аренде: текущая стоимость арендных платежей и не гарантированного остатка, увеличиваемая каждый месяц на сумму процентов по лизингу и уменьшаемая каждый платеж аренды и счет-фактуру по опциону покупки."
 
+msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "Этапы жизненного цикла, через которые вы отслеживаете покупателей"
 
@@ -23323,9 +23332,6 @@ msgstr "Результат по номенклатуре, записанный �
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "Процент скидки при оплате наличными. Используйте 0, если скидки нет."
 
-msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
-msgstr "Набор прав доступа, который автоматически получают новые сотрудники этого типа; редактирование здесь изменяет шаблон только для будущих сотрудников — существующие сотрудники сохраняют свои права, пока их явно не обновить массово."
-
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "Лицо, которому назначено действие планирования: ответственный номенклатуры на этой площадке, иначе ответственный группы номенклатуры, иначе ответственный площадки, иначе ответственный организации по умолчанию."
 
@@ -23462,6 +23468,9 @@ msgstr "Номер ревизии детали."
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "Активы право пользования и обязательство лизинга отражаются в бухгалтерском балансе, и прямолинейная стоимость лизинга учитывается каждый месяц."
+
+msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Строка заказа покупателя, для которой был создан этот Производственный заказ с целью Обеспечения, связывающая Производственный заказ с Потребностью Покупателя."
@@ -23633,9 +23642,6 @@ msgstr "Маршрутный лист содержит каждый элемен
 
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "Маршрутный лист перечисляет каждую операцию маршрута с ожидаемыми временами и сканируемыми штрих-кодами."
-
-msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
-msgstr "Тип управляет тем, какие права доступа по умолчанию получает новый сотрудник; выбор его здесь предварительно заполняет матрицу разрешений из шаблона типа."
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "Типичное количество дней между отправкой работы этому поставщику для этого процесса и ее возвратом; планирование смещает спрос на эту величину при выборе поставщика."
@@ -26325,9 +26331,6 @@ msgstr "Выполняется ли этот процесс на внутрен�
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "Блокирует ли эта работа производство (Вниз), его деградирует (Воздействие), находится в окне планового простоя (Плановое) или не оказывает влияния на производство (Без воздействия); информирует планирование и общение об простое, обращенное к клиентам."
-
-msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
-msgstr "Добавить выбранные права доступа поверх того, что уже имеет каждый пользователь, или Обновить, заменив набор прав доступа каждого пользователя полностью выбором ниже."
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "Какой документ определяет каждый процесс контроля для этого элемента."

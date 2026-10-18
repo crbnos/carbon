@@ -25,7 +25,7 @@ Phases 1 and 2 — grants, resolver, editors (one release)
 - [x] Task 13: Build the access view
 - [ ] Task 14: Update dev bootstrap, company seed and demo datasets
 - [x] Task 14a: Replace the ERP auth entry points with `authorize`
-- [ ] Task 15: Rewrite the permissions docs and glossary
+- [x] Task 15: Rewrite the permissions docs and glossary
 - [ ] Task 16: Verify phases 1 and 2 in the browser
 
 Phase 3 — every module to page keys (one deploy)

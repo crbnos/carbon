@@ -3,7 +3,7 @@ title: API keys
 description: A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions.
 ---
 
-An <Term id="api-key">API key</Term> authenticates programmatic requests to Carbon. Each key belongs to one company and has explicit permission scopes independent of its creator. Manage keys under **Settings → API Keys**.
+An <Term id="api-key">API key</Term> authenticates programmatic requests to Carbon. Each key belongs to one company and has its own access levels, independent of its creator. Manage keys under **Settings → API Keys**.
 
 <Callout type="tip" title="Connectors don't need a key">
 Claude.ai, Claude Desktop, and ChatGPT connect over **OAuth**. The connection inherits the authorizing user's role and company. Use an API key for clients without browser-based OAuth, including Claude Code, Cursor, VS Code, Codex, headless scripts, and CI. Stdio-only clients connect through `mcp-remote`. See [Authentication](/api/authentication) for both flows.
@@ -13,10 +13,10 @@ Claude.ai, Claude Desktop, and ChatGPT connect over **OAuth**. The connection in
 
 <Screenshot label="Settings → API Keys: the key list with masked previews, scopes, and rate limit, plus the one-time 'You can only see this key once' dialog" caption="The full key is shown exactly once at creation." />
 
-Select **New API Key**, enter a company-unique **Name**, optionally set **Expires At**, grant scopes, and save. A blank expiration means the key does not expire. Carbon displays the full key once and then stores only its SHA-256 hash and a five-character preview. Copy the key immediately; if it is lost, delete it and create another. The dialog also provides an MCP connection command.
+Select **New API Key**, enter a company-unique **Name**, optionally set **Expires At**, set a level on each module, and save. A blank expiration means the key does not expire. Carbon displays the full key once and then stores only its SHA-256 hash and a five-character preview. Copy the key immediately; if it is lost, delete it and create another. The dialog also provides an MCP connection command.
 
 <Callout type="warn" title="The key is a bearer secret">
-Anyone holding the key can act as it, within its scopes. Store it in a secret manager, never commit it, and rotate (delete and recreate) if it leaks.
+Anyone holding the key can act as it, within its levels. Store it in a secret manager, never commit it, and rotate (delete and recreate) if it leaks.
 </Callout>
 
 ## Authenticating a request
@@ -35,9 +35,13 @@ API keys require no login or refresh flow. Carbon hashes each submitted key and 
 `rest.carbon.ms` accepts `Authorization: Bearer crbn_…` and forwards the token internally in the `carbon-key` header. For direct PostgREST calls on a self-hosted installation, send `carbon-key: crbn_…` to `/rest/v1/<table>`. The MCP endpoint accepts the Bearer token in either deployment.
 </Callout>
 
-## Scopes and rate limit
+## Access levels and rate limit
 
-A key has only its stored `module_action` scopes, such as `sales_view` or `inventory_create`, and can access only its company. A key with no scopes can authenticate but cannot read or write data. Scope changes and deletion take effect immediately. On Carbon Cloud, API access requires the **Business** plan; Starter-plan requests return `403` regardless of scope. See [Licensing](/docs/platform/licensing).
+A key has only the [access levels](/docs/reference/permissions#levels) set on its grid, one per module, and can access only its company. A key with no levels can authenticate but cannot read or write data. Level changes and deletion take effect immediately.
+
+**Select all** gives Full on every module except Accounting, which gets Edit: deleting accounting data through a key is a choice you make on its own row.
+
+On Carbon Cloud, API access requires the **Business** plan; Starter-plan requests return `403` whatever the key's levels. See [Licensing](/docs/platform/licensing).
 
 New keys allow **20 requests per minute**. Existing keys retain the rate limit shown in the **Rate Limit** column. All keys for a company share a separate limit of **60 requests per minute**. Neither limit can be changed in Carbon. If an integration needs more, contact Carbon support: both limits can be raised for one company. A rejected request returns `429` with `Retry-After` and `X-RateLimit-*` headers; retry after the specified interval.
 
@@ -70,10 +74,10 @@ An **API key** authorizes requests to Carbon. A **[webhook](/docs/building/webho
 Key format is `crbn_` + random token; storage is SHA-256 hash + last-five preview. `upsertApiKey` strips rate-limit columns from any submission (`packages/ee/src/api-keys.server.ts`). The 429 response headers come from `packages/auth/src/services/auth.server.ts:255`.
 
 ### "API key lacks required permissions"
-The call needs a `module_action` scope the key doesn't carry — checked per request against the key's record (`packages/auth/src/services/auth.server.ts:295`), never the creator's permissions. Add the exact scope in the permission matrix; it applies immediately.
+The call needs a level the key doesn't have. The check is a `module_action` key (view needs View, create needs Create, update needs Edit, delete needs Full), read per request from the key's own `permission` rows, never the creator's. Raise the key's level on that module; it applies immediately.
 
-### 403 on every call despite correct scopes
-On Carbon Cloud, API access is Business-tier: the key path blocks Starter-plan companies outright (`packages/auth/src/services/auth.server.ts:312-330`). Upgrade the plan; the key itself is fine. A 403 on a single operation is the scope problem above instead. Connectors (OAuth) hit the same plan gate through the identity they inherit.
+### 403 on every call despite correct levels
+On Carbon Cloud, API access is Business-tier: the key path blocks Starter-plan companies outright (`packages/auth/src/services/auth.server.ts:312-330`). Upgrade the plan; the key itself is fine. A 403 on a single operation is the level problem above instead. Connectors (OAuth) hit the same plan gate through the identity they inherit.
 
 ### "Rate limit exceeded"
 Over the key's per-minute limit, or over the company's total across its keys (60/minute unless `companyPlan.apiRateLimit` is set); `X-RateLimit-Limit` carries the limit that refused it (`auth.server.ts:249`). Platform-controlled, with no field in the app: support raises one key with `apiKey.rateLimit` and the company total with `companyPlan.apiRateLimit`, and a key above its company's total is still capped by it. Honor `Retry-After`; if the ceiling is genuinely too tight, batch reads (PostgREST `in.(...)` filters, embedded relations) or talk to us.

@@ -1615,6 +1615,9 @@ msgstr "Aceptada el {0}"
 msgid "Access"
 msgstr ""
 
+msgid "Access level"
+msgstr ""
+
 msgid "Account"
 msgstr "Cuenta"
 
@@ -2159,6 +2162,9 @@ msgstr "Agregar propiedad"
 
 msgid "Add Question"
 msgstr "Agregar pregunta"
+
+msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
+msgstr ""
 
 msgid "Add Receipt"
 msgstr "Agregar Recepción"
@@ -7207,9 +7213,6 @@ msgstr "Tipo de suministro predeterminado"
 
 msgid "Default Method Type"
 msgstr "Tipo de suministro predeterminado"
-
-msgid "Default Permissions"
-msgstr "Permisos Predeterminados"
 
 msgid "Default Priority"
 msgstr "Prioridad Predeterminada"
@@ -15672,6 +15675,9 @@ msgstr "¿A cuántos {1} equivale 1 {0}?"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Una ejecución de un flujo de trabajo, registrada paso a paso con los valores que cada paso usó y produjo, actuando en todo momento con los permisos del propietario del flujo de trabajo."
 
+msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
+msgstr ""
+
 msgid "One or more quantities cannot meet this date"
 msgstr "Una o más cantidades no pueden cumplir esta fecha"
 
@@ -22282,8 +22288,8 @@ msgstr "Cambiar a contenido escrito"
 msgid "Switch users over and confirm access"
 msgstr "Cambiar usuarios y confirmar acceso"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "Cambiar el tipo de empleado aquí no cambia sus permisos existentes; el diálogo que sigue pregunta si se debe sobrescribir el conjunto actual con los valores predeterminados del nuevo tipo."
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr ""
 
 msgid "Sync"
 msgstr "Sincronizar"
@@ -23125,6 +23131,9 @@ msgstr "El activo del arrendatario por el derecho de usar un activo arrendado, c
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "El activo del arrendador en un arrendamiento de tipo venta: el valor presente de los pagos de arrendamiento y el residual no garantizado, incrementado cada mes por los intereses de arrendamiento y reducido por cada factura de alquiler y opción de compra."
 
+msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "Las etapas del ciclo de vida que rastreas en tus clientes"
 
@@ -23323,9 +23332,6 @@ msgstr "El resultado por artículo registrado en el material afectado de una no 
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "El porcentaje del descuento en efectivo. Utiliza 0 para sin descuento."
 
-msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
-msgstr "El conjunto de permisos que reciben automáticamente los nuevos empleados de este tipo; editar aquí cambia la plantilla solo para futuras contrataciones - los empleados existentes conservan lo que tienen a menos que se actualicen explícitamente en masa."
-
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "La persona a quien se asigna una acción de planificación: el propietario del artículo en esa ubicación; en su defecto, el del grupo de artículos; en su defecto, el de la ubicación; en su defecto, el valor predeterminado de la empresa."
 
@@ -23462,6 +23468,9 @@ msgstr "El número de revisión de la pieza"
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "El activo de derecho de uso y el pasivo de arrendamiento están en el balance general, y un costo de arrendamiento de línea recta se contabiliza cada mes."
+
+msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "La línea de pedido de venta que esta orden de trabajo fue creada para surtir, vinculando la orden de trabajo a la demanda del cliente detrás de ella."
@@ -23633,9 +23642,6 @@ msgstr "La hoja viajera lista cada artículo en la lista de materiales con su ca
 
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "La hoja viajera enumera cada operación de la ruta de fabricación con sus tiempos esperados y códigos de barras para escanear."
-
-msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
-msgstr "El tipo controla qué permisos predeterminados recibe el nuevo empleado; seleccionarlo aquí completa previamente la matriz de permisos de la plantilla del tipo."
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "El número típico de días entre enviar el trabajo a este proveedor para este proceso y recibirlo de regreso; la planificación aplica un desfase a la demanda por este tiempo cuando se selecciona un proveedor."
@@ -26325,9 +26331,6 @@ msgstr "Si este proceso se ejecuta en centros de trabajo internos (Proceso, Ensa
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "Si este trabajo bloquea la producción (Paro), la degrada (Impacto), está en una ventana de tiempo de paro planificado (Planificado) o no tiene impacto en la producción (Sin impacto); informa la programación y la comunicación de tiempo de paro al cliente."
-
-msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
-msgstr "Si se Agregan los permisos seleccionados además de lo que cada usuario ya tiene, o se Actualizan reemplazando el conjunto de permisos de cada usuario con la selección a continuación."
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "Qué documento conduce cada flujo de inspección para este artículo."

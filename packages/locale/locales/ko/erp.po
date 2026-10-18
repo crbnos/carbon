@@ -1615,6 +1615,9 @@ msgstr "수락됨 {0}"
 msgid "Access"
 msgstr ""
 
+msgid "Access level"
+msgstr ""
+
 msgid "Account"
 msgstr "계정"
 
@@ -2159,6 +2162,9 @@ msgstr "속성 추가"
 
 msgid "Add Question"
 msgstr "질문 추가"
+
+msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
+msgstr ""
 
 msgid "Add Receipt"
 msgstr "입고 추가"
@@ -7207,9 +7213,6 @@ msgstr "기본 공급 방식"
 
 msgid "Default Method Type"
 msgstr "기본 공급 방식"
-
-msgid "Default Permissions"
-msgstr "기본 권한"
 
 msgid "Default Priority"
 msgstr "기본 우선순위"
@@ -15672,6 +15675,9 @@ msgstr "1 {0}은(는) 몇 {1}입니까?"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "워크플로의 한 번 실행으로, 각 단계가 사용하고 생성한 값을 단계별로 기록하며 워크플로 책임자의 권한으로 전체적으로 작동합니다."
 
+msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
+msgstr ""
+
 msgid "One or more quantities cannot meet this date"
 msgstr "하나 이상의 수량이 이 날짜를 충족할 수 없습니다"
 
@@ -22282,8 +22288,8 @@ msgstr "작성된 콘텐츠로 전환"
 msgid "Switch users over and confirm access"
 msgstr "사용자를 전환하고 접근 권한을 확인하세요"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "여기서 직원 유형을 전환해도 기존 권한은 변경되지 않습니다. 이어지는 모달에서 현재 권한 세트를 새 유형의 기본값으로 덮어쓸지 여부를 묻습니다."
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr ""
 
 msgid "Sync"
 msgstr "동기화"
@@ -23125,6 +23131,9 @@ msgstr "리스이용자의 임차 자산 사용권 자산으로, 영업용 또�
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "판매유형 리스에서 임대인의 자산: 리스료와 보증되지 않은 잔존가치의 현재가치로, 매월 리스이자로 증가하며 각 리스료와 구매선택권 송장으로 감소합니다."
 
+msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "고객을 추적하는 생애주기 단계"
 
@@ -23323,9 +23332,6 @@ msgstr "각 영향을 받은 로트 또는 일련번호마다 독립적으로 �
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "현금 할인 비율입니다. 할인이 없으면 0을 사용하세요."
 
-msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
-msgstr "이 유형의 신규 직원이 자동으로 받는 권한 세트입니다. 여기서 수정하면 이후 신규 채용자에게만 템플릿이 적용되며, 기존 직원은 명시적으로 일괄 업데이트하지 않는 한 현재 권한을 유지합니다."
-
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "계획 조치가 할당되는 사람입니다: 해당 사업장의 품목 책임자, 없으면 품목 그룹의 책임자, 없으면 사업장의 책임자, 없으면 회사 기본 책임자입니다."
 
@@ -23462,6 +23468,9 @@ msgstr "품목의 리비전 번호"
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "사용권 자산과 임차 부채는 재무상태표에 있으며, 매월 하나의 정액 임차 원가가 계상됩니다."
+
+msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "이 작업 지시를 공급하기 위해 생성된 수주 라인으로, 작업 지시를 뒤의 고객 소요량과 연결합니다."
@@ -23633,9 +23642,6 @@ msgstr "작업 이동표는 자재 명세서의 각 품목을 수량과 함께 �
 
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "작업 이동표는 각 라우팅 공정의 예상 시간과 스캔 바코드를 나열합니다."
-
-msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
-msgstr "이 유형은 신규 직원이 받는 기본 권한을 결정합니다. 여기서 선택하면 해당 유형의 템플릿으로 권한 매트릭스가 미리 채워집니다."
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "이 공급업체에 이 공법의 작업을 보낸 후 반품을 받을 때까지의 일반적인 일 수; 공급업체를 선택할 때 계획이 이만큼 소요량을 계획 오프셋합니다."
@@ -26325,9 +26331,6 @@ msgstr "이 공법이 내부 작업장(공법, 조립 또는 검사)에서 실�
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "이 작업이 생산을 차단(Down)하는지, 성능을 저하(영향)시키는지, 계획된 비가동 시간 윈도우(계획됨)에 있는지, 또는 생산에 영향(No Impact)이 없는지 여부; 스케줄링 및 고객 대면 비가동 시간 통신을 알립니다."
-
-msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
-msgstr "선택한 권한을 각 사용자가 이미 가진 권한에 추가할지(추가), 아래 선택 항목으로 각 사용자의 권한 세트를 완전히 교체할지(업데이트) 여부입니다."
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "이 항목에 대한 각 검사 흐름을 운영하는 문서입니다."

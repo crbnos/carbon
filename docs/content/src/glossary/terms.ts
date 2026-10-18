@@ -2047,20 +2047,26 @@ export const terms = {
 
   // ── Users: Employee types (EmployeeTypeForm) ────────────────────────────
   "employee-type-default-permissions": {
-    term: msg`Default Permissions`,
-    definition: msg`The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated.`
+    term: msg`Access`,
+    definition: msg`The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request.`,
+    href: "/docs/reference/permissions#employee-types"
+  },
+  "access-level": {
+    term: msg`Access level`,
+    definition: msg`One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records.`,
+    href: "/docs/reference/permissions#levels"
   },
 
   // ── Users: Employee permissions (EmployeePermissionsForm) ───────────────
   "employee-permissions-employee-type-override": {
     term: msg`Employee Type`,
-    definition: msg`Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults.`
+    definition: msg`Switching the type changes the levels this person inherits on every module; their personal overrides stay.`
   },
 
   // ── Users: Bulk permissions (BulkEditPermissionsForm) ───────────────────
   "bulk-permissions-update-type": {
     term: msg`Type of Permission Update`,
-    definition: msg`Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below.`
+    definition: msg`Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has.`
   },
 
   // ── Users: Customer account (CreateCustomerModal) ───────────────────────
@@ -2086,7 +2092,7 @@ export const terms = {
   // ── Users: Create employee (CreateEmployeeModal) ────────────────────────
   "create-employee-employee-type": {
     term: msg`Employee Type`,
-    definition: msg`The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template.`
+    definition: msg`The role this employee gets their access levels from; a later edit of the type reaches them too.`
   },
   "create-employee-location": {
     term: msg`Location`,

@@ -1615,6 +1615,9 @@ msgstr "{0} को स्वीकृत"
 msgid "Access"
 msgstr ""
 
+msgid "Access level"
+msgstr ""
+
 msgid "Account"
 msgstr "खाता"
 
@@ -2159,6 +2162,9 @@ msgstr "प्रॉपर्टी जोड़ें"
 
 msgid "Add Question"
 msgstr "प्रश्न जोड़ें"
+
+msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
+msgstr ""
 
 msgid "Add Receipt"
 msgstr "रसीद जोड़ें"
@@ -7207,9 +7213,6 @@ msgstr "डिफ़ॉल्ट आपूर्ति प्रकार"
 
 msgid "Default Method Type"
 msgstr "डिफ़ॉल्ट आपूर्ति प्रकार"
-
-msgid "Default Permissions"
-msgstr "डिफ़ॉल्ट अनुमतियाँ"
 
 msgid "Default Priority"
 msgstr "डिफ़ॉल्ट प्राथमिकता"
@@ -15672,6 +15675,9 @@ msgstr "1 {0} कितने {1} के बराबर है?"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "एक वर्कफ़्लो का एक निष्पादन, चरण दर चरण रिकॉर्ड किया गया जिसमें प्रत्येक चरण द्वारा उपयोग किए गए और उत्पादित मान शामिल हैं, वर्कफ़्लो के स्वामी की अनुमतियों के साथ पूरे समय कार्य करते हुए।"
 
+msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
+msgstr ""
+
 msgid "One or more quantities cannot meet this date"
 msgstr "एक या अधिक मात्रा इस तारीख को पूरी नहीं कर सकती है"
 
@@ -22282,8 +22288,8 @@ msgstr "लिखित सामग्री पर स्विच करे�
 msgid "Switch users over and confirm access"
 msgstr "उपयोगकर्ताओं को स्विच करें और एक्सेस की पुष्टि करें"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "यहां कर्मचारी के प्रकार को बदलने से उनकी मौजूदा अनुमतियां नहीं बदलती; अनुवर्ती मोडल पूछता है कि क्या वर्तमान सेट को नए प्रकार के डिफ़ॉल्ट के साथ अधिलेखित करना है।"
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr ""
 
 msgid "Sync"
 msgstr "सिंक करें"
@@ -23125,6 +23131,9 @@ msgstr "किराएदार की उपयोग के अधिका�
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "बिक्री-प्रकार पट्टे पर पट्टेदार की संपत्ति: पट्टे के भुगतान और गारंटीयुक्त अवशेष का वर्तमान मूल्य, प्रत्येक महीने पट्टे के ब्याज से बढ़ाया जाता है और प्रत्येक किराए और खरीद विकल्प चालान से कम किया जाता है।"
 
+msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "जीवनचक्र के चरण जिन्हें आप ग्राहकों के माध्यम से ट्रैक करते हैं"
 
@@ -23323,9 +23332,6 @@ msgstr "गैर-अनुरूपता की प्रभावित स�
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "नकद छूट का प्रतिशत। कोई छूट नहीं के लिए 0 का उपयोग करें।"
 
-msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
-msgstr "अनुमति सेट जो इस प्रकार के नए कर्मचारी स्वचालित रूप से प्राप्त करते हैं; यहाँ संपादन केवल भविष्य की भर्ती के लिए टेम्पलेट को बदलता है - मौजूदा कर्मचारी जो उनके पास है वह रखते हैं जब तक कि स्पष्ट रूप से बड़े पैमाने पर अद्यतन नहीं किया जाता।"
-
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "वह व्यक्ति जिसे योजना कार्रवाई असाइन की गई है: उस स्थान पर आइटम का स्वामी, अन्यथा आइटम समूह का, अन्यथा स्थान का, अन्यथा कंपनी का डिफ़ॉल्ट।"
 
@@ -23462,6 +23468,9 @@ msgstr "पार्ट की रिवीजन संख्या"
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "उपयोग अधिकार संपत्ति और पट्टा दायित्व तुलन पत्र पर हैं, और एक सीधी रेखा पट्टा लागत हर महीने बुक की जाती है।"
+
+msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "विक्रय आदेश पंक्ति जिसे आपूर्ति के लिए यह जॉब बनाया गया था, जॉब को इसके पीछे ग्राहक मांग से जोड़ता है।"
@@ -23633,9 +23642,6 @@ msgstr "ट्रैवलर सामग्री सूची पर प्�
 
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "ट्रैवलर प्रत्येक रूटिंग ऑपरेशन को उसके अपेक्षित समय और स्कैन बारकोड के साथ सूचीबद्ध करता है।"
-
-msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
-msgstr "प्रकार नियंत्रित करता है कि नया कर्मचारी कौन सी डिफ़ॉल्ट अनुमतियां प्राप्त करता है; यहाँ इसे चुनने से प्रकार के टेम्पलेट से अनुमति मैट्रिक्स पूर्व-भर जाता है।"
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "इस प्रक्रिया के लिए इस आपूर्तिकर्ता को काम भेजने और इसे वापस पाने के बीच दिनों की विशिष्ट संख्या; योजना आपूर्तिकर्ता चुनते समय इस मात्रा से मांग को ऑफसेट करती है।"
@@ -26325,9 +26331,6 @@ msgstr "क्या यह प्रक्रिया आंतरिक व�
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "यह कार्य उत्पादन को अवरुद्ध करता है (डाउन), इसे नीचा दिखाता है (प्रभाव), एक नियोजित डाउनटाइम विंडो (योजनाबद्ध) में है, या कोई उत्पादन प्रभाव नहीं है (कोई प्रभाव नहीं); शेड्यूलिंग और ग्राहक-सामना डाउनटाइम संचार को सूचित करता है।"
-
-msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
-msgstr "क्या जोड़ें चयनित अनुमतियों को प्रत्येक उपयोगकर्ता के पास पहले से है उसके ऊपर, या अपडेट करें प्रत्येक उपयोगकर्ता की अनुमति सेट को नीचे चयन के साथ थोक में प्रतिस्थापित करके।"
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "कौन सा दस्तावेज़ इस आइटम के लिए प्रत्येक निरीक्षण प्रवाह को चलाता है।"

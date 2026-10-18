@@ -1615,6 +1615,9 @@ msgstr "{0} tarihinde kabul edildi"
 msgid "Access"
 msgstr ""
 
+msgid "Access level"
+msgstr ""
+
 msgid "Account"
 msgstr "Hesap"
 
@@ -2159,6 +2162,9 @@ msgstr "Özellik Ekle"
 
 msgid "Add Question"
 msgstr "Soru Ekle"
+
+msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
+msgstr ""
 
 msgid "Add Receipt"
 msgstr "Makbuz Ekle"
@@ -7207,9 +7213,6 @@ msgstr "Varsayılan tedarik şekli"
 
 msgid "Default Method Type"
 msgstr "Varsayılan Tedarik Şekli"
-
-msgid "Default Permissions"
-msgstr "Varsayılan İzinler"
 
 msgid "Default Priority"
 msgstr "Varsayılan Öncelik"
@@ -15672,6 +15675,9 @@ msgstr "1 {0} kaç {1} eder?"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Bir iş akışının bir kez çalıştırılması, her adımın kullandığı ve ürettiği değerlerle adım adım kaydedilmiş, iş akışının sahibinin izinleriyle hareket eder."
 
+msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
+msgstr ""
+
 msgid "One or more quantities cannot meet this date"
 msgstr "Bir veya daha fazla miktar bu tarihi karşılayamıyor"
 
@@ -22282,8 +22288,8 @@ msgstr "Yazılı İçeriğe Geç"
 msgid "Switch users over and confirm access"
 msgstr "Kullanıcıları değiştir ve erişimi onayla"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "Çalışan türünü burada değiştirmek mevcut izinlerini değiştirmez; takip eden iletişim kutusu geçerli kümenin yeni türün varsayılanlarıyla yazılıp yazılmayacağını sorar."
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr ""
 
 msgid "Sync"
 msgstr "Senkronize Et"
@@ -23125,6 +23131,9 @@ msgstr "Kiracının bir kiralanmış varlığı kullanma hakkına ilişkin varl�
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "Satış türü kiralama üzerinde kiraya verenin varlığı: kira ödemeleri ile garantisiz kalıntı tutarının bugünkü değeri; bu tutar her ay kiralama faizi ile artar ve her kira ve satın alma seçeneği faturası ile azalır."
 
+msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "Müşterileri takip ettiğiniz yaşam döngüsü aşamaları"
 
@@ -23323,9 +23332,6 @@ msgstr "Bir uygunsuzluk nedeniyle etkilenen malzeme üzerine kaydedilen sonuç �
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "Peşin ödeme iskontosunun yüzdesi. İskonto yoksa 0 kullanın."
 
-msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
-msgstr "Bu tür yeni çalışanların otomatik olarak aldığı izin kümesi; burada düzenleme, yalnızca gelecekteki işe almalar için şablonu değiştirir - mevcut çalışanlar, açıkça toplu güncellenmediği sürece sahip olduklarını tutarlar."
-
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "Planlama aksiyonunun atandığı kişi: o lokasyondaki stok kartının sahibi, değilse stok kartı grubunun, değilse lokasyonun, değilse şirketin varsayılanı."
 
@@ -23462,6 +23468,9 @@ msgstr "Parçanın revizyon numarası"
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "Kullanım hakkı kıymeti ve kiralama yükümlülüğü bilançoda gösterilir ve her ay bir düz çizgi kiralama maliyeti muhasebeleştirilir."
+
+msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Bu iş emrinin arzulanacak satış siparişi satırı, iş emrini arkasındaki müşteri talebine bağlayan."
@@ -23633,9 +23642,6 @@ msgstr "İş takip kartı ürün ağacındaki her stok kartını miktarıyla bir
 
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "İş takip kartı her rota operasyonunun beklenen zamanlarını ve tarama barkodlarını listeler."
-
-msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
-msgstr "Tür, yeni çalışanın aldığı varsayılan izinleri kontrol eder; buradan seçmek, tür şablonundan izin matrisini önceden doldurur."
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "Bu tedarikçiye bu proses için iş göndermekle geri almak arasında geçen tipik gün sayısı; bir tedarikçi seçerken planlama talebi bu kadar kaydırır."
@@ -26325,9 +26331,6 @@ msgstr "Bu prosesin dahili iş merkezlerinde (Proses, Montaj, veya Muayene) veya
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "Bu işin üretime engel olup olmadığı (Duruş), üretime zarar verip vermediği (Etki), planlanan duruş penceresinde olup olmadığı (Planlandı), veya üretim üzerinde hiçbir etkisi olmadığı (Etki yok); planlama ve müşteriye yönelik duruş iletişimini bilgilendirir."
-
-msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
-msgstr "Seçilen izinlerin her kullanıcının zaten sahip olduğu şeylerin üstüne Eklenip Eklenmediği veya her kullanıcının izin setinin aşağıda seçilen kişilerle değiştirilmesi suretiyle Güncelleştirilmesi."
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "Bu öğe için hangi belgenin her muayene akışını yönettiği."

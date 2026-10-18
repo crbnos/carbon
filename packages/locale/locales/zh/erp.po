@@ -1615,6 +1615,9 @@ msgstr "已接受 {0}"
 msgid "Access"
 msgstr ""
 
+msgid "Access level"
+msgstr ""
+
 msgid "Account"
 msgstr "账户"
 
@@ -2159,6 +2162,9 @@ msgstr "添加属性"
 
 msgid "Add Question"
 msgstr "添加问题"
+
+msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
+msgstr ""
 
 msgid "Add Receipt"
 msgstr "添加收据"
@@ -7207,9 +7213,6 @@ msgstr "默认供料方式"
 
 msgid "Default Method Type"
 msgstr "默认供料方式"
-
-msgid "Default Permissions"
-msgstr "默认权限"
 
 msgid "Default Priority"
 msgstr "默认优先级"
@@ -15672,6 +15675,9 @@ msgstr "1 {0} 等于多少 {1}？"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "一次工作流执行，逐步记录每个步骤使用和产生的值，始终以工作流负责人的权限行动。"
 
+msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
+msgstr ""
+
 msgid "One or more quantities cannot meet this date"
 msgstr "一个或多个数量无法满足此日期"
 
@@ -22282,8 +22288,8 @@ msgstr "切换到书面内容"
 msgid "Switch users over and confirm access"
 msgstr "切换用户并确认访问权限"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "在此处更改员工类型不会更改其现有权限；后续对话框询问是否应使用新类型的默认值覆盖当前集。"
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr ""
 
 msgid "Sync"
 msgstr "同步"
@@ -23125,6 +23131,9 @@ msgstr "承租人的资产用于使用权，在运营或融资租赁激活时按
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "销售型租赁中出租人的资产：租赁付款和无保障残值的现值，每月因租赁利息增加，因每笔租金和购买选择权发票而减少。"
 
+msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "您跟踪客户所经历的生命周期阶段"
 
@@ -23323,9 +23332,6 @@ msgstr "在不合格品的受影响原材料上记录的单件结果——待处
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "现金折扣的百分比。使用 0 表示无折扣。"
 
-msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
-msgstr "该类型的新员工自动接收的权限集；在此处编辑仅更改模板以供将来雇用 - 现有员工保留他们拥有的内容，除非明确进行批量更新。"
-
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "计划行动被分配给的个人：该地点的物料负责人，否则为物料组的负责人，否则为地点的负责人，否则为公司默认值。"
 
@@ -23462,6 +23468,9 @@ msgstr "零件的修订版号"
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "使用权资产和租赁负债在资产负债表上列示，每月预提一笔直线租赁成本。"
+
+msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "为供应而创建此作业的销售订单行，将作业与其后的客户需求联系起来。"
@@ -23633,9 +23642,6 @@ msgstr "流转卡列出物料清单上的每个物料及其数量。"
 
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "流转卡列出每个工艺路线工序及其预期时间和扫码条码。"
-
-msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
-msgstr "类型控制新员工接收的默认权限；在此处选择它会从类型的模板预填充权限矩阵。"
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "将工作发送给此供应商进行此工艺和取回之间的典型天数;选择供应商时计划以此偏移需求。"
@@ -26325,9 +26331,6 @@ msgstr "此工艺是在内部工作中心(工艺、装配或检验)还是在外�
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "此工作是否阻止生产（停机）、降低生产（影响）、处于计划停机时间窗口（已计划）或没有生产影响（无影响）；影响计划和面向客户的停机时间通信。"
-
-msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
-msgstr "是否将选定的权限添加到每个用户已有的权限之上,或通过将每个用户的权限集替换为下面的选择来更新。"
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "哪份文件驱动此物料的每个检验流程。"

@@ -1615,6 +1615,9 @@ msgstr "承諾済 {0}"
 msgid "Access"
 msgstr ""
 
+msgid "Access level"
+msgstr ""
+
 msgid "Account"
 msgstr "アカウント"
 
@@ -2159,6 +2162,9 @@ msgstr "プロパティを追加"
 
 msgid "Add Question"
 msgstr "質問を追加"
+
+msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
+msgstr ""
 
 msgid "Add Receipt"
 msgstr "領収書を追加"
@@ -7207,9 +7213,6 @@ msgstr "デフォルト供給方式"
 
 msgid "Default Method Type"
 msgstr "デフォルト供給方式"
-
-msgid "Default Permissions"
-msgstr "デフォルト権限"
 
 msgid "Default Priority"
 msgstr "デフォルト優先度"
@@ -15672,6 +15675,9 @@ msgstr "1 {0} は何 {1} に相当しますか？"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "ワークフローの1回の実行。各ステップが使用および生成した値を含めてステップバイステップで記録され、全体を通じてワークフロー責任者の権限で実行されます。"
 
+msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
+msgstr ""
+
 msgid "One or more quantities cannot meet this date"
 msgstr "1つ以上の数量がこの日付に対応できません"
 
@@ -22282,8 +22288,8 @@ msgstr "記述内容に切り替える"
 msgid "Switch users over and confirm access"
 msgstr "ユーザーを切り替えてアクセスを確認"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "ここで従業員のタイプを変更しても、既存の権限は変わりません。その後のダイアログで、現在のセットを新しいタイプのデフォルトで上書きするかどうかを尋ねます。"
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr ""
 
 msgid "Sync"
 msgstr "同期"
@@ -23125,6 +23131,9 @@ msgstr "借主がリース資産を使用する権利を持つ資産で、運用
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "売却型リースのリース会社資産：リース支払いおよび保証されていない残価の現在価値。毎月のリース利息により増加し、各賃料および購入オプション請求書により減少します。"
 
+msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "得意先を追跡するライフサイクルステージ。"
 
@@ -23323,9 +23332,6 @@ msgstr "不適合の影響を受けた材料に記録される項目ごとの結
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "現金割引の割合。割引がない場合は0を使用してください。"
 
-msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
-msgstr "このタイプの新しい従業員が自動的に受け取る権限セット。ここで編集すると、将来の雇用のみがテンプレートを変更します。既存の従業員は、明示的に大量更新されない限り、持っているものを保持します。"
-
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "計画提案が割り当てられる個人：その拠点での品目の責任者。該当なければアイテムグループの責任者。該当なければ拠点の責任者。該当なければ会社のデフォルト。"
 
@@ -23462,6 +23468,9 @@ msgstr "部品のリビジョン番号"
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "使用権資産とリース負債は貸借対照表に計上され、1つの定額リースコストが毎月計上されます。"
+
+msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "この製造指図が供給するために作成された受注明細であり、製造指図を背後の得意先所要量に結びつけます。"
@@ -23633,9 +23642,6 @@ msgstr "現品票は部品表上の各品目をその数量と共にリストし
 
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "現品票は各工順工程とその予想時間及びスキャンバーコードをリストアップします。"
-
-msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
-msgstr "タイプは新しい従業員が受け取るデフォルトの権限を制御します。ここで選択すると、タイプのテンプレートから権限マトリックスが事前に入力されます。"
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "この工法のためにこの仕入先に作業を送ってから返ってくるまでの一般的な日数。計画機能は仕入先を選択する際、需要をこの日数だけオフセットします。"
@@ -26325,9 +26331,6 @@ msgstr "この工法が社内作業区（工法、組立、検査）または外
 
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "この作業が生産をブロックする（ダウン）か、性能を低下させる（影響）か、計画ダウンタイムウィンドウ（計画済）か、生産への影響がない（影響なし）かどうか。スケジューリングとカスタマーフェーシングのダウンタイムコミュニケーションに通知します。"
-
-msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
-msgstr "選択した権限を各ユーザーが既に持っているものに追加するか、または各ユーザーの権限セット全体を下記の選択で置き換えて更新するかどうか。"
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "どの文書がこの品目の各検査フローを駆動するか。"
