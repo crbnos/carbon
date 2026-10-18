@@ -21,7 +21,9 @@ export const onshapeElementSyncFunction = inngest.createFunction(
   {
     id: "onshape-element-sync",
     checkpointing: ONSHAPE_CHECKPOINTING,
-    retries: 3,
+    // As the backfill's: a 429 reschedules the step through RetryAfterError,
+    // and each reschedule counts against this budget.
+    retries: 10,
     concurrency: { key: "event.data.itemId", limit: 1 }
   },
   { event: "carbon/onshape-element-sync" },
@@ -45,7 +47,9 @@ export const onshapeDrawingSyncFunction = inngest.createFunction(
   {
     id: "onshape-drawing-sync",
     checkpointing: ONSHAPE_CHECKPOINTING,
-    retries: 3,
+    // As the backfill's: a 429 reschedules the step through RetryAfterError,
+    // and each reschedule counts against this budget.
+    retries: 10,
     concurrency: { key: "event.data.itemId", limit: 1 }
   },
   { event: "carbon/onshape-drawing-sync" },

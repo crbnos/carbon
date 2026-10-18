@@ -415,41 +415,57 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
         models,
         PO_EMAIL_ATTACHMENT_LIMIT_MB * 1024 * 1024 - documentBytes
       );
-      const modelAttachments = (
-        await async.map(split.attach, async (model) => {
-          const url = await service.signOriginalModelFile(
-            client,
-            companyId,
-            model,
-            3600
-          );
-          return url ? { filename: model.filename, path: url } : null;
-        })
-      ).flatMap((model) => (model ? [model] : []));
-      const modelLinks = (
-        await async.map(split.link, async (model) => {
-          const url = await service.signOriginalModelFile(
+      // A model whose attachment link could not be signed goes as a link; one
+      // with no link either is named, so the supplier knows to ask for it.
+      const attachSigned = await async.map(split.attach, async (model) => ({
+        model,
+        url: await service.signOriginalModelFile(client, companyId, model, 3600)
+      }));
+      const modelAttachments = attachSigned.flatMap(({ model, url }) =>
+        url ? [{ filename: model.filename, path: url }] : []
+      );
+      const signedLinks = await async.map(
+        [
+          ...split.link,
+          ...attachSigned.flatMap(({ model, url }) => (url ? [] : [model]))
+        ],
+        async (model) => ({
+          model,
+          url: await service.signOriginalModelFile(
             client,
             companyId,
             model,
             RFQ_MODEL_LINK_SECONDS
-          );
-          return url ? { filename: model.filename, url } : null;
+          )
         })
-      ).flatMap((model) => (model ? [model] : []));
+      );
+      const modelLinks = signedLinks.flatMap(({ model, url }) =>
+        url ? [{ filename: model.filename, url }] : []
+      );
+      const missingModels = signedLinks.flatMap(({ model, url }) =>
+        url ? [] : [model.filename]
+      );
+      const missingHtml = missingModels.length
+        ? `<br><br>These models could not be included; reply to ask for them: ${missingModels
+            .map(escapeHTMLChars)
+            .join(", ")}`
+        : "";
+      const missingText = missingModels.length
+        ? `\n\nThese models could not be included; reply to ask for them: ${missingModels.join(", ")}`
+        : "";
       const modelLinksHtml = modelLinks.length
         ? `<br><br>Models too large to attach (links valid for 7 days):<br>${modelLinks
             .map(
               (model) =>
                 `<a href="${escapeHTMLChars(model.url)}">${escapeHTMLChars(model.filename)}</a>`
             )
-            .join("<br>")}`
-        : "";
+            .join("<br>")}${missingHtml}`
+        : missingHtml;
       const modelLinksText = modelLinks.length
         ? `\n\nModels too large to attach (links valid for 7 days):\n${modelLinks
             .map((model) => `${model.filename}: ${model.url}`)
-            .join("\n")}`
-        : "";
+            .join("\n")}${missingText}`
+        : missingText;
       const notesHtml = tiptapToHTML(
         (rfq.data?.internalNotes ?? {}) as JSONContent
       );

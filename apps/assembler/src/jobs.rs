@@ -346,11 +346,13 @@ impl JobStore {
     /// Move an active job to `status`. A job that is working (not `pending`)
     /// holds a lease, renewed by `heartbeat` while this process runs it.
     pub async fn set_status(&self, id: &str, status: &str) {
-        if self.transition(id, &[("status", status.to_string())], &[]).await
-            && status != "pending"
-        {
+        // The lease first: a poll between the two writes would otherwise see a
+        // working status with no lease and end a live job `WORKER_LOST`. A
+        // lease left on a job that already ended expires on its own.
+        if status != "pending" {
             self.renew_lease(id).await;
         }
+        self.transition(id, &[("status", status.to_string())], &[]).await;
     }
 
     /// Publish a terminal `done` pointer. Does NOT deliver the completion

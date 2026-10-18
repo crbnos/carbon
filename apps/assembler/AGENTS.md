@@ -214,9 +214,12 @@ resized as parts are counted), so it is released the same way.
 
 **Secrets stay out of payloads, records and errors.**
 - The Lambda self-invoke spec is `{ action, job_id, traceparent }` and nothing
-  else. The request body waits in Redis (`asm:req:{id}`, 15 min) until the
-  worker takes it (`GETDEL`), so no signed URL, caller token or service key
-  rides in the Invoke payload, which AWS keeps for its async retries.
+  else. The request body waits in Redis (`asm:req:{id}`, 2 h) and the worker
+  reads it (`GET`); it is deleted when the job ends (`ended()`), so a
+  redelivery can take over a job whose worker died. No signed URL, caller
+  token or service key rides in the Invoke payload, which AWS keeps for its
+  async retries, but the stored body holds them, a `fetch`'s `authorization`
+  included, until the job ends.
 - `/events` is mounted only on Lambda, where only an IAM-signed Invoke reaches
   it; a spec names a job, so a delivery can only start a pending job with the
   body its create stored.
@@ -265,8 +268,8 @@ Built to sit as a small always-on pod beside other workloads.
   timeout only catches a stalled one), an upload 2 min plus 2 MB/s of body, the
   Lambda self-invoke 10 s. A create claims `asm:create:{id}` (`SET NX`, 30 s,
   released when done) so two POSTs with one key cannot both spawn; a Lambda
-  worker's `GETDEL` of the request is its claim, so of two deliveries exactly
-  one runs. Callbacks from `set_error`/`cancel` go out in their own task.
+  worker claims the job's lease (`claim_lease`, `SET NX`), so of two live
+  deliveries exactly one runs. Callbacks from `set_error`/`cancel` go out in their own task.
 - **A waiting job is `pending` or `starting`, not `running`.** Each action sets
   `running` only after `admission.acquire` returns. On Lambda the worker inlet
   sets `starting` when it takes a `pending` job, before the download and the
@@ -322,7 +325,9 @@ the Onshape sync has the assembler pull a STEP export straight from Onshape into
 staging instead of streaming it through the app's function.
 
 - `authorization` is sent as the `Authorization` header (marked sensitive) and
-  lives only in the request: never in the job record, a log or a span.
+  lives only in the request: never in the job record, a log or a span. On
+  Lambda the request is the stored body (`asm:req:{id}`), so the token sits in
+  Redis until the job ends, at most the request's 2 h.
 - `fetch` alone follows redirects, at most five and each to a URL that passes
   `validate_url`; reqwest drops `Authorization` on a redirect to another host.
 - Outside dev mode `fetch` connects only to public addresses: its resolver

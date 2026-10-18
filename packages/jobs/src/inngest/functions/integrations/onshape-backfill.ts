@@ -383,11 +383,12 @@ const OnshapeBackfillPayloadSchema = z.object({
 export const onshapeBackfillFunction = inngest.createFunction(
   {
     id: "onshape-backfill",
-    // Higher than the usual 3: a 429 now reschedules the run via RetryAfterError
-    // (withRateLimitRetry), and that reschedule counts against this budget. A big
-    // first-time backfill can hit the rate limit a few times, so give it headroom
-    // to ride those out before giving up (a failed run resumes cleanly on re-run —
-    // already-synced items are skipped).
+    // Higher than the usual 3: a 429 reschedules the run via RetryAfterError
+    // (withRateLimitRetry), and that reschedule counts against this budget. It
+    // covers the backfill's own listing steps; each item's export runs in the
+    // invoked onshape-element-sync / onshape-drawing-sync, which carry their own
+    // budget of 10 (a failed run resumes cleanly on re-run — already-synced
+    // items are skipped).
     retries: 10,
     // One backfill per company at a time — stops a double-click (or a full run
     // overlapping an incremental reconcile) from racing on the "already synced"

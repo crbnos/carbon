@@ -6018,7 +6018,13 @@ export async function getItemModelFiles(
       return [
         [
           model.id,
-          { modelId: model.id, filename, bucket, path, size: model.size ?? 0 }
+          {
+            modelId: model.id,
+            filename,
+            bucket,
+            path,
+            size: model.size ?? Number.POSITIVE_INFINITY
+          }
         ]
       ] as const;
     })
