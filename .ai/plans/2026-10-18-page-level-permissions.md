@@ -16,7 +16,7 @@ Phases 1 and 2 — grants, resolver, editors (one release)
 - [x] Task 4: Create the `permission` table
 - [x] Task 5: Add RLS rules for `permission`
 - [x] Task 6: Resolve access from grants in the SQL helpers
-- [ ] Task 7: Convert today's permissions to grants
+- [x] Task 7: Convert today's permissions to grants
 - [ ] Task 8: Read claims and key scopes from grants in TS
 - [ ] Task 9: Write grants from every authoring path
 - [ ] Task 10: Build `AccessGrid` and the role editor

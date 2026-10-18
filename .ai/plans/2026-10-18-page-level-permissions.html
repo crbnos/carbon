@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/plans/2026-10-18-page-level-permissions.md" />
-<meta name="explain-source-hash" content="4cf99370872a07ba31d5f62a05f9c73213a508d2" />
+<meta name="explain-source-hash" content="4ab2eaf8ea7f4dcd718c45c5b030c2231e82f377" />
 <title>Page-Level Permissions plan</title>
 <style>
   :root {
@@ -107,8 +107,8 @@
     <p class="kicker">Plan · claude/service-function-wrapping-13f04f · 2026-10-18 · <code>.ai/plans/2026-10-18-page-level-permissions.md</code></p>
     <h1>Page-Level Permissions — implementation plan</h1>
     <p class="tldr">When the plan is done, one permission table holds every role, person and API key level, and every module checks page keys. A browser test of each of the 158 pages with a one-page role proves it.</p>
-    <div class="progress"><span style="width: 23%"></span></div>
-    <p class="kicker">6 of 26 tasks done · spec: <code>.ai/specs/2026-10-18-page-level-permissions.md</code></p>
+    <div class="progress"><span style="width: 27%"></span></div>
+    <p class="kicker">7 of 26 tasks done · spec: <code>.ai/specs/2026-10-18-page-level-permissions.md</code></p>
   </header>
 
   <section>
@@ -181,9 +181,9 @@
         <text x="920" y="69" text-anchor="middle">5 · RLS rules</text>
         <rect class="box new" x="840" y="110" width="160" height="48" rx="8" />
         <text x="920" y="139" text-anchor="middle">6 · SQL resolver</text>
-        <rect class="box hot" x="1040" y="40" width="160" height="48" rx="8" />
+        <rect class="box new" x="1040" y="40" width="160" height="48" rx="8" />
         <text x="1120" y="69" text-anchor="middle">7 · convert data</text>
-        <rect class="box risk" x="1040" y="110" width="160" height="48" rx="8" />
+        <rect class="box hot" x="1040" y="110" width="160" height="48" rx="8" />
         <text x="1120" y="139" text-anchor="middle">8 · TS claims</text>
         <rect class="box" x="1240" y="40" width="160" height="48" rx="8" />
         <text x="1320" y="69" text-anchor="middle">9 · writers</text>
@@ -325,7 +325,7 @@ pnpm --filter @carbon/database test -- migration
         <div class="callout warn"><span class="label">Stop if</span><p>pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/access-resolver.test.sql</p></div>
       </div>
     </details>
-    <details class="task">
+    <details class="task done">
       <summary><b>7.</b> Convert today&#x27;s permissions to grants</summary>
       <div>
         <p class="meta">Depends on: Task 6</p>
