@@ -302,6 +302,10 @@ msgstr "{0} ऑपरेशन"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} ऑपरेशन · {1} टुकड़े"
 
+#. placeholder {0}: levelLabel[l]
+msgid "{0} or more"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"
@@ -401,6 +405,12 @@ msgstr "{0} को {name} के रूप में सहेजा जाए�
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-वर्ष"
+
+#. placeholder {0}: row.label
+#. placeholder {1}: row.level
+#. placeholder {2}: row.gained.join(", ")
+msgid "{0}: {1}, gained {2}"
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -2315,6 +2325,9 @@ msgstr "समायोजन"
 msgid "Admin"
 msgstr "प्रशासक"
 
+msgid "Admin employee type"
+msgstr ""
+
 msgid "Advance"
 msgstr "अग्रिम"
 
@@ -2806,6 +2819,10 @@ msgstr "API कुंजी"
 
 msgid "API Key"
 msgstr "API कुंजी"
+
+#. placeholder {0}: key.name
+msgid "API key {0}"
+msgstr ""
 
 msgid "API Keys"
 msgstr "API कुंजियाँ"
@@ -5775,6 +5792,9 @@ msgstr "MRP सुझावों को क्रय आदेश और जॉ
 msgid "Convert to Quote"
 msgstr "उद्धरण में परिवर्तित करें"
 
+msgid "Converted access that grew"
+msgstr ""
+
 msgid "Converted Total Price"
 msgstr "परिवर्तित कुल मूल्य"
 
@@ -6629,6 +6649,9 @@ msgstr "वर्तमान"
 
 msgid "Current"
 msgstr "वर्तमान"
+
+msgid "Current access"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "वर्तमान शुद्ध बही मूल्य:"
@@ -10541,6 +10564,10 @@ msgstr "लीज समाप्ति पर लाभ"
 msgid "Gain/Loss"
 msgstr "लाभ/हानि"
 
+#. placeholder {0}: row.gained.join(", ")
+msgid "Gained {0} in the conversion"
+msgstr ""
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "अचल संपत्तियों के निपटान पर स्वीकृत लाभ"
 
@@ -12662,6 +12689,9 @@ msgstr "आइए अपना खाता सेट अप करें"
 
 msgid "Letter"
 msgstr "अक्षर"
+
+msgid "Level"
+msgstr ""
 
 msgid "Liability"
 msgstr "देयता"
@@ -14797,6 +14827,9 @@ msgstr "कोई गेज चयनित नहीं"
 msgid "No gauges found."
 msgstr "कोई गेज नहीं मिले।"
 
+msgid "No grant"
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "कोई समूहीकृत सूचनाएं नहीं"
 
@@ -15250,6 +15283,9 @@ msgstr "इस स्थान पर कोई वर्क सेंटर न
 
 msgid "No work centers exist"
 msgstr "कोई वर्क सेंटर मौजूद नहीं है"
+
+msgid "Nobody"
+msgstr ""
 
 msgid "Nom"
 msgstr "नाम"
@@ -16247,6 +16283,9 @@ msgstr "{0} का वर्गीकरण ओवरराइड करें"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "ओवरराइड के लिए inventory:update अनुमति और कारण की आवश्यकता है।"
+
+msgid "Override on this page"
+msgstr ""
 
 msgid "Override Price"
 msgstr "ओवरराइड मूल्य"
@@ -19531,6 +19570,9 @@ msgid "Role"
 msgstr "भूमिका"
 
 msgid "Role default"
+msgstr ""
+
+msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -26313,6 +26355,9 @@ msgstr "छह चरणों में कौन क्या करता ह
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "कौन किस पर प्रशिक्षण पाता है, किस प्रारूप में। आपका हिस्सा: अपने चैंपियन के कैलेंडर पर हाथों-हाथ सत्र का समय जल्दी सुरक्षित रखें। यह वह है जो कंपनियों के व्यस्त होने पर सबसे अधिक फिसलता है।"
+
+msgid "Who has access"
+msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "किसे कोटेशन, आदेश, और क्रय को अनुमोदन करना है — और कब"

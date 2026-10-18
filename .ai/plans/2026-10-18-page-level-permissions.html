@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/plans/2026-10-18-page-level-permissions.md" />
-<meta name="explain-source-hash" content="0b738d47740045827ffc0772b6fffecafedc1895" />
+<meta name="explain-source-hash" content="bbee6ce8024965b94a3fe768c34f80e02b3c33a4" />
 <title>Page-Level Permissions plan</title>
 <style>
   :root {
@@ -107,8 +107,8 @@
     <p class="kicker">Plan · claude/service-function-wrapping-13f04f · 2026-10-18 · <code>.ai/plans/2026-10-18-page-level-permissions.md</code></p>
     <h1>Page-Level Permissions — implementation plan</h1>
     <p class="tldr">When the plan is done, one permission table holds every role, person and API key level, and every module checks page keys. A browser test of each of the 158 pages with a one-page role proves it.</p>
-    <div class="progress"><span style="width: 35%"></span></div>
-    <p class="kicker">9 of 26 tasks done · spec: <code>.ai/specs/2026-10-18-page-level-permissions.md</code></p>
+    <div class="progress"><span style="width: 38%"></span></div>
+    <p class="kicker">10 of 26 tasks done · spec: <code>.ai/specs/2026-10-18-page-level-permissions.md</code></p>
   </header>
 
   <section>
@@ -197,7 +197,7 @@
         <text x="1720" y="69" text-anchor="middle">11 · person tab</text>
         <rect class="box" x="1640" y="110" width="160" height="48" rx="8" />
         <text x="1720" y="139" text-anchor="middle">12 · key grid</text>
-        <rect class="box" x="1640" y="180" width="160" height="48" rx="8" />
+        <rect class="box new" x="1640" y="180" width="160" height="48" rx="8" />
         <text x="1720" y="209" text-anchor="middle">13 · access view</text>
         <rect class="box" x="1840" y="40" width="160" height="48" rx="8" />
         <text x="1920" y="69" text-anchor="middle">16 · browser check</text>
@@ -419,7 +419,7 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
         
       </div>
     </details>
-    <details class="task">
+    <details class="task done">
       <summary><b>13.</b> Build the access view</summary>
       <div>
         <p class="meta">Depends on: Task 10</p>
@@ -428,7 +428,9 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
         <ul><li>Modify: <code>apps/erp/app/modules/users/users.server.ts</code> — <code>getEffectiveAccess</code>, <code>getPageAccessHolders</code></li><li>Modify: <code>apps/erp/app/modules/users/users.service.ts</code> — their building blocks</li><li>Create: <code>apps/erp/app/modules/users/ui/Employees/EffectiveAccess.ee.tsx</code></li><li>Modify: <code>apps/erp/app/routes/x+/users+/employees.$employeeId.tsx</code>, <code>apps/erp/app/routes/x+/users+/employee-types.$employeeTypeId.tsx</code></li><li>Copy from (precedent): <code>AccessGrid.ee.tsx</code> in read-only mode</li></ul>
         <p class="meta">Verify</p>
         <pre>pnpm --filter erp test -- users
-# Expected: all users tests pass, including new cases for both functions</pre>
+# Expected: all users tests pass
+pnpm --filter @carbon/database test -- access
+# Expected: the winningGrant, accessHolders and actionsGained cases pass</pre>
         
       </div>
     </details>

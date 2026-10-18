@@ -26,13 +26,11 @@ const PRECEDENCE: readonly [Grant["subject"], "page" | "module"][] = [
   ["key", "module"]
 ];
 
-/** The level of one subject on one page. The SQL helper `access_level` is its twin. */
-export function resolveLevel(
-  grants: readonly Grant[],
-  pageId: string,
-  { admin = false }: { admin?: boolean } = {}
-): Level {
-  if (admin) return "Full";
+/** The grant that decides a subject's level on a page; null when none does. */
+export function winningGrant<G extends Grant>(
+  grants: readonly G[],
+  pageId: string
+): G | null {
   const module = moduleOf(pageId);
   for (const [subject, scope] of PRECEDENCE) {
     const grant = grants.find(
@@ -42,9 +40,41 @@ export function resolveLevel(
           ? g.page === pageId
           : g.page === null && g.module.toLowerCase() === module)
     );
-    if (grant) return grant.level;
+    if (grant) return grant;
   }
-  return "None";
+  return null;
+}
+
+/** The level of one subject on one page. The SQL helper `util.access_level` is its twin. */
+export function resolveLevel(
+  grants: readonly Grant[],
+  pageId: string,
+  { admin = false }: { admin?: boolean } = {}
+): Level {
+  if (admin) return "Full";
+  return winningGrant(grants, pageId)?.level ?? "None";
+}
+
+/** A person or an API key, with every grant that applies to it. */
+export type AccessSubject<G extends Grant = Grant> = {
+  id: string;
+  admin: boolean;
+  grants: readonly G[];
+};
+
+/** The subjects whose level on the page reaches `atLeast`, with the deciding grant. */
+export function accessHolders<G extends Grant>(
+  subjects: readonly AccessSubject<G>[],
+  pageId: string,
+  atLeast: Level
+) {
+  return subjects.flatMap((subject) => {
+    const grant = subject.admin ? null : winningGrant(subject.grants, pageId);
+    const level = subject.admin ? "Full" : (grant?.level ?? "None");
+    return LEVELS.indexOf(level) >= LEVELS.indexOf(atLeast)
+      ? [{ id: subject.id, level, grant }]
+      : [];
+  });
 }
 
 /** What `get_claims` returns for one user in one company. */

@@ -90,6 +90,8 @@ export const path = {
     apAging: `${x}/reports/ap-aging`,
     api: {
       abilities: `${api}/resources/abilities`,
+      accessHolders: (page: string, level: string) =>
+        `${api}/users/access-holders?${new URLSearchParams({ level, page })}`,
       accountNotifications: `${api}/account/notifications`,
       accountProfile: `${api}/account/profile`,
       accountSecurity: `${api}/account/security`,

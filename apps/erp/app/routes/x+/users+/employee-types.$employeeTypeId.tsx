@@ -5,6 +5,7 @@
 import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { actionsGained, pageById } from "@carbon/database/access";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -40,9 +41,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })
   ]);
 
+  const rows = grants.data ?? [];
   return {
     employeeType: employeeType?.data,
-    grants: grants.data ?? []
+    grants: rows,
+    convertedGrowth: rows.flatMap((row) => {
+      const gained = actionsGained(row.level, row.convertedFrom);
+      if (gained.length === 0) return [];
+      const id = row.page ?? row.module.toLowerCase();
+      return [
+        { label: pageById(id)?.label ?? row.module, level: row.level, gained }
+      ];
+    })
   };
 }
 
@@ -64,7 +74,8 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function EditEmployeeTypesRoute() {
-  const { employeeType, grants } = useLoaderData<typeof loader>();
+  const { employeeType, grants, convertedGrowth } =
+    useLoaderData<typeof loader>();
 
   const initialValues = {
     id: employeeType?.id ?? "",
@@ -73,6 +84,10 @@ export default function EditEmployeeTypesRoute() {
   };
 
   return (
-    <EmployeeTypeForm key={initialValues.id} initialValues={initialValues} />
+    <EmployeeTypeForm
+      key={initialValues.id}
+      initialValues={initialValues}
+      convertedGrowth={convertedGrowth}
+    />
   );
 }

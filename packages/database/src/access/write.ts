@@ -38,7 +38,7 @@ export function readGrants(
   const [column, id] = subjectColumn(subject);
   return db
     .selectFrom("permission")
-    .select(["module", "page", "level"])
+    .select(["module", "page", "level", "convertedFrom"])
     .where("companyId", "=", companyId)
     .where(column, "=", id)
     .execute();

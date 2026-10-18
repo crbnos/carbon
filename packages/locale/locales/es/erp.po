@@ -302,6 +302,10 @@ msgstr "{0} operaciones"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} op. · {1} pzas."
 
+#. placeholder {0}: levelLabel[l]
+msgid "{0} or more"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} pedidos"
@@ -401,6 +405,12 @@ msgstr "{0} se guardará como {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-Año"
+
+#. placeholder {0}: row.label
+#. placeholder {1}: row.level
+#. placeholder {2}: row.gained.join(", ")
+msgid "{0}: {1}, gained {2}"
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -2315,6 +2325,9 @@ msgstr "Ajustes"
 msgid "Admin"
 msgstr "Administrador"
 
+msgid "Admin employee type"
+msgstr ""
+
 msgid "Advance"
 msgstr "Anticipo"
 
@@ -2806,6 +2819,10 @@ msgstr "Clave API"
 
 msgid "API Key"
 msgstr "Clave API"
+
+#. placeholder {0}: key.name
+msgid "API key {0}"
+msgstr ""
 
 msgid "API Keys"
 msgstr "Claves API"
@@ -5775,6 +5792,9 @@ msgstr "Convertir sugerencias de MRP en órdenes de compra y órdenes de trabajo
 msgid "Convert to Quote"
 msgstr "Convertir a Cotización"
 
+msgid "Converted access that grew"
+msgstr ""
+
 msgid "Converted Total Price"
 msgstr "Precio total convertido"
 
@@ -6629,6 +6649,9 @@ msgstr "actual"
 
 msgid "Current"
 msgstr "Actual"
+
+msgid "Current access"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "Valor Neto en Libros Actual:"
@@ -10541,6 +10564,10 @@ msgstr "Ganancia en la terminación del arrendamiento"
 msgid "Gain/Loss"
 msgstr "Ganancia/Pérdida"
 
+#. placeholder {0}: row.gained.join(", ")
+msgid "Gained {0} in the conversion"
+msgstr ""
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Ganancias reconocidas en la baja de activos fijos"
 
@@ -12662,6 +12689,9 @@ msgstr "Configuremos tu cuenta"
 
 msgid "Letter"
 msgstr "Letra"
+
+msgid "Level"
+msgstr ""
 
 msgid "Liability"
 msgstr "Pasivo"
@@ -14797,6 +14827,9 @@ msgstr "Ningún instrumento de medición seleccionado"
 msgid "No gauges found."
 msgstr "No se encontraron instrumentos de medición."
 
+msgid "No grant"
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "Sin notificaciones agrupadas"
 
@@ -15250,6 +15283,9 @@ msgstr "No hay centros de trabajo en esta ubicación"
 
 msgid "No work centers exist"
 msgstr "No existen centros de trabajo"
+
+msgid "Nobody"
+msgstr ""
 
 msgid "Nom"
 msgstr "Nom"
@@ -16247,6 +16283,9 @@ msgstr "Sobrescritura de clasificación de {0}"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "La sobrescritura necesita el permiso inventory:update y una razón."
+
+msgid "Override on this page"
+msgstr ""
 
 msgid "Override Price"
 msgstr "Sobrescribir precio"
@@ -19531,6 +19570,9 @@ msgid "Role"
 msgstr "Rol"
 
 msgid "Role default"
+msgstr ""
+
+msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -26313,6 +26355,9 @@ msgstr "Quién hace qué, en los seis pasos. Tu lado está resaltado arriba. Haz
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Quién recibe capacitación sobre qué, en qué formato. Tu parte: protege el tiempo de la sesión práctica en los calendarios de tus campeones con anticipación. Es lo que más se pospone cuando las empresas están ocupadas."
+
+msgid "Who has access"
+msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Quién debe aprobar cotizaciones, pedidos y compras — y cuándo"

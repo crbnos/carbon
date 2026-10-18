@@ -302,6 +302,10 @@ msgstr "{0} Arbeitsgänge"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} Vorgänge · {1} Stück"
 
+#. placeholder {0}: levelLabel[l]
+msgid "{0} or more"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} Bestellungen"
@@ -401,6 +405,12 @@ msgstr "{0} wird als {name} gespeichert"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-Jahr"
+
+#. placeholder {0}: row.label
+#. placeholder {1}: row.level
+#. placeholder {2}: row.gained.join(", ")
+msgid "{0}: {1}, gained {2}"
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -2315,6 +2325,9 @@ msgstr "Korrekturen"
 msgid "Admin"
 msgstr "Admin"
 
+msgid "Admin employee type"
+msgstr ""
+
 msgid "Advance"
 msgstr "Anzahlung"
 
@@ -2806,6 +2819,10 @@ msgstr "API-Schlüssel"
 
 msgid "API Key"
 msgstr "API-Schlüssel"
+
+#. placeholder {0}: key.name
+msgid "API key {0}"
+msgstr ""
 
 msgid "API Keys"
 msgstr "API-Schlüssel"
@@ -5775,6 +5792,9 @@ msgstr "Wandeln Sie MRP-Vorschläge in Bestellungen und Fertigungsaufträge um."
 msgid "Convert to Quote"
 msgstr "In Angebot umwandeln"
 
+msgid "Converted access that grew"
+msgstr ""
+
 msgid "Converted Total Price"
 msgstr "Umgerechneter Gesamtpreis"
 
@@ -6629,6 +6649,9 @@ msgstr "aktuell"
 
 msgid "Current"
 msgstr "Aktuell"
+
+msgid "Current access"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "Aktueller Restbuchwert:"
@@ -10541,6 +10564,10 @@ msgstr "Gewinn aus Mietvertragskündigung"
 msgid "Gain/Loss"
 msgstr "Gewinn/Verlust"
 
+#. placeholder {0}: row.gained.join(", ")
+msgid "Gained {0} in the conversion"
+msgstr ""
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Gewinne aus dem Abgang von Anlagevermögen"
 
@@ -12662,6 +12689,9 @@ msgstr "Lassen Sie uns Ihr Konto einrichten"
 
 msgid "Letter"
 msgstr "Buchstabe"
+
+msgid "Level"
+msgstr ""
 
 msgid "Liability"
 msgstr "Verbindlichkeit"
@@ -14797,6 +14827,9 @@ msgstr "Kein Prüfmittel ausgewählt"
 msgid "No gauges found."
 msgstr "Keine Prüfmittel gefunden."
 
+msgid "No grant"
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "Keine gruppierten Benachrichtigungen"
 
@@ -15250,6 +15283,9 @@ msgstr "Keine Arbeitsplätze an diesem Standort"
 
 msgid "No work centers exist"
 msgstr "Keine Arbeitsplätze vorhanden"
+
+msgid "Nobody"
+msgstr ""
 
 msgid "Nom"
 msgstr "Nom"
@@ -16247,6 +16283,9 @@ msgstr "Übersteuerung der Klassifizierung von {0}"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Die Übersteuerung benötigt die Berechtigung Inventar:Aktualisieren und einen Grund."
+
+msgid "Override on this page"
+msgstr ""
 
 msgid "Override Price"
 msgstr "Preis übersteuern"
@@ -19531,6 +19570,9 @@ msgid "Role"
 msgstr "Rolle"
 
 msgid "Role default"
+msgstr ""
+
+msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -26313,6 +26355,9 @@ msgstr "Wer macht was, über alle sechs Schritte hinweg. Ihre Seite ist oben her
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Wer wird auf was und in welchem Format geschult. Ihre Aufgabe: Schützen Sie die praktische Schulungszeit in den Kalendern Ihrer Champions frühzeitig. Das ist das, was am meisten verrutscht, wenn Unternehmen beschäftigt sind."
+
+msgid "Who has access"
+msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Wer muss Angebote, Bestellungen und Käufe genehmigen – und wann"

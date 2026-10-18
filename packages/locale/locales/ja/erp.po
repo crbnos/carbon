@@ -302,6 +302,10 @@ msgstr "{0} 工程"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} 作業 · {1} 個"
 
+#. placeholder {0}: levelLabel[l]
+msgid "{0} or more"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0}件の注文"
@@ -401,6 +405,12 @@ msgstr "{0} は {name} として保存されます"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0} 年"
+
+#. placeholder {0}: row.label
+#. placeholder {1}: row.level
+#. placeholder {2}: row.gained.join(", ")
+msgid "{0}: {1}, gained {2}"
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -2315,6 +2325,9 @@ msgstr "調整"
 msgid "Admin"
 msgstr "管理者"
 
+msgid "Admin employee type"
+msgstr ""
+
 msgid "Advance"
 msgstr "前払い"
 
@@ -2806,6 +2819,10 @@ msgstr "APIキー"
 
 msgid "API Key"
 msgstr "APIキー"
+
+#. placeholder {0}: key.name
+msgid "API key {0}"
+msgstr ""
 
 msgid "API Keys"
 msgstr "APIキー"
@@ -5775,6 +5792,9 @@ msgstr "MRP提案を発注書と製造指図に変換します。"
 msgid "Convert to Quote"
 msgstr "見積に変換"
 
+msgid "Converted access that grew"
+msgstr ""
+
 msgid "Converted Total Price"
 msgstr "変換後の合計価格"
 
@@ -6629,6 +6649,9 @@ msgstr "現在"
 
 msgid "Current"
 msgstr "現在"
+
+msgid "Current access"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "現在の未償却残高:"
@@ -10541,6 +10564,10 @@ msgstr "リース終了利得"
 msgid "Gain/Loss"
 msgstr "利益/損失"
 
+#. placeholder {0}: row.gained.join(", ")
+msgid "Gained {0} in the conversion"
+msgstr ""
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定資産の除却により認識された利益"
 
@@ -12662,6 +12689,9 @@ msgstr "アカウントをセットアップしましょう"
 
 msgid "Letter"
 msgstr "文字"
+
+msgid "Level"
+msgstr ""
 
 msgid "Liability"
 msgstr "負債"
@@ -14797,6 +14827,9 @@ msgstr "測定器が選択されていません"
 msgid "No gauges found."
 msgstr "測定器が見つかりません。"
 
+msgid "No grant"
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "グループ化された通知がありません"
 
@@ -15250,6 +15283,9 @@ msgstr "この拠点には作業区がありません"
 
 msgid "No work centers exist"
 msgstr "作業区がありません"
+
+msgid "Nobody"
+msgstr ""
 
 msgid "Nom"
 msgstr "公称値"
@@ -16247,6 +16283,9 @@ msgstr "{0}の分類を上書き"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "上書きにはinventory:update権限と理由が必要です。"
+
+msgid "Override on this page"
+msgstr ""
 
 msgid "Override Price"
 msgstr "上書き価格"
@@ -19531,6 +19570,9 @@ msgid "Role"
 msgstr "役割"
 
 msgid "Role default"
+msgstr ""
+
+msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -26313,6 +26355,9 @@ msgstr "6つのステップ全体で誰が何をするかを示します。あ�
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "誰が何をどのような形式で訓練を受けるか。あなたの役割：チャンピオンのカレンダーで実践的なセッション時間を早期に確保する。企業が忙しくなると、これが最も遅れやすい。"
+
+msgid "Who has access"
+msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "見積、注文、購買の承認が必要な人と時期"

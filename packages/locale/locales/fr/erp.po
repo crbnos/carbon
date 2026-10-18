@@ -302,6 +302,10 @@ msgstr "{0} opérations"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} opérations · {1} pièces"
 
+#. placeholder {0}: levelLabel[l]
+msgid "{0} or more"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} commandes"
@@ -401,6 +405,12 @@ msgstr "{0} sera enregistré en tant que {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-Année"
+
+#. placeholder {0}: row.label
+#. placeholder {1}: row.level
+#. placeholder {2}: row.gained.join(", ")
+msgid "{0}: {1}, gained {2}"
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -2315,6 +2325,9 @@ msgstr "Ajustements"
 msgid "Admin"
 msgstr "Admin"
 
+msgid "Admin employee type"
+msgstr ""
+
 msgid "Advance"
 msgstr "Avance"
 
@@ -2806,6 +2819,10 @@ msgstr "Clé API"
 
 msgid "API Key"
 msgstr "Clé API"
+
+#. placeholder {0}: key.name
+msgid "API key {0}"
+msgstr ""
 
 msgid "API Keys"
 msgstr "Clés API"
@@ -5775,6 +5792,9 @@ msgstr "Convertir les suggestions MRP en bons de commande et ordres de fabricati
 msgid "Convert to Quote"
 msgstr "Convertir en devis"
 
+msgid "Converted access that grew"
+msgstr ""
+
 msgid "Converted Total Price"
 msgstr "Prix total converti"
 
@@ -6629,6 +6649,9 @@ msgstr "actuel"
 
 msgid "Current"
 msgstr "Actuel"
+
+msgid "Current access"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "Valeur Nette Comptable Actuelle:"
@@ -10541,6 +10564,10 @@ msgstr "Gain sur résiliation de contrat de location"
 msgid "Gain/Loss"
 msgstr "Gain/Perte"
 
+#. placeholder {0}: row.gained.join(", ")
+msgid "Gained {0} in the conversion"
+msgstr ""
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Gains constatés à la cession d'immobilisations"
 
@@ -12662,6 +12689,9 @@ msgstr "Configurons votre compte"
 
 msgid "Letter"
 msgstr "Lettre"
+
+msgid "Level"
+msgstr ""
 
 msgid "Liability"
 msgstr "Passif"
@@ -14797,6 +14827,9 @@ msgstr "Aucun instrument de mesure sélectionné"
 msgid "No gauges found."
 msgstr "Aucun instrument de mesure trouvé."
 
+msgid "No grant"
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "Aucune notification groupée"
 
@@ -15250,6 +15283,9 @@ msgstr "Aucun poste de travail sur ce site"
 
 msgid "No work centers exist"
 msgstr "Aucun poste de travail n'existe"
+
+msgid "Nobody"
+msgstr ""
 
 msgid "Nom"
 msgstr "Nom"
@@ -16247,6 +16283,9 @@ msgstr "Substitution de classification de {0}"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "La substitution requiert l'autorisation stocks:modification et une raison."
+
+msgid "Override on this page"
+msgstr ""
 
 msgid "Override Price"
 msgstr "Modifier le prix"
@@ -19531,6 +19570,9 @@ msgid "Role"
 msgstr "Rôle"
 
 msgid "Role default"
+msgstr ""
+
+msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -26313,6 +26355,9 @@ msgstr "Qui fait quoi, à travers les six étapes. Votre côté est mis en évid
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Qui reçoit une formation sur quoi, dans quel format. Votre rôle : protéger le temps des sessions pratiques dans les calendriers de vos champions dès le départ. C'est ce qui glisse le plus quand les entreprises sont occupées."
+
+msgid "Who has access"
+msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Qui doit approuver les devis, les commandes et les achats — et quand"

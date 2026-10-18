@@ -34,3 +34,17 @@ export function roundUp(flags: Partial<Record<Action, boolean>>): Level {
 export function lowerLevel(a: Level, b: Level): Level {
   return LEVELS.indexOf(a) <= LEVELS.indexOf(b) ? a : b;
 }
+
+/**
+ * The actions a converted grant holds that its old checkboxes did not: what
+ * the round-up gave. Empty for a grant saved since.
+ */
+export function actionsGained(
+  level: Level,
+  convertedFrom: readonly string[] | null
+): Action[] {
+  if (!convertedFrom) return [];
+  return ACTIONS.filter(
+    (action) => levelHolds(level, action) && !convertedFrom.includes(action)
+  );
+}

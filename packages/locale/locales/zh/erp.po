@@ -302,6 +302,10 @@ msgstr "{0} 工序"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} 道工序 · {1} 件"
 
+#. placeholder {0}: levelLabel[l]
+msgid "{0} or more"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} 个订单"
@@ -401,6 +405,12 @@ msgstr "{0} 将被保存为 {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0} 年"
+
+#. placeholder {0}: row.label
+#. placeholder {1}: row.level
+#. placeholder {2}: row.gained.join(", ")
+msgid "{0}: {1}, gained {2}"
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -2315,6 +2325,9 @@ msgstr "调整"
 msgid "Admin"
 msgstr "管理员"
 
+msgid "Admin employee type"
+msgstr ""
+
 msgid "Advance"
 msgstr "预付"
 
@@ -2806,6 +2819,10 @@ msgstr "API密钥"
 
 msgid "API Key"
 msgstr "API密钥"
+
+#. placeholder {0}: key.name
+msgid "API key {0}"
+msgstr ""
 
 msgid "API Keys"
 msgstr "API密钥"
@@ -5775,6 +5792,9 @@ msgstr "将MRP建议转换为采购订单和工单。"
 msgid "Convert to Quote"
 msgstr "转换为报价"
 
+msgid "Converted access that grew"
+msgstr ""
+
 msgid "Converted Total Price"
 msgstr "转换后的总价格"
 
@@ -6629,6 +6649,9 @@ msgstr "当前"
 
 msgid "Current"
 msgstr "当前"
+
+msgid "Current access"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "当前账面净值："
@@ -10541,6 +10564,10 @@ msgstr "租赁终止利得"
 msgid "Gain/Loss"
 msgstr "收益/损失"
 
+#. placeholder {0}: row.gained.join(", ")
+msgid "Gained {0} in the conversion"
+msgstr ""
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的获利"
 
@@ -12662,6 +12689,9 @@ msgstr "让我们设置您的账户"
 
 msgid "Letter"
 msgstr "字母"
+
+msgid "Level"
+msgstr ""
 
 msgid "Liability"
 msgstr "负债"
@@ -14797,6 +14827,9 @@ msgstr "未选择量具"
 msgid "No gauges found."
 msgstr "未找到量具。"
 
+msgid "No grant"
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "没有分组通知"
 
@@ -15250,6 +15283,9 @@ msgstr "此地点没有工作中心"
 
 msgid "No work centers exist"
 msgstr "没有工作中心存在"
+
+msgid "Nobody"
+msgstr ""
 
 msgid "Nom"
 msgstr "标称值"
@@ -16247,6 +16283,9 @@ msgstr "覆盖 {0} 的分类"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "覆盖需要库存管理:更新权限和原因。"
+
+msgid "Override on this page"
+msgstr ""
 
 msgid "Override Price"
 msgstr "覆盖价格"
@@ -19531,6 +19570,9 @@ msgid "Role"
 msgstr "角色"
 
 msgid "Role default"
+msgstr ""
+
+msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -26313,6 +26355,9 @@ msgstr "谁在六个步骤中做什么。您的部分在上面突出显示。做
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "谁接受什么培训，采用什么形式。你的职责：尽早在你的冠军们的日程表上保护动手操作的会议时间。这是公司忙碌时最容易被推迟的事情。"
+
+msgid "Who has access"
+msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "谁必须审批报价单、订单和采购——以及何时"

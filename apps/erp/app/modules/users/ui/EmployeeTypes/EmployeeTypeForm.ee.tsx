@@ -23,14 +23,20 @@ import { usePermissions } from "~/hooks";
 import { employeeTypeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 import AccessGrid, { type AccessGrant } from "../components/AccessGrid.ee";
+import AccessHolders from "./AccessHolders.ee";
 
 type EmployeeTypeFormProps = {
   initialValues: Omit<z.infer<typeof employeeTypeValidator>, "data"> & {
     grants: AccessGrant[];
   };
+  /** The role's converted grants that hold more than their old checkboxes. */
+  convertedGrowth?: { label: string; level: string; gained: string[] }[];
 };
 
-const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
+const EmployeeTypeForm = ({
+  initialValues,
+  convertedGrowth = []
+}: EmployeeTypeFormProps) => {
   const { t } = useLingui();
   const userPermissions = usePermissions();
   const closeRoute = useCloseRoute();
@@ -85,6 +91,25 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
                 termId="employee-type-default-permissions"
                 isDisabled={isDisabled}
               />
+              {convertedGrowth.length > 0 ? (
+                <div className="mt-4 rounded-md border border-yellow-500/40 p-3 text-sm">
+                  <p className="font-medium mb-1">
+                    <Trans>Converted access that grew</Trans>
+                  </p>
+                  <ul className="list-disc pl-5 text-muted-foreground">
+                    {convertedGrowth.map((row) => (
+                      <li key={row.label}>
+                        {t`${row.label}: ${row.level}, gained ${row.gained.join(", ")}`}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {isEditing ? (
+                <div className="mt-4">
+                  <AccessHolders />
+                </div>
+              ) : null}
             </div>
           </ModalBody>
           <ModalFooter>

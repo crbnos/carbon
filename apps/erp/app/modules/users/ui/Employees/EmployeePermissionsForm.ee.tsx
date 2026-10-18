@@ -24,6 +24,7 @@ import { usePermissions } from "~/hooks";
 import { employeeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 import AccessGrid, { type AccessGrant } from "../components/AccessGrid.ee";
+import EffectiveAccess, { type EffectiveAccessRow } from "./EffectiveAccess.ee";
 
 type EmployeeType = { id: string; name: string; systemType: string | null };
 
@@ -39,6 +40,8 @@ type EmployeePermissionsFormProps = {
   employeeTypes: EmployeeType[];
   /** Every role's grants, so a new type shows its levels at once. */
   roleGrants: RoleGrant[];
+  /** What the person can do as saved. */
+  effectiveAccess: EffectiveAccessRow[];
   initialValues: Omit<z.infer<typeof employeeValidator>, "data"> & {
     /** The person's own overrides. */
     grants: AccessGrant[];
@@ -67,6 +70,7 @@ const EmployeePermissionsForm = ({
   name,
   employeeTypes,
   roleGrants,
+  effectiveAccess,
   initialValues
 }: EmployeePermissionsFormProps) => {
   const { t } = useLingui();
@@ -129,6 +133,7 @@ const EmployeePermissionsForm = ({
                 label={t`Access`}
                 isDisabled={!canEditPermissions}
               />
+              <EffectiveAccess rows={effectiveAccess} />
               <Hidden name="id" />
               <Hidden name="data" value={JSON.stringify(grants)} />
             </VStack>

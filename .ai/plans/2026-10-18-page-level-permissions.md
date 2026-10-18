@@ -22,7 +22,7 @@ Phases 1 and 2 — grants, resolver, editors (one release)
 - [ ] Task 10: Build `AccessGrid` and the role editor
 - [ ] Task 11: Build the person Access tab and bulk overrides
 - [ ] Task 12: Build the API key grid
-- [ ] Task 13: Build the access view
+- [x] Task 13: Build the access view
 - [ ] Task 14: Update dev bootstrap, company seed and demo datasets
 - [ ] Task 15: Rewrite the permissions docs and glossary
 - [ ] Task 16: Verify phases 1 and 2 in the browser
@@ -505,14 +505,17 @@ Browser: create a key with Inventory View. Call `POST /api/v1/inventory/getRecei
 3. `getPageAccessHolders({ page, level })`: every employee and key whose level reaches `level`.
 4. Compute both in one query of the company's grants and employees, then resolve in TS. No query per person.
 5. Show `EffectiveAccess` on the person page: page, level, source.
-6. Show a "People with access" list per page on the role page.
+6. Show a "Who has access" panel on the role page: a page and a level, the people and keys that reach it (`api+/users.access-holders`, cached). API keys need the settings view.
 7. Show "Converted access that grew": every row whose `level` holds an action missing from `convertedFrom`.
-8. Compute that list in TS with `levelHolds` over the row's `convertedFrom`.
+8. Compute that list in TS with `actionsGained(level, convertedFrom)`. Show it on the role page for the role's rows and as a badge on the person page.
+9. The pure core (`winningGrant`, `accessHolders`, `actionsGained`) lives in `@carbon/database/access` and is tested there; the building blocks only read and map.
 
 **Verify:**
 ```bash
 pnpm --filter erp test -- users
-# Expected: all users tests pass, including new cases for both functions
+# Expected: all users tests pass
+pnpm --filter @carbon/database test -- access
+# Expected: the winningGrant, accessHolders and actionsGained cases pass
 ```
 
 **Out of scope:** exports of the access review.

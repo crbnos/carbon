@@ -4,16 +4,18 @@
 
 import { describe, expect, it } from "vitest";
 import cases from "./cases.json";
-import { roundUp } from "./levels";
+import { actionsGained, roundUp } from "./levels";
 import { clampLevel, PAGES, REGISTRY_HASH } from "./registry";
 import {
+  accessHolders,
   claimKeys,
   expandClaims,
   type Grant,
   holds,
   holdsAny,
   type RawClaims,
-  resolveLevel
+  resolveLevel,
+  winningGrant
 } from "./resolve";
 
 describe("resolveLevel", () => {
@@ -128,5 +130,64 @@ describe("claimKeys", () => {
         parts: { view: [], create: [], update: [], delete: [] }
       })
     ).toEqual({ sales_view: ["c1"], sales_update: ["c1"] });
+  });
+});
+
+describe("winningGrant", () => {
+  it("returns the grant precedence picks, or null", () => {
+    const role = {
+      subject: "role" as const,
+      module: "Sales",
+      page: null,
+      level: "Edit" as const
+    };
+    const person = {
+      ...role,
+      subject: "person" as const,
+      level: "None" as const
+    };
+    expect(winningGrant([role, person], "sales")).toBe(person);
+    expect(winningGrant([role], "sales")).toBe(role);
+    expect(winningGrant([role], "parts")).toBeNull();
+  });
+});
+
+describe("accessHolders", () => {
+  const sales = (level: "View" | "Edit" | "None") => ({
+    subject: "role" as const,
+    module: "Sales",
+    page: null,
+    level
+  });
+  it("keeps subjects at or above the level, with the deciding grant", () => {
+    const holders = accessHolders(
+      [
+        { id: "viewer", admin: false, grants: [sales("View")] },
+        { id: "editor", admin: false, grants: [sales("Edit")] },
+        { id: "admin", admin: true, grants: [sales("None")] },
+        { id: "nobody", admin: false, grants: [] }
+      ],
+      "sales",
+      "Edit"
+    );
+    expect(holders.map((h) => [h.id, h.level, h.grant?.level ?? null])).toEqual(
+      [
+        ["editor", "Edit", "Edit"],
+        ["admin", "Full", null]
+      ]
+    );
+  });
+});
+
+describe("actionsGained", () => {
+  it("lists what the round-up added to the old checkboxes", () => {
+    expect(actionsGained("Edit", ["view", "update"])).toEqual(["create"]);
+    expect(actionsGained("Full", ["delete"])).toEqual([
+      "view",
+      "create",
+      "update"
+    ]);
+    expect(actionsGained("View", ["view"])).toEqual([]);
+    expect(actionsGained("Edit", null)).toEqual([]);
   });
 });

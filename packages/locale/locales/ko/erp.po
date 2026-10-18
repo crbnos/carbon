@@ -302,6 +302,10 @@ msgstr "{0} 공정"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} 작업 · {1} 개"
 
+#. placeholder {0}: levelLabel[l]
+msgid "{0} or more"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "주문 {0}건"
@@ -401,6 +405,12 @@ msgstr "{0}이 {name}으로 저장됩니다"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}년"
+
+#. placeholder {0}: row.label
+#. placeholder {1}: row.level
+#. placeholder {2}: row.gained.join(", ")
+msgid "{0}: {1}, gained {2}"
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -2315,6 +2325,9 @@ msgstr "조정"
 msgid "Admin"
 msgstr "관리자"
 
+msgid "Admin employee type"
+msgstr ""
+
 msgid "Advance"
 msgstr "선금"
 
@@ -2806,6 +2819,10 @@ msgstr "API 키"
 
 msgid "API Key"
 msgstr "API 키"
+
+#. placeholder {0}: key.name
+msgid "API key {0}"
+msgstr ""
 
 msgid "API Keys"
 msgstr "API 키"
@@ -5775,6 +5792,9 @@ msgstr "MRP 제안을 발주서 및 작업 지시로 전환합니다."
 msgid "Convert to Quote"
 msgstr "견적으로 전환"
 
+msgid "Converted access that grew"
+msgstr ""
+
 msgid "Converted Total Price"
 msgstr "변환된 총 가격"
 
@@ -6629,6 +6649,9 @@ msgstr "현재"
 
 msgid "Current"
 msgstr "현재"
+
+msgid "Current access"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "현재 순장부가액:"
@@ -10541,6 +10564,10 @@ msgstr "리스 종료로 인한 이익"
 msgid "Gain/Loss"
 msgstr "이득/손실"
 
+#. placeholder {0}: row.gained.join(", ")
+msgid "Gained {0} in the conversion"
+msgstr ""
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 이익"
 
@@ -12662,6 +12689,9 @@ msgstr "계정을 설정해봅시다"
 
 msgid "Letter"
 msgstr "레터"
+
+msgid "Level"
+msgstr ""
 
 msgid "Liability"
 msgstr "부채"
@@ -14797,6 +14827,9 @@ msgstr "선택된 계측기 없음"
 msgid "No gauges found."
 msgstr "계측기를 찾을 수 없습니다."
 
+msgid "No grant"
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "그룹화된 알림이 없습니다"
 
@@ -15250,6 +15283,9 @@ msgstr "이 사업장에 작업장이 없습니다"
 
 msgid "No work centers exist"
 msgstr "존재하는 작업장이 없습니다"
+
+msgid "Nobody"
+msgstr ""
 
 msgid "Nom"
 msgstr "명목"
@@ -16247,6 +16283,9 @@ msgstr "{0}의 분류 재정의"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "재정의는 inventory:update 권한과 사유가 필요합니다."
+
+msgid "Override on this page"
+msgstr ""
 
 msgid "Override Price"
 msgstr "가격 재정의"
@@ -19531,6 +19570,9 @@ msgid "Role"
 msgstr "역할"
 
 msgid "Role default"
+msgstr ""
+
+msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -26313,6 +26355,9 @@ msgstr "6단계 전반에 걸쳐 누가 무엇을 하는지. 귀사의 역할은
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "누가 무엇을, 어떤 형식으로 교육받는지. 귀사가 할 일: 담당자들의 일정에서 실습 세션 시간을 미리 확보하세요. 회사가 바빠지면 가장 밀리기 쉬운 부분입니다."
+
+msgid "Who has access"
+msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "누가 견적, 주문, 구매를 승인해야 하는지 — 그리고 언제"

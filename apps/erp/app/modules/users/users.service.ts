@@ -24,6 +24,14 @@ import {
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import {
+  accessHolders,
+  actionsGained,
+  type Grant,
+  type Level,
+  PAGES,
+  winningGrant
+} from "@carbon/database/access";
+import {
   type GrantInput,
   type GrantSubject,
   readGrants
@@ -2272,6 +2280,164 @@ export function readAccessGrants(
     ctx.company.id,
     grantSubject(subjectType, subjectId)
   );
+}
+
+type GrantRow = {
+  employeeTypeId: string | null;
+  userId: string | null;
+  apiKeyId: string | null;
+  module: string;
+  page: string | null;
+  level: Level;
+  convertedFrom: string[] | null;
+};
+
+function toGrant(row: GrantRow): Grant & { convertedFrom: string[] | null } {
+  return {
+    subject: row.userId ? "person" : row.employeeTypeId ? "role" : "key",
+    module: row.module,
+    page: row.page,
+    level: row.level,
+    convertedFrom: row.convertedFrom
+  };
+}
+
+/** Every grant in the company, in one read. */
+function readCompanyGrants(ctx: ServiceContext) {
+  return ctx.asSystem.pg
+    .selectFrom("permission")
+    .select([
+      "employeeTypeId",
+      "userId",
+      "apiKeyId",
+      "module",
+      "page",
+      "level",
+      "convertedFrom"
+    ])
+    .where("companyId", "=", ctx.company.id)
+    .execute();
+}
+
+/** The company's employees (or one), with their employee type. */
+function readCompanyEmployees(ctx: ServiceContext, userId?: string) {
+  let query = ctx.asSystem.pg
+    .selectFrom("employee")
+    .innerJoin("userToCompany", (join) =>
+      join
+        .onRef("userToCompany.userId", "=", "employee.id")
+        .onRef("userToCompany.companyId", "=", "employee.companyId")
+        .on("userToCompany.role", "=", "employee")
+    )
+    .innerJoin("user", "user.id", "employee.id")
+    .leftJoin("employeeType", "employeeType.id", "employee.employeeTypeId")
+    .select([
+      "employee.id",
+      "user.fullName",
+      "employee.employeeTypeId",
+      "employeeType.systemType"
+    ])
+    .where("employee.companyId", "=", ctx.company.id);
+  if (userId) query = query.where("employee.id", "=", userId);
+  return query.execute();
+}
+
+/** The grants that apply to an employee: their own and their role's. */
+function employeeGrants(
+  rows: GrantRow[],
+  employee: { id: string; employeeTypeId: string | null }
+) {
+  return rows
+    .filter(
+      (row) =>
+        row.userId === employee.id ||
+        (row.employeeTypeId !== null &&
+          row.employeeTypeId === employee.employeeTypeId)
+    )
+    .map(toGrant);
+}
+
+/**
+ * What a person can do on each page and the grant that decides it: Admin,
+ * the person's own override, or their role. A converted grant lists the
+ * actions the round-up added to its old checkboxes.
+ */
+export async function readEffectiveAccess(ctx: ServiceContext, userId: string) {
+  const [[employee], rows] = await Promise.all([
+    readCompanyEmployees(ctx, userId),
+    readCompanyGrants(ctx)
+  ]);
+  if (!employee) return null;
+  const admin = employee.systemType === "Admin";
+  const grants = employeeGrants(rows, employee);
+  return PAGES.map((page) => {
+    const grant = admin ? null : winningGrant(grants, page.id);
+    return {
+      page: page.id,
+      label: page.label,
+      level: admin ? ("Full" as const) : (grant?.level ?? "None"),
+      source: admin ? ("admin" as const) : (grant?.subject ?? null),
+      scope: grant
+        ? grant.page
+          ? ("page" as const)
+          : ("module" as const)
+        : null,
+      gained: grant ? actionsGained(grant.level, grant.convertedFrom) : []
+    };
+  });
+}
+
+/**
+ * The employees, and with the settings view the API keys, whose level on a
+ * page reaches `level`. One read of the company's grants and employees.
+ */
+export async function readPageAccessHolders(
+  ctx: ServiceContext,
+  page: string,
+  level: Level
+) {
+  const withKeys = ctx.can({ view: "settings" });
+  const [employees, rows, keys] = await Promise.all([
+    readCompanyEmployees(ctx),
+    readCompanyGrants(ctx),
+    withKeys
+      ? ctx.asSystem.pg
+          .selectFrom("apiKey")
+          .select(["id", "name"])
+          .where("companyId", "=", ctx.company.id)
+          .execute()
+      : Promise.resolve([])
+  ]);
+  const names = new Map(employees.map((e) => [e.id, e.fullName]));
+  const people = accessHolders(
+    employees.map((employee) => ({
+      id: employee.id,
+      admin: employee.systemType === "Admin",
+      grants: employeeGrants(rows, employee)
+    })),
+    page,
+    level
+  ).map((holder) => ({
+    userId: holder.id,
+    name: names.get(holder.id) ?? holder.id,
+    level: holder.level,
+    source: holder.grant?.subject ?? "admin"
+  }));
+  const keyNames = new Map(keys.map((key) => [key.id, key.name]));
+  const apiKeys = accessHolders(
+    keys.map((key) => ({
+      id: key.id,
+      admin: false,
+      grants: rows.filter((row) => row.apiKeyId === key.id).map(toGrant)
+    })),
+    page,
+    level
+  ).map((holder) => ({
+    apiKeyId: holder.id,
+    name: keyNames.get(holder.id) ?? holder.id,
+    level: holder.level
+  }));
+  return { people, apiKeys };
 }
 
 /** Every role's grants in the company, in one read. */

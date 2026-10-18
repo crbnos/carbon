@@ -302,6 +302,10 @@ msgstr "{0} операции"
 msgid "{0} ops · {1} pcs"
 msgstr "{0} опер. · {1} шт"
 
+#. placeholder {0}: levelLabel[l]
+msgid "{0} or more"
+msgstr ""
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} заказов"
@@ -401,6 +405,12 @@ msgstr "{0} будет сохранено как {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-летний"
+
+#. placeholder {0}: row.label
+#. placeholder {1}: row.level
+#. placeholder {2}: row.gained.join(", ")
+msgid "{0}: {1}, gained {2}"
+msgstr ""
 
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
@@ -2315,6 +2325,9 @@ msgstr "Корректировки"
 msgid "Admin"
 msgstr "Администратор"
 
+msgid "Admin employee type"
+msgstr ""
+
 msgid "Advance"
 msgstr "Аванс"
 
@@ -2806,6 +2819,10 @@ msgstr "API-ключ"
 
 msgid "API Key"
 msgstr "API-ключ"
+
+#. placeholder {0}: key.name
+msgid "API key {0}"
+msgstr ""
 
 msgid "API Keys"
 msgstr "API-ключи"
@@ -5775,6 +5792,9 @@ msgstr "Преобразовывать предложения MRP в заказ�
 msgid "Convert to Quote"
 msgstr "Преобразовать в предложение"
 
+msgid "Converted access that grew"
+msgstr ""
+
 msgid "Converted Total Price"
 msgstr "Преобразованная общая цена"
 
@@ -6629,6 +6649,9 @@ msgstr "текущий"
 
 msgid "Current"
 msgstr "Текущее"
+
+msgid "Current access"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "Текущая остаточная стоимость:"
@@ -10541,6 +10564,10 @@ msgstr "Прибыль от прекращения аренды"
 msgid "Gain/Loss"
 msgstr "Прибыль/Убыток"
 
+#. placeholder {0}: row.gained.join(", ")
+msgid "Gained {0} in the conversion"
+msgstr ""
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Прибыль, признаваемая при выбытии основных средств"
 
@@ -12662,6 +12689,9 @@ msgstr "Давайте настроим вашу учетную запись"
 
 msgid "Letter"
 msgstr "Буква"
+
+msgid "Level"
+msgstr ""
 
 msgid "Liability"
 msgstr "Обязательство"
@@ -14797,6 +14827,9 @@ msgstr "Средство измерения не выбрано"
 msgid "No gauges found."
 msgstr "Средства измерения не найдены."
 
+msgid "No grant"
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "Нет сгруппированных уведомлений"
 
@@ -15250,6 +15283,9 @@ msgstr "На этой площадке нет рабочих центров"
 
 msgid "No work centers exist"
 msgstr "Рабочих центров не существует"
+
+msgid "Nobody"
+msgstr ""
 
 msgid "Nom"
 msgstr "Номин"
@@ -16247,6 +16283,9 @@ msgstr "Переопределение классификации {0}"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Для переопределения требуется право доступа inventory:update и причина."
+
+msgid "Override on this page"
+msgstr ""
 
 msgid "Override Price"
 msgstr "Цена переопределения"
@@ -19531,6 +19570,9 @@ msgid "Role"
 msgstr "Роль"
 
 msgid "Role default"
+msgstr ""
+
+msgid "Role, this page"
 msgstr ""
 
 msgid "Role:"
@@ -26313,6 +26355,9 @@ msgstr "Кто что делает во всех шести шагах. Ваша
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Кто получает обучение, по каким темам и в каком формате. Ваша задача: зарезервируйте время практических занятий в календарях ваших ключевых сотрудников заранее. Это то, что чаще всего откладывается, когда компании становятся загруженными."
+
+msgid "Who has access"
+msgstr ""
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Кто должен утвердить коммерческие предложения, заказы и закупки — и когда"

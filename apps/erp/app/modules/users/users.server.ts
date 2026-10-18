@@ -7,6 +7,7 @@ import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CarbonEdition, CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { deactivateUser } from "@carbon/auth/users.server";
+import { LEVELS, pageById } from "@carbon/database/access";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
 import {
@@ -645,6 +646,40 @@ const grantSubjectRules = {
   person: { update: "users" },
   key: { update: "settings" }
 } as const;
+
+/**
+ * What an employee can do on each page, and the grant that decides it: the
+ * Admin type, their own override, or their role.
+ */
+export const getEffectiveAccess = defineServiceFn({
+  input: z.object({ userId: z.string().min(1) }),
+  permission: { view: "users" },
+  async run(ctx, { userId }) {
+    const access = await service.readEffectiveAccess(ctx, userId);
+    if (!access) return ctx.error("notFound", "Employee not found");
+    return access;
+  }
+});
+
+/**
+ * The employees whose level on a page reaches `level`, and, with the
+ * settings view, the API keys.
+ */
+export const getPageAccessHolders = defineServiceFn({
+  input: z.object({
+    page: z
+      .string()
+      .min(1)
+      .refine((page) => pageById(page) !== undefined, {
+        message: "Unknown page"
+      }),
+    level: z.enum(LEVELS)
+  }),
+  permission: { view: "users" },
+  async run(ctx, { page, level }) {
+    return service.readPageAccessHolders(ctx, page, level);
+  }
+});
 
 /** Every role's grants in the company. */
 export const getRoleGrants = defineServiceFn({

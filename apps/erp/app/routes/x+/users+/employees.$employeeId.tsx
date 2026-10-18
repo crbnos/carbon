@@ -86,12 +86,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const client = getCarbonServiceRole();
 
-  const [employee, employeeTypes, grants, roleGrants] = await Promise.all([
-    getEmployee(client, employeeId, companyId),
-    getEmployeeTypes(client, companyId),
-    api.users.getAccessGrants({ subjectType: "person", subjectId: employeeId }),
-    api.users.getRoleGrants({})
-  ]);
+  const [employee, employeeTypes, grants, roleGrants, effectiveAccess] =
+    await Promise.all([
+      getEmployee(client, employeeId, companyId),
+      getEmployeeTypes(client, companyId),
+      api.users.getAccessGrants({
+        subjectType: "person",
+        subjectId: employeeId
+      }),
+      api.users.getRoleGrants({}),
+      api.users.getEffectiveAccess({ userId: employeeId })
+    ]);
 
   if (employee.error || grants.error || roleGrants.error) {
     throw redirect(
@@ -114,7 +119,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     employee: employee.data,
     employeeTypes: employeeTypes.data ?? [],
     grants: grants.data,
-    roleGrants: roleGrants.data
+    roleGrants: roleGrants.data,
+    effectiveAccess: effectiveAccess.data ?? []
   };
 }
 
@@ -135,7 +141,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function UsersEmployeeRoute() {
-  const { employee, employeeTypes, grants, roleGrants } =
+  const { employee, employeeTypes, grants, roleGrants, effectiveAccess } =
     useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "PERMISSIONS" });
 
@@ -155,6 +161,7 @@ export default function UsersEmployeeRoute() {
       name={employee?.name || ""}
       employeeTypes={employeeTypes}
       roleGrants={roleGrants}
+      effectiveAccess={effectiveAccess}
       initialValues={initialValues}
     />
   );
