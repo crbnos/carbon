@@ -1811,7 +1811,7 @@ export const setRecordTags = defineServiceFn({
     ids: z.array(z.string()),
     tags: z.array(z.string())
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, { table, ids, tags }) {
     const { error } = await ctx.asCaller.supabase
       // @ts-expect-error: the table is the caller's, for any taggable record
@@ -1842,7 +1842,7 @@ export const setRecordCustomFields = defineServiceFn({
     ids: z.array(z.string()),
     customFields: z.record(z.string(), z.unknown())
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, { table, ids, customFields }) {
     const { error } = await ctx.asCaller.supabase
       // @ts-expect-error: the table is the caller's, for any record with custom fields
@@ -2432,7 +2432,7 @@ export const getCompanies = defineServiceFn({
  */
 export const getEmployeeCompanies = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2461,7 +2461,7 @@ export const getIndustries = defineServiceFn({
  */
 export const getCompany = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2477,7 +2477,7 @@ export const getCompany = defineServiceFn({
  */
 export const getCompanySettings = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2590,7 +2590,7 @@ export const getCustomFieldsTables = defineServiceFn({
  */
 export const getIntegration = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "settings" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2610,7 +2610,7 @@ export const getIntegration = defineServiceFn({
  */
 export const getKanbanOutputSetting = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2649,7 +2649,7 @@ export const getNextSequence = defineServiceFn({
  */
 export const getPlans = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: "member",
   async run(ctx) {
     return unwrap(ctx, await service.getPlans(ctx.asCaller.supabase));
   }
@@ -2710,7 +2710,7 @@ export const getSequences = defineServiceFn({
  */
 export const getSequencesList = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
-  permission: { view: "settings" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2738,7 +2738,7 @@ export const getItemSerialSequences = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "settings" },
+  permission: "member",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2928,7 +2928,7 @@ export const getDocumentTemplate = defineServiceFn({
       "trackingLabel"
     ])
   }),
-  permission: { view: "settings" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2962,7 +2962,7 @@ export const getDocumentTemplateConfig = defineServiceFn({
       "trackingLabel"
     ])
   }),
-  permission: { view: "settings" },
+  permission: "member",
   async run(ctx, input) {
     return await service.getDocumentTemplateConfig(
       ctx.asCaller.supabase,
@@ -3056,7 +3056,7 @@ export const getWebhooks = defineServiceFn({
  */
 export const getWebhookTables = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: "member",
   async run(ctx) {
     return unwrap(ctx, await service.getWebhookTables(ctx.asCaller.supabase));
   }

@@ -27,6 +27,22 @@ const isDefineServiceFn = (init: ts.Expression | undefined) =>
   ts.isIdentifier(init.expression) &&
   init.expression.text === "defineServiceFn";
 
+/** The `permission: {}` of a service function's definition, if it has one. */
+const emptyPermission = (call: ts.CallExpression) => {
+  const definition = call.arguments[0];
+  if (!definition || !ts.isObjectLiteralExpression(definition)) return null;
+  const property = definition.properties.find(
+    (p): p is ts.PropertyAssignment =>
+      ts.isPropertyAssignment(p) && p.name.getText() === "permission"
+  );
+  const value = property?.initializer;
+  return value &&
+    ts.isObjectLiteralExpression(value) &&
+    value.properties.length === 0
+    ? value
+    : null;
+};
+
 const isFunctionValue = (init: ts.Expression | undefined) =>
   !!init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init));
 
@@ -77,6 +93,17 @@ export const serviceFnFile: ConformanceCheck = {
           if (isDefineServiceFn(init)) {
             if (!exported) {
               flag(declaration, name, "a service function nothing can call.");
+            }
+            const empty = emptyPermission(init as ts.CallExpression);
+            if (empty) {
+              violations.push({
+                file,
+                line:
+                  source.getLineAndCharacterOfPosition(empty.getStart(source))
+                    .line + 1,
+                snippet: `${name}: permission {}`,
+                message: `${name}: permission {} reads as "nothing required". Write "member" for any member of the company.`
+              });
             }
           } else if (isFunctionValue(init)) {
             flag(declaration, name, "a function, not a service function.");

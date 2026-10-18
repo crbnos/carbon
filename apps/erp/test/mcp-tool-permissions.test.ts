@@ -171,10 +171,15 @@ const OWN_ACCOUNT = new Set([
 ]);
 const membershipModule = (t: Tool) =>
   t.module === "shared" || OWN_ACCOUNT.has(t.name);
+// `"member"`: any member of the company. Published as no module and no actions.
+const membershipOnly = (t: Tool) =>
+  t.permission.module === null && t.permission.actions.length === 0;
 
 describe("permission module mapping", () => {
   it("maps items_* to the 'parts' permission module", () => {
-    for (const t of tools.filter((t) => t.module === "items")) {
+    for (const t of tools.filter(
+      (t) => t.module === "items" && !membershipOnly(t)
+    )) {
       expect(t.permission.module, t.name).toBe("parts");
     }
   });
@@ -187,7 +192,8 @@ describe("permission module mapping", () => {
 
   it("maps every other module to itself", () => {
     for (const t of tools.filter(
-      (t) => t.module !== "items" && !membershipModule(t)
+      (t) =>
+        t.module !== "items" && !membershipModule(t) && !membershipOnly(t)
     )) {
       expect(t.permission.module, t.name).toBe(t.module);
     }
@@ -196,9 +202,6 @@ describe("permission module mapping", () => {
 
 describe("permission actions in the manifest", () => {
   const ACTIONS = new Set(["view", "create", "update", "delete"]);
-  // `{}`: any member of the company. Published as no module and no actions.
-  const membershipOnly = (t: Tool) =>
-    t.permission.module === null && t.permission.actions.length === 0;
 
   it("every op gates on known actions, or on membership alone", () => {
     for (const t of tools.filter((t) => !membershipOnly(t))) {
@@ -209,9 +212,14 @@ describe("permission actions in the manifest", () => {
     }
   });
 
-  it("only own-account and shared tools gate on membership alone", () => {
+  // A lookup every screen needs (locations, units) is "member"; RLS filters
+  // its rows. Only the caller's own account and shared tools may write on it.
+  it("a tool gated on membership alone is a READ, or own-account or shared", () => {
     for (const t of tools.filter(membershipOnly)) {
-      expect(membershipModule(t), t.name).toBe(true);
+      expect(
+        membershipModule(t) || t.classification === "READ",
+        t.name
+      ).toBe(true);
     }
   });
 

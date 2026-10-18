@@ -80,7 +80,7 @@ export const assignRecord = defineServiceFn({
     id: z.string().min(1),
     assignee: z.string()
   }),
-  permission: {},
+  permission: "member",
 
   async run(ctx, { table, id, assignee }) {
     const client = ctx.asCaller.supabase;
@@ -958,7 +958,7 @@ export const unlinkLinearIssue = defineServiceFn({
  */
 export const deleteSavedView = defineServiceFn({
   input: z.looseObject({ viewId: z.string() }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -977,7 +977,7 @@ export const deleteSavedView = defineServiceFn({
  */
 export const getBase64ImageFromSupabase = defineServiceFn({
   input: z.looseObject({ path: z.string() }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return await service.getBase64ImageFromSupabase(
       ctx.asCaller.supabase,
@@ -993,7 +993,7 @@ export const getBase64ImageFromSupabase = defineServiceFn({
  */
 export const getCountries = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {},
+  permission: "member",
   async run(ctx) {
     return unwrap(ctx, await service.getCountries(ctx.asCaller.supabase));
   }
@@ -1006,7 +1006,7 @@ export const getCountries = defineServiceFn({
  */
 export const getModelByItemId = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return await service.getModelByItemId(
       ctx.asCaller.supabase,
@@ -1022,7 +1022,7 @@ export const getModelByItemId = defineServiceFn({
  */
 export const getNotes = defineServiceFn({
   input: z.looseObject({ documentId: z.string() }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1038,7 +1038,7 @@ export const getNotes = defineServiceFn({
  */
 export const getTagsList = defineServiceFn({
   input: z.looseObject({ table: z.string().nullable().optional() }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1058,7 +1058,7 @@ export const getTagsList = defineServiceFn({
  */
 export const insertNote = defineServiceFn({
   input: z.looseObject({ note: z.string(), documentId: z.string() }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1081,7 +1081,7 @@ export const insertTag = defineServiceFn({
     name: z.string(),
     table: z.string()
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1100,7 +1100,7 @@ export const insertTag = defineServiceFn({
  */
 export const getExternalLink = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1124,7 +1124,7 @@ export const getCustomerPortals = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1144,7 +1144,7 @@ export const getCustomerPortals = defineServiceFn({
  */
 export const getCustomerPortal = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1171,7 +1171,7 @@ export const upsertSavedView = defineServiceFn({
     columnVisibility: z.record(z.string(), z.unknown()).optional(),
     columnOrder: z.array(z.string()).optional()
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1201,7 +1201,7 @@ export const updateSavedViewOrder = defineServiceFn({
       z.looseObject({ id: z.string(), sortOrder: z.number().int() })
     )
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, { updates }) {
     try {
       await service.reorderSavedViews(
@@ -1236,7 +1236,7 @@ export const getEnforcementRules = defineServiceFn({
     search: z.string().nullable().optional(),
     targetType: z.enum(["item", "workCenter"]).nullable().optional()
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1260,7 +1260,7 @@ export const getEnforcementRule = defineServiceFn({
     family: z.enum(["storage", "sales"]),
     id: z.string()
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1281,7 +1281,7 @@ export const getEnforcementRule = defineServiceFn({
  */
 export const getEnforcementRuleAssignmentCounts = defineServiceFn({
   input: z.looseObject({ ruleIds: z.array(z.string()) }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,

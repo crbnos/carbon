@@ -300,7 +300,7 @@ function allows(
   return hasPermissions(
     actor.type === "user" ? actor.permissions : actor.scopes,
     companyId,
-    required
+    required === "member" ? {} : required
   );
 }
 

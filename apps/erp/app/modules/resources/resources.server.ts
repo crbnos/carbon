@@ -1291,7 +1291,7 @@ export const createSuggestion = defineServiceFn({
     attributed: z.boolean(),
     sendToCarbon: z.boolean()
   }),
-  permission: {},
+  permission: "member",
 
   async run(ctx, input) {
     const companyId = ctx.company.id;
@@ -1991,7 +1991,7 @@ export const getAbilities = defineServiceFn({
  */
 export const getAbilitiesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2070,7 +2070,7 @@ export const getContractors = defineServiceFn({
  */
 export const getEmployeeAbilities = defineServiceFn({
   input: z.looseObject({ employeeId: z.string() }),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2156,7 +2156,7 @@ export const getFailureModes = defineServiceFn({
  */
 export const getFailureModesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2199,7 +2199,7 @@ export const getLocations = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2219,7 +2219,7 @@ export const getLocations = defineServiceFn({
  */
 export const getLocationsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2412,7 +2412,7 @@ export const getOutstandingTrainingsForUser = defineServiceFn({
  */
 export const getTrainingAssignmentStatusForEmployee = defineServiceFn({
   input: z.looseObject({ employeeId: z.string() }),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2543,7 +2543,7 @@ export const getProcesses = defineServiceFn({
  */
 export const getProcessesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2559,7 +2559,7 @@ export const getProcessesList = defineServiceFn({
  */
 export const getSuggestion = defineServiceFn({
   input: z.looseObject({ suggestionId: z.string() }),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2754,7 +2754,7 @@ export const getTrainings = defineServiceFn({
  */
 export const getTrainingsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2770,7 +2770,7 @@ export const getTrainingsList = defineServiceFn({
  */
 export const getWorkCenter = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2814,7 +2814,7 @@ export const getWorkCenters = defineServiceFn({
  */
 export const getWorkCentersByLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2833,7 +2833,7 @@ export const getWorkCentersByLocation = defineServiceFn({
  */
 export const getWorkCentersList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2849,7 +2849,7 @@ export const getWorkCentersList = defineServiceFn({
  */
 export const getWorkCentersListWithBlockingStatus = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2868,7 +2868,7 @@ export const getWorkCentersListWithBlockingStatus = defineServiceFn({
  */
 export const getProcessesWithoutAbility = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,

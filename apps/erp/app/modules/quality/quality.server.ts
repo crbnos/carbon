@@ -2037,7 +2037,7 @@ const riskInput = riskRegisterValidator
  */
 export const createRisk = defineServiceFn({
   input: riskInput,
-  permission: {},
+  permission: "member",
 
   async run(ctx, input) {
     const result = await service.upsertRisk(ctx.asCaller.supabase, {
@@ -2582,7 +2582,7 @@ export const getGaugeTypes = defineServiceFn({
  */
 export const getIssue = defineServiceFn({
   input: z.looseObject({ nonConformanceId: z.string() }),
-  permission: { view: "quality" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2609,7 +2609,7 @@ export const getIssues = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "quality" },
+  permission: "member",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2986,7 +2986,7 @@ export const getQualityDocuments = defineServiceFn({
  */
 export const getQualityFiles = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "quality" },
+  permission: "member",
   async run(ctx, input) {
     return await service.getQualityFiles(
       ctx.asCaller.supabase,
@@ -3003,7 +3003,7 @@ export const getQualityFiles = defineServiceFn({
  */
 export const getRequiredActionsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "quality" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3801,7 +3801,7 @@ export const getInspection = defineServiceFn({
  */
 export const getReceiptInspections = defineServiceFn({
   input: z.looseObject({ receiptId: z.string() }),
-  permission: { view: "quality" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3901,7 +3901,7 @@ export const getInspectionMeasurements = defineServiceFn({
  */
 export const getItemInspectionDocumentAssignments = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { view: "quality" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3972,7 +3972,7 @@ export const getInspectionDocuments = defineServiceFn({
  */
 export const getInspectionDocumentsForItem = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { view: "quality" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,

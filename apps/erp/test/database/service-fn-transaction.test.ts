@@ -37,7 +37,7 @@ const contextOn = (pg: Kysely<KyselyDatabase>) =>
 // A composed operation that writes, then refuses.
 const writeThenRefuse = defineServiceFn({
   input: z.object({ id: z.string(), refuse: z.boolean() }),
-  permission: {},
+  permission: "member",
   async run(ctx, { id, refuse }) {
     await sql`INSERT INTO service_fn_tx_probe (id) VALUES (${id})`.execute(
       ctx.asSystem.pg

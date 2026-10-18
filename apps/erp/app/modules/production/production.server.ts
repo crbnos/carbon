@@ -5903,7 +5903,7 @@ export const deleteProductionQuantity = defineServiceFn({
  */
 export const getActiveJobOperationByJobId = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: "member",
   async run(ctx, input) {
     return await service.getActiveJobOperationByJobId(
       ctx.asCaller.supabase,
@@ -6171,7 +6171,7 @@ export const getJobDocumentsWithItemId = defineServiceFn({
  */
 export const getJob = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "production" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6349,7 +6349,7 @@ export const getJobs = defineServiceFn({
  */
 export const getJobsBySalesOrderLine = defineServiceFn({
   input: z.looseObject({ salesOrderLineId: z.string() }),
-  permission: { view: "production" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6405,7 +6405,7 @@ export const getJobsList = defineServiceFn({
  */
 export const getJobMakeMethodById = defineServiceFn({
   input: z.looseObject({ jobMakeMethodId: z.string() }),
-  permission: { view: "production" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6613,7 +6613,7 @@ export const getJobOperations = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { view: "production" },
+  permission: "member",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -6687,7 +6687,7 @@ export const getJobOperationsList = defineServiceFn({
  */
 export const getJobOperationsByMethodId = defineServiceFn({
   input: z.looseObject({ jobMakeMethodId: z.string() }),
-  permission: { view: "production" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6836,7 +6836,7 @@ export const getProceduresList = defineServiceFn({
  */
 export const getProductionEvent = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "production" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7012,7 +7012,7 @@ export const getProductionDataByOperations = defineServiceFn({
  */
 export const getScrapReasonsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "production" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -7233,7 +7233,7 @@ export const getMaintenanceSchedule = defineServiceFn({
  */
 export const getTrackedEntityByJobId = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "production" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8824,7 +8824,7 @@ export const getWorkCenterReservationsRange = defineServiceFn({
  */
 export const getLocationEmployees = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { view: "production" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9021,7 +9021,7 @@ export const getBatchOutputLots = defineServiceFn({
  */
 export const getJobOperationBatchWithMembers = defineServiceFn({
   input: z.looseObject({ batchId: z.string() }),
-  permission: { view: "production" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9081,7 +9081,7 @@ export const getBatchableOperations = defineServiceFn({
  */
 export const getBatchableProcesses = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "production" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,

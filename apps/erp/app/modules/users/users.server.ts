@@ -884,7 +884,7 @@ export const certifyItarUser = defineServiceFn({
     fullLegalName: z.string(),
     ...signedFrom
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, { ipAddress, userAgent, ...form }) {
     const parsed = itarUserCertificationValidator.safeParse(form);
     if (!parsed.success) {
@@ -922,7 +922,7 @@ export const getItarCertificationStatus = defineServiceFn({
  */
 export const getItarEntityCertification = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -941,7 +941,7 @@ export const getItarEntityCertification = defineServiceFn({
  */
 export const getItarCertificationReport = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1145,7 +1145,7 @@ export const getEmployeeTypes = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  permission: "member",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1165,7 +1165,7 @@ export const getEmployeeTypes = defineServiceFn({
  */
 export const getInvitable = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1181,7 +1181,7 @@ export const getInvitable = defineServiceFn({
  */
 export const getModules = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: "member",
   async run(ctx) {
     return unwrap(ctx, await service.getModules(ctx.asCaller.supabase));
   }
@@ -1258,7 +1258,7 @@ export const getGroups = defineServiceFn({
  */
 export const getGroupEmails = defineServiceFn({
   input: z.looseObject({ groupIds: z.array(z.string()) }),
-  permission: { view: "users" },
+  permission: "member",
   async run(ctx, input) {
     return await service.getGroupEmails(
       ctx.asCaller.supabase,
@@ -1279,7 +1279,7 @@ export const getUserSelectGroups = defineServiceFn({
     limit: z.number(),
     offset: z.number()
   }),
-  permission: { view: "users" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1299,7 +1299,7 @@ export const getUserSelectGroups = defineServiceFn({
  */
 export const getUserSelectGroupMembers = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
-  permission: { view: "users" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1407,7 +1407,7 @@ export const getSuppliers = defineServiceFn({
 /** Change the caller's name, phone and about text. */
 export const updateOwnProfile = defineServiceFn({
   input: accountProfileValidator,
-  permission: {},
+  permission: "member",
   async run(ctx, profile) {
     const saved = await service.updatePublicAccount(ctx.asCaller.supabase, {
       id: ctx.auditUserId,
@@ -1431,7 +1431,7 @@ export const updateOwnProfile = defineServiceFn({
  */
 export const updateOwnAvatar = defineServiceFn({
   input: z.object({ path: z.string() }),
-  permission: {},
+  permission: "member",
   async run(ctx, { path }) {
     const userId = ctx.auditUserId;
     if (!isAllowedAvatarValue(userId, path)) {
@@ -1486,7 +1486,7 @@ export const upsertAttributeValue = defineServiceFn({
     type: z.string().min(1),
     value: z.union([z.boolean(), z.number(), z.string()])
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, { userId, ...value }) {
     const refused = await service.refuseAttributeValueChange(
       ctx,
@@ -1527,7 +1527,7 @@ export const deleteAttributeValue = defineServiceFn({
     userAttributeId: z.string().min(1),
     userAttributeValueId: z.string().min(1)
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, value) {
     const refused = await service.refuseAttributeValueChange(
       ctx,
@@ -1558,7 +1558,7 @@ export const deleteAttributeValue = defineServiceFn({
  */
 export const setOwnFlag = defineServiceFn({
   input: userFlagValidator,
-  permission: {},
+  permission: "member",
   async run(ctx, { flag, value }) {
     const userId = ctx.auditUserId;
     const client = ctx.asCaller.supabase;
@@ -1590,7 +1590,7 @@ export const setOwnFlag = defineServiceFn({
  */
 export const getNotificationPreferences = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {},
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1614,7 +1614,7 @@ export const upsertNotificationPreference = defineServiceFn({
     channel: z.enum(["email", "slack"]),
     enabled: z.boolean()
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1633,7 +1633,7 @@ export const upsertNotificationPreference = defineServiceFn({
  */
 export const getAccount = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1649,7 +1649,7 @@ export const getAccount = defineServiceFn({
  */
 export const getCurrentUser = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {},
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1665,7 +1665,7 @@ export const getCurrentUser = defineServiceFn({
  */
 export const getAllAttributeCategories = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {},
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1685,7 +1685,7 @@ export const getAllAttributeCategories = defineServiceFn({
  */
 export const getAttributeCategoryWithValues = defineServiceFn({
   input: z.looseObject({ categoryId: z.string() }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1712,7 +1712,7 @@ export const updatePublicAccount = defineServiceFn({
     about: z.string().optional(),
     phone: z.string().optional()
   }),
-  permission: {},
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,

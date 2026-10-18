@@ -9,8 +9,12 @@ type Action = "view" | "create" | "update" | "delete";
 /** `{ update: "inventory" }`: each action names the module(s) it needs. */
 export type RequiredPermissions = Partial<Record<Action, string | string[]>>;
 
-/** What an operation requires. `"system"` admits only the system actor. */
-export type Permissions = RequiredPermissions | "system";
+/**
+ * What an operation requires. `"system"` admits only the system actor;
+ * `"member"` any member of the company (a permission naming it), for reads
+ * every screen needs, such as locations or units. RLS still filters the rows.
+ */
+export type Permissions = RequiredPermissions | "system" | "member";
 
 /** One permission per value of a string field. Data, so the API manifest can read it. */
 type KeyedRule<I> = {

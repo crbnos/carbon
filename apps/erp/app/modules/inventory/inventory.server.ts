@@ -3354,7 +3354,7 @@ export const scanKanban = defineServiceFn({
   input: z.object({ kanbanId: z.string() }),
   // Safe only unpublished (an employee-only route; Make creates jobs as the
   // system): give it a real rule before it is ever tagged @mcp.
-  permission: {},
+  permission: "member",
 
   async run(ctx, { kanbanId }): Promise<KanbanScan | CarbonError> {
     const client = ctx.asCaller.supabase;
@@ -4027,7 +4027,7 @@ export const getItemLedgerBalance = defineServiceFn({
  */
 export const getBatchProperties = defineServiceFn({
   input: z.looseObject({ itemIds: z.array(z.string()) }),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4172,7 +4172,7 @@ export const getKanbans = defineServiceFn({
  */
 export const getKanban = defineServiceFn({
   input: z.looseObject({ kanbanId: z.string() }),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4417,7 +4417,7 @@ export const getReceiptFiles = defineServiceFn({
  */
 export const getSerialNumbersForItem = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4481,7 +4481,7 @@ export const getBatchNumbersForItem = defineServiceFn({
     itemId: z.string(),
     isReadOnly: z.boolean().optional()
   }),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4516,7 +4516,7 @@ export const getStorageUnitsList = defineServiceFn({
  */
 export const getStorageUnitsListForLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4536,7 +4536,7 @@ export const getStorageUnitsListForLocation = defineServiceFn({
  */
 export const getStorageUnitsTreeForLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4950,7 +4950,7 @@ export const getShippingMethods = defineServiceFn({
  */
 export const getShippingMethodsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -4969,7 +4969,7 @@ export const getShippingMethodsList = defineServiceFn({
  */
 export const getShippingTermsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -5013,7 +5013,7 @@ export const getTrackedEntities = defineServiceFn({
  */
 export const getTrackedEntitiesByMakeMethodId = defineServiceFn({
   input: z.looseObject({ jobMakeMethodId: z.string() }),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5033,7 +5033,7 @@ export const getTrackedEntitiesByMakeMethodId = defineServiceFn({
  */
 export const getTrackedEntity = defineServiceFn({
   input: z.looseObject({ trackedEntityId: z.string() }),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx, input) {
     const entity = await service.getTrackedEntity(
       ctx.asCaller.supabase,
@@ -5192,7 +5192,7 @@ export const getWarehouseTransferRelatedItems = defineServiceFn({
  */
 export const getWarehouseTransferLine = defineServiceFn({
   input: z.looseObject({ transferId: z.string(), lineId: z.string() }),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx, input) {
     const line = await service.getWarehouseTransferLine(
       ctx.asCaller.supabase,
@@ -6069,7 +6069,7 @@ export const getStorageType = defineServiceFn({
  */
 export const getStorageTypesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -6245,7 +6245,7 @@ export const getPickingList = defineServiceFn({
  */
 export const getPicksByJobMaterial = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: { view: "inventory" },
+  permission: "member",
   async run(ctx, input) {
     return unwrap(
       ctx,

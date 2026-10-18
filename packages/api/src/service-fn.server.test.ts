@@ -179,10 +179,10 @@ describe("the gate", () => {
     expect(asSystem.data).toEqual({ data: "inner", error: null });
   });
 
-  it("requires company membership when nothing is named", async () => {
+  it("requires company membership for a member read", async () => {
     const open = defineServiceFn({
       input: z.object({}),
-      permission: {},
+      permission: "member",
       async run() {
         return "ok";
       }
