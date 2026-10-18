@@ -40,6 +40,7 @@ import {
   purchaseOrderStatusType,
   purchaseOrderValidator,
   resolveLeaseDates,
+  splitRfqModelAttachments,
   supplierQuoteValidator
 } from "./purchasing.models";
 
@@ -627,5 +628,24 @@ describe("lockedReturnLineField", () => {
         saved
       )
     ).toBeNull();
+  });
+});
+
+describe("splitRfqModelAttachments", () => {
+  const model = (id: string, size: number) => ({ id, size });
+
+  it("attaches what fits in line order and links the rest", () => {
+    const { attach, link } = splitRfqModelAttachments(
+      [model("a", 10), model("big", 30), model("b", 5)],
+      20
+    );
+    expect(attach.map((m) => m.id)).toEqual(["a", "b"]);
+    expect(link.map((m) => m.id)).toEqual(["big"]);
+  });
+
+  it("links every model when documents already use the budget", () => {
+    const { attach, link } = splitRfqModelAttachments([model("a", 1)], -5);
+    expect(attach).toEqual([]);
+    expect(link.map((m) => m.id)).toEqual(["a"]);
   });
 });

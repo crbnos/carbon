@@ -15,7 +15,8 @@ import {
   internalizeStorageUrl,
   requireModelSourceBucket,
   runAssemblerJob,
-  signSourceUrl
+  signSourceUrl,
+  signUploadUrls
 } from "./assembler-client";
 import {
   compactTarget,
@@ -190,28 +191,21 @@ export const modelOptimizeFunction = inngest.createFunction(
           // quality omitted → the service applies its size-adaptive policy.
         };
       },
-      mintUploadUrls: async () => {
+      mintUploadUrls: () => {
         const client = getCarbonServiceRole();
-        const [glb, thumbnail, raw] = await Promise.all([
-          storage(client)
-            .company(companyId)
-            .createSignedUploadUrl(optimizedPath, { upsert: true }),
-          storage(client)
-            .company(companyId)
-            .createSignedUploadUrl(thumbnailPath, { upsert: true }),
-          compact
-            ? client.storage
-                .from(TEMP_STAGING_BUCKET)
-                .createSignedUploadUrl(compact.path, { upsert: true })
-            : null
-        ]);
-        const urls: Record<string, string> = {};
-        if (glb.data) urls.glb = internalizeStorageUrl(glb.data.signedUrl);
-        if (thumbnail.data) {
-          urls.thumbnail = internalizeStorageUrl(thumbnail.data.signedUrl);
-        }
-        if (raw?.data) urls.raw = internalizeStorageUrl(raw.data.signedUrl);
-        return urls;
+        const bucket = storage(client).company(companyId);
+        return signUploadUrls({
+          glb: { bucket, path: optimizedPath },
+          thumbnail: { bucket, path: thumbnailPath },
+          ...(compact
+            ? {
+                raw: {
+                  bucket: client.storage.from(TEMP_STAGING_BUCKET),
+                  path: compact.path
+                }
+              }
+            : {})
+        });
       }
     });
     const outputs =

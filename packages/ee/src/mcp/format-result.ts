@@ -90,8 +90,9 @@ export type McpResultOptions = {
  * Serialize a call_tool result for the MCP text response.
  *
  * A list of records is CSV, written by `encodeCsv` (`@carbon/files/csv`): the
- * column names once, then one line per record, about 70% smaller than a JSON
- * array that repeats every key on every row. An empty cell is null or an empty
+ * column names once, then one line per record. On 100 real inventory rows that
+ * is about half the tokens of the JSON array it replaced (13,778 vs 27,207,
+ * o200k), which repeated every key on every row. An empty cell is null or an empty
  * string, and a nested value is JSON inside its cell. Columns that are empty in
  * every row shown are left out. String cells are kept as they are
  * (`formulaSafe: false`): the reader is an agent, not a spreadsheet. Anything

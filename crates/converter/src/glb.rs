@@ -11,7 +11,6 @@
 use crate::graph::{AssemblyNode, PartMesh};
 use gltf::json;
 use json::validation::{Checked::Valid, USize64};
-use std::borrow::Cow;
 use std::collections::HashMap;
 
 const DEFAULT_COLOR: [f32; 4] = [0.65, 0.65, 0.65, 1.0];
@@ -329,20 +328,74 @@ pub fn write_glb(root: &AssemblyNode) -> Vec<u8> {
     };
 
     let json_bytes = json::serialize::to_vec(&gltf_root).unwrap();
-    let bin = if b.blob.is_empty() {
-        None
-    } else {
-        Some(Cow::Owned(b.blob))
-    };
+    layout_glb(&json_bytes, b.blob)
+}
 
-    let glb = gltf::binary::Glb {
-        header: gltf::binary::Header {
-            magic: *b"glTF",
-            version: 2,
-            length: 0,
-        },
-        json: Cow::Owned(json_bytes),
-        bin,
-    };
-    glb.to_vec().unwrap()
+/// Lay out a GLB (header, JSON chunk, BIN chunk) in the BIN buffer's own
+/// allocation: the header and JSON are shifted in ahead of the binary data, so
+/// the model is never held twice. `gltf::binary::Glb::to_vec` copies the whole
+/// buffer into a new one; this writes the same bytes.
+fn layout_glb(json: &[u8], mut bin: Vec<u8>) -> Vec<u8> {
+    const JSON_CHUNK: u32 = 0x4E4F_534A;
+    const BIN_CHUNK: u32 = 0x004E_4942;
+    let pad = |len: usize| (4 - len % 4) % 4;
+    let (json_pad, bin_pad) = (pad(json.len()), pad(bin.len()));
+    let has_bin = !bin.is_empty();
+    let prefix_len = 12 + 8 + json.len() + json_pad + if has_bin { 8 } else { 0 };
+    let total = prefix_len + bin.len() + bin_pad;
+
+    let mut prefix = Vec::with_capacity(prefix_len);
+    prefix.extend_from_slice(b"glTF");
+    prefix.extend_from_slice(&2u32.to_le_bytes());
+    prefix.extend_from_slice(&(total as u32).to_le_bytes());
+    prefix.extend_from_slice(&((json.len() + json_pad) as u32).to_le_bytes());
+    prefix.extend_from_slice(&JSON_CHUNK.to_le_bytes());
+    prefix.extend_from_slice(json);
+    prefix.resize(prefix.len() + json_pad, b' ');
+    if has_bin {
+        prefix.extend_from_slice(&((bin.len() + bin_pad) as u32).to_le_bytes());
+        prefix.extend_from_slice(&BIN_CHUNK.to_le_bytes());
+    }
+
+    bin.reserve_exact(prefix_len + bin_pad);
+    bin.resize(bin.len() + bin_pad, 0);
+    bin.splice(0..0, prefix);
+    bin
+}
+
+#[cfg(test)]
+mod layout_glb_tests {
+    use super::layout_glb;
+    use std::borrow::Cow;
+
+    fn reference(json: &[u8], bin: &[u8]) -> Vec<u8> {
+        gltf::binary::Glb {
+            header: gltf::binary::Header {
+                magic: *b"glTF",
+                version: 2,
+                length: 0,
+            },
+            json: Cow::Borrowed(json),
+            bin: (!bin.is_empty()).then_some(Cow::Borrowed(bin)),
+        }
+        .to_vec()
+        .unwrap()
+    }
+
+    #[test]
+    fn writes_the_bytes_gltf_writes_at_every_padding() {
+        let json = br#"{"asset":{"version":"2.0"}}"#;
+        for json_len in 25..=28 {
+            for bin_len in [0, 1, 2, 3, 4, 5, 1023] {
+                let json = &json[..json_len.min(json.len())];
+                let bin: Vec<u8> = (0..bin_len).map(|i| i as u8).collect();
+                assert_eq!(
+                    layout_glb(json, bin.clone()),
+                    reference(json, &bin),
+                    "json {} bytes, bin {bin_len} bytes",
+                    json.len()
+                );
+            }
+        }
+    }
 }

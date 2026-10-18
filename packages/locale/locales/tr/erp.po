@@ -14193,6 +14193,9 @@ msgstr "Yeni IC İşlemi"
 msgid "New Inspection Plan"
 msgstr "Yeni kontrol planı"
 
+msgid "New instruction"
+msgstr ""
+
 msgid "New Inventory Count"
 msgstr "Yeni Envanter Sayımı"
 
@@ -23247,6 +23250,9 @@ msgstr "Geçersiz kılma, etkinleştirildiğinde tutulur ve sebebi ile birlikte 
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "İzlenen varlıkların parent-child zinciri - bir birim neyin dışında inşa edilmiş ve ne olmuş."
+
+msgid "The part has a newer model than this instruction."
+msgstr ""
 
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "Parça, ihtiyacı olan üst öğe inşa edildiğinde kendi işi olarak üretilir."

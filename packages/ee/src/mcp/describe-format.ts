@@ -25,18 +25,29 @@ export function deriveNameDescription(name: string): string {
 }
 
 /**
- * The description search_tools prints under a tool: its first paragraph (the
+ * The description search_tools prints beside a tool: its first paragraph (the
  * summary; `describe_tool` has the rest), or null when that only restates the
- * name.
+ * name. 937 of 1,612 summaries do ("Get receipt." on `inventory_getReceipt`,
+ * "Post a receipt." on `inventory_postReceipt`), so case, a closing full stop
+ * and articles do not count as saying more.
  */
 export function searchLineDescription(
   tool: Pick<ManifestEntry, "name" | "description">
 ): string | null {
   const summary = tool.description.split("\n", 1)[0]!.trim();
-  return summary && summary !== deriveNameDescription(tool.name)
+  const words = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/[.!]+$/, "")
+      .split(/\s+/)
+      .filter((word) => word && !ARTICLES.has(word))
+      .join(" ");
+  return summary && words(summary) !== words(deriveNameDescription(tool.name))
     ? summary
     : null;
 }
+
+const ARTICLES = new Set(["a", "an", "the"]);
 
 type JsonSchema = {
   type?: string | string[];
@@ -152,6 +163,31 @@ function editDistance(a: string, b: string): number {
 }
 
 /**
+ * search_tools output: one line per tool in rank order, then the next page's
+ * offset when there is one. Grouping by module put a lower-ranked tool above
+ * better ones, and the name already carries its module. Required params are
+ * inline so a simple tool needs no describe round trip; the summary only when
+ * it says more than the name.
+ */
+export function formatSearchResults(
+  matches: ManifestEntry[],
+  total: number,
+  offset: number
+): string {
+  const next = offset + matches.length;
+  let output = `Found ${total} ${total === 1 ? "tool" : "tools"}, ranked by relevance`;
+  if (next < total || offset > 0) {
+    output += ` (showing ${offset + 1}-${next}${next < total ? `; next page: offset ${next}` : ""})`;
+  }
+  output += ":";
+  for (const tool of matches) {
+    const summary = searchLineDescription(tool);
+    output += `\n${tool.name} [${tool.classification}] ${formatParamSummary(tool)}${summary ? ` — ${summary}` : ""}`;
+  }
+  return output;
+}
+
+/**
  * One-line argument summary for search results: required params spelled out,
  * optionals as a count — enough to call a simple tool without a describe round
  * trip. "(id)" / "(jobId, itemId, +12 optional)" / "()".
@@ -187,20 +223,22 @@ export function paginatingSibling(
   return sibling?.paginates ? sibling.name : null;
 }
 
-/** Full describe_tool text for one tool. */
+/**
+ * Full describe_tool text for one tool: the name and classification, the
+ * description, the permission every caller needs, how a list pages, then the
+ * input and response types. The name already carries the module.
+ */
 export function formatToolDescription(
   tool: ManifestEntry,
   options: { isList: boolean; sibling?: string | null }
 ): string {
-  let output = `Tool: ${tool.name}\n`;
-  output += `Module: ${tool.module}\n`;
-  output += `Classification: ${tool.classification}\n`;
-  output += `Description: ${tool.description}\n`;
+  let output = `${tool.name} [${tool.classification}]\n`;
+  output += `${tool.description}\n`;
   if (tool.permission.module) {
     const scopes = tool.permission.actions
       .map((action) => `${tool.permission.module}_${action}`)
       .join(" or ");
-    output += `Permission: ${scopes} (required for API-key callers)\n`;
+    output += `Permission: ${scopes}\n`;
   }
   if (options.isList) {
     if (tool.paginates) {

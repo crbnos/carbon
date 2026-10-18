@@ -40,6 +40,7 @@ import {
   selectRows
 } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
+import { findStorageObjectBuckets } from "@carbon/database/storage-objects";
 import {
   convertUnitPrice,
   supplierPartCurrency
@@ -47,7 +48,13 @@ import {
 import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
-import { storage } from "@carbon/files";
+import {
+  getCompanyPrivateBucket,
+  getFileExtension,
+  storage,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
+import { isModelRawDownloadable } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import {
@@ -862,7 +869,7 @@ export async function getSupplierInteractionLineAttachments(
   client: SupabaseClient<Database>,
   companyId: string,
   lineIds: string[]
-): Promise<{ filename: string; path: string }[]> {
+): Promise<{ filename: string; path: string; size?: number }[]> {
   const perLine = await async.map(lineIds, async (lineId) => {
     const docs = await getSupplierInteractionLineDocuments(
       client,
@@ -881,7 +888,11 @@ export async function getSupplierInteractionLineAttachments(
         });
         return null;
       }
-      return { filename: doc.name, path: data.signedUrl };
+      return {
+        filename: doc.name,
+        path: data.signedUrl,
+        size: doc.metadata?.size as number | undefined
+      };
     });
   });
   return perLine
@@ -5883,7 +5894,7 @@ export async function interactionAttachments(
   client: SupabaseClient<Database>,
   companyId: string,
   interactionId: string
-): Promise<{ filename: string; path: string }[]> {
+): Promise<{ filename: string; path: string; size?: number }[]> {
   const docs = await getSupplierInteractionDocuments(
     client,
     companyId,
@@ -5894,7 +5905,8 @@ export async function interactionAttachments(
     companyId,
     docs.map((doc) => ({
       filename: doc.name,
-      path: `${companyId}/supplier-interaction/${interactionId}/${doc.name}`
+      path: `${companyId}/supplier-interaction/${interactionId}/${doc.name}`,
+      size: doc.metadata?.size as number | undefined
     }))
   );
 }
@@ -5902,8 +5914,8 @@ export async function interactionAttachments(
 export async function signedAttachments(
   client: SupabaseClient<Database>,
   companyId: string,
-  files: { filename: string; path: string }[]
-): Promise<{ filename: string; path: string }[]> {
+  files: { filename: string; path: string; size?: number }[]
+): Promise<{ filename: string; path: string; size?: number }[]> {
   const signed = await async.map(files, async (file) => {
     const { data, error } = await storage(client)
       .company(companyId)
@@ -5915,9 +5927,135 @@ export async function signedAttachments(
       });
       return null;
     }
-    return { filename: file.filename, path: data.signedUrl };
+    return { filename: file.filename, path: data.signedUrl, size: file.size };
   });
   return signed.flatMap((file) => (file ? [file] : []));
+}
+
+/**
+ * The original CAD file of each item's model, found where the model's Download button
+ * finds it: `originalPath`, else a `modelPath` that is still the uploaded file,
+ * in the company bucket or in temp-staging before compaction settles. A model
+ * with no original, or only a compressed `.zst` raw no CAD tool opens, is left
+ * out.
+ */
+export async function getItemModelFiles(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  itemIds: string[]
+): Promise<
+  {
+    modelId: string;
+    filename: string;
+    bucket: string;
+    path: string;
+    size: number;
+  }[]
+> {
+  if (itemIds.length === 0) return [];
+  const items = await client
+    .from("item")
+    .select("id, modelUploadId")
+    .in("id", itemIds)
+    .eq("companyId", companyId);
+  const modelByItem = new Map(
+    (items.data ?? []).map((item) => [item.id, item.modelUploadId])
+  );
+  const modelIds = [
+    ...new Set(
+      itemIds.flatMap((id) => {
+        const modelId = modelByItem.get(id);
+        return modelId ? [modelId] : [];
+      })
+    )
+  ];
+  if (items.error || modelIds.length === 0) {
+    if (items.error) {
+      logger.error("Failed to read items for model attachments", {
+        companyId,
+        error: items.error
+      });
+    }
+    return [];
+  }
+  const models = await client
+    .from("modelUpload")
+    .select("id, name, size, modelPath, originalPath")
+    .in("id", modelIds)
+    .eq("companyId", companyId);
+  if (models.error) {
+    logger.error("Failed to read models for attachments", {
+      companyId,
+      error: models.error
+    });
+    return [];
+  }
+
+  const candidates = models.data.flatMap((model) => {
+    const path =
+      model.originalPath ??
+      (model.modelPath && isModelRawDownloadable(model.modelPath)
+        ? model.modelPath
+        : null);
+    if (!path || getFileExtension(path) === "zst") return [];
+    return [{ model, path }];
+  });
+  const buckets = await findStorageObjectBuckets(db, {
+    names: candidates.map((candidate) => candidate.path),
+    buckets: [getCompanyPrivateBucket(companyId), TEMP_STAGING_BUCKET]
+  });
+
+  const byId = new Map(
+    candidates.flatMap(({ model, path }) => {
+      const bucket = buckets.get(path);
+      if (!bucket) return [];
+      const extension = getFileExtension(path);
+      const name = model.name || model.id;
+      const filename = name.toLowerCase().endsWith(`.${extension}`)
+        ? name
+        : `${name}.${extension}`;
+      return [
+        [
+          model.id,
+          {
+            modelId: model.id,
+            filename,
+            bucket,
+            path,
+            size: model.size ?? Number.POSITIVE_INFINITY
+          }
+        ]
+      ] as const;
+    })
+  );
+  return modelIds.flatMap((id) => {
+    const file = byId.get(id);
+    return file ? [file] : [];
+  });
+}
+
+/** A signed link to a file `getOriginalModelFiles` found, valid `seconds`. */
+export async function signOriginalModelFile(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  file: { bucket: string; path: string },
+  seconds: number
+): Promise<string | null> {
+  const bucket =
+    file.bucket === TEMP_STAGING_BUCKET
+      ? storage(client).from(TEMP_STAGING_BUCKET)
+      : storage(client).company(companyId);
+  const { data, error } = await bucket.createSignedUrl(file.path, seconds);
+  if (!data) {
+    logger.error("Failed to sign a model file", {
+      companyId,
+      storagePath: file.path,
+      error
+    });
+    return null;
+  }
+  return data.signedUrl;
 }
 
 /** The statuses of records an edit is about to touch, for a lock check. */

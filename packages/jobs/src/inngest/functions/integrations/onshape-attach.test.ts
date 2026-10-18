@@ -2,13 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { openAsBlob } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { attachOnshapeAssetsToItem } from "./onshape-attach";
+import {
+  type AttachOnshapeAssetsInput,
+  attachOnshapeAssetsToItem
+} from "./onshape-attach";
 
-vi.mock("node:fs", () => ({
-  openAsBlob: vi.fn(async () => new Blob(["selected part geometry"]))
-}));
 vi.mock("../tasks/assembler-client", () => ({
   resolveModelSourceBucket: vi.fn(async () => "temp-staging")
 }));
@@ -50,6 +49,7 @@ function database() {
   const calls: Call[] = [];
   const objects = new Map<string, Blob>();
   const uploads: string[] = [];
+  const moves: string[] = [];
   const copies: string[] = [];
   const failures: { table: string; operation: string; error: QueryError }[] =
     [];
@@ -136,7 +136,27 @@ function database() {
             copies.push(target);
             return { error: null };
           },
-          remove: async (_paths: string[]) => ({ error: null })
+          move: async (from: string, to: string) => {
+            const [source, target] = [`${bucket}/${from}`, `${bucket}/${to}`];
+            if (!objects.has(source)) {
+              return { error: { message: "Object not found" } };
+            }
+            if (objects.has(target)) {
+              return { error: { message: "The resource already exists" } };
+            }
+            moves.push(target);
+            objects.set(target, objects.get(source)!);
+            objects.delete(source);
+            return { data: { message: "Successfully moved" }, error: null };
+          },
+          info: async (path: string) =>
+            objects.has(`${bucket}/${path}`)
+              ? { data: { name: path }, error: null }
+              : { data: null, error: { message: "Object not found" } },
+          remove: async (paths: string[]) => {
+            for (const path of paths) objects.delete(`${bucket}/${path}`);
+            return { data: [], error: null };
+          }
         };
       }
     }
@@ -149,10 +169,13 @@ function database() {
     calls,
     objects,
     uploads,
+    moves,
     copies,
     failures
   };
 }
+
+const STAGED = "company/models/onshape-fetch-t1.step";
 
 const input = {
   companyId: "company",
@@ -160,23 +183,35 @@ const input = {
   itemId: "item",
   sourceDocument: "Part" as const,
   model: {
-    fileName: "SADDLE.A.gltf",
-    localPath: "/unused.gltf",
+    fileName: "SADDLE.A.step",
+    stagedPath: STAGED,
     size: 22,
+    contentHash: "content-1",
     sourceId: "onshape-part-v2"
   }
 };
 
+/** Stage the export (as the assembler's fetch would), then attach it. */
+function attach(
+  db: ReturnType<typeof database>,
+  args: AttachOnshapeAssetsInput,
+  bytes = "selected part geometry"
+) {
+  if (args.model) {
+    db.objects.set(`temp-staging/${args.model.stagedPath}`, new Blob([bytes]));
+  }
+  return attachOnshapeAssetsToItem(db.client, args);
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(openAsBlob).mockResolvedValue(new Blob(["selected part geometry"]));
 });
 
 describe("immutable released-part attachments", () => {
   it("replaces a bad generation while keeping item data and the prior model intact", async () => {
     const db = database();
     const prior = structuredClone(db.tables.modelUpload[0]);
-    const result = await attachOnshapeAssetsToItem(db.client, input);
+    const result = await attach(db, input);
     expect(result.modelUploadId).toBe(input.model.sourceId);
     expect(db.tables.item[0]).toEqual({
       id: "item",
@@ -187,7 +222,7 @@ describe("immutable released-part attachments", () => {
     expect(db.tables.modelUpload[0]).toEqual(prior);
     expect(db.tables.modelUpload[1]).toMatchObject({
       id: input.model.sourceId,
-      modelPath: "company/models/onshape-part-v2.gltf",
+      modelPath: "company/models/onshape-part-v2.step",
       size: 22,
       originalSize: 22
     });
@@ -198,22 +233,22 @@ describe("immutable released-part attachments", () => {
 
   it("replays without overwriting a compacted raw, optimized preview or thumbnail", async () => {
     const db = database();
-    await attachOnshapeAssetsToItem(db.client, input);
+    await attach(db, input);
     const current = db.tables.modelUpload.find(
       (row) => row.id === input.model.sourceId
     )!;
     Object.assign(current, {
-      modelPath: "company/models/onshape-part-v2.gltf.zst",
+      modelPath: "company/models/onshape-part-v2.step.zst",
       optimizeStatus: "Success",
       optimizedModelPath: "new.glb",
       thumbnailPath: "new.png"
     });
     const snapshot = structuredClone(current);
-    const uploadCount = db.uploads.length;
-    await attachOnshapeAssetsToItem(db.client, input);
+    const uploadCount = db.moves.length;
+    await attach(db, input);
     expect(db.tables.modelUpload).toHaveLength(2);
     expect(current).toEqual(snapshot);
-    expect(db.uploads).toHaveLength(uploadCount);
+    expect(db.moves).toHaveLength(uploadCount);
   });
 
   it("recovers a failed item link using the already-created source model", async () => {
@@ -223,21 +258,16 @@ describe("immutable released-part attachments", () => {
       operation: "update",
       error: { message: "link unavailable" }
     });
-    await expect(attachOnshapeAssetsToItem(db.client, input)).rejects.toThrow(
-      /link/i
-    );
-    const result = await attachOnshapeAssetsToItem(db.client, input);
+    await expect(attach(db, input)).rejects.toThrow(/link/i);
+    const result = await attach(db, input);
     expect(result.modelUploadId).toBe(input.model.sourceId);
     expect(db.tables.modelUpload).toHaveLength(2);
-    expect(db.uploads).toHaveLength(1);
+    expect(db.moves).toHaveLength(1);
   });
 
   it("allows concurrent redeliveries without duplicate model rows or overwriting bytes", async () => {
     const db = database();
-    const results = await Promise.all([
-      attachOnshapeAssetsToItem(db.client, input),
-      attachOnshapeAssetsToItem(db.client, input)
-    ]);
+    const results = await Promise.all([attach(db, input), attach(db, input)]);
     expect(results.map((r) => r.modelUploadId)).toEqual([
       input.model.sourceId,
       input.model.sourceId
@@ -256,7 +286,7 @@ describe("immutable released-part attachments", () => {
   it("preserves a genuinely different manual model as a document", async () => {
     const db = database();
     withManualPriorModel(db, "manual-prototype.glb");
-    const result = await attachOnshapeAssetsToItem(db.client, input);
+    const result = await attach(db, input);
     expect(result.preservedPriorModelAsDocument).toBe(true);
     expect(db.copies).toEqual(["company/parts/item/manual-prototype.glb"]);
     expect(db.tables.document).toHaveLength(1);
@@ -267,10 +297,10 @@ describe("immutable released-part attachments", () => {
     // Same filename as the incoming release — filename is not provenance, so the
     // manual model must still be preserved rather than silently relinked away.
     withManualPriorModel(db, input.model.fileName);
-    const result = await attachOnshapeAssetsToItem(db.client, input);
+    const result = await attach(db, input);
     expect(result.modelUploadId).toBe(input.model.sourceId);
     expect(result.preservedPriorModelAsDocument).toBe(true);
-    expect(db.copies).toEqual(["company/parts/item/SADDLE.A.gltf"]);
+    expect(db.copies).toEqual(["company/parts/item/SADDLE.A.step"]);
     expect(db.tables.document).toHaveLength(1);
   });
 
@@ -281,11 +311,9 @@ describe("immutable released-part attachments", () => {
       operation: "select",
       error: { message: "database unavailable" }
     });
-    await expect(attachOnshapeAssetsToItem(db.client, input)).rejects.toThrow(
-      /lookup/i
-    );
+    await expect(attach(db, input)).rejects.toThrow(/lookup/i);
     expect(db.tables.item[0]!.modelUploadId).toBe("onshape-legacy");
-    expect(db.uploads).toEqual([]);
+    expect(db.moves).toEqual([]);
   });
 
   it("refuses a source ID belonging to another company", async () => {
@@ -296,38 +324,48 @@ describe("immutable released-part attachments", () => {
       name: input.model.fileName,
       modelPath: "foreign.gltf"
     });
-    await expect(attachOnshapeAssetsToItem(db.client, input)).rejects.toThrow();
+    await expect(attach(db, input)).rejects.toThrow();
     expect(db.tables.item[0]!.modelUploadId).toBe("onshape-legacy");
     expect(db.tables.modelUpload[1]!.modelPath).toBe("foreign.gltf");
   });
 
-  it("recovers an upload completed before the model row insert failed", async () => {
+  it("recovers a move completed before the model row insert failed", async () => {
     const db = database();
     db.failures.push({
       table: "modelUpload",
       operation: "insert",
       error: { code: "08006", message: "connection lost" }
     });
-    await expect(attachOnshapeAssetsToItem(db.client, input)).rejects.toThrow(
-      /insert/
-    );
+    await expect(attach(db, input)).rejects.toThrow(/insert/);
     expect(db.tables.item[0]!.modelUploadId).toBe("onshape-legacy");
-    const uploaded = db.objects.get(
-      "temp-staging/company/models/onshape-part-v2.gltf"
+    const moved = db.objects.get(
+      "temp-staging/company/models/onshape-part-v2.step"
     );
+    expect(moved).toBeDefined();
+    // The step's retry: the staged object is already gone, the final one stays.
     await attachOnshapeAssetsToItem(db.client, input);
     expect(
-      db.objects.get("temp-staging/company/models/onshape-part-v2.gltf")
-    ).toBe(uploaded);
+      db.objects.get("temp-staging/company/models/onshape-part-v2.step")
+    ).toBe(moved);
     expect(db.tables.modelUpload).toHaveLength(2);
+    expect(db.tables.item[0]!.modelUploadId).toBe(input.model.sourceId);
+  });
+
+  it("refuses to attach a model whose staged export is missing", async () => {
+    const db = database();
+    await expect(attachOnshapeAssetsToItem(db.client, input)).rejects.toThrow(
+      /move/
+    );
+    expect(db.tables.modelUpload).toHaveLength(1);
+    expect(db.tables.item[0]!.modelUploadId).toBe("onshape-legacy");
   });
 
   it("uses a separate model for a changed source and retains manual image overrides", async () => {
     const db = database();
     db.tables.item[0]!.thumbnailPath = "company/thumbnails/item/manual.png";
-    await attachOnshapeAssetsToItem(db.client, input);
+    await attach(db, input);
     const firstSource = structuredClone(db.tables.modelUpload[1]);
-    const result = await attachOnshapeAssetsToItem(db.client, {
+    const result = await attach(db, {
       ...input,
       model: { ...input.model, sourceId: "onshape-another-part" }
     });
@@ -343,7 +381,7 @@ describe("immutable released-part attachments", () => {
   it("rejects an invalid or conflicting immutable identity", async () => {
     const db = database();
     await expect(
-      attachOnshapeAssetsToItem(db.client, {
+      attach(db, {
         ...input,
         model: { ...input.model, sourceId: "../unsafe" }
       })
@@ -354,10 +392,8 @@ describe("immutable released-part attachments", () => {
       name: "wrong-model.gltf",
       modelPath: "wrong.gltf"
     });
-    await expect(attachOnshapeAssetsToItem(db.client, input)).rejects.toThrow(
-      /identity/
-    );
-    expect(db.uploads).toEqual([]);
+    await expect(attach(db, input)).rejects.toThrow(/identity/);
+    expect(db.moves).toEqual([]);
     expect(db.tables.item[0]!.modelUploadId).toBe("onshape-legacy");
   });
 
@@ -365,7 +401,7 @@ describe("immutable released-part attachments", () => {
     const db = database();
     const { sourceId: _sourceId, ...model } = input.model;
     const prior = structuredClone(db.tables.modelUpload[0]);
-    const first = await attachOnshapeAssetsToItem(db.client, {
+    const first = await attach(db, {
       ...input,
       model
     });
@@ -373,33 +409,32 @@ describe("immutable released-part attachments", () => {
     expect(db.tables.modelUpload[0]).toEqual(prior);
     expect(db.tables.modelUpload[1]).toMatchObject({
       id: first.modelUploadId,
-      modelPath: `company/models/${first.modelUploadId}.gltf`
+      modelPath: `company/models/${first.modelUploadId}.step`
     });
     expect(db.tables.item[0]!.modelUploadId).toBe(first.modelUploadId);
     expect(db.tables.document).toEqual([]);
 
-    const again = await attachOnshapeAssetsToItem(db.client, {
+    const again = await attach(db, {
       ...input,
       model
     });
     expect(again.modelUploadId).toBe(first.modelUploadId);
     expect(db.tables.modelUpload).toHaveLength(2);
-    expect(db.uploads).toHaveLength(1);
+    expect(db.moves).toHaveLength(1);
   });
 
   it("gives changed bytes a new model, so no file keyed by the old one is reused", async () => {
     const db = database();
     const { sourceId: _sourceId, ...model } = input.model;
-    const first = await attachOnshapeAssetsToItem(db.client, {
+    const first = await attach(db, {
       ...input,
       model
     });
     const firstRow = structuredClone(db.tables.modelUpload[1]);
 
-    vi.mocked(openAsBlob).mockResolvedValue(new Blob(["changed geometry"]));
-    const changed = await attachOnshapeAssetsToItem(db.client, {
+    const changed = await attach(db, {
       ...input,
-      model
+      model: { ...model, contentHash: "content-2" }
     });
     expect(changed.modelUploadId).not.toBe(first.modelUploadId);
     expect(db.tables.modelUpload).toHaveLength(3);
@@ -414,7 +449,7 @@ describe("immutable released-part attachments", () => {
     const { sourceId: _sourceId, ...model } = input.model;
     // A row the in-place path wrote: a plain id, the export's own file name.
     withManualPriorModel(db, model.fileName);
-    const result = await attachOnshapeAssetsToItem(db.client, {
+    const result = await attach(db, {
       ...input,
       model
     });
@@ -426,7 +461,7 @@ describe("immutable released-part attachments", () => {
 
   it("keeps every item/model read and update company-scoped", async () => {
     const db = database();
-    await attachOnshapeAssetsToItem(db.client, input);
+    await attach(db, input);
     for (const call of db.calls.filter(
       (call) =>
         ["item", "modelUpload"].includes(call.table) &&

@@ -5,6 +5,8 @@
 import { useEffect } from "react";
 import { isRouteErrorResponse, useNavigate } from "react-router";
 import { ErrorScreen, type ErrorScreenProps } from "./ErrorScreen";
+import { isNetworkError } from "./routeErrorCopy";
+import { useNetworkRetry } from "./useNetworkRetry";
 
 /**
  * VOID//SYS — drop-in root ErrorBoundary for React Router v7 (framework mode).
@@ -18,14 +20,17 @@ import { ErrorScreen, type ErrorScreenProps } from "./ErrorScreen";
  *     return <RootErrorBoundary error={error} />;
  *   }
  *
- * It handles three cases:
+ * It handles four cases:
  *   1. Route error responses (thrown `Response` / `data()` — includes 404s and
  *      any other HTTP status like 401 / 403 / 500).
  *   2. Real `Error` instances thrown during render / loaders / actions.
- *   3. Anything else that got thrown (strings, unknown values).
+ *   3. A request that never reached the server (offline, asleep): it retries
+ *      on its own once the connection or the tab is back.
+ *   4. Anything else that got thrown (strings, unknown values).
  */
 export function RootErrorBoundary({ error }: { error: unknown }) {
   const navigate = useNavigate();
+  const { offline, retry } = useNetworkRetry(error);
 
   // Route errors (e.g. an unmatched fetcher.load) are otherwise invisible —
   // React Router hands them to the boundary without logging anywhere.
@@ -39,7 +44,7 @@ export function RootErrorBoundary({ error }: { error: unknown }) {
     console.error(`[ErrorBoundary] ${summary}`, error);
   }, [error]);
 
-  const config = resolveConfig(error, () => navigate(0));
+  const config = resolveConfig(error, offline ? retry : () => navigate(0));
   return <ErrorScreen {...config} />;
 }
 
@@ -118,7 +123,29 @@ function resolveConfig(error: unknown, retry: () => void): ErrorScreenProps {
     };
   }
 
-  // 2. Real Error instances thrown during render / loaders / actions.
+  // 2. The request never reached the server. `retry` reloads the data in
+  // place: a full reload while offline would land on the browser's own page.
+  if (isNetworkError(error)) {
+    return {
+      code: "000",
+      eyebrow: "— connection lost",
+      title: "Carbon could not reach the server.",
+      message:
+        "The connection dropped or the computer was asleep. Nothing you saved is lost; Carbon tries again when the connection returns or when you come back to this tab.",
+      highlightIndex: 3,
+      logLines: [
+        "> opening channel to server ...",
+        "> transmitting request payload",
+        "> no response from remote host",
+        "> status_code: 000 / NO_RESPONSE",
+        "> waiting for the connection",
+        "> recommendation: retry once online"
+      ],
+      actions: [{ label: "retry", onClick: retry }]
+    };
+  }
+
+  // 3. Real Error instances thrown during render / loaders / actions.
   // SI-11: never reveal internal error detail (message / source location) to end
   // users in production — it aids reconnaissance. Show it only in development.
   // Vite replaces `import.meta.env.DEV` at build; this shared package has no Vite

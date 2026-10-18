@@ -14193,6 +14193,9 @@ msgstr "Nouvelle Transaction IC"
 msgid "New Inspection Plan"
 msgstr "Nouveau plan de contrôle"
 
+msgid "New instruction"
+msgstr ""
+
 msgid "New Inventory Count"
 msgstr "Nouveau Décompte d'Inventaire"
 
@@ -23247,6 +23250,9 @@ msgstr "La substitution est conservée à l'activation et enregistrée dans le j
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "La chaîne parent-enfant des entités suivies - ce dont une unité a été construite et ce qu'elle est devenue."
+
+msgid "The part has a newer model than this instruction."
+msgstr ""
 
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "La pièce est fabriquée comme son propre travail quand le parent qui en a besoin est construit."

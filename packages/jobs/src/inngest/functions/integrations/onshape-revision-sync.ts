@@ -4,26 +4,26 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import {
-  getOnshapeClient,
-  OnshapeAssetTooLargeError
-} from "@carbon/ee/onshape";
+import { getOnshapeClient } from "@carbon/ee/onshape";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { inngest } from "../../client";
 import {
   isOnshapeAssetSyncEnabled,
-  resolveOnshapeCompanyId,
-  withRateLimitRetry
+  resolveOnshapeCompanyId
 } from "./onshape-backfill";
 import {
   escapeLikePattern,
   releaseKey,
   sharedNumberSuffix
 } from "./onshape-matching";
+import { withRateLimitRetry } from "./onshape-rate-limit";
 import {
-  syncOnshapeDrawingAssetsToItem,
-  syncOnshapeElementAssetsToItem
+  ONSHAPE_CHECKPOINTING,
+  runOnshapeDrawingSync,
+  runOnshapeElementSync,
+  type SyncOnshapeDrawingInput,
+  type SyncOnshapeElementInput
 } from "./onshape-sync-element";
 
 // Go-forward sync: one released Onshape revision ->
@@ -75,14 +75,35 @@ function modelKindForElementType(
   return null;
 }
 
-export async function runOnshapeRevisionSync(
+/** A released model to export onto the item it matched. */
+export interface OnshapeRevisionModel {
+  element: SyncOnshapeElementInput;
+  itemId: string;
+  releaseKey: string;
+}
+
+/** A released drawing to export onto the model item sharing its number. */
+export interface OnshapeRevisionDrawing {
+  drawing: SyncOnshapeDrawingInput;
+  itemId: string;
+  releaseKey?: string;
+}
+
+/**
+ * Resolve one released revision to what to do with it: a final result (a
+ * skip, or a drawing already attached), or the model to export onto its item.
+ * The export is not done here: it runs as the pipeline's own steps.
+ */
+export async function resolveOnshapeRevision(
   carbon: CarbonClient,
   input: OnshapeRevisionSyncInput
-): Promise<OnshapeRevisionSyncResult> {
+): Promise<
+  OnshapeRevisionSyncResult | OnshapeRevisionModel | OnshapeRevisionDrawing
+> {
   const onshape = await getOnshapeClient(carbon, input.companyId, input.userId);
   if (onshape.error || !onshape.client) {
     throw new Error(
-      `runOnshapeRevisionSync: getOnshapeClient failed: ${
+      `resolveOnshapeRevision: getOnshapeClient failed: ${
         onshape.error ?? "no client"
       }`
     );
@@ -141,7 +162,7 @@ export async function runOnshapeRevisionSync(
       .ilike("readableId", `%${escapeLikePattern(suffix)}`);
     if (candidates.error) {
       throw new Error(
-        `runOnshapeRevisionSync: drawing item match query failed: ${candidates.error.message}`
+        `resolveOnshapeRevision: drawing item match query failed: ${candidates.error.message}`
       );
     }
     const items = candidates.data ?? [];
@@ -160,8 +181,10 @@ export async function runOnshapeRevisionSync(
     if (!target) {
       return { synced: false, skippedReason: "no-matching-item" };
     }
-    try {
-      const attached = await syncOnshapeDrawingAssetsToItem(carbon, {
+    return {
+      itemId: target.id,
+      releaseKey: target.readableIdWithRevision ?? undefined,
+      drawing: {
         companyId: input.companyId,
         userId: input.userId,
         itemId: target.id,
@@ -170,26 +193,11 @@ export async function runOnshapeRevisionSync(
         versionId: input.versionId,
         drawingElementId: input.elementId,
         assetBaseName: target.readableIdWithRevision ?? undefined
-      });
-      return {
-        synced: true,
-        itemId: target.id,
-        modelUploadId: attached.modelUploadId,
-        releaseKey: target.readableIdWithRevision ?? undefined
-      };
-    } catch (syncError) {
-      if (syncError instanceof OnshapeAssetTooLargeError) {
-        // Permanent: a retry can't shrink the export. Skip, don't fail.
-        console.warn(
-          `runOnshapeRevisionSync: skipping oversized drawing ${input.partNumber}: ${syncError.message}`
-        );
-        return { synced: false, skippedReason: "asset-too-large" };
       }
-      throw syncError;
-    }
+    };
   }
 
-  // MODEL (elementType 0 = part studio, 1 = assembly): export compressed GLB + attach.
+  // MODEL (elementType 0 = part studio, 1 = assembly): export STEP + attach.
   const modelElementKind = modelKindForElementType(input.elementType);
   if (!modelElementKind) {
     return { synced: false, skippedReason: "unknown-element" };
@@ -207,7 +215,7 @@ export async function runOnshapeRevisionSync(
     .maybeSingle();
   if (carbonItem.error) {
     throw new Error(
-      `runOnshapeRevisionSync: item match query failed: ${carbonItem.error.message}`
+      `resolveOnshapeRevision: item match query failed: ${carbonItem.error.message}`
     );
   }
   if (!carbonItem.data) {
@@ -218,9 +226,10 @@ export async function runOnshapeRevisionSync(
     };
   }
 
-  let attached: Awaited<ReturnType<typeof syncOnshapeElementAssetsToItem>>;
-  try {
-    attached = await syncOnshapeElementAssetsToItem(carbon, {
+  return {
+    itemId: carbonItem.data.id,
+    releaseKey: key,
+    element: {
       companyId: input.companyId,
       userId: input.userId,
       itemId: carbonItem.data.id,
@@ -232,29 +241,7 @@ export async function runOnshapeRevisionSync(
       partId: releasedRevision.partId,
       configuration: releasedRevision.configuration,
       assetBaseName: key
-    });
-  } catch (syncError) {
-    if (syncError instanceof OnshapeAssetTooLargeError) {
-      // Permanent: a retry can't shrink the export. Skip, don't fail. The
-      // drawing PDF (a separate DRW element/event) still attaches normally.
-      console.warn(
-        `runOnshapeRevisionSync: skipping oversized model ${key}: ${syncError.message}`
-      );
-      return {
-        synced: false,
-        skippedReason: "asset-too-large",
-        releaseKey: key
-      };
     }
-    throw syncError;
-  }
-
-  return {
-    synced: true,
-    itemId: carbonItem.data.id,
-    modelUploadId: attached.modelUploadId,
-    thumbnailAttached: attached.thumbnailAttached,
-    releaseKey: key
   };
 }
 
@@ -281,6 +268,7 @@ const OnshapeRevisionSyncPayloadSchema = z.object({
 export const onshapeRevisionSyncFunction = inngest.createFunction(
   {
     id: "onshape-revision-sync",
+    checkpointing: ONSHAPE_CHECKPOINTING,
     retries: 3,
     idempotency: "event.data.messageId",
     // One in-flight sync per released element; different elements run in parallel.
@@ -302,17 +290,56 @@ export const onshapeRevisionSyncFunction = inngest.createFunction(
       return { skipped: true as const };
     }
 
-    // Wrap in the 429 backoff (same as the backfill's per-item syncs) so a rate
-    // limit during export/poll/download backs off instead of bubbling out.
-    const result = await step.run("sync-revision", () =>
+    // Wrap in the 429 backoff (same as the pipeline's own steps) so a rate
+    // limit during the lookup backs off instead of bubbling out.
+    const resolved = await step.run("resolve-revision", () =>
       withRateLimitRetry(
-        () => runOnshapeRevisionSync(carbon, payload),
+        () => resolveOnshapeRevision(carbon, payload),
         `revision ${payload.partNumber}`
       )
     );
+    if ("drawing" in resolved) {
+      const attached = await runOnshapeDrawingSync(
+        step,
+        carbon,
+        resolved.drawing,
+        "drawing"
+      );
+      // An oversized PDF is permanent: a retry can't shrink the export.
+      return attached.tooLarge
+        ? { synced: false, skippedReason: "asset-too-large" as const }
+        : {
+            synced: true,
+            itemId: resolved.itemId,
+            modelUploadId: attached.modelUploadId,
+            releaseKey: resolved.releaseKey
+          };
+    }
+    if (!("element" in resolved)) return resolved;
 
     // The sync stores the RAW Onshape export. A new model row starts the
     // optimise that builds the viewer GLB and the thumbnail.
-    return result;
+    const attached = await runOnshapeElementSync(
+      step,
+      carbon,
+      resolved.element,
+      "element"
+    );
+    if (attached.tooLarge) {
+      // Permanent: a retry can't shrink the export. Skip, don't fail. The
+      // drawing PDF (a separate DRW element/event) still attaches normally.
+      return {
+        synced: false,
+        skippedReason: "asset-too-large" as const,
+        releaseKey: resolved.releaseKey
+      };
+    }
+    return {
+      synced: true,
+      itemId: resolved.itemId,
+      modelUploadId: attached.modelUploadId,
+      thumbnailAttached: attached.thumbnailAttached,
+      releaseKey: resolved.releaseKey
+    };
   }
 );

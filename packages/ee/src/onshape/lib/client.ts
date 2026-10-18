@@ -111,19 +111,14 @@ export interface OnshapeCompany {
   [key: string]: unknown;
 }
 
-// The only export formats Carbon ingests: GLTF for models (compressed to a
-// viewer-renderable GLB before attaching) and PDF for drawings. Onshape's API
-// supports more (STEP, PARASOLID, IGES, ...) but they are deliberately not
-// accepted here — real assemblies export to multi-GB STEP files, and Onshape
-// stays the CAD system of record.
-export type OnshapeModelTranslationFormat = "GLTF";
+// The only export formats Carbon ingests: STEP for models and PDF for
+// drawings. A STEP model is what a manual upload is: the assembler builds the
+// viewer GLB from it, and assembly instructions can convert and plan it. A
+// mesh export (GLTF) could do neither, and left no STEP to download.
+export type OnshapeModelTranslationFormat = "STEP";
 export type OnshapeDrawingTranslationFormat = "PDF";
 
-// Tessellation presets Onshape accepts for mesh exports (mirrors the UI's
-// resolution picker). Mesh translations fail without one.
-export type OnshapeMeshResolution = "coarse" | "medium" | "fine";
-
-// Async translation job (GLTF / PDF export). requestState transitions
+// Async translation job (STEP / PDF export). requestState transitions
 // ACTIVE -> DONE | FAILED. When storeInDocument=false the result is fetched via
 // resultExternalDataIds; when true, via resultElementIds (a blob element).
 export interface OnshapeTranslation {
@@ -294,6 +289,25 @@ export class OnshapeClient {
 
       throw this.toApiError(error);
     }
+  }
+
+  /**
+   * Where a translation result downloads from and the bearer to send, for a
+   * caller that downloads it elsewhere (the assembler's `fetch`, so a large
+   * export never passes through this process). The token is the one this
+   * client holds: build the client right before handing it on. Counted as a
+   * live call, since the download is one.
+   */
+  externalDataDownload(
+    documentId: string,
+    foreignId: string
+  ): { url: string; authorization: string } {
+    const path = `/api/v10/documents/d/${documentId}/externaldata/${foreignId}`;
+    void this.countLiveCall(path);
+    return {
+      url: `${this.baseUrl.replace(/\/+$/, "")}${path}`,
+      authorization: `Bearer ${this.accessToken}`
+    };
   }
 
   /** Counts in Redis `onshape:api-calls:<year>`; never awaited. */
@@ -682,7 +696,6 @@ export class OnshapeClient {
       formatName?: OnshapeModelTranslationFormat;
       storeInDocument?: boolean;
       configuration?: string;
-      resolution?: OnshapeMeshResolution;
       // FLAGGED: single-part export support unverified. Omit to export the whole
       // Part Studio; the reliable documented path is a whole-Part-Studio translation.
       partIds?: string;
@@ -693,12 +706,8 @@ export class OnshapeClient {
       "POST",
       `/api/v10/partstudios/d/${documentId}/${options.wvm ?? "v"}/${versionId}/e/${elementId}/translations`,
       {
-        formatName: options.formatName ?? "GLTF",
+        formatName: options.formatName ?? "STEP",
         storeInDocument: options.storeInDocument ?? false,
-        // Mesh exports (GLTF) REQUIRE tessellation detail — without it Onshape
-        // fails the translation with "Invalid GLTF detail parameters were
-        // specified" (verified live). "medium" mirrors the Onshape UI default.
-        resolution: options.resolution ?? "medium",
         ...(options.configuration
           ? { configuration: options.configuration }
           : {}),
@@ -715,7 +724,6 @@ export class OnshapeClient {
       formatName?: OnshapeModelTranslationFormat;
       storeInDocument?: boolean;
       configuration?: string;
-      resolution?: OnshapeMeshResolution;
       wvm?: "w" | "v";
     } = {}
   ): Promise<OnshapeTranslation> {
@@ -723,10 +731,8 @@ export class OnshapeClient {
       "POST",
       `/api/v10/assemblies/d/${documentId}/${options.wvm ?? "v"}/${versionId}/e/${elementId}/translations`,
       {
-        formatName: options.formatName ?? "GLTF",
+        formatName: options.formatName ?? "STEP",
         storeInDocument: options.storeInDocument ?? false,
-        // Same requirement as the Part Studio path — see comment there.
-        resolution: options.resolution ?? "medium",
         ...(options.configuration
           ? { configuration: options.configuration }
           : {})
@@ -761,7 +767,7 @@ export class OnshapeClient {
     );
   }
 
-  // Binary download for storeInDocument=false results (GLTF/PDF bytes). Uses the
+  // Binary download for storeInDocument=false results (STEP/PDF bytes). Uses the
   // axios instance directly with arraybuffer — the shared `request` helper is
   // JSON-oriented and would corrupt binary. `maxBytes` bounds the download via
   // axios maxContentLength: when Onshape sends Content-Length the request
@@ -821,7 +827,7 @@ export class OnshapeClient {
   }
 
   // Stream external data to a file on disk — for results too large to buffer
-  // in memory (e.g. a multi-GB GLTF export destined for compression, not
+  // in memory (e.g. a multi-GB STEP export destined for compression, not
   // attachment). Aborts with OnshapeAssetTooLargeError as soon as the
   // Content-Length header (or the byte count, when the header is absent)
   // crosses `maxBytes`. Returns the number of bytes written.

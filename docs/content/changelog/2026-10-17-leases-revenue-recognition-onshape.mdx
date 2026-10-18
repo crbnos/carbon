@@ -1,0 +1,124 @@
+---
+title: "Rentals, leases, a rebuilt API and MCP, Onshape, and a phone layout"
+description: "Rentals, leases and revenue recognition, a guided accounting setup, and an API and MCP rebuilt on the app's own operations."
+date: "2026-10-17"
+tags: ["accounting", "sales", "integrations"]
+image: "/changelog/2026-10-17-leases-revenue-recognition-onshape.svg"
+---
+
+Some revenue and cost arrives over months, not on one invoice: equipment you rent out, equipment you lease, and support you bill a year ahead. Carbon could invoice them, but the accounting had to be done by hand. This release covers all three, with a guided setup that opens your books in Carbon. It also rebuilds the API and MCP on the operations the app itself runs, adds a Carbon panel inside Onshape, and redesigns Carbon for phones.
+
+## Rental agreements and the fleet
+
+Rent serialized equipment to customers from `Sales → Rental Agreements`. An [agreement](/docs/reference/rental-agreements) has day, week and month rates, billing in advance or arrears, deposits, and holdover and early-return credits. Monthly billing runs from the start date, so a start on the 7th bills the 7th to the 6th, and a part period is prorated by days.
+
+- **Deliver** opens a shipment and **Return** opens a receipt, each with a meter reading per unit.
+- The [fleet register](/docs/reference/fixed-assets#fleet-register) shows each unit as Available, Reserved, On Rent or In Maintenance. **Capitalize as Fixed Asset** moves a stocked serial unit into the fleet.
+- A unit can be rented as a [sales-type lease](/docs/reference/rental-agreements#sales-type-leases) under ASC 842, with a commencement journal and a purchase option.
+
+## Leases you pay
+
+[Leases](/docs/reference/leases) under `Purchasing → Leases` cover equipment and buildings your company leases, under ASC 842. Each asset is classified Operating or Finance. Activation books the right-of-use asset and the liability, and Carbon drafts the purchase invoices. A monthly lease run under `Accounting → Closing → Leases` posts the interest and amortization, and the [Lease Liabilities report](/docs/reference/leases#lease-liabilities-report) shows what is owed.
+
+## Service contracts and revenue recognition
+
+A [service contract](/docs/reference/contracts#revenue) under `Sales → Service Contracts` plans its invoices and a monthly revenue plan you can edit, spread daily or evenly per period. On the 1st of each month Carbon proposes a [revenue recognition run](/docs/reference/accounting#revenue-recognition-and-lease-runs) as a draft, and you post it. The Deferred Revenue Waterfall report shows what is still to be recognized.
+
+## Setting up accounting
+
+[Set up accounting](/docs/reference/accounting#setting-up-accounting) under `Settings → Accounting` opens your books at a cutover date. The wizard imports your chart of accounts, checks the company is ready, reviews opening stock and fixed assets, takes your prior system's trial balance, and posts one opening journal. Until then, journals are Provisional and the accounting reports stay behind a setup overlay. Setting up cannot be undone.
+
+- [Import a chart of accounts](/docs/reference/accounting#importing-your-chart-of-accounts) and its default accounts from CSV under `Accounting → Chart of Accounts`.
+- **Pull from** Xero, QuickBooks Online or Rillet reads the trial balance from your provider. The trial balance is now one signed Balance column.
+- Migration Clearing lists each control account's open invoices, so an invoice your prior system already settled can be ignored.
+
+## One set of operations for the app, the API and MCP
+
+The API and MCP used to publish generic helpers beside the actions the app runs, so an agent could write a row a button would have refused. Every operation is now one function. A button, an API call, an MCP tool and a workflow step run the same code behind the same permission check, so a tool does exactly what the button does.
+
+- **515 new tools** are the actions behind the app's buttons. 463 helpers no screen used are retired, for 1,612 in all.
+- Agents can now post and void receipts, shipments, invoices, payments and memos. They can approve or reject purchase orders, suppliers, change notices and quality documents, close or reopen periods, jobs and purchase orders, cancel jobs, leases and contracts, and pick stock.
+- A refusal comes back with the same message the app shows, and a category that says whether it was invalid input, a missing permission, a conflict or a business rule.
+- A [workflow](/docs/reference/workflows) step is checked against its owner's live permissions, and an MCP connector is limited to its user's own permissions.
+
+## MCP that spends less of an agent's context
+
+Asking an agent "how many items are in inventory?" used to pull about 200,000 characters of tool output into its context. It now takes about 80, from one call.
+
+- [MCP](/api/mcp) list results come back as CSV, with the column names once. 100 inventory rows went from 89,326 characters to 26,325, and to 7,360 with `fields`, which returns only the columns you ask for.
+- A list stops at 100 rows or 20,000 characters and says where the next page starts. `truncate: false` returns the whole page.
+- Search ranks the right tool first for 33 of 34 test queries, up from 19. An exact tool name ranks first, and a mistyped one suggests the closest real tools.
+- The server runs on MCP SDK v2, and works with clients on both the 2025 and the 2026-07-28 protocol.
+
+## Webhooks and CAD uploads through the API
+
+Every [webhook](/docs/building/webhooks#verifying-deliveries) delivery is signed with a per-webhook secret you can reveal and rotate under `Settings → Webhooks`. Webhooks can [subscribe](/docs/building/webhooks#subscribable-tables) to make methods, method lines, models and change notices. The API can upload a CAD model and attach it to an item, job or line, upload an item thumbnail, and move a change notice to its next status. Available on the Business plan.
+
+## The Carbon panel in Onshape
+
+Push parts, assemblies and releases into Carbon from a [panel inside Onshape](/docs/integrations/cad#the-carbon-panel-in-onshape). Every push shows what it will create or update before anything is written. A release creates its item revisions under one Draft change notice. A [Fields](/docs/integrations/cad#fields) page maps Onshape properties to item fields and custom fields. Install it under `Settings → Integrations → Onshape V2`, available on the Business plan.
+
+## Machine monitoring with Sense
+
+[Sense](/docs/integrations/oee) sensors record machine time on the operation loaded on each work center, so operators no longer start a Machine timer for every run. Run time that no operation can claim goes to [Unattributed Time](/docs/integrations/oee#unattributed-time) under `Production`, where you assign it, mark it "Not job time", or skip it. Machine cost reaches work in progress when the run ends. Available on the Business plan.
+
+## Carbon on your phone
+
+The ERP and the MES now have a phone layout: an app bar, a floating dock, compact lists, record headers, and menus and pickers in bottom sheets. On a phone you edit a BOM or BOP line in a sheet, reorder it by its handle, and press and hold for its menu. The job page adds a Structure tab, and the MES has its own materials list.
+
+## Account settings in every app
+
+Account settings is now one modal in the ERP and the MES, opened from the avatar menu. [Account](/docs/reference/account) has an Appearance tab with a Light, Dark or System mode and a theme color. On Profile you can choose a generated avatar in one of 10 styles. The company switcher moved into the navigation rail, and a pin keeps the rail open.
+
+## Planning orders the way you buy them
+
+[MRP](/docs/reference/planning#planning-actions) used to merge a week's demand into one order, so a batch size of 50 became one job of 120. It now splits suggestions by the batch size, fixed reorder quantity or maximum order quantity. Frozen orders are never expedited, increased or decreased, and saving an item's planning settings runs MRP again.
+
+## Assembly instructions turn the build
+
+A step in [assembly instructions](/docs/reference/assembly-instructions#playback-settings) can turn the whole build: Flip over, Tip toward or away from you, or Spin left or right. Later steps keep that orientation. A path waypoint can rotate a part, and a [sub-assembly](/docs/reference/assembly-instructions#sub-assemblies) can join the main build on its own path.
+
+## Training with PDFs and outside courses
+
+A [training](/docs/reference/training#written-content-or-a-pdf) can be written or uploaded as a PDF. An [external training](/docs/reference/training#external-training) assignment needs only a name and the groups, for courses run by an outside provider. Mark Complete can attach the certificate.
+
+## Change notice approvals
+
+With an approval rule on change notices under `Settings → Approval Rules`, moving a notice to Implementation becomes **Submit for Approval**, and engineering edits are locked while it waits. The History drawer on change notices and items downloads the history as CSV. Available on the Business plan.
+
+<Accordion title="Improvements">
+
+- A transfer [kanban](/docs/reference/kanban#replenishment-level) can have a Replenishment Level, and Carbon creates a stock transfer when the destination falls below it.
+- [Notifications](/docs/reference/notifications#browser-notifications) can show as browser notifications, even when Carbon is closed.
+- The [scheduling](/docs/reference/scheduling#the-forecast-explains-the-schedule) Forecast opens with one row per work center, with a Compact and Detailed toggle.
+- Check two or more BOM or BOP lines and **Delete Selected** removes them in one action.
+- [Custom fields](/docs/reference/custom-fields#defining-a-field) have a Link type, shown as a link that opens in a new tab.
+- Supplier part prices are stored in the supplier's currency, and each PO converts at that day's rate.
+- **Adjust Cost** raises a [fixed asset's cost](/docs/reference/fixed-assets#adjusting-cost), and **Recost** revalues one [serial unit](/docs/reference/inventory#serial-unit-cost).
+- Dropping the same CAD file again resumes an upload a reload cut off.
+- Mount pushes run in batches until done, show their last result, and run daily.
+- The company picker is a card grid with search.
+- Support can raise a company's API rate limit.
+
+</Accordion>
+
+<Accordion title="Fixes">
+
+- A job whose serial units were consumed before its receipt now completes.
+- A quote no longer converts to a sales order without a location.
+- A digital quote can be accepted with no purchase order file attached.
+- Service jobs show their real item type and never read "Shipped".
+- Document numbers saved through MCP, the API or a typed ID no longer collide with the counter.
+- Serials and batches leave the bin they are actually in on shipments and stock transfers.
+- Parallel final operations no longer double a job's completed quantity.
+- Approvals that cannot be read now show an error, instead of looking like nothing is pending.
+- A deactivated employee can be invited again.
+- Ramp connects to production Ramp, not its demo environment.
+- Adding a configured item to a quote no longer errors.
+- The MES batch view shows a sub-assembly's own files.
+- PDF previews no longer show a blank page under each page.
+- The editor's text color and highlight menu works.
+- RFQ search results open the RFQ.
+- The Carbon favicon shows on light and dark tab strips.
+
+</Accordion>

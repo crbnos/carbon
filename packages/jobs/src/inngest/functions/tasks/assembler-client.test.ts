@@ -73,7 +73,8 @@ describe("decideJobStep", () => {
     });
     expect(decideJobStep(upload, state({ resubmits: 2 }))).toEqual({
       kind: "fail",
-      message: "upload failed"
+      message: "upload failed",
+      code: "UPLOAD_FAILED"
     });
   });
 
@@ -87,7 +88,11 @@ describe("decideJobStep", () => {
         },
         state()
       )
-    ).toEqual({ kind: "fail", message: "cannot fit" });
+    ).toEqual({
+      kind: "fail",
+      message: "cannot fit",
+      code: "cannot_fit_budget"
+    });
   });
 
   it("resubmits a job the service lost, then gives up", () => {
@@ -117,8 +122,7 @@ describe("pollAssemblerJobOnce", () => {
     );
     return pollAssemblerJobOnce({
       jobId: "optimize-m1",
-      baseUrl: "http://assembler.test",
-      mintUploadUrls: async () => ({})
+      baseUrl: "http://assembler.test"
     });
   };
 

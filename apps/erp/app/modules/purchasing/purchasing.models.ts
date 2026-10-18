@@ -1517,3 +1517,26 @@ export const leasePurchaseValidator = z.object({
   name: z.string().trim().min(1, { message: "Asset name is required" }),
   notes: zfd.text(z.string().optional())
 });
+
+/**
+ * Which RFQ models go in the email and which go as download links: in line
+ * order, each model that still fits in `budgetBytes` is attached, the rest are
+ * linked, so one large model does not push out the small ones after it.
+ */
+export function splitRfqModelAttachments<T extends { size: number }>(
+  models: T[],
+  budgetBytes: number
+): { attach: T[]; link: T[] } {
+  const attach: T[] = [];
+  const link: T[] = [];
+  let left = budgetBytes;
+  for (const model of models) {
+    if (model.size <= left) {
+      attach.push(model);
+      left -= model.size;
+    } else {
+      link.push(model);
+    }
+  }
+  return { attach, link };
+}

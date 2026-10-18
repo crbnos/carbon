@@ -19,10 +19,9 @@ import { z } from "zod";
 import { requireEntitlement } from "../entitlements.server";
 import {
   closestToolNames,
-  formatParamSummary,
+  formatSearchResults,
   formatToolDescription,
-  paginatingSibling,
-  searchLineDescription
+  paginatingSibling
 } from "./describe-format";
 import {
   formatMcpResult,
@@ -445,39 +444,9 @@ function buildMcpServer<Ctx extends McpContext>(
           returned: matches.length
         });
 
-        // Build response
-        let output = `Found ${total} tools`;
-        if (total > limit) {
-          output += ` (showing ${offset + 1}-${offset + matches.length}, ranked by relevance)`;
-        }
-        output += ":\n\n";
-
-        // Group by module, preserving the ranked order within each group
-        const byModule = new Map<string, typeof matches>();
-        for (const tool of matches) {
-          if (!byModule.has(tool.module)) {
-            byModule.set(tool.module, []);
-          }
-          byModule.get(tool.module)!.push(tool);
-        }
-
-        // One line per tool: required args inline so simple tools need no
-        // describe round trip; the description only when it says more than the
-        // name does (today that means a hand-written override).
-        for (const [mod, tools] of byModule.entries()) {
-          output += `${mod.toUpperCase()} MODULE:\n`;
-
-          for (const tool of tools) {
-            output += `  • ${tool.name} [${tool.classification}] ${formatParamSummary(tool)}\n`;
-            const summary = searchLineDescription(tool);
-            if (summary) output += `    ${summary}\n`;
-          }
-          output += "\n";
-        }
-
-        // No footer: the describe_tool/call_tool how-to and the catalog size
-        // ship once in the server instructions at connect.
-        output = output.trimEnd();
+        // The describe_tool/call_tool how-to ships once, in the server
+        // instructions, not under every search.
+        const output = formatSearchResults(matches, total, offset);
 
         return { content: [{ type: "text" as const, text: output }] };
       }, "Search failed")

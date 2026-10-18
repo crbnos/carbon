@@ -11,6 +11,12 @@ use crate::error::ApiError;
 // value; unused knobs are just misconfiguration surface. Revisit a constant
 // when a real deployment proves it wrong, not before.
 
+/// The tessellation every nodeId derives from. nodeIds hash the tessellated
+/// vertex positions, so convert's graph.json and plan's plan.json must use the
+/// same one or their nodeIds disagree. 0.5 rad is what every stored plan used.
+pub const TESSELLATION_LINEAR: f64 = 0.1;
+pub const TESSELLATION_ANGULAR: f64 = 0.5;
+
 /// Max source-download size: unlimited. The download streams to a temp file and
 /// the storage bucket already bounds upload size — no in-service cap.
 pub fn max_source_bytes() -> usize {
@@ -78,18 +84,6 @@ pub fn result_ttl_secs() -> u64 {
     86400
 }
 
-/// TTL (seconds) for a computed-but-unuploaded plan held in Redis for hand-off
-/// (compute -> the poll that uploads it). Short: a plan not drained within this
-/// window is abandoned and the job re-plans. Default 5 min.
-pub fn pending_ttl_secs() -> u64 {
-    300
-}
-
-/// Where outputs wait on disk for a late-minted upload URL (see `jobs.rs`).
-pub fn pending_dir() -> std::path::PathBuf {
-    std::env::temp_dir().join("asm-pending")
-}
-
 /// Server-side cap on the `?wait=` long-poll hold (seconds). Kept under typical
 /// proxy/LB idle timeouts so a held request never trips them.
 pub fn max_long_poll_secs() -> u64 {
@@ -105,6 +99,13 @@ pub fn max_long_poll_secs() -> u64 {
 pub fn blocking_threads() -> usize {
     let cores = std::thread::available_parallelism().map_or(8, |n| n.get());
     (cores + 2).max(2)
+}
+
+/// How many downloaded sources may sit on disk at once (see `source.rs`): one
+/// per compute the blocking pool can run, so a queue past it waits without a
+/// file of its own.
+pub fn source_slots() -> usize {
+    blocking_threads()
 }
 
 pub fn require_https() -> bool {
@@ -134,17 +135,58 @@ pub fn validate_url(url: &str) -> Result<(), ApiError> {
         if let Some(host) = parsed.host_str() {
             let literal = host.trim_start_matches('[').trim_end_matches(']');
             if let Ok(ip) = literal.parse::<std::net::IpAddr>() {
-                let blocked = match ip {
-                    std::net::IpAddr::V4(v4) => {
-                        v4.is_private() || v4.is_loopback() || v4.is_link_local()
-                    }
-                    std::net::IpAddr::V6(v6) => v6.is_loopback() || v6.is_unspecified(),
-                };
-                if blocked {
+                if !is_public_ip(ip) {
                     return Err(ApiError::invalid("URL host is not allowed"));
                 }
             }
         }
     }
     Ok(())
+}
+
+/// Whether an address is on the public internet: not loopback, private,
+/// link-local, unspecified, broadcast, CGNAT (100.64/10) or IPv6 unique-local,
+/// and an IPv4-mapped IPv6 address is judged as the IPv4 it maps.
+pub fn is_public_ip(ip: std::net::IpAddr) -> bool {
+    match ip {
+        std::net::IpAddr::V4(v4) => {
+            let [a, b, ..] = v4.octets();
+            !(v4.is_private()
+                || v4.is_loopback()
+                || v4.is_link_local()
+                || v4.is_unspecified()
+                || v4.is_broadcast()
+                || a == 0
+                || (a == 100 && (64..128).contains(&b)))
+        }
+        std::net::IpAddr::V6(v6) => {
+            if let Some(v4) = v6.to_ipv4_mapped() {
+                return is_public_ip(std::net::IpAddr::V4(v4));
+            }
+            let first = v6.segments()[0];
+            !(v6.is_loopback()
+                || v6.is_unspecified()
+                || (first & 0xfe00) == 0xfc00 // unique local, fc00::/7
+                || (first & 0xffc0) == 0xfe80) // link local, fe80::/10
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_public_ip;
+
+    #[test]
+    fn only_public_addresses_pass() {
+        for blocked in [
+            "127.0.0.1", "10.1.2.3", "172.16.0.1", "192.168.1.1", "169.254.169.254",
+            "0.0.0.0", "100.64.0.1", "255.255.255.255", "::1", "::", "fd00::1",
+            "fe80::1", "::ffff:127.0.0.1", "::ffff:10.0.0.1",
+        ] {
+            assert!(!is_public_ip(blocked.parse().unwrap()), "{blocked}");
+        }
+        for public in ["8.8.8.8", "100.128.0.1", "2606:4700::1111", "::ffff:1.1.1.1"] {
+            assert!(is_public_ip(public.parse().unwrap()), "{public}");
+        }
+    }
 }

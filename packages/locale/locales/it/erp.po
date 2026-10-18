@@ -14193,6 +14193,9 @@ msgstr "Nuova Transazione IC"
 msgid "New Inspection Plan"
 msgstr "Nuovo Piano di controllo"
 
+msgid "New instruction"
+msgstr ""
+
 msgid "New Inventory Count"
 msgstr "Nuovo Conteggio Inventario"
 
@@ -23247,6 +23250,9 @@ msgstr "La forzatura è mantenuta all'attivazione e registrata nel registro di a
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "La catena padre-figlio delle entità monitorate - di cosa è stata costruita un'unità e cosa è diventata."
+
+msgid "The part has a newer model than this instruction."
+msgstr ""
 
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "La parte viene fabbricata come suo proprio lavoro quando il genitore che la necessita è costruito."

@@ -14193,6 +14193,9 @@ msgstr "Neue IC-Transaktion"
 msgid "New Inspection Plan"
 msgstr "Neuer Prüfplan"
 
+msgid "New instruction"
+msgstr ""
+
 msgid "New Inventory Count"
 msgstr "Neue Bestandszählung"
 
@@ -23247,6 +23250,9 @@ msgstr "Die Übersteuerung wird bei Aktivierung beibehalten und im Änderungspro
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "Die Eltern-Kind-Kette der verfolgten Einheiten – was eine Einheit aus gebaut wurde und was sie wurde."
+
+msgid "The part has a newer model than this instruction."
+msgstr ""
 
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "Der Teil wird als eigener Auftrag hergestellt, wenn das Elternteil, das es benötigt, gebaut wird."

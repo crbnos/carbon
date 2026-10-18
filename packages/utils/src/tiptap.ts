@@ -192,7 +192,7 @@ function tiptapInlineToHTML(node: JSONContent): string {
   return "";
 }
 
-function escapeHTMLChars(str: string): string {
+export function escapeHTMLChars(str: string): string {
   return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

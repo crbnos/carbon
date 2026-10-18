@@ -11,7 +11,7 @@ import type { ConformanceCheck, Violation } from "../check";
 const ROUTER_IMPORT =
   /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*["']react-router["']/g;
 // The wrapper itself: the one place that takes React Router's.
-const DEFINITION = "packages/query/src/useRevalidator.ts";
+const DEFINITION = "packages/react/src/hooks/useRevalidator.ts";
 
 export const noRawRevalidator: ConformanceCheck = {
   id: "no-raw-revalidator",

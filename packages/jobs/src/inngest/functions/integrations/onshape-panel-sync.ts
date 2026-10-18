@@ -7,8 +7,9 @@ import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import { z } from "zod";
 import { inngest } from "../../client";
 import {
-  syncOnshapeDrawingAssetsToItem,
-  syncOnshapeElementAssetsToItem
+  ONSHAPE_CHECKPOINTING,
+  runOnshapeDrawingSync,
+  runOnshapeElementSync
 } from "./onshape-sync-element";
 
 /**
@@ -34,6 +35,7 @@ const OnshapePanelSyncPayloadSchema = z.object({
 export const onshapePanelSyncFunction = inngest.createFunction(
   {
     id: "onshape-panel-sync",
+    checkpointing: ONSHAPE_CHECKPOINTING,
     retries: 1,
     concurrency: { key: "event.data.itemId", limit: 1 }
   },
@@ -46,8 +48,10 @@ export const onshapePanelSyncFunction = inngest.createFunction(
 
     if (elementKind === "drawing") {
       // Release pushes only; no model, so no optimize or thumbnail.
-      return step.run("sync-drawing-assets", () =>
-        syncOnshapeDrawingAssetsToItem(carbon, {
+      return runOnshapeDrawingSync(
+        step,
+        carbon,
+        {
           companyId: payload.companyId,
           userId: payload.userId,
           // The panel pushes on its own connection.
@@ -59,12 +63,17 @@ export const onshapePanelSyncFunction = inngest.createFunction(
           sourceWvm: payload.wvm,
           drawingElementId: payload.elementId,
           assetBaseName: payload.assetBaseName
-        })
+        },
+        "drawing"
       );
     }
 
-    const result = await step.run("sync-element-assets", () =>
-      syncOnshapeElementAssetsToItem(carbon, {
+    // A new model row starts its own optimise, which also renders the
+    // thumbnail; an unchanged export reuses its model.
+    return runOnshapeElementSync(
+      step,
+      carbon,
+      {
         companyId: payload.companyId,
         userId: payload.userId,
         integrationId: ONSHAPE_V2_INTEGRATION_ID,
@@ -79,11 +88,8 @@ export const onshapePanelSyncFunction = inngest.createFunction(
         modelElementId: payload.elementId,
         modelElementKind: elementKind,
         assetBaseName: payload.assetBaseName
-      })
+      },
+      "element"
     );
-
-    // A new model row starts its own optimise, which also renders the
-    // thumbnail; an unchanged export reuses its model.
-    return result;
   }
 );

@@ -14193,6 +14193,9 @@ msgstr "New IC Transaction"
 msgid "New Inspection Plan"
 msgstr "New Inspection Plan"
 
+msgid "New instruction"
+msgstr "New instruction"
+
 msgid "New Inventory Count"
 msgstr "New Inventory Count"
 
@@ -23247,6 +23250,9 @@ msgstr "The override is kept at activation and recorded in the audit log with it
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "The parent-child chain of tracked entities — what a unit was built from and what it became."
+
+msgid "The part has a newer model than this instruction."
+msgstr "The part has a newer model than this instruction."
 
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "The part is manufactured as its own job when the parent that needs it is built."

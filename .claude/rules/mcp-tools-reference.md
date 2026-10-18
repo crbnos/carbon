@@ -214,9 +214,17 @@ the manifest.
   because it matches the expanded term, not the query. `stemInflection` leaves
   "materials" unstemmed, so `sameWord` also accepts a plain -s/-es plural.
 - `module` keeps substring semantics; filter-only calls bypass the index.
-- One line per tool: `name [READ] (requiredParams, +N optional)`
-  (`formatParamSummary`, `describe-format.ts`), plus the description's first
-  paragraph when it says more than the name (`searchLineDescription`).
+- `search_tools` output (`formatSearchResults`, `describe-format.ts`): one
+  line per tool in rank order, `name [READ] (requiredParams, +N optional)`
+  (`formatParamSummary`), plus ` — ` and the description's first paragraph when
+  it says more than the name (`searchLineDescription`; case, a closing full
+  stop and articles do not count, and 937 of 1,612 summaries only restate the
+  name). Results are not grouped by module: grouping put lower-ranked tools
+  above better ones, and the name already carries the module. A page short of
+  the total names the next offset.
+- `describe_tool` (`formatToolDescription`) opens with `name [CLASS]`, the
+  description, and `Permission:` (the gate checks it for every caller, not only
+  API keys).
 - `describe_tool` prints input and response schemas as TypeScript types
   (`formatSchemaType`): the manifest's schemas use only type, enum, anyOf,
   properties, required, items and additionalProperties, so nothing is lost and
@@ -235,9 +243,18 @@ callers get the exact data.
   reader is an agent, and stripping `=`/`+`/`-`/`@` would change values such
   as `+1 555 0100`. The column names come once, then one line per record. An
   empty cell is null or empty, a nested value (arrays included) is JSON in its
-  cell, and a column empty in every row shown is left out. On real inventory rows that is 71% smaller than the JSON array it
-  replaced, and the same budget holds 68 rows instead of 19. A single record,
-  or a list of plain values, stays compact JSON with nulls removed.
+  cell, and a column empty in every row shown is left out. A single record, or
+  a list of plain values, stays compact JSON with nulls removed.
+- Why CSV, measured on 100 real inventory rows (o200k tokens, a proxy: Claude's
+  tokenizer is not public): compact JSON 27,207, CSV 13,778 (−49%), markdown
+  table 17,656, TOON 32,298, markdown key-value 29,631. TOON is larger than
+  JSON here because null-stripped rows are not uniform, and its compact form
+  needs uniform rows. With 6 `fields`: JSON 5,822, CSV 3,917, TOON 3,999.
+  Published comparisons find no single best format; markdown key-value reads
+  best for small models on 1,000-row tables, while at about 100 rows strong
+  models read CSV and JSON near-perfectly. Anthropic's tool-writing guidance
+  says to choose by your own evaluation. Measure tokens, not characters:
+  characters overstated CSV's saving (71% vs 49%).
 - A list stops at `MCP_MAX_ROWS` (100) rows or `MCP_MAX_CHARS` (20,000)
   characters, always with at least one row; any list short of its total ends
   with `(rows A-B of TOTAL; next page: offset N)`. A `limit` above

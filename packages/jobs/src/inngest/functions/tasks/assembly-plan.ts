@@ -15,7 +15,8 @@ import {
   internalizeStorageUrl,
   requireModelSourceBucket,
   runAssemblerJob,
-  signSourceUrl
+  signSourceUrl,
+  signUploadUrls
 } from "./assembler-client";
 import { getModelUpload, insertPlanJob, updatePlanJobs } from "./model-rows";
 import { loadPlanUnits } from "./plan-units";
@@ -194,44 +195,22 @@ export const assemblyPlanFunction = inngest.createFunction(
               : {})
         };
       },
-      mintUploadUrls: async () => {
-        const client = getCarbonServiceRole();
-        const upload = await storage(client)
-          .company(companyId)
-          .createSignedUploadUrl(planPath, { upsert: true });
-        const urls: Record<string, string> = {};
-        if (upload.data)
-          urls.plan = internalizeStorageUrl(upload.data.signedUrl);
-        return urls;
-      }
+      mintUploadUrls: () =>
+        signUploadUrls({
+          plan: {
+            bucket: storage(getCarbonServiceRole()).company(companyId),
+            path: planPath
+          }
+        })
     });
 
-    const planResult = (plan.result ?? {}) as {
-      planPath?: string;
-      plan?: AssemblyPlan | null;
-    };
-    const donePlanPath = planResult.planPath ?? planPath;
-    const inlinePlan = planResult.plan ?? null;
+    const donePlanPath =
+      (plan.result as { planPath?: string } | null)?.planPath ?? planPath;
     const stats: Json = plan.stats;
 
-    // Persist: flip the row to the pointer the service reported. A legacy
-    // response returned the plan inline instead of offloading — upload it here in
-    // that case. Guarded by status=Processing so a cancel/racing-retry no-ops.
+    // Persist: flip the row to the pointer the service reported. Guarded by
+    // status=Processing so a cancel/racing-retry no-ops.
     await step.run("persist-plan", async () => {
-      const client = getCarbonServiceRole();
-      if (inlinePlan) {
-        const upload = await storage(client)
-          .company(companyId)
-          .upload(donePlanPath, JSON.stringify(inlinePlan), {
-            contentType: "application/json",
-            upsert: true
-          });
-        if (upload.error) {
-          throw new Error(
-            `Failed to upload plan.json: ${upload.error.message}`
-          );
-        }
-      }
       await updatePlanJobs(
         companyId,
         { id: job.id, statuses: ["Processing"] },
@@ -240,24 +219,19 @@ export const assemblyPlanFunction = inngest.createFunction(
     });
 
     // Re-motion: preserve step order, refresh each step's motion from the new
-    // plan (Done steps kept, titles/typed fields untouched). The plan lives in
-    // storage now (offloaded), so download it unless the legacy inline path
-    // already has it in memory.
+    // plan (Done steps kept, titles/typed fields untouched).
     if (reMotionFor) {
       await step.run("update-step-motions", async () => {
         const client = getCarbonServiceRole();
-        let plan = inlinePlan;
-        if (!plan) {
-          const download = await storage(client)
-            .company(companyId)
-            .download(donePlanPath);
-          if (!download.data) {
-            throw new Error(
-              `Failed to download plan.json for re-motion: ${download.error.message}`
-            );
-          }
-          plan = JSON.parse(await download.data.text()) as AssemblyPlan;
+        const download = await storage(client)
+          .company(companyId)
+          .download(donePlanPath);
+        if (!download.data) {
+          throw new Error(
+            `Failed to download plan.json for re-motion: ${download.error.message}`
+          );
         }
+        const plan = JSON.parse(await download.data.text()) as AssemblyPlan;
         await updateAssemblyStepMotionsFromPlan(client, {
           assemblyInstructionId: reMotionFor,
           plan,

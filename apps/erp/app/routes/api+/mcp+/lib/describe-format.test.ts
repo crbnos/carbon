@@ -8,6 +8,7 @@ import {
   deriveNameDescription,
   formatParamSummary,
   formatSchemaType,
+  formatSearchResults,
   formatToolDescription,
   getServerInstructions,
   MCP_DEFAULT_LIMIT,
@@ -67,8 +68,11 @@ describe("formatParamSummary", () => {
 describe("formatToolDescription", () => {
   test("prints the full contract including the response schema", () => {
     const text = formatToolDescription(baseTool, { isList: false });
-    expect(text).toContain("Tool: sales_getCustomer");
-    expect(text).toContain("Permission: sales_view");
+    expect(text.split("\n").slice(0, 3)).toEqual([
+      "sales_getCustomer [READ]",
+      "get customer",
+      "Permission: sales_view"
+    ]);
     expect(text).toContain(
       "Input: { id: string; includeContacts?: boolean; status?: string }"
     );
@@ -173,6 +177,42 @@ describe("formatSchemaType", () => {
   });
 });
 
+describe("formatSearchResults", () => {
+  const tool = (
+    name: string,
+    description: string,
+    classification: ManifestEntry["classification"] = "READ"
+  ) => ({ ...baseTool, name, description, classification });
+
+  test("lists tools in rank order, one line each, with the next page", () => {
+    const text = formatSearchResults(
+      [
+        tool("sales_getCustomer", "get customer"),
+        tool("inventory_postReceipt", "Post a receipt.", "WRITE"),
+        tool(
+          "sales_deleteCustomer",
+          "Remove a customer and its contacts.",
+          "DESTRUCTIVE"
+        )
+      ],
+      40,
+      0
+    );
+    expect(text.split("\n")).toEqual([
+      "Found 40 tools, ranked by relevance (showing 1-3; next page: offset 3):",
+      "sales_getCustomer [READ] (id, +2 optional)",
+      "inventory_postReceipt [WRITE] (id, +2 optional)",
+      "sales_deleteCustomer [DESTRUCTIVE] (id, +2 optional) — Remove a customer and its contacts."
+    ]);
+  });
+
+  test("omits the page note when every match is shown", () => {
+    expect(formatSearchResults([tool("sales_getCustomer", "x")], 1, 0)).toBe(
+      "Found 1 tool, ranked by relevance:\nsales_getCustomer [READ] (id, +2 optional) — x"
+    );
+  });
+});
+
 describe("closestToolNames", () => {
   const names = (toolMetadata.tools as unknown as ManifestEntry[]).map(
     (tool) => tool.name
@@ -203,12 +243,22 @@ describe("searchLineDescription", () => {
   });
 
   test("skips a description that restates the name", () => {
+    for (const [name, description] of [
+      ["sales_getCustomers", "get customers"],
+      ["inventory_getReceipt", "Get receipt."],
+      ["inventory_postReceipt", "Post a receipt."]
+    ]) {
+      expect(searchLineDescription({ name, description })).toBe(null);
+    }
+  });
+
+  test("keeps a description that says more than the name", () => {
     expect(
       searchLineDescription({
-        name: "sales_getCustomers",
-        description: "get customers"
+        name: "invoicing_postPayment",
+        description: "Post a Draft payment."
       })
-    ).toBe(null);
+    ).toBe("Post a Draft payment.");
   });
 });
 

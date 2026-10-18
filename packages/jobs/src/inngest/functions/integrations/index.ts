@@ -15,6 +15,11 @@ export { mountSweepFunction } from "./mount-sweep";
 export { oeeSweepFunction } from "./oee-sweep";
 export { oeeSyncFunction } from "./oee-sync";
 export { onshapeBackfillFunction } from "./onshape-backfill";
+export {
+  onshapeDrawingSyncFunction,
+  onshapeElementSyncFunction
+} from "./onshape-element-sync";
+export { onshapeFetchFunction } from "./onshape-fetch";
 export { onshapePanelSyncFunction } from "./onshape-panel-sync";
 export { onshapeRevisionSyncFunction } from "./onshape-revision-sync";
 export { paperlessPartsFunction } from "./paperless-parts";

@@ -4,24 +4,23 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import {
-  getOnshapeClient,
-  getOnshapeIntegration,
-  OnshapeApiError,
-  OnshapeAssetTooLargeError
-} from "@carbon/ee/onshape";
+import { getOnshapeClient, getOnshapeIntegration } from "@carbon/ee/onshape";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { RetryAfterError } from "inngest";
 import { z } from "zod";
 import { inngest } from "../../client";
+import {
+  onshapeDrawingSyncFunction,
+  onshapeElementSyncFunction
+} from "./onshape-element-sync";
 import {
   escapeLikePattern,
   releaseKey,
   sharedNumberSuffix
 } from "./onshape-matching";
-import {
-  syncOnshapeDrawingAssetsToItem,
-  syncOnshapeElementAssetsToItem
+import { withRateLimitRetry } from "./onshape-rate-limit";
+import type {
+  SyncOnshapeDrawingInput,
+  SyncOnshapeElementInput
 } from "./onshape-sync-element";
 
 // Backfill / reconcile: pull released Onshape assets onto existing Carbon items.
@@ -80,38 +79,7 @@ export interface OnshapeBackfillPageResult {
   nextCursor: string | null; // Onshape `next` cursor URL for the following page
 }
 
-const RATE_LIMIT_DEFAULT_WAIT_SECONDS = 60;
-// Clamp Onshape's Retry-After so a bad/huge value can't schedule an absurd wait.
-const RATE_LIMIT_MAX_WAIT_SECONDS = 300;
 const MAX_CONSECUTIVE_FAILURES = 5;
-
-// On a 429, surface it to Inngest as a RetryAfterError rather than blocking the
-// step with an in-process sleep. Inngest SUSPENDS the function — releasing its
-// compute window and the per-company concurrency slot — and reschedules it after
-// the delay; the memoized steps mean it resumes at the first unfinished item, and
-// every export/attach is idempotent so a re-run is safe. The wait honors Onshape's
-// Retry-After (default 60s), clamped to a sane maximum. Anything else rethrows.
-export async function withRateLimitRetry<T>(
-  operation: () => Promise<T>,
-  label: string
-): Promise<T> {
-  try {
-    return await operation();
-  } catch (error) {
-    if (error instanceof OnshapeApiError && error.status === 429) {
-      const waitSeconds = Math.min(
-        error.retryAfterSeconds ?? RATE_LIMIT_DEFAULT_WAIT_SECONDS,
-        RATE_LIMIT_MAX_WAIT_SECONDS
-      );
-      throw new RetryAfterError(
-        `onshape: rate limited on ${label}; retrying after ${waitSeconds}s`,
-        waitSeconds * 1000,
-        { cause: error }
-      );
-    }
-    throw error;
-  }
-}
 
 // Shared gate for the Onshape asset-sync jobs: run only when the integration is
 // active AND asset sync is enabled. One definition so the backfill and go-forward
@@ -361,64 +329,41 @@ export async function matchOnshapeBackfillPage(
   return result;
 }
 
-// One matched export+attach — the body of a per-item Inngest step. An export
-// that exceeds Carbon's upload limits returns `skippedTooLarge` instead of
-// throwing: the skip is permanent (a retry can't shrink the asset), so it must
-// not fail the step and burn retries/quota.
-export async function syncOnshapeBackfillWorkItem(
-  carbon: CarbonClient,
+// What a matched drawing exports: the `onshape-drawing-sync` run's input.
+export function backfillDrawingInput(
   input: Pick<OnshapeBackfillInput, "companyId" | "userId">,
   workItem: OnshapeBackfillWorkItem
-): Promise<{
-  modelUploadId: string | null;
-  skippedTooLarge?: boolean;
-}> {
-  try {
-    if (workItem.kind === "drawing") {
-      const attached = await withRateLimitRetry(
-        () =>
-          syncOnshapeDrawingAssetsToItem(carbon, {
-            companyId: input.companyId,
-            userId: input.userId,
-            itemId: workItem.itemId,
-            sourceDocument: "Part",
-            documentId: workItem.documentId,
-            versionId: workItem.versionId,
-            drawingElementId: workItem.elementId,
-            assetBaseName: workItem.assetBaseName
-          }),
-        workItem.label
-      );
-      return { modelUploadId: attached.modelUploadId };
-    }
+): SyncOnshapeDrawingInput {
+  return {
+    companyId: input.companyId,
+    userId: input.userId,
+    itemId: workItem.itemId,
+    sourceDocument: "Part",
+    documentId: workItem.documentId,
+    versionId: workItem.versionId,
+    drawingElementId: workItem.elementId,
+    assetBaseName: workItem.assetBaseName
+  };
+}
 
-    const attached = await withRateLimitRetry(
-      () =>
-        syncOnshapeElementAssetsToItem(carbon, {
-          companyId: input.companyId,
-          userId: input.userId,
-          itemId: workItem.itemId,
-          sourceDocument: "Part", // v1: released items are parts/assemblies
-          documentId: workItem.documentId,
-          versionId: workItem.versionId,
-          modelElementId: workItem.elementId,
-          modelElementKind: workItem.modelElementKind ?? "partstudio",
-          partId: workItem.partId,
-          configuration: workItem.configuration,
-          assetBaseName: workItem.assetBaseName
-        }),
-      workItem.label
-    );
-    return { modelUploadId: attached.modelUploadId };
-  } catch (syncError) {
-    if (syncError instanceof OnshapeAssetTooLargeError) {
-      console.warn(
-        `syncOnshapeBackfillWorkItem: skipping oversized ${workItem.label}: ${syncError.message}`
-      );
-      return { modelUploadId: null, skippedTooLarge: true };
-    }
-    throw syncError;
-  }
+// What a matched model exports: the `onshape-element-sync` run's input.
+export function backfillElementInput(
+  input: Pick<OnshapeBackfillInput, "companyId" | "userId">,
+  workItem: OnshapeBackfillWorkItem
+): SyncOnshapeElementInput {
+  return {
+    companyId: input.companyId,
+    userId: input.userId,
+    itemId: workItem.itemId,
+    sourceDocument: "Part", // v1: released items are parts/assemblies
+    documentId: workItem.documentId,
+    versionId: workItem.versionId,
+    modelElementId: workItem.elementId,
+    modelElementKind: workItem.modelElementKind ?? "partstudio",
+    partId: workItem.partId,
+    configuration: workItem.configuration,
+    assetBaseName: workItem.assetBaseName
+  };
 }
 
 // --- Inngest function -------------------------------------------------------
@@ -438,11 +383,12 @@ const OnshapeBackfillPayloadSchema = z.object({
 export const onshapeBackfillFunction = inngest.createFunction(
   {
     id: "onshape-backfill",
-    // Higher than the usual 3: a 429 now reschedules the run via RetryAfterError
-    // (withRateLimitRetry), and that reschedule counts against this budget. A big
-    // first-time backfill can hit the rate limit a few times, so give it headroom
-    // to ride those out before giving up (a failed run resumes cleanly on re-run —
-    // already-synced items are skipped).
+    // Higher than the usual 3: a 429 reschedules the run via RetryAfterError
+    // (withRateLimitRetry), and that reschedule counts against this budget. It
+    // covers the backfill's own listing steps; each item's export runs in the
+    // invoked onshape-element-sync / onshape-drawing-sync, which carry their own
+    // budget of 10 (a failed run resumes cleanly on re-run — already-synced
+    // items are skipped).
     retries: 10,
     // One backfill per company at a time — stops a double-click (or a full run
     // overlapping an incremental reconcile) from racing on the "already synced"
@@ -505,10 +451,29 @@ export const onshapeBackfillFunction = inngest.createFunction(
       // and keep going unless failures look systemic.
       for (const [workIndex, workItem] of pageResult.workItems.entries()) {
         try {
-          const attached = await step.run(
-            `sync-page-${pageIndex}-item-${workIndex}`,
-            () => syncOnshapeBackfillWorkItem(carbon, input, workItem)
-          );
+          const stepId = `sync-page-${pageIndex}-item-${workIndex}`;
+          // A model runs as its own `onshape-element-sync`: its polls,
+          // sleeps and fetch are that run's steps, not this one's.
+          const attached =
+            workItem.kind === "drawing"
+              ? await step
+                  .invoke(stepId, {
+                    function: onshapeDrawingSyncFunction,
+                    data: backfillDrawingInput(input, workItem)
+                  })
+                  .then((synced) => ({
+                    modelUploadId: synced.modelUploadId,
+                    skippedTooLarge: synced.tooLarge
+                  }))
+              : await step
+                  .invoke(stepId, {
+                    function: onshapeElementSyncFunction,
+                    data: backfillElementInput(input, workItem)
+                  })
+                  .then((synced) => ({
+                    modelUploadId: synced.modelUploadId,
+                    skippedTooLarge: synced.tooLarge
+                  }));
           consecutiveFailures = 0;
           if (attached.skippedTooLarge) {
             totals.skippedTooLarge++;
