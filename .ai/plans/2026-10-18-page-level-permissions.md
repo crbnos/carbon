@@ -532,8 +532,10 @@ pnpm --filter @carbon/database test -- access
 **Steps:**
 1. Remove the Admin `employeeTypePermission` inserts. The Admin type resolves to Full without rows.
 2. Remove the employee key writes to `userPermission` in `bootstrap.ts`.
-3. In each dataset, add a "Buyer" role: Purchasing Edit, Inventory View, Receipts Edit.
-4. Add `permission: 3` to the coverage floors.
+3. In each dataset, add a "Buyer" role: Purchasing Edit, Inventory View (Receipts Edit needs Task 17). Tier 1 adopts it by name; its grants are inserted only where none exists.
+4. Add `permission: 2` to the coverage floors.
+5. Add `permission` to the dataset wipe's `PRESERVED_TABLES`: a demo apply keeps employees, roles and API keys, so it must keep their grants.
+6. Stop `seedCompany` writing the creator's module keys into `userPermission`.
 
 **Verify:**
 ```bash

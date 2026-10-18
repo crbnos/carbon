@@ -65,6 +65,33 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     }
   );
 
+  // ── Roles ────────────────────────────────────────────────────────────────
+  // A non-admin role with grants, so the access screens show one. Both tables
+  // survive the wipe: a re-apply adopts the role by name and keeps any grant
+  // the company changed.
+  ctx.log("roles");
+  for (const role of data.roles) {
+    const existing = await maybeOne<{ id: string }>(
+      client,
+      `SELECT id FROM "employeeType" WHERE "companyId" = $1 AND name = $2`,
+      [companyId, role.name]
+    );
+    const employeeTypeId =
+      existing?.id ??
+      (await insertId(ctx, "employeeType", {
+        name: role.name,
+        protected: false
+      }));
+    for (const grant of role.grants) {
+      await insertMaybe(ctx, "permission", {
+        employeeTypeId,
+        module: grant.module,
+        page: null,
+        level: grant.level
+      });
+    }
+  }
+
   // ── Departments ──────────────────────────────────────────────────────────
   ctx.log("departments");
   for (const name of data.departments) {

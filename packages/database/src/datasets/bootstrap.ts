@@ -173,25 +173,7 @@ export async function seedCompanyReferenceData(
   );
   const employeeTypeId = employeeTypeResult.rows[0].id;
 
-  const modulesResult = await client.query(`SELECT name FROM modules`);
-  const modules = modulesResult.rows as { name: string }[];
-
-  for (const module of modules) {
-    if (!module.name) continue;
-    await client.query(
-      `INSERT INTO "employeeTypePermission" ("employeeTypeId", module, "create", "update", "delete", view)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [
-        employeeTypeId,
-        module.name,
-        [companyId],
-        [companyId],
-        [companyId],
-        [companyId]
-      ]
-    );
-  }
-
+  // The Admin type resolves to Full on every page with no permission rows.
   await client.query(
     `INSERT INTO employee (id, "employeeTypeId", "companyId", active) VALUES ($1, $2, $3, true)`,
     [userId, employeeTypeId, companyId]
@@ -415,46 +397,6 @@ export async function seedCompanyReferenceData(
   await client.query(
     `INSERT INTO "employeeJob" (id, "companyId", "locationId") VALUES ($1, $2, $3)`,
     [userId, companyId, locationId]
-  );
-
-  const newPermissions: Record<string, string[]> = {};
-  for (const module of modules) {
-    const moduleName = module.name?.toLowerCase();
-    if (!moduleName) continue;
-    for (const type of ["view", "create", "update", "delete"]) {
-      newPermissions[`${moduleName}_${type}`] = [companyId];
-    }
-  }
-
-  const currentPermResult = await client.query(
-    `SELECT permissions FROM "userPermission" WHERE id = $1`,
-    [userId]
-  );
-
-  let finalPermissions = newPermissions;
-  if (
-    currentPermResult.rows.length > 0 &&
-    currentPermResult.rows[0].permissions
-  ) {
-    const currentPerms = currentPermResult.rows[0].permissions as Record<
-      string,
-      string[]
-    >;
-    finalPermissions = { ...currentPerms };
-    for (const [key, value] of Object.entries(newPermissions)) {
-      if (key in finalPermissions) {
-        if (!finalPermissions[key]!.includes(companyId)) {
-          finalPermissions[key]!.push(companyId);
-        }
-      } else {
-        finalPermissions[key] = value;
-      }
-    }
-  }
-
-  await client.query(
-    `UPDATE "userPermission" SET permissions = $1 WHERE id = $2`,
-    [JSON.stringify(finalPermissions), userId]
   );
 
   return { companyId, companyGroupId, locationId };

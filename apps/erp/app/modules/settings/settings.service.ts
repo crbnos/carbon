@@ -23,7 +23,7 @@ import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { single, updateRows } from "@carbon/database/rows";
+import { single } from "@carbon/database/rows";
 import {
   accountDefaults,
   accounts,
@@ -3499,35 +3499,7 @@ export async function seedCompany(
     if (!employeeTypeId)
       throw new Error("Failed to insert admin employee type");
 
-    // get the modules
-    const modules = (await trx
-      .selectFrom("modules")
-      .select("name")
-      .execute()) as { name: string }[];
-
-    // create employee type permissions for admin
-    const employeeTypePermissions = modules.reduce<
-      Database["public"]["Tables"]["employeeTypePermission"]["Insert"][]
-    >((acc, module) => {
-      if (module.name) {
-        acc.push({
-          employeeTypeId: employeeTypeId,
-          // @ts-expect-error - it's legit, chill typescript
-          module: module.name,
-          create: [companyId],
-          update: [companyId],
-          delete: [companyId],
-          view: [companyId]
-        });
-      }
-      return acc;
-    }, []);
-
-    // insert employee type permissions
-    await trx
-      .insertInto("employeeTypePermission")
-      .values(employeeTypePermissions)
-      .execute();
+    // The Admin type resolves to Full on every page with no permission rows.
 
     // insert employee
     await trx
@@ -3856,54 +3828,6 @@ export async function seedCompany(
         await trx.insertInto("fixedAssetClass").values(classRows).execute();
       }
     } // end if (!identityOnly)
-
-    const user = await single(
-      trx,
-      "userPermission",
-      { id: userId },
-      { columns: ["permissions"] }
-    );
-    if (user.error) throw new Error(user.error.message);
-
-    const currentPermissions = (user.data?.permissions ?? {}) as Record<
-      string,
-      string[]
-    >;
-    const newPermissions = { ...currentPermissions };
-    modules.forEach(({ name }) => {
-      const module = name?.toLowerCase();
-      if (`${module}_view` in newPermissions) {
-        newPermissions[`${module}_view`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_view`] = [companyId];
-      }
-
-      if (`${module}_create` in newPermissions) {
-        newPermissions[`${module}_create`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_create`] = [companyId];
-      }
-
-      if (`${module}_update` in newPermissions) {
-        newPermissions[`${module}_update`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_update`] = [companyId];
-      }
-
-      if (`${module}_delete` in newPermissions) {
-        newPermissions[`${module}_delete`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_delete`] = [companyId];
-      }
-    });
-
-    const { error } = await updateRows(
-      trx,
-      "userPermission",
-      { permissions: newPermissions },
-      { id: userId }
-    );
-    if (error) throw new Error(error.message);
 
     // For subsidiaries: set companyGroupId + parentCompanyId now that the
     // reference data (including the supplier/customer sequences) has been

@@ -4,6 +4,7 @@
 
 import type { CalendarDate } from "@internationalized/date";
 import type { PoolClient } from "pg";
+import type { Database } from "../types.ts";
 import { maybeOne, one } from "./sql.ts";
 
 /** Signed days relative to the dataset anchor. Negative = in the past. */
@@ -204,8 +205,19 @@ export type MaterialTaxonomySpec = {
   dimensions: { name: string; form: string; isMetric?: boolean }[];
 };
 
+/** A non-admin role and its module grants. */
+export type RoleSpec = {
+  name: string;
+  grants: {
+    module: Database["public"]["Enums"]["module"];
+    level: "None" | "View" | "Create" | "Edit" | "Full";
+  }[];
+};
+
 export type FoundationData = {
   departments: string[];
+  /** Roles besides Admin, so the access screens show a role with grants. */
+  roles: RoleSpec[];
   abilities: string[];
   processes: ProcessSpec[];
   workCenters: WorkCenterSpec[];

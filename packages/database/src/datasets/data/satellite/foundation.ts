@@ -772,6 +772,15 @@ export const MATERIAL_TAXONOMY: MaterialTaxonomySpec = {
 
 export const satelliteFoundation: FoundationData = {
   departments: DEPT_NAMES,
+  roles: [
+    {
+      name: "Buyer",
+      grants: [
+        { module: "Purchasing", level: "Edit" },
+        { module: "Inventory", level: "View" }
+      ]
+    }
+  ],
   abilities: ABILITIES,
   processes: PROCESSES,
   workCenters: WORK_CENTERS,
