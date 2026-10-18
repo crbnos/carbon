@@ -183,6 +183,22 @@ graph.json and a plan.json made at different deflections disagree. A plan
 needs `meta.planPath` (400 without); there is no inline plan result, no
 `?sync` mode and no `run-job` CLI.
 
+**Secrets stay out of payloads, records and errors.**
+- The Lambda self-invoke spec is `{ action, job_id, traceparent }` and nothing
+  else. The request body waits in Redis (`asm:req:{id}`, 15 min) until the
+  worker takes it (`GETDEL`), so no signed URL, caller token or service key
+  rides in the Invoke payload, which AWS keeps for its async retries.
+- `/events` is mounted only on Lambda, where only an IAM-signed Invoke reaches
+  it; a spec names a job, so a delivery can only start a pending job with the
+  body its create stored.
+- A job's upload URLs are cleared when it ends. Its `callback_url` stays (the
+  worker re-sends the callback; it only reports that one job).
+- Every reqwest error goes through `without_url()`: signed URLs keep their
+  token in the query string, and the message is logged, stored on the job and
+  returned to the caller.
+- The shared HTTP client follows no redirects: a redirect would reach a host
+  `validate_url` never checked.
+
 **Content-hash result cache** (`asm:result:{model}:{contentHash}:{optsHash}:v{CODE_VERSION}`
 → pointer, 24 h): a repeat of the same model + bytes + options + code version
 reuses the prior plan's storage pointer, skipping the FCL compute.

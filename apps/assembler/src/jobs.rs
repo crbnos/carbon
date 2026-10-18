@@ -49,7 +49,9 @@ struct JobRecord {
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<Value>, // { code, message }
     /// Signed PUT URLs handed over AT SUBMIT (name → URL), one per output.
-    /// Never rendered.
+    /// Never rendered; cleared once the job ends (they are bearer tokens).
+    /// `callback_url` stays: the Lambda worker re-sends the callback after the
+    /// job ends, and it only lets its holder report this one job.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     upload_urls: Option<HashMap<String, String>>,
     /// Completion webhook minted by the caller at submit: the terminal job
@@ -271,6 +273,7 @@ impl JobStore {
             rec.result = Some(done.result);
             rec.stats = Some(done.stats);
             rec.error = None;
+            rec.upload_urls = None;
             self.write(id, &rec).await;
         }
         self.wake(id);
@@ -284,6 +287,7 @@ impl JobStore {
             }
             rec.status = "error".into();
             rec.error = Some(json!({ "code": code, "message": message }));
+            rec.upload_urls = None;
             self.write(id, &rec).await;
         }
         self.send_callback(id).await;
@@ -296,6 +300,7 @@ impl JobStore {
         let mut rec = self.read(id).await?;
         if is_active(&rec.status) {
             rec.status = "canceled".into();
+            rec.upload_urls = None;
             self.write(id, &rec).await;
             // Wake the event-driven waiter immediately (terminal state).
             self.send_callback(id).await;
@@ -446,6 +451,28 @@ impl JobStore {
         self.set_done(id, done).await;
     }
 
+    /// Hold a Lambda job's request body until its worker takes it. The worker
+    /// spec carries only ids, so signed URLs and caller tokens never ride in
+    /// the Invoke payload (which AWS keeps for its async retries).
+    pub async fn put_request(&self, id: &str, body: &Value) -> Result<(), String> {
+        let mut c = self.conn.clone();
+        c.set_ex::<_, _, ()>(request_key(id), body.to_string(), REQUEST_TTL_SECS)
+            .await
+            .map_err(|e| format!("could not store the request: {e}"))
+    }
+
+    /// Take a Lambda job's request body; `None` once taken or expired.
+    pub async fn take_request(&self, id: &str) -> Option<Value> {
+        let mut c = self.conn.clone();
+        let raw: Option<String> = redis::cmd("GETDEL")
+            .arg(request_key(id))
+            .query_async(&mut c)
+            .await
+            .map_err(|e| eprintln!("assembler: redis request read failed: {e}"))
+            .ok()?;
+        serde_json::from_str(&raw?).ok()
+    }
+
     // --- content-hash result-pointer cache (CODE_VERSION-stamped) ----------
 
     pub async fn result_get(&self, model: &str, content: u128, opts: u64) -> Option<Done> {
@@ -482,8 +509,7 @@ impl JobStore {
     /// Central explicit invalidation: drop every cached result pointer for a
     /// model so the next job re-derives. Returns how many entries were cleared.
     pub async fn invalidate_model(&self, model: &str) -> usize {
-        let prefix = format!("asm:result:{model}:");
-        let pattern = format!("{prefix}*");
+        let pattern = format!("asm:result:{}:*", escape_glob(model));
         let mut scan = self.conn.clone();
         let mut keys: Vec<String> = Vec::new();
         match scan.scan_match::<_, String>(&pattern).await {
@@ -555,6 +581,26 @@ fn job_key(id: &str) -> String {
     format!("asm:job:{id}")
 }
 
+/// How long a Lambda job's request waits for its worker. The worker is
+/// invoked at once; this only bounds a delivery AWS retries much later.
+const REQUEST_TTL_SECS: u64 = 15 * 60;
+
+fn request_key(id: &str) -> String {
+    format!("asm:req:{id}")
+}
+
+/// Escape Redis glob metacharacters, so a caller's id matches only itself.
+fn escape_glob(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        if matches!(c, '*' | '?' | '[' | ']' | '\\') {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
+}
+
 fn result_key(model: &str, content: u128, opts: u64) -> String {
     format!("asm:result:{model}:{content:032x}:{opts:016x}:v{CODE_VERSION}")
 }
@@ -616,6 +662,13 @@ mod tests {
         assert_eq!(notifiers.0.len(), 1, "the second poll still waits");
         drop(second);
         assert!(notifiers.0.is_empty());
+    }
+
+    #[test]
+    fn a_model_id_matches_only_itself_in_a_scan() {
+        assert_eq!(escape_glob("model-1"), "model-1");
+        assert_eq!(escape_glob("*"), "\\*");
+        assert_eq!(escape_glob("a?b[c]\\"), "a\\?b\\[c\\]\\\\");
     }
 
     #[test]

@@ -42,10 +42,17 @@ fn clear_sources_in(dir: &std::path::Path) {
 
 /// One shared client for the process: reuses connections (keep-alive/h2)
 /// instead of paying a fresh pool + TLS handshake per download/upload.
+///
+/// Follows no redirects: every URL here is a signed storage URL or our own
+/// callback, checked by `config::validate_url`, and a redirect would take the
+/// request to a host that was never checked. Errors never carry the URL
+/// (`without_url`): signed URLs hold their token in the query string, and an
+/// error message is logged, stored on the job and returned to the caller.
 fn client() -> &'static reqwest::Client {
     static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
     CLIENT.get_or_init(|| {
         reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
             .danger_accept_invalid_certs(!config::verify_tls())
             .connect_timeout(std::time::Duration::from_secs(10))
             // Idle-read timeout, not a total deadline: a large source can stream
@@ -88,7 +95,7 @@ async fn download(
         ApiError::new(
             422,
             "READ_FAILED",
-            format!("could not download source: {e}"),
+            format!("could not download source: {}", e.without_url()),
         )
     })?;
     if !resp.status().is_success() {
@@ -122,7 +129,7 @@ async fn download(
     // without consuming and the whole thing optionally piped through zstd.
     let byte_stream = resp
         .bytes_stream()
-        .map(|r| r.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)));
+        .map(|r| r.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.without_url())));
     let mut buf_reader = tokio::io::BufReader::new(tokio_util::io::StreamReader::new(byte_stream));
     let is_zstd = {
         let head = buf_reader.fill_buf().await.map_err(|e| {
@@ -226,7 +233,7 @@ async fn put(url: &str, body: reqwest::Body, content_type: &str) -> Result<(), A
             ApiError::new(
                 502,
                 "UPLOAD_FAILED",
-                format!("could not upload artifact: {e}"),
+                format!("could not upload artifact: {}", e.without_url()),
             )
         })?;
     if !resp.status().is_success() {
@@ -256,7 +263,13 @@ async fn post(url: &str, body: &serde_json::Value) -> Result<(), ApiError> {
         .timeout(std::time::Duration::from_secs(10))
         .send()
         .await
-        .map_err(|e| ApiError::new(502, "CALLBACK_FAILED", format!("callback POST failed: {e}")))?;
+        .map_err(|e| {
+            ApiError::new(
+                502,
+                "CALLBACK_FAILED",
+                format!("callback POST failed: {}", e.without_url()),
+            )
+        })?;
     if !resp.status().is_success() {
         return Err(ApiError::new(
             502,
@@ -270,6 +283,43 @@ async fn post(url: &str, body: &serde_json::Value) -> Result<(), ApiError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn a_failed_request_never_echoes_its_signed_url() {
+        // Nothing listens on port 1: the connect fails, and reqwest's error
+        // would normally quote the whole URL, token included.
+        let url = "http://127.0.0.1:1/object/sign/m.step?token=secret-token";
+        let dest = temp_path("step");
+        let download = download_hashed(url, &dest, None).await.err().unwrap();
+        let upload = upload(url, bytes::Bytes::new(), "application/step").await.err().unwrap();
+        let callback = post_json(url, &serde_json::json!({})).await.err().unwrap();
+        for message in [download.message, upload.message, callback.message] {
+            assert!(!message.contains("secret-token"), "{message}");
+            assert!(!message.contains("/object/sign"), "{message}");
+        }
+    }
+
+    #[tokio::test]
+    async fn a_redirect_is_not_followed() {
+        let app = axum::Router::new()
+            .route(
+                "/object",
+                axum::routing::get(|| async {
+                    (axum::http::StatusCode::FOUND, [("location", "/elsewhere")])
+                }),
+            )
+            .route("/elsewhere", axum::routing::get(|| async { "unchecked host" }));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+
+        let dest = temp_path("step");
+        let err = download_hashed(&format!("http://{addr}/object"), &dest, None)
+            .await
+            .err()
+            .unwrap();
+        assert!(err.message.contains("302"), "{}", err.message);
+    }
 
     #[test]
     fn stale_sources_are_cleared_and_nothing_else() {

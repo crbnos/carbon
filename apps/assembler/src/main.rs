@@ -104,12 +104,18 @@ async fn serve() {
         .route("/v1/:action", post(create_job))
         .route("/v1/jobs/:job_id", get(get_job))
         .route("/v1/jobs/:job_id/cancel", post(cancel_job))
-        .route("/v1/cache/invalidate", post(cache_invalidate))
-        // Lambda self-invoke worker inlet: the Web Adapter delivers non-HTTP
-        // (Event) payloads here (AWS_LWA_PASS_THROUGH_PATH). Not part of the
-        // public API — the API Gateway routes only /health and /v1/*, and the
-        // spec's embedded token is verified in-handler.
-        .route("/events", post(worker_events))
+        .route("/v1/cache/invalidate", post(cache_invalidate));
+    // Lambda self-invoke worker inlet: the Web Adapter delivers non-HTTP
+    // (Event) payloads here (AWS_LWA_PASS_THROUGH_PATH). Mounted only on
+    // Lambda, where it is reachable only by an IAM-signed Invoke — API Gateway
+    // routes /health and /v1/* alone. A spec names a job and nothing else, so
+    // a delivery can only start a pending job with the body its create stored.
+    let app = if dispatch::from_env() == dispatch::Dispatch::Lambda {
+        app.route("/events", post(worker_events))
+    } else {
+        app
+    };
+    let app = app
         // Negotiated response compression (zstd, gzip fallback). Content-encoding
         // is chosen from the request's `Accept-Encoding`, so the server never
         // sends an encoding the client didn't advertise — a caller bypasses it
@@ -343,10 +349,10 @@ async fn create_job(
     }
     state
         .jobs
-        .set_pending(&job_id, &action, upload_urls.clone(), callback_url)
+        .set_pending(&job_id, &action, upload_urls, callback_url)
         .await;
     if dispatch::from_env() == dispatch::Dispatch::Lambda {
-        lambda_dispatch(&state, &job_id, &action, &req, &upload_urls).await?;
+        lambda_dispatch(&state, &job_id, &action, &req).await?;
     } else {
         eprintln!("[{job_id}] {action} queued");
         request::spawn(&state, &job_id, parsed);
@@ -355,30 +361,24 @@ async fn create_job(
 }
 
 /// Lambda-mode create path: instead of spawning in-process (this instance
-/// freezes after the response), fire the job as an Event-type self-invocation
-/// carrying a worker spec — the request body plus `action`/`job_id`, the
-/// submit-time signed upload URLs, and the bearer for the worker inlet. A failed
-/// dispatch fails the job loudly (never a forever-"pending" record).
+/// freezes after the response), fire the job as an Event-type self-invocation.
+/// The request body waits in Redis for the worker; the spec carries only
+/// `action`, `job_id` and the trace, so no signed URL, caller token or service
+/// key rides in the Invoke payload. A failed dispatch fails the job loudly
+/// (never a forever-"pending" record).
 async fn lambda_dispatch(
     state: &AppState,
     job_id: &str,
     action: &str,
     req: &Value,
-    urls: &HashMap<String, String>,
 ) -> Result<(), ApiError> {
-    let mut spec = req.clone();
-    spec["action"] = action.into();
-    spec["job_id"] = job_id.into();
-    if !urls.is_empty() {
-        spec["upload_urls"] = json!(urls);
-    }
-    if let Ok(k) = std::env::var("ASSEMBLER_SERVICE_API_KEY") {
-        if !k.is_empty() {
-            spec["token"] = k.into();
-        }
-    }
+    let mut spec = json!({ "action": action, "job_id": job_id });
     telemetry::inject(&mut spec);
-    if let Err(m) = dispatch::self_invoke(&spec).await {
+    let dispatched = match state.jobs.put_request(job_id, req).await {
+        Ok(()) => dispatch::self_invoke(&spec).await,
+        Err(m) => Err(m),
+    };
+    if let Err(m) = dispatched {
         state
             .jobs
             .set_error(job_id, "dispatch_failed", m.clone())
@@ -399,11 +399,6 @@ async fn worker_events(
     body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
     let spec = parse_body(body)?;
-    if let Ok(key) = std::env::var("ASSEMBLER_SERVICE_API_KEY") {
-        if !key.is_empty() && !constant_eq(spec["token"].as_str().unwrap_or(""), &key) {
-            return Err(ApiError::unauthorized("invalid worker token"));
-        }
-    }
     let action = spec["action"].as_str().unwrap_or_default().to_string();
     let job_id = spec["job_id"].as_str().unwrap_or_default().to_string();
     if job_id.is_empty() {
@@ -414,7 +409,12 @@ async fn worker_events(
             // Take the job before the long download and admission wait, so a
             // second delivery in that window sees it as taken.
             state.jobs.set_status(&job_id, "starting").await;
-            if let Err(e) = spawn_traced(&state, &job_id, &action, &spec) {
+            let Some(req) = state.jobs.take_request(&job_id).await else {
+                let message = "the request expired before a worker took it".to_string();
+                state.jobs.set_error(&job_id, "dispatch_failed", message.clone()).await;
+                return Err(ApiError::new(410, "dispatch_failed", message));
+            };
+            if let Err(e) = spawn_traced(&state, &job_id, &action, &spec, &req) {
                 state.jobs.set_error(&job_id, "invalid_input", e.message.clone()).await;
                 return Err(e);
             }
@@ -442,9 +442,15 @@ async fn worker_events(
 
 /// Parse and spawn the worker's job under the submitting request's trace, when
 /// the spec carries it. Sync: the trace guard cannot be held across an await.
-fn spawn_traced(state: &AppState, job_id: &str, action: &str, spec: &Value) -> Result<(), ApiError> {
+fn spawn_traced(
+    state: &AppState,
+    job_id: &str,
+    action: &str,
+    spec: &Value,
+    req: &Value,
+) -> Result<(), ApiError> {
     let _trace = telemetry::attach(spec);
-    request::spawn(state, job_id, request::parse(action, spec)?);
+    request::spawn(state, job_id, request::parse(action, req)?);
     Ok(())
 }
 
