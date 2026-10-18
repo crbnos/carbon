@@ -55,15 +55,12 @@ BEGIN
   INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES
     (u, company_a, 'employee'), (w, company_a, 'employee'), (v, company_b, 'employee'),
     (c, company_a, 'customer');
-  INSERT INTO "userPermission" (id, permissions) VALUES
-    (u, jsonb_build_object(
-      'users_create', jsonb_build_array(company_a),
-      'resources_update', jsonb_build_array(company_a),
-      'invoicing_update', jsonb_build_array(company_a),
-      'documents_view', jsonb_build_array(company_a, company_b),  -- names a company u is not in
-      'inventory_view', jsonb_build_array('0')                    -- the old global wildcard
-    )),
-    (w, '{}'::jsonb), (v, '{}'::jsonb), (c, '{}'::jsonb);
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company_a, u, 'Users', 'Create', 'system'),
+    (company_a, u, 'Resources', 'Edit', 'system'),
+    (company_a, u, 'Invoicing', 'Edit', 'system'),
+    (company_a, u, 'Documents', 'View', 'system'),
+    (company_b, u, 'Documents', 'View', 'system');  -- names a company u is not in
 
   INSERT INTO account (name, class, "incomeBalance", "isGroup", "companyGroupId", "createdBy")
     VALUES ('Authz bank', 'Asset', 'Balance Sheet', false, group_a, 'system') RETURNING id INTO bank;

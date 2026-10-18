@@ -56,13 +56,11 @@ BEGIN
   INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES
     (u, company_a, 'employee'), (w, company_a, 'employee'),
     (v, company_b, 'employee'), (c, company_a, 'customer');
-  INSERT INTO "userPermission" (id, permissions) VALUES
-    (u, jsonb_build_object(
-      'accounting_update', jsonb_build_array(company_a, company_b),  -- B: not a member there
-      'parts_view', jsonb_build_array(company_a),
-      'sales_update', jsonb_build_array(company_a)
-    )),
-    (w, '{}'::jsonb), (v, '{}'::jsonb), (c, '{}'::jsonb);
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company_a, u, 'Accounting', 'Edit', 'system'),
+    (company_b, u, 'Accounting', 'Edit', 'system'),  -- B: not a member there
+    (company_a, u, 'Parts', 'View', 'system'),
+    (company_a, u, 'Sales', 'Edit', 'system');
 
   INSERT INTO customer (name, "readableId", "companyId", "createdBy") VALUES ('Pieces customer', 'customer_a', company_a, 'system')
     RETURNING id INTO customer_a;

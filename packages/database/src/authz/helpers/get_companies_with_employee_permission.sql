@@ -2,48 +2,52 @@ CREATE OR REPLACE FUNCTION public.get_companies_with_employee_permission(permiss
  RETURNS text[]
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 DECLARE
-  permission_companies text[];
+  parts text[];
+  target_page text;
+  needed_level "permissionLevel";
+  raw_key text;
+  api_key_id text;
   api_key_company text;
-  employee_companies text[];
-  api_key_scopes JSONB;
+  companies text[];
 BEGIN
-  api_key_company := get_company_id_from_api_key();
+  -- '<page>_<action>': the page's level must reach the action's level.
+  parts := regexp_match(permission, '^(.*)_(view|create|update|delete)$');
+  IF parts IS NULL THEN
+    RETURN '{}';
+  END IF;
+  target_page := parts[1];
+  needed_level := CASE parts[2]
+    WHEN 'view' THEN 'View'
+    WHEN 'create' THEN 'Create'
+    WHEN 'update' THEN 'Edit'
+    ELSE 'Full'
+  END::"permissionLevel";
 
-  IF api_key_company IS NOT NULL THEN
-    api_key_scopes := get_api_key_scopes();
-    IF api_key_scopes IS NULL OR api_key_scopes = '{}'::jsonb THEN
-      RETURN '{}';
-    END IF;
-    IF (api_key_scopes ? permission)
-       AND api_key_company = ANY(jsonb_to_text_array(api_key_scopes->permission)) THEN
-      RETURN ARRAY[api_key_company];
-    ELSE
+  raw_key := (current_setting('request.headers'::text, true))::json ->> 'carbon-key';
+  IF raw_key IS NOT NULL THEN
+    SELECT id, "companyId" INTO api_key_id, api_key_company
+    FROM "apiKey"
+    WHERE "keyHash" = encode(digest(raw_key::bytea, 'sha256'::text), 'hex')
+      AND ("expiresAt" IS NULL OR "expiresAt" > NOW());
+
+    IF api_key_company IS NOT NULL THEN
+      IF util.access_level(NULL, api_key_id, api_key_company, target_page) >= needed_level THEN
+        RETURN ARRAY[api_key_company];
+      END IF;
       RETURN '{}';
     END IF;
   END IF;
 
-  SELECT array_agg("companyId"::text)
-  INTO employee_companies
-  FROM "userToCompany"
-  WHERE "userId" = auth.uid()::text AND "role" = 'employee';
+  SELECT array_agg(utc."companyId"::text)
+  INTO companies
+  FROM "userToCompany" utc
+  WHERE utc."userId" = auth.uid()::text
+    AND utc."role" = 'employee'
+    AND util.access_level(utc."userId", NULL, utc."companyId", target_page) >= needed_level;
 
-  SELECT jsonb_to_text_array(COALESCE(permissions->permission, '[]'))
-  INTO permission_companies
-  FROM public."userPermission"
-  WHERE id::text = auth.uid()::text;
-
-  IF permission_companies IS NOT NULL AND employee_companies IS NOT NULL THEN
-    SELECT array_agg(company)
-    INTO permission_companies
-    FROM unnest(permission_companies) company
-    WHERE company = ANY(employee_companies);
-  ELSE
-    permission_companies := '{}';
-  END IF;
-
-  RETURN COALESCE(permission_companies, '{}');
+  RETURN COALESCE(companies, '{}');
 END;
 $function$;

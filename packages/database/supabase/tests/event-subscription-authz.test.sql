@@ -23,9 +23,8 @@ BEGIN
     (admin, admin || '@subscription-authz.invalid');
   INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES
     (employee, company, 'employee'), (admin, company, 'employee');
-  INSERT INTO "userPermission" (id, permissions) VALUES
-    (employee, '{}'::jsonb),
-    (admin, jsonb_build_object('settings_update', jsonb_build_array(company)));
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company, admin, 'Settings', 'Edit', 'system');
   INSERT INTO "eventSystemSubscription" (name, "table", "companyId", operations, "handlerType", config)
   VALUES ('webhook-probe', 'item', company, ARRAY['INSERT'], 'WEBHOOK', '{"url":"https://example.invalid"}');
 

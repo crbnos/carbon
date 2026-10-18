@@ -5,8 +5,10 @@ CREATE OR REPLACE FUNCTION public.get_claims(uid text, company text)
  SET search_path TO 'public'
 AS $function$
   DECLARE company_role text;
-  DECLARE role_object jsonb;
-  DECLARE perms jsonb;
+  DECLARE employee_type text;
+  DECLARE is_admin boolean := false;
+  DECLARE grant_rows jsonb := '[]'::jsonb;
+  DECLARE portal_keys jsonb := '{}'::jsonb;
   BEGIN
     -- Your own claims, or those of someone in a company where you may view or
     -- update users (the permission editor reads them with users_update alone).
@@ -24,11 +26,41 @@ AS $function$
         USING ERRCODE = 'insufficient_privilege';
     END IF;
 
-    select role from "userToCompany" into company_role where "userId" = uid AND "companyId" = company;
-    select permissions from "userPermission" into perms where id = uid;
-    role_object := jsonb_build_object('role', company_role);
+    SELECT role INTO company_role FROM "userToCompany" WHERE "userId" = uid AND "companyId" = company;
 
+    IF company_role = 'employee' THEN
+      SELECT e."employeeTypeId", COALESCE(et."systemType" = 'Admin', false)
+      INTO employee_type, is_admin
+      FROM employee e
+      LEFT JOIN "employeeType" et ON et.id = e."employeeTypeId"
+      WHERE e.id = uid AND e."companyId" = company;
 
-    return (role_object || perms)::jsonb;
+      SELECT COALESCE(jsonb_agg(jsonb_build_object(
+          'subject', CASE WHEN p."userId" IS NOT NULL THEN 'person' ELSE 'role' END,
+          'module', p.module,
+          'page', p.page,
+          'level', p.level
+        ) ORDER BY p."userId" IS NULL, p.module, p.page NULLS FIRST), '[]'::jsonb)
+      INTO grant_rows
+      FROM permission p
+      WHERE p."companyId" = company
+        AND (p."userId" = uid OR (employee_type IS NOT NULL AND p."employeeTypeId" = employee_type));
+    END IF;
+
+    -- A portal account still holds its keys in userPermission. An employee's old
+    -- keys are left out, so a None override is never undone by them.
+    IF company_role IN ('customer', 'supplier') THEN
+      SELECT COALESCE(jsonb_object_agg(kv.key, jsonb_build_array(company)), '{}'::jsonb)
+      INTO portal_keys
+      FROM "userPermission" up, jsonb_each(up.permissions) kv
+      WHERE up.id = uid AND jsonb_typeof(kv.value) = 'array' AND kv.value ? company;
+    END IF;
+
+    RETURN jsonb_build_object(
+      'role', company_role,
+      'admin', COALESCE(is_admin, false),
+      'grants', grant_rows,
+      'portal', portal_keys
+    );
   END;
 $function$;

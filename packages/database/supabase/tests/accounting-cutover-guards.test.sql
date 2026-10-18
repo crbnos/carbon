@@ -68,14 +68,9 @@ BEGIN
   INSERT INTO "user" (id, email) VALUES (user_id, user_id || '@cutover-guards.invalid');
   INSERT INTO "userToCompany" ("userId", "companyId", role)
     VALUES (user_id, company_id, 'employee');
-  INSERT INTO "userPermission" (id, permissions)
-    VALUES (user_id, jsonb_build_object(
-      'settings_view', jsonb_build_array(company_id),
-      'settings_update', jsonb_build_array(company_id),
-      'accounting_view', jsonb_build_array(company_id),
-      'accounting_create', jsonb_build_array(company_id),
-      'accounting_update', jsonb_build_array(company_id),
-      'accounting_delete', jsonb_build_array(company_id)));
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company_id, user_id, 'Settings', 'Edit', 'system'),
+    (company_id, user_id, 'Accounting', 'Full', 'system');
   PERFORM set_config('request.jwt.claims',
     jsonb_build_object('sub', user_id, 'role', 'authenticated')::text, true);
   SET LOCAL ROLE authenticated;

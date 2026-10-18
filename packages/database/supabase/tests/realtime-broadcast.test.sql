@@ -25,9 +25,9 @@ BEGIN
     (user_b, user_b || '@realtime.invalid');
   INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES
     (user_a, company_a, 'employee'), (user_b, company_b, 'employee');
-  INSERT INTO "userPermission" (id, permissions) VALUES
-    (user_a, jsonb_build_object('sales_view', jsonb_build_array(company_a))),
-    (user_b, jsonb_build_object('sales_view', jsonb_build_array(company_b)));
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company_a, user_a, 'Sales', 'View', 'system'),
+    (company_b, user_b, 'Sales', 'View', 'system');
 
   PERFORM set_config('test.company_a', company_a, true);
   PERFORM set_config('test.company_b', company_b, true);

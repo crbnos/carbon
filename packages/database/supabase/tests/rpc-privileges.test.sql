@@ -18,7 +18,7 @@ DECLARE
   user_c text := gen_random_uuid()::text;
   group_b text := gen_random_uuid()::text;
   raw_key text := 'crbn_rpc_privileges_' || gen_random_uuid()::text;
-  perms jsonb;
+  key_id text;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('RPC privileges ' || id(), 'system') RETURNING id INTO group_id;
   INSERT INTO "company" (name, "companyGroupId", "baseCurrencyCode") VALUES ('RPC A ' || id(), group_id, 'USD') RETURNING id INTO company_a;
@@ -29,17 +29,19 @@ BEGIN
     (user_c, user_c || '@rpc-privileges.invalid');
   INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES
     (user_a, company_a, 'employee'), (user_b, company_b, 'employee'), (user_c, company_a, 'employee');
-  SELECT jsonb_object_agg(p, jsonb_build_array(company_a)) INTO perms
-  FROM unnest(ARRAY['sales_view', 'sales_create', 'inventory_view', 'users_view']) p;
-  -- user_c can edit users but not view them: the permission editor's shape.
-  INSERT INTO "userPermission" (id, permissions) VALUES
-    (user_a, perms), (user_b, '{}'::jsonb),
-    (user_c, jsonb_build_object('users_update', jsonb_build_array(company_a)));
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company_a, user_a, 'Sales', 'Create', 'system'),
+    (company_a, user_a, 'Inventory', 'View', 'system'),
+    (company_a, user_a, 'Users', 'View', 'system'),
+    -- user_c edits users: the permission editor's level.
+    (company_a, user_c, 'Users', 'Edit', 'system');
   INSERT INTO "group" (id, name, "companyId") VALUES (group_b, 'RPC privileges B', company_b);
   INSERT INTO "membership" ("groupId", "memberUserId") VALUES (group_b, user_b);
-  INSERT INTO "apiKey" (name, "companyId", "createdBy", "keyHash", scopes)
-  VALUES ('RPC privileges', company_a, user_a, encode(digest(raw_key::bytea, 'sha256'), 'hex'),
-          jsonb_build_object('inventory_view', jsonb_build_array(company_a)));
+  INSERT INTO "apiKey" (name, "companyId", "createdBy", "keyHash")
+  VALUES ('RPC privileges', company_a, user_a, encode(digest(raw_key::bytea, 'sha256'), 'hex'))
+  RETURNING id INTO key_id;
+  INSERT INTO permission ("companyId", "apiKeyId", module, level, "createdBy")
+  VALUES (company_a, key_id, 'Inventory', 'View', 'system');
 
   PERFORM set_config('test.company_a', company_a, true);
   PERFORM set_config('test.company_b', company_b, true);
@@ -228,9 +230,8 @@ BEGIN
     (user_a, company_a, employee_type, true), (user_c, company_a, employee_type, true);
   INSERT INTO "companySettings" (id, "consoleEnabled") VALUES (company_a, false)
   ON CONFLICT (id) DO UPDATE SET "consoleEnabled" = false;
-  UPDATE "userPermission"
-  SET permissions = permissions || jsonb_build_object('settings_update', jsonb_build_array(company_a))
-  WHERE id = user_a;
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company_a, user_a, 'Settings', 'Edit', 'system');
 
   -- The owner (the servers' direct connection) sets and verifies.
   PERFORM set_employee_pin(user_a, company_a, '4821', user_a);

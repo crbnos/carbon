@@ -13,9 +13,9 @@ Phase 0 — fix this branch
 
 Phases 1 and 2 — grants, resolver, editors (one release)
 - [x] Task 3: Add the access registry, levels and the TS resolver
-- [ ] Task 4: Create the `permission` table
+- [x] Task 4: Create the `permission` table
 - [x] Task 5: Add RLS rules for `permission`
-- [ ] Task 6: Resolve access from grants in the SQL helpers
+- [x] Task 6: Resolve access from grants in the SQL helpers
 - [ ] Task 7: Convert today's permissions to grants
 - [ ] Task 8: Read claims and key scopes from grants in TS
 - [ ] Task 9: Write grants from every authoring path
@@ -252,15 +252,16 @@ pnpm --filter @carbon/database test -- migration
 
 **Depends on:** Task 4
 **Files:**
-- Create: `packages/database/src/authz/helpers/access_level.sql`
+- Create: `packages/database/src/authz/helpers/util.access_level.sql`
 - Modify: `packages/database/src/authz/helpers/get_companies_with_employee_permission.sql`
 - Modify: `packages/database/src/authz/helpers/get_claims.sql`
 - Modify: `packages/database/src/authz/helpers/get_api_key_scopes.sql`
 - Create: `packages/database/supabase/tests/access-resolver.test.sql`
-- Create: a hand-written migration for the new helper's signature, then the generated one
+- Create: the generated migration from `pnpm --filter @carbon/database authz migration access-resolver`
+- Modify: the nine tests in `packages/database/supabase/tests/` that seed `userPermission` — seed `permission` rows
 
 **Steps:**
-1. Write `access_level(p_user text, p_api_key text, p_company text, p_page text) RETURNS "permissionLevel"`, `STABLE SECURITY DEFINER`.
+1. Write `util.access_level(p_user text, p_api_key text, p_company text, p_page text) RETURNS "permissionLevel"`, `STABLE SECURITY DEFINER`. Put it in `util`: the API has no `USAGE` there, so no caller can read another user's level.
 2. Return `'Full'` when the user's employee type in the company has `systemType = 'Admin'`.
 3. Otherwise return the first grant in the spec's precedence order, else `'None'`.
 4. Derive the module with `split_part(p_page, '.', 1)` and compare to `lower("module"::text)`.
@@ -270,13 +271,14 @@ pnpm --filter @carbon/database test -- migration
 8. Return the key's company when `access_level(NULL, key, company, page)` reaches the action's level.
 9. For a user: return every company where the user is an employee and `access_level` reaches the action's level.
 10. Rewrite `get_claims(uid, company)`. Keep the caller check at its top.
-11. Return `{ role, admin, grants: [{ subject, module, page, level }], portal: <userPermission keys> }`.
+11. Return `{ role, admin, grants: [{ subject, module, page, level }], portal }`. `portal` holds the `userPermission` keys that name the company, for a customer or supplier account only. An employee's old keys would undo a None override.
 12. Rewrite `get_api_key_scopes()` to return the key's grants in the same `grants` shape.
-13. Run `pnpm db:migrate:new access-level-helper` and write `DROP FUNCTION IF EXISTS public.access_level(text, text, text, text);` in it.
+13. Write no hand-written migration. The function is new, and `no-authz-ddl-in-migrations` refuses a `DROP FUNCTION` of a managed helper.
 14. Run `pnpm --filter @carbon/database authz migration access-resolver`.
 15. Write `access-resolver.test.sql` in the style of `authz-fixes.test.sql`, inside `BEGIN … ROLLBACK`.
 16. Load every case of `packages/database/src/access/cases.json` as fixtures and assert `access_level` matches.
 17. Assert `get_companies_with_employee_permission` for one role grant, one override and one key.
+17a. In the nine tests that insert `userPermission` rows, insert person grants instead. Use the round-up level of each module's keys.
 18. STOP and ask the user to run `pnpm db:migrate`.
 
 **Verify:**
