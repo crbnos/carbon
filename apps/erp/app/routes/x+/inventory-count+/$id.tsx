@@ -12,6 +12,10 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { InventoryCountDetails } from "~/modules/inventory/ui";
+import {
+  getMaterialFormsList,
+  getMaterialSubstancesList
+} from "~/modules/items/items.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -32,6 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     view: "inventory"
   });
+  const { client, companyId } = auth;
   const api = carbonFor(auth);
 
   const { id } = params;
@@ -89,8 +94,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     api.inventory.getInventoryCountMovements({ inventoryCountId: id }),
     // Option lists for the count-line column filters (same set the quantities
     // screen loads).
-    api.items.getMaterialFormsList({}),
-    api.items.getMaterialSubstancesList({}),
+    getMaterialFormsList(client, companyId),
+    getMaterialSubstancesList(client, companyId),
     api.shared.getTagsList({}),
     api.inventory.getStorageTypesList({}),
     api.inventory.getStorageUnitsListForLocation({

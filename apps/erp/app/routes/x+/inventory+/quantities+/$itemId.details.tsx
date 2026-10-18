@@ -14,7 +14,16 @@ import { useLoaderData } from "react-router";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { getTrackedEntityExpirations } from "~/modules/inventory/inventory.service";
 import { InventoryDetails } from "~/modules/inventory/ui";
-import { upsertPickMethod } from "~/modules/items/items.service";
+import {
+  getItemQuantities,
+  getItemShelfLife,
+  getMakeMethodById,
+  getMakeMethods,
+  getMethodMaterialsByMakeMethod,
+  getMethodOperationsByMakeMethodId,
+  getPickMethod,
+  upsertPickMethod
+} from "~/modules/items/items.service";
 import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { getUserDefaults } from "~/modules/users/users.service";
@@ -40,8 +49,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [userDefaults, item, itemShelfLife, makeMethods] = await Promise.all([
     locationId ? null : getUserDefaults(client, userId, companyId),
     api.items.getItem({ id: itemId }),
-    api.items.getItemShelfLife({ itemId }),
-    api.items.getMakeMethods({ itemId })
+    getItemShelfLife(client, itemId),
+    getMakeMethods(client, itemId, companyId)
   ]);
 
   if (userDefaults) {
@@ -88,21 +97,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     methodOperations,
     operationTags
   ] = await Promise.all([
-    api.items.getPickMethod({ itemId, locationId }),
-    api.items.getItemQuantities({ itemId, locationId }),
+    getPickMethod(client, itemId, companyId, locationId),
+    getItemQuantities(client, itemId, companyId, locationId),
     getItemStorageUnitQuantities(client, itemId, companyId, locationId),
+    makeMethod ? getMakeMethodById(client, makeMethod.id, companyId) : null,
+    makeMethod ? getMethodMaterialsByMakeMethod(client, makeMethod.id) : null,
     makeMethod
-      ? api.items.getMakeMethodById({ makeMethodId: makeMethod.id })
-      : null,
-    makeMethod
-      ? api.items.getMethodMaterialsByMakeMethod({
-          makeMethodId: makeMethod.id
-        })
-      : null,
-    makeMethod
-      ? api.items.getMethodOperationsByMakeMethodId({
-          makeMethodId: makeMethod.id
-        })
+      ? getMethodOperationsByMakeMethodId(client, makeMethod.id)
       : null,
     makeMethod ? api.shared.getTagsList({ table: "operation" }) : null
   ]);
@@ -126,7 +127,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    pickMethod = await api.items.getPickMethod({ itemId, locationId });
+    pickMethod = await getPickMethod(client, itemId, companyId, locationId);
     if (pickMethod.error || !pickMethod.data) {
       throw redirect(
         path.to.inventory,

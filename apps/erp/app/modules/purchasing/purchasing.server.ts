@@ -4010,7 +4010,7 @@ export const deleteSupplierType = defineServiceFn({
  */
 export const getPurchaseOrder = defineServiceFn({
   input: z.looseObject({ purchaseOrderId: z.string() }),
-  permission: "employee",
+  permission: { view: "purchasing" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4116,7 +4116,7 @@ export const getPurchaseOrderLines = defineServiceFn({
  */
 export const getPurchaseOrderLine = defineServiceFn({
   input: z.looseObject({ purchaseOrderLineId: z.string() }),
-  permission: "employee",
+  permission: { view: "purchasing" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4187,7 +4187,7 @@ export const getPurchasingPlanning = defineServiceFn({
  */
 export const getSupplier = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
-  permission: "employee",
+  permission: { view: "purchasing" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4245,7 +4245,7 @@ export const getSupplierContacts = defineServiceFn({
  */
 export const getSupplierInteraction = defineServiceFn({
   input: z.looseObject({ opportunityId: z.string().nullable() }),
-  permission: "employee",
+  permission: { view: "purchasing" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4264,7 +4264,7 @@ export const getSupplierInteraction = defineServiceFn({
  */
 export const getSupplierInteractionDocuments = defineServiceFn({
   input: z.looseObject({ interactionId: z.string() }),
-  permission: "employee",
+  permission: { view: "purchasing" },
   async run(ctx, input) {
     return await service.getSupplierInteractionDocuments(
       ctx.asCaller.supabase,
@@ -4281,7 +4281,7 @@ export const getSupplierInteractionDocuments = defineServiceFn({
  */
 export const getSupplierInteractionLineDocuments = defineServiceFn({
   input: z.looseObject({ lineId: z.string() }),
-  permission: "employee",
+  permission: { view: "purchasing" },
   async run(ctx, input) {
     return await service.getSupplierInteractionLineDocuments(
       ctx.asCaller.supabase,
@@ -4355,7 +4355,7 @@ export const getSupplierPayment = defineServiceFn({
  */
 export const getSupplierProcessesByProcess = defineServiceFn({
   input: z.looseObject({ processId: z.string() }),
-  permission: "employee",
+  permission: { view: "purchasing" },
   async run(ctx, input) {
     return unwrap(
       ctx,

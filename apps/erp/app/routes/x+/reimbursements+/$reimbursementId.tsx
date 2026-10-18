@@ -12,6 +12,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
+import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
 import type { getOpenReimbursementsForEmployee } from "~/modules/invoicing/invoicing.service";
 import {
   ReimbursementDocuments,
@@ -113,7 +114,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             >["data"],
             error: null
           }),
-      api.accounting.getDefaultAccounts({})
+      getDefaultAccounts(client, companyId)
     ]);
 
   const auxiliaryError = accounts.error ?? journal.error;

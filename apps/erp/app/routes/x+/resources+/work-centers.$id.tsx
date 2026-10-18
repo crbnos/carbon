@@ -10,6 +10,7 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
+import { getWorkCenterCapitalCost } from "~/modules/accounting/accounting.service";
 import { workCenterValidator } from "~/modules/resources/resources.models";
 import { WorkCenterForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -20,6 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "resources",
     role: "employee"
   });
+  const { client, companyId } = auth;
   const api = carbonFor(auth);
 
   const { id } = params;
@@ -27,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [workCenter, capitalCost] = await Promise.all([
     api.resources.getWorkCenter({ id }),
-    api.accounting.getWorkCenterCapitalCost({ workCenterId: id })
+    getWorkCenterCapitalCost(client, id, companyId)
   ]);
   if (workCenter.error) {
     throw redirect(

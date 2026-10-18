@@ -47,6 +47,7 @@ import type {
   WorkCenterAvailability
 } from "~/modules/production/ui/Schedule/WorkCenterAvailabilityPopover";
 import { WorkCenterAvailabilityPopover } from "~/modules/production/ui/Schedule/WorkCenterAvailabilityPopover";
+import { getWorkCentersByLocation } from "~/modules/resources/resources.service";
 import {
   getLocationTimeZone,
   resolveLocationId
@@ -157,7 +158,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ] = await Promise.all([
     getLocationTimeZone(client, locationId, companyId),
     api.people.getShiftsWithTimes({ locationId }),
-    api.resources.getWorkCentersByLocation({ locationId }),
+    getWorkCentersByLocation(client, locationId),
     api.people.getDepartmentsList({}),
     client
       .from("location")

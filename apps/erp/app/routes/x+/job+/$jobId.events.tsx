@@ -12,6 +12,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
 import { ProductionEventsTable } from "~/modules/production/ui/Jobs";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { path, requestReferrer } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -19,6 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     view: "production"
   });
+  const { client, companyId } = auth;
   const api = carbonFor(auth);
 
   const { jobId } = params;
@@ -59,7 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       filters,
       jobOperationIds: operations.data?.map((o) => o.id) ?? []
     }),
-    api.resources.getWorkCentersList({})
+    getWorkCentersList(client, companyId)
   ]);
 
   if (events.error) {

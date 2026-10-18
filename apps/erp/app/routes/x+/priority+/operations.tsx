@@ -64,6 +64,7 @@ import type {
 import { isBatchItem, Kanban } from "~/modules/production/ui/Schedule/Kanban";
 import { comparePriorityThenId } from "~/modules/production/ui/Schedule/Kanban/placement";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
+import { getWorkCentersByLocation } from "~/modules/resources/resources.service";
 import { resolveLocationId } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { usePeople } from "~/stores";
@@ -159,7 +160,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const [workCenters, processes, operations, tags] = await Promise.all([
-    api.resources.getWorkCentersByLocation({ locationId }),
+    getWorkCentersByLocation(client, locationId),
     api.resources.getProcessesList({}),
     api.production.getActiveJobOperationsByLocation({
       locationId,

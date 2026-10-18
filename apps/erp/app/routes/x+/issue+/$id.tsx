@@ -15,6 +15,10 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
+import {
+  getChangeNoticesForNonConformance,
+  getItemFiles
+} from "~/modules/items/items.service";
 import type { IssueAssociationNode } from "~/modules/quality/types";
 import {
   IssueAssociationsSkeleton,
@@ -50,7 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "quality",
     bypassRls: true
   });
-  const { companyId } = auth;
+  const { companyId, client } = auth;
   const api = carbonFor(auth);
 
   const { id } = params;
@@ -70,7 +74,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     api.quality.getIssueSuppliers({ id }),
     api.shared.getTagsList({ table: "nonConformance" }),
     // Reverse Linked-NCR cross-link (4a): COs referencing this issue.
-    api.items.getChangeNoticesForNonConformance({ nonConformanceId: id })
+    getChangeNoticesForNonConformance(client, id, companyId)
   ]);
 
   if (nonConformance.error) {
@@ -94,7 +98,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     associations: api.quality
       .getIssueAssociations({ nonConformanceId: id })
       .then(dataOrThrow),
-    files: api.items.getItemFiles({ itemId: id }).then(dataOrThrow),
+    files: getItemFiles(client, id, companyId),
     nonConformance: nonConformance.data,
     nonConformanceTypes: nonConformanceTypes.data ?? [],
     requiredActions: requiredActions.data ?? [],

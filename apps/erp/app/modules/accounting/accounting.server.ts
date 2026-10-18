@@ -2717,7 +2717,7 @@ export const getCurrency = defineServiceFn({
  */
 export const getCurrencyByCode = defineServiceFn({
   input: z.looseObject({ currencyCode: z.string() }),
-  permission: "employee",
+  permission: { view: "accounting" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2737,7 +2737,7 @@ export const getCurrencyByCode = defineServiceFn({
  */
 export const getExchangeRate = defineServiceFn({
   input: z.looseObject({ currencyCode: z.string() }),
-  permission: "employee",
+  permission: { view: "accounting" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2801,7 +2801,7 @@ export const getCurrencies = defineServiceFn({
  */
 export const getCurrenciesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "employee",
+  permission: { view: "accounting" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2927,7 +2927,7 @@ export const getPeriodCloseChecklist = defineServiceFn({
  */
 export const getDefaultAccounts = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "employee",
+  permission: { view: "accounting" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3022,7 +3022,7 @@ export const getPaymentTerms = defineServiceFn({
  */
 export const getPaymentTermsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "employee",
+  permission: { view: "accounting" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -4162,7 +4162,7 @@ export const getFixedAssetClass = defineServiceFn({
  */
 export const getFixedAssetClassesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "employee",
+  permission: { view: "accounting" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -4264,7 +4264,7 @@ export const getFixedAssets = defineServiceFn({
       .nullable()
       .optional()
   }),
-  permission: "employee",
+  permission: { view: "accounting" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -4753,7 +4753,7 @@ export const getFixedAssetCipCosts = defineServiceFn({
  */
 export const getWorkCenterCapitalCost = defineServiceFn({
   input: z.looseObject({ workCenterId: z.string() }),
-  permission: "employee",
+  permission: { view: "accounting" },
   async run(ctx, input) {
     return unwrap(
       ctx,

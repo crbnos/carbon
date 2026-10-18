@@ -26,7 +26,11 @@ import {
 } from "~/modules/items/ui/Item";
 import CustomerParts from "~/modules/items/ui/Item/CustomerParts";
 import { itemRentalRateValidator } from "~/modules/sales/sales.models";
-import { upsertItemRentalRate } from "~/modules/sales/sales.service";
+import {
+  getCustomerItemRentalRates,
+  getItemRentalRate,
+  upsertItemRentalRate
+} from "~/modules/sales/sales.service";
 import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -62,9 +66,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const baseCurrencyCode = company.data?.baseCurrencyCode ?? "";
   const [rentalRate, customerRentalRates] = await Promise.all([
     baseCurrencyCode
-      ? api.sales.getItemRentalRate({ itemId, currencyCode: baseCurrencyCode })
+      ? getItemRentalRate(client, itemId, companyId, baseCurrencyCode)
       : null,
-    api.sales.getCustomerItemRentalRates({ itemId })
+    getCustomerItemRentalRates(client, itemId, companyId)
   ]);
 
   if (partUnitSalePrice.error) {

@@ -19,7 +19,7 @@ import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
 import SalesInvoiceExplorer from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceExplorer";
 import SalesInvoiceHeader from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceHeader";
 import SalesInvoiceProperties from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties";
-import { getCustomer } from "~/modules/sales/sales.service";
+import { getCustomer, getOpportunity } from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -79,9 +79,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ? getCustomer(client, salesInvoice.data.customerId)
         : null,
       salesInvoice.data?.opportunityId
-        ? api.sales.getOpportunity({
-            opportunityId: salesInvoice.data.opportunityId
-          })
+        ? getOpportunity(client, salesInvoice.data.opportunityId)
         : null,
       getCompanySettings(serviceRole, companyId),
       api.invoicing

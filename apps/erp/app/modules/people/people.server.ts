@@ -696,7 +696,7 @@ export const getShiftsList = defineServiceFn({
  */
 export const getEmployeeShifts = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "employee",
+  permission: { view: "people" },
   async run(ctx) {
     return unwrap(
       ctx,

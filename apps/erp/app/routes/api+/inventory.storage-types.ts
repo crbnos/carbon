@@ -2,15 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
+import { getStorageTypesList } from "~/modules/inventory/inventory.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     view: "parts"
   });
-  const api = carbonFor(auth);
-
-  return await api.inventory.getStorageTypesList({});
+  const { client, companyId } = auth;
+  return await getStorageTypesList(client, companyId);
 }

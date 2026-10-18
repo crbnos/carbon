@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getOpenSalesOrderLinesForItem } from "~/modules/sales/sales.service";
 
 /**
  * Sales order lines a job can be linked to: open/draft orders whose line item
@@ -22,8 +22,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "production"
   });
   const { client, companyId } = auth;
-  const api = carbonFor(auth);
-
   const { jobId } = params;
   if (!jobId) {
     return { data: [], error: null };
@@ -48,9 +46,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return { data: [], error: null };
   }
 
-  const lines = await api.sales.getOpenSalesOrderLinesForItem({
-    itemId: job.data.itemId
-  });
+  const lines = await getOpenSalesOrderLinesForItem(
+    client,
+    companyId,
+    job.data.itemId
+  );
 
   if (lines.error) {
     return data(

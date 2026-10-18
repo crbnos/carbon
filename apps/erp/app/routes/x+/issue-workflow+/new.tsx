@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,7 +14,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { useSetAppBarOverride } from "~/components/Layout/Mobile";
 import { issueWorkflowValidator } from "~/modules/quality/quality.models";
-import { upsertIssueWorkflow } from "~/modules/quality/quality.service";
+import {
+  getRequiredActionsList,
+  upsertIssueWorkflow
+} from "~/modules/quality/quality.service";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
 import { path } from "~/utils/path";
 
@@ -23,9 +25,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     create: "quality"
   });
-  const api = carbonFor(auth);
-
-  const requiredActions = await api.quality.getRequiredActionsList({});
+  const { client, companyId } = auth;
+  const requiredActions = await getRequiredActionsList(client, companyId);
 
   return {
     requiredActions: requiredActions.data ?? []

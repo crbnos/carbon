@@ -16,6 +16,7 @@ import { getUnattributedMachineTimes } from "~/modules/production/production.ser
 import MachineTimeTable from "~/modules/production/ui/MachineTime/MachineTimeTable.ee";
 import MachineTimeUpgradeOverlay from "~/modules/production/ui/MachineTime/MachineTimeUpgradeOverlay.ee";
 import { parseMachineTimeListFilters } from "~/modules/production/ui/MachineTime/machine-time-filters.ee";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -40,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [machineTimes, workCenters, locations] = await Promise.all([
     getUnattributedMachineTimes(client, companyId, { filters, limit, offset }),
-    api.resources.getWorkCentersList({}),
+    getWorkCentersList(client, companyId),
     api.resources.getLocationsList({})
   ]);
 

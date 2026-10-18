@@ -11,6 +11,7 @@ import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
+import { getPicksByJobMaterial } from "~/modules/inventory/inventory.service";
 import {
   type getJob,
   getJobMaterialsWithQuantityOnHand
@@ -65,7 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }),
     api.settings.getCompanySettings({}),
     api.production.getJobMaterialItemIds({ jobId }),
-    api.inventory.getPicksByJobMaterial({ jobId })
+    getPicksByJobMaterial(client, jobId, companyId)
   ]);
 
   if (materials.error) {

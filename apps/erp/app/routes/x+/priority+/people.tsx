@@ -20,6 +20,7 @@ import { useLocale } from "@react-aria/i18n";
 import { useCallback, useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { getEmployeeShifts } from "~/modules/people/people.service";
 import {
   buildPeopleCapacityBuckets,
   getWorkCenterCalendarHoursByDay
@@ -32,6 +33,7 @@ import { PeopleMatrix } from "~/modules/production/ui/Schedule/People/PeopleMatr
 import { PeopleWeekBoard } from "~/modules/production/ui/Schedule/People/PeopleWeekBoard";
 import { assignmentMatchesShift } from "~/modules/production/ui/Schedule/People/peopleShared";
 import { TimeOffDialog } from "~/modules/production/ui/Schedule/People/TimeOffDialog";
+import { getWorkCentersByLocation } from "~/modules/resources/resources.service";
 import {
   getLocationTimeZone,
   resolveLocationId
@@ -153,12 +155,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     api.production.getPeopleAssignments({ locationId, date }),
     api.production.getPeopleAbsences({ date }),
     api.production.getLocationEmployees({ locationId }),
-    api.resources.getWorkCentersByLocation({ locationId }),
+    getWorkCentersByLocation(client, locationId),
     api.production.getWorkCenterRequiredAbilities({ locationId }),
     api.production.getActiveEmployeeAbilities({}),
     api.people.getShiftsWithTimes({ locationId }),
     api.people.getEmployeeDepartments({}),
-    api.people.getEmployeeShifts({})
+    getEmployeeShifts(client, companyId)
   ]);
 
   // resolve the requested department against this location's real departments

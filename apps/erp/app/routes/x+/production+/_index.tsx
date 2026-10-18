@@ -83,6 +83,7 @@ import { KPIs } from "~/modules/production/production.models";
 import { getUnbatchedBatchableOperationCount } from "~/modules/production/production.service";
 import type { ActiveProductionEvent } from "~/modules/production/types";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs";
+import { getWorkCentersListWithBlockingStatus } from "~/modules/resources/resources.service";
 import type { WorkCenter } from "~/modules/resources/types";
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
 import type { Handle } from "~/utils/handle";
@@ -127,7 +128,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .eq("companyId", companyId)
         .eq("assignee", userId),
       getUnbatchedBatchableOperationCount(client, companyId),
-      api.resources.getWorkCentersListWithBlockingStatus({})
+      getWorkCentersListWithBlockingStatus(client, companyId)
     ]);
 
   return {

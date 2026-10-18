@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,19 +10,23 @@ import { redirect } from "@carbon/utils";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, useFetcher, useLoaderData } from "react-router";
-import { updateKanbanJob } from "~/modules/production/production.service";
+import { getKanban } from "~/modules/inventory/inventory.service";
+import {
+  getJob,
+  updateKanbanJob
+} from "~/modules/production/production.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     role: "employee"
   });
-  const api = carbonFor(auth);
+  const { client, companyId } = auth;
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const kanban = await api.inventory.getKanban({ kanbanId: id });
+  const kanban = await getKanban(client, id, companyId);
   if (
     kanban.data?.replenishmentSystem !== "Make" ||
     !kanban.data?.jobReadableId
@@ -32,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.api.kanban(id));
   }
 
-  const job = await api.production.getJob({ id: kanban.data.jobId! });
+  const job = await getJob(client, kanban.data.jobId!);
   if (job.error) {
     return {
       existingJob: null,

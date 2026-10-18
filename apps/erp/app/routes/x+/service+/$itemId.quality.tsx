@@ -12,7 +12,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useParams } from "react-router";
 import invariant from "tiny-invariant";
 import { itemInspectionDocumentAssignmentValidator } from "~/modules/quality/quality.models";
-import { upsertItemInspectionDocumentAssignment } from "~/modules/quality/quality.service";
+import {
+  getItemInspectionDocumentAssignments,
+  upsertItemInspectionDocumentAssignment
+} from "~/modules/quality/quality.service";
 import type { ItemInspectionDocumentAssignment } from "~/modules/quality/types";
 import ItemQualityView from "~/modules/quality/ui/Item/ItemQualityView";
 import { path } from "~/utils/path";
@@ -21,13 +24,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const { client, companyId } = auth;
   const api = carbonFor(auth);
   const { itemId } = params;
   invariant(itemId, "itemId is required");
 
   const [documents, assignments] = await Promise.all([
     api.quality.getInspectionDocumentsForItem({ itemId }),
-    api.quality.getItemInspectionDocumentAssignments({ itemId })
+    getItemInspectionDocumentAssignments(client, itemId, companyId)
   ]);
 
   return data({

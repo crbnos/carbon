@@ -512,9 +512,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     dynamicOptions.reimbursementBankAccountId = assetOptions;
   }
 
-  const integrationData = await api.settings.getIntegration({
-    id: integrationId
-  });
+  const integrationData = await getIntegration(
+    client,
+    integrationId,
+    companyId
+  );
 
   if (integrationData.error || !integrationData.data) {
     return {

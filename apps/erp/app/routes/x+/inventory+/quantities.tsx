@@ -17,6 +17,10 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import type { InventoryItem } from "~/modules/inventory/types";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
+import {
+  getMaterialFormsList,
+  getMaterialSubstancesList
+} from "~/modules/items/items.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -103,8 +107,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
         filters,
         locationId
       }),
-      api.items.getMaterialFormsList({}),
-      api.items.getMaterialSubstancesList({}),
+      getMaterialFormsList(client, companyId),
+      getMaterialSubstancesList(client, companyId),
       api.shared.getTagsList({}),
       api.inventory.getStorageTypesList({}),
       api.inventory.getStorageUnitsList({})

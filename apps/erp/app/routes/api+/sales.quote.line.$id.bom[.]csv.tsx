@@ -7,7 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import type { LoaderFunctionArgs } from "react-router";
 import { flattenTree } from "~/components/TreeView";
-import type { BomItemAttributes } from "~/modules/items/items.service";
+import {
+  type BomItemAttributes,
+  getBomItemAttributes
+} from "~/modules/items/items.service";
 import type { BomOperation } from "~/utils/bom";
 import {
   calculateMadePartCosts,
@@ -119,7 +122,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
       .in("quoteMakeMethodId", makeMethodIds)
       .eq("companyId", companyId),
-    api.items.getBomItemAttributes({ itemIds })
+    getBomItemAttributes(client, companyId, itemIds)
   ]);
 
   const itemAttributes =

@@ -10,6 +10,11 @@ import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import {
+  getArAging,
+  getArOpenByCustomer,
+  getArTieOut
+} from "~/modules/invoicing/invoicing.service";
 import { ARAPWorkbench } from "~/modules/invoicing/ui";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
@@ -54,13 +59,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [tieOut, aging, open] = await Promise.all([
     accountingSetUp
-      ? api.invoicing.getArTieOut({ asOfDate })
+      ? getArTieOut(client, companyId, asOfDate)
       : Promise.resolve({ data: null }),
-    api.invoicing.getArAging({
-      asOfDate,
-      options: { agingMethod, bucketDays }
-    }),
-    api.invoicing.getArOpenByCustomer({ asOfDate })
+    getArAging(client, companyId, asOfDate, { agingMethod, bucketDays }),
+    getArOpenByCustomer(client, companyId, asOfDate)
   ]);
 
   return {

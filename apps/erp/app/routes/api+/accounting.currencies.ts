@@ -2,16 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
+import { getCurrenciesList } from "~/modules/accounting/accounting.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {});
-  const api = carbonFor(auth);
-
-  return await api.accounting.getCurrenciesList({});
+  const { client, companyGroupId } = auth;
+  return await getCurrenciesList(client, companyGroupId);
 }
 
 export const clientLoader = cachedClientLoader<typeof loader>({

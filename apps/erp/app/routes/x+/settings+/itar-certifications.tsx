@@ -16,6 +16,7 @@ import {
   ItarCertificationsTable,
   ItarEntityCertificationStatus
 } from "~/modules/settings/ui";
+import { getItarCertificationReport } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -55,6 +56,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings",
     role: "employee"
   });
+  const { client, companyId } = auth;
   const api = carbonFor(auth);
 
   // Controlled environments only.
@@ -63,7 +65,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [report, entityCertification, lastLoginByUserId] = await Promise.all([
-    api.users.getItarCertificationReport({}),
+    getItarCertificationReport(client, companyId),
     api.users.getItarEntityCertification({}),
     getLastLoginByUserId()
   ]);

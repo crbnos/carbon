@@ -12,6 +12,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { getPeople } from "~/modules/people/people.service";
 import { PeopleTable } from "~/modules/people/ui/People";
+import { getEmployeeTypes } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -34,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const [attributeCategories, employeeTypes, people, shifts] =
     await Promise.all([
       api.people.getAttributeCategories({}),
-      api.users.getEmployeeTypes({}),
+      getEmployeeTypes(client, companyId),
       getPeople(client, companyId, { search, limit, offset, sorts, filters }),
       api.people.getShiftsList({ locationId: null })
     ]);
@@ -65,7 +66,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     attributeCategories: attributeCategories.data?.rows,
-    employeeTypes: employeeTypes.data?.rows ?? [],
+    employeeTypes: employeeTypes.data ?? [],
     people: people.data ?? [],
     shifts: shifts.data ?? [],
     count: people.count ?? 0

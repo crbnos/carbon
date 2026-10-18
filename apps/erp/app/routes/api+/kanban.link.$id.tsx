@@ -7,18 +7,20 @@ import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { redirect, redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
+import { getKanban } from "~/modules/inventory/inventory.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     role: "employee"
   });
+  const { client, companyId } = auth;
   const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const kanban = await api.inventory.getKanban({ kanbanId: id });
+  const kanban = await getKanban(client, id, companyId);
   if (kanban.error) {
     throw notFound("Kanban not found");
   }

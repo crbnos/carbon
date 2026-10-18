@@ -941,7 +941,7 @@ export const getItarEntityCertification = defineServiceFn({
  */
 export const getItarCertificationReport = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "employee",
+  permission: { view: "users" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1145,7 +1145,7 @@ export const getEmployeeTypes = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: "employee",
+  permission: { view: "users" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1165,7 +1165,7 @@ export const getEmployeeTypes = defineServiceFn({
  */
 export const getInvitable = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "employee",
+  permission: { view: "users" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1181,7 +1181,7 @@ export const getInvitable = defineServiceFn({
  */
 export const getModules = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "employee",
+  permission: { view: "users" },
   async run(ctx) {
     return unwrap(ctx, await service.getModules(ctx.asCaller.supabase));
   }
@@ -1258,7 +1258,7 @@ export const getGroups = defineServiceFn({
  */
 export const getGroupEmails = defineServiceFn({
   input: z.looseObject({ groupIds: z.array(z.string()) }),
-  permission: "employee",
+  permission: { view: "users" },
   async run(ctx, input) {
     return await service.getGroupEmails(
       ctx.asCaller.supabase,
@@ -1279,7 +1279,7 @@ export const getUserSelectGroups = defineServiceFn({
     limit: z.number(),
     offset: z.number()
   }),
-  permission: "employee",
+  permission: { view: "users" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1299,7 +1299,7 @@ export const getUserSelectGroups = defineServiceFn({
  */
 export const getUserSelectGroupMembers = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
-  permission: "employee",
+  permission: { view: "users" },
   async run(ctx, input) {
     return unwrap(
       ctx,

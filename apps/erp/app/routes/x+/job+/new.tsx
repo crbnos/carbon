@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -12,6 +12,7 @@ import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
 import { CONSTRUCTION_IN_PROGRESS_ENABLED } from "~/modules/accounting/accounting.models";
+import { getFixedAssets } from "~/modules/accounting/accounting.service";
 import { jobValidator } from "~/modules/production/production.models";
 import { JobForm } from "~/modules/production/ui/Jobs";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -30,8 +31,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "production"
   });
   const { client, companyId } = auth;
-  const api = carbonFor(auth);
-
   // The Complete To pickers. A CIP class is the holding account a job's cost
   // sits in, never a target, so it is filtered out here rather than by name.
   const [fixedAssetClasses, underConstructionAssets] = await Promise.all([
@@ -43,7 +42,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .order("name"),
     // Not offered while construction in progress is hidden.
     CONSTRUCTION_IN_PROGRESS_ENABLED
-      ? api.accounting.getFixedAssets({
+      ? getFixedAssets(client, companyId, {
           search: null,
           status: "Under Construction",
           limit: 100,
@@ -59,7 +58,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       id: assetClass.id,
       name: assetClass.name
     })),
-    underConstructionAssets: (underConstructionAssets?.data?.rows ?? []).map(
+    underConstructionAssets: (underConstructionAssets?.data ?? []).map(
       (asset) => ({
         id: asset.id,
         fixedAssetId: asset.fixedAssetId,

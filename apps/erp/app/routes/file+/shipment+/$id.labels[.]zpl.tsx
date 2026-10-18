@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateProductLabelZPL } from "@carbon/documents/zpl";
 import type { TrackedEntityAttributes } from "@carbon/utils";
@@ -11,6 +11,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getShipmentTracking } from "~/modules/inventory/inventory.utils";
 import {
   getCompanyLogoForLabel,
+  getDocumentTemplateConfig,
   resolveLabelLogo
 } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
@@ -132,10 +133,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Invalid label size or missing ZPL configuration");
   }
 
-  const template = dataOrThrow(
-    await api.settings.getDocumentTemplateConfig({
-      documentType: "trackingLabel"
-    })
+  const template = await getDocumentTemplateConfig(
+    client,
+    companyId,
+    "trackingLabel"
   );
 
   const companyLogo = await getCompanyLogoForLabel(client, companyId);

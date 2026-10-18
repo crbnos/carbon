@@ -2432,7 +2432,7 @@ export const getCompanies = defineServiceFn({
  */
 export const getEmployeeCompanies = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "employee",
+  permission: { view: "settings" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2590,7 +2590,7 @@ export const getCustomFieldsTables = defineServiceFn({
  */
 export const getIntegration = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: "employee",
+  permission: { view: "settings" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2710,7 +2710,7 @@ export const getSequences = defineServiceFn({
  */
 export const getSequencesList = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
-  permission: "employee",
+  permission: { view: "settings" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2738,7 +2738,7 @@ export const getItemSerialSequences = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: "employee",
+  permission: { view: "settings" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2962,7 +2962,7 @@ export const getDocumentTemplateConfig = defineServiceFn({
       "trackingLabel"
     ])
   }),
-  permission: "employee",
+  permission: { view: "settings" },
   async run(ctx, input) {
     return await service.getDocumentTemplateConfig(
       ctx.asCaller.supabase,

@@ -47,6 +47,7 @@ import {
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useResolved } from "~/hooks/useResolved";
+import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { settingsToggle } from "~/modules/settings/settings.models";
 import { getDatabaseClient } from "~/services/database.server";
@@ -104,12 +105,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     view: "settings"
   });
-  const { companyId } = auth;
+  const { companyId, client } = auth;
   const api = carbonFor(auth);
 
   const [companySettings, accountDefaults] = await Promise.all([
     api.settings.getCompanySettings({}),
-    api.accounting.getDefaultAccounts({})
+    getDefaultAccounts(client, companyId)
   ]);
 
   if (!companySettings.data)

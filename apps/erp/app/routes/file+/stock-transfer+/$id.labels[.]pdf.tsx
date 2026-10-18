@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ProductLabelPDF } from "@carbon/documents/pdf";
 import { labelSizes } from "@carbon/utils";
@@ -10,6 +10,7 @@ import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   getCompanyLogoForLabel,
+  getDocumentTemplateConfig,
   resolveLabelLogo
 } from "~/modules/settings/settings.service";
 import { getStockTransferLabelItems } from "./labels.server";
@@ -56,10 +57,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Apply the tracking-label template + company logo, same as the other label
   // routes — stock-transfer labels should match the configured layout/branding.
-  const template = dataOrThrow(
-    await api.settings.getDocumentTemplateConfig({
-      documentType: "trackingLabel"
-    })
+  const template = await getDocumentTemplateConfig(
+    client,
+    companyId,
+    "trackingLabel"
   );
   const company = await api.settings.getCompany({});
   const companyLogo = await getCompanyLogoForLabel(client, companyId);

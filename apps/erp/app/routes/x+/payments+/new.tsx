@@ -24,6 +24,7 @@ import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
+import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
 import { paymentValidator } from "~/modules/invoicing/invoicing.models";
 import {
   checkDepositDocument,
@@ -63,7 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [company, defaults, depositDocuments] = await Promise.all([
     api.settings.getCompany({}),
-    api.accounting.getDefaultAccounts({}),
+    getDefaultAccounts(client, companyId),
     getDepositDocuments(client, companyId, [salesOrderId])
   ]);
   const bankAccount = defaults.data?.bankCashAccount ?? "";

@@ -23,7 +23,7 @@ import { useSetAppBarOverride } from "~/components/Layout/Mobile";
 import { RecordHero } from "~/components/Layout/RecordHeader";
 import { useUrlParams } from "~/hooks";
 import InventoryItemHeader from "~/modules/inventory/ui/Inventory/InventoryItemHeader";
-import { upsertPickMethod } from "~/modules/items/items.service";
+import { getPickMethod, upsertPickMethod } from "~/modules/items/items.service";
 import { resolveLocationId } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
@@ -67,7 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   // Now get the pick method (it should definitely exist)
-  const pickMethod = await api.items.getPickMethod({ itemId, locationId });
+  const pickMethod = await getPickMethod(client, itemId, companyId, locationId);
   if (pickMethod.error || !pickMethod.data) {
     throw redirect(
       path.to.inventory,

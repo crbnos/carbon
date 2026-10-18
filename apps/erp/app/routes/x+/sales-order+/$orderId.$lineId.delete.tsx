@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,7 +14,8 @@ import { ConfirmDelete } from "~/components/Modals";
 import { isSalesOrderLocked } from "~/modules/sales/sales.models";
 import {
   deleteSalesOrderLine,
-  getSalesOrder
+  getSalesOrder,
+  getSalesOrderLine
 } from "~/modules/sales/sales.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
@@ -24,14 +24,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     delete: "sales"
   });
-  const api = carbonFor(auth);
+  const { client } = auth;
   const { lineId, orderId } = params;
   if (!lineId) throw notFound("lineId not found");
   if (!orderId) throw notFound("orderId not found");
 
-  const salesOrderLine = await api.sales.getSalesOrderLine({
-    salesOrderLineId: lineId
-  });
+  const salesOrderLine = await getSalesOrderLine(client, lineId);
   if (salesOrderLine.error) {
     throw redirect(
       path.to.salesOrder(orderId),

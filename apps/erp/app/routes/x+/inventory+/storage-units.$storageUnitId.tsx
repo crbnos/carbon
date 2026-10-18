@@ -11,6 +11,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { storageUnitValidator } from "~/modules/inventory/inventory.models";
 import { StorageUnitForm } from "~/modules/inventory/ui";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
@@ -19,6 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "inventory",
     role: "employee"
   });
+  const { client, companyId } = auth;
   const api = carbonFor(auth);
 
   const { storageUnitId } = params;
@@ -27,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [storageUnit, effectiveWorkCenter, workCenters] = await Promise.all([
     api.inventory.getStorageUnit({ storageUnitId }),
     api.inventory.getEffectiveWorkCenterId({ storageUnitId }),
-    api.resources.getWorkCentersList({})
+    getWorkCentersList(client, companyId)
   ]);
 
   const ownWorkCenterId = storageUnit?.data?.workCenterId ?? null;

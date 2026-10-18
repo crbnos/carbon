@@ -9,7 +9,7 @@
 
 Phase 0 — fix this branch
 - [x] Task 1: Replace the `"member"` permission with `"employee"`
-- [ ] Task 2: Restore `view` on lookups whose tables restrict reads
+- [x] Task 2: Restore `view` on lookups whose tables restrict reads
 
 Phases 1 and 2 — grants, resolver, editors (one release)
 - [ ] Task 3: Add the access registry, levels and the TS resolver

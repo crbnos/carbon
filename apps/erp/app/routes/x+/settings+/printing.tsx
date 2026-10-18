@@ -18,6 +18,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { printerRouteValidator } from "~/modules/settings/settings.models";
 import { AssignmentsCard, PrintersCard } from "~/modules/settings/ui/Printing";
 import { getUserDefaults } from "~/modules/users/users.service";
@@ -40,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     await Promise.all([
       api.settings.getCompanySettings({}),
       getPrinterRoutes(client, companyId),
-      api.resources.getWorkCentersList({}),
+      getWorkCentersList(client, companyId),
       api.resources.getLocationsList({}),
       getUserDefaults(client, userId, companyId)
     ]);

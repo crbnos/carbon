@@ -12,6 +12,7 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { BatchBuilder } from "~/modules/production/ui/Batches/BatchBuilder";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
@@ -31,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const [processes, locations, workCenters, userDefaults] = await Promise.all([
     api.production.getBatchableProcesses({}),
     api.resources.getLocationsList({}),
-    api.resources.getWorkCentersList({}),
+    getWorkCentersList(client, companyId),
     getUserDefaults(client, userId, companyId)
   ]);
 

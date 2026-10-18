@@ -13,6 +13,7 @@ import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { getBatchProperties } from "~/modules/inventory/inventory.service";
 import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
 import { itemPurchasingValidator } from "~/modules/items/items.models";
 import { upsertItemPurchasing } from "~/modules/items/items.service";
@@ -25,6 +26,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const { client, companyId } = auth;
   const api = carbonFor(auth);
 
   const { itemId } = params;
@@ -50,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     materialPurchasing: materialPurchasingResult.data,
-    batchProperties: api.inventory.getBatchProperties({ itemIds: [itemId] }),
+    batchProperties: getBatchProperties(client, [itemId], companyId),
     itemCostHistory: itemCostHistory.data ?? []
   };
 }

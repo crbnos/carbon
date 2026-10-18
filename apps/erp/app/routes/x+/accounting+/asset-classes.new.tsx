@@ -12,7 +12,10 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { fixedAssetClassValidator } from "~/modules/accounting/accounting.models";
-import { upsertFixedAssetClass } from "~/modules/accounting/accounting.service";
+import {
+  getDefaultAccounts,
+  upsertFixedAssetClass
+} from "~/modules/accounting/accounting.service";
 import { AssetClassForm } from "~/modules/accounting/ui/FixedAssets";
 import { path } from "~/utils/path";
 
@@ -20,10 +23,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     create: "accounting"
   });
+  const { client, companyId } = auth;
   const api = carbonFor(auth);
 
   const [defaults, companySettings] = await Promise.all([
-    api.accounting.getDefaultAccounts({}),
+    getDefaultAccounts(client, companyId),
     api.settings.getCompanySettings({})
   ]);
 

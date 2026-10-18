@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor, dataOrThrow } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -16,7 +15,10 @@ import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { gaugeCalibrationRecordValidator } from "~/modules/quality/quality.models";
-import { upsertGaugeCalibrationRecord } from "~/modules/quality/quality.service";
+import {
+  getQualityFiles,
+  upsertGaugeCalibrationRecord
+} from "~/modules/quality/quality.service";
 import GaugeCalibrationRecordForm from "~/modules/quality/ui/Calibrations/GaugeCalibrationRecordForm";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -25,8 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     create: "quality"
   });
-  const api = carbonFor(auth);
-
+  const { client, companyId } = auth;
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
   const gaugeId = url.searchParams.get("gaugeId");
@@ -35,7 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return {
       id,
       gaugeId,
-      files: dataOrThrow(await api.quality.getQualityFiles({ id }))
+      files: await getQualityFiles(client, id, companyId)
     };
   }
 

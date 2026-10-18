@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
+import { getStorageUnitsListForLocation } from "~/modules/inventory/inventory.service";
 import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -13,8 +13,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "parts"
   });
   const { client, companyId } = auth;
-  const api = carbonFor(auth);
-
   const url = new URL(request.url);
   const locationId = url.searchParams.get("locationId");
   const itemId = url.searchParams.get("itemId");
@@ -29,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // If itemId is provided, get storageUnits with quantities
   if (itemId) {
     const [shelvesResult, quantitiesResult] = await Promise.all([
-      api.inventory.getStorageUnitsListForLocation({ locationId }),
+      getStorageUnitsListForLocation(client, companyId, locationId),
       getItemStorageUnitQuantities(client, itemId, companyId, locationId)
     ]);
 
@@ -65,7 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
-  return await api.inventory.getStorageUnitsListForLocation({ locationId });
+  return await getStorageUnitsListForLocation(client, companyId, locationId);
 }
 
 // On-hand moves with every receipt, pick and shipment, by anyone: the cached

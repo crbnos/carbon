@@ -9,13 +9,16 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { productionEventValidator } from "~/modules/production/production.models";
+import { getProductionEvent } from "~/modules/production/production.service";
 import { ProductionEventForm } from "~/modules/production/ui/Jobs";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     create: "production"
   });
+  const { client, companyId } = auth;
   const api = carbonFor(auth);
 
   const { id, jobId } = params;
@@ -24,8 +27,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [jobOperations, workCenters, productionEvent] = await Promise.all([
     api.production.getJobOperations({ jobId }),
-    api.resources.getWorkCentersList({}),
-    api.production.getProductionEvent({ id })
+    getWorkCentersList(client, companyId),
+    getProductionEvent(client, id)
   ]);
 
   const operationOptions = jobOperations.data?.rows?.map((operation) => ({

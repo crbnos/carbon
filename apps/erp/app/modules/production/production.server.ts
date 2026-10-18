@@ -6171,7 +6171,7 @@ export const getJobDocumentsWithItemId = defineServiceFn({
  */
 export const getJob = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: "employee",
+  permission: { view: "production" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6349,7 +6349,7 @@ export const getJobs = defineServiceFn({
  */
 export const getJobsBySalesOrderLine = defineServiceFn({
   input: z.looseObject({ salesOrderLineId: z.string() }),
-  permission: "employee",
+  permission: { view: "production" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6836,7 +6836,7 @@ export const getProceduresList = defineServiceFn({
  */
 export const getProductionEvent = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: "employee",
+  permission: { view: "production" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8824,7 +8824,7 @@ export const getWorkCenterReservationsRange = defineServiceFn({
  */
 export const getLocationEmployees = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: "employee",
+  permission: { view: "production" },
   async run(ctx, input) {
     return unwrap(
       ctx,

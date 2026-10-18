@@ -36,6 +36,7 @@ import {
   FixedAssetHeader,
   FixedAssetNotes
 } from "~/modules/accounting/ui/FixedAssets";
+import { getWorkCenter } from "~/modules/resources/resources.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -88,7 +89,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [workCenter, cipJobs] = await Promise.all([
     asset.data.workCenterId
-      ? api.resources.getWorkCenter({ id: asset.data.workCenterId })
+      ? getWorkCenter(client, asset.data.workCenterId)
       : null,
     cipJobIds.length > 0
       ? client

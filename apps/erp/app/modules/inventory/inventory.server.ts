@@ -4027,7 +4027,7 @@ export const getItemLedgerBalance = defineServiceFn({
  */
 export const getBatchProperties = defineServiceFn({
   input: z.looseObject({ itemIds: z.array(z.string()) }),
-  permission: "employee",
+  permission: { view: "inventory" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4172,7 +4172,7 @@ export const getKanbans = defineServiceFn({
  */
 export const getKanban = defineServiceFn({
   input: z.looseObject({ kanbanId: z.string() }),
-  permission: "employee",
+  permission: { view: "inventory" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4516,7 +4516,7 @@ export const getStorageUnitsList = defineServiceFn({
  */
 export const getStorageUnitsListForLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: "employee",
+  permission: { view: "inventory" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4536,7 +4536,7 @@ export const getStorageUnitsListForLocation = defineServiceFn({
  */
 export const getStorageUnitsTreeForLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: "employee",
+  permission: { view: "inventory" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5192,7 +5192,7 @@ export const getWarehouseTransferRelatedItems = defineServiceFn({
  */
 export const getWarehouseTransferLine = defineServiceFn({
   input: z.looseObject({ transferId: z.string(), lineId: z.string() }),
-  permission: "employee",
+  permission: { view: "inventory" },
   async run(ctx, input) {
     const line = await service.getWarehouseTransferLine(
       ctx.asCaller.supabase,
@@ -6069,7 +6069,7 @@ export const getStorageType = defineServiceFn({
  */
 export const getStorageTypesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "employee",
+  permission: { view: "inventory" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -6245,7 +6245,7 @@ export const getPickingList = defineServiceFn({
  */
 export const getPicksByJobMaterial = defineServiceFn({
   input: z.looseObject({ jobId: z.string() }),
-  permission: "employee",
+  permission: { view: "inventory" },
   async run(ctx, input) {
     return unwrap(
       ctx,
