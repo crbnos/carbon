@@ -2152,7 +2152,7 @@ export const createSalesInvoiceFromShipment = defineServiceFn({
  */
 export const getPurchaseInvoice = defineServiceFn({
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2238,7 +2238,7 @@ export const getPurchaseInvoiceLines = defineServiceFn({
  */
 export const getPurchaseInvoiceLine = defineServiceFn({
   input: z.looseObject({ purchaseInvoiceLineId: z.string() }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2257,7 +2257,7 @@ export const getPurchaseInvoiceLine = defineServiceFn({
  */
 export const getSalesInvoice = defineServiceFn({
   input: z.looseObject({ salesInvoiceId: z.string() }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2343,7 +2343,7 @@ export const getSalesInvoiceLines = defineServiceFn({
  */
 export const getSalesInvoiceLine = defineServiceFn({
   input: z.looseObject({ salesInvoiceLineId: z.string() }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3072,7 +3072,7 @@ export const getOpenReimbursementsForEmployee = defineServiceFn({
  */
 export const getPaymentCurrencyConfiguration = defineServiceFn({
   input: z.looseObject({ currencyCode: z.string() }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, input) {
     return await service.getPaymentCurrencyConfiguration(
       ctx.asCaller.supabase,
@@ -3466,7 +3466,7 @@ export const applyCreditsToInvoices = defineServiceFn({
  */
 export const getArTieOut = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3486,7 +3486,7 @@ export const getArTieOut = defineServiceFn({
  */
 export const getApTieOut = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3506,7 +3506,7 @@ export const getApTieOut = defineServiceFn({
  */
 export const getArOpenByCustomer = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3526,7 +3526,7 @@ export const getArOpenByCustomer = defineServiceFn({
  */
 export const getApOpenBySupplier = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3554,7 +3554,7 @@ export const getArAging = defineServiceFn({
       })
       .optional()
   }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3583,7 +3583,7 @@ export const getApAging = defineServiceFn({
       })
       .optional()
   }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,

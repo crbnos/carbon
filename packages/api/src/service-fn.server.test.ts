@@ -143,6 +143,7 @@ describe("the gate", () => {
   });
   const user = (permissions = {}): Actor => ({
     type: "user",
+    role: "employee",
     userId: "user-1",
     permissions
   });
@@ -180,10 +181,29 @@ describe("the gate", () => {
     expect(asSystem.data).toEqual({ data: "inner", error: null });
   });
 
-  it("requires company membership for a member read", async () => {
+  it("refuses a portal account an employee read, whatever it holds", async () => {
     const open = defineServiceFn({
       input: z.object({}),
-      permission: "member",
+      permission: "employee",
+      async run() {
+        return "ok";
+      }
+    });
+    const customer: Actor = {
+      type: "user",
+      role: "customer",
+      userId: "user-1",
+      permissions: productionView
+    };
+    expect((await open(contextWith({}, customer), {})).error?.category).toBe(
+      "forbidden"
+    );
+  });
+
+  it("requires company membership for an employee read", async () => {
+    const open = defineServiceFn({
+      input: z.object({}),
+      permission: "employee",
       async run() {
         return "ok";
       }

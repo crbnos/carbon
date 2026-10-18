@@ -233,8 +233,8 @@ function stringsOf(node: Node | undefined): string[] | null {
 /**
  * The API gate's view of the declared permission. The gate checks one module;
  * a permission naming several modules publishes module `null` (membership
- * only) and the function's own gate decides, as it does for `"member"` (any
- * member of the company). `"system"` and a keyed rule are refused.
+ * only) and the function's own gate decides, as it does for `"employee"` (any
+ * employee of the company). `"system"` and a keyed rule are refused.
  */
 /**
  * The permission's object literal: written in place, or a constant it names
@@ -278,9 +278,9 @@ export function leafPermission(leaf: ServiceFnLeaf): {
   );
   if (!value) throw new Error(`${where}: no literal \`permission\``);
 
-  // `"member"`: any member of the company. The API gate then checks only
+  // `"employee"`: any employee of the company. The API gate then checks only
   // that the key is the company's.
-  if (Node.isStringLiteral(value) && value.getLiteralValue() === "member") {
+  if (Node.isStringLiteral(value) && value.getLiteralValue() === "employee") {
     return { permission: { module: null, actions: [] }, actions: [] };
   }
 

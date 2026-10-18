@@ -193,6 +193,15 @@ async function getEffectiveUser(
   return pinIn?.userId ?? sessionUserId;
 }
 
+/** A claims role as one of the company roles; anything else is no role. */
+function companyRole(
+  role: string | null
+): "employee" | "customer" | "supplier" | null {
+  return role === "employee" || role === "customer" || role === "supplier"
+    ? role
+    : null;
+}
+
 export async function requirePermissions(
   request: Request,
   requiredPermissions: {
@@ -221,6 +230,8 @@ export async function requirePermissions(
   caller: "session" | "apiKey";
   /** The session user's claims, or the API key's scopes, per module. */
   permissions: Record<string, Permission>;
+  /** The session user's role in the company; `null` for an API key. */
+  role: "employee" | "customer" | "supplier" | null;
 }> {
   const apiKey = request.headers.get("carbon-key");
 
@@ -342,7 +353,8 @@ export async function requirePermissions(
         email: "",
         consoleMode: false,
         caller: "apiKey",
-        permissions: makePermissionsFromClaims(scopes)?.permissions ?? {}
+        permissions: makePermissionsFromClaims(scopes)?.permissions ?? {},
+        role: null
       };
     }
   }
@@ -388,7 +400,8 @@ export async function requirePermissions(
       sessionUserId: userId,
       consoleMode,
       caller: "session",
-      permissions: myClaims.permissions
+      permissions: myClaims.permissions,
+      role: companyRole(myClaims.role)
     };
   }
 
@@ -452,7 +465,8 @@ export async function requirePermissions(
     sessionUserId: userId,
     consoleMode,
     caller: "session",
-    permissions: myClaims.permissions
+    permissions: myClaims.permissions,
+    role: companyRole(myClaims.role)
   };
 }
 

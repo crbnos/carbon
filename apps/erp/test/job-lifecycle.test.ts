@@ -116,6 +116,7 @@ const contextWith = (caller: unknown) =>
   createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "u1",
       permissions: {
         production: { view: [], create: ["c1"], update: ["c1"], delete: [] }

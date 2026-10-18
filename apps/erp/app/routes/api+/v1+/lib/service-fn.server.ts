@@ -57,7 +57,10 @@ export function contextFromAuthed(context: AuthedContext): ServiceContext {
     permissions: permissionsFromClaims(context.scopes),
     companyId: context.companyId,
     companyGroupId: context.companyGroupId,
-    client: scopedToCompany(context.client, context.companyId, COMPANY_TABLES)
+    client: scopedToCompany(context.client, context.companyId, COMPANY_TABLES),
+    // OAuth acts only as an employee (`oauthContext`), and a workflow only as
+    // an owner who is one (`readOwnerPermissions`).
+    role: context.authKind === "api-key" ? null : "employee"
   });
 }
 

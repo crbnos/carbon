@@ -102,7 +102,7 @@ export const serviceFnFile: ConformanceCheck = {
                   source.getLineAndCharacterOfPosition(empty.getStart(source))
                     .line + 1,
                 snippet: `${name}: permission {}`,
-                message: `${name}: permission {} reads as "nothing required". Write "member" for any member of the company.`
+                message: `${name}: permission {} reads as "nothing required". Write "employee" for any employee of the company.`
               });
             }
           } else if (isFunctionValue(init)) {

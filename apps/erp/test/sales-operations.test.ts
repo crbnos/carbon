@@ -107,7 +107,7 @@ function serviceRole(rows: Record<string, unknown> = {}) {
 
 const contextFor = (permissions: Permissions) =>
   createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions },
+    actor: { type: "user", role: "employee", userId: "user-1", permissions },
     company: { id: "company-1", groupId: "group-1" },
     caller: serviceRole(),
     system: () => serviceRole(),

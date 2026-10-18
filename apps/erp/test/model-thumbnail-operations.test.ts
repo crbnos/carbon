@@ -51,6 +51,7 @@ function contextFor(partsUpdate: string[]) {
   return createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "system",
       permissions: {
         parts: {

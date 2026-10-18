@@ -13,7 +13,7 @@ import { CarbonError, createServiceContext } from "./service-fn.server";
 import { paged, payload, run, unwrap } from "./service-tools.server";
 
 const ctx = createServiceContext({
-  actor: { type: "user", userId: "user-1", permissions: {} },
+  actor: { type: "user", role: "employee", userId: "user-1", permissions: {} },
   company: { id: "company-1", groupId: "group-1" },
   caller: {} as never,
   system: () => ({}) as never,

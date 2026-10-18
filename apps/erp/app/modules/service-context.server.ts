@@ -24,6 +24,8 @@ export type Caller = {
   companyId: string;
   companyGroupId: string;
   client: SupabaseClient<Database>;
+  /** The user's role in the company; `null` for a key. */
+  role: "employee" | "customer" | "supplier" | null;
 };
 
 /** The context a service function runs with for this caller. */
@@ -39,7 +41,8 @@ export function contextFor(caller: Caller): ServiceContext {
         : {
             type: "user",
             userId: caller.userId,
-            permissions: caller.permissions
+            permissions: caller.permissions,
+            role: caller.role
           },
     company: { id: caller.companyId, groupId: caller.companyGroupId },
     caller: caller.client,
@@ -103,6 +106,7 @@ type Auth = Pick<
   | "userId"
   | "caller"
   | "permissions"
+  | "role"
 >;
 
 /** The context for a request, built from what `requirePermissions` returned. */
@@ -114,6 +118,7 @@ export function serviceContext(auth: Auth): ServiceContext {
     permissions: auth.permissions,
     companyId: auth.companyId,
     companyGroupId: auth.companyGroupId,
-    client: auth.client
+    client: auth.client,
+    role: auth.role
   });
 }

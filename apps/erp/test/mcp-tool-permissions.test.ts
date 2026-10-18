@@ -171,7 +171,7 @@ const OWN_ACCOUNT = new Set([
 ]);
 const membershipModule = (t: Tool) =>
   t.module === "shared" || OWN_ACCOUNT.has(t.name);
-// `"member"`: any member of the company. Published as no module and no actions.
+// `"employee"`: any employee of the company. Published as no module and no actions.
 const membershipOnly = (t: Tool) =>
   t.permission.module === null && t.permission.actions.length === 0;
 
@@ -212,7 +212,7 @@ describe("permission actions in the manifest", () => {
     }
   });
 
-  // A lookup every screen needs (locations, units) is "member"; RLS filters
+  // A lookup every screen needs (locations, units) is "employee"; RLS filters
   // its rows. Only the caller's own account and shared tools may write on it.
   it("a tool gated on membership alone is a READ, or own-account or shared", () => {
     for (const t of tools.filter(membershipOnly)) {

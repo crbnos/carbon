@@ -134,8 +134,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 - A service function that returns a plain value (not `unwrap`/`paged`) is read
   with `dataOrThrow(await api.<module>.<fn>(input))`
   (`@carbon/api/carbon.server`): the value, or the refusal thrown.
-- A lookup every screen needs (locations, units, company settings) gates on
-  `"member"`, so a page reads it without the module's permission.
+- A lookup every screen needs (locations, units) gates on `"employee"`, so a
+  page reads it without the module's permission. Only a lookup whose tables
+  RLS lets every employee read may do so; one that reads a restricted table
+  keeps its module's `view`, and a loader without that permission calls the
+  building block directly (baselined in `loader-reads-through-api`).
 - A building block no service function calls is a helper (a time zone, user
   defaults, a label logo) and the loader calls it directly. A read made as the
   service role, or for another company of the group, stays a direct call too.

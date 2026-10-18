@@ -40,6 +40,7 @@ const as = (userId: string) =>
     // A member of the company: saved views need no module permission.
     actor: {
       type: "user",
+      role: "employee",
       userId,
       permissions: {
         parts: { view: [ids.company], create: [], update: [], delete: [] }

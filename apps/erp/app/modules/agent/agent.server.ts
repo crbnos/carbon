@@ -18,7 +18,7 @@ const agentRatelimit = new Ratelimit({
  */
 export const createAgentThread = defineServiceFn({
   input: z.object({}),
-  permission: "member",
+  permission: "employee",
 
   async run(ctx) {
     const created = await service.createThread(ctx.asCaller.supabase, {
@@ -38,7 +38,7 @@ export const createAgentThread = defineServiceFn({
  */
 export const deleteAgentThread = defineServiceFn({
   input: z.object({ threadId: z.string().min(1) }),
-  permission: "member",
+  permission: "employee",
 
   async run(ctx, { threadId }) {
     const deleted = await service.deleteThread(ctx.asCaller.supabase, {
@@ -68,7 +68,7 @@ export const deleteAgentThread = defineServiceFn({
  */
 export const startAgentTurn = defineServiceFn({
   input: chatRequest,
-  permission: "member",
+  permission: "employee",
 
   async run(ctx, { threadId, trigger, text, context }) {
     const client = ctx.asCaller.supabase;

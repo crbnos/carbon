@@ -41,7 +41,7 @@ const noClient = () => ({}) as any;
 
 function contextFor(client: any, permissions: Claims) {
   return createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions },
+    actor: { type: "user", role: "employee", userId: "user-1", permissions },
     company: { id: "company-1", groupId: "group-1" },
     caller: client,
     system: noClient,

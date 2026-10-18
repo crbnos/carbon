@@ -8,7 +8,7 @@
 ## Progress
 
 Phase 0 — fix this branch
-- [ ] Task 1: Replace the `"member"` permission with `"employee"`
+- [x] Task 1: Replace the `"member"` permission with `"employee"`
 - [ ] Task 2: Restore `view` on lookups whose tables restrict reads
 
 Phases 1 and 2 — grants, resolver, editors (one release)
@@ -73,6 +73,8 @@ Phase 4 — cleanup
 - Modify: `packages/auth/src/services/auth.server.ts` — `requirePermissions` returns `role`
 - Modify: `apps/erp/app/modules/service-context.server.ts` — `Caller` and `serviceContext` pass `role`
 - Modify: `apps/erp/app/routes/api+/v1+/lib/authenticate.server.ts` — the OAuth and key contexts pass `role`
+- Modify: `apps/erp/app/routes/api+/v1+/lib/service-fn.server.ts` — `contextFromAuthed` passes `role`
+- Modify: `packages/jobs/src/workflows/engine/owner.ts` and its test — `readOwnerPermissions` refuses an owner who is not an employee
 - Modify: every `apps/erp/app/modules/*/*.server.ts` with `permission: "member"`
 - Modify: `scripts/lib/service-fn-metadata.ts`, `packages/checks/src/conformance/service-fn-file.ts` and its test, `apps/erp/test/mcp-tool-permissions.test.ts`, `apps/erp/test/database/service-fn-transaction.test.ts`
 - Modify: `.claude/rules/module-files.md`, `.claude/rules/conventions-services.md`, `.claude/rules/mcp-tools-reference.md`, `packages/api/AGENTS.md`
@@ -85,14 +87,15 @@ Phase 4 — cleanup
 5. Keep the company check: for `"employee"`, also require `hasPermissions(claims, companyId, {})`.
 6. Add `role` to the object `requirePermissions` returns. Read it from the claims it already loads.
 7. Add `role` to `CallerAuth`, `Caller` and `contextFor`, and pass it to the user actor.
-8. In `authenticate.server.ts`, set `role` from the claims for OAuth and to `null` for keys.
-9. Replace `permission: "member"` with `permission: "employee"` in every module server file (`sed`).
-10. In `service-fn-metadata.ts`, read the string literal `"employee"` where it reads `"member"` today.
-11. Update the `service-fn-file` message and test: `permission: {}` must be written `"employee"`.
-12. Update the four docs files: replace `"member"` with `"employee"` and its new meaning.
-13. Add a test: a user actor with `role: "customer"` gets `forbidden` from an `"employee"` function.
-14. Run `pnpm run generate:mcp`.
-15. If a route with `allowPortalAccounts: true` calls an `"employee"` service function, STOP and report. Do not improvise.
+8. In `contextFromAuthed`, pass `role: null` for an API key and `"employee"` for OAuth and workflow calls.
+9. OAuth already refuses a non-employee (`oauthContext`). Make `readOwnerPermissions` return null when the owner's role is not `employee`.
+10. Replace `permission: "member"` with `permission: "employee"` in every module server file (`sed`).
+11. In `service-fn-metadata.ts`, read the string literal `"employee"` where it reads `"member"` today.
+12. Update the `service-fn-file` message and test: `permission: {}` must be written `"employee"`.
+13. Update the four docs files: replace `"member"` with `"employee"` and its new meaning.
+14. Add a test: a user actor with `role: "customer"` gets `forbidden` from an `"employee"` function.
+15. Run `pnpm run generate:mcp`.
+16. If a route with `allowPortalAccounts: true` calls an `"employee"` service function, STOP and report. Do not improvise.
 
 **Verify:**
 ```bash

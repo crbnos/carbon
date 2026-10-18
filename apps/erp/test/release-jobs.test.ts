@@ -96,6 +96,7 @@ const contextFor = (client: any) =>
   createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "user-1",
       permissions: {
         production: { view: [], create: [], update: ["company-1"], delete: [] }
@@ -509,6 +510,7 @@ describe("releaseJobs", () => {
       ...({} as any),
       actor: {
         type: "user",
+        role: "employee",
         userId: "user-1",
         permissions: {
           production: { view: [], create: [], update: ["company-1"], delete: [] }

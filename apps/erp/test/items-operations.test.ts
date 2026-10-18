@@ -112,6 +112,7 @@ function contextFor(
   return createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "user-1",
       permissions: {
         parts: {

@@ -117,7 +117,7 @@ function client(rows: Record<string, unknown>) {
 function contextWith(rows: Record<string, unknown> = {}) {
   const db = client(rows);
   const ctx = createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions: quality },
+    actor: { type: "user", role: "employee", userId: "user-1", permissions: quality },
     company: { id: "company-1", groupId: "group-1" },
     caller: db as never,
     system: () => db as never,

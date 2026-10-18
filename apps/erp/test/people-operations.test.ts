@@ -34,6 +34,7 @@ const unreachable = () => {
 const ctx = createServiceContext({
   actor: {
     type: "user",
+    role: "employee",
     userId: "user-1",
     permissions: {
       people: { view: ["company-1"], create: [], update: [], delete: [] }
@@ -98,6 +99,7 @@ function shiftContext(caller: never, update: string[]) {
   return createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "user-1",
       permissions: {
         people: {

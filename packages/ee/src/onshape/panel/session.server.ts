@@ -165,6 +165,8 @@ export async function requireOnshapePanelPermissions(
   consoleMode: boolean;
   caller: "session";
   permissions: Awaited<ReturnType<typeof getUserClaims>>["permissions"];
+  /** Always an employee: the panel refuses every other role. */
+  role: "employee";
 }> {
   const token = panelSessionTokenFromRequest(request);
   if (!token) {
@@ -235,6 +237,7 @@ export async function requireOnshapePanelPermissions(
     sessionUserId: userId,
     consoleMode: false,
     caller: "session",
-    permissions: myClaims.permissions
+    permissions: myClaims.permissions,
+    role: "employee"
   };
 }

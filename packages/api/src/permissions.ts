@@ -11,10 +11,11 @@ export type RequiredPermissions = Partial<Record<Action, string | string[]>>;
 
 /**
  * What an operation requires. `"system"` admits only the system actor;
- * `"member"` any member of the company (a permission naming it), for reads
- * every screen needs, such as locations or units. RLS still filters the rows.
+ * `"employee"` an employee of the company or an API key of the company, for
+ * reads every screen needs, such as locations or units. RLS still filters the
+ * rows. A customer or supplier portal account is refused.
  */
-export type Permissions = RequiredPermissions | "system" | "member";
+export type Permissions = RequiredPermissions | "system" | "employee";
 
 /** One permission per value of a string field. Data, so the API manifest can read it. */
 type KeyedRule<I> = {

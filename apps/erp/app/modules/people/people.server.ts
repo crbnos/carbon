@@ -235,7 +235,7 @@ export const deletePersonTimeCardEntry = defineServiceFn({
 /** Clock the caller in. Refused when they are already clocked in. */
 export const clockInSelf = defineServiceFn({
   input: z.object({}),
-  permission: "member",
+  permission: "employee",
   async run(ctx) {
     const result = await service.clockIn(ctx.asCaller.supabase, {
       employeeId: ctx.auditUserId,
@@ -257,7 +257,7 @@ export const clockOutSelf = defineServiceFn({
     clockOut: z.string().optional(),
     note: z.string().optional()
   }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, { clockOut: at, note }) {
     const result = await service.clockOut(ctx.asCaller.supabase, {
       employeeId: ctx.auditUserId,
@@ -437,7 +437,7 @@ export const getAttributeCategory = defineServiceFn({
  */
 export const getAttributeDataTypes = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "member",
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -472,7 +472,7 @@ export const getDepartment = defineServiceFn({
  */
 export const getDepartmentsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "member",
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -696,7 +696,7 @@ export const getShiftsList = defineServiceFn({
  */
 export const getEmployeeShifts = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "member",
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -712,7 +712,7 @@ export const getEmployeeShifts = defineServiceFn({
  */
 export const getEmployeeDepartments = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: "member",
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -731,7 +731,7 @@ export const getEmployeeDepartments = defineServiceFn({
  */
 export const getShiftsWithTimes = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: "member",
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,

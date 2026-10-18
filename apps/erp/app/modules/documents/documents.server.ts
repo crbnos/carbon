@@ -31,7 +31,7 @@ export const regenerateModelThumbnail = defineServiceFn({
     modelUploadId: z.string().min(1),
     direction: modelViewDirection.optional()
   }),
-  permission: "member",
+  permission: "employee",
 
   async run(ctx, { modelUploadId, direction }) {
     const missing = await service.findModel(ctx, modelUploadId);
@@ -96,7 +96,7 @@ export const optimizeModel = defineServiceFn({
     modelUploadId: z.string().min(1),
     force: z.boolean().optional()
   }),
-  permission: "member",
+  permission: "employee",
 
   async run(ctx, { modelUploadId, force = false }) {
     const missing = await service.findModel(ctx, modelUploadId);
@@ -146,7 +146,7 @@ export const optimizeModel = defineServiceFn({
  */
 export const cancelModelOptimize = defineServiceFn({
   input: z.object({ modelUploadId: z.string().min(1) }),
-  permission: "member",
+  permission: "employee",
 
   async run(ctx, { modelUploadId }) {
     const missing = await service.findModel(ctx, modelUploadId);

@@ -40,6 +40,7 @@ const grants = (...entries: [module: string, action: string][]) => {
 
 const user = (permissions: ModulePermissions): Actor => ({
   type: "user",
+  role: "employee",
   userId: "user-1",
   permissions
 });

@@ -39,6 +39,7 @@ export type CallerAuth = Pick<
   | "userId"
   | "caller"
   | "permissions"
+  | "role"
 >;
 
 /** A tree of service functions, each bound to one caller. */

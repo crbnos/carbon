@@ -8919,7 +8919,7 @@ export async function invokeAssetTransfer(
           input.cost != null &&
           required !== "system"
           ? {
-              ...(required === "member" ? {} : required),
+              ...(required === "employee" ? {} : required),
               update: "accounting"
             }
           : required;

@@ -44,6 +44,7 @@ const ctx = () =>
   createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: ids.user,
       permissions: {
         settings: {

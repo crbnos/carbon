@@ -58,6 +58,7 @@ function saveAvatar(path: string) {
     // `{}` admits a member of the company: anyone holding a grant there.
     actor: {
       type: "user",
+      role: "employee",
       userId: USER_ID,
       permissions: {
         documents: { view: ["company-1"], create: [], update: [], delete: [] }
@@ -149,6 +150,7 @@ describe("attribute values", () => {
     return createServiceContext({
       actor: {
         type: "user",
+        role: "employee",
         userId: USER_ID,
         permissions: {
           documents: { view: ["company-1"], create: [], update: [], delete: [] },

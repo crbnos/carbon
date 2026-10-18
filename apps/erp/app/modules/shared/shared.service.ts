@@ -16254,7 +16254,7 @@ export async function authorizePostingCaller(
   if (required === "system") {
     throw new ForbiddenError("Only server-side callers may run this");
   }
-  const needed = required === "member" ? {} : required;
+  const needed = required === "employee" ? {} : required;
   if (caller.type === "apiKey") {
     return authorizeApiKey(db, companyId, caller.apiKey, needed);
   }

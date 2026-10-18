@@ -36,6 +36,7 @@ function productionOnly(companyId: string): Actor {
   const all = [companyId];
   return {
     type: "user",
+    role: "employee",
     userId: USER,
     permissions: {
       production: { view: all, create: all, update: all, delete: all }

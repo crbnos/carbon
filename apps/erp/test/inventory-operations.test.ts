@@ -59,6 +59,7 @@ const ctx = () =>
   createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "user-1",
       permissions: {
         inventory: {

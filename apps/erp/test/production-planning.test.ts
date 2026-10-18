@@ -79,6 +79,7 @@ const contextWith = ({
   createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "u1",
       permissions: {
         production: { view: [], create: [], update: ["c1"], delete: [] }

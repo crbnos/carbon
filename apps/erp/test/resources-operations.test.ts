@@ -118,7 +118,7 @@ function client(answers: Record<string, unknown>) {
 function contextWith(answers: Record<string, unknown> = {}) {
   const db = client(answers);
   const ctx = createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions },
+    actor: { type: "user", role: "employee", userId: "user-1", permissions },
     company: { id: "company-1", groupId: "group-1" },
     caller: db as never,
     system: () => db as never,

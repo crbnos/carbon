@@ -72,7 +72,17 @@ export async function readOwnerPermissions(
   }
 
   const claims = makePermissionsFromClaims(rawClaims.data as Json[]);
-  return claims?.permissions ?? null;
+  // A workflow acts as its owner only while the owner is an employee: a
+  // customer or supplier portal account runs nothing.
+  if (claims?.role !== "employee") {
+    log.warn("Workflow owner is not an employee of the company", {
+      ownerId,
+      companyId,
+      role: claims?.role ?? null
+    });
+    return null;
+  }
+  return claims.permissions;
 }
 
 export function hasPermission(

@@ -70,7 +70,13 @@ export type Result<T, E extends CarbonError = CarbonError> =
  * authenticated it; the gate checks every entry call against it.
  */
 export type Actor =
-  | { type: "user"; userId: string; permissions: ModulePermissions }
+  | {
+      type: "user";
+      userId: string;
+      permissions: ModulePermissions;
+      /** The user's role in the company: a portal account is not an employee. */
+      role: "employee" | "customer" | "supplier" | null;
+    }
   | { type: "apiKey"; createdBy: string; scopes: ModulePermissions }
   | { type: "system"; onBehalfOf: string };
 
@@ -297,11 +303,14 @@ function allows(
 ): boolean {
   if (actor.type === "system") return true;
   if (required === "system") return false;
-  return hasPermissions(
-    actor.type === "user" ? actor.permissions : actor.scopes,
-    companyId,
-    required === "member" ? {} : required
-  );
+  const claims = actor.type === "user" ? actor.permissions : actor.scopes;
+  if (required === "employee") {
+    return (
+      (actor.type === "apiKey" || actor.role === "employee") &&
+      hasPermissions(claims, companyId, {})
+    );
+  }
+  return hasPermissions(claims, companyId, required);
 }
 
 /** What a failure log says of the input: its keys. Values can be files, notes, emails. */

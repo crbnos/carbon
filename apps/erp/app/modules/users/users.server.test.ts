@@ -601,7 +601,7 @@ function operationContext(
     }
   };
   return createServiceContext({
-    actor: { type: "user", userId: "usr_admin", permissions },
+    actor: { type: "user", role: "employee", userId: "usr_admin", permissions },
     company: { id: COMPANY, groupId: "grp_1" },
     caller: caller as never,
     system: unreachable as never,

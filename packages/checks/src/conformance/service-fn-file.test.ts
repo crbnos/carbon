@@ -17,7 +17,7 @@ type Line = { id: string };
 const logger = getLogger("erp", "sales");
 const CLOSED = new Set(["Closed"]);
 /** Send a quote. @mcp */
-export const sendQuote = defineServiceFn({ input: z.object({}), permission: "member", async run() {} });`)
+export const sendQuote = defineServiceFn({ input: z.object({}), permission: "employee", async run() {} });`)
     ).toEqual([]);
   });
 
@@ -38,7 +38,7 @@ export { thing } from "./x";`)
     ).toEqual(["LIMIT", "hidden", "ExportDeclaration"]);
   });
 
-  it('flags permission {}: membership is written "member"', () => {
+  it('flags permission {}: membership is written "employee"', () => {
     expect(
       scan(`export const getUnits = defineServiceFn({ input: z.object({}), permission: {}, async run() {} });
 export const getNames = defineServiceFn({ input: z.object({}), permission: { view: "parts" }, async run() {} });`)
