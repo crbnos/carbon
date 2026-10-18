@@ -21810,6 +21810,213 @@ export default {
         tags: ["supplierPart"]
       }
     },
+    "/permission": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.permission.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.employeeTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.apiKeyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.module"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.page"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.level"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.convertedFrom"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/permission"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["permission"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.permission"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["permission"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.permission.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.employeeTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.apiKeyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.module"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.page"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.level"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.convertedFrom"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["permission"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.permission.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.employeeTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.userId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.apiKeyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.module"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.page"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.level"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.convertedFrom"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.permission.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.permission"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["permission"]
+      }
+    },
     "/partner": {
       get: {
         parameters: [
@@ -128243,6 +128450,109 @@ export default {
       },
       type: "object"
     },
+    permission: {
+      required: [
+        "id",
+        "companyId",
+        "module",
+        "level",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('prm'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        employeeTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `employeeType.id`.<fk table='employeeType' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        apiKeyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `apiKey.id`.<fk table='apiKey' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        module: {
+          enum: [
+            "Accounting",
+            "Documents",
+            "Invoicing",
+            "Inventory",
+            "Items",
+            "Messaging",
+            "Parts",
+            "People",
+            "Production",
+            "Purchasing",
+            "Resources",
+            "Sales",
+            "Settings",
+            "Users",
+            "Quality",
+            "Printing",
+            "Workflows"
+          ],
+          format: "public.module",
+          type: "string"
+        },
+        page: {
+          format: "text",
+          type: "string"
+        },
+        level: {
+          enum: ["None", "View", "Create", "Edit", "Full"],
+          format: 'public."permissionLevel"',
+          type: "string"
+        },
+        convertedFrom: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     partner: {
       required: [
         "id",
@@ -179342,6 +179652,93 @@ export default {
       name: "currencyCode",
       description:
         "Currency of supplierUnitPrice and of every supplierPartPrice row. NULL = the company base currency.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.permission": {
+      name: "permission",
+      description: "permission",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/permission"
+      }
+    },
+    "rowFilter.permission.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.permission.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.permission.employeeTypeId": {
+      name: "employeeTypeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.permission.userId": {
+      name: "userId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.permission.apiKeyId": {
+      name: "apiKeyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.permission.module": {
+      name: "module",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.permission.page": {
+      name: "page",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.permission.level": {
+      name: "level",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.permission.convertedFrom": {
+      name: "convertedFrom",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.permission.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.permission.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.permission.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.permission.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
