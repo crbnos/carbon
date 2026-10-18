@@ -37,13 +37,14 @@ const ReceiptVoidModal = ({
 
   const { t } = useLingui();
   const navigation = useNavigation();
-  // A refused void keeps the modal open and shows the reason in place.
   const fetcher = useAction<typeof voidAction>({
     onSuccess: () => {
       toast.success(t`Receipt voided`);
       if (submitted.current) onClose();
     },
-    onError: () => {}
+    onError: () => {
+      // No toast: a refused void keeps the modal open and shows the reason in place.
+    }
   });
   const submitted = useRef(false);
   const refusal =

@@ -39,9 +39,10 @@ Route: /x/receipt/<id>/details
   `select "readableId", status, attributes->>'Receipt Line Index' from "trackedEntity" where attributes->>'Receipt' = '<receipt id>'`
 
 ### 7. Refused values empty the box
-- A duplicate within the form, a serial on another receipt's box, or the serial
-  of an existing unit with stock history (e.g. one shipped to a customer) shows
-  an error AND leaves nothing saved for the box; the Post dialog then blocks.
+- A duplicate within the form, a serial on another receipt's box, a job's
+  reserved serial, or the serial of an existing unit with stock history (e.g.
+  one shipped to a customer: "already belongs to an existing unit") shows an
+  error AND leaves nothing saved for the box; the Post dialog then blocks.
 ### 8. Enter
 - Enter moves focus to the next box (one save via blur); on the last box it blurs.
 ### 9. Line split and sales returns
@@ -57,7 +58,5 @@ Route: /x/receipt/<id>/details
 - A flash from a redirect is never shown after the post dialog submits (fetcher
   redirect to the same page does not reload root) — the post route returns
   `{ error: { message } }` instead.
-- Two simultaneous saves into an empty box leave two rows with one serial; the
-  next save of that box removes the extra copy.
 - Sales returns: RMA "Add Line Item" → "Add from shipment"; the customer needs a
   US Customer Location on the SO header or the ITAR rule blocks the SO line.

@@ -376,16 +376,32 @@ describe("planSerialBoxWrite", () => {
     ).toEqual({ kind: "write", targetId: "voided", releaseIds: [] });
   });
 
-  it("reuses a serial entity with no box and no history", () => {
+  it("refuses the serial of a record no receipt box holds (a job's reserved serial)", () => {
     expect(
       planSerialBoxWrite({
         receiptLineId: "line1",
         index: 0,
         serialNumber: "SN-A",
         box: [{ id: "e1", hasHistory: false }],
-        withSerial: [{ id: "orphan", hasHistory: false, attributes: {} }]
+        withSerial: [
+          { id: "reserved", hasHistory: false, attributes: { Job: "job1" } }
+        ]
       })
-    ).toEqual({ kind: "write", targetId: "orphan", releaseIds: ["e1"] });
+    ).toEqual({ kind: "taken", reason: "unit", releaseIds: ["e1"] });
+  });
+
+  it("names a received unit in another box as an existing unit", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 0,
+        serialNumber: "SN-B",
+        box: [],
+        withSerial: [
+          { id: "received", hasHistory: true, attributes: box("line2", 0) }
+        ]
+      })
+    ).toEqual({ kind: "taken", reason: "unit", releaseIds: [] });
   });
 });
 

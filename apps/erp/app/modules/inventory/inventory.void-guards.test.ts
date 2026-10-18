@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { findVoidShortfalls } from "../../../app/modules/inventory/inventory.service";
+import { findVoidShortfalls } from "./inventory.service";
 
 const at = (
   storageUnitId: string | null,

@@ -592,17 +592,26 @@ export function planSerialBoxWrite(args: {
     attributes["Receipt Line"] === args.receiptLineId &&
     attributes["Receipt Line Index"] === args.index;
 
-  const takenElsewhere = args.withSerial.some(
-    (entity) =>
-      !entity.onVoidedReceipt &&
-      "Receipt Line Index" in entity.attributes &&
-      !isInThisBox(entity.attributes)
-  );
-  if (takenElsewhere)
-    return { kind: "taken", reason: "box", releaseIds: boxIds };
-
   if (args.withSerial.some((entity) => entity.hasHistory)) {
     return { kind: "taken", reason: "unit", releaseIds: boxIds };
+  }
+
+  // Only this box's record or one from a voided receipt can be taken over;
+  // any other record with the serial belongs to another box or document (a
+  // job's reserved serial).
+  const elsewhere = args.withSerial.filter(
+    (entity) => !entity.onVoidedReceipt && !isInThisBox(entity.attributes)
+  );
+  if (elsewhere.length > 0) {
+    return {
+      kind: "taken",
+      reason: elsewhere.some(
+        (entity) => "Receipt Line Index" in entity.attributes
+      )
+        ? "box"
+        : "unit",
+      releaseIds: boxIds
+    };
   }
 
   const targetId =

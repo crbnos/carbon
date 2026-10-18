@@ -38,10 +38,11 @@ Route: /x/receipt/<id>/details → More options → Void
   action is off; a direct POST is refused "The receipt of this inspection was voided".
 - An untracked lot rejected (written off) before the void: the void is refused
   in the modal, naming the inspection.
-- A serial or batch moved to another bin (stock transfer) or picked before the
-  void: the void is refused in the modal ("moved, picked or shipped").
-- A serial from a voided receipt can be entered on a new receipt; after posting
-  it is the same tracked entity, Available/1.
+- A serial or batch moved to another bin (stock transfer), picked, shipped or
+  adjusted out before the void: the void is refused in the modal ("moved, picked
+  or shipped"). Every refusal shows its own reason, never "Failed to void receipt".
+- A serial from a voided receipt can be entered on a new receipt: on the draft
+  it is On Hold/1 again, and after posting it is the same tracked entity, Available/1.
 
 ## Common Failures
 - Session lands on /login with "User record not found": the stack's kong/gotrue

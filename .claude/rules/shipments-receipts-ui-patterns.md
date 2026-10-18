@@ -56,8 +56,10 @@ run the same checks. The route only parses the form, and takes the document id f
   A receipt serial write is keyed by its box (`Receipt Line` + `Receipt Line Index`), not by the
   serial number, and planned by the pure `planSerialBoxWrite` (`inventory.models.ts`): an empty
   value clears the box, a new value renames the box's unposted entity, and a refused value (a
-  serial held by another box, a serial of a unit with `itemLedger` history, or a failed write)
-  empties the box, so a box showing an error never posts its previous serial. Typed serials only
+  serial of a unit with `itemLedger` history, checked first; a serial held by another box or by
+  any other record, such as a job's reserved serial; or a failed write) empties the box, so a box
+  showing an error never posts its previous serial. Only this box's record, or one from a voided
+  receipt, is ever taken over. Typed serials only
   exist on purchase receipts of new units (outside-processing lines ask for none, inbound
   transfers never touch serials), so writing into an existing unit is never right: it wiped a
   shipped unit's `Shipment` link, which the RMA provenance check reads. `ReceiptLines` sends every
@@ -66,7 +68,8 @@ run the same checks. The route only parses the form, and takes the document id f
   only moves focus (`data-serial-boxes`) so the blur is the one save. `setReceiptLineSerial`
   runs `saveReceiptSerialBox` (`inventory.service.ts`): the reads, the write
   (`update_receipt_line_serial_tracking`, called through Kysely) and the release in one
-  transaction; a failed write empties the box in a second one (`clearReceiptSerialBox`). Refused
+  transaction, holding the receipt line `FOR UPDATE` so two saves of one line run one after the
+  other; a failed write empties the box in a second one (`clearReceiptSerialBox`). Refused
   unless the receipt is Draft.
   The `postReceipt` operation refuses a Posted or Voided receipt before any write, and refuses
   the post (back to Draft) when `reconcileReceiptSerialEntities` reports a line still missing
@@ -232,7 +235,11 @@ applies.
   open. A serial from a voided receipt can be entered on a new receipt: `saveReceiptSerialBox`
   reuses the same tracked entity (`idsWithLiveStockHistory` ignores the ledger rows of voided
   receipts, `onVoidedReceipt` lifts the "taken by another box" refusal), so one unit keeps one
-  history.
+  history. The function's update keeps quantity and status, so the save resets that record to
+  1 / On Hold, as a new draft serial starts.
+  `voidReceipt` and `postReceipt` show a posting refusal (status below 500) in the posting's own
+  words; the refusals in `postReceipt` are `InvalidInputError`, never a plain `Error` (which the
+  posting reads as a 500 and the dialog would show as "Failed to void receipt").
   A rental shipment voids while every unit is still On Rent and no `Accrual` row of its lines is
   Posted or held by a Draft run: the units go back to Pending. `post-receipt` refuses a rental
   receipt void ("A rental return cannot be voided. Correct the unit by hand.").

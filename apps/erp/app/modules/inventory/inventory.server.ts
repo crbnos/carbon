@@ -483,11 +483,14 @@ export const postReceipt = defineServiceFn({
       );
       if (posted.error) {
         await backToDraft();
-        return service.serverFnFailure(
-          ctx,
-          posted.error,
-          "Failed to post receipt"
-        );
+        // Below 500 the posting refused the receipt, in words for the person.
+        return posted.error.status < 500
+          ? service.serverFnFailure(
+              ctx,
+              posted.error,
+              posted.error.message || "Failed to post receipt"
+            )
+          : ctx.error("internal", "Failed to post receipt", posted.error);
       }
     } catch (thrown) {
       await backToDraft();
@@ -597,11 +600,14 @@ export const voidReceipt = defineServiceFn({
       service.postReceipt
     );
     if (voided.error) {
-      return service.serverFnFailure(
-        ctx,
-        voided.error,
-        "Failed to void receipt"
-      );
+      // Below 500 the posting refused the void, in words for the person.
+      return voided.error.status < 500
+        ? service.serverFnFailure(
+            ctx,
+            voided.error,
+            voided.error.message || "Failed to void receipt"
+          )
+        : ctx.error("internal", "Failed to void receipt", voided.error);
     }
     return { receiptId };
   }

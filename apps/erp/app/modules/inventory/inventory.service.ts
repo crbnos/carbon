@@ -934,6 +934,21 @@ function selectReceiptSerialBox(
     .execute();
 }
 
+/** One serial save of a line at a time: two saves into an empty box would each insert a record. */
+async function lockReceiptLine(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  receiptLineId: string
+) {
+  await trx
+    .selectFrom("receiptLine")
+    .select("id")
+    .where("id", "=", receiptLineId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .execute();
+}
+
 export type ReceiptSerialBoxResult =
   | { ok: true }
   | { ok: false; reason: "notFound" | "locked" | "box" | "unit" };
@@ -957,6 +972,7 @@ export async function saveReceiptSerialBox(
   const { companyId, receiptId, receiptLineId, itemId, index, serialNumber } =
     args;
   return db.transaction().execute(async (trx) => {
+    await lockReceiptLine(trx, companyId, receiptLineId);
     const receipt = await trx
       .selectFrom("receipt")
       .select("status")
@@ -999,6 +1015,17 @@ export async function saveReceiptSerialBox(
       })
     );
 
+    const candidates = withSerial.map((entity) => {
+      const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
+      return {
+        id: entity.id,
+        hasHistory: history.has(entity.id),
+        attributes,
+        onVoidedReceipt:
+          typeof attributes.Receipt === "string" &&
+          voided.has(attributes.Receipt)
+      };
+    });
     const plan = planSerialBoxWrite({
       receiptLineId,
       index,
@@ -1007,17 +1034,7 @@ export async function saveReceiptSerialBox(
         id: entity.id,
         hasHistory: history.has(entity.id)
       })),
-      withSerial: withSerial.map((entity) => {
-        const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
-        return {
-          id: entity.id,
-          hasHistory: history.has(entity.id),
-          attributes,
-          onVoidedReceipt:
-            typeof attributes.Receipt === "string" &&
-            voided.has(attributes.Receipt)
-        };
-      })
+      withSerial: candidates
     });
 
     if (plan.kind === "write") {
@@ -1029,6 +1046,20 @@ export async function saveReceiptSerialBox(
         p_tracked_entity_id => ${plan.targetId ?? null}::text,
         p_expiry_date => ${args.expiryDate || null}::text
       )`.execute(trx);
+
+      // The void drained the record to 0 / Consumed, and the function's
+      // update keeps both: start it again as a new draft serial starts.
+      const reusedFromVoid = candidates.some(
+        (entity) => entity.id === plan.targetId && entity.onVoidedReceipt
+      );
+      if (reusedFromVoid && plan.targetId) {
+        await trx
+          .updateTable("trackedEntity")
+          .set({ quantity: 1, status: "On Hold" })
+          .where("id", "=", plan.targetId)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
     }
 
     await releaseReceiptSerialEntities(trx, companyId, plan.releaseIds);
@@ -1045,6 +1076,7 @@ export async function clearReceiptSerialBox(
   args: { companyId: string; receiptLineId: string; index: number }
 ): Promise<void> {
   await db.transaction().execute(async (trx) => {
+    await lockReceiptLine(trx, args.companyId, args.receiptLineId);
     const box = await selectReceiptSerialBox(trx, args);
     await releaseReceiptSerialEntities(
       trx,
@@ -9289,6 +9321,10 @@ export async function assertReceivedStockOnHand(
   if (removing.length === 0) return;
 
   const itemIds = [...new Set(removing.map((row) => row.itemId))];
+  const locationIds = [
+    ...new Set(removing.flatMap((row) => row.locationId ?? []))
+  ];
+  const withoutLocation = removing.some((row) => row.locationId === null);
   const rows = await trx
     .selectFrom("itemLedger")
     .select([
@@ -9300,6 +9336,14 @@ export async function assertReceivedStockOnHand(
     ])
     .where("companyId", "=", companyId)
     .where("itemId", "in", itemIds)
+    .where((eb) =>
+      eb.or([
+        ...(locationIds.length > 0
+          ? [eb("locationId", "in", locationIds)]
+          : []),
+        ...(withoutLocation ? [eb("locationId", "is", null)] : [])
+      ])
+    )
     .groupBy(["itemId", "locationId", "storageUnitId", "trackedEntityId"])
     .execute();
 
@@ -9606,7 +9650,7 @@ export async function postReceipt(
 
     if (type === "void") {
       if (receiptHeader.status !== "Posted") {
-        throw new Error("Can only void posted receipts");
+        throw new InvalidInputError("Can only void posted receipts");
       }
 
       // The enable reset the cost layers this receipt created.
@@ -9618,7 +9662,7 @@ export async function postReceipt(
       );
 
       if (receiptHeader.invoiced) {
-        throw new Error(
+        throw new InvalidInputError(
           "Cannot void a receipt created by a purchase invoice. Void the invoice instead."
         );
       }
@@ -9633,7 +9677,7 @@ export async function postReceipt(
         receiptHeader.sourceDocument !== "Purchase Order" &&
         receiptHeader.sourceDocument !== "Sales Return Order"
       ) {
-        throw new Error(
+        throw new InvalidInputError(
           `Void is only supported for receipts with source document "Purchase Order" or "Sales Return Order"`
         );
       }
@@ -9662,7 +9706,7 @@ export async function postReceipt(
         if (creditMemos.error)
           throw new Error("Failed to check for credit memos");
         if ((creditMemos.data ?? []).length > 0) {
-          throw new Error(
+          throw new InvalidInputError(
             "Cannot void: a credit memo exists for this return order. Void it first."
           );
         }
@@ -9767,7 +9811,7 @@ export async function postReceipt(
               Number(layer.remainingQuantity) < Number(layer.quantity)
           );
           if (consumed) {
-            throw new Error(
+            throw new InvalidInputError(
               "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
             );
           }
@@ -10134,7 +10178,7 @@ export async function postReceipt(
               Boolean(asset.fixedAssetClass?.isConstructionInProgress);
             if (isConstructionInProgress) {
               if (asset.status !== "Under Construction") {
-                throw new Error(
+                throw new InvalidInputError(
                   "Asset was capitalized; reverse the capitalization first"
                 );
               }
@@ -10285,7 +10329,7 @@ export async function postReceipt(
           }))
         );
         if (costLedgerPlan.consumed) {
-          throw new Error(
+          throw new InvalidInputError(
             "Cannot void: stock received on this receipt was already consumed. Correct the remainder with an inventory adjustment instead."
           );
         }
@@ -10467,7 +10511,7 @@ export async function postReceipt(
     }
 
     if (receiptHeader.status === "Voided") {
-      throw new Error("Cannot post a voided receipt");
+      throw new InvalidInputError("Cannot post a voided receipt");
     }
 
     switch (receiptHeader.sourceDocument) {
@@ -11792,7 +11836,7 @@ export async function postReceipt(
         // its caps validated, so it must be confirmed (To Receive) before
         // receiving.
         if (salesReturnOrder.data.status !== "To Receive") {
-          throw new Error(
+          throw new InvalidInputError(
             `Cannot post a receipt against a return order in ${salesReturnOrder.data.status} status`
           );
         }
@@ -12123,7 +12167,9 @@ export async function postReceipt(
             lockedReceipt.status === "Posted" ||
             lockedReceipt.status === "Voided"
           ) {
-            throw new Error(`Receipt is already ${lockedReceipt.status}`);
+            throw new InvalidInputError(
+              `Receipt is already ${lockedReceipt.status}`
+            );
           }
 
           // cancelSalesReturnOrder locks this same order row — re-check the
@@ -12137,7 +12183,7 @@ export async function postReceipt(
             .forUpdate()
             .executeTakeFirstOrThrow();
           if (lockedOrder.status !== "To Receive") {
-            throw new Error(
+            throw new InvalidInputError(
               `Cannot post a receipt against a return order in ${lockedOrder.status} status`
             );
           }
