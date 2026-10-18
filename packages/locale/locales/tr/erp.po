@@ -5075,7 +5075,7 @@ msgstr "Mal alımı / fatura alımı eşleştirmesi için mahsup hesabı"
 msgid "Clearing demo data"
 msgstr "Demo verisi temizleniyor"
 
-msgid "Click a step to override the type for one module. Each step includes the ones before it."
+msgid "Click a cell to override the type for one module. Each level includes the ones before it."
 msgstr ""
 
 msgid "Click again to disconnect"

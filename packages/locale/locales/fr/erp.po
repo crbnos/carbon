@@ -5075,7 +5075,7 @@ msgstr "Compte de compensation pour réception de marchandises / correspondance 
 msgid "Clearing demo data"
 msgstr "Effacement des données de démonstration"
 
-msgid "Click a step to override the type for one module. Each step includes the ones before it."
+msgid "Click a cell to override the type for one module. Each level includes the ones before it."
 msgstr ""
 
 msgid "Click again to disconnect"

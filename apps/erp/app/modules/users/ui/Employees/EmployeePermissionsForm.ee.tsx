@@ -165,8 +165,8 @@ const EmployeePermissionsForm = ({
                   {isAdmin ? null : (
                     <p className="text-xs text-muted-foreground">
                       <Trans>
-                        Click a step to override the type for one module. Each
-                        step includes the ones before it.
+                        Click a cell to override the type for one module. Each
+                        level includes the ones before it.
                       </Trans>
                     </p>
                   )}

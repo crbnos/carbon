@@ -5075,7 +5075,7 @@ msgstr "माल की प्राप्ति / चालान प्रा
 msgid "Clearing demo data"
 msgstr "डेमो डेटा साफ कर रहे हैं"
 
-msgid "Click a step to override the type for one module. Each step includes the ones before it."
+msgid "Click a cell to override the type for one module. Each level includes the ones before it."
 msgstr ""
 
 msgid "Click again to disconnect"

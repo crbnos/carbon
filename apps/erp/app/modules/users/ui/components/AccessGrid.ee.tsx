@@ -27,7 +27,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type KeyboardEvent, useState } from "react";
-import { LuChevronRight, LuUndo2 } from "react-icons/lu";
+import { LuCheck, LuChevronRight, LuUndo2 } from "react-icons/lu";
 import { capitalize } from "~/utils/string";
 
 /** One grant as the grid edits it. `module` is the `module` enum value. */
@@ -233,11 +233,13 @@ const AccessGrid = ({
     const preview = hover?.key === key ? target(level, hover.step) : undefined;
     // In a bulk edit a row with no grant is "no change", not None.
     const unset = !own && !showInherited;
+    // Solid where this grid sets the level; tinted where the row inherits it.
+    const solid = Boolean(own) || !showInherited;
     return (
       <>
         {/* One cell spanning the step columns, so the row is one radio group:
             one tab stop, arrow keys to move. */}
-        <Td colSpan={STEPS.length} className="px-0 py-1">
+        <Td colSpan={STEPS.length} className="px-0 py-1.5">
           <div
             role="radiogroup"
             aria-label={row.label}
@@ -246,69 +248,84 @@ const AccessGrid = ({
           >
             {STEPS.map((step) => {
               const filled = step <= level;
-              const willFill = preview !== undefined && step <= preview;
               const capped = step > max;
               const blocked = isDisabled || capped;
+              // While the pointer rests on the row, the cells preview the click.
+              const adding =
+                preview !== undefined && !filled && step <= preview;
+              const removing =
+                preview !== undefined && filled && step > preview;
               return (
-                <button
-                  key={step}
-                  type="button"
-                  role="radio"
-                  aria-label={`${row.label}: ${stepLabel[step]}`}
-                  aria-checked={step === level}
-                  tabIndex={step === Math.max(level, 1) ? 0 : -1}
-                  disabled={blocked}
-                  onClick={() =>
-                    setLevel(module, row, LEVELS[target(level, step)]!)
-                  }
-                  onPointerEnter={() => setHover({ key, step })}
-                  onPointerLeave={() => setHover(null)}
-                  className={cn(
-                    "group flex h-8 flex-1 items-center rounded-md px-1.5",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    blocked ? "cursor-not-allowed" : "cursor-pointer"
-                  )}
-                >
-                  <span
-                    // Filling cascades left to right: each step includes the ones before it.
+                <div key={step} className="flex flex-1 justify-center">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-label={`${row.label}: ${stepLabel[step]}`}
+                    aria-checked={step === level}
+                    tabIndex={step === Math.max(level, 1) ? 0 : -1}
+                    disabled={blocked}
+                    onClick={() =>
+                      setLevel(module, row, LEVELS[target(level, step)]!)
+                    }
+                    onPointerEnter={() => setHover({ key, step })}
+                    onPointerLeave={() => setHover(null)}
+                    className={cn(
+                      "relative flex size-7 items-center justify-center rounded-md",
+                      "transition-[background-color,color,box-shadow,opacity,transform] duration-150 ease-out motion-reduce:transition-none",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      capped && "invisible",
+                      filled
+                        ? solid
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-primary/10 text-primary ring-1 ring-inset ring-primary/25"
+                        : adding
+                          ? "text-primary outline-1 outline-dashed -outline-offset-1 outline-primary/50"
+                          : "text-muted-foreground",
+                      removing && "opacity-35",
+                      !blocked && "cursor-pointer active:scale-[0.92]",
+                      blocked && "cursor-default"
+                    )}
+                    // Granting cascades left to right: each step includes the ones before it.
                     style={{
                       transitionDelay: filled ? `${(step - 1) * 20}ms` : "0ms"
                     }}
-                    className={cn(
-                      "block h-2 w-full rounded-full transition-[background-color,opacity,transform] duration-150 ease-out motion-reduce:transition-none",
-                      // What is stored: solid for the row's own grant, light when inherited.
-                      filled
-                        ? own || !showInherited
-                          ? "bg-primary"
-                          : "bg-primary/40"
-                        : unset
-                          ? "border border-dashed border-muted-foreground/50"
-                          : "bg-foreground/10",
-                      // What a click would store.
-                      preview !== undefined &&
-                        (willFill
-                          ? !filled && "bg-primary/30"
-                          : filled && "opacity-40"),
-                      capped && "opacity-30",
-                      !blocked && "group-active:scale-y-150"
-                    )}
-                  />
-                </button>
+                  >
+                    <LuCheck
+                      strokeWidth={3}
+                      className={cn(
+                        "absolute size-3.5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none",
+                        filled || adding
+                          ? "scale-100 opacity-100"
+                          : "scale-50 opacity-0",
+                        adding && "opacity-50"
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        "absolute rounded-full transition-opacity duration-150",
+                        unset
+                          ? "size-1.5 ring-1 ring-muted-foreground/40"
+                          : "size-1 bg-muted-foreground/35",
+                        filled || adding ? "opacity-0" : "opacity-100"
+                      )}
+                    />
+                  </button>
+                </div>
               );
             })}
           </div>
         </Td>
         {inherits ? (
-          <Td className="truncate text-xs text-muted-foreground">
+          <Td className="truncate">
             {own ? (
-              <span className="font-medium text-foreground">
+              <span className="rounded-md bg-primary px-1.5 py-0.5 text-[11px] font-medium text-primary-foreground">
                 <Trans>Override</Trans>
               </span>
             ) : level > 0 ? (
-              inheritsFrom
-            ) : (
-              "—"
-            )}
+              <span className="text-xs text-muted-foreground">
+                {inheritsFrom}
+              </span>
+            ) : null}
           </Td>
         ) : null}
         <Td className="px-1 text-center">
@@ -384,21 +401,25 @@ const AccessGrid = ({
             </>
           ) : null}
         </span>
-        {/* A key to the bar, where a row can be in more than one state. */}
+        {/* A key to the cells, where a row can be in more than one state. */}
         {resettable ? (
           <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-4 rounded-full bg-primary" />
+              <span className="flex size-3.5 items-center justify-center rounded-[4px] bg-primary text-primary-foreground">
+                <LuCheck strokeWidth={3} className="size-2.5" />
+              </span>
               {inherits ? <Trans>Override</Trans> : <Trans>Set here</Trans>}
             </span>
             {inherits ? (
               <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-4 rounded-full bg-primary/40" />
+                <span className="flex size-3.5 items-center justify-center rounded-[4px] bg-primary/10 text-primary ring-1 ring-inset ring-primary/25">
+                  <LuCheck strokeWidth={3} className="size-2.5" />
+                </span>
                 {inheritsFrom}
               </span>
             ) : (
               <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-4 rounded-full border border-dashed border-muted-foreground/50" />
+                <span className="size-1.5 rounded-full ring-1 ring-muted-foreground/40" />
                 <Trans>No change</Trans>
               </span>
             )}

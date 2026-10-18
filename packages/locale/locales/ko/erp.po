@@ -5075,7 +5075,7 @@ msgstr "입고 / 송장 수령 매칭을 위한 상계 계정"
 msgid "Clearing demo data"
 msgstr "데모 데이터 삭제 중"
 
-msgid "Click a step to override the type for one module. Each step includes the ones before it."
+msgid "Click a cell to override the type for one module. Each level includes the ones before it."
 msgstr ""
 
 msgid "Click again to disconnect"

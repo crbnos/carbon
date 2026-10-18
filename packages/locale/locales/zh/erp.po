@@ -5075,7 +5075,7 @@ msgstr "商品收据/发票收据匹配的清算账户"
 msgid "Clearing demo data"
 msgstr "正在清除演示数据"
 
-msgid "Click a step to override the type for one module. Each step includes the ones before it."
+msgid "Click a cell to override the type for one module. Each level includes the ones before it."
 msgstr ""
 
 msgid "Click again to disconnect"
