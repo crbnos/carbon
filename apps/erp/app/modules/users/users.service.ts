@@ -2274,6 +2274,16 @@ export function readAccessGrants(
   );
 }
 
+/** Every role's grants in the company, in one read. */
+export function readRoleGrants(ctx: ServiceContext) {
+  return ctx.asSystem.pg
+    .selectFrom("permission")
+    .select(["employeeTypeId", "module", "page", "level"])
+    .where("companyId", "=", ctx.company.id)
+    .where("employeeTypeId", "is not", null)
+    .execute();
+}
+
 /**
  * Replace the grants of a role, a person or an API key. Roles and people need
  * role authoring (the PERMISSIONS feature), keys the API_KEYS feature; both

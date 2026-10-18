@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCallback, useMemo, useState } from "react";
-import type { CompanyPermission } from "~/modules/users/types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -71,9 +70,6 @@ const ALL_ACTIONS: readonly PermissionAction[] = [
   "update",
   "delete"
 ] as const;
-
-/** Modules that should be hidden from all permission UIs */
-const HIDDEN_MODULES = new Set(["items", "timecards"]);
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -265,86 +261,4 @@ export function fromApiKeyScopes(
     }
   }
   return state;
-}
-
-// ---------------------------------------------------------------------------
-// Adapter: CompanyPermission (employee permissions, bulk edit)
-// ---------------------------------------------------------------------------
-
-/** Convert flat boolean map → Record<string, CompanyPermission> */
-export function toCompanyPermissions(
-  permissions: Record<string, boolean>
-): Record<string, CompanyPermission> {
-  const result: Record<string, CompanyPermission> = {};
-  for (const [key, enabled] of Object.entries(permissions)) {
-    const lastUnderscore = key.lastIndexOf("_");
-    if (lastUnderscore === -1) continue;
-    const mod = key.slice(0, lastUnderscore);
-    const action = key.slice(lastUnderscore + 1);
-    if (!result[mod]) {
-      result[mod] = {
-        view: false,
-        create: false,
-        update: false,
-        delete: false
-      };
-    }
-    if (action in result[mod]) {
-      result[mod][action as keyof CompanyPermission] = enabled;
-    }
-  }
-  return result;
-}
-
-/** Convert Record<string, CompanyPermission> → flat boolean map + derived ModuleDefinition */
-export function fromCompanyPermissions(
-  permissions: Record<string, CompanyPermission>
-): { state: Record<string, boolean>; modules: ModuleDefinition } {
-  const state: Record<string, boolean> = {};
-  const modules: ModuleDefinition = {};
-  for (const [mod, perm] of Object.entries(permissions)) {
-    if (HIDDEN_MODULES.has(mod)) continue;
-    const actions: PermissionAction[] = ["view", "create", "update", "delete"];
-    modules[mod] = actions;
-    for (const action of actions) {
-      state[`${mod}_${action}`] = perm[action];
-    }
-  }
-  return { state, modules };
-}
-
-// ---------------------------------------------------------------------------
-// Adapter: Employee type permissions ({ name, permission } shape)
-// ---------------------------------------------------------------------------
-
-/** Convert flat boolean map → Record<string, { name: string; permission: CompanyPermission }> */
-export function toEmployeeTypePermissions(
-  permissions: Record<string, boolean>
-): Record<string, { name: string; permission: CompanyPermission }> {
-  const company = toCompanyPermissions(permissions);
-  const result: Record<
-    string,
-    { name: string; permission: CompanyPermission }
-  > = {};
-  for (const [mod, perm] of Object.entries(company)) {
-    result[mod] = { name: mod, permission: perm };
-  }
-  return result;
-}
-
-/** Convert Record<string, { name: string; permission: CompanyPermission }> → flat boolean map + derived ModuleDefinition */
-export function fromEmployeeTypePermissions(
-  permissions: Record<string, { name: string; permission: CompanyPermission }>
-): { state: Record<string, boolean>; modules: ModuleDefinition } {
-  const state: Record<string, boolean> = {};
-  const modules: ModuleDefinition = {};
-  for (const [mod, data] of Object.entries(permissions)) {
-    if (HIDDEN_MODULES.has(mod)) continue;
-    const actions: PermissionAction[] = ["view", "create", "update", "delete"];
-    modules[mod] = actions;
-    for (const action of actions) {
-      state[`${mod}_${action}`] = data.permission[action];
-    }
-  }
-  return { state, modules };
 }

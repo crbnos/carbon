@@ -8040,9 +8040,6 @@ msgstr "배치 해체"
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "배치 {0}를 해제하면 {memberCount}개의 공정을 미실행 상태로 일정에 반환하고 배치를 삭제합니다. 기록된 생산이 있는 배치는 대신 완료되어야 합니다."
 
-msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-msgstr "이 직원 유형의 기본 권한으로 사용자의 현재 권한을 덮어쓰시겠습니까?"
-
 msgid "Doc-Backed"
 msgstr "문서 기반"
 
@@ -11542,10 +11539,6 @@ msgstr "인프라"
 msgid "Inherit"
 msgstr "상속"
 
-#. placeholder {0}: levelLabel[lower(fallback, max)]
-msgid "Inherit ({0})"
-msgstr ""
-
 msgid "Inherit document default"
 msgstr "문서 기본값 상속"
 
@@ -12306,9 +12299,6 @@ msgstr "칸반"
 
 msgid "Keep"
 msgstr "유지"
-
-msgid "Keep Current"
-msgstr "현재 값 유지"
 
 msgid "Keep demo data"
 msgstr "데모 데이터 유지"
@@ -14615,6 +14605,9 @@ msgstr "교정 기록이 없습니다"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "시각화할 용량 예약이 없습니다. 작업을 예약하여 작업 센터 부하를 확인하세요."
 
+msgid "No change"
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "기록된 변경 사항이 없습니다"
 
@@ -16286,9 +16279,6 @@ msgstr "개요"
 
 msgid "Overwrite Existing"
 msgstr "기존 항목 덮어쓰기"
-
-msgid "Overwrite Permissions"
-msgstr "권한 덮어쓰기"
 
 msgid "Overwrite the quote method with the source method"
 msgstr "견적 방법을 원본 방법으로 덮어쓰기"
@@ -19542,6 +19532,9 @@ msgstr "RMA"
 
 msgid "Role"
 msgstr "역할"
+
+msgid "Role default"
+msgstr ""
 
 msgid "Role:"
 msgstr "역할:"

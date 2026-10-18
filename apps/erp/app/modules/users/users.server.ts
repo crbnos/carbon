@@ -33,8 +33,7 @@ import {
   itarUserCertificationValidator,
   permissionsValidator,
   US_PERSON_ATTESTATION_REQUIRED,
-  userFlagValidator,
-  userPermissionsValidator
+  userFlagValidator
 } from "./users.models";
 import * as service from "./users.service";
 
@@ -463,62 +462,62 @@ export const deactivateUsers = defineServiceFn({
   }
 });
 
-const companyPermissions = z.record(z.string(), userPermissionsValidator);
 /**
- * Change an employee's employee type and their permissions in the company.
+ * Change an employee's employee type and replace their overrides in the
+ * company.
  *
  * @remarks
  * Needs role authoring (the PERMISSIONS feature). The employee and the type
- * must both be the company's, and the caller must be a claims admin. The
- * change is written to the permission audit log.
+ * must both be the company's. Access is the role's grants with these
+ * overrides on top; the change is written to the permission audit log.
  */
 export const updateEmployeePermissions = defineServiceFn({
   input: z.object({
     id: z.string().min(1),
     employeeType: z.string().min(1),
-    permissions: companyPermissions,
+    grants: permissionsValidator.shape.grants,
     ip: z.string().optional()
   }),
   permission: { update: "users" },
-  async run(ctx, { id, employeeType, permissions, ip }) {
+  async run(ctx, { id, employeeType, grants, ip }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
 
-    const result = await updateEmployee(
-      ctx.asCaller.supabase,
-      ctx.asSystem.pg,
-      {
-        id,
-        employeeType,
-        permissions,
-        companyId: ctx.company.id,
-        actorId: ctx.auditUserId,
-        ip
-      }
-    );
-    if (!result.success)
-      return service.permissionsWriteError(ctx, result.message);
+    const moved = await updateEmployee(ctx.asCaller.supabase, {
+      id,
+      employeeType,
+      companyId: ctx.company.id
+    });
+    if (!moved.success)
+      return service.permissionsWriteError(ctx, moved.message);
+    const refused = await service.saveAccessGrants(ctx, {
+      subjectType: "person",
+      subjectId: id,
+      grants,
+      ip
+    });
+    if (refused) return refused;
     return { id };
   }
 });
 
 /**
- * Change several employees' permissions in the company, in a job.
+ * Apply the same overrides to several employees in the company, in a job.
  *
  * @remarks
  * Needs role authoring (the PERMISSIONS feature). Every user must be an
- * employee of the company. `editType: "add"` only grants; any other value
- * also takes away what `permissions` leaves unchecked.
+ * employee of the company. `editType: "add"` only raises a level; any other
+ * value sets it.
  */
 export const bulkUpdatePermissions = defineServiceFn({
   input: z.object({
     editType: z.string().min(1),
     userIds: z.array(z.string().min(1)).min(1),
-    permissions: companyPermissions,
+    grants: permissionsValidator.shape.grants,
     ip: z.string().optional()
   }),
   permission: { update: "users" },
-  async run(ctx, { editType, userIds, permissions, ip }) {
+  async run(ctx, { editType, userIds, grants, ip }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
 
@@ -540,12 +539,15 @@ export const bulkUpdatePermissions = defineServiceFn({
       return ctx.error("notFound", "Employee not found");
     }
 
+    const chosen = grants.flatMap((grant) =>
+      grant.level === null ? [] : [{ ...grant, level: grant.level }]
+    );
     await batchTrigger(
       "update-permissions",
       userIds.map((id) => ({
         payload: {
           id,
-          permissions,
+          grants: chosen,
           addOnly: editType === "add",
           companyId,
           actorId: ctx.auditUserId,
@@ -643,6 +645,15 @@ const grantSubjectRules = {
   person: { update: "users" },
   key: { update: "settings" }
 } as const;
+
+/** Every role's grants in the company. */
+export const getRoleGrants = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "users" },
+  async run(ctx) {
+    return service.readRoleGrants(ctx);
+  }
+});
 
 /** The grants of a role, a person or an API key in the company. */
 export const getAccessGrants = defineServiceFn({

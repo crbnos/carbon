@@ -298,7 +298,14 @@ export type Events = {
     data: {
       id: string;
       addOnly: boolean;
-      permissions: Record<
+      /** The overrides to apply, one level per module or page. */
+      grants?: {
+        module: string;
+        page: string | null;
+        level: "None" | "View" | "Create" | "Edit" | "Full";
+      }[];
+      /** The checkbox shape sent before grants; still read for a replay. */
+      permissions?: Record<
         string,
         { view: boolean; create: boolean; update: boolean; delete: boolean }
       >;

@@ -9,14 +9,13 @@ import {
   logRoleAccessChange
 } from "@carbon/auth/auth-events.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { Constants, type Database, type Json } from "@carbon/database";
+import { Constants, type Database } from "@carbon/database";
 import {
   claimKeys,
   claimsFromJson,
   expandClaims,
   LEVELS,
-  type Level,
-  roundUp
+  type Level
 } from "@carbon/database/access";
 import {
   type GrantInput,
@@ -43,30 +42,6 @@ import { requireEntitlement } from "./entitlements.server";
  * The invite flow's permission merge stays in the ERP `users.service.ts`: only
  * portal invites carry permissions through it, and it is not authoring.
  */
-
-export type CompanyPermission = {
-  view: boolean;
-  create: boolean;
-  update: boolean;
-  delete: boolean;
-};
-
-export type Permission = {
-  view: string[];
-  create: string[];
-  update: string[];
-  delete: string[];
-};
-
-type ModuleName = { name: string | null };
-
-type EmployeeTypePermissionRow = {
-  view: string[];
-  create: string[];
-  update: string[];
-  delete: string[];
-  module: string | null;
-};
 
 // Uppercase the first letter only (mirrors the ERP `~/utils/string` capitalize),
 // which `@carbon/ee` cannot import.
@@ -155,88 +130,6 @@ export async function upsertEmployeeType(
     .insert([employeeType])
     .select("id")
     .single();
-}
-
-// ---------------------------------------------------------------------------
-// Permission-object translators (claims / employee-type / UI grid shapes)
-// ---------------------------------------------------------------------------
-
-export function makeEmptyPermissionsFromModules(data: ModuleName[]) {
-  return data.reduce<
-    Record<string, { name: string; permission: CompanyPermission }>
-  >((acc, m) => {
-    if (m.name && m.name !== "Messaging") {
-      acc[m.name] = {
-        name: m.name.toLowerCase(),
-        permission: {
-          view: false,
-          create: false,
-          update: false,
-          delete: false
-        }
-      };
-    }
-    return acc;
-  }, {});
-}
-
-/** `get_claims` for one company as one checkbox set per page. */
-export function makeCompanyPermissionsFromClaims(
-  claims: Json[] | Json | null,
-  companyId: string
-) {
-  if (typeof claims !== "object" || claims === null) return null;
-  const raw = claimsFromJson(claims);
-  const permissions: Record<string, CompanyPermission> = {};
-  for (const [page, permission] of Object.entries(
-    expandClaims(raw, companyId)
-  )) {
-    permissions[page] = {
-      view: permission.view.includes(companyId),
-      create: permission.create.includes(companyId),
-      update: permission.update.includes(companyId),
-      delete: permission.delete.includes(companyId)
-    };
-  }
-  return { permissions, role: raw.role };
-}
-
-export function makeCompanyPermissionsFromEmployeeType(
-  data: EmployeeTypePermissionRow[],
-  companyId: string
-) {
-  const result: Record<
-    string,
-    { name: string; permission: CompanyPermission }
-  > = {};
-  if (!data) return result;
-  data.forEach((permission) => {
-    if (!permission.module) {
-      throw new Error(
-        `Module is missing for permission ${JSON.stringify(permission)}`
-      );
-    } else {
-      result[permission.module] = {
-        name: permission.module.toLowerCase(),
-        permission: {
-          view: permission.view.includes(companyId),
-          create: permission.create.includes(companyId),
-          update: permission.update.includes(companyId),
-          delete: permission.delete.includes(companyId)
-        }
-      };
-    }
-  });
-
-  if ("items" in result) {
-    delete result.items;
-  }
-
-  if ("Messaging" in result) {
-    delete result.Messaging;
-  }
-
-  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -384,23 +277,17 @@ export async function replaceAccessGrants(
   return success("Permissions updated");
 }
 
+/** Move an employee to another employee type of the company. */
 export async function updateEmployee(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   {
     id,
     employeeType,
-    permissions,
-    companyId,
-    actorId,
-    ip
+    companyId
   }: {
     id: string;
     employeeType: string;
-    permissions: Record<string, CompanyPermission>;
     companyId: string;
-    actorId: string;
-    ip?: string;
   }
 ): Promise<Result> {
   await requireEntitlement(client, companyId, "PERMISSIONS");
@@ -428,35 +315,27 @@ export async function updateEmployee(
 
   if (updateEmployeeEmployeeType.error)
     return error(updateEmployeeEmployeeType.error, "Failed to update employee");
-
-  return updatePermissions(client, db, {
-    id,
-    permissions,
-    companyId,
-    actorId,
-    ip
-  });
+  return success("Employee updated");
 }
 
 /**
- * A person's module checkboxes as overrides on their role. A module whose
- * level equals the role's stores no override; any other level, None included,
- * is stored. `addOnly` only raises a level. Page grants and modules the form
- * leaves out are kept.
+ * The bulk edit: each chosen grant becomes an override on the person. A grant
+ * whose level equals the role's stores no override. `addOnly` only raises a
+ * level. The person's other grants are kept.
  */
 export async function updatePermissions(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   {
     id,
-    permissions,
+    grants: chosen,
     companyId,
     addOnly = false,
     actorId,
     ip
   }: {
     id: string;
-    permissions: Record<string, CompanyPermission>;
+    grants: readonly { module: string; page: string | null; level: Level }[];
     companyId: string;
     addOnly?: boolean;
     actorId: string;
@@ -490,29 +369,38 @@ export async function updatePermissions(
       })
     : [];
   const own = await readGrants(db, companyId, { userId: id });
-  const moduleLevel = (
-    grants: { module: string; page: string | null; level: Level }[],
-    module: string
-  ) => grants.find((g) => g.page === null && g.module === module)?.level;
-  const roleLevel = (module: string): Level =>
+  const find = (
+    grants: readonly { module: string; page: string | null; level: Level }[],
+    module: string,
+    page: string | null
+  ) => grants.find((g) => g.module === module && g.page === page)?.level;
+  // What the person gets with no override: the role's page grant, else its
+  // module grant; Full on the Admin type.
+  const roleLevel = (module: string, page: string | null): Level =>
     employee?.systemType === "Admin"
       ? "Full"
-      : (moduleLevel(roleGrants, module) ?? "None");
+      : (find(roleGrants, module, page) ??
+        find(roleGrants, module, null) ??
+        "None");
 
-  const edited = new Map<GrantModule, Level | null>();
-  for (const [name, permission] of Object.entries(permissions)) {
-    const module = toModule(name);
+  const edited = new Map<string, GrantInput>();
+  for (const grant of chosen) {
+    const module = toModule(grant.module);
     if (!module) continue;
-    let level = roundUp(permission);
-    if (addOnly) {
-      level = higher(level, moduleLevel(own, module) ?? roleLevel(module));
-    }
-    edited.set(module, level === roleLevel(module) ? null : level);
+    const role = roleLevel(module, grant.page);
+    const level = addOnly
+      ? higher(grant.level, find(own, module, grant.page) ?? role)
+      : grant.level;
+    edited.set(`${module}:${grant.page ?? ""}`, {
+      module,
+      page: grant.page,
+      level: level === role ? null : level
+    });
   }
 
   const grants: GrantInput[] = [
-    ...own.filter((g) => g.page !== null || !edited.has(g.module)),
-    ...[...edited].map(([module, level]) => ({ module, page: null, level }))
+    ...own.filter((g) => !edited.has(`${g.module}:${g.page ?? ""}`)),
+    ...edited.values()
   ];
   return replaceAccessGrants(client, db, {
     companyId,

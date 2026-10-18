@@ -17,7 +17,7 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.users.bulkUpdatePermissions({
     editType,
     userIds,
-    permissions: JSON.parse(data),
+    grants: JSON.parse(data),
     ip: originOf(args.request).ip
   });
   return respond(args.request, result).redirect(

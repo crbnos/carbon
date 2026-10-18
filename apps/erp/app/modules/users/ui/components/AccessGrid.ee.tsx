@@ -40,9 +40,14 @@ const INHERIT = "inherit";
 type AccessGridProps = {
   pages?: readonly Page[];
   value: AccessGrant[];
-  /** Per module id, what the row resolves to with no grant here: a person's
-   *  role. Missing is None. */
+  /** Per module or page id, what the row resolves to with no grant here: a
+   *  person's role. Missing is None. */
   inherited?: Record<string, Level>;
+  /** The empty choice: "Inherit", or "Role default" on a person. */
+  inheritLabel?: string;
+  /** Show what the empty choice resolves to. Off where it differs per row
+   *  owner, as in a bulk edit. */
+  showInherited?: boolean;
   onChange: (grants: AccessGrant[]) => void;
   label?: string;
   termId?: TermId;
@@ -58,6 +63,8 @@ const AccessGrid = ({
   pages = PAGES,
   value,
   inherited = {},
+  inheritLabel,
+  showInherited = true,
   onChange,
   label,
   termId,
@@ -126,7 +133,9 @@ const AccessGrid = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={INHERIT}>
-            {t`Inherit (${levelLabel[lower(fallback, max)]})`}
+            {showInherited
+              ? `${inheritLabel ?? t`Inherit`} (${levelLabel[lower(fallback, max)]})`
+              : (inheritLabel ?? t`Inherit`)}
           </SelectItem>
           {levelsUpTo(max).map((level) => (
             <SelectItem key={level} value={level}>
@@ -163,9 +172,9 @@ const AccessGrid = ({
           </Thead>
           <Tbody>
             {modules.map((module) => {
-              const moduleGrant = grantFor(module.enumValue, null);
-              const moduleLevel =
-                moduleGrant?.level ?? inherited[module.id] ?? "None";
+              // A page row with no grant: the module grant here, else what
+              // the page itself inherits, else the module's inheritance.
+              const moduleGrant = grantFor(module.enumValue, null)?.level;
               const isOpen = expanded.has(module.id);
               const set = module.children.filter((page) =>
                 grantFor(module.enumValue, page.id)
@@ -216,7 +225,10 @@ const AccessGrid = ({
                             module.enumValue,
                             page.id,
                             page.maxLevel,
-                            moduleLevel
+                            moduleGrant ??
+                              inherited[page.id] ??
+                              inherited[module.id] ??
+                              "None"
                           )}
                         </Td>
                         <Td />

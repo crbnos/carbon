@@ -8040,9 +8040,6 @@ msgstr "解散批次"
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "解散{0}会将其{memberCount}个操作返回到未运行的计划中，并删除该批次。包含已记录生产的批次必须改为完成。"
 
-msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-msgstr "您想用此员工类型的默认权限覆盖该用户的当前权限吗？"
-
 msgid "Doc-Backed"
 msgstr "文档支持"
 
@@ -11542,10 +11539,6 @@ msgstr "基础设施"
 msgid "Inherit"
 msgstr "继承"
 
-#. placeholder {0}: levelLabel[lower(fallback, max)]
-msgid "Inherit ({0})"
-msgstr ""
-
 msgid "Inherit document default"
 msgstr "继承文件默认值"
 
@@ -12306,9 +12299,6 @@ msgstr "看板"
 
 msgid "Keep"
 msgstr "保留"
-
-msgid "Keep Current"
-msgstr "保持当前"
 
 msgid "Keep demo data"
 msgstr "保留演示数据"
@@ -14615,6 +14605,9 @@ msgstr "未找到校准记录"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "没有产能预留可显示。计划一项任务以查看工作中心负荷。"
 
+msgid "No change"
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "未记录任何更改"
 
@@ -16286,9 +16279,6 @@ msgstr "概览"
 
 msgid "Overwrite Existing"
 msgstr "覆盖现有"
-
-msgid "Overwrite Permissions"
-msgstr "覆盖权限"
 
 msgid "Overwrite the quote method with the source method"
 msgstr "用源方法覆盖报价方法"
@@ -19542,6 +19532,9 @@ msgstr "RMA"
 
 msgid "Role"
 msgstr "角色"
+
+msgid "Role default"
+msgstr ""
 
 msgid "Role:"
 msgstr "角色："

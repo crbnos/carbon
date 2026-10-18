@@ -8040,9 +8040,6 @@ msgstr "बैच भंग करना"
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "भंग करने से {0} अपने {memberCount} ऑपरेशन को शेड्यूल को अचलित लौटाता है और बैच को हटा देता है। उत्पादन रिकॉर्ड के साथ एक बैच को पूर्ण किया जाना चाहिए।"
 
-msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-msgstr "क्या आप उपयोगकर्ता की वर्तमान अनुमतियों को इस कर्मचारी प्रकार के लिए डिफ़ॉल्ट अनुमतियों से अधिलेखित करना चाहते हैं?"
-
 msgid "Doc-Backed"
 msgstr "दस्तावेज़-समर्थित"
 
@@ -11542,10 +11539,6 @@ msgstr "बुनियादी ढांचा"
 msgid "Inherit"
 msgstr "विरासत"
 
-#. placeholder {0}: levelLabel[lower(fallback, max)]
-msgid "Inherit ({0})"
-msgstr ""
-
 msgid "Inherit document default"
 msgstr "दस्तावेज़ डिफ़ॉल्ट को विरासत में लें"
 
@@ -12306,9 +12299,6 @@ msgstr "कानबान"
 
 msgid "Keep"
 msgstr "रखें"
-
-msgid "Keep Current"
-msgstr "वर्तमान रखें"
 
 msgid "Keep demo data"
 msgstr "डेमो डेटा रखें"
@@ -14615,6 +14605,9 @@ msgstr "कोई अंशांकन रिकॉर्ड नहीं म�
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "कोई क्षमता आरक्षण नहीं है जो देखा जा सके। कार्य-केंद्र लोड देखने के लिए एक नौकरी शेड्यूल करें।"
 
+msgid "No change"
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "कोई परिवर्तन दर्ज नहीं किया गया"
 
@@ -16286,9 +16279,6 @@ msgstr "सारांश"
 
 msgid "Overwrite Existing"
 msgstr "मौजूदा को अधिलेखित करें"
-
-msgid "Overwrite Permissions"
-msgstr "अनुमतियों को अधिलेखित करें"
 
 msgid "Overwrite the quote method with the source method"
 msgstr "उद्धरण विधि को स्रोत विधि से अधिलेखित करें"
@@ -19542,6 +19532,9 @@ msgstr "RMA"
 
 msgid "Role"
 msgstr "भूमिका"
+
+msgid "Role default"
+msgstr ""
 
 msgid "Role:"
 msgstr "भूमिका:"

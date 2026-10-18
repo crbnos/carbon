@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { type Level, moduleOf, PAGES } from "@carbon/database/access";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -11,40 +12,61 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  ModalOverlay,
   ModalTitle,
   useCloseRoute,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { z } from "zod";
 import { Hidden, Select, Submit } from "~/components/Form";
-import PermissionMatrix from "~/components/PermissionMatrix";
 import { usePermissions } from "~/hooks";
-import {
-  fromCompanyPermissions,
-  toCompanyPermissions,
-  usePermissionMatrix
-} from "~/hooks/usePermissionMatrix";
-import type { CompanyPermission } from "~/modules/users/types";
 import { employeeValidator } from "~/modules/users/users.models";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+import AccessGrid, { type AccessGrant } from "../components/AccessGrid.ee";
+
+type EmployeeType = { id: string; name: string; systemType: string | null };
+
+type RoleGrant = {
+  employeeTypeId: string | null;
+  module: string;
+  page: string | null;
+  level: Level;
+};
 
 type EmployeePermissionsFormProps = {
   name: string;
-  employeeTypes: ListItem[];
-  employeeTypePermissions: Record<string, Record<string, CompanyPermission>>;
-  initialValues: z.infer<typeof employeeValidator> & {
-    permissions: Record<string, CompanyPermission>;
+  employeeTypes: EmployeeType[];
+  /** Every role's grants, so a new type shows its levels at once. */
+  roleGrants: RoleGrant[];
+  initialValues: Omit<z.infer<typeof employeeValidator>, "data"> & {
+    /** The person's own overrides. */
+    grants: AccessGrant[];
   };
 };
+
+/** What a person on the type gets with no override, per module or page id. */
+function roleLevels(
+  type: EmployeeType | undefined,
+  roleGrants: RoleGrant[]
+): Record<string, Level> {
+  if (!type) return {};
+  if (type.systemType === "Admin") {
+    const ids = PAGES.flatMap((page) => [page.id, moduleOf(page.id)]);
+    return Object.fromEntries(ids.map((id) => [id, "Full" as const]));
+  }
+  const levels: Record<string, Level> = {};
+  for (const grant of roleGrants) {
+    if (grant.employeeTypeId !== type.id) continue;
+    levels[grant.page ?? grant.module.toLowerCase()] = grant.level;
+  }
+  return levels;
+}
 
 const EmployeePermissionsForm = ({
   name,
   employeeTypes,
-  employeeTypePermissions,
+  roleGrants,
   initialValues
 }: EmployeePermissionsFormProps) => {
   const { t } = useLingui();
@@ -54,142 +76,76 @@ const EmployeePermissionsForm = ({
 
   const canEditPermissions = permissions.can("update", "users");
 
-  const employeeTypeOptions =
-    employeeTypes?.map((et) => ({
-      value: et.id,
-      label: et.name
-    })) ?? [];
+  const employeeTypeOptions = employeeTypes.map((et) => ({
+    value: et.id,
+    label: et.name
+  }));
 
-  const { state: initialState, modules } = useMemo(
-    () => fromCompanyPermissions(initialValues.permissions),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [initialValues.permissions]
+  // The person's edits; the route remounts the form for another person.
+  const [grants, setGrants] = useState(initialValues.grants);
+  // A new type changes what is inherited; the overrides stay.
+  const [employeeTypeId, setEmployeeTypeId] = useState(
+    initialValues.employeeType
   );
-
-  const matrix = usePermissionMatrix({
-    modules,
-    initialState
-  });
-
-  const [pendingEmployeeTypeId, setPendingEmployeeTypeId] = useState<
-    string | null
-  >(null);
-
-  const handleEmployeeTypeChange = (
-    newValue: { value: string; label: string | JSX.Element } | null
-  ) => {
-    if (!newValue) return;
-    const newId = newValue.value;
-    if (newId && newId !== initialValues.employeeType) {
-      setPendingEmployeeTypeId(newId);
-    }
-  };
-
-  const handleConfirmOverwrite = () => {
-    if (pendingEmployeeTypeId) {
-      const perms = employeeTypePermissions[pendingEmployeeTypeId] ?? {};
-      const nextState: Record<string, boolean> = {};
-      for (const [mod] of matrix.modules) {
-        const p = perms[mod];
-        nextState[`${mod}_view`] = p?.view ?? false;
-        nextState[`${mod}_create`] = p?.create ?? false;
-        nextState[`${mod}_update`] = p?.update ?? false;
-        nextState[`${mod}_delete`] = p?.delete ?? false;
-      }
-      matrix.setPermissions(nextState);
-    }
-    setPendingEmployeeTypeId(null);
-  };
-
-  const permissionsData = JSON.stringify(
-    toCompanyPermissions(matrix.permissions)
+  const inherited = roleLevels(
+    employeeTypes.find((et) => et.id === employeeTypeId),
+    roleGrants
   );
 
   return (
-    <>
-      <Modal
-        open
-        onOpenChange={(open) => {
-          if (!open) onClose();
-        }}
-      >
-        <ModalContent size="xlarge">
-          <ValidatedForm
-            validator={employeeValidator}
-            method="post"
-            action={path.to.employeeAccount(initialValues.id)}
-            defaultValues={initialValues}
-          >
-            <ModalHeader>
-              <ModalTitle>{name}</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <VStack spacing={4}>
-                <Select
-                  name="employeeType"
-                  label={t`Employee Type`}
-                  termId="employee-permissions-employee-type-override"
-                  options={employeeTypeOptions}
-                  placeholder={t`Select Employee Type`}
-                  onChange={handleEmployeeTypeChange}
-                />
-                <PermissionMatrix
-                  matrix={matrix}
-                  isDisabled={!canEditPermissions}
-                />
-                <Hidden name="id" />
-                <Hidden name="data" value={permissionsData} />
-              </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <HStack>
-                <Submit isDisabled={!canEditPermissions}>
-                  <Trans>Save</Trans>
-                </Submit>
-                <Button size="md" variant="solid" onClick={onClose}>
-                  <Trans>Cancel</Trans>
-                </Button>
-              </HStack>
-            </ModalFooter>
-          </ValidatedForm>
-        </ModalContent>
-      </Modal>
-
-      <Modal
-        open={pendingEmployeeTypeId !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingEmployeeTypeId(null);
-        }}
-      >
-        <ModalOverlay />
-        <ModalContent>
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent size="xlarge">
+        <ValidatedForm
+          validator={employeeValidator}
+          method="post"
+          action={path.to.employeeAccount(initialValues.id)}
+          defaultValues={initialValues}
+        >
           <ModalHeader>
-            <ModalTitle>
-              <Trans>Update Permissions</Trans>
-            </ModalTitle>
+            <ModalTitle>{name}</ModalTitle>
           </ModalHeader>
           <ModalBody>
-            <p className="text-sm text-muted-foreground">
-              <Trans>
-                Do you want to overwrite the user's current permissions with the
-                default permissions for this employee type?
-              </Trans>
-            </p>
+            <VStack spacing={4}>
+              <Select
+                name="employeeType"
+                label={t`Employee Type`}
+                termId="employee-permissions-employee-type-override"
+                options={employeeTypeOptions}
+                placeholder={t`Select Employee Type`}
+                onChange={(option) => {
+                  if (option) setEmployeeTypeId(option.value);
+                }}
+              />
+              <AccessGrid
+                value={grants}
+                onChange={setGrants}
+                inherited={inherited}
+                inheritLabel={t`Role default`}
+                label={t`Access`}
+                isDisabled={!canEditPermissions}
+              />
+              <Hidden name="id" />
+              <Hidden name="data" value={JSON.stringify(grants)} />
+            </VStack>
           </ModalBody>
           <ModalFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setPendingEmployeeTypeId(null)}
-            >
-              <Trans>Keep Current</Trans>
-            </Button>
-            <Button variant="primary" onClick={handleConfirmOverwrite}>
-              <Trans>Overwrite Permissions</Trans>
-            </Button>
+            <HStack>
+              <Submit isDisabled={!canEditPermissions}>
+                <Trans>Save</Trans>
+              </Submit>
+              <Button size="md" variant="solid" onClick={onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+            </HStack>
           </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
   );
 };
 

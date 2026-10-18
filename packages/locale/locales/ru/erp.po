@@ -8040,9 +8040,6 @@ msgstr "Распустить партию"
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "Распускание {0} возвращает его {memberCount} операций в расписание невыполненными и удаляет партию. Партию с записанным производством необходимо вместо этого завершить."
 
-msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-msgstr "Вы хотите заменить текущие права доступа пользователя правами доступа по умолчанию для этого типа сотрудника?"
-
 msgid "Doc-Backed"
 msgstr "Обеспечено документом"
 
@@ -11542,10 +11539,6 @@ msgstr "Инфраструктура"
 msgid "Inherit"
 msgstr "Наследовать"
 
-#. placeholder {0}: levelLabel[lower(fallback, max)]
-msgid "Inherit ({0})"
-msgstr ""
-
 msgid "Inherit document default"
 msgstr "Наследовать документ по умолчанию"
 
@@ -12306,9 +12299,6 @@ msgstr "Канбаны"
 
 msgid "Keep"
 msgstr "Сохранить"
-
-msgid "Keep Current"
-msgstr "Сохранить текущие"
 
 msgid "Keep demo data"
 msgstr "Сохранить демонстрационные данные"
@@ -14615,6 +14605,9 @@ msgstr "Записи о калибровке не найдены"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "Нет резервирований мощности для визуализации. Запланируйте задание, чтобы увидеть нагрузку рабочего центра."
 
+msgid "No change"
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "Изменений не записано"
 
@@ -16286,9 +16279,6 @@ msgstr "Обзор"
 
 msgid "Overwrite Existing"
 msgstr "Перезаписать существующие"
-
-msgid "Overwrite Permissions"
-msgstr "Перезаписать права доступа"
 
 msgid "Overwrite the quote method with the source method"
 msgstr "Перезаписать метод предложения исходным методом"
@@ -19542,6 +19532,9 @@ msgstr "RMA"
 
 msgid "Role"
 msgstr "Роль"
+
+msgid "Role default"
+msgstr ""
 
 msgid "Role:"
 msgstr "Роль:"

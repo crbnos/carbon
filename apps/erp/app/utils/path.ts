@@ -151,7 +151,6 @@ export const path = {
         generatePath(`${api}/purchasing/digital-quote/${id}`),
       docs: `${api}/docs?${build}`,
       employeeTypes: `${api}/users/employee-types`,
-      emptyPermissions: `${api}/users/empty-permissions`,
       failureModes: `${api}/resources/failure-modes`,
       gauges: `${api}/quality/gauges`,
       generateCsvColumns: (table: string) =>

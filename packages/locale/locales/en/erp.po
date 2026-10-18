@@ -8040,9 +8040,6 @@ msgstr "Dissolve Batch"
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 
-msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-msgstr "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-
 msgid "Doc-Backed"
 msgstr "Doc-Backed"
 
@@ -11542,10 +11539,6 @@ msgstr "Infrastructure"
 msgid "Inherit"
 msgstr "Inherit"
 
-#. placeholder {0}: levelLabel[lower(fallback, max)]
-msgid "Inherit ({0})"
-msgstr "Inherit ({0})"
-
 msgid "Inherit document default"
 msgstr "Inherit document default"
 
@@ -12306,9 +12299,6 @@ msgstr "Kanbans"
 
 msgid "Keep"
 msgstr "Keep"
-
-msgid "Keep Current"
-msgstr "Keep Current"
 
 msgid "Keep demo data"
 msgstr "Keep demo data"
@@ -14615,6 +14605,9 @@ msgstr "No calibration records found"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "No capacity reservations to visualize. Schedule a job to see work-center load."
 
+msgid "No change"
+msgstr "No change"
+
 msgid "No changes recorded"
 msgstr "No changes recorded"
 
@@ -16286,9 +16279,6 @@ msgstr "Overview"
 
 msgid "Overwrite Existing"
 msgstr "Overwrite Existing"
-
-msgid "Overwrite Permissions"
-msgstr "Overwrite Permissions"
 
 msgid "Overwrite the quote method with the source method"
 msgstr "Overwrite the quote method with the source method"
@@ -19542,6 +19532,9 @@ msgstr "RMAs"
 
 msgid "Role"
 msgstr "Role"
+
+msgid "Role default"
+msgstr "Role default"
 
 msgid "Role:"
 msgstr "Role:"

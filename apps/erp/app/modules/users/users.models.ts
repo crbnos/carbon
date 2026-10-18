@@ -16,8 +16,8 @@ export const bulkPermissionsValidator = z.object({
     .min(1, { message: "Group members are required" }),
   data: z
     .string()
-    .startsWith("{", { message: "Invalid JSON" })
-    .endsWith("}", { message: "Invalid JSON" })
+    .startsWith("[", { message: "Invalid JSON" })
+    .endsWith("]", { message: "Invalid JSON" })
 });
 
 export const createCustomerAccountValidator = z.object({
@@ -123,8 +123,8 @@ export const employeeValidator = z.object({
   employeeType: z.string().min(1, { message: "Employee type is required" }),
   data: z
     .string()
-    .startsWith("{", { message: "Invalid JSON" })
-    .endsWith("}", { message: "Invalid JSON" })
+    .startsWith("[", { message: "Invalid JSON" })
+    .endsWith("]", { message: "Invalid JSON" })
 });
 
 export const groupValidator = z.object({
@@ -145,13 +145,6 @@ export const revokeInviteValidator = z.object({
   users: z
     .array(z.string().min(1, { message: "Invalid user id" }))
     .min(1, { message: "Users are required" })
-});
-
-export const userPermissionsValidator = z.object({
-  view: z.boolean(),
-  create: z.boolean(),
-  update: z.boolean(),
-  delete: z.boolean()
 });
 
 /**

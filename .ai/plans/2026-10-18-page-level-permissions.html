@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/plans/2026-10-18-page-level-permissions.md" />
-<meta name="explain-source-hash" content="47369877f7a145d3f7a4d63385f8075a3e4fe1b9" />
+<meta name="explain-source-hash" content="dab4013fb89f0ab5b6c3fa5474a31325c4a8eb2c" />
 <title>Page-Level Permissions plan</title>
 <style>
   :root {
@@ -401,7 +401,7 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
         <p class="meta">Verify</p>
         <pre>pnpm exec turbo run typecheck --filter=erp --concurrency=1
 # Expected: no &quot;error TS&quot; lines outside docs/content</pre>
-        <p>Browser: give one person a Receipts override of None. Expected: that person loses Receipts on the next request; the role&#x27;s other people keep it.</p>
+        <p>Browser: give one person an Inventory override of None. Expected: that person loses Inventory on the next request; the role&#x27;s other people keep it. A page override (Receipts) needs Task 17.</p>
         
       </div>
     </details>

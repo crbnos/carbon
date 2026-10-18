@@ -452,14 +452,15 @@ Browser: open Users → Employee Types → a type. Set Inventory to View and Sal
 2. Label the select's empty choice "Role default".
 3. Keep the employee type picker. Changing the type changes `inherited` only; overrides stay.
 4. Remove the "replace or preserve" prompt; the role is no longer copied.
-5. In the bulk form, apply the chosen overrides to every selected person.
+5. In the bulk form, apply the chosen overrides to every selected person. Its empty choice is "No change"; Add only raises a level, Update sets it. The job's payload carries `grants`; a replayed checkbox payload is rounded up.
+6. Read every role's grants in one query (`getRoleGrants`) for the type picker, not one per type.
 
 **Verify:**
 ```bash
 pnpm exec turbo run typecheck --filter=erp --concurrency=1
 # Expected: no "error TS" lines outside docs/content
 ```
-Browser: give one person a Receipts override of None. Expected: that person loses Receipts on the next request; the role's other people keep it.
+Browser: give one person an Inventory override of None. Expected: that person loses Inventory on the next request; the role's other people keep it. A page override (Receipts) needs Task 17.
 
 **Out of scope:** the access view. Task 13 builds it.
 

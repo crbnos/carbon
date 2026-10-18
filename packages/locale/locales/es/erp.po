@@ -8040,9 +8040,6 @@ msgstr "Disolver Lote"
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "Disolver {0} devuelve sus {memberCount} operaciones a la programación sin ejecutar y elimina el lote. Un lote con producción registrada debe completarse en su lugar."
 
-msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-msgstr "¿Deseas sobrescribir los permisos actuales del usuario con los permisos predeterminados para este tipo de empleado?"
-
 msgid "Doc-Backed"
 msgstr "Respaldado por Documento"
 
@@ -11542,10 +11539,6 @@ msgstr "Infraestructura"
 msgid "Inherit"
 msgstr "Heredar"
 
-#. placeholder {0}: levelLabel[lower(fallback, max)]
-msgid "Inherit ({0})"
-msgstr ""
-
 msgid "Inherit document default"
 msgstr "Heredar valor predeterminado del documento"
 
@@ -12306,9 +12299,6 @@ msgstr "Kanbans"
 
 msgid "Keep"
 msgstr "Mantener"
-
-msgid "Keep Current"
-msgstr "Mantener Actual"
 
 msgid "Keep demo data"
 msgstr "Mantener datos de demostración"
@@ -14615,6 +14605,9 @@ msgstr "No se encontraron registros de calibración"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "No hay reservas de capacidad para visualizar. Programa un trabajo para ver la carga del centro de trabajo."
 
+msgid "No change"
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "Sin cambios registrados"
 
@@ -16286,9 +16279,6 @@ msgstr "Descripción general"
 
 msgid "Overwrite Existing"
 msgstr "Sobrescribir Existente"
-
-msgid "Overwrite Permissions"
-msgstr "Sobrescribir Permisos"
 
 msgid "Overwrite the quote method with the source method"
 msgstr "Sobrescribir el método de cotización con el método de origen"
@@ -19542,6 +19532,9 @@ msgstr "RMAs"
 
 msgid "Role"
 msgstr "Rol"
+
+msgid "Role default"
+msgstr ""
 
 msgid "Role:"
 msgstr "Rol:"
