@@ -74,10 +74,41 @@ fn client() -> &'static reqwest::Client {
     })
 }
 
+/// Resolves a host to its public addresses only, refusing one that has none.
+/// `validate_url` sees only the URL, so a hostname that resolves to a private
+/// address (a tenant URL pointed inside the network) passed it.
+struct PublicOnly;
+
+impl reqwest::dns::Resolve for PublicOnly {
+    fn resolve(&self, name: reqwest::dns::Name) -> reqwest::dns::Resolving {
+        let host = name.as_str().to_string();
+        Box::pin(async move {
+            let addrs = public_addrs(&host).await?;
+            Ok(Box::new(addrs.into_iter()) as reqwest::dns::Addrs)
+        })
+    }
+}
+
+async fn public_addrs(
+    host: &str,
+) -> Result<Vec<std::net::SocketAddr>, Box<dyn std::error::Error + Send + Sync>> {
+    let addrs: Vec<_> = tokio::net::lookup_host((host, 0))
+        .await?
+        .filter(|addr| config::is_public_ip(addr.ip()))
+        .collect();
+    if addrs.is_empty() {
+        return Err(format!("{host} resolves to no public address").into());
+    }
+    Ok(addrs)
+}
+
 /// The `fetch` action's client: it follows redirects (a CAD system may answer
 /// a download with one to its object store), but only to URLs that pass
 /// `config::validate_url`, and at most five. reqwest drops the Authorization
-/// header on a redirect to another host.
+/// header on a redirect to another host. Outside dev mode it connects only to
+/// public addresses (`PublicOnly`): `fetch` is the one action whose URL comes
+/// from a third party (a CAD system's tenant URL is the customer's to set),
+/// while every other URL is one of our own signed storage URLs.
 fn fetch_client() -> &'static reqwest::Client {
     static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
     CLIENT.get_or_init(|| {
@@ -90,7 +121,13 @@ fn fetch_client() -> &'static reqwest::Client {
                 attempt.follow()
             }
         });
-        reqwest::Client::builder()
+        let builder = reqwest::Client::builder();
+        let builder = if config::require_https() {
+            builder.dns_resolver(std::sync::Arc::new(PublicOnly))
+        } else {
+            builder
+        };
+        builder
             .redirect(policy)
             .danger_accept_invalid_certs(!config::verify_tls())
             .connect_timeout(std::time::Duration::from_secs(10))
@@ -455,6 +492,12 @@ mod tests {
         let addr = listener.local_addr().unwrap();
         tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
         (format!("http://{addr}"), leaked)
+    }
+
+    #[tokio::test]
+    async fn a_host_resolving_only_to_private_addresses_is_refused() {
+        let err = public_addrs("localhost").await.err().unwrap();
+        assert!(err.to_string().contains("no public address"), "{err}");
     }
 
     #[tokio::test]

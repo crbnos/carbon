@@ -318,6 +318,13 @@ staging instead of streaming it through the app's function.
   lives only in the request: never in the job record, a log or a span.
 - `fetch` alone follows redirects, at most five and each to a URL that passes
   `validate_url`; reqwest drops `Authorization` on a redirect to another host.
+- Outside dev mode `fetch` connects only to public addresses: its resolver
+  (`PublicOnly`) drops private, loopback, link-local, CGNAT and IPv6
+  unique-local results and refuses a host with none left. Its URL is the one a
+  third party decides (an Onshape Government tenant URL is the customer's to
+  set); every other action reaches our own signed storage URLs, which a
+  self-hosted install may serve from a private network. `validate_url` checks
+  IP literals by the same rule (`config::is_public_ip`).
 - `maxBytes` fails the job `LIMIT_EXCEEDED` (413), from `Content-Length` when
   sent, else as the bytes cross it.
 - No zstd decoding: the stored bytes are exactly what the source served.
