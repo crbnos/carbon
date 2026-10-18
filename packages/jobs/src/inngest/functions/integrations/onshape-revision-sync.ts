@@ -22,6 +22,7 @@ import {
 } from "./onshape-matching";
 import { withRateLimitRetry } from "./onshape-rate-limit";
 import {
+  ONSHAPE_CHECKPOINTING,
   runOnshapeElementSync,
   type SyncOnshapeElementInput,
   syncOnshapeDrawingAssetsToItem
@@ -273,6 +274,7 @@ const OnshapeRevisionSyncPayloadSchema = z.object({
 export const onshapeRevisionSyncFunction = inngest.createFunction(
   {
     id: "onshape-revision-sync",
+    checkpointing: ONSHAPE_CHECKPOINTING,
     retries: 3,
     idempotency: "event.data.messageId",
     // One in-flight sync per released element; different elements run in parallel.

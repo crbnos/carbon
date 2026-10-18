@@ -7,6 +7,7 @@ import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import { z } from "zod";
 import { inngest } from "../../client";
 import {
+  ONSHAPE_CHECKPOINTING,
   runOnshapeElementSync,
   syncOnshapeDrawingAssetsToItem
 } from "./onshape-sync-element";
@@ -34,6 +35,7 @@ const OnshapePanelSyncPayloadSchema = z.object({
 export const onshapePanelSyncFunction = inngest.createFunction(
   {
     id: "onshape-panel-sync",
+    checkpointing: ONSHAPE_CHECKPOINTING,
     retries: 1,
     concurrency: { key: "event.data.itemId", limit: 1 }
   },

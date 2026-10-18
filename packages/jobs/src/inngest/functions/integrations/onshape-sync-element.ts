@@ -122,6 +122,17 @@ async function downloadTranslationBytes(
   return new Uint8Array(buffer);
 }
 
+/**
+ * Checkpointing for the functions that run this pipeline: consecutive steps
+ * (existing → translate → first poll; drawings → attach → thumbnail) run in
+ * one request instead of a round trip each. Every step here is a short Onshape
+ * call or storage move. `maxRuntime` is far below the ERP's 300 s Vercel limit
+ * because a step that starts at the end of the window gets only the rest of
+ * the request: at 60 s a late step still has ~240 s. Not set client-wide,
+ * where single steps run for minutes (MRP per company, backups).
+ */
+export const ONSHAPE_CHECKPOINTING = { maxRuntime: "60s" } as const;
+
 /** The Inngest step tools the pipeline needs. */
 export type ElementSyncStep = {
   run: (id: string, fn: () => unknown) => Promise<any>;

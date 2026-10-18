@@ -5,7 +5,10 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { OnshapeOAuthIntegrationId } from "@carbon/ee/onshape/integration-id";
 import { inngest } from "../../client";
-import { runOnshapeElementSync } from "./onshape-sync-element";
+import {
+  ONSHAPE_CHECKPOINTING,
+  runOnshapeElementSync
+} from "./onshape-sync-element";
 
 /**
  * One element's export as its own run, for callers that sync many elements
@@ -16,6 +19,7 @@ import { runOnshapeElementSync } from "./onshape-sync-element";
 export const onshapeElementSyncFunction = inngest.createFunction(
   {
     id: "onshape-element-sync",
+    checkpointing: ONSHAPE_CHECKPOINTING,
     retries: 3,
     concurrency: { key: "event.data.itemId", limit: 1 }
   },

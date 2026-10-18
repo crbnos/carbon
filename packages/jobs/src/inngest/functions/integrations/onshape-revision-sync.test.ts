@@ -30,6 +30,7 @@ vi.mock("../../client", () => ({
   inngest: { createFunction: (...args: unknown[]) => args }
 }));
 vi.mock("./onshape-sync-element", () => ({
+  ONSHAPE_CHECKPOINTING: {},
   runOnshapeElementSync: mocks.sync,
   syncOnshapeDrawingAssetsToItem: mocks.drawing
 }));
