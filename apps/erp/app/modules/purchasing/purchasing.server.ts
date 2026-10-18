@@ -33,8 +33,10 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
 import {
   applyRate,
+  async,
   datetime,
   deriveRate,
+  escapeHTMLChars,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   SCALE,
   taxableBase,
@@ -88,6 +90,7 @@ import {
   purchasingRfqFinalizeValidator,
   purchasingRfqValidator,
   selectedLineSchema,
+  splitRfqModelAttachments,
   supplierQuoteFinalizeValidator,
   taxPairForQuantity
 } from "./purchasing.models";
@@ -118,6 +121,10 @@ const customFieldsInput = z.record(
  *
  * @mcp
  */
+
+/** How long a model link in an RFQ email works: a supplier may open it days later. */
+const RFQ_MODEL_LINK_SECONDS = 7 * 24 * 60 * 60;
+
 export const createPurchasingRfq = defineServiceFn({
   input: purchasingRfqValidator
     .omit({ id: true })
@@ -386,6 +393,63 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
           (lines.data ?? []).flatMap((line) => (line.id ? [line.id] : []))
         ))
       ];
+      // Each part's original CAD file: attached while the email stays under the
+      // limit, a download link past it.
+      const models = await service.getItemModelFiles(
+        client,
+        ctx.asSystem.pg,
+        companyId,
+        [
+          ...new Set(
+            (lines.data ?? []).flatMap((line) =>
+              line.itemId ? [line.itemId] : []
+            )
+          )
+        ]
+      );
+      const documentBytes = attachments.reduce(
+        (sum, file) => sum + (file.size ?? 0),
+        0
+      );
+      const split = splitRfqModelAttachments(
+        models,
+        PO_EMAIL_ATTACHMENT_LIMIT_MB * 1024 * 1024 - documentBytes
+      );
+      const modelAttachments = (
+        await async.map(split.attach, async (model) => {
+          const url = await service.signOriginalModelFile(
+            client,
+            companyId,
+            model,
+            3600
+          );
+          return url ? { filename: model.filename, path: url } : null;
+        })
+      ).flatMap((model) => (model ? [model] : []));
+      const modelLinks = (
+        await async.map(split.link, async (model) => {
+          const url = await service.signOriginalModelFile(
+            client,
+            companyId,
+            model,
+            RFQ_MODEL_LINK_SECONDS
+          );
+          return url ? { filename: model.filename, url } : null;
+        })
+      ).flatMap((model) => (model ? [model] : []));
+      const modelLinksHtml = modelLinks.length
+        ? `<br><br>Models too large to attach (links valid for 7 days):<br>${modelLinks
+            .map(
+              (model) =>
+                `<a href="${escapeHTMLChars(model.url)}">${escapeHTMLChars(model.filename)}</a>`
+            )
+            .join("<br>")}`
+        : "";
+      const modelLinksText = modelLinks.length
+        ? `\n\nModels too large to attach (links valid for 7 days):\n${modelLinks
+            .map((model) => `${model.filename}: ${model.url}`)
+            .join("\n")}`
+        : "";
       const notesHtml = tiptapToHTML(
         (rfq.data?.internalNotes ?? {}) as JSONContent
       );
@@ -402,11 +466,15 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
             html: [
               body.replace(/\n/g, "<br>"),
               `<br><a href="${link}">${link}</a>`,
+              modelLinksHtml,
               notesHtml ? `<br><br>${notesHtml}` : "",
               `<br><br>${signature.replace(/\n/g, "<br>")}`
             ].join(""),
-            text: `${body}\n\n${link}\n\n${signature}`,
-            attachments,
+            text: `${body}\n\n${link}${modelLinksText}\n\n${signature}`,
+            attachments: [
+              ...attachments.map(({ filename, path }) => ({ filename, path })),
+              ...modelAttachments
+            ],
             companyId
           });
         } catch (err) {
