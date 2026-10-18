@@ -12481,7 +12481,7 @@ export const assignSerialNumbersInput = z.object({
  * Idempotent: it no-ops when the seed is already numbered or already split.
  */
 export const assignSerialNumbersPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof assignSerialNumbersInput>>;
 
 export async function assignSerialNumbers(
@@ -12850,7 +12850,7 @@ export const getMethodInput = z.object({
 export type GetMethodResult = { success: boolean; newQuoteId?: string };
 
 export const getMethodPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof getMethodInput>>;
 
 /** Copies a method (BOM + BOP) between items, quotes and jobs, per `type`. */
@@ -22128,7 +22128,7 @@ async function recalculatePriorities(
 }
 
 export const rescheduleJobPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof rescheduleInput>>;
 
 /**
@@ -22271,7 +22271,7 @@ const postedNetKey = (lines: Awaited<ReturnType<typeof readPostedNet>>) =>
     .join(";");
 
 export const postProductionEventPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof postProductionEventInput>>;
 
 /** Posts (or reverses) a production event's labor/machine and overhead cost to WIP. */
@@ -22787,7 +22787,7 @@ const recalculateRequirementsLogger = getLogger(
   "recalculate"
 );
 export const recalculateRequirementsPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof recalculateInput>>;
 
 /** Re-derives a job's (or one make method's) material and operation quantities. */
@@ -23464,7 +23464,7 @@ async function cloneReworkOperations(
 }
 
 export const triggerReworkPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof triggerReworkInput>>;
 
 /**
@@ -24316,7 +24316,7 @@ async function completeBatch(
 }
 
 export const batchOperationPermission = {
-  update: "production"
+  "production.batches": "Edit"
 } satisfies PermissionRule<z.output<typeof batchOperationsInput>>;
 
 /** Job-operation batches: create, change membership, release, dissolve and complete. */

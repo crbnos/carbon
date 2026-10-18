@@ -10320,7 +10320,7 @@ async function copyMakeMethodOperations(
 }
 
 export const syncMakeMethodPermission = {
-  update: "resources"
+  "parts.parts": "Edit"
 } satisfies PermissionRule<z.output<typeof syncInput>>;
 
 /** Syncs an external CAD structure (Onshape) into a make method's BOM, per `type`. */

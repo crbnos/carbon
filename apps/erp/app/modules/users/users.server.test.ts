@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ModulePermissions } from "@carbon/api/permissions";
 import type { CompiledQuery, DatabaseConnection, Driver } from "kysely";
 import {
   Kysely,
@@ -10,6 +11,7 @@ import {
   PostgresQueryCompiler
 } from "kysely";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { pageClaims } from "../../../test/page-claims";
 
 // users.server pulls in auth, SSO, Redis and two module barrels at import
 // time. Everything createEmployeeAccount and acceptInvite do not exercise is
@@ -596,7 +598,12 @@ function operationContext(
     }
   };
   return createServiceContext({
-    actor: { type: "user", role: "employee", userId: "usr_admin", permissions },
+    actor: {
+      type: "user",
+      role: "employee",
+      userId: "usr_admin",
+      permissions: pageClaims(permissions as ModulePermissions)
+    },
     company: { id: COMPANY, groupId: "grp_1" },
     caller: caller as never,
     system: unreachable as never,

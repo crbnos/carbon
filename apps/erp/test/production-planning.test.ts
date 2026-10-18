@@ -44,6 +44,7 @@ import {
   updatePlannedJob
 } from "../app/modules/production/production.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 type Job = {
   id: string;
@@ -81,9 +82,9 @@ const contextWith = ({
       type: "user",
       role: "employee",
       userId: "u1",
-      permissions: {
+      permissions: pageClaims({
         production: { view: [], create: [], update: ["c1"], delete: [] }
-      }
+      })
     },
     company: { id: "c1", groupId: "g1" },
     caller: {} as never,

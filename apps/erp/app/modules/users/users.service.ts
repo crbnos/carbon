@@ -2396,7 +2396,7 @@ export async function readPageAccessHolders(
   page: string,
   level: Level
 ) {
-  const withKeys = ctx.can({ view: "settings" });
+  const withKeys = ctx.can({ "settings.apiKeys": "View" });
   const [employees, rows, keys] = await Promise.all([
     readCompanyEmployees(ctx),
     readCompanyGrants(ctx),
@@ -3000,7 +3000,7 @@ export async function refuseAttributeValueChange(
   userAttributeId: string,
   refusal: string
 ) {
-  if (ctx.can({ update: "resources" })) return null;
+  if (ctx.can({ "people.attributes": "Edit" })) return null;
   if (ctx.auditUserId !== userId) return ctx.error("forbidden", refusal);
 
   const attribute = await getAttribute(ctx.asCaller.supabase, userAttributeId);

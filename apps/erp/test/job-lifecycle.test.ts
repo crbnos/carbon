@@ -80,6 +80,7 @@ import {
   resumeJob
 } from "../app/modules/production/production.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 /** Every status the job was moved to, with the statuses the move allowed. */
 let statusWrites: { status: unknown; fromStatuses?: unknown }[] = [];
@@ -118,9 +119,9 @@ const contextWith = (caller: unknown) =>
       type: "user",
       role: "employee",
       userId: "u1",
-      permissions: {
+      permissions: pageClaims({
         production: { view: [], create: ["c1"], update: ["c1"], delete: [] }
-      }
+      })
     },
     company: { id: "c1", groupId: "g1" },
     caller: caller as never,

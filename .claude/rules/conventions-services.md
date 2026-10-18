@@ -42,7 +42,7 @@ exactly what the button does. Plan:
  */
 export const cancelJob = defineServiceFn({
   input: z.object({ jobId: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, { jobId }) {
     // ...
     if (!update.updated) return ctx.error("conflict", "The job's status changed");
@@ -55,7 +55,13 @@ export const cancelJob = defineServiceFn({
   value or `ctx.error(category, message, cause)`; a throw becomes `internal`
   with the cause logged and withheld. The error union is inferred.
 - **Gate**: every ENTRY call is checked against `permission` for its actor
-  (`user` claims, `apiKey` scopes; `system` passes). `"employee"` admits an
+  (`user` claims, `apiKey` scopes; `system` passes). A gate names each page
+  it needs and the lowest level there, `{ "inventory.receipts": "Edit" }`
+  (`RequiredPermissions` is `Partial<Record<PageId, GateLevel>>`, typed by
+  the registry, `@carbon/database/access`); two entries need both. The check
+  reads the level's highest action (`inventory.receipts_update` for Edit). A
+  page is the one that owns the table the function writes (else reads), or
+  the page whose route calls it. `"employee"` admits an
   employee of the company or an API key of the company, never a customer or
   supplier portal account (a read every screen needs, such as locations or
   units; RLS still filters the rows). Use it only when every table the read
@@ -85,8 +91,8 @@ export const cancelJob = defineServiceFn({
   share link) uses `systemContext({ companyId, companyGroupId, onBehalfOf })`.
 - **Published**: `@mcp` in the TSDoc publishes the const as the MCP tool
   `{module}_{name}` and `POST /api/v1/{module}/{name}`. The permission decides
-  the classification (only `view` → READ, any `delete` → DESTRUCTIVE, else
-  WRITE); `@mcp read` forces READ (a read gated on `update`), `@mcp destructive`
+  the classification (View alone → READ, Full → DESTRUCTIVE, else WRITE);
+  `@mcp read` forces READ (a read gated on `"employee"`), `@mcp destructive`
   forces DESTRUCTIVE. `@param name - text` describes an input field. Publish
   an operation only when it is safe with nothing but its input: the API runs
   the gate and `run`, nothing the route does around the call.

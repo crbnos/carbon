@@ -13557,8 +13557,8 @@ export const createRentalInvoicesInput = z.object({
 });
 
 export const createRentalInvoicesPermission = {
-  update: "sales",
-  create: "invoicing"
+  "sales.rentalAgreements": "Edit",
+  "invoicing.salesInvoices": "Create"
 } satisfies PermissionRule<z.output<typeof createRentalInvoicesInput>>;
 
 /** Drafts the rental invoices due on or before `asOf` (see
@@ -16238,7 +16238,7 @@ export const postRentalAgreementInput = payloadValidator;
 export type PostRentalAgreementInput = RentalAgreementPayload;
 
 export const postRentalAgreementPermission = {
-  update: "sales"
+  "sales.rentalAgreements": "Edit"
 } satisfies PermissionRule<z.output<typeof postRentalAgreementInput>>;
 
 /** Activates, releases a unit of, closes or cancels a rental agreement, per
@@ -19326,7 +19326,7 @@ async function revertCancellation(
 // ---------------------------------------------------------------------------
 
 export const postCustomerContractPermission = {
-  update: "sales"
+  "sales.serviceContracts": "Edit"
 } satisfies PermissionRule<z.output<typeof postCustomerContractInput>>;
 
 /** Confirms, edits the schedule of, amends, cancels or reverts the
@@ -20166,8 +20166,8 @@ export const createContractInvoicesInput = z.object({
 });
 
 export const createContractInvoicesPermission = {
-  update: "sales",
-  create: "invoicing"
+  "sales.serviceContracts": "Edit",
+  "invoicing.salesInvoices": "Create"
 } satisfies PermissionRule<z.output<typeof createContractInvoicesInput>>;
 
 /** Drafts the contract invoices due on or before `asOf` (see

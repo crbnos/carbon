@@ -52,7 +52,7 @@ that defines it: `~/modules/sales/sales.models`, never `~/modules/sales`.
   import * as service from "./sales.service";
   export const getCustomers = defineServiceFn({
     input: z.object({ search: z.string().optional() }),
-    permission: { view: "sales" },
+    permission: { "sales.customers": "View" },
     async run(ctx, input) {
       return paged(ctx, await service.getCustomers(ctx.asCaller.supabase, ctx.company.id, input));
     }
@@ -139,7 +139,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 - A lookup every screen needs (locations, units) gates on `"employee"`, so a
   page reads it without the module's permission. Only a lookup whose tables
   RLS lets every employee read may do so; one that reads a restricted table
-  keeps its module's `view`, and a loader without that permission calls the
+  keeps View on its page, and a loader without that permission calls the
   building block directly (baselined in `loader-reads-through-api`).
 - A building block no service function calls is a helper (a time zone, user
   defaults, a label logo) and the loader calls it directly. A read made as the

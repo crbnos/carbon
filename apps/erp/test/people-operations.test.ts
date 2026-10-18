@@ -26,6 +26,7 @@ import { clockInPerson, updateShift } from "../app/modules/people/people.server"
 import { clockIn } from "../app/modules/people/people.service";
 import { notifyScheduleInputsChanged } from "../app/modules/production/production.service";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 const unreachable = () => {
   throw new Error("must not be reached");
@@ -36,9 +37,9 @@ const ctx = createServiceContext({
     type: "user",
     role: "employee",
     userId: "user-1",
-    permissions: {
+    permissions: pageClaims({
       people: { view: ["company-1"], create: [], update: [], delete: [] }
-    }
+    })
   },
   company: { id: "company-1", groupId: "group-1" },
   caller: {} as never,
@@ -101,14 +102,14 @@ function shiftContext(caller: never, update: string[]) {
       type: "user",
       role: "employee",
       userId: "user-1",
-      permissions: {
+      permissions: pageClaims({
         people: {
           view: ["company-1"],
           create: ["company-1"],
           update,
           delete: []
         }
-      }
+      })
     },
     company: { id: "company-1", groupId: "group-1" },
     caller,

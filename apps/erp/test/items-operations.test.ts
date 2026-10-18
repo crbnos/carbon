@@ -44,6 +44,7 @@ import {
   upsertItemSupersession
 } from "../app/modules/items/items.service";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 type Write = {
   table: string;
@@ -114,14 +115,14 @@ function contextFor(
       type: "user",
       role: "employee",
       userId: "user-1",
-      permissions: {
+      permissions: pageClaims({
         parts: {
           view: ["company-1"],
           create: ["company-1"],
           update: ["company-1"],
           delete: ["company-1"]
         }
-      }
+      })
     },
     company: { id: "company-1", groupId: "group-1" },
     caller: caller as any,

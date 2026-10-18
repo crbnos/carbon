@@ -35,6 +35,7 @@ import {
 } from "../app/modules/users/users.service";
 import { getAttribute } from "../app/modules/people/people.service";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 // Saving the avatar saves the new value, then deletes the photo it replaced.
 // The order is the point: deleting first and then failing the save left
@@ -60,9 +61,9 @@ function saveAvatar(path: string) {
       type: "user",
       role: "employee",
       userId: USER_ID,
-      permissions: {
+      permissions: pageClaims({
         documents: { view: ["company-1"], create: [], update: [], delete: [] }
-      }
+      })
     },
     company: { id: "company-1", groupId: "group-1" },
     caller: { storage: { from: () => ({ remove }) } } as never,
@@ -136,8 +137,8 @@ describe("updateOwnAvatar", () => {
   });
 });
 
-// Anyone with resources update may change anyone's attribute values; others
-// only their own, of an attribute marked as self-managed.
+// Anyone with Edit on People → Attributes may change anyone's attribute
+// values; others only their own, of an attribute marked as self-managed.
 describe("attribute values", () => {
   const OTHER = "9a8b7c6d-0000-4000-8000-000000000000";
   const value = {
@@ -152,10 +153,10 @@ describe("attribute values", () => {
         type: "user",
         role: "employee",
         userId: USER_ID,
-        permissions: {
+        permissions: pageClaims({
           documents: { view: ["company-1"], create: [], update: [], delete: [] },
           ...permissions
-        } as never
+        } as never)
       },
       company: { id: "company-1", groupId: "group-1" },
       caller: {} as never,
@@ -175,15 +176,25 @@ describe("attribute values", () => {
     } as never);
   });
 
-  it("lets resources update change another person's value", async () => {
+  it("lets Edit on Attributes change another person's value", async () => {
     const result = await upsertAttributeValue(
-      contextAs({ resources: { update: ["company-1"] } }),
+      contextAs({ "people.attributes": { update: ["company-1"] } }),
       { ...value, userId: OTHER }
     );
     expect(result.data).toEqual({ userAttributeValueId: "value-1" });
   });
 
-  it("refuses another person's value without resources update", async () => {
+  // The registry put attributes on People → Attributes: resources no longer
+  // reaches them.
+  it("refuses another person's value with resources update alone", async () => {
+    const result = await upsertAttributeValue(
+      contextAs({ resources: { update: ["company-1"] } }),
+      { ...value, userId: OTHER }
+    );
+    expect(result.error?.category).toBe("forbidden");
+  });
+
+  it("refuses another person's value without Edit on Attributes", async () => {
     const result = await upsertAttributeValue(contextAs({}), {
       ...value,
       userId: OTHER

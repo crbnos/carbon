@@ -234,11 +234,10 @@ export function formatToolDescription(
 ): string {
   let output = `${tool.name} [${tool.classification}]\n`;
   output += `${tool.description}\n`;
-  if (tool.permission.module) {
-    const scopes = tool.permission.actions
-      .map((action) => `${tool.permission.module}_${action}`)
-      .join(" or ");
-    output += `Permission: ${scopes}\n`;
+  // The actions are every one the gate's level holds; it checks the highest.
+  const action = tool.permission.actions.at(-1);
+  if (tool.permission.module && action) {
+    output += `Permission: ${tool.permission.module}_${action}\n`;
   }
   if (options.isList) {
     if (tool.paginates) {

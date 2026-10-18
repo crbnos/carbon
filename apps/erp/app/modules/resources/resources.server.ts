@@ -64,7 +64,7 @@ const customFieldsInput = z
  */
 export const createAbility = defineServiceFn({
   input: abilityValidator,
-  permission: { create: "resources" },
+  permission: { "resources.abilities": "Create" },
 
   async run(ctx, { processId, recertifyEveryDays }) {
     const client = ctx.asCaller.supabase;
@@ -114,7 +114,7 @@ export const createAbility = defineServiceFn({
  */
 export const deactivateAbility = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.abilities": "Full" },
 
   async run(ctx, { id }) {
     const deactivated = await service.deleteAbility(
@@ -153,7 +153,7 @@ export const deactivateAbility = defineServiceFn({
  */
 export const addEmployeeAbility = defineServiceFn({
   input: employeeAbilityCellValidator,
-  permission: { update: "resources" },
+  permission: { "resources.abilities": "Edit" },
 
   async run(ctx, input) {
     return service.saveEmployeeAbility(ctx, input, {
@@ -175,7 +175,7 @@ export const addEmployeeAbility = defineServiceFn({
  */
 export const updateEmployeeAbility = defineServiceFn({
   input: employeeAbilityCellValidator,
-  permission: { update: "resources" },
+  permission: { "resources.abilities": "Edit" },
 
   async run(ctx, input) {
     return service.saveEmployeeAbility(ctx, input, {
@@ -196,7 +196,7 @@ export const updateEmployeeAbility = defineServiceFn({
  */
 export const removeEmployeeAbility = defineServiceFn({
   input: z.object({ abilityId: z.string(), employeeAbilityId: z.string() }),
-  permission: { update: "resources" },
+  permission: { "resources.abilities": "Edit" },
 
   async run(ctx, { abilityId, employeeAbilityId }) {
     const removed = await ctx.asCaller.supabase
@@ -234,7 +234,7 @@ export const removeEmployeeAbility = defineServiceFn({
  */
 export const createLocation = defineServiceFn({
   input: locationValidator.safeExtend({ customFields: customFieldsInput }),
-  permission: { create: "resources" },
+  permission: { "resources.locations": "Create" },
 
   async run(ctx, { id: _id, ...location }) {
     const insert = await service.upsertLocation(ctx.asCaller.supabase, {
@@ -263,7 +263,7 @@ export const updateLocation = defineServiceFn({
     customFields: customFieldsInput
   }),
   // The route gated on create; the write runs under the update policy.
-  permission: { create: "resources", update: "resources" },
+  permission: { "resources.locations": "Edit" },
 
   async run(ctx, { id, ...location }) {
     const update = await service.upsertLocation(ctx.asCaller.supabase, {
@@ -301,7 +301,7 @@ const processInput = processValidator.safeExtend({
  */
 export const createProcess = defineServiceFn({
   input: processInput,
-  permission: { create: "resources" },
+  permission: { "resources.processes": "Create" },
 
   async run(ctx, { id: _id, ...process }) {
     const client = ctx.asCaller.supabase;
@@ -355,7 +355,7 @@ export const updateProcess = defineServiceFn({
   // The route gated on create and wrote under the caller's policies: the
   // process update, and the delete and insert of its work centers, which
   // now run on the system connection.
-  permission: { create: "resources", update: "resources", delete: "resources" },
+  permission: { "resources.processes": "Full" },
 
   async run(ctx, { id, ...process }) {
     const client = ctx.asCaller.supabase;
@@ -456,7 +456,7 @@ const workCenterInput = workCenterValidator.safeExtend({
 export const createWorkCenter = defineServiceFn({
   input: workCenterInput,
   // The route gated on update; the inserts run under the create policy.
-  permission: { create: "resources", update: "resources" },
+  permission: { "resources.workCenters": "Edit" },
 
   async run(ctx, { id: _id, ...workCenter }) {
     const insert = await service.upsertWorkCenter(ctx.asCaller.supabase, {
@@ -493,7 +493,7 @@ export const createWorkCenter = defineServiceFn({
  */
 export const updateWorkCenter = defineServiceFn({
   input: workCenterInput.safeExtend({ id: z.string() }),
-  permission: { update: "resources" },
+  permission: { "resources.workCenters": "Edit" },
 
   async run(ctx, { id, ...workCenter }) {
     const update = await service.upsertWorkCenter(ctx.asCaller.supabase, {
@@ -530,7 +530,7 @@ export const updateWorkCenter = defineServiceFn({
  */
 export const reactivateWorkCenter = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.workCenters": "Full" },
 
   async run(ctx, { id }) {
     const activated = await service.activateWorkCenter(
@@ -566,7 +566,7 @@ export const reactivateWorkCenter = defineServiceFn({
  */
 export const deactivateWorkCenter = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.workCenters": "Full" },
 
   async run(ctx, { id }) {
     const deactivated = await service.deleteWorkCenter(
@@ -606,7 +606,7 @@ export const deactivateWorkCenter = defineServiceFn({
  */
 export const createMaintenanceSchedule = defineServiceFn({
   input: maintenanceScheduleValidator,
-  permission: { create: "resources" },
+  permission: { "resources.schedules": "Create" },
 
   async run(ctx, { id: _id, ...schedule }) {
     const insert = await service.upsertMaintenanceSchedule(
@@ -645,7 +645,7 @@ export const createMaintenanceSchedule = defineServiceFn({
  */
 export const updateMaintenanceSchedule = defineServiceFn({
   input: maintenanceScheduleValidator.safeExtend({ id: z.string() }),
-  permission: { update: "resources" },
+  permission: { "resources.schedules": "Edit" },
 
   async run(ctx, { id, ...schedule }) {
     const update = await service.upsertMaintenanceSchedule(
@@ -687,7 +687,7 @@ export const updateMaintenanceSchedule = defineServiceFn({
  */
 export const createMaintenanceDispatch = defineServiceFn({
   input: maintenanceDispatchValidator,
-  permission: { create: "resources" },
+  permission: { "resources.dispatches": "Create" },
 
   async run(ctx, input) {
     let content: Json | undefined;
@@ -785,7 +785,7 @@ export const updateMaintenanceDispatchField = defineServiceFn({
     field: z.enum([...dispatchValueFields, ...dispatchTimeFields]),
     value: z.string().nullish()
   }),
-  permission: { update: "resources" },
+  permission: { "resources.dispatches": "Edit" },
 
   async run(ctx, { ids, field, value }) {
     const client = ctx.asCaller.supabase;
@@ -890,7 +890,7 @@ export const setMaintenanceDispatchStatus = defineServiceFn({
     dispatchId: z.string(),
     status: z.enum(maintenanceDispatchStatus)
   }),
-  permission: { update: "resources" },
+  permission: { "resources.dispatches": "Edit" },
 
   async run(ctx, { dispatchId, status }) {
     const update = await ctx.asCaller.supabase
@@ -943,7 +943,7 @@ export const setMaintenanceDispatchStatus = defineServiceFn({
  */
 export const createMaintenanceEvent = defineServiceFn({
   input: maintenanceDispatchEventValidator,
-  permission: { update: "resources" },
+  permission: { "resources.dispatches": "Edit" },
 
   async run(ctx, { id: _id, maintenanceDispatchId, endTime, notes, ...event }) {
     const dispatch = await service.editableDispatch(ctx, maintenanceDispatchId);
@@ -990,7 +990,7 @@ export const createMaintenanceEvent = defineServiceFn({
  */
 export const updateMaintenanceEvent = defineServiceFn({
   input: maintenanceDispatchEventValidator.safeExtend({ id: z.string() }),
-  permission: { update: "resources" },
+  permission: { "resources.dispatches": "Edit" },
 
   async run(ctx, { id, maintenanceDispatchId, ...event }) {
     const dispatch = await service.editableDispatch(ctx, maintenanceDispatchId);
@@ -1043,7 +1043,7 @@ export const updateMaintenanceEvent = defineServiceFn({
  */
 export const deleteMaintenanceEvent = defineServiceFn({
   input: z.object({ dispatchId: z.string(), eventId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.dispatches": "Full" },
 
   async run(ctx, { dispatchId, eventId }) {
     const dispatch = await service.editableDispatch(ctx, dispatchId);
@@ -1081,7 +1081,7 @@ export const deleteMaintenanceEvent = defineServiceFn({
  */
 export const startMaintenanceEvent = defineServiceFn({
   input: z.object({ dispatchId: z.string() }),
-  permission: { update: "resources" },
+  permission: { "resources.dispatches": "Edit" },
 
   async run(ctx, { dispatchId }) {
     const dispatch = await service.editableDispatch(ctx, dispatchId);
@@ -1121,7 +1121,7 @@ export const startMaintenanceEvent = defineServiceFn({
  */
 export const stopMaintenanceEvent = defineServiceFn({
   input: z.object({ dispatchId: z.string(), eventId: z.string() }),
-  permission: { update: "resources" },
+  permission: { "resources.dispatches": "Edit" },
 
   async run(ctx, { dispatchId, eventId }) {
     const dispatch = await service.editableDispatch(ctx, dispatchId);
@@ -1178,7 +1178,7 @@ export const issueMaintenancePart = defineServiceFn({
       )
       .optional()
   }),
-  permission: { update: "resources" },
+  permission: { "resources.dispatches": "Edit" },
 
   async run(
     ctx,
@@ -1237,7 +1237,7 @@ export const unissueMaintenancePart = defineServiceFn({
     dispatchId: z.string(),
     maintenanceDispatchItemId: z.string()
   }),
-  permission: { delete: "resources" },
+  permission: { "resources.dispatches": "Full" },
 
   async run(ctx, { dispatchId, maintenanceDispatchItemId }) {
     const dispatch = await service.editableDispatch(ctx, dispatchId);
@@ -1394,10 +1394,10 @@ export const updateTrainingField = defineServiceFn({
   }),
   // The editor wrote its content directly, under the training table's policy;
   // the other fields went through a route gated on people update.
-  permission: { update: "resources" },
+  permission: { "resources.training": "Edit" },
 
   async run(ctx, { ids, field, value }) {
-    if (field !== "content" && !ctx.can({ update: "people" })) {
+    if (field !== "content" && !ctx.can({ "people.employees": "Edit" })) {
       return ctx.error("forbidden", "You do not have permission to do this");
     }
     const client = ctx.asCaller.supabase;
@@ -1485,7 +1485,7 @@ export const updateTrainingField = defineServiceFn({
  */
 export const createTrainingAssignment = defineServiceFn({
   input: trainingAssignmentValidator,
-  permission: { create: "resources" },
+  permission: { "resources.assignments": "Create" },
 
   async run(ctx, { isExternal, trainingId, name, groupIds }) {
     const client = ctx.asCaller.supabase;
@@ -1546,7 +1546,7 @@ export const createTrainingAssignment = defineServiceFn({
  */
 export const updateTrainingAssignment = defineServiceFn({
   input: trainingAssignmentValidator.safeExtend({ id: z.string() }),
-  permission: { update: "resources" },
+  permission: { "resources.assignments": "Edit" },
 
   async run(ctx, { id, name, groupIds }) {
     const client = ctx.asCaller.supabase;
@@ -1595,7 +1595,7 @@ export const completeTrainingAssignment = defineServiceFn({
     employeeId: z.string().min(1),
     certificate: z.instanceof(File).optional()
   }),
-  permission: { update: "resources" },
+  permission: { "resources.assignments": "Edit" },
 
   async run(ctx, { trainingAssignmentId, employeeId, certificate }) {
     const client = ctx.asCaller.supabase;
@@ -1657,7 +1657,7 @@ export const completeTrainingAssignment = defineServiceFn({
  */
 export const uncompleteTrainingAssignment = defineServiceFn({
   input: z.object({ completionId: zfd.numeric(z.number().int().positive()) }),
-  permission: { delete: "resources" },
+  permission: { "resources.assignments": "Full" },
 
   async run(ctx, { completionId }) {
     const companyId = ctx.company.id;
@@ -1699,7 +1699,7 @@ export const uncompleteTrainingAssignment = defineServiceFn({
  */
 export const deleteContractor = defineServiceFn({
   input: z.looseObject({ contractorId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.abilities": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1718,7 +1718,7 @@ export const deleteContractor = defineServiceFn({
  */
 export const deleteFailureMode = defineServiceFn({
   input: z.looseObject({ failureModeId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.failureModes": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1737,7 +1737,7 @@ export const deleteFailureMode = defineServiceFn({
  */
 export const deleteLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.locations": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1756,7 +1756,7 @@ export const deleteLocation = defineServiceFn({
  */
 export const deleteMaintenanceDispatch = defineServiceFn({
   input: z.looseObject({ dispatchId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.dispatches": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1775,7 +1775,7 @@ export const deleteMaintenanceDispatch = defineServiceFn({
  */
 export const deleteMaintenanceSchedule = defineServiceFn({
   input: z.looseObject({ scheduleId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.schedules": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1794,7 +1794,7 @@ export const deleteMaintenanceSchedule = defineServiceFn({
  */
 export const deletePartner = defineServiceFn({
   input: z.looseObject({ partnerId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.abilities": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1813,7 +1813,7 @@ export const deletePartner = defineServiceFn({
  */
 export const activateProcess = defineServiceFn({
   input: z.looseObject({ processId: z.string() }),
-  permission: { update: "resources" },
+  permission: { "resources.processes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1832,7 +1832,7 @@ export const activateProcess = defineServiceFn({
  */
 export const processDeactivate = defineServiceFn({
   input: z.looseObject({ processId: z.string() }),
-  permission: { update: "resources" },
+  permission: { "resources.processes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1851,7 +1851,7 @@ export const processDeactivate = defineServiceFn({
  */
 export const deleteProcess = defineServiceFn({
   input: z.looseObject({ processId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.processes": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1870,7 +1870,7 @@ export const deleteProcess = defineServiceFn({
  */
 export const deleteShift = defineServiceFn({
   input: z.looseObject({ shiftId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "people.shifts": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1886,7 +1886,7 @@ export const deleteShift = defineServiceFn({
  */
 export const deleteSuggestion = defineServiceFn({
   input: z.looseObject({ suggestionId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.suggestions": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1905,7 +1905,7 @@ export const deleteSuggestion = defineServiceFn({
  */
 export const deleteTraining = defineServiceFn({
   input: z.looseObject({ trainingId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.training": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1924,7 +1924,7 @@ export const deleteTraining = defineServiceFn({
  */
 export const deleteTrainingAssignment = defineServiceFn({
   input: z.looseObject({ assignmentId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.assignments": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1943,7 +1943,7 @@ export const deleteTrainingAssignment = defineServiceFn({
  */
 export const deleteTrainingQuestion = defineServiceFn({
   input: z.looseObject({ trainingQuestionId: z.string() }),
-  permission: { delete: "resources" },
+  permission: { "resources.training": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1971,7 +1971,7 @@ export const getAbilities = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "resources" },
+  permission: { "resources.abilities": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1991,7 +1991,7 @@ export const getAbilities = defineServiceFn({
  */
 export const getAbilitiesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: { "resources.abilities": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2007,7 +2007,7 @@ export const getAbilitiesList = defineServiceFn({
  */
 export const getAbility = defineServiceFn({
   input: z.looseObject({ abilityId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.abilities": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2023,7 +2023,7 @@ export const getAbility = defineServiceFn({
  */
 export const getContractor = defineServiceFn({
   input: z.looseObject({ contractorId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.abilities": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2050,7 +2050,7 @@ export const getContractors = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "resources" },
+  permission: { "resources.abilities": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2070,7 +2070,7 @@ export const getContractors = defineServiceFn({
  */
 export const getEmployeeAbilities = defineServiceFn({
   input: z.looseObject({ employeeId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.abilities": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2090,7 +2090,7 @@ export const getEmployeeAbilities = defineServiceFn({
  */
 export const getEmployeeAbility = defineServiceFn({
   input: z.looseObject({ employeeAbilityId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.abilities": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2109,7 +2109,7 @@ export const getEmployeeAbility = defineServiceFn({
  */
 export const getFailureMode = defineServiceFn({
   input: z.looseObject({ failureModeId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.failureModes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2136,7 +2136,7 @@ export const getFailureModes = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "resources" },
+  permission: { "resources.failureModes": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2172,7 +2172,7 @@ export const getFailureModesList = defineServiceFn({
  */
 export const getLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.locations": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2235,7 +2235,7 @@ export const getLocationsList = defineServiceFn({
  */
 export const getMaintenanceDispatch = defineServiceFn({
   input: z.looseObject({ dispatchId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.dispatches": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2254,7 +2254,7 @@ export const getMaintenanceDispatch = defineServiceFn({
  */
 export const getMaintenanceDispatchComments = defineServiceFn({
   input: z.looseObject({ dispatchId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.dispatches": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2273,7 +2273,7 @@ export const getMaintenanceDispatchComments = defineServiceFn({
  */
 export const getMaintenanceDispatchEvents = defineServiceFn({
   input: z.looseObject({ dispatchId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.dispatches": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2292,7 +2292,7 @@ export const getMaintenanceDispatchEvents = defineServiceFn({
  */
 export const getMaintenanceDispatchItems = defineServiceFn({
   input: z.looseObject({ dispatchId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.dispatches": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2321,7 +2321,7 @@ export const getMaintenanceDispatchesByLocation = defineServiceFn({
     search: z.string().nullable().optional(),
     status: z.string().optional()
   }),
-  permission: { view: "resources" },
+  permission: { "resources.dispatches": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2342,7 +2342,7 @@ export const getMaintenanceDispatchesByLocation = defineServiceFn({
  */
 export const getMaintenanceSchedule = defineServiceFn({
   input: z.looseObject({ scheduleId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.schedules": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2371,7 +2371,7 @@ export const getMaintenanceSchedulesByLocation = defineServiceFn({
     search: z.string().nullable().optional(),
     active: z.boolean().optional()
   }),
-  permission: { view: "resources" },
+  permission: { "resources.schedules": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2392,7 +2392,7 @@ export const getMaintenanceSchedulesByLocation = defineServiceFn({
  */
 export const getOutstandingTrainingsForUser = defineServiceFn({
   input: z.looseObject({ employeeId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.assignments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2412,7 +2412,7 @@ export const getOutstandingTrainingsForUser = defineServiceFn({
  */
 export const getTrainingAssignmentStatusForEmployee = defineServiceFn({
   input: z.looseObject({ employeeId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.assignments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2432,7 +2432,7 @@ export const getTrainingAssignmentStatusForEmployee = defineServiceFn({
  */
 export const getPartner = defineServiceFn({
   input: z.looseObject({ partnerId: z.string(), abilityId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.abilities": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2452,7 +2452,7 @@ export const getPartner = defineServiceFn({
  */
 export const getPartnerBySupplierId = defineServiceFn({
   input: z.looseObject({ partnerId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.abilities": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2479,7 +2479,7 @@ export const getPartners = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "resources" },
+  permission: { "resources.abilities": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2499,7 +2499,7 @@ export const getPartners = defineServiceFn({
  */
 export const getProcess = defineServiceFn({
   input: z.looseObject({ processId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.processes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2523,7 +2523,7 @@ export const getProcesses = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "resources" },
+  permission: { "resources.processes": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2559,7 +2559,7 @@ export const getProcessesList = defineServiceFn({
  */
 export const getSuggestion = defineServiceFn({
   input: z.looseObject({ suggestionId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.suggestions": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2586,7 +2586,7 @@ export const getSuggestions = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "resources" },
+  permission: { "resources.suggestions": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2606,7 +2606,7 @@ export const getSuggestions = defineServiceFn({
  */
 export const getTraining = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.training": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2622,7 +2622,7 @@ export const getTraining = defineServiceFn({
  */
 export const getTrainingAssignment = defineServiceFn({
   input: z.looseObject({ assignmentId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.assignments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2641,7 +2641,7 @@ export const getTrainingAssignment = defineServiceFn({
  */
 export const getTrainingAssignmentForCompletion = defineServiceFn({
   input: z.looseObject({ assignmentId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.assignments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2660,7 +2660,7 @@ export const getTrainingAssignmentForCompletion = defineServiceFn({
  */
 export const getTrainingAssignments = defineServiceFn({
   input: z.looseObject({ trainingId: z.string().optional() }),
-  permission: { view: "resources" },
+  permission: { "resources.assignments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2687,7 +2687,7 @@ export const getTrainingAssignmentStatus = defineServiceFn({
       .optional(),
     search: z.string().optional()
   }),
-  permission: { view: "resources" },
+  permission: { "resources.assignments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2707,7 +2707,7 @@ export const getTrainingAssignmentStatus = defineServiceFn({
  */
 export const getTrainingAssignmentSummary = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: { "resources.assignments": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2734,7 +2734,7 @@ export const getTrainings = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { view: "resources" },
+  permission: { "resources.training": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2770,7 +2770,7 @@ export const getTrainingsList = defineServiceFn({
  */
 export const getWorkCenter = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.workCenters": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2794,7 +2794,7 @@ export const getWorkCenters = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { view: "resources" },
+  permission: { "resources.workCenters": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2814,7 +2814,7 @@ export const getWorkCenters = defineServiceFn({
  */
 export const getWorkCentersByLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { view: "resources" },
+  permission: { "resources.workCenters": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2833,7 +2833,7 @@ export const getWorkCentersByLocation = defineServiceFn({
  */
 export const getWorkCentersList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: { "resources.workCenters": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2849,7 +2849,7 @@ export const getWorkCentersList = defineServiceFn({
  */
 export const getWorkCentersListWithBlockingStatus = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: { "resources.workCenters": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2868,7 +2868,7 @@ export const getWorkCentersListWithBlockingStatus = defineServiceFn({
  */
 export const getProcessesWithoutAbility = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "resources" },
+  permission: { "resources.processes": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2893,7 +2893,7 @@ export const updateAbility = defineServiceFn({
       recertifyEveryDays: z.number().nullable().optional()
     })
   }),
-  permission: { update: "resources" },
+  permission: { "resources.abilities": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2913,7 +2913,7 @@ export const updateAbility = defineServiceFn({
  */
 export const updateSuggestionEmoji = defineServiceFn({
   input: z.looseObject({ suggestionId: z.string(), emoji: z.string() }),
-  permission: { update: "resources" },
+  permission: { "resources.suggestions": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2935,7 +2935,7 @@ export const updateTrainingQuestionOrder = defineServiceFn({
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
-  permission: { update: "resources" },
+  permission: { "resources.training": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2966,7 +2966,7 @@ export const createContractor = defineServiceFn({
     abilities: z.array(z.string()),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "resources" },
+  permission: { "resources.abilities": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2997,7 +2997,7 @@ export const updateContractor = defineServiceFn({
     abilities: z.array(z.string()),
     customFields: z.unknown().optional()
   }),
-  permission: { update: "resources" },
+  permission: { "resources.abilities": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3027,7 +3027,7 @@ export const createFailureMode = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "resources" },
+  permission: { "resources.failureModes": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3059,7 +3059,7 @@ export const updateFailureMode = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "resources" },
+  permission: { "resources.failureModes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3088,7 +3088,7 @@ export const createMaintenanceDispatchComment = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "resources" },
+  permission: { "resources.dispatches": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3119,7 +3119,7 @@ export const updateMaintenanceDispatchComment = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "resources" },
+  permission: { "resources.dispatches": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3149,7 +3149,7 @@ export const createMaintenanceDispatchItem = defineServiceFn({
     quantity: z.number().min(1),
     unitOfMeasureCode: z.string().min(1)
   }),
-  permission: { update: "resources" },
+  permission: { "resources.dispatches": "Edit" },
   async run(
     ctx,
     { maintenanceDispatchId, itemId, quantity, unitOfMeasureCode }
@@ -3186,7 +3186,7 @@ export const updateMaintenanceDispatchItem = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "resources" },
+  permission: { "resources.dispatches": "Edit" },
   async run(ctx, input) {
     const dispatch = await service.editableDispatch(
       ctx,
@@ -3237,7 +3237,7 @@ export const createPartner = defineServiceFn({
     hoursPerWeek: z.number().min(0),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "resources" },
+  permission: { "resources.abilities": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3270,7 +3270,7 @@ export const updatePartner = defineServiceFn({
       customFields: z.unknown().optional()
     })
     .required({ id: true }),
-  permission: { update: "resources" },
+  permission: { "resources.abilities": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3300,7 +3300,7 @@ export const createTraining = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "resources" },
+  permission: { "resources.training": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3332,7 +3332,7 @@ export const updateTraining = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "resources" },
+  permission: { "resources.training": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3376,7 +3376,7 @@ export const createTrainingQuestion = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "resources" },
+  permission: { "resources.training": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3422,7 +3422,7 @@ export const updateTrainingQuestion = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "resources" },
+  permission: { "resources.training": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,

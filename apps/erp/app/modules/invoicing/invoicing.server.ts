@@ -96,7 +96,7 @@ const salesInvoiceFields = [
  */
 export const updateSalesInvoiceField = defineServiceFn({
   input: service.fieldUpdate(salesInvoiceFields),
-  permission: { update: "sales" },
+  permission: { "invoicing.salesInvoices": "Edit" },
 
   async run(ctx, { ids, field, value }) {
     const client = ctx.asCaller.supabase;
@@ -209,7 +209,7 @@ const salesInvoiceLineInput = salesInvoiceLineValidator.safeExtend({
  */
 export const createSalesInvoiceLine = defineServiceFn({
   input: salesInvoiceLineInput,
-  permission: { create: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Create" },
 
   async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
     const line = service.salesInvoiceLineRow(input);
@@ -286,7 +286,7 @@ export const createSalesInvoiceLine = defineServiceFn({
  */
 export const updateSalesInvoiceLine = defineServiceFn({
   input: salesInvoiceLineInput.safeExtend({ id: z.string() }),
-  permission: { create: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Create" },
 
   async run(ctx, { id, acknowledged, customFields, ...input }) {
     const line = service.salesInvoiceLineRow(input);
@@ -384,7 +384,7 @@ export const updateSalesInvoiceLine = defineServiceFn({
  */
 export const deleteDraftSalesInvoiceLine = defineServiceFn({
   input: z.object({ invoiceId: z.string(), lineId: z.string() }),
-  permission: { delete: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Full" },
 
   async run(ctx, { invoiceId, lineId }) {
     const locked = await service.unlockedSalesInvoice(
@@ -419,7 +419,7 @@ export const deleteDraftSalesInvoiceLine = defineServiceFn({
  */
 export const deleteDraftSalesInvoice = defineServiceFn({
   input: z.object({ invoiceId: z.string() }),
-  permission: { delete: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Full" },
 
   async run(ctx, { invoiceId }) {
     const locked = await service.unlockedSalesInvoice(
@@ -453,7 +453,7 @@ export const deleteDraftSalesInvoice = defineServiceFn({
  */
 export const voidSalesInvoice = defineServiceFn({
   input: z.object({ invoiceId: z.string() }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Edit" },
 
   async run(ctx, { invoiceId }) {
     const invoice = await ctx.asCaller.supabase
@@ -502,7 +502,7 @@ export const voidSalesInvoice = defineServiceFn({
  */
 export const sendSalesInvoice = defineServiceFn({
   input: z.object({ invoiceId: z.string() }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Edit" },
 
   async run(ctx, { invoiceId }) {
     const companyId = ctx.company.id;
@@ -562,7 +562,7 @@ export const postSalesInvoice = defineServiceFn({
     acknowledged: z.boolean().default(false),
     locale: z.string().default("en-US")
   }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Edit" },
 
   async run(ctx, input) {
     const { invoiceId, notification, customerContact, locale } = input;
@@ -788,7 +788,7 @@ export const createPurchaseInvoice = defineServiceFn({
     taxAmount: z.number().default(0),
     documentPath: z.string().optional()
   }),
-  permission: { create: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Create" },
 
   async run(
     ctx,
@@ -919,7 +919,7 @@ const purchaseInvoiceFields = [
  */
 export const updatePurchaseInvoiceField = defineServiceFn({
   input: service.fieldUpdate(purchaseInvoiceFields),
-  permission: { update: "sales" },
+  permission: { "invoicing.purchaseInvoices": "Edit" },
 
   async run(ctx, { ids, field, value }) {
     const locked = await service.refuseLockedInvoices(
@@ -982,7 +982,7 @@ export const postPurchaseInvoice = defineServiceFn({
     invoiceId: z.string(),
     skipReceiptPost: z.boolean().default(false)
   }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Edit" },
 
   async run(ctx, { invoiceId, skipReceiptPost }) {
     const client = ctx.asCaller.supabase;
@@ -1135,7 +1135,7 @@ export const postPurchaseInvoice = defineServiceFn({
  */
 export const voidPurchaseInvoice = defineServiceFn({
   input: z.object({ invoiceId: z.string() }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Edit" },
 
   async run(ctx, { invoiceId }) {
     const invoice = await ctx.asCaller.supabase
@@ -1196,7 +1196,7 @@ export const voidPurchaseInvoice = defineServiceFn({
  */
 export const deleteDraftPurchaseInvoice = defineServiceFn({
   input: z.object({ invoiceId: z.string() }),
-  permission: { delete: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Full" },
 
   async run(ctx, { invoiceId }) {
     const locked = await service.unlockedPurchaseInvoice(
@@ -1229,7 +1229,7 @@ export const deleteDraftPurchaseInvoice = defineServiceFn({
  */
 export const deleteDraftPurchaseInvoiceLine = defineServiceFn({
   input: z.object({ invoiceId: z.string(), lineId: z.string() }),
-  permission: { delete: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Full" },
 
   async run(ctx, { invoiceId, lineId }) {
     const locked = await service.unlockedPurchaseInvoice(
@@ -1281,7 +1281,7 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
       })
     )
   }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Edit" },
 
   async run(ctx, { invoiceId, mappings }) {
     const serviceRole = ctx.asSystem.supabase;
@@ -1421,7 +1421,7 @@ export const createPayment = defineServiceFn({
     customFields: customFieldValues.optional(),
     seedInvoiceIds: z.array(z.string()).default([])
   }),
-  permission: { create: "invoicing" },
+  permission: { "invoicing.payments": "Create" },
 
   async run(ctx, { id: _id, seedInvoiceIds, customFields, ...payment }) {
     const client = ctx.asCaller.supabase;
@@ -1507,7 +1507,7 @@ export const createPayment = defineServiceFn({
  */
 export const postPayment = defineServiceFn({
   input: z.object({ paymentId: z.string() }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.payments": "Edit" },
 
   async run(ctx, { paymentId }) {
     const refused = await refuseUnlessOwned(ctx, "payment", { id: paymentId });
@@ -1539,7 +1539,7 @@ export const postPayment = defineServiceFn({
  */
 export const voidPayment = defineServiceFn({
   input: z.object({ paymentId: z.string() }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.payments": "Edit" },
 
   async run(ctx, { paymentId }) {
     const refused = await refuseUnlessOwned(ctx, "payment", { id: paymentId });
@@ -1573,7 +1573,10 @@ export const voidPayment = defineServiceFn({
  */
 export const postMemo = defineServiceFn({
   input: z.object({ memoId: z.string() }),
-  permission: { update: "invoicing" },
+  permission: {
+    "invoicing.supplierCredits": "Edit",
+    "invoicing.creditMemos": "Edit"
+  },
 
   async run(ctx, { memoId }) {
     const refused = await refuseUnlessOwned(ctx, "memo", { id: memoId });
@@ -1605,7 +1608,10 @@ export const postMemo = defineServiceFn({
  */
 export const voidMemo = defineServiceFn({
   input: z.object({ memoId: z.string() }),
-  permission: { update: "invoicing" },
+  permission: {
+    "invoicing.supplierCredits": "Edit",
+    "invoicing.creditMemos": "Edit"
+  },
 
   async run(ctx, { memoId }) {
     const refused = await refuseUnlessOwned(ctx, "memo", { id: memoId });
@@ -1638,7 +1644,10 @@ export const voidMemo = defineServiceFn({
  */
 export const deleteDraftMemo = defineServiceFn({
   input: z.object({ memoId: z.string() }),
-  permission: { delete: "invoicing" },
+  permission: {
+    "invoicing.supplierCredits": "Full",
+    "invoicing.creditMemos": "Full"
+  },
 
   async run(ctx, { memoId }) {
     const client = ctx.asCaller.supabase;
@@ -1689,7 +1698,7 @@ export const deleteDraftMemo = defineServiceFn({
  */
 export const voidCharge = defineServiceFn({
   input: z.object({ chargeId: z.string() }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.charges": "Edit" },
 
   async run(ctx, { chargeId }) {
     const refused = await refuseUnlessOwned(ctx, "charge", { id: chargeId });
@@ -1727,7 +1736,7 @@ const adjustInput = z.object({ asOfDate: z.string().optional() });
  */
 export const adjustReceivables = defineServiceFn({
   input: adjustInput,
-  permission: { create: "accounting" },
+  permission: { "accounting.journalEntries": "Create" },
   run: (ctx, { asOfDate }) => service.adjustTieOut(ctx, "receivables", asOfDate)
 });
 
@@ -1745,7 +1754,7 @@ export const adjustReceivables = defineServiceFn({
  */
 export const adjustPayables = defineServiceFn({
   input: adjustInput,
-  permission: { create: "accounting" },
+  permission: { "accounting.journalEntries": "Create" },
   run: (ctx, { asOfDate }) => service.adjustTieOut(ctx, "payables", asOfDate)
 });
 
@@ -1769,7 +1778,7 @@ const reimbursementInput = reimbursementUpdateValidator.safeExtend({
  */
 export const saveReimbursement = defineServiceFn({
   input: reimbursementInput,
-  permission: { update: "invoicing" },
+  permission: { "invoicing.reimbursements": "Edit" },
 
   async run(ctx, { lines, customFields, ...header }) {
     const existing = await service.loadReimbursement(ctx, header.id);
@@ -1825,7 +1834,7 @@ export const saveReimbursement = defineServiceFn({
  */
 export const saveAndPostReimbursement = defineServiceFn({
   input: reimbursementInput,
-  permission: { update: "invoicing" },
+  permission: { "invoicing.reimbursements": "Edit" },
 
   async run(ctx, input) {
     if (
@@ -1856,7 +1865,7 @@ export const saveAndPostReimbursement = defineServiceFn({
  */
 export const postReimbursement = defineServiceFn({
   input: z.object({ reimbursementId: z.string() }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.reimbursements": "Edit" },
 
   async run(ctx, { reimbursementId }) {
     const reimbursement = await service.loadReimbursement(ctx, reimbursementId);
@@ -1902,7 +1911,7 @@ export const postReimbursement = defineServiceFn({
  */
 export const voidReimbursement = defineServiceFn({
   input: z.object({ reimbursementId: z.string() }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.reimbursements": "Edit" },
 
   async run(ctx, { reimbursementId }) {
     const refused = await refuseUnlessOwned(ctx, "reimbursement", {
@@ -1942,7 +1951,7 @@ export const payReimbursement = defineServiceFn({
   input: reimbursementPaymentValidator.safeExtend({
     reimbursementId: z.string()
   }),
-  permission: { create: "invoicing" },
+  permission: { "invoicing.payments": "Create" },
 
   async run(ctx, { reimbursementId, amount, paymentDate, bankAccount }) {
     const client = ctx.asCaller.supabase;
@@ -2086,7 +2095,7 @@ export const payReimbursement = defineServiceFn({
  */
 export const createPurchaseInvoiceFromPurchaseOrder = defineServiceFn({
   input: z.looseObject({ purchaseOrderId: z.string() }),
-  permission: { create: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2108,7 +2117,7 @@ export const createPurchaseInvoiceFromPurchaseOrder = defineServiceFn({
  */
 export const createSalesInvoiceFromSalesOrder = defineServiceFn({
   input: z.looseObject({ salesOrderId: z.string() }),
-  permission: { create: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2130,7 +2139,7 @@ export const createSalesInvoiceFromSalesOrder = defineServiceFn({
  */
 export const createSalesInvoiceFromShipment = defineServiceFn({
   input: z.looseObject({ shipmentId: z.string() }),
-  permission: { create: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2152,7 +2161,7 @@ export const createSalesInvoiceFromShipment = defineServiceFn({
  */
 export const getPurchaseInvoice = defineServiceFn({
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2180,7 +2189,7 @@ export const getPurchaseInvoices = defineServiceFn({
     search: z.string().nullable().optional(),
     supplierId: z.string().nullable().optional()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2200,7 +2209,7 @@ export const getPurchaseInvoices = defineServiceFn({
  */
 export const getPurchaseInvoiceDelivery = defineServiceFn({
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2219,7 +2228,7 @@ export const getPurchaseInvoiceDelivery = defineServiceFn({
  */
 export const getPurchaseInvoiceLines = defineServiceFn({
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2238,7 +2247,7 @@ export const getPurchaseInvoiceLines = defineServiceFn({
  */
 export const getPurchaseInvoiceLine = defineServiceFn({
   input: z.looseObject({ purchaseInvoiceLineId: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2257,7 +2266,7 @@ export const getPurchaseInvoiceLine = defineServiceFn({
  */
 export const getSalesInvoice = defineServiceFn({
   input: z.looseObject({ salesInvoiceId: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.salesInvoices": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2285,7 +2294,7 @@ export const getSalesInvoices = defineServiceFn({
     search: z.string().nullable().optional(),
     customerId: z.string().nullable().optional()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.salesInvoices": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2305,7 +2314,7 @@ export const getSalesInvoices = defineServiceFn({
  */
 export const getSalesInvoiceShipment = defineServiceFn({
   input: z.looseObject({ salesInvoiceId: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.salesInvoices": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2324,7 +2333,7 @@ export const getSalesInvoiceShipment = defineServiceFn({
  */
 export const getSalesInvoiceLines = defineServiceFn({
   input: z.looseObject({ salesInvoiceId: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.salesInvoices": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2343,7 +2352,7 @@ export const getSalesInvoiceLines = defineServiceFn({
  */
 export const getSalesInvoiceLine = defineServiceFn({
   input: z.looseObject({ salesInvoiceLineId: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.salesInvoices": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2362,7 +2371,7 @@ export const getSalesInvoiceLine = defineServiceFn({
  */
 export const updatePurchaseInvoiceExchangeRate = defineServiceFn({
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2381,7 +2390,7 @@ export const updatePurchaseInvoiceExchangeRate = defineServiceFn({
  */
 export const updateSalesInvoiceExchangeRate = defineServiceFn({
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2416,7 +2425,7 @@ export const updatePurchaseInvoice = defineServiceFn({
     exchangeRateUpdatedAt: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2458,7 +2467,7 @@ export const upsertPurchaseInvoiceDelivery = defineServiceFn({
     incotermLocation: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2537,7 +2546,7 @@ export const createPurchaseInvoiceLine = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2618,7 +2627,7 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2640,7 +2649,7 @@ export const updatePurchaseInvoiceLineOrder = defineServiceFn({
     invoiceId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.purchaseInvoices": "Edit" },
   async run(ctx, input) {
     return await service.updatePurchaseInvoiceLineOrder(
       ctx.asSystem.pg,
@@ -2674,7 +2683,7 @@ export const insertSalesInvoice = defineServiceFn({
     exchangeRateUpdatedAt: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2717,7 +2726,7 @@ export const upsertSalesInvoiceShipment = defineServiceFn({
     incotermLocation: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2739,7 +2748,7 @@ export const updateSalesInvoiceLineOrder = defineServiceFn({
     invoiceId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.salesInvoices": "Edit" },
   async run(ctx, input) {
     return await service.updateSalesInvoiceLineOrder(
       ctx.asSystem.pg,
@@ -2758,7 +2767,7 @@ export const updateSalesInvoiceLineOrder = defineServiceFn({
  */
 export const getPayment = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2791,7 +2800,7 @@ export const getPayments = defineServiceFn({
     supplierId: z.string().nullable().optional(),
     counterpartyIds: z.array(z.string()).nullable().optional()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payments": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2811,7 +2820,7 @@ export const getPayments = defineServiceFn({
  */
 export const getCharge = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.charges": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2844,7 +2853,7 @@ export const getCharges = defineServiceFn({
       .optional(),
     status: z.enum(["Draft", "Posted", "Voided"]).nullable().optional()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.charges": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2864,7 +2873,7 @@ export const getCharges = defineServiceFn({
  */
 export const getReimbursement = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.reimbursements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2894,7 +2903,7 @@ export const getReimbursements = defineServiceFn({
     status: z.enum(["Draft", "Posted", "Voided"]).nullable().optional(),
     employeeId: z.string().nullable().optional()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.reimbursements": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2914,7 +2923,7 @@ export const getReimbursements = defineServiceFn({
  */
 export const getReimbursementRelatedItems = defineServiceFn({
   input: z.looseObject({ reimbursementId: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.reimbursements": "View" },
   async run(ctx, input) {
     return await service.getReimbursementRelatedItems(
       ctx.asCaller.supabase,
@@ -2931,7 +2940,7 @@ export const getReimbursementRelatedItems = defineServiceFn({
  */
 export const getInvoiceSettlements = defineServiceFn({
   input: z.looseObject({ paymentId: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2954,7 +2963,7 @@ export const getInvoiceSettlementsForInvoice = defineServiceFn({
     side: z.enum(["sales", "purchase"]),
     invoiceId: z.string()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2975,7 +2984,10 @@ export const getInvoiceSettlementsForInvoice = defineServiceFn({
  */
 export const getMemoApplications = defineServiceFn({
   input: z.looseObject({ memoId: z.string() }),
-  permission: { view: "invoicing" },
+  permission: {
+    "invoicing.supplierCredits": "View",
+    "invoicing.creditMemos": "View"
+  },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2998,7 +3010,7 @@ export const getOpenSalesInvoicesForCustomer = defineServiceFn({
     customerId: z.string(),
     currencyCode: z.string().optional()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3022,7 +3034,7 @@ export const getOpenPurchaseInvoicesForSupplier = defineServiceFn({
     supplierId: z.string(),
     currencyCode: z.string().optional()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3051,7 +3063,7 @@ export const getOpenReimbursementsForEmployee = defineServiceFn({
     employeeId: z.string(),
     currencyCode: z.string().optional()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.reimbursements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3101,7 +3113,7 @@ export const getAvailableOnAccountCreditSources = defineServiceFn({
     ]),
     currencyCode: z.string()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3153,7 +3165,7 @@ export const updatePayment = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.payments": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3172,7 +3184,7 @@ export const updatePayment = defineServiceFn({
  */
 export const deletePayment = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "invoicing" },
+  permission: { "invoicing.payments": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3210,7 +3222,7 @@ export const replaceInvoiceSettlements = defineServiceFn({
       })
     )
   }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.payments": "Edit" },
   async run(ctx, input) {
     return await service.replaceInvoiceSettlements(
       ctx.asSystem.pg,
@@ -3226,7 +3238,10 @@ export const replaceInvoiceSettlements = defineServiceFn({
  */
 export const getMemo = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "invoicing" },
+  permission: {
+    "invoicing.supplierCredits": "View",
+    "invoicing.creditMemos": "View"
+  },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3258,7 +3273,10 @@ export const getMemos = defineServiceFn({
     counterpartyIds: z.array(z.string()).nullable().optional(),
     party: z.enum(["customer", "supplier"]).nullable().optional()
   }),
-  permission: { view: "invoicing" },
+  permission: {
+    "invoicing.supplierCredits": "View",
+    "invoicing.creditMemos": "View"
+  },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3303,7 +3321,10 @@ export const createMemo = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "invoicing" },
+  permission: {
+    "invoicing.supplierCredits": "Create",
+    "invoicing.creditMemos": "Create"
+  },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3349,7 +3370,10 @@ export const updateMemo = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "invoicing" },
+  permission: {
+    "invoicing.supplierCredits": "Edit",
+    "invoicing.creditMemos": "Edit"
+  },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3375,7 +3399,7 @@ export const getAvailableCreditsForParty = defineServiceFn({
     excludePaymentId: z.string().optional(),
     currencyCode: z.string().optional()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3397,7 +3421,7 @@ export const getAvailableCreditsForParty = defineServiceFn({
  */
 export const getCompanyHasOpenCredits = defineServiceFn({
   input: z.looseObject({ side: z.enum(["sales", "purchase"]) }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payments": "View" },
   async run(ctx, input) {
     return await service.getCompanyHasOpenCredits(
       ctx.asCaller.supabase,
@@ -3417,7 +3441,7 @@ export const getStagedCreditsForPayment = defineServiceFn({
     paymentId: z.string(),
     side: z.enum(["sales", "purchase"])
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3450,7 +3474,7 @@ export const applyCreditsToInvoices = defineServiceFn({
       })
     )
   }),
-  permission: { update: "invoicing" },
+  permission: { "invoicing.payments": "Edit" },
   async run(ctx, input) {
     return await service.applyCreditsToInvoices(
       ctx.asSystem.pg,
@@ -3466,7 +3490,7 @@ export const applyCreditsToInvoices = defineServiceFn({
  */
 export const getArTieOut = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.receivables": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3486,7 +3510,7 @@ export const getArTieOut = defineServiceFn({
  */
 export const getApTieOut = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payables": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3506,7 +3530,7 @@ export const getApTieOut = defineServiceFn({
  */
 export const getArOpenByCustomer = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.receivables": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3526,7 +3550,7 @@ export const getArOpenByCustomer = defineServiceFn({
  */
 export const getApOpenBySupplier = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string() }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payables": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3554,7 +3578,7 @@ export const getArAging = defineServiceFn({
       })
       .optional()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.receivables": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3583,7 +3607,7 @@ export const getApAging = defineServiceFn({
       })
       .optional()
   }),
-  permission: { view: "invoicing" },
+  permission: { "invoicing.payables": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,

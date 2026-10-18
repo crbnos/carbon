@@ -6,6 +6,7 @@ import { createServiceContext } from "@carbon/api/service-fn.server";
 import { describe, expect, it } from "vitest";
 import { saveJournalEntry } from "../app/modules/accounting/accounting.server";
 import { accountMoveRefusal } from "../app/modules/accounting/accounting.utils";
+import { pageClaims } from "./page-claims";
 
 // A handle with no methods: a refusal that reached the database fails the test.
 const unreachable = () => {
@@ -18,14 +19,14 @@ const context = () =>
       type: "user",
       role: "employee",
       userId: "user-1",
-      permissions: {
+      permissions: pageClaims({
         accounting: {
           view: ["company-1"],
           create: ["company-1"],
           update: ["company-1"],
           delete: ["company-1"]
         }
-      }
+      })
     },
     company: { id: "company-1", groupId: "group-1" },
     caller: {} as never,

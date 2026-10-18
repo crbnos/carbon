@@ -49,6 +49,7 @@ import {
   updateJobMaterial
 } from "../app/modules/production/production.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 /** The caller's and the service-role client: each table's one row, or none. */
 function systemWith(rows: Record<string, unknown>) {
@@ -71,9 +72,9 @@ const contextWith = (rows: Record<string, unknown>) =>
       type: "user",
       role: "employee",
       userId: "u1",
-      permissions: {
+      permissions: pageClaims({
         production: { view: [], create: ["c1"], update: [], delete: [] }
-      }
+      })
     },
     company: { id: "c1", groupId: "g1" },
     caller: systemWith(rows),

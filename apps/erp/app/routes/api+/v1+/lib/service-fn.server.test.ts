@@ -25,7 +25,7 @@ vi.mock("~/modules/router.server", async () => {
         job: {
           cancel: defineServiceFn({
             input: z.object({ jobId: z.string() }),
-            permission: { update: "production" },
+            permission: { "production.jobs": "Edit" },
             async run(ctx, { jobId }) {
               if (jobId === "moved") {
                 return ctx.error("conflict", "The job's status changed");
@@ -36,7 +36,7 @@ vi.mock("~/modules/router.server", async () => {
           // Records the filters an update on the caller's client carries.
           touch: defineServiceFn({
             input: z.object({ jobId: z.string() }),
-            permission: { update: "production" },
+            permission: { "production.jobs": "Edit" },
             async run(ctx, { jobId }) {
               const client = ctx.asCaller.supabase as unknown as {
                 from(table: string): {
@@ -63,7 +63,7 @@ const meta = {
 
 const caller = (
   authKind: AuthedContext["authKind"],
-  scopes: Record<string, string[]> = { production_update: ["c1"] }
+  scopes: Record<string, string[]> = { "production.jobs_update": ["c1"] }
 ): AuthedContext => ({
   client: {} as AuthedContext["client"],
   userId: "u1",
@@ -100,9 +100,13 @@ describe("runServiceFn", () => {
 
   it("refuses a caller whose scopes lack the function's permission", async () => {
     await expect(
-      runServiceFn(meta, caller("api-key", { production_view: ["c1"] }), {
-        jobId: "j1"
-      })
+      runServiceFn(
+        meta,
+        caller("api-key", { "production.jobs_view": ["c1"] }),
+        {
+          jobId: "j1"
+        }
+      )
     ).rejects.toMatchObject({ code: "FORBIDDEN", status: 403 });
   });
 
@@ -111,7 +115,7 @@ describe("runServiceFn", () => {
   it("refuses an OAuth or workflow caller whose user lacks the permission", async () => {
     for (const kind of ["oauth", "session"] as const) {
       await expect(
-        runServiceFn(meta, caller(kind, { production_update: ["c2"] }), {
+        runServiceFn(meta, caller(kind, { "production.jobs_update": ["c2"] }), {
           jobId: "j1"
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN", status: 403 });

@@ -76,7 +76,7 @@ export const inviteEmployee = defineServiceFn({
     usPersonAttestation: z.boolean().default(false),
     ...requestOrigin
   }),
-  permission: { create: "users" },
+  permission: { "users.accounts": "Create" },
   async run(ctx, input) {
     const companyId = ctx.company.id;
     const client = ctx.asCaller.supabase;
@@ -149,7 +149,7 @@ export const inviteCustomerContact = defineServiceFn({
     customerId: z.string().min(1),
     ...requestOrigin
   }),
-  permission: { create: "users" },
+  permission: { "users.accounts": "Create" },
   async run(ctx, { customerContactId, customerId, ...origin }) {
     const created = await service.createCustomerAccount(
       ctx.asCaller.supabase,
@@ -182,7 +182,7 @@ export const inviteSupplierContact = defineServiceFn({
     supplierId: z.string().min(1),
     ...requestOrigin
   }),
-  permission: { create: "users" },
+  permission: { "users.accounts": "Create" },
   async run(ctx, { supplierContactId, supplierId, ...origin }) {
     const created = await service.createSupplierAccount(
       ctx.asCaller.supabase,
@@ -219,7 +219,7 @@ export const resendInvites = defineServiceFn({
     userIds: z.array(z.string().min(1)).min(1),
     ...requestOrigin
   }),
-  permission: { create: "users" },
+  permission: { "users.accounts": "Create" },
   async run(ctx, { userIds, ip, city }) {
     const companyId = ctx.company.id;
     if (userIds.length > 1) {
@@ -323,7 +323,7 @@ export const revokeInvites = defineServiceFn({
     ip: z.string().optional(),
     userAgent: z.string().optional()
   }),
-  permission: { create: "users" },
+  permission: { "users.accounts": "Create" },
   async run(ctx, { userIds, ip, userAgent }) {
     const companyId = ctx.company.id;
     const actorId = ctx.auditUserId;
@@ -418,7 +418,7 @@ export const deactivateUsers = defineServiceFn({
     userIds: z.array(z.string().min(1)).min(1),
     ip: z.string().optional()
   }),
-  permission: { delete: "users" },
+  permission: { "users.accounts": "Full" },
   async run(ctx, { userIds, ip }) {
     const companyId = ctx.company.id;
     const actorId = ctx.auditUserId;
@@ -479,7 +479,7 @@ export const updateEmployeePermissions = defineServiceFn({
     grants: permissionsValidator.shape.grants,
     ip: z.string().optional()
   }),
-  permission: { update: "users" },
+  permission: { "users.accounts": "Edit" },
   async run(ctx, { id, employeeType, grants, ip }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
@@ -517,7 +517,7 @@ export const bulkUpdatePermissions = defineServiceFn({
     grants: permissionsValidator.shape.grants,
     ip: z.string().optional()
   }),
-  permission: { update: "users" },
+  permission: { "users.accounts": "Edit" },
   async run(ctx, { editType, userIds, grants, ip }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
@@ -572,12 +572,12 @@ export const createEmployeeType = defineServiceFn({
     name: z.string().trim().min(1),
     grants: permissionsValidator.shape.grants
   }),
-  permission: { create: "users" },
+  permission: { "users.employeeTypes": "Create" },
   async run(ctx, { name, grants }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
     // The grants are written without RLS, which asks this of a grant write.
-    if (!ctx.can({ update: "users" })) {
+    if (!ctx.can({ "users.employeeTypes": "Edit" })) {
       return ctx.error("forbidden", "You do not have permission to do this");
     }
 
@@ -616,7 +616,7 @@ export const updateEmployeeType = defineServiceFn({
     name: z.string().trim().min(1),
     grants: permissionsValidator.shape.grants
   }),
-  permission: { update: "users" },
+  permission: { "users.employeeTypes": "Edit" },
   async run(ctx, { id, name, grants }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
@@ -642,9 +642,9 @@ export const updateEmployeeType = defineServiceFn({
 });
 
 const grantSubjectRules = {
-  role: { update: "users" },
-  person: { update: "users" },
-  key: { update: "settings" }
+  role: { "users.employeeTypes": "Edit" },
+  person: { "users.accounts": "Edit" },
+  key: { "settings.apiKeys": "Edit" }
 } as const;
 
 /**
@@ -653,7 +653,7 @@ const grantSubjectRules = {
  */
 export const getEffectiveAccess = defineServiceFn({
   input: z.object({ userId: z.string().min(1) }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, { userId }) {
     const access = await service.readEffectiveAccess(ctx, userId);
     if (!access) return ctx.error("notFound", "Employee not found");
@@ -675,7 +675,7 @@ export const getPageAccessHolders = defineServiceFn({
       }),
     level: z.enum(LEVELS)
   }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, { page, level }) {
     return service.readPageAccessHolders(ctx, page, level);
   }
@@ -684,7 +684,7 @@ export const getPageAccessHolders = defineServiceFn({
 /** Every role's grants in the company. */
 export const getRoleGrants = defineServiceFn({
   input: z.object({}),
-  permission: { view: "users" },
+  permission: { "users.employeeTypes": "View" },
   async run(ctx) {
     return service.readRoleGrants(ctx);
   }
@@ -699,9 +699,9 @@ export const getAccessGrants = defineServiceFn({
   permission: {
     by: "subjectType",
     rules: {
-      role: { view: "users" },
-      person: { view: "users" },
-      key: { view: "settings" }
+      role: { "users.employeeTypes": "View" },
+      person: { "users.accounts": "View" },
+      key: { "settings.apiKeys": "View" }
     }
   },
   async run(ctx, { subjectType, subjectId }) {
@@ -768,7 +768,7 @@ const groupMembers = z.array(z.string().min(1)).min(1);
  */
 export const createGroup = defineServiceFn({
   input: z.object({ name: z.string().trim().min(1), selections: groupMembers }),
-  permission: { create: "users" },
+  permission: { "users.groups": "Create" },
   async run(ctx, { name, selections }) {
     const client = ctx.asCaller.supabase;
     const created = await service.insertGroup(client, {
@@ -806,7 +806,7 @@ export const updateGroup = defineServiceFn({
   }),
   // The route has only ever required view; row-level security decides the
   // write. Kept as it was, so this stays unpublished.
-  permission: { view: "users" },
+  permission: { "users.groups": "View" },
   async run(ctx, { id, name, selections }) {
     const client = ctx.asCaller.supabase;
     const [group, members] = await Promise.all([
@@ -838,7 +838,7 @@ export const updateGroup = defineServiceFn({
  */
 export const addConsoleOperator = defineServiceFn({
   input: createOperatorValidator,
-  permission: { create: "users" },
+  permission: { "users.operators": "Create" },
   async run(ctx, { firstName, lastName, locationId }) {
     const companyId = ctx.company.id;
     const operatorType = await ctx.asSystem.supabase
@@ -905,7 +905,7 @@ export const addConsoleOperator = defineServiceFn({
  */
 export const resetConsoleOperatorPin = defineServiceFn({
   input: z.object({ operatorId: z.string().min(1) }),
-  permission: { update: "users" },
+  permission: { "users.operators": "Edit" },
   async run(ctx, { operatorId }) {
     const user = await ctx.asCaller.supabase
       .from("user")
@@ -915,7 +915,10 @@ export const resetConsoleOperatorPin = defineServiceFn({
     if (user.error || !user.data) {
       return ctx.error("notFound", "Operator not found", user.error);
     }
-    if (!user.data.isConsoleOperator && !ctx.can({ update: "settings" })) {
+    if (
+      !user.data.isConsoleOperator &&
+      !ctx.can({ "settings.people": "Edit" })
+    ) {
       return ctx.error("forbidden", "You do not have permission to do this");
     }
 
@@ -962,7 +965,7 @@ export const certifyItarEntity = defineServiceFn({
     complianceContact: z.string(),
     ...signedFrom
   }),
-  permission: { update: "users" },
+  permission: { "users.accounts": "Edit" },
   async run(ctx, { ipAddress, userAgent, ...form }) {
     if (ctx.actor.type !== "user") return ctx.error("forbidden", RIDER_SIGNER);
     const signer = await ctx.asSystem.supabase
@@ -1020,7 +1023,7 @@ export const certifyItarUser = defineServiceFn({
  */
 export const getItarCertificationStatus = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: { "settings.itarCertifications": "View" },
   async run(ctx) {
     return await service.getItarCertificationStatus(
       ctx.asCaller.supabase,
@@ -1056,7 +1059,7 @@ export const getItarEntityCertification = defineServiceFn({
  */
 export const getItarCertificationReport = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: { "settings.itarCertifications": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1075,7 +1078,7 @@ export const getItarCertificationReport = defineServiceFn({
  */
 export const deleteGroup = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
-  permission: { delete: "users" },
+  permission: { "users.groups": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1099,7 +1102,7 @@ export const getCustomers = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1119,7 +1122,7 @@ export const getCustomers = defineServiceFn({
  */
 export const getEmployee = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1139,7 +1142,7 @@ export const getEmployee = defineServiceFn({
  */
 export const getUnrevokedInviteEmails = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1158,7 +1161,7 @@ export const getUnrevokedInviteEmails = defineServiceFn({
  */
 export const getUsersWithVerifiedMfa = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1185,7 +1188,7 @@ export const getEmployees = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1213,7 +1216,7 @@ export const getConsoleOperators = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.operators": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1233,7 +1236,7 @@ export const getConsoleOperators = defineServiceFn({
  */
 export const getEmployeeType = defineServiceFn({
   input: z.looseObject({ employeeTypeId: z.string() }),
-  permission: { view: "users" },
+  permission: { "users.employeeTypes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1260,7 +1263,7 @@ export const getEmployeeTypes = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.employeeTypes": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1280,7 +1283,7 @@ export const getEmployeeTypes = defineServiceFn({
  */
 export const getInvitable = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -1296,7 +1299,7 @@ export const getInvitable = defineServiceFn({
  */
 export const getModules = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "users" },
+  permission: { "users.employeeTypes": "View" },
   async run(ctx) {
     return unwrap(ctx, await service.getModules(ctx.asCaller.supabase));
   }
@@ -1309,7 +1312,7 @@ export const getModules = defineServiceFn({
  */
 export const getGroup = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
-  permission: { view: "users" },
+  permission: { "users.groups": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1325,7 +1328,7 @@ export const getGroup = defineServiceFn({
  */
 export const getGroupMembers = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
-  permission: { view: "users" },
+  permission: { "users.groups": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1353,7 +1356,7 @@ export const getGroups = defineServiceFn({
     search: z.string().nullable().optional(),
     uid: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.groups": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1373,7 +1376,7 @@ export const getGroups = defineServiceFn({
  */
 export const getGroupEmails = defineServiceFn({
   input: z.looseObject({ groupIds: z.array(z.string()) }),
-  permission: { view: "users" },
+  permission: { "users.groups": "View" },
   async run(ctx, input) {
     return await service.getGroupEmails(
       ctx.asCaller.supabase,
@@ -1394,7 +1397,7 @@ export const getUserSelectGroups = defineServiceFn({
     limit: z.number(),
     offset: z.number()
   }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1414,7 +1417,7 @@ export const getUserSelectGroups = defineServiceFn({
  */
 export const getUserSelectGroupMembers = defineServiceFn({
   input: z.looseObject({ groupId: z.string() }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1439,7 +1442,7 @@ export const searchUsersForSelect = defineServiceFn({
     excludeSelf: z.boolean().optional(),
     allowedIds: z.array(z.string()).optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1459,7 +1462,7 @@ export const searchUsersForSelect = defineServiceFn({
  */
 export const resolveUserSelectIds = defineServiceFn({
   input: z.looseObject({ ids: z.array(z.string()) }),
-  permission: { update: "users" },
+  permission: { "users.accounts": "Edit" },
   async run(ctx, input) {
     return await service.resolveUserSelectIds(
       ctx.asCaller.supabase,
@@ -1476,7 +1479,7 @@ export const resolveUserSelectIds = defineServiceFn({
  */
 export const getPermissionsByEmployeeType = defineServiceFn({
   input: z.looseObject({ employeeTypeId: z.string() }),
-  permission: { view: "users" },
+  permission: { "users.employeeTypes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1503,7 +1506,7 @@ export const getSuppliers = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "users" },
+  permission: { "users.accounts": "View" },
   async run(ctx, input) {
     return paged(
       ctx,

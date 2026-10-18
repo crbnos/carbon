@@ -46,7 +46,7 @@ const runTypes = ["Revenue Recognition", "Lease"] as const satisfies RunType[];
  */
 export const createDepreciationRun = defineServiceFn({
   input: z.object({ periodEnd: z.string().optional() }),
-  permission: { create: "accounting" },
+  permission: { "accounting.depreciation": "Create" },
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -112,7 +112,7 @@ export const createDepreciationRun = defineServiceFn({
  */
 export const postDepreciationRun = defineServiceFn({
   input: z.object({ depreciationRunId: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.depreciation": "Edit" },
   async run(ctx, { depreciationRunId }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -303,7 +303,7 @@ export const postDepreciationRun = defineServiceFn({
  */
 export const recalculateDepreciationRun = defineServiceFn({
   input: z.object({ depreciationRunId: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.depreciation": "Edit" },
   async run(ctx, { depreciationRunId }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -383,7 +383,7 @@ export const recalculateDepreciationRun = defineServiceFn({
  */
 export const repeatDepreciationRun = defineServiceFn({
   input: z.object({ depreciationRunId: z.string() }),
-  permission: { create: "accounting" },
+  permission: { "accounting.depreciation": "Create" },
   async run(ctx, { depreciationRunId }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -467,7 +467,7 @@ export const repeatDepreciationRun = defineServiceFn({
  */
 export const reverseDepreciationRun = defineServiceFn({
   input: z.object({ depreciationRunId: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.depreciation": "Edit" },
   async run(ctx, { depreciationRunId }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -547,7 +547,13 @@ export const createRevenueRecognitionRun = defineServiceFn({
     type: z.enum(runTypes),
     periodEnd: z.string().optional()
   }),
-  permission: { create: "accounting" },
+  permission: {
+    by: "type",
+    rules: {
+      "Revenue Recognition": { "accounting.revenueRecognition": "Create" },
+      Lease: { "accounting.leases": "Create" }
+    }
+  },
   async run(ctx, { type, periodEnd }) {
     if (periodEnd) {
       // Schedule rows fall on month ends, so a picked day means its month: a
@@ -591,7 +597,10 @@ export const createRevenueRecognitionRun = defineServiceFn({
  */
 export const postRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
-  permission: { update: "accounting" },
+  permission: {
+    "accounting.revenueRecognition": "Edit",
+    "accounting.leases": "Edit"
+  },
   async run(ctx, { runId }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -701,7 +710,10 @@ export const postRevenueRecognitionRun = defineServiceFn({
  */
 export const repeatRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
-  permission: { create: "accounting" },
+  permission: {
+    "accounting.revenueRecognition": "Create",
+    "accounting.leases": "Create"
+  },
   async run(ctx, { runId }) {
     const sourceRun = await ctx.asCaller.supabase
       .from("revenueRecognitionRun")
@@ -743,7 +755,10 @@ export const repeatRevenueRecognitionRun = defineServiceFn({
  */
 export const reverseRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
-  permission: { update: "accounting" },
+  permission: {
+    "accounting.revenueRecognition": "Edit",
+    "accounting.leases": "Edit"
+  },
   async run(ctx, { runId }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -823,7 +838,10 @@ export const reverseRevenueRecognitionRun = defineServiceFn({
  */
 export const recalculateRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
-  permission: { update: "accounting" },
+  permission: {
+    "accounting.revenueRecognition": "Edit",
+    "accounting.leases": "Edit"
+  },
   async run(ctx, { runId }) {
     // A run left with nothing due is deleted: the caller goes back to its
     // own type's list.
@@ -869,7 +887,10 @@ export const recalculateRevenueRecognitionRun = defineServiceFn({
  */
 export const deleteRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
-  permission: { delete: "accounting" },
+  permission: {
+    "accounting.revenueRecognition": "Full",
+    "accounting.leases": "Full"
+  },
   async run(ctx, { runId }) {
     const run = await ctx.asCaller.supabase
       .from("revenueRecognitionRun")
@@ -910,7 +931,7 @@ export const deleteRevenueRecognitionRun = defineServiceFn({
  */
 export const lockPeriod = defineServiceFn({
   input: z.object({ periodId: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.accountingPeriods": "Edit" },
   async run(ctx, { periodId }) {
     const result = await service.lockAccountingPeriod(ctx.asCaller.supabase, {
       periodId,
@@ -933,7 +954,7 @@ export const lockPeriod = defineServiceFn({
  */
 export const unlockPeriod = defineServiceFn({
   input: z.object({ periodId: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.accountingPeriods": "Edit" },
   async run(ctx, { periodId }) {
     const result = await service.unlockAccountingPeriod(ctx.asCaller.supabase, {
       periodId,
@@ -961,7 +982,7 @@ export const unlockPeriod = defineServiceFn({
  */
 export const closePeriod = defineServiceFn({
   input: z.object({ periodId: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.accountingPeriods": "Edit" },
   async run(ctx, { periodId }) {
     const result = await service.closePeriodWithChecklist(
       ctx.asCaller.supabase,
@@ -996,7 +1017,14 @@ export const createRunForPeriod = defineServiceFn({
     periodId: z.string(),
     run: z.enum([...runTypes, "Depreciation"])
   }),
-  permission: { create: "accounting", update: "accounting" },
+  permission: {
+    by: "run",
+    rules: {
+      "Revenue Recognition": { "accounting.revenueRecognition": "Edit" },
+      Lease: { "accounting.leases": "Edit" },
+      Depreciation: { "accounting.depreciation": "Edit" }
+    }
+  },
   async run(ctx, { periodId, run }) {
     const client = ctx.asCaller.supabase;
     const period = await client
@@ -1056,7 +1084,7 @@ export const createRunForPeriod = defineServiceFn({
  */
 export const closeTaskComplete = defineServiceFn({
   input: z.object({ taskId: z.string(), notes: z.string().optional() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.accountingPeriods": "Edit" },
   async run(ctx, { taskId, notes }) {
     const result = await service.completeCloseTask(ctx.asCaller.supabase, {
       taskId,
@@ -1082,7 +1110,7 @@ export const closeTaskComplete = defineServiceFn({
  */
 export const closeTaskSkip = defineServiceFn({
   input: z.object({ taskId: z.string(), skippedReason: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.accountingPeriods": "Edit" },
   async run(ctx, { taskId, skippedReason }) {
     const result = await service.skipCloseTask(ctx.asCaller.supabase, {
       taskId,
@@ -1109,7 +1137,7 @@ export const closeTaskSkip = defineServiceFn({
  */
 export const createJournalEntry = defineServiceFn({
   input: z.object({}),
-  permission: { create: "accounting" },
+  permission: { "accounting.journalEntries": "Create" },
   async run(ctx) {
     const created = await invokeCreate(ctx, {
       type: "journalEntry"
@@ -1158,7 +1186,7 @@ export const saveJournalEntry = defineServiceFn({
     lines: z.array(journalLineInput),
     post: z.boolean().optional()
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.journalEntries": "Edit" },
   async run(ctx, { journalEntryId, postingDate, description, lines, post }) {
     if (!postingDate) {
       return ctx.error("validation", "Posting date is required");
@@ -1230,7 +1258,7 @@ export const takeFixedAssetOutOfService = defineServiceFn({
     fixedAssetId: z.string(),
     reason: z.string().trim().min(1, { message: "Reason is required" })
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.assets": "Edit" },
   async run(ctx, { fixedAssetId, reason }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -1273,7 +1301,7 @@ export const takeFixedAssetOutOfService = defineServiceFn({
  */
 export const returnFixedAssetToService = defineServiceFn({
   input: z.object({ fixedAssetId: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.assets": "Edit" },
   async run(ctx, { fixedAssetId }) {
     const result = await service.returnFixedAssetToService(
       ctx.asCaller.supabase,
@@ -1313,7 +1341,7 @@ const SELLABLE_ASSET_STATUSES: string[] = ["Active", "Fully Depreciated"];
  */
 export const purchaseFixedAsset = defineServiceFn({
   input: z.object({ fixedAssetId: z.string(), supplierId: z.string() }),
-  permission: { create: "purchasing" },
+  permission: { "purchasing.purchaseOrders": "Create" },
   async run(ctx, { fixedAssetId, supplierId }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -1402,7 +1430,7 @@ export const purchaseFixedAsset = defineServiceFn({
  */
 export const sellFixedAsset = defineServiceFn({
   input: z.object({ fixedAssetId: z.string(), customerId: z.string() }),
-  permission: { create: "sales" },
+  permission: { "sales.salesOrders": "Create" },
   async run(ctx, { fixedAssetId, customerId }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -1483,7 +1511,7 @@ export const disposeFixedAsset = defineServiceFn({
     fixedAssetId: z.string(),
     disposalDate: z.string().min(1, { message: "Disposal date is required" })
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.assets": "Edit" },
   async run(ctx, { fixedAssetId, disposalDate }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -1586,7 +1614,7 @@ export const registerFixedAsset = defineServiceFn({
       .string()
       .min(1, { message: "Depreciation start date is required" })
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.assets": "Edit" },
   async run(ctx, { fixedAssetId, ...registration }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -1693,7 +1721,7 @@ export const overrideExchangeRate = defineServiceFn({
     currencyCode: z.string().trim().min(1, { message: "Currency is required" }),
     rate: z.number().positive({ message: "Rate must be positive" })
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.exchangeRates": "Edit" },
   async run(ctx, { currencyCode, rate }) {
     const client = ctx.asCaller.supabase;
     // The resolver checks base before overrides, so a pin on the base code
@@ -1738,7 +1766,7 @@ export const resetExchangeRate = defineServiceFn({
   input: z.object({
     currencyCode: z.string().min(1, { message: "Currency code is required" })
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.exchangeRates": "Edit" },
   async run(ctx, { currencyCode }) {
     const result = await service.deleteExchangeRateOverride(
       ctx.asCaller.supabase,
@@ -1781,7 +1809,7 @@ export const updateCurrency = defineServiceFn({
       .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
       .optional()
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.exchangeRates": "Edit" },
   async run(ctx, input) {
     const companyId = ctx.company.id;
     const { rate, displayedRate } = input;
@@ -1851,7 +1879,7 @@ export const updateCurrency = defineServiceFn({
  */
 export const moveAccount = defineServiceFn({
   input: z.object({ accountId: z.string(), parentId: z.string().optional() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.chartOfAccounts": "Edit" },
   async run(ctx, { accountId, parentId }) {
     const client = ctx.asCaller.supabase;
     let update: {
@@ -1913,7 +1941,7 @@ export const moveAccount = defineServiceFn({
  */
 export const importChartOfAccounts = defineServiceFn({
   input: service.applyAccountImportInput,
-  permission: { update: "accounting" },
+  permission: { "accounting.chartOfAccounts": "Edit" },
   async run(ctx, input) {
     const result = await invokePosting(
       ctx,
@@ -1947,7 +1975,7 @@ export const importChartOfAccounts = defineServiceFn({
  */
 export const enableAccountingCutover = defineServiceFn({
   input: z.object({ cutoverDate: z.string(), confirmation: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "settings.accounting": "Edit" },
   async run(ctx, input) {
     const result = await invokePosting(
       ctx,
@@ -1975,7 +2003,7 @@ export const getAccountLedger = defineServiceFn({
     limit: z.number(),
     offset: z.number()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.chartOfAccounts": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1998,7 +2026,7 @@ export const getAccountLedgerSummary = defineServiceFn({
     startDate: z.string().nullable(),
     endDate: z.string().nullable()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.chartOfAccounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2023,7 +2051,7 @@ export const getFinancialStatementBalances = defineServiceFn({
     endDate: z.string().nullable(),
     includeCurrentYearEarnings: z.boolean().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2057,7 +2085,7 @@ export const getFinancialStatementPeriodSeries = defineServiceFn({
     includeCurrentYearEarnings: z.boolean().optional(),
     translate: z.looseObject({ targetCurrency: z.string() }).optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2078,7 +2106,7 @@ export const getFinancialStatementPeriodSeries = defineServiceFn({
  */
 export const getReportPins = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2098,7 +2126,7 @@ export const getReportPins = defineServiceFn({
  */
 export const upsertReportPin = defineServiceFn({
   input: z.looseObject({ reportKey: z.string(), pinned: z.boolean() }),
-  permission: { create: "accounting", update: "accounting" },
+  permission: { "accounting.reporting": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2154,7 +2182,7 @@ export const getAccountsInScope = defineServiceFn({
     ]),
     scrapAccountIds: z.array(z.string()).optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.chartOfAccounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2258,7 +2286,7 @@ export const getDimensionPivot = defineServiceFn({
       accountIds: z.array(z.string().min(1)).default([])
     })
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.dimensions": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2341,7 +2369,7 @@ export const getDimensionPivotLines = defineServiceFn({
     columnPeriodEnd: z.string().optional(),
     accountIds: z.array(z.string()).optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.dimensions": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2397,7 +2425,7 @@ export const getPurchaseLinePivot = defineServiceFn({
       accountIds: z.array(z.string().min(1)).default([])
     })
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2427,7 +2455,7 @@ export const getPurchaseLinePivotLines = defineServiceFn({
     columnPeriodStart: z.string().optional(),
     columnPeriodEnd: z.string().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2446,7 +2474,7 @@ export const getPurchaseLinePivotLines = defineServiceFn({
  */
 export const getReportViews = defineServiceFn({
   input: z.looseObject({ reportKey: z.string().optional() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2473,7 +2501,7 @@ export const createReportView = defineServiceFn({
     visibility: z.enum(["Private", "Company"]),
     config: z.unknown()
   }),
-  permission: { create: "accounting" },
+  permission: { "accounting.reporting": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2501,7 +2529,7 @@ export const updateReportView = defineServiceFn({
     visibility: z.enum(["Private", "Company"]),
     config: z.unknown()
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.reporting": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2520,7 +2548,7 @@ export const updateReportView = defineServiceFn({
  */
 export const deleteReportView = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.reporting": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2559,7 +2587,7 @@ export const getCompaniesInGroup = defineServiceFn({
  */
 export const deleteAccount = defineServiceFn({
   input: z.looseObject({ accountId: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.chartOfAccounts": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2578,7 +2606,7 @@ export const deleteAccount = defineServiceFn({
  */
 export const deletePaymentTerm = defineServiceFn({
   input: z.looseObject({ paymentTermId: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.paymentTerms": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2597,7 +2625,7 @@ export const deletePaymentTerm = defineServiceFn({
  */
 export const getAccount = defineServiceFn({
   input: z.looseObject({ accountId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.chartOfAccounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2658,7 +2686,7 @@ export const getGroupAccounts = defineServiceFn({
  */
 export const getBaseCurrency = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "accounting" },
+  permission: { "accounting.exchangeRates": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2678,7 +2706,7 @@ export const getChartOfAccounts = defineServiceFn({
     startDate: z.string().nullable(),
     endDate: z.string().nullable()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.chartOfAccounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2698,7 +2726,7 @@ export const getChartOfAccounts = defineServiceFn({
  */
 export const getCurrency = defineServiceFn({
   input: z.looseObject({ currencyId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.exchangeRates": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2717,7 +2745,7 @@ export const getCurrency = defineServiceFn({
  */
 export const getCurrencyByCode = defineServiceFn({
   input: z.looseObject({ currencyCode: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.exchangeRates": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2737,7 +2765,7 @@ export const getCurrencyByCode = defineServiceFn({
  */
 export const getExchangeRate = defineServiceFn({
   input: z.looseObject({ currencyCode: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.exchangeRates": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2757,7 +2785,7 @@ export const getExchangeRate = defineServiceFn({
  */
 export const getExchangeRates = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "accounting" },
+  permission: { "accounting.exchangeRates": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2781,7 +2809,7 @@ export const getCurrencies = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.exchangeRates": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2801,7 +2829,7 @@ export const getCurrencies = defineServiceFn({
  */
 export const getCurrenciesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "accounting" },
+  permission: { "accounting.exchangeRates": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2820,7 +2848,7 @@ export const getCurrenciesList = defineServiceFn({
  */
 export const getAccountingPeriods = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "accounting" },
+  permission: { "accounting.accountingPeriods": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2836,7 +2864,7 @@ export const getAccountingPeriods = defineServiceFn({
  */
 export const getAccountingPeriodDeletability = defineServiceFn({
   input: z.looseObject({ periodId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.accountingPeriods": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2856,7 +2884,7 @@ export const getAccountingPeriodDeletability = defineServiceFn({
  */
 export const deleteAccountingPeriod = defineServiceFn({
   input: z.looseObject({ periodId: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.accountingPeriods": "Full" },
   async run(ctx, input) {
     return await service.deleteAccountingPeriod(
       ctx.asCaller.supabase,
@@ -2872,7 +2900,7 @@ export const deleteAccountingPeriod = defineServiceFn({
  */
 export const getFiscalCalendarCommitted = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "accounting" },
+  permission: { "accounting.fiscalYear": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2891,7 +2919,7 @@ export const getFiscalCalendarCommitted = defineServiceFn({
  */
 export const createFiscalYearPeriods = defineServiceFn({
   input: z.looseObject({ fiscalYear: z.number() }),
-  permission: { create: "accounting" },
+  permission: { "accounting.accountingPeriods": "Create" },
   async run(ctx, input) {
     return await service.createFiscalYearPeriods(
       ctx.asCaller.supabase,
@@ -2907,7 +2935,7 @@ export const createFiscalYearPeriods = defineServiceFn({
  */
 export const getPeriodCloseChecklist = defineServiceFn({
   input: z.looseObject({ periodId: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.accountingPeriods": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2927,7 +2955,7 @@ export const getPeriodCloseChecklist = defineServiceFn({
  */
 export const getDefaultAccounts = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "accounting" },
+  permission: { "accounting.defaultAccounts": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2943,7 +2971,7 @@ export const getDefaultAccounts = defineServiceFn({
  */
 export const getScrapAccountIds = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2959,7 +2987,7 @@ export const getScrapAccountIds = defineServiceFn({
  */
 export const getFiscalYearSettings = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "accounting" },
+  permission: { "accounting.fiscalYear": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2975,7 +3003,7 @@ export const getFiscalYearSettings = defineServiceFn({
  */
 export const getPaymentTerm = defineServiceFn({
   input: z.looseObject({ paymentTermId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.paymentTerms": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3002,7 +3030,7 @@ export const getPaymentTerms = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.paymentTerms": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3022,7 +3050,7 @@ export const getPaymentTerms = defineServiceFn({
  */
 export const getPaymentTermsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "accounting" },
+  permission: { "accounting.paymentTerms": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3104,7 +3132,7 @@ export const updateDefaultAccounts = defineServiceFn({
     rightOfUseAmortizationExpenseAccount: z.string().optional(),
     leaseInterestExpenseAccount: z.string().optional()
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.defaultAccounts": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3152,7 +3180,7 @@ export const updateFiscalYearSettings = defineServiceFn({
       "December"
     ])
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.fiscalYear": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3212,7 +3240,7 @@ export const createAccount = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "accounting" },
+  permission: { "accounting.chartOfAccounts": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3274,7 +3302,7 @@ export const updateAccount = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "accounting" },
+  permission: { "accounting.chartOfAccounts": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3307,7 +3335,7 @@ export const createPaymentTerm = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "accounting" },
+  permission: { "accounting.paymentTerms": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3342,7 +3370,7 @@ export const updatePaymentTerm = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "accounting" },
+  permission: { "accounting.paymentTerms": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3361,7 +3389,7 @@ export const updatePaymentTerm = defineServiceFn({
  */
 export const deleteCostCenter = defineServiceFn({
   input: z.looseObject({ costCenterId: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.costCenters": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3380,7 +3408,7 @@ export const deleteCostCenter = defineServiceFn({
  */
 export const getCostCenter = defineServiceFn({
   input: z.looseObject({ costCenterId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.costCenters": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3415,7 +3443,7 @@ export const getCostCentersList = defineServiceFn({
  */
 export const getCostCentersTree = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "accounting" },
+  permission: { "accounting.costCenters": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3443,7 +3471,7 @@ export const createCostCenter = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "accounting" },
+  permission: { "accounting.costCenters": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3476,7 +3504,7 @@ export const updateCostCenter = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "accounting" },
+  permission: { "accounting.costCenters": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3495,7 +3523,7 @@ export const updateCostCenter = defineServiceFn({
  */
 export const deleteProject = defineServiceFn({
   input: z.looseObject({ projectId: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.projects": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3516,7 +3544,7 @@ export const deleteProject = defineServiceFn({
  */
 export const getProject = defineServiceFn({
   input: z.looseObject({ projectId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.projects": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3544,7 +3572,7 @@ export const getProjects = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.projects": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3574,7 +3602,7 @@ export const createProject = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "accounting" },
+  permission: { "accounting.projects": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3605,7 +3633,7 @@ export const updateProject = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "accounting" },
+  permission: { "accounting.projects": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3632,7 +3660,7 @@ export const getDimensions = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.dimensions": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3652,7 +3680,7 @@ export const getDimensions = defineServiceFn({
  */
 export const getDimension = defineServiceFn({
   input: z.looseObject({ dimensionId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.dimensions": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3697,7 +3725,7 @@ export const createDimension = defineServiceFn({
     required: z.boolean().optional(),
     dimensionValues: z.array(z.string()).optional()
   }),
-  permission: { create: "accounting" },
+  permission: { "accounting.dimensions": "Create" },
   async run(ctx, input) {
     const { dimensionValues, ...dimension } = input;
     return unwrap(
@@ -3751,7 +3779,7 @@ export const updateDimension = defineServiceFn({
     id: z.string(),
     dimensionValues: z.array(z.string()).optional()
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.dimensions": "Edit" },
   async run(ctx, input) {
     const { dimensionValues, ...dimension } = input;
     return unwrap(
@@ -3778,7 +3806,7 @@ export const updateDimension = defineServiceFn({
  */
 export const deleteDimension = defineServiceFn({
   input: z.looseObject({ dimensionId: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.dimensions": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3817,7 +3845,7 @@ export const getActiveDimensionsWithValues = defineServiceFn({
  */
 export const getJournalLineDimensions = defineServiceFn({
   input: z.looseObject({ journalLineIds: z.array(z.string()) }),
-  permission: { view: "accounting" },
+  permission: { "accounting.journalEntries": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3841,7 +3869,7 @@ export const saveJournalLineDimensions = defineServiceFn({
       z.looseObject({ dimensionId: z.string(), valueId: z.string() })
     )
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.journalEntries": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3875,7 +3903,7 @@ export const translateCompanyBalances = defineServiceFn({
       })
     )
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.intercompany": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3907,7 +3935,7 @@ export const getIntercompanyTransactions = defineServiceFn({
     offset: z.number().int().default(0),
     status: z.string().nullable().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.intercompany": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3936,7 +3964,7 @@ export const createIntercompanyTransaction = defineServiceFn({
     creditAccountId: z.string().min(1),
     postingDate: z.string().optional()
   }),
-  permission: { create: "accounting" },
+  permission: { "accounting.intercompany": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3955,7 +3983,7 @@ export const createIntercompanyTransaction = defineServiceFn({
  */
 export const runIntercompanyMatching = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { update: "accounting" },
+  permission: { "accounting.intercompany": "Edit" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3974,7 +4002,7 @@ export const runIntercompanyMatching = defineServiceFn({
  */
 export const generateEliminations = defineServiceFn({
   input: z.looseObject({ regenerate: z.boolean().optional() }),
-  permission: { create: "accounting" },
+  permission: { "accounting.intercompany": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3995,7 +4023,7 @@ export const generateEliminations = defineServiceFn({
  */
 export const getExchangeRateHistory = defineServiceFn({
   input: z.looseObject({ currencyCode: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.exchangeRates": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4023,7 +4051,7 @@ export const getJournalEntries = defineServiceFn({
     search: z.string().nullable().optional(),
     status: z.string().nullable().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.journalEntries": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -4043,7 +4071,7 @@ export const getJournalEntries = defineServiceFn({
  */
 export const getJournalEntry = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.journalEntries": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4059,7 +4087,7 @@ export const getJournalEntry = defineServiceFn({
  */
 export const deleteJournalEntry = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.journalEntries": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4075,7 +4103,7 @@ export const deleteJournalEntry = defineServiceFn({
  */
 export const postJournalEntry = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { update: "accounting" },
+  permission: { "accounting.journalEntries": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4098,7 +4126,7 @@ export const reverseJournalEntry = defineServiceFn({
     id: z.string(),
     data: z.looseObject({ journalEntryId: z.string().optional() })
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.journalEntries": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4126,7 +4154,7 @@ export const getFixedAssetClasses = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.assetClasses": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -4146,7 +4174,7 @@ export const getFixedAssetClasses = defineServiceFn({
  */
 export const getFixedAssetClass = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.assetClasses": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4162,7 +4190,7 @@ export const getFixedAssetClass = defineServiceFn({
  */
 export const getFixedAssetClassesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "accounting" },
+  permission: { "accounting.assetClasses": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -4184,7 +4212,7 @@ export const getFixedAssetClassesList = defineServiceFn({
  */
 export const createFixedAssetClass = defineServiceFn({
   input: z.looseObject({ data: z.unknown() }),
-  permission: { create: "accounting" },
+  permission: { "accounting.assetClasses": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4208,7 +4236,7 @@ export const updateFixedAssetClass = defineServiceFn({
   input: z.looseObject({
     id: z.string()
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.assetClasses": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4227,7 +4255,7 @@ export const updateFixedAssetClass = defineServiceFn({
  */
 export const deleteFixedAssetClass = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.assetClasses": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4264,7 +4292,7 @@ export const getFixedAssets = defineServiceFn({
       .nullable()
       .optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.assets": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -4284,7 +4312,7 @@ export const getFixedAssets = defineServiceFn({
  */
 export const getFixedAsset = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.assets": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4323,7 +4351,7 @@ export const insertFixedAsset = defineServiceFn({
     macrsConvention: z.string().nullable().optional(),
     bonusDepreciationPercent: z.number().nullable().optional()
   }),
-  permission: { create: "accounting" },
+  permission: { "accounting.assets": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4368,7 +4396,7 @@ export const updateFixedAsset = defineServiceFn({
     macrsConvention: z.enum(["Half-Year", "Mid-Quarter"]).nullable().optional(),
     bonusDepreciationPercent: z.number().nullable().optional()
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.assets": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4387,7 +4415,7 @@ export const updateFixedAsset = defineServiceFn({
  */
 export const deleteFixedAsset = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.assets": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4403,7 +4431,7 @@ export const deleteFixedAsset = defineServiceFn({
  */
 export const deleteDepreciationRun = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.depreciation": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4430,7 +4458,7 @@ export const getDepreciationRuns = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.depreciation": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -4450,7 +4478,7 @@ export const getDepreciationRuns = defineServiceFn({
  */
 export const getDepreciationRun = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.depreciation": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4466,7 +4494,7 @@ export const getDepreciationRun = defineServiceFn({
  */
 export const getDepreciationRunLines = defineServiceFn({
   input: z.looseObject({ depreciationRunId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.depreciation": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4485,7 +4513,10 @@ export const getDepreciationRunLines = defineServiceFn({
  */
 export const getRevenueRecognitionRun = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "accounting" },
+  permission: {
+    "accounting.revenueRecognition": "View",
+    "accounting.leases": "View"
+  },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4505,7 +4536,10 @@ export const getRevenueRecognitionRun = defineServiceFn({
  */
 export const getRevenueRecognitionRunLines = defineServiceFn({
   input: z.looseObject({ runId: z.string() }),
-  permission: { view: "accounting" },
+  permission: {
+    "accounting.revenueRecognition": "View",
+    "accounting.leases": "View"
+  },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4530,7 +4564,7 @@ export const getPeriodRunRelatedItems = defineServiceFn({
     periodEnd: z.string(),
     journalIds: z.array(z.string())
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.journalEntries": "View" },
   async run(ctx, input) {
     return await service.getPeriodRunRelatedItems(
       ctx.asCaller.supabase,
@@ -4548,7 +4582,7 @@ export const getPeriodRunRelatedItems = defineServiceFn({
  */
 export const getDeferredRevenueWaterfall = defineServiceFn({
   input: z.looseObject({ asOf: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4572,7 +4606,7 @@ export const getRentalUtilization = defineServiceFn({
     to: z.string(),
     fixedAssetClassId: z.string().nullable().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4592,7 +4626,7 @@ export const getRentalUtilization = defineServiceFn({
  */
 export const getLeaseNetInvestment = defineServiceFn({
   input: z.looseObject({ asOf: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4624,7 +4658,7 @@ export const getLeaseLiabilities = defineServiceFn({
     from: z.string().optional(),
     to: z.string().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.reporting": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4644,7 +4678,7 @@ export const getLeaseLiabilities = defineServiceFn({
  */
 export const getAssetDepreciationHistory = defineServiceFn({
   input: z.looseObject({ fixedAssetId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.assets": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4663,7 +4697,7 @@ export const getAssetDepreciationHistory = defineServiceFn({
  */
 export const getFixedAssetDisposal = defineServiceFn({
   input: z.looseObject({ fixedAssetId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.assets": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4691,7 +4725,7 @@ export const getFleetAssets = defineServiceFn({
     search: z.string().nullable().optional(),
     fleetStatus: z.string().nullable().optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.fleet": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -4711,7 +4745,7 @@ export const getFleetAssets = defineServiceFn({
  */
 export const getFixedAssetTransfers = defineServiceFn({
   input: z.looseObject({ fixedAssetId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.assets": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4731,7 +4765,7 @@ export const getFixedAssetTransfers = defineServiceFn({
  */
 export const getFixedAssetCipCosts = defineServiceFn({
   input: z.looseObject({ fixedAssetId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.assets": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4753,7 +4787,7 @@ export const getFixedAssetCipCosts = defineServiceFn({
  */
 export const getWorkCenterCapitalCost = defineServiceFn({
   input: z.looseObject({ workCenterId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.assets": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4778,7 +4812,7 @@ export const getWorkCenterCapitalCost = defineServiceFn({
  */
 export const invokeAssetTransfer = defineServiceFn({
   input: service.postAssetTransferInput,
-  permission: { update: "accounting" },
+  permission: { "accounting.assets": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4808,7 +4842,7 @@ export const getAccountingSyncTieOut = defineServiceFn({
       .nullable()
       .optional()
   }),
-  permission: { view: "accounting" },
+  permission: { "accounting.syncTieOut": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4835,7 +4869,7 @@ export const getAccountingSyncTieOut = defineServiceFn({
  */
 export const getAccountingSyncTieOutCell = defineServiceFn({
   input: z.looseObject({ cellId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.syncTieOut": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,

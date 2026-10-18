@@ -51,6 +51,7 @@ vi.mock("../app/services/mfa-email.server", () => ({
 
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 const {
   removePrinterRoute,
@@ -65,14 +66,14 @@ const {
   updateSubsidiaryDetails
 } = await import("../app/modules/settings/settings.server");
 
-const settings = {
+const settings = pageClaims({
   settings: {
     view: ["company-1"],
     create: ["company-1"],
     update: ["company-1"],
     delete: ["company-1"]
   }
-};
+});
 
 type Write = { table: string; method: string; values: unknown };
 

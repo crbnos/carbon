@@ -9,8 +9,7 @@ import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
 import {
   actionTaskEntities,
-  actionTaskParentId,
-  actionTaskPermissions
+  actionTaskParentId
 } from "@carbon/ee/action-task-entity";
 import { resolveIntegrationSecrets } from "@carbon/ee/integrations/secrets";
 import {
@@ -55,7 +54,6 @@ import {
   type CreatableLookup,
   creatableLookups,
   importPermissions,
-  importRequiresCreate,
   importSchemas
 } from "./imports.models";
 import * as service from "./shared.service";
@@ -139,15 +137,10 @@ const importTables = Object.keys(importPermissions) as [
   ...ImportTable[]
 ];
 
-// `update` on the table's module; an import that posts stock also needs
-// `create`, as the single-record adjustment does.
+// Edit on the table's page; an import that posts stock needs it too, as the
+// single-record adjustment does.
 const importRules = Object.fromEntries(
-  importTables.map((table) => [
-    table,
-    importRequiresCreate.has(table)
-      ? { update: importPermissions[table], create: importPermissions[table] }
-      : { update: importPermissions[table] }
-  ])
+  importTables.map((table) => [table, { [importPermissions[table]]: "Edit" }])
 ) as Record<ImportTable, RequiredPermissions>;
 
 /**
@@ -158,7 +151,7 @@ const importRules = Object.fromEntries(
  * `columnMappings` names, for each of the table's fields, the CSV column that
  * fills it; the table's required fields must be mapped. `enumMappings` maps
  * CSV values onto a field's allowed values (field → CSV value → value). Needs
- * `update` on the table's module, and `create` too for the stock imports.
+ * Edit on the table's page (`importPermissions`).
  * Quotes go through the sales importer, so each gets its opportunity,
  * payment, shipment and share link as one made in the app does; every other
  * table goes through the `import-csv` posting. Returns how many rows were
@@ -223,19 +216,19 @@ export const importCsvFile = defineServiceFn({
   }
 });
 
-// Creating a lookup is gated by the module that owns it. Exhaustive: a new
+// Creating a lookup is gated by the page that owns it. Exhaustive: a new
 // lookup without a permission fails typecheck.
 const lookupRules: Record<CreatableLookup, RequiredPermissions> = {
-  supplierType: { create: "purchasing" },
-  customerType: { create: "sales" },
-  customerStatus: { create: "sales" }
+  supplierType: { "purchasing.types": "Create" },
+  customerType: { "sales.types": "Create" },
+  customerStatus: { "sales.statuses": "Create" }
 };
 /**
  * Create name-only lookup values for a CSV import: supplier types, customer
  * types, customer statuses.
  *
  * @remarks
- * Needs `create` on the module that owns the lookup. A name that already
+ * Needs Create on the page that owns the lookup. A name that already
  * exists is matched case-insensitively and returned instead of created, and
  * case variants within the batch become one value. `results` answers every
  * name, in order: the value's id and name, or an error.
@@ -320,7 +313,7 @@ export const createImportLookups = defineServiceFn({
  */
 export const enrollImplementationHub = defineServiceFn({
   input: z.object({}),
-  permission: { update: "settings" },
+  permission: { "settings.company": "Edit" },
 
   async run(ctx) {
     const serviceRole = ctx.asSystem.supabase;
@@ -478,7 +471,7 @@ export const createIssueFromSlack = defineServiceFn({
  */
 export const startStripeConnectOnboarding = defineServiceFn({
   input: z.object({ origin: z.url() }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
 
   async run(ctx, { origin }) {
     const client = ctx.asCaller.supabase;
@@ -582,12 +575,13 @@ const actionTaskEntityTypes = Object.keys(actionTaskEntities) as [
   ...ActionTaskEntityType[]
 ];
 
-// An issue's tasks are quality's, a change notice's are parts'.
+// An issue's tasks are the Issues page's, a change notice's the Change
+// Notices page's.
 const actionTaskRule = {
   by: "entityType",
   rules: {
-    nonConformanceActionTask: actionTaskPermissions("nonConformanceActionTask"),
-    changeOrderActionTask: actionTaskPermissions("changeOrderActionTask")
+    nonConformanceActionTask: { "quality.issues": "Edit" },
+    changeOrderActionTask: { "parts.changeNotices": "Edit" }
   }
 } as const;
 

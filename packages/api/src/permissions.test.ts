@@ -16,7 +16,10 @@ import {
 describe("resolvePermissions", () => {
   const rule: PermissionRule<{ type: "post" | "void" }> = {
     by: "type",
-    rules: { post: { update: "invoicing" }, void: { delete: "invoicing" } }
+    rules: {
+      post: { "invoicing.payments": "Edit" },
+      void: { "invoicing.payments": "Full" }
+    }
   };
   const refusal = (input: unknown) => {
     try {
@@ -29,7 +32,7 @@ describe("resolvePermissions", () => {
 
   it("resolves the rule of the value sent", () => {
     expect(resolvePermissions(rule, { type: "void" })).toEqual({
-      delete: "invoicing"
+      "invoicing.payments": "Full"
     });
   });
 
@@ -50,35 +53,69 @@ describe("resolvePermissions", () => {
 
   it("returns a plain rule as it is", () => {
     expect(resolvePermissions("system", {})).toBe("system");
-    expect(resolvePermissions({ view: "sales" }, {})).toEqual({
-      view: "sales"
+    expect(resolvePermissions({ "sales.quotes": "View" }, {})).toEqual({
+      "sales.quotes": "View"
     });
   });
 });
 
 const none = { view: [], create: [], update: [], delete: [] };
 const claims: ModulePermissions = {
-  inventory: { ...none, view: ["co1"], update: ["co1"] },
-  production: { ...none, view: ["co1", "co2"] }
+  "inventory.receipts": {
+    ...none,
+    view: ["co1"],
+    create: ["co1"],
+    update: ["co1"]
+  },
+  "production.jobs": { ...none, view: ["co1", "co2"] }
 };
 
 describe("hasPermissions", () => {
-  it("grants when every required module_action names the company", () => {
+  it("grants when every required page holds its level in the company", () => {
     expect(
-      hasPermissions(claims, "co1", { update: "inventory", view: "production" })
+      hasPermissions(claims, "co1", {
+        "inventory.receipts": "Edit",
+        "production.jobs": "View"
+      })
     ).toBe(true);
   });
 
-  it("refuses when one module_action is missing", () => {
+  it("reads a level as its highest action", () => {
+    expect(
+      hasPermissions(claims, "co1", { "inventory.receipts": "Create" })
+    ).toBe(true);
+    expect(
+      hasPermissions(claims, "co1", { "inventory.receipts": "Full" })
+    ).toBe(false);
+    // Edit reads update alone: claims that hold update without view still pass.
+    expect(
+      hasPermissions(
+        { "inventory.receipts": { ...none, update: ["co1"] } },
+        "co1",
+        { "inventory.receipts": "Edit" }
+      )
+    ).toBe(true);
+  });
+
+  it("refuses when one page is short of its level", () => {
     expect(
       hasPermissions(claims, "co1", {
-        update: ["inventory", "production"]
+        "inventory.receipts": "Edit",
+        "production.jobs": "Edit"
       })
     ).toBe(false);
   });
 
+  it("refuses a page the claims do not name", () => {
+    expect(
+      hasPermissions(claims, "co1", { "inventory.shipments": "View" })
+    ).toBe(false);
+  });
+
   it("refuses a permission held in another company only", () => {
-    expect(hasPermissions(claims, "co2", { update: "inventory" })).toBe(false);
+    expect(
+      hasPermissions(claims, "co2", { "inventory.receipts": "Edit" })
+    ).toBe(false);
   });
 
   it("with nothing required, still needs membership of the company", () => {
@@ -124,13 +161,49 @@ describe("permissionsFromClaims", () => {
       },
       "co1"
     );
-    expect(hasPermissions(permissions, "co1", { update: "inventory" })).toBe(
-      true
-    );
-    expect(hasPermissions(permissions, "co1", { delete: "inventory" })).toBe(
+    // A module grant covers every page of the module.
+    expect(
+      hasPermissions(permissions, "co1", { "inventory.receipts": "Edit" })
+    ).toBe(true);
+    expect(
+      hasPermissions(permissions, "co1", { "inventory.shipments": "Edit" })
+    ).toBe(true);
+    expect(
+      hasPermissions(permissions, "co1", { "inventory.receipts": "Full" })
+    ).toBe(false);
+    // The person's None override beats the role's Full.
+    expect(hasPermissions(permissions, "co1", { "sales.quotes": "View" })).toBe(
       false
     );
-    expect(hasPermissions(permissions, "co1", { view: "sales" })).toBe(false);
+  });
+
+  it("checks a page against its own grant before the module's", () => {
+    const permissions = permissionsFromClaims(
+      {
+        role: "employee",
+        admin: false,
+        grants: [
+          { subject: "role", module: "Parts", page: null, level: "View" },
+          {
+            subject: "role",
+            module: "Parts",
+            page: "parts.tools",
+            level: "Edit"
+          }
+        ],
+        portal: {}
+      },
+      "co1"
+    );
+    expect(hasPermissions(permissions, "co1", { "parts.tools": "Edit" })).toBe(
+      true
+    );
+    expect(hasPermissions(permissions, "co1", { "parts.parts": "Edit" })).toBe(
+      false
+    );
+    expect(hasPermissions(permissions, "co1", { "parts.parts": "View" })).toBe(
+      true
+    );
   });
 
   it("reads malformed claims as no access", () => {

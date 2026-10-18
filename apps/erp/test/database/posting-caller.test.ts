@@ -10,8 +10,10 @@ import { type Kysely, sql } from "kysely";
 import { describe, expect, it, vi } from "vitest";
 import {
   permissionsFromClaims,
+  type RequiredPermissions,
   resolvePermissions
 } from "@carbon/api/permissions";
+import { pageById } from "@carbon/database/access";
 import {
   connectLocalTestDatabase,
   databaseTest
@@ -48,7 +50,10 @@ const fields = {
 describe("authorizePostingCaller", () => {
   it("lets the system through without reading claims", async () => {
     await expect(
-      authorize({ ...fields, caller: { type: "system" } }, { update: "inventory" })
+      authorize(
+        { ...fields, caller: { type: "system" } },
+        { "inventory.receipts": "Edit" }
+      )
     ).resolves.toBeUndefined();
   });
 });
@@ -142,9 +147,9 @@ describe("authorizePostingCaller (API key)", () => {
     withApiKey({ scopes: {}, expiresAt: null }, async (ctx) => {
       await expect(authorize(ctx, {})).resolves.toBeUndefined();
       // The creator of a real company holds this; the key does not.
-      await expect(authorize(ctx, { view: "inventory" })).rejects.toMatchObject(
-        { status: 403 }
-      );
+      await expect(
+        authorize(ctx, { "inventory.receipts": "View" })
+      ).rejects.toMatchObject({ status: 403 });
     })
   );
 
@@ -155,11 +160,18 @@ describe("authorizePostingCaller (API key)", () => {
         SELECT ${companyId}, id, 'Inventory', 'Edit', "createdBy"
         FROM "apiKey" WHERE name = 'authorize test'
       `.execute(ctx.db);
+      // A module grant covers every page of the module, at its level.
       await expect(
-        authorize(ctx, { update: "inventory" })
+        authorize(ctx, { "inventory.receipts": "Edit" })
       ).resolves.toBeUndefined();
       await expect(
-        authorize(ctx, { update: "invoicing" })
+        authorize(ctx, { "inventory.shipments": "Edit" })
+      ).resolves.toBeUndefined();
+      await expect(
+        authorize(ctx, { "inventory.receipts": "Full" })
+      ).rejects.toMatchObject({ status: 403 });
+      await expect(
+        authorize(ctx, { "invoicing.payments": "Edit" })
       ).rejects.toMatchObject({ status: 403 });
     })
   );
@@ -197,12 +209,15 @@ describe("authorizePostingCaller (user)", () => {
       for (const { companyId, userId, claims } of rows) {
         const held = Object.entries(
           permissionsFromClaims(claims, companyId)
-        ).find(([, permission]) => permission.update.includes(companyId));
+        ).find(
+          ([page, permission]) =>
+            pageById(page) && permission.update.includes(companyId)
+        );
         if (held) {
           return await fn({ db, companyId, userId }, held[0]);
         }
       }
-      throw new Error("No employee with an update permission to test with");
+      throw new Error("No employee with Edit on a page to test with");
     } finally {
       await db.destroy();
     }
@@ -212,19 +227,20 @@ describe("authorizePostingCaller (user)", () => {
     "admits a permission the user holds, in their company only",
     () =>
       withEmployee(async (fields, held) => {
+        const gate = { [held]: "Edit" } as RequiredPermissions;
         await expect(
-          authorize({ ...fields, caller: { type: "user" } }, { update: held })
+          authorize({ ...fields, caller: { type: "user" } }, gate)
         ).resolves.toBeUndefined();
         await expect(
           authorize(
             { ...fields, companyId: "not-theirs", caller: { type: "user" } },
-            {
-              update: held
-            }
+            gate
           )
         ).rejects.toMatchObject({ status: 403 });
         await expect(
-          authorize({ ...fields, caller: { type: "user" } }, { update: "no-such-module" })
+          authorize({ ...fields, caller: { type: "user" } }, {
+            "no-such-page": "Edit"
+          } as RequiredPermissions)
         ).rejects.toMatchObject({ status: 403 });
       })
   );
@@ -233,7 +249,10 @@ describe("authorizePostingCaller (user)", () => {
     withEmployee(async (fields, held) => {
       const rule = {
         by: "type",
-        rules: { internal: "system", open: { update: held } }
+        rules: {
+          internal: "system",
+          open: { [held]: "Edit" } as RequiredPermissions
+        }
       } as const;
       const user: Caller = { ...fields, caller: { type: "user" } };
       await expect(

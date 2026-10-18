@@ -2465,7 +2465,7 @@ export function withoutSupersededEntries(
 }
 
 export const postMaintenanceEventPermission = {
-  update: "resources"
+  "resources.dispatches": "Edit"
 } satisfies PermissionRule<z.output<typeof postMaintenanceEventInput>>;
 
 /**

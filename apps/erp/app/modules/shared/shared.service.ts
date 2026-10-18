@@ -7943,15 +7943,15 @@ export type ConvertResult = { id?: string; convertedId?: string };
 export const convertDocumentPermission = {
   by: "type",
   rules: {
-    methodVersionToActive: { update: "resources" },
-    purchaseOrderToPurchaseInvoice: { update: "invoicing" },
-    quoteToSalesOrder: { update: "sales" },
-    salesOrderToSalesInvoice: { update: "invoicing" },
-    salesRfqToQuote: { update: "sales" },
-    shipmentToSalesInvoice: { update: "invoicing" },
-    supplierQuoteToPurchaseOrder: { update: "purchasing" },
-    warehouseTransferToShipment: { update: "inventory" },
-    warehouseTransferToReceipt: { update: "inventory" }
+    methodVersionToActive: { "parts.parts": "Edit" },
+    purchaseOrderToPurchaseInvoice: { "invoicing.purchaseInvoices": "Edit" },
+    quoteToSalesOrder: { "sales.quotes": "Edit" },
+    salesOrderToSalesInvoice: { "invoicing.salesInvoices": "Edit" },
+    salesRfqToQuote: { "sales.rfqs": "Edit" },
+    shipmentToSalesInvoice: { "invoicing.salesInvoices": "Edit" },
+    supplierQuoteToPurchaseOrder: { "purchasing.supplierQuotes": "Edit" },
+    warehouseTransferToShipment: { "inventory.warehouseTransfers": "Edit" },
+    warehouseTransferToReceipt: { "inventory.warehouseTransfers": "Edit" }
   }
 } satisfies PermissionRule<z.output<typeof convertInput>>;
 
@@ -9987,25 +9987,28 @@ async function getFallbackLocationId(
 export const createDocumentPermission = {
   by: "type",
   rules: {
-    nonConformanceTasks: { update: "quality" },
-    purchaseOrderFromJob: { create: ["purchasing", "production"] },
-    receiptDefault: { create: "inventory" },
-    receiptFromPurchaseOrder: { create: "inventory" },
-    receiptFromInboundTransfer: { create: "inventory" },
-    receiptFromSalesReturnOrder: { create: "inventory" },
-    receiptFromWarehouseTransfer: { create: "inventory" },
-    receiptLineSplit: { create: "inventory" },
-    shipmentDefault: { create: "inventory" },
-    shipmentFromPurchaseOrder: { create: "inventory" },
-    shipmentFromWarehouseTransfer: { create: "inventory" },
-    shipmentFromPurchaseReturnOrder: { create: "inventory" },
-    shipmentFromSalesOrder: { create: "inventory" },
-    shipmentFromSalesReturnOrder: { create: "inventory" },
-    shipmentFromSalesOrderLine: { create: "inventory" },
-    shipmentLineSplit: { create: "inventory" },
-    shipmentFromRentalAgreement: { create: "inventory" },
-    receiptFromRentalAgreement: { create: "inventory" },
-    journalEntry: { create: "accounting" }
+    nonConformanceTasks: { "quality.issues": "Edit" },
+    purchaseOrderFromJob: {
+      "purchasing.purchaseOrders": "Create",
+      "production.jobs": "Create"
+    },
+    receiptDefault: { "inventory.receipts": "Create" },
+    receiptFromPurchaseOrder: { "inventory.receipts": "Create" },
+    receiptFromInboundTransfer: { "inventory.receipts": "Create" },
+    receiptFromSalesReturnOrder: { "inventory.receipts": "Create" },
+    receiptFromWarehouseTransfer: { "inventory.receipts": "Create" },
+    receiptLineSplit: { "inventory.receipts": "Create" },
+    shipmentDefault: { "inventory.shipments": "Create" },
+    shipmentFromPurchaseOrder: { "inventory.shipments": "Create" },
+    shipmentFromWarehouseTransfer: { "inventory.shipments": "Create" },
+    shipmentFromPurchaseReturnOrder: { "inventory.shipments": "Create" },
+    shipmentFromSalesOrder: { "inventory.shipments": "Create" },
+    shipmentFromSalesReturnOrder: { "inventory.shipments": "Create" },
+    shipmentFromSalesOrderLine: { "inventory.shipments": "Create" },
+    shipmentLineSplit: { "inventory.shipments": "Create" },
+    shipmentFromRentalAgreement: { "inventory.shipments": "Create" },
+    receiptFromRentalAgreement: { "inventory.receipts": "Create" },
+    journalEntry: { "accounting.journalEntries": "Create" }
   }
 } satisfies PermissionRule<z.output<typeof createInput>>;
 

@@ -65,6 +65,7 @@ vi.mock("../app/modules/shared/shared.service", async (importOriginal) => {
 });
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 const {
   createIssue,
@@ -76,14 +77,14 @@ const {
   updateQualityDocumentField
 } = await import("../app/modules/quality/quality.server");
 
-const quality = {
+const quality = pageClaims({
   quality: {
     view: ["company-1"],
     create: ["company-1"],
     update: ["company-1"],
     delete: ["company-1"]
   }
-};
+});
 
 /**
  * A Supabase client whose every query answers with the rows the test names

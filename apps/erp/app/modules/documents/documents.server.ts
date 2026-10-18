@@ -51,7 +51,7 @@ export const regenerateModelThumbnail = defineServiceFn({
       return ctx.error("internal", "Failed to read the parts", owned.error);
     }
     if (owned.data.length > 0) {
-      if (!ctx.can({ update: "parts" })) {
+      if (!ctx.can({ "parts.parts": "Edit" })) {
         return ctx.error(
           "forbidden",
           "Replacing a part's thumbnail needs permission to update parts"
@@ -234,7 +234,7 @@ export const recordDocumentDownload = defineServiceFn({
  */
 export const deleteDocument = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "documents" },
+  permission: { documents: "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -250,7 +250,7 @@ export const deleteDocument = defineServiceFn({
  */
 export const getDocument = defineServiceFn({
   input: z.looseObject({ documentId: z.string() }),
-  permission: { view: "documents" },
+  permission: { documents: "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -280,7 +280,7 @@ export const getDocuments = defineServiceFn({
     recent: z.boolean().optional(),
     active: z.boolean()
   }),
-  permission: { view: "documents" },
+  permission: { documents: "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -300,7 +300,7 @@ export const getDocuments = defineServiceFn({
  */
 export const getDocumentExtensions = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "documents" },
+  permission: { documents: "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -316,7 +316,7 @@ export const getDocumentExtensions = defineServiceFn({
  */
 export const getDocumentLabels = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "documents" },
+  permission: { documents: "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -332,7 +332,7 @@ export const getDocumentLabels = defineServiceFn({
  */
 export const moveDocumentToTrash = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { update: "documents" },
+  permission: { documents: "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -352,7 +352,7 @@ export const moveDocumentToTrash = defineServiceFn({
  */
 export const restoreDocument = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { update: "documents" },
+  permission: { documents: "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -411,7 +411,7 @@ export const createDocument = defineServiceFn({
       .optional(),
     sourceDocumentId: z.string().optional()
   }),
-  permission: { create: "documents" },
+  permission: { documents: "Create" },
   async run(ctx, input) {
     const foreign = service.refuseForeignPath(ctx, input.path);
     if (foreign) return foreign;
@@ -473,7 +473,7 @@ export const updateDocument = defineServiceFn({
       id: z.string().describe("The document to update.").optional()
     })
     .required({ id: true }),
-  permission: { update: "documents" },
+  permission: { documents: "Edit" },
   async run(ctx, input) {
     const foreign = service.refuseForeignPath(ctx, input.path);
     if (foreign) return foreign;
@@ -498,7 +498,7 @@ export const createDocumentUploadUrl = defineServiceFn({
     entityId: z.string(),
     name: z.string()
   }),
-  permission: { create: "documents" },
+  permission: { documents: "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -547,7 +547,7 @@ export const insertUploadedDocument = defineServiceFn({
       .optional(),
     sourceDocumentId: z.string().optional()
   }),
-  permission: { create: "documents" },
+  permission: { documents: "Create" },
   async run(ctx, input) {
     const foreign = service.refuseForeignPath(ctx, input.path);
     if (foreign) return foreign;
@@ -568,7 +568,7 @@ export const insertUploadedDocument = defineServiceFn({
  */
 export const updateDocumentFavorite = defineServiceFn({
   input: z.looseObject({ id: z.string(), favorite: z.boolean() }),
-  permission: { update: "documents" },
+  permission: { documents: "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -590,7 +590,7 @@ export const updateDocumentLabels = defineServiceFn({
     documentId: z.string().min(20),
     labels: z.array(z.string().min(1).max(50)).optional()
   }),
-  permission: { update: "documents" },
+  permission: { documents: "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -614,7 +614,7 @@ export const insertDocumentExtraction = defineServiceFn({
     sourceDocument: z.string(),
     sourceDocumentId: z.string().optional()
   }),
-  permission: { create: "documents" },
+  permission: { documents: "Create" },
   async run(ctx, input) {
     const foreign = service.refuseForeignPath(ctx, input.storagePath);
     if (foreign) return foreign;

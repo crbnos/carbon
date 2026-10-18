@@ -39,7 +39,7 @@ import { defineServiceFn } from "./helper";
  */
 export const cancelJob = defineServiceFn({
   input: null,
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(_ctx, input: { jobId: string; reason?: string }) {
     return { jobId: input.jobId };
   }
@@ -52,7 +52,7 @@ export const cancelJob = defineServiceFn({
  */
 export const deleteJob = defineServiceFn({
   input: null,
-  permission: { update: ["production", "inventory"] },
+  permission: { "production.jobs": "Edit", "inventory.quantities": "Edit" },
   async run(_ctx, input: { jobId: string }) {
     return null;
   }
@@ -113,7 +113,11 @@ describe("buildServiceFnTools", () => {
   });
 
   it("gates one module on the API and leaves several to the function", () => {
-    expect(cancel?.permission).toEqual({ module: "production", actions: ["update"] });
+    // A level lists every action it holds.
+    expect(cancel?.permission).toEqual({
+      module: "production",
+      actions: ["view", "create", "update"]
+    });
     expect(cancel?.classification).toBe("WRITE");
     const remove = tools.find((tool) => tool.name === "production_deleteJob");
     expect(remove?.permission).toEqual({ module: null, actions: [] });
@@ -131,7 +135,7 @@ import { defineServiceFn } from "./helper";
  */
 export const getJobs = defineServiceFn({
   input: null,
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(_ctx, input: { limit?: number }) {
     return { rows: [{ id: "j1" }], count: 1 as number | null };
   }
@@ -157,7 +161,7 @@ import { defineServiceFn } from "./helper";
  */
 export const countJobs = defineServiceFn({
   input: null,
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(_ctx, input: { limit?: number }) {
     return { rows: { id: "j1" }, count: 1 as number | null };
   }
@@ -186,10 +190,12 @@ export const getKeys = defineServiceFn({
 });`,
         "/m/router.ts": ROUTER
       });
-    expect(() => read(`{ update: "users" }`)).toThrow(
-      "@mcp read on a function whose permission names update"
+    expect(() => read(`{ "settings.apiKeys": "Edit" }`)).toThrow(
+      "@mcp read on a function whose permission names create, update"
     );
-    expect(read(`{ view: "users" }`)[0]?.classification).toBe("READ");
+    expect(read(`{ "settings.apiKeys": "View" }`)[0]?.classification).toBe(
+      "READ"
+    );
   });
 
   it("refuses a summary that was cut off", () => {
@@ -204,7 +210,7 @@ import { defineServiceFn } from "./helper";
  */
 export const getJob = defineServiceFn({
   input: null,
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(_ctx, input: { id: string }) {
     return null;
   }
@@ -226,7 +232,7 @@ export const getJob = defineServiceFn({
     const [recost] = toolsFor({
       "/m/production.ts": `
 import { defineServiceFn } from "./helper";
-const recostPermission = { update: "accounting" } as const;
+const recostPermission = { "accounting.reporting": "Edit" } as const;
 /**
  * Recost a unit.
  *
@@ -241,7 +247,61 @@ export const recost = defineServiceFn({
 });`,
       "/m/router.ts": ROUTER
     });
-    expect(recost?.permission).toEqual({ module: "accounting", actions: ["update"] });
+    expect(recost?.permission).toEqual({
+      module: "accounting",
+      actions: ["view", "create", "update"]
+    });
+  });
+
+  const published = (permission: string) =>
+    toolsFor({
+      "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+/**
+ * Post a run.
+ *
+ * @mcp
+ */
+export const postRun = defineServiceFn({
+  input: null,
+  permission: ${permission},
+  async run(_ctx, input: { type: string }) {
+    return null;
+  }
+});`,
+      "/m/router.ts": ROUTER
+    });
+
+  it("refuses a page the registry does not have, and a level that is not one", () => {
+    expect(() => published(`{ production: "Edit" }`)).toThrow(
+      "permission names a page of the registry"
+    );
+    expect(() => published(`{ update: "production" }`)).toThrow(
+      "permission names a page of the registry"
+    );
+    expect(() => published(`{ "production.jobs": "update" }`)).toThrow(
+      "permission.production.jobs must be one of View, Create, Edit, Full"
+    );
+    expect(() => published(`{ "production.jobs": "None" }`)).toThrow(
+      "must be one of View, Create, Edit, Full"
+    );
+  });
+
+  it("publishes a keyed rule as every page and action its rules name", () => {
+    const [run] = published(
+      `{ by: "type", rules: { revenue: { "accounting.revenueRecognition": "Create" }, lease: { "accounting.leases": "Edit" } } }`
+    );
+    expect(run?.permission).toEqual({
+      module: "accounting",
+      actions: ["view", "create", "update"]
+    });
+    const [split] = published(
+      `{ by: "type", rules: { a: { "accounting.leases": "View" }, b: { "sales.quotes": "View" } } }`
+    );
+    expect(split?.permission).toEqual({ module: null, actions: [] });
+    expect(() =>
+      published(`{ by: "type", rules: { a: "system" } }`)
+    ).toThrow("a published keyed permission names a literal page gate");
   });
 
   it("refuses to publish a system-only function", () => {

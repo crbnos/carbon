@@ -8920,7 +8920,7 @@ export async function invokeAssetTransfer(
           required !== "system"
           ? {
               ...(required === "employee" ? {} : required),
-              update: "accounting"
+              "accounting.assets": "Edit"
             }
           : required;
       }
@@ -13525,11 +13525,11 @@ async function adjustCost(
 export const postAssetTransferPermission = {
   by: "type",
   rules: {
-    capitalize: { create: "accounting" },
-    return: { create: "accounting" },
-    attachJob: { create: "accounting" },
-    capitalizeCip: { create: "accounting" },
-    adjustCost: { update: "accounting" }
+    capitalize: { "accounting.assets": "Create" },
+    return: { "accounting.assets": "Create" },
+    attachJob: { "accounting.assets": "Create" },
+    capitalizeCip: { "accounting.assets": "Create" },
+    adjustCost: { "accounting.assets": "Edit" }
   }
 } satisfies PermissionRule<z.output<typeof postAssetTransferInput>>;
 
@@ -13550,7 +13550,7 @@ export async function postAssetTransfer(
   switch (input.type) {
     case "capitalize":
       // An entered cost puts a number of the caller's own on the books.
-      if (input.cost != null && !ctx.can({ update: "accounting" })) {
+      if (input.cost != null && !ctx.can({ "accounting.assets": "Edit" })) {
         throw new ForbiddenError();
       }
       return capitalize(db, { ...input, companyId, userId });
@@ -13578,7 +13578,7 @@ class RollbackPreview extends Error {
 }
 
 export const previewAssetCapitalizationPermission = {
-  view: "accounting"
+  "accounting.assets": "View"
 } satisfies PermissionRule<z.output<typeof previewAssetCapitalizationInput>>;
 
 export async function previewAssetCapitalization(
@@ -13713,7 +13713,7 @@ async function repointReferences(
 }
 
 export const applyAccountImportPermission = {
-  update: "accounting"
+  "accounting.chartOfAccounts": "Edit"
 } satisfies PermissionRule<z.output<typeof applyAccountImportInput>>;
 
 export async function applyAccountImport(
@@ -14814,7 +14814,7 @@ export const postChargeInput = z.object({
 });
 
 export const postChargePermission = {
-  update: "invoicing"
+  "invoicing.charges": "Edit"
 } satisfies PermissionRule<z.output<typeof postChargeInput>>;
 
 /**
@@ -15562,7 +15562,7 @@ export const postReimbursementInput = z.object({
 });
 
 export const postReimbursementPermission = {
-  update: "invoicing"
+  "invoicing.reimbursements": "Edit"
 } satisfies PermissionRule<z.output<typeof postReimbursementInput>>;
 
 /**
@@ -20282,7 +20282,7 @@ export type ActivateAccountingResult = {
 const OPENING_JOURNAL_DESCRIPTION = "Opening Balance";
 
 export const activateAccountingPermission = {
-  update: "accounting"
+  "settings.accounting": "Edit"
 } satisfies PermissionRule<z.output<typeof activateAccountingInput>>;
 
 export async function activateAccounting(
@@ -20643,7 +20643,7 @@ export type JournalLegacyDocumentsResult = {
 };
 
 export const journalLegacyDocumentsPermission = {
-  update: "accounting"
+  "accounting.journalEntries": "Edit"
 } satisfies PermissionRule<z.output<typeof journalLegacyDocumentsInput>>;
 
 export async function repairLegacyJournals(
@@ -21325,8 +21325,11 @@ export const proposeRevenueRecognitionRunInput = z.object({
   type: z.enum(["Revenue Recognition", "Lease"]).default("Revenue Recognition")
 });
 
+// Both run pages: the posting contract types `type` as optional (it
+// defaults), so a rule keyed on it cannot type-check for its callers.
 export const proposeRevenueRecognitionRunPermission = {
-  create: "accounting"
+  "accounting.revenueRecognition": "Create",
+  "accounting.leases": "Create"
 } satisfies PermissionRule<z.output<typeof proposeRevenueRecognitionRunInput>>;
 
 /** Proposes ONE Draft run for the period, or null when nothing is due (see
@@ -21372,7 +21375,11 @@ class PreviewRollback extends Error {
 }
 
 export const previewRevenueRecognitionRunPermission = {
-  view: "accounting"
+  by: "type",
+  rules: {
+    "Revenue Recognition": { "accounting.revenueRecognition": "View" },
+    Lease: { "accounting.leases": "View" }
+  }
 } satisfies PermissionRule<z.output<typeof previewRevenueRecognitionRunInput>>;
 
 export async function previewRevenueRecognitionRun(
@@ -21415,7 +21422,8 @@ export type RunRecalculation = {
 };
 
 export const recalculateRevenueRecognitionRunPermission = {
-  update: "accounting"
+  "accounting.revenueRecognition": "Edit",
+  "accounting.leases": "Edit"
 } satisfies PermissionRule<
   z.output<typeof recalculateRevenueRecognitionRunInput>
 >;

@@ -5388,7 +5388,7 @@ export const postNonConformanceInput = z.object({
 });
 
 export const postNonconformancePermission = {
-  update: "quality"
+  "quality.issues": "Edit"
 } satisfies PermissionRule<z.output<typeof postNonConformanceInput>>;
 
 export async function postNonconformance(

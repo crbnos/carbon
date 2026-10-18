@@ -6499,7 +6499,7 @@ export const finalizeSupplierQuoteInput = z.object({
 });
 
 export const finalizeSupplierQuotePermission = {
-  create: "purchasing"
+  "purchasing.supplierQuotes": "Create"
 } satisfies PermissionRule<z.output<typeof finalizeSupplierQuoteInput>>;
 
 /**
@@ -6743,7 +6743,7 @@ export type FinalizedSupplierQuote = {
 };
 
 export const finalizePurchasingRfqPermission = {
-  create: "purchasing"
+  "purchasing.rfqs": "Create"
 } satisfies PermissionRule<z.output<typeof finalizePurchasingRfqInput>>;
 
 /**
@@ -6954,7 +6954,7 @@ const calculateLeadTimeInDays = (
 };
 
 export const updatePurchasedPricesPermission = {
-  update: "purchasing"
+  "purchasing.purchaseOrders": "Edit"
 } satisfies PermissionRule<z.output<typeof updatePurchasedPricesInput>>;
 
 export async function updatePurchasedPrices(
@@ -9978,7 +9978,7 @@ export const postLeaseInput = payloadValidator;
 export type PostLeaseInput = LeasePayload;
 
 export const postLeaseActionPermission = {
-  update: "purchasing"
+  "purchasing.leases": "Edit"
 } satisfies PermissionRule<z.output<typeof postLeaseInput>>;
 
 export async function postLeaseAction(
@@ -10382,8 +10382,8 @@ export const createLeaseInvoicesInput = z.object({
 });
 
 export const createLeaseInvoicesPermission = {
-  update: "purchasing",
-  create: "invoicing"
+  "purchasing.leases": "Edit",
+  "invoicing.purchaseInvoices": "Create"
 } satisfies PermissionRule<z.output<typeof createLeaseInvoicesInput>>;
 
 /** Drafts the lease invoices due on or before `asOf` (see

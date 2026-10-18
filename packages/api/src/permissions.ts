@@ -2,13 +2,26 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { claimsFromJson, expandClaims, holds } from "@carbon/database/access";
+import {
+  ACTION_LEVEL,
+  ACTIONS,
+  type Action,
+  claimsFromJson,
+  expandClaims,
+  holds,
+  type Level,
+  type PageId
+} from "@carbon/database/access";
 import { InvalidInputError } from "./errors";
 
-type Action = "view" | "create" | "update" | "delete";
+/** A level a gate can ask for: `"None"` asks for nothing. */
+export type GateLevel = Exclude<Level, "None">;
 
-/** `{ update: "inventory" }`: each action names the module(s) it needs. */
-export type RequiredPermissions = Partial<Record<Action, string | string[]>>;
+/**
+ * `{ "inventory.receipts": "Edit" }`: each page the operation needs, and the
+ * lowest level it needs there. A gate with two entries needs both.
+ */
+export type RequiredPermissions = Partial<Record<PageId, GateLevel>>;
 
 /**
  * What an operation requires. `"system"` admits only the system actor;
@@ -52,32 +65,34 @@ export function resolvePermissions<I>(
   return rule as Permissions;
 }
 
-/** A user's claims per module: the company ids holding each action. */
+/** A user's claims per page: the company ids holding each action. */
 export type ModulePermissions = Record<string, Record<Action, string[]>>;
 
-const ACTIONS: Action[] = ["view", "create", "update", "delete"];
+/** The highest action a level holds: the one its check reads. */
+const LEVEL_ACTION = Object.fromEntries(
+  ACTIONS.map((action) => [ACTION_LEVEL[action], action])
+) as Record<GateLevel, Action>;
 
 /**
- * Whether `claims` grant every required `<module>_<action>` in `companyId`. With
- * nothing required, membership of the company (any permission naming it) is
- * still needed.
+ * Whether `claims` hold every required page at its level in `companyId`: the
+ * highest action of the level, `<page>_<action>`. With nothing required,
+ * membership of the company (any permission naming it) is still needed.
  */
 export function hasPermissions(
   claims: ModulePermissions,
   companyId: string,
   required: RequiredPermissions
 ): boolean {
-  const entries = Object.entries(required) as [Action, string | string[]][];
+  const entries = Object.entries(required) as [PageId, GateLevel][];
   if (entries.length === 0) {
     return Object.values(claims).some((permission) =>
       ACTIONS.some((action) => permission[action]?.includes(companyId))
     );
   }
-  return entries.every(([action, modules]) =>
-    (typeof modules === "string" ? [modules] : modules).every((module) =>
-      holds(claims, `${module}_${action}`, companyId)
-    )
-  );
+  return entries.every(([page, level]) => {
+    const action = LEVEL_ACTION[level];
+    return !!action && holds(claims, `${page}_${action}`, companyId);
+  });
 }
 
 /** The `get_claims` jsonb for one company as permissions per page. */
@@ -97,7 +112,7 @@ export function permissionsFromScopes(
     const parts = key.split("_");
     if (parts.length !== 2 || !Array.isArray(value)) continue;
     const [module, action] = parts as [string, Action];
-    if (!ACTIONS.includes(action)) continue;
+    if (!(ACTIONS as readonly string[]).includes(action)) continue;
     permissions[module] ??= { view: [], create: [], update: [], delete: [] };
     permissions[module][action] = value as string[];
   }

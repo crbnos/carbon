@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { PageId } from "@carbon/database/access";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
@@ -2040,49 +2041,44 @@ export const fieldMappings = {
   }
 } as const;
 
-export const importPermissions: Record<keyof typeof fieldMappings, string> = {
-  customer: "sales",
-  customerContact: "sales",
-  supplier: "purchasing",
-  supplierContact: "purchasing",
-  part: "parts",
-  material: "parts",
-  bom: "parts",
-  operations: "parts",
-  partWithMethod: "parts",
-  tool: "parts",
-  fixture: "parts",
-  consumable: "parts",
-  workCenter: "production",
-  process: "production",
-  storageUnit: "inventory",
-  service: "parts",
-  unitOfMeasure: "parts",
-  itemPostingGroup: "accounting",
-  storageType: "parts",
-  scrapReason: "production",
-  department: "people",
-  fixedAsset: "accounting",
-  materialSubstance: "parts",
-  materialForm: "parts",
-  materialFinish: "parts",
-  materialGrade: "parts",
-  materialType: "parts",
-  materialDimension: "parts",
-  quote: "sales",
-  quoteLine: "sales",
-  quoteWithLines: "sales",
-  inventoryQuantity: "inventory",
-  batchQuantity: "inventory",
-  serialQuantity: "inventory"
+// The page whose Edit level an import of the table needs: the page that owns
+// the table in the access registry. Its RLS insert policy names the same page.
+export const importPermissions: Record<keyof typeof fieldMappings, PageId> = {
+  customer: "sales.customers",
+  customerContact: "sales.customers",
+  supplier: "purchasing.suppliers",
+  supplierContact: "purchasing.suppliers",
+  part: "parts.parts",
+  material: "parts.materials",
+  bom: "parts.parts",
+  operations: "parts.parts",
+  partWithMethod: "parts.parts",
+  tool: "parts.tools",
+  fixture: "parts.tools",
+  consumable: "parts.consumables",
+  workCenter: "resources.workCenters",
+  process: "resources.processes",
+  storageUnit: "inventory.storageUnits",
+  service: "parts.services",
+  unitOfMeasure: "parts.units",
+  itemPostingGroup: "parts.itemGroups",
+  storageType: "inventory.storageTypes",
+  scrapReason: "production.scrapReasons",
+  department: "people.departments",
+  fixedAsset: "accounting.assets",
+  materialSubstance: "parts.substances",
+  materialForm: "parts.shapes",
+  materialFinish: "parts.finishes",
+  materialGrade: "parts.grades",
+  materialType: "parts.types",
+  materialDimension: "parts.dimensions",
+  quote: "sales.quotes",
+  quoteLine: "sales.quotes",
+  quoteWithLines: "sales.quotes",
+  inventoryQuantity: "inventory.quantities",
+  batchQuantity: "inventory.quantities",
+  serialQuantity: "inventory.quantities"
 };
-
-// Imports that post stock also require `create` on their module: the
-// single-record inventory adjustment route requires `create: inventory`, and
-// its Save button requires `update: inventory`, so an import of the same rows
-// requires both.
-export const importRequiresCreate: ReadonlySet<keyof typeof fieldMappings> =
-  new Set(["inventoryQuantity", "batchQuantity", "serialQuantity"]);
 
 // Quote import validation is intentionally permissive at the mapping layer (every
 // cell an optional string); the app-side importer (`sales.import.server.ts`) does

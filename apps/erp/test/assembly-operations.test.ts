@@ -44,6 +44,7 @@ import {
   syncAssemblyToOperation
 } from "../app/modules/production/production.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 /** A client that answers every table's single-row read with `rows[table]`. */
 function clientWith(rows: Record<string, unknown>) {
@@ -66,9 +67,9 @@ const contextWith = (rows: Record<string, unknown> = {}) =>
       type: "user",
       role: "employee",
       userId: "u1",
-      permissions: {
+      permissions: pageClaims({
         production: { view: [], create: [], update: ["c1"], delete: [] }
-      }
+      })
     },
     company: { id: "c1", groupId: "g1" },
     caller: clientWith(rows) as never,

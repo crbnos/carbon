@@ -7972,7 +7972,7 @@ const RECOGNIZED_REVENUE_VOID_ERROR =
   "Invoice has recognized revenue; reverse the revenue recognition or lease run that posted it first";
 
 export const postSalesInvoicePermission = {
-  update: "invoicing"
+  "invoicing.salesInvoices": "Edit"
 } satisfies PermissionRule<z.output<typeof postSalesInvoiceInput>>;
 
 /** Posts or voids a sales invoice: its ledger, cost and journal rows, atomically. */
@@ -11291,7 +11291,8 @@ export const postMemoInput = z.object({
 });
 
 export const postMemoPermission = {
-  update: "invoicing"
+  "invoicing.supplierCredits": "Edit",
+  "invoicing.creditMemos": "Edit"
 } satisfies PermissionRule<z.output<typeof postMemoInput>>;
 
 /** Posts or voids a credit/debit memo and its journal, atomically. */
@@ -13305,7 +13306,7 @@ export const postPaymentInput = z.object({
 });
 
 export const postPaymentPermission = {
-  update: "invoicing"
+  "invoicing.payments": "Edit"
 } satisfies PermissionRule<z.output<typeof postPaymentInput>>;
 
 /** Posts or voids a payment: settlements, funding and its journal, atomically. */
@@ -14411,7 +14412,7 @@ export const postPurchaseInvoiceInput = z.object({
 });
 
 export const postPurchaseInvoicePermission = {
-  update: "invoicing"
+  "invoicing.purchaseInvoices": "Edit"
 } satisfies PermissionRule<z.output<typeof postPurchaseInvoiceInput>>;
 
 /** Posts or voids a purchase invoice: receipts, cost, ledger and journal rows. */

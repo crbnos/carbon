@@ -149,7 +149,7 @@ export const updateAccountingSettings = defineServiceFn({
     leaseShortTermExpedient: z.boolean().optional(),
     leaseReminderDays: z.number().int().min(0).optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.accounting": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -199,7 +199,10 @@ export const updateAccountingSettings = defineServiceFn({
  */
 export const writeMissingJournals = defineServiceFn({
   input: z.object({}),
-  permission: { update: ["settings", "accounting"] },
+  permission: {
+    "settings.accounting": "Edit",
+    "accounting.journalEntries": "Edit"
+  },
   async run(ctx) {
     const result = await invokePosting(
       ctx,
@@ -251,7 +254,7 @@ export const updateInventorySettings = defineServiceFn({
       .optional(),
     returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.inventory": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -287,7 +290,7 @@ export const updateInvoicingSettings = defineServiceFn({
     accountsReceivableBillingAddress: billingAddressInput.optional(),
     defaultCustomerCc: z.array(z.string().email()).optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.invoicing": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -347,7 +350,7 @@ export const updateItemsSettings = defineServiceFn({
     showBomExplorerReadableId: z.boolean().optional(),
     plmReleaseControl: z.enum(plmReleaseControl).optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.items": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -390,7 +393,7 @@ export const updateProductionSettings = defineServiceFn({
       })
       .optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.production": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -450,7 +453,7 @@ export const updatePurchasingSettings = defineServiceFn({
     supplierQuoteNotificationGroup: notificationGroup.optional(),
     defaultSupplierCc: z.array(z.string().email()).optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.purchasing": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -501,7 +504,7 @@ export const updateQualitySettings = defineServiceFn({
     qualityIssueTarget: z.number().int().min(0).optional(),
     gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.quality": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -532,7 +535,7 @@ export const updateResourcesSettings = defineServiceFn({
     operationsDispatchNotificationGroup: notificationGroup.optional(),
     otherDispatchNotificationGroup: notificationGroup.optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.resources": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -596,7 +599,7 @@ export const updateSalesSettings = defineServiceFn({
       })
       .optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.sales": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -626,7 +629,7 @@ export const updatePeopleSettings = defineServiceFn({
     timeCardEnabled: z.boolean().optional(),
     consoleEnabled: z.boolean().optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.people": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -684,7 +687,7 @@ export const updatePeopleSettings = defineServiceFn({
  */
 export const updateSecuritySettings = defineServiceFn({
   input: z.object({ requireMfa: z.boolean() }),
-  permission: { update: "settings" },
+  permission: { "settings.security": "Edit" },
   async run(ctx, { requireMfa }) {
     // Read first: the switch re-submits on every flip, and a toggle that
     // lands on the value it already had must not re-announce.
@@ -792,7 +795,7 @@ export const updatePlanningSettings = defineServiceFn({
       .nullable()
       .optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.planning": "Edit" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
@@ -896,7 +899,7 @@ export const updatePlanningSettings = defineServiceFn({
  */
 export const updateCompanyDetails = defineServiceFn({
   input: companyValidator,
-  permission: { update: "settings" },
+  permission: { "settings.company": "Edit" },
   async run(ctx, company) {
     const existing = await ctx.asCaller.supabase
       .from("company")
@@ -945,7 +948,7 @@ export const updateCompanyDetails = defineServiceFn({
  */
 export const createCompany = defineServiceFn({
   input: companyValidator,
-  permission: { update: ["settings", "users"] },
+  permission: { "settings.companies": "Edit", "users.accounts": "Edit" },
   async run(ctx, company) {
     const client = ctx.asSystem.supabase;
     const inserted = await service.insertCompany(client, company);
@@ -993,7 +996,7 @@ export const createCompany = defineServiceFn({
  */
 export const createSubsidiary = defineServiceFn({
   input: subsidiaryValidator,
-  permission: { create: "settings" },
+  permission: { "settings.companies": "Create" },
   async run(ctx, subsidiary) {
     const refused = await service.refuseUnlessInternalUser(ctx);
     if (refused) return refused;
@@ -1048,7 +1051,7 @@ export const createSubsidiary = defineServiceFn({
  */
 export const updateSubsidiaryDetails = defineServiceFn({
   input: subsidiaryValidator.safeExtend({ id: z.string() }),
-  permission: { update: "settings" },
+  permission: { "settings.companies": "Edit" },
   async run(ctx, { id, ...subsidiary }) {
     const refused = await service.refuseUnlessInternalUser(ctx);
     if (refused) return refused;
@@ -1077,7 +1080,7 @@ export const updateSubsidiaryDetails = defineServiceFn({
  */
 export const savePrinterRoute = defineServiceFn({
   input: printerRouteValidator,
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, route) {
     const result = await upsertPrinterRoute(ctx.asCaller.supabase, {
       id: route.id || undefined,
@@ -1112,7 +1115,7 @@ export const savePrinterRoute = defineServiceFn({
  */
 export const testPrinterRoute = defineServiceFn({
   input: z.object({ routeId: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, { routeId }) {
     const { data: route } = await ctx.asCaller.supabase
       .from("printerRoute")
@@ -1175,7 +1178,7 @@ export const testPrinterRoute = defineServiceFn({
  */
 export const removePrinterRoute = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, { id }) {
     const client = ctx.asCaller.supabase;
     const result = await deletePrinterRoute(client, id, ctx.company.id);
@@ -1254,7 +1257,7 @@ export const removePrinterRoute = defineServiceFn({
  */
 export const assignPrinter = defineServiceFn({
   input: updateAssignmentValidator,
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, assignment) {
     const client = ctx.asCaller.supabase;
     const { data: existing } = await getPrintingSettings(
@@ -1303,7 +1306,7 @@ export const assignPrinter = defineServiceFn({
  */
 export const reprintPrintJob = defineServiceFn({
   input: reprintValidator,
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, { printJobId, printerUrl }) {
     const client = ctx.asCaller.supabase;
     const [original, originalMeta] = await Promise.all([
@@ -1369,7 +1372,7 @@ export const reprintPrintJob = defineServiceFn({
  */
 export const deletePrintJob = defineServiceFn({
   input: z.object({ printJobId: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, { printJobId }) {
     const { error } = await ctx.asCaller.supabase
       .from("printJob")
@@ -1384,7 +1387,7 @@ export const deletePrintJob = defineServiceFn({
 /** What a print job printed: its ZPL or PDF content. */
 export const viewPrintJobContent = defineServiceFn({
   input: z.object({ printJobId: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.printing": "Edit" },
   async run(ctx, { printJobId }) {
     const content = await getPrintJobContent(
       ctx.asCaller.supabase,
@@ -1425,7 +1428,7 @@ export const saveDocumentTemplate = defineServiceFn({
     footerSectionId: z.string().optional(),
     headerConfig: sectionConfigSchema.optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.documentTemplates": "Edit" },
   async run(ctx, template) {
     const client = ctx.asCaller.supabase;
     const { headerConfig, headerSectionId } = template;
@@ -1495,7 +1498,7 @@ export const saveDocumentSection = defineServiceFn({
     content: z.record(z.string(), z.unknown()),
     config: sectionConfigSchema.optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.documentTemplates": "Edit" },
   async run(ctx, { id, name, placement, content, config }) {
     const result = await service.upsertDocumentSection(ctx.asCaller.supabase, {
       id,
@@ -1524,7 +1527,7 @@ export const saveDocumentSection = defineServiceFn({
  */
 export const removeDocumentSection = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.documentTemplates": "Edit" },
   async run(ctx, { id }) {
     const result = await service.deleteDocumentSection(
       ctx.asCaller.supabase,
@@ -1554,10 +1557,10 @@ const apiKeyFields = {
  */
 export const createApiKey = defineServiceFn({
   input: z.object(apiKeyFields),
-  permission: { update: "users" },
+  permission: { "settings.apiKeys": "Edit" },
   async run(ctx, { name, grants, expiresAt }) {
     // The grants are written without RLS, which asks this of an apiKey write.
-    if (!ctx.can({ create: "settings" })) {
+    if (!ctx.can({ "settings.apiKeys": "Create" })) {
       return ctx.error("forbidden", "You do not have permission to do this");
     }
     const rawKey = `crbn_${nanoid()}`;
@@ -1613,10 +1616,10 @@ export const createApiKey = defineServiceFn({
  */
 export const updateApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1), ...apiKeyFields }),
-  permission: { update: "users" },
+  permission: { "settings.apiKeys": "Edit" },
   async run(ctx, { id, name, grants, expiresAt }) {
     // The grants are written without RLS, which asks this of an apiKey write.
-    if (!ctx.can({ update: "settings" })) {
+    if (!ctx.can({ "settings.apiKeys": "Edit" })) {
       return ctx.error("forbidden", "You do not have permission to do this");
     }
     let updated: Awaited<ReturnType<typeof upsertApiKey>>;
@@ -1670,7 +1673,7 @@ export const updateApiKey = defineServiceFn({
  */
 export const revokeApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { update: "users" },
+  permission: { "settings.apiKeys": "Edit" },
   async run(ctx, { id }) {
     const keyHash = await service.invalidateApiKeyCache(id, ctx.company.id);
     let deleted: Awaited<ReturnType<typeof deleteApiKey>>;
@@ -1700,7 +1703,7 @@ export const revokeApiKey = defineServiceFn({
  */
 export const deactivateCompanyIntegration = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { id }) {
     if (
       !isIntegrationWhitelisted(id) &&
@@ -1746,7 +1749,7 @@ export const deactivateCompanyIntegration = defineServiceFn({
  */
 export const enableCompanyAuditLog = defineServiceFn({
   input: z.object({}),
-  permission: { update: "settings" },
+  permission: { "settings.auditLogs": "Edit" },
   async run(ctx) {
     try {
       await enableAuditLog(ctx.asCaller.supabase, ctx.company.id);
@@ -1774,7 +1777,7 @@ export const enableCompanyAuditLog = defineServiceFn({
  */
 export const disableCompanyAuditLog = defineServiceFn({
   input: z.object({}),
-  permission: { update: "settings" },
+  permission: { "settings.auditLogs": "Edit" },
   async run(ctx) {
     if (CONTROLLED_ENVIRONMENT) {
       return ctx.error(
@@ -1794,7 +1797,7 @@ export const disableCompanyAuditLog = defineServiceFn({
 /** A signed URL that downloads one of the company's audit log archives. */
 export const getAuditArchiveDownloadUrl = defineServiceFn({
   input: z.object({ archiveId: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.auditLogs": "Edit" },
   async run(ctx, { archiveId }) {
     try {
       const url = await getArchiveDownloadUrl(
@@ -1812,7 +1815,7 @@ export const getAuditArchiveDownloadUrl = defineServiceFn({
 /** A Stripe billing portal session for the company, for its subscription. */
 export const getBillingPortalUrl = defineServiceFn({
   input: z.object({}),
-  permission: { update: "settings" },
+  permission: { "settings.billing": "Edit" },
   async run(ctx) {
     try {
       const plans = await ctx.asCaller.supabase
@@ -1839,7 +1842,7 @@ export const getBillingPortalUrl = defineServiceFn({
  */
 export const transferCompanyOwnership = defineServiceFn({
   input: z.object({ newOwnerId: z.string().min(1) }),
-  permission: { update: "settings" },
+  permission: { "settings.billing": "Edit" },
   async run(ctx, { newOwnerId }) {
     const { error } = await ctx.asCaller.supabase
       .from("companyGroup")
@@ -1934,7 +1937,7 @@ export const transitionSyncOperations = defineServiceFn({
       .max(500, { message: "Select at most 500 operations at once" }),
     to: z.enum(["Pending", "Skipped"])
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { ids, to }) {
     const result = await service.transitionSyncOperations(
       ctx.asCaller.supabase,
@@ -1983,7 +1986,7 @@ export const suggestAccountMappings = defineServiceFn({
       })
     )
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { accounts, providerAccounts }) {
     const result = await suggestAccountMatchesWithAI({
       accounts,
@@ -2008,7 +2011,7 @@ export const saveAccountMappings = defineServiceFn({
       .array(accountMappingEntrySchema)
       .min(1, { message: "No account mappings to save" })
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { integrationId, mappings }) {
     const result = await upsertAccountMappings(ctx.asSystem.pg, {
       companyId: ctx.company.id,
@@ -2043,7 +2046,7 @@ export const updateDimensionSync = defineServiceFn({
     slots: z.array(dimensionSlotEntrySchema),
     onUnmappedDimensionValue: z.enum(["warn", "drop"])
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { integrationId, slots, onUnmappedDimensionValue }) {
     const providerTargets = await service.getProviderDimensionTargets(
       ctx.asCaller.supabase,
@@ -2117,7 +2120,7 @@ export const saveDimensionValueMappings = defineServiceFn({
       .array(dimensionValueMappingEntrySchema)
       .min(1, { message: "No dimension value mappings to save" })
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { integrationId, mappings }) {
     const failures: string[] = [];
     // ponytail: one upsert per value, as the match drawer confirms a page of
@@ -2162,7 +2165,7 @@ export const setIntegrationSyncEnabled = defineServiceFn({
     integrationId: z.string().min(1),
     syncEnabled: z.boolean()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, { integrationId, syncEnabled }) {
     const existing = await service.integrationSettings(ctx, integrationId);
     if (!existing?.active) {
@@ -2237,7 +2240,7 @@ export const updatePostingSync = defineServiceFn({
     periodLockPolicy: z.enum(["park", "redate"]),
     lockDate: z.string().optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(ctx, input) {
     const granularityBySourceType = new Map(
       input.sourceTypeConfigs.map((config) => {
@@ -2329,7 +2332,7 @@ export const saveOeeDeviceMapping = defineServiceFn({
     deviceName: z.string().min(1),
     workCenterId: z.string().optional()
   }),
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   async run(
     ctx,
     { integrationId, externalDeviceId, deviceName, workCenterId }
@@ -2404,7 +2407,7 @@ export const saveOeeDeviceMapping = defineServiceFn({
  */
 export const getAccountsPayableBillingAddress = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.purchasing": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2423,7 +2426,7 @@ export const getAccountsPayableBillingAddress = defineServiceFn({
  */
 export const getAccountsReceivableBillingAddress = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.invoicing": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2450,7 +2453,7 @@ export const getApiKeys = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { update: "users" },
+  permission: { "settings.apiKeys": "Edit" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2470,7 +2473,7 @@ export const getApiKeys = defineServiceFn({
  */
 export const getCompanies = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.companies": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2486,7 +2489,7 @@ export const getCompanies = defineServiceFn({
  */
 export const getEmployeeCompanies = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.companies": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2502,7 +2505,7 @@ export const getEmployeeCompanies = defineServiceFn({
  */
 export const getIndustries = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.company": "View" },
   async run(ctx) {
     return unwrap(ctx, await service.getIndustries(ctx.asCaller.supabase));
   }
@@ -2547,7 +2550,7 @@ export const getCompanySettings = defineServiceFn({
  */
 export const getConfig = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.webhooks": "View" },
   async run(ctx) {
     return unwrap(ctx, await service.getConfig(ctx.asCaller.supabase));
   }
@@ -2560,7 +2563,7 @@ export const getConfig = defineServiceFn({
  */
 export const getCurrentSequence = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.sequences": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2580,7 +2583,7 @@ export const getCurrentSequence = defineServiceFn({
  */
 export const getCustomField = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.customFields": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2596,7 +2599,7 @@ export const getCustomField = defineServiceFn({
  */
 export const getCustomFields = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.customFields": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2624,7 +2627,7 @@ export const getCustomFieldsTables = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "settings" },
+  permission: { "settings.customFields": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2644,7 +2647,7 @@ export const getCustomFieldsTables = defineServiceFn({
  */
 export const getIntegration = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.integrations": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2683,7 +2686,7 @@ export const getKanbanOutputSetting = defineServiceFn({
  */
 export const getNextSequence = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
-  permission: { update: "settings" },
+  permission: { "settings.sequences": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2716,7 +2719,7 @@ export const getPlans = defineServiceFn({
  */
 export const getSequence = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.sequences": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2744,7 +2747,7 @@ export const getSequences = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "settings" },
+  permission: { "settings.sequences": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2764,7 +2767,7 @@ export const getSequences = defineServiceFn({
  */
 export const getSequencesList = defineServiceFn({
   input: z.looseObject({ table: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.sequences": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2792,7 +2795,7 @@ export const getItemSerialSequences = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "settings" },
+  permission: { "settings.serialNumbers": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -2812,7 +2815,7 @@ export const getItemSerialSequences = defineServiceFn({
  */
 export const getItemSerialSequence = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.serialNumbers": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2846,7 +2849,7 @@ export const createItemSerialSequence = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "settings" },
+  permission: { "settings.serialNumbers": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2881,7 +2884,7 @@ export const updateItemSerialSequence = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "settings" },
+  permission: { "settings.serialNumbers": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2900,7 +2903,7 @@ export const updateItemSerialSequence = defineServiceFn({
  */
 export const deleteItemSerialSequence = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "settings" },
+  permission: { "settings.serialNumbers": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2920,7 +2923,7 @@ export const deleteItemSerialSequence = defineServiceFn({
  */
 export const getSubsidiaries = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.companies": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2936,7 +2939,7 @@ export const getSubsidiaries = defineServiceFn({
  */
 export const getSubsidiary = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.companies": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2952,7 +2955,7 @@ export const getSubsidiary = defineServiceFn({
  */
 export const getTerms = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.documentTemplates": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3016,7 +3019,7 @@ export const getDocumentTemplateConfig = defineServiceFn({
       "trackingLabel"
     ])
   }),
-  permission: { view: "settings" },
+  permission: { "settings.documentTemplates": "View" },
   async run(ctx, input) {
     return await service.getDocumentTemplateConfig(
       ctx.asCaller.supabase,
@@ -3033,7 +3036,7 @@ export const getDocumentTemplateConfig = defineServiceFn({
  */
 export const getDocumentSections = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "settings" },
+  permission: { "settings.documentTemplates": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3049,7 +3052,7 @@ export const getDocumentSections = defineServiceFn({
  */
 export const resolveSections = defineServiceFn({
   input: z.looseObject({ ids: z.array(z.string()) }),
-  permission: { update: "settings" },
+  permission: { "settings.documentTemplates": "Edit" },
   async run(ctx, input) {
     return await service.resolveSections(
       ctx.asCaller.supabase,
@@ -3066,7 +3069,7 @@ export const resolveSections = defineServiceFn({
  */
 export const getWebhook = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "settings" },
+  permission: { "settings.webhooks": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3090,7 +3093,7 @@ export const getWebhooks = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "settings" },
+  permission: { "settings.webhooks": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3133,7 +3136,7 @@ export const updateSequence = defineServiceFn({
       size: z.number().min(1).max(20).optional()
     })
   }),
-  permission: { update: "settings" },
+  permission: { "settings.sequences": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3157,7 +3160,7 @@ export const updateSequence = defineServiceFn({
  */
 export const detachOnshapeItem = defineServiceFn({
   input: z.object({ itemId: z.string().min(1) }),
-  permission: { update: "parts" },
+  permission: { "parts.parts": "Edit" },
   async run(ctx, { itemId }) {
     const removed = await ctx.asSystem.supabase
       .from("externalIntegrationMapping")
@@ -3190,7 +3193,7 @@ export const detachOnshapeItem = defineServiceFn({
  */
 export const saveOnshapePropertyMap = defineServiceFn({
   input: service.onshapePropertyMapInput,
-  permission: { update: "settings" },
+  permission: { "settings.integrations": "Edit" },
   run: (ctx, input) => service.saveOnshapePropertyMap(ctx, input)
 });
 
@@ -3204,7 +3207,7 @@ export const saveOnshapePropertyMap = defineServiceFn({
  */
 export const pushOnshapePart = defineServiceFn({
   input: service.onshapePartPushInput,
-  permission: { create: "parts", update: "parts" },
+  permission: { "parts.parts": "Edit" },
   run: (ctx, input) => service.pushOnshapePart(ctx, input)
 });
 
@@ -3218,7 +3221,7 @@ export const pushOnshapePart = defineServiceFn({
  */
 export const pushOnshapeAssembly = defineServiceFn({
   input: service.onshapeAssemblyPushInput,
-  permission: { create: "parts", update: "parts", delete: "parts" },
+  permission: { "parts.parts": "Full" },
   run: (ctx, input) => service.pushOnshapeAssembly(ctx, input)
 });
 
@@ -3231,6 +3234,6 @@ export const pushOnshapeAssembly = defineServiceFn({
  */
 export const pushOnshapeRelease = defineServiceFn({
   input: service.onshapeReleasePushInput,
-  permission: { create: "parts", update: "parts", delete: "parts" },
+  permission: { "parts.parts": "Full" },
   run: (ctx, input) => service.pushOnshapeRelease(ctx, input)
 });

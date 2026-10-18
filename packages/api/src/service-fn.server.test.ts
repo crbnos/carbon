@@ -44,7 +44,7 @@ function database() {
 }
 
 const productionView = {
-  production: { view: ["company-1"], create: [], update: [], delete: [] }
+  "production.jobs": { view: ["company-1"], create: [], update: [], delete: [] }
 };
 
 const contextWith = (
@@ -69,7 +69,7 @@ const ctx = contextWith({});
 describe("defineServiceFn", () => {
   const divide = defineServiceFn({
     input: z.object({ by: z.number().default(2) }),
-    permission: { view: "production" },
+    permission: { "production.jobs": "View" },
     async run(ctx, { by }) {
       if (by === 0) return ctx.error("rule", "Cannot divide by zero");
       if (by < 0) throw new Error("negative");
@@ -122,21 +122,21 @@ describe("the gate", () => {
   });
   const outer = defineServiceFn({
     input: z.object({}),
-    permission: { view: "production" },
+    permission: { "production.jobs": "View" },
     async run(ctx) {
       return inner(ctx, {});
     }
   });
   const accountingDelete = defineServiceFn({
     input: z.object({}),
-    permission: { delete: "accounting" },
+    permission: { "accounting.journalEntries": "Full" },
     async run() {
       return "deleted";
     }
   });
   const outerOfAccounting = defineServiceFn({
     input: z.object({}),
-    permission: { view: "production" },
+    permission: { "production.jobs": "View" },
     async run(ctx) {
       return accountingDelete(ctx, {});
     }
@@ -221,7 +221,10 @@ describe("the gate", () => {
       input: z.object({ kind: z.enum(["read", "write"]) }),
       permission: {
         by: "kind",
-        rules: { read: { view: "production" }, write: { update: "production" } }
+        rules: {
+          read: { "production.jobs": "View" },
+          write: { "production.jobs": "Edit" }
+        }
       },
       async run({ actor }) {
         return actor.type;
@@ -239,9 +242,9 @@ describe("the gate", () => {
       input: z.object({ kind: z.string() }),
       permission: {
         by: "kind",
-        rules: { read: { view: "production" } } as Record<
+        rules: { read: { "production.jobs": "View" } } as Record<
           string,
-          { view: string }
+          { "production.jobs": "View" }
         >
       },
       async run() {
@@ -260,11 +263,12 @@ describe("the gate", () => {
 
 describe("ctx.can", () => {
   it("answers for the actor's own permissions, and yes for the system", () => {
-    expect(ctx.can({ view: "production" })).toBe(true);
-    expect(ctx.can({ update: "production" })).toBe(false);
+    expect(ctx.can({ "production.jobs": "View" })).toBe(true);
+    expect(ctx.can({ "production.jobs": "Edit" })).toBe(false);
+    expect(ctx.can({ "production.batches": "View" })).toBe(false);
     expect(ctx.can("system")).toBe(false);
     const system = contextWith({}, { type: "system", onBehalfOf: "user-1" });
-    expect(system.can({ delete: "accounting" })).toBe(true);
+    expect(system.can({ "accounting.journalEntries": "Full" })).toBe(true);
   });
 });
 
@@ -326,7 +330,7 @@ describe("ctx.transaction", () => {
     const { pg, outcomes } = database();
     const write = defineServiceFn({
       input: z.object({}),
-      permission: { view: "production" },
+      permission: { "production.jobs": "View" },
       async run(ctx) {
         return ctx.asSystem.pg;
       }

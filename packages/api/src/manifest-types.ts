@@ -13,9 +13,11 @@ export type Classification = "READ" | "WRITE" | "DESTRUCTIVE";
 export type PermissionAction = "view" | "create" | "update" | "delete";
 
 /**
- * The permission an API-key caller must hold to invoke the operation.
- * `module` is `null` for operations that gate only on a valid key of the company
- * (e.g. `account`, `shared`) rather than a specific permission module.
+ * The permission an API-key caller must hold to invoke the operation: the
+ * module of the pages its gate names, and every action the gate's levels hold
+ * (Edit lists view, create and update; the gate checks the highest).
+ * `module` is `null` for operations that gate only on a valid key of the
+ * company, or on pages of several modules.
  */
 export interface ToolPermission {
   module: string | null;

@@ -28,6 +28,7 @@ import {
   importCsvFile
 } from "../app/modules/shared/shared.server";
 import { createWorkflow } from "../app/modules/workflows/workflows.server";
+import { pageClaims } from "./page-claims";
 
 const grants = (...entries: [module: string, action: string][]) => {
   const permissions: ModulePermissions = {};
@@ -42,7 +43,7 @@ const user = (permissions: ModulePermissions): Actor => ({
   type: "user",
   role: "employee",
   userId: "user-1",
-  permissions
+  permissions: pageClaims(permissions)
 });
 
 // Each of these refuses before it reads or writes anything: a handle that is
@@ -102,9 +103,10 @@ describe("importing a CSV file", () => {
     columnMappings: {}
   };
 
-  it("needs create as well as update on inventory to post stock", async () => {
+  // Edit on Inventory → Quantities, as the single-record adjustment needs.
+  it("needs Edit on Quantities to post stock: Create is refused", async () => {
     const result = await importCsvFile(
-      contextFor(user(grants(["inventory", "update"]))),
+      contextFor(user(grants(["inventory", "view"], ["inventory", "create"]))),
       stockImport
     );
     expect(result.error).toMatchObject({ category: "forbidden" });

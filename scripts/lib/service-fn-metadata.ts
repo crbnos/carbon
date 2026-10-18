@@ -19,6 +19,14 @@ import type {
   ToolPermission
 } from "@carbon/api";
 import {
+  ACTIONS,
+  type Level,
+  LEVELS,
+  levelHolds,
+  moduleOf,
+  pageById
+} from "../../packages/database/src/access";
+import {
   type CallExpression,
   Node,
   type ObjectLiteralExpression,
@@ -37,7 +45,18 @@ const ROUTER_FILE = path.resolve(
   "../../apps/erp/app/modules/router.server.ts"
 );
 
-const ACTIONS: PermissionAction[] = ["view", "create", "update", "delete"];
+const GATE_LEVELS: readonly string[] = LEVELS.filter(
+  (level) => level !== "None"
+);
+
+/** A property's name as written: `"inventory.receipts"` or `documents`. */
+function literalName(entry: Node): string | undefined {
+  if (!Node.isPropertyAssignment(entry)) return undefined;
+  const name = entry.getNameNode();
+  if (Node.isStringLiteral(name)) return name.getLiteralValue();
+  if (Node.isIdentifier(name)) return name.getText();
+  return undefined;
+}
 
 export interface ServiceFnLeaf {
   path: string[];
@@ -231,10 +250,11 @@ function stringsOf(node: Node | undefined): string[] | null {
 }
 
 /**
- * The API gate's view of the declared permission. The gate checks one module;
- * a permission naming several modules publishes module `null` (membership
- * only) and the function's own gate decides, as it does for `"employee"` (any
- * employee of the company). `"system"` and a keyed rule are refused.
+ * The API gate's view of the declared permission: the module of its pages and
+ * every action its levels hold. Pages of several modules publish module `null`
+ * (membership only) and the function's own gate decides, as it does for
+ * `"employee"` (any employee of the company). `"system"` and a keyed rule are
+ * refused.
  */
 /**
  * The permission's object literal: written in place, or a constant it names
@@ -286,33 +306,73 @@ export function leafPermission(leaf: ServiceFnLeaf): {
 
   if (!Node.isObjectLiteralExpression(value)) {
     throw new Error(
-      `${where}: a published service function names its permission ({ update: "<module>" }), not ${value.getText()}`
+      `${where}: a published service function names its permission ({ "<page>": "<Level>" }), not ${value.getText()}`
     );
   }
+  // A keyed rule publishes every page its rules name: the gate picks one
+  // rule by the input, the manifest describes them all.
+  let gates = [value];
   if (value.getProperty("by")) {
-    throw new Error(`${where}: a keyed permission cannot be published yet`);
+    const rules = value.getProperty("rules");
+    const literal =
+      rules && Node.isPropertyAssignment(rules)
+        ? permissionLiteral(rules.getInitializer())
+        : undefined;
+    const values =
+      literal && Node.isObjectLiteralExpression(literal)
+        ? literal
+            .getProperties()
+            .map((rule) =>
+              Node.isPropertyAssignment(rule)
+                ? permissionLiteral(rule.getInitializer())
+                : undefined
+            )
+        : [];
+    if (
+      !values.length ||
+      !values.every((v) => v !== undefined && Node.isObjectLiteralExpression(v))
+    ) {
+      throw new Error(
+        `${where}: a published keyed permission names a literal page gate for every value, not ${value.getText()}`
+      );
+    }
+    gates = values as ObjectLiteralExpression[];
   }
 
   const modules = new Set<string>();
-  const actions: PermissionAction[] = [];
-  for (const action of ACTIONS) {
-    const entry = value.getProperty(action);
-    if (!entry) continue;
-    const names = Node.isPropertyAssignment(entry)
+  const actions = new Set<PermissionAction>();
+  for (const entry of gates.flatMap((gate) => gate.getProperties())) {
+    const page = Node.isPropertyAssignment(entry)
+      ? (literalName(entry) ?? null)
+      : null;
+    const level = Node.isPropertyAssignment(entry)
       ? stringsOf(entry.getInitializer())
       : null;
-    if (!names || names.length === 0) {
-      throw new Error(`${where}: permission.${action} must be string literals`);
+    if (!page || !pageById(page)) {
+      throw new Error(
+        `${where}: permission names a page of the registry ({ "inventory.receipts": "Edit" }), not ${entry.getText()}`
+      );
     }
-    for (const name of names) modules.add(name);
-    actions.push(action);
+    if (level?.length !== 1 || !GATE_LEVELS.includes(level[0]!)) {
+      throw new Error(
+        `${where}: permission.${page} must be one of ${GATE_LEVELS.join(", ")}`
+      );
+    }
+    modules.add(moduleOf(page));
+    // A level lists every action it holds.
+    for (const action of ACTIONS) {
+      if (levelHolds(level[0] as Level, action)) actions.add(action);
+    }
   }
-  // Several modules publish as membership; the function's own gate decides.
+  const held = ACTIONS.filter((action) => actions.has(action));
+  // Pages of several modules publish as membership; the function's own gate decides.
   const [module] = modules;
   return {
     permission:
-      modules.size === 1 && module ? { module, actions } : { module: null, actions: [] },
-    actions
+      modules.size === 1 && module
+        ? { module, actions: held }
+        : { module: null, actions: [] },
+    actions: held
   };
 }
 

@@ -54,6 +54,7 @@ import {
   postInventoryCount
 } from "../app/modules/inventory/inventory.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 const ctx = () =>
   createServiceContext({
@@ -61,14 +62,14 @@ const ctx = () =>
       type: "user",
       role: "employee",
       userId: "user-1",
-      permissions: {
+      permissions: pageClaims({
         inventory: {
           view: ["company-1"],
           create: ["company-1"],
           update: ["company-1"],
           delete: []
         }
-      }
+      })
     },
     company: { id: "company-1", groupId: "group-1" },
     caller: {} as any,

@@ -41,7 +41,7 @@ const shiftInput = z.object({
  */
 export const createShift = defineServiceFn({
   input: shiftInput,
-  permission: { create: "people" },
+  permission: { "people.shifts": "Create" },
   async run(ctx, shift) {
     const created = await service.upsertShift(ctx.asCaller.supabase, {
       ...shift,
@@ -68,7 +68,7 @@ export const createShift = defineServiceFn({
 export const updateShift = defineServiceFn({
   input: shiftInput.extend({ id: z.string().min(1) }),
   // The route gated on create; the write runs under the update policy.
-  permission: { create: "people", update: "people" },
+  permission: { "people.shifts": "Edit" },
   async run(ctx, shift) {
     const updated = await service.upsertShift(ctx.asCaller.supabase, {
       ...shift,
@@ -106,7 +106,7 @@ export const updatePersonJob = defineServiceFn({
     employeeId: z.string().min(1),
     customFields: customFieldValues.optional()
   }),
-  permission: { update: "people" },
+  permission: { "people.employees": "Edit" },
   async run(ctx, { employeeId, ...job }) {
     const updated = await service.updateEmployeeJob(
       ctx.asSystem.pg,
@@ -135,7 +135,7 @@ export const updatePersonJob = defineServiceFn({
 /** Clock a person in. Refused when they are already clocked in. */
 export const clockInPerson = defineServiceFn({
   input: z.object({ employeeId: z.string().min(1) }),
-  permission: { view: "people" },
+  permission: { "people.timecards": "View" },
   async run(ctx, { employeeId }) {
     const result = await service.clockIn(ctx.asCaller.supabase, {
       employeeId,
@@ -154,7 +154,7 @@ export const clockOutPerson = defineServiceFn({
     employeeId: z.string().min(1),
     note: z.string().optional()
   }),
-  permission: { view: "people" },
+  permission: { "people.timecards": "View" },
   async run(ctx, { employeeId, note }) {
     const result = await service.clockOut(ctx.asCaller.supabase, {
       employeeId,
@@ -176,7 +176,7 @@ export const addPersonTimeCardEntry = defineServiceFn({
     clockIn: z.string().min(1),
     clockOut: z.string().optional()
   }),
-  permission: { view: "people" },
+  permission: { "people.timecards": "View" },
   async run(ctx, entry) {
     const created = await service.createTimeCardEntry(ctx.asCaller.supabase, {
       employeeId: entry.employeeId,
@@ -200,7 +200,7 @@ export const updatePersonTimeCardEntry = defineServiceFn({
     clockOut: z.string().optional(),
     note: z.string().optional()
   }),
-  permission: { view: "people" },
+  permission: { "people.timecards": "View" },
   async run(ctx, entry) {
     const updated = await service.updateTimeCardEntry(ctx.asCaller.supabase, {
       entryId: entry.entryId,
@@ -219,7 +219,7 @@ export const updatePersonTimeCardEntry = defineServiceFn({
 /** Delete a time card entry. */
 export const deletePersonTimeCardEntry = defineServiceFn({
   input: z.object({ entryId: z.string().min(1) }),
-  permission: { view: "people" },
+  permission: { "people.timecards": "View" },
   async run(ctx, { entryId }) {
     const deleted = await service.deleteTimeCardEntry(
       ctx.asCaller.supabase,
@@ -279,7 +279,7 @@ export const clockOutSelf = defineServiceFn({
  */
 export const deleteAttribute = defineServiceFn({
   input: z.looseObject({ attributeId: z.string() }),
-  permission: { delete: "people" },
+  permission: { "people.attributes": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -298,7 +298,7 @@ export const deleteAttribute = defineServiceFn({
  */
 export const deleteAttributeCategory = defineServiceFn({
   input: z.looseObject({ attributeCategoryId: z.string() }),
-  permission: { delete: "people" },
+  permission: { "people.attributes": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -317,7 +317,7 @@ export const deleteAttributeCategory = defineServiceFn({
  */
 export const deleteDepartment = defineServiceFn({
   input: z.looseObject({ departmentId: z.string() }),
-  permission: { delete: "people" },
+  permission: { "people.departments": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -336,7 +336,7 @@ export const deleteDepartment = defineServiceFn({
  */
 export const deleteHoliday = defineServiceFn({
   input: z.looseObject({ holidayId: z.string() }),
-  permission: { delete: "people" },
+  permission: { "people.holidays": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -355,7 +355,7 @@ export const deleteHoliday = defineServiceFn({
  */
 export const deleteShift = defineServiceFn({
   input: z.looseObject({ shiftId: z.string() }),
-  permission: { delete: "people" },
+  permission: { "people.shifts": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -371,7 +371,7 @@ export const deleteShift = defineServiceFn({
  */
 export const getAttribute = defineServiceFn({
   input: z.looseObject({ attributeId: z.string() }),
-  permission: { view: "people" },
+  permission: { "people.attributes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -398,7 +398,7 @@ export const getAttributeCategories = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { view: "people" },
+  permission: { "people.attributes": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -418,7 +418,7 @@ export const getAttributeCategories = defineServiceFn({
  */
 export const getAttributeCategory = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "people" },
+  permission: { "people.attributes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -453,7 +453,7 @@ export const getAttributeDataTypes = defineServiceFn({
  */
 export const getDepartment = defineServiceFn({
   input: z.looseObject({ departmentId: z.string() }),
-  permission: { view: "people" },
+  permission: { "people.departments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -488,7 +488,7 @@ export const getDepartmentsList = defineServiceFn({
  */
 export const getDepartmentsTree = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "people" },
+  permission: { "people.departments": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -504,7 +504,7 @@ export const getDepartmentsTree = defineServiceFn({
  */
 export const getEmployeeJob = defineServiceFn({
   input: z.looseObject({ employeeId: z.string() }),
-  permission: { view: "people" },
+  permission: { "people.employees": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -524,7 +524,7 @@ export const getEmployeeJob = defineServiceFn({
  */
 export const getEmployeeSummary = defineServiceFn({
   input: z.looseObject({ employeeId: z.string() }),
-  permission: { view: "people" },
+  permission: { "people.employees": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -544,7 +544,7 @@ export const getEmployeeSummary = defineServiceFn({
  */
 export const getHoliday = defineServiceFn({
   input: z.looseObject({ holidayId: z.string() }),
-  permission: { view: "people" },
+  permission: { "people.holidays": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -568,7 +568,7 @@ export const getHolidays = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "people" },
+  permission: { "people.holidays": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -588,7 +588,7 @@ export const getHolidays = defineServiceFn({
  */
 export const getHolidayYears = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "people" },
+  permission: { "people.holidays": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -612,7 +612,7 @@ export const getPeople = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "people" },
+  permission: { "people.employees": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -632,7 +632,7 @@ export const getPeople = defineServiceFn({
  */
 export const getShift = defineServiceFn({
   input: z.looseObject({ shiftId: z.string() }),
-  permission: { view: "people" },
+  permission: { "people.shifts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -656,7 +656,7 @@ export const getShifts = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "people" },
+  permission: { "people.shifts": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -676,7 +676,7 @@ export const getShifts = defineServiceFn({
  */
 export const getShiftsList = defineServiceFn({
   input: z.looseObject({ locationId: z.string().nullable() }),
-  permission: { view: "people" },
+  permission: { "people.shifts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -696,7 +696,7 @@ export const getShiftsList = defineServiceFn({
  */
 export const getEmployeeShifts = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "people" },
+  permission: { "people.employees": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -757,7 +757,7 @@ export const insertAttribute = defineServiceFn({
     listOptions: z.array(z.string()).optional(),
     canSelfManage: z.boolean()
   }),
-  permission: { create: "people" },
+  permission: { "people.attributes": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -780,7 +780,7 @@ export const insertAttributeCategory = defineServiceFn({
     emoji: z.string().optional(),
     public: z.boolean()
   }),
-  permission: { create: "people" },
+  permission: { "people.attributes": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -799,7 +799,7 @@ export const insertAttributeCategory = defineServiceFn({
  */
 export const insertEmployeeJob = defineServiceFn({
   input: z.looseObject({ id: z.string(), locationId: z.string() }),
-  permission: { create: "people" },
+  permission: { "people.employees": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -823,7 +823,7 @@ export const updateAttribute = defineServiceFn({
     listOptions: z.array(z.string()).optional(),
     canSelfManage: z.boolean()
   }),
-  permission: { update: "people" },
+  permission: { "people.attributes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -847,7 +847,7 @@ export const updateAttributeCategory = defineServiceFn({
     emoji: z.string().optional(),
     public: z.boolean()
   }),
-  permission: { update: "people" },
+  permission: { "people.attributes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -868,7 +868,7 @@ export const updateAttributeSortOrder = defineServiceFn({
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
-  permission: { update: "people" },
+  permission: { "people.attributes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -898,7 +898,7 @@ export const createDepartment = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "people" },
+  permission: { "people.departments": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -930,7 +930,7 @@ export const updateDepartment = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "people" },
+  permission: { "people.departments": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -960,7 +960,7 @@ export const createHoliday = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "people" },
+  permission: { "people.holidays": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -992,7 +992,7 @@ export const updateHoliday = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "people" },
+  permission: { "people.holidays": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1016,7 +1016,7 @@ export const createTimeCardEntry = defineServiceFn({
     clockOut: z.string().nullable().optional(),
     note: z.string().nullable().optional()
   }),
-  permission: { create: "people" },
+  permission: { "people.timecards": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1035,7 +1035,7 @@ export const createTimeCardEntry = defineServiceFn({
  */
 export const deleteTimeCardEntry = defineServiceFn({
   input: z.looseObject({ entryId: z.string() }),
-  permission: { delete: "people" },
+  permission: { "people.timecards": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1054,7 +1054,7 @@ export const deleteTimeCardEntry = defineServiceFn({
  */
 export const getOpenClockEntry = defineServiceFn({
   input: z.looseObject({ employeeId: z.string() }),
-  permission: { view: "people" },
+  permission: { "people.employees": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1074,7 +1074,7 @@ export const getOpenClockEntry = defineServiceFn({
  */
 export const getTimeCardEntry = defineServiceFn({
   input: z.looseObject({ entryId: z.string() }),
-  permission: { view: "people" },
+  permission: { "people.timecards": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1097,7 +1097,7 @@ export const getTimeCardEntries = defineServiceFn({
     from: z.string().optional(),
     to: z.string().optional()
   }),
-  permission: { view: "people" },
+  permission: { "people.timecards": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1124,7 +1124,7 @@ export const getTimecardEntries = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "people" },
+  permission: { "people.timecards": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -1149,7 +1149,7 @@ export const updateTimeCardEntry = defineServiceFn({
     clockOut: z.string().nullable().optional(),
     note: z.string().nullable().optional()
   }),
-  permission: { update: "people" },
+  permission: { "people.timecards": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,

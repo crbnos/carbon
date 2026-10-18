@@ -67,11 +67,15 @@ any other value export in a server file fails generation.
   The description is the summary sentence, then `@remarks`, then `@returns`.
   `@param name - text` becomes that input field's `description`, and naming a
   field the input does not have fails generation.
-- **Permission**: read off the literal `permission` and published in the
-  manifest. One module → `{ module, actions }`; several modules, or
-  `"employee"` (any employee of the company) → `{ module: null, actions: [] }`. The function's own
-  gate is the only check. `"system"` and a keyed permission (`{ by, rules }`)
-  cannot be published.
+- **Permission**: read off the literal `permission` (pages and levels,
+  `{ "inventory.receipts": "Edit" }`) and published in the manifest as the
+  pages' module and every action their levels hold (Edit → view, create,
+  update). Pages of one module → `{ module, actions }`; pages of several
+  modules, or `"employee"` (any employee of the company) →
+  `{ module: null, actions: [] }`. A keyed permission (`{ by, rules }`)
+  publishes every page its rules name. A page the registry does not have, or
+  a level that is not View, Create, Edit or Full, fails generation. The
+  function's own gate is the only check. `"system"` cannot be published.
 - **Classification**: only `view` → READ; any `delete` → DESTRUCTIVE; else
   WRITE. `@mcp read` forces READ, for a read gated on membership alone (`"employee"`);
   on a permission that names `create`, `update` or `delete` it fails

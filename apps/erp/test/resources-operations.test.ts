@@ -54,6 +54,7 @@ vi.mock("../app/modules/shared/shared.service", async (importOriginal) => {
 vi.mock("@carbon/jobs", () => ({ trigger }));
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 // Load the service first: shared.service imports it, and a module first loaded
 // while shared.service's mock is being built binds the unmocked one.
@@ -118,7 +119,12 @@ function client(answers: Record<string, unknown>) {
 function contextWith(answers: Record<string, unknown> = {}) {
   const db = client(answers);
   const ctx = createServiceContext({
-    actor: { type: "user", role: "employee", userId: "user-1", permissions },
+    actor: {
+      type: "user",
+      role: "employee",
+      userId: "user-1",
+      permissions: pageClaims(permissions)
+    },
     company: { id: "company-1", groupId: "group-1" },
     caller: db as never,
     system: () => db as never,

@@ -91,6 +91,7 @@ import {
   releaseJobs
 } from "../app/modules/production/production.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 const contextFor = (client: any) =>
   createServiceContext({
@@ -98,9 +99,9 @@ const contextFor = (client: any) =>
       type: "user",
       role: "employee",
       userId: "user-1",
-      permissions: {
+      permissions: pageClaims({
         production: { view: [], create: [], update: ["company-1"], delete: [] }
-      }
+      })
     },
     company: { id: "company-1", groupId: "group-1" },
     caller: client,
@@ -512,9 +513,9 @@ describe("releaseJobs", () => {
         type: "user",
         role: "employee",
         userId: "user-1",
-        permissions: {
+        permissions: pageClaims({
           production: { view: [], create: [], update: ["company-1"], delete: [] }
-        }
+        })
       },
       company: { id: "company-1", groupId: "group-1" },
       caller: clientFor([job("j1")]).client,
