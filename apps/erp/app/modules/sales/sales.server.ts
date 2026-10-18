@@ -3343,6 +3343,47 @@ export const deleteQuoteMaterialAndReprice = defineServiceFn({
     return { id };
   }
 });
+
+/**
+ * Remove several materials from a quote line's method, then reprice the line
+ * once.
+ *
+ * @remarks
+ * The bill of material's Delete Selected. The line must be this company's;
+ * only materials of that line are deleted.
+ */
+export const deleteQuoteMaterialsAndReprice = defineServiceFn({
+  input: z.object({
+    quoteId: z.string(),
+    quoteLineId: z.string(),
+    ids: z.array(z.string()).min(1)
+  }),
+  permission: { delete: "sales" },
+
+  async run(ctx, { quoteId, quoteLineId, ids }) {
+    const refused = await refuseUnlessOwned(ctx, "quoteLine", {
+      id: quoteLineId,
+      quoteId
+    });
+    if (refused) return refused;
+
+    const deleted = await ctx.asCaller.supabase
+      .from("quoteMaterial")
+      .delete()
+      .in("id", ids)
+      .eq("quoteLineId", quoteLineId)
+      .eq("companyId", ctx.company.id);
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete quote materials",
+        deleted.error
+      );
+    }
+    await service.repriceQuoteLine(ctx, { quoteId, quoteLineId });
+    return { ids };
+  }
+});
 const quoteOperationInput = quoteOperationValidator.safeExtend({
   quoteId: z.string(),
   quoteLineId: z.string(),
@@ -3461,6 +3502,62 @@ export const deleteQuoteOperationAndReprice = defineServiceFn({
     }
     if (operation.data) await service.repriceQuoteLine(ctx, operation.data);
     return { id };
+  }
+});
+
+/**
+ * Remove several operations from one quote line's method, then reprice the
+ * line once.
+ *
+ * @remarks
+ * The bill of process's Delete Selected. Every operation must belong to the
+ * same quote line.
+ */
+export const deleteQuoteOperationsAndReprice = defineServiceFn({
+  input: z.object({ ids: z.array(z.string()).min(1) }),
+  permission: { delete: "sales" },
+
+  async run(ctx, { ids }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const operations = await client
+      .from("quoteOperation")
+      .select("quoteId, quoteLineId")
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (operations.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the quote operations",
+        operations.error
+      );
+    }
+    const lines = new Map(
+      operations.data.map((op) => [op.quoteLineId, op.quoteId])
+    );
+    if (lines.size !== 1) {
+      return ctx.error(
+        "validation",
+        "The operations must belong to one quote line"
+      );
+    }
+    const [[quoteLineId, quoteId]] = lines;
+
+    const deleted = await client
+      .from("quoteOperation")
+      .delete()
+      .in("id", ids)
+      .eq("quoteLineId", quoteLineId)
+      .eq("companyId", companyId);
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete quote operations",
+        deleted.error
+      );
+    }
+    await service.repriceQuoteLine(ctx, { quoteId, quoteLineId });
+    return { ids };
   }
 });
 

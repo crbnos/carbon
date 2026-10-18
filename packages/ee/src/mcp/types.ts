@@ -12,7 +12,7 @@ const logger = getLogger("erp", "mcp");
 
 /** The minimum an MCP request context must carry for the engine — the caller
  *  (the app route) passes its full `AuthedContext`, which is a superset. The
- *  engine is generic over the concrete context (see `createMcpServer`), so the
+ *  engine is generic over the concrete context (see `serveMcpRequest`), so the
  *  app's dispatch (`deps.callOperation`) receives the real context unchanged;
  *  the engine itself only reads `client`/`companyId` (for the entitlement gate). */
 export type McpContext = {

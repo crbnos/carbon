@@ -7600,6 +7600,9 @@ msgstr "Supprimer la commande client"
 msgid "Delete Schedule"
 msgstr "Supprimer le calendrier"
 
+msgid "Delete Selected"
+msgstr "Supprimer la sélection"
+
 msgid "Delete Service"
 msgstr "Supprimer le service"
 
@@ -17890,6 +17893,13 @@ msgstr "Les envois depuis Onshape ne mettront plus à jour cet article. Envoyer 
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "Les envois ne remplacent que les champs que la page Champs d'Onshape définit à Mettre à jour à chaque envoi."
+msgstr "Les envois ne modifient pas les champs de cet article, donc les modifications apportées ici restent."
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr "Les envois depuis Onshape cessent de mettre à jour cet article. Envoyer à nouveau cette pièce depuis Onshape rétablit le lien."
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgstr "Les envois ne remplacent que les champs que la page Champs d'Onshape configure pour une mise à jour à chaque envoi."
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Mettre cette charge sur sa propre facture, en attente de Revue avant d'être comptabilisée. Sinon, elle va sur la prochaine facture de l'accord."
@@ -23911,6 +23921,9 @@ msgstr "La valeur comptable de l'unité n'est pas visible, donc son coût des ma
 
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "Les unités de mesure dans lesquelles vous achetez, stockez et vendez"
+
+msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
+msgstr ""
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "Le système d'amortissement fiscal américain avec des tables de classe de propriété IRS, exécuté comme un planning fiscal distinct aux côtés du planning comptable."

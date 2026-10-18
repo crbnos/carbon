@@ -1141,6 +1141,60 @@ export const deleteMethodOperation = defineServiceFn({
 });
 
 /**
+ * Delete several operations of one make method's bill of process.
+ *
+ * @remarks
+ * The bill of process's Delete Selected. Every operation must belong to the
+ * same make method; the method's release lock is checked once, as
+ * `deleteMethodOperation` checks it for one.
+ */
+export const deleteMethodOperations = defineServiceFn({
+  input: z.object({ ids: z.array(z.string()).min(1) }),
+  permission: { delete: "parts" },
+
+  async run(ctx, { ids }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const makeMethod = await service.getSingleMakeMethodId(
+      client,
+      companyId,
+      "methodOperation",
+      ids
+    );
+    if (makeMethod.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the operations",
+        makeMethod.error
+      );
+    }
+    if (!makeMethod.data) {
+      return ctx.error(
+        "validation",
+        "The operations must belong to one bill of process"
+      );
+    }
+    const lock = await service.checkRevisionLock(client, {
+      kind: "makeMethod",
+      id: makeMethod.data,
+      companyId
+    });
+    if (!lock.ok) return ctx.error("rule", lock.message);
+
+    const deleted = await client
+      .from("methodOperation")
+      .delete()
+      .in("id", ids)
+      .eq("makeMethodId", makeMethod.data)
+      .eq("companyId", companyId);
+    if (deleted.error) {
+      return ctx.error("internal", deleted.error.message, deleted.error);
+    }
+    return { ids, notice: lock.warn ? lock.message : undefined };
+  }
+});
+
+/**
  * Recalculate a made item's unit cost from its make method.
  *
  * @remarks
@@ -2003,6 +2057,64 @@ export const deleteMethodMaterial = defineServiceFn({
         )
       )
     );
+  }
+});
+
+/**
+ * Delete several materials of one make method's bill of material.
+ *
+ * @remarks
+ * The bill of material's Delete Selected. Every material must belong to the
+ * same make method; the method's release lock is checked once, as
+ * `deleteMethodMaterial` checks it for one.
+ */
+export const deleteMethodMaterials = defineServiceFn({
+  input: z.object({ ids: z.array(z.string()).min(1) }),
+  permission: { delete: "parts" },
+
+  async run(ctx, { ids }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const makeMethod = await service.getSingleMakeMethodId(
+      client,
+      companyId,
+      "methodMaterial",
+      ids
+    );
+    if (makeMethod.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the materials",
+        makeMethod.error
+      );
+    }
+    if (!makeMethod.data) {
+      return ctx.error(
+        "validation",
+        "The materials must belong to one bill of material"
+      );
+    }
+    const lock = await service.checkRevisionLock(client, {
+      kind: "makeMethod",
+      id: makeMethod.data,
+      companyId
+    });
+    if (!lock.ok) return ctx.error("rule", lock.message);
+
+    const deleted = await client
+      .from("methodMaterial")
+      .delete()
+      .in("id", ids)
+      .eq("makeMethodId", makeMethod.data)
+      .eq("companyId", companyId);
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete method material",
+        deleted.error
+      );
+    }
+    return { ids, notice: lock.warn ? lock.message : undefined };
   }
 });
 

@@ -7600,6 +7600,9 @@ msgstr "Kundenauftrag löschen"
 msgid "Delete Schedule"
 msgstr "Zeitplan löschen"
 
+msgid "Delete Selected"
+msgstr "Ausgewählte löschen"
+
 msgid "Delete Service"
 msgstr "Dienstleistung löschen"
 
@@ -8500,6 +8503,7 @@ msgstr "Jede physische Einheit erhält ihre eigene verfolgte Einheit und eine ei
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
 msgstr "Jeder Push ersetzt: {0}. Andere Änderungen bleiben erhalten."
+msgstr "Jeder Push ersetzt: {0}. Andere Änderungen bleiben bestehen."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Der Verkäufer (oder Ersteller) jeder Mietvereinbarung oder eines Vertrags erhält eine tägliche Zusammenfassung seiner Rechnungen."
@@ -17890,6 +17894,13 @@ msgstr "Übertragungen aus Onshape aktualisieren diesen Artikel nicht mehr. Wenn
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "Übertragungen ersetzen nur die Felder, die auf der Seite Felder von Onshape auf Bei jedem Push aktualisieren gesetzt sind."
+msgstr "Pushes ändern nicht die Felder dieses Artikels. Daher bleiben hier vorgenommene Änderungen bestehen."
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr "Pushes von Onshape stoppen die Aktualisierung dieses Artikels. Das erneute Pushen dieses Teils von Onshape stellt die Verknüpfung wieder her."
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgstr "Pushes ersetzen nur die Felder, die auf der Seite „Felder\" von Onshape auf „Bei jedem Push aktualisieren\" eingestellt sind."
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Legen Sie diese Gebühr auf einer separaten Rechnung ab, die vor der Buchung überprüft wird. Andernfalls wird sie auf der nächsten Rechnung der Vereinbarung eingefügt."
@@ -23911,6 +23922,9 @@ msgstr "Der Buchwert der Einheit ist für Sie nicht sichtbar, daher werden ihre 
 
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "Die Maßeinheiten, in denen Sie kaufen, lagern und verkaufen"
+
+msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
+msgstr ""
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "Das US-Steuersystem für Abschreibung mit IRS-Anlageklassen-Tabellen, das als separater Steuerstundungsplan neben dem Handelsabschreibungsplan läuft."

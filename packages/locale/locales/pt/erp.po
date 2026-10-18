@@ -7600,6 +7600,9 @@ msgstr "Excluir Pedido de venda"
 msgid "Delete Schedule"
 msgstr "Excluir Programação"
 
+msgid "Delete Selected"
+msgstr "Excluir Selecionados"
+
 msgid "Delete Service"
 msgstr "Excluir Serviço"
 
@@ -8500,6 +8503,7 @@ msgstr "Cada unidade física obtém sua própria entidade rastreada e número ú
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
 msgstr "Cada push substitui: {0}. Outras edições permanecem."
+msgstr "Cada envio substitui: {0}. Outras edições permanecem."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "O vendedor (ou criador) de cada contrato de aluguel ou contrato recebe um resumo diário de suas faturas."
@@ -17890,6 +17894,10 @@ msgstr "Os envios do Onshape param de atualizar este item. Enviar esta peça do 
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "Os envios substituem apenas os campos que a página Campos do Onshape define para atualizar a cada envio."
+msgstr "Os envios do Onshape deixam de atualizar este item. Enviar esta peça do Onshape novamente a revincula."
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgstr "Os envios substituem apenas os campos que a página Campos do Onshape define como Atualizar em cada envio."
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Coloque este encargo em sua própria fatura, retida para revisão antes de ser contabilizada. Caso contrário, será incluída na próxima fatura do contrato."
@@ -23911,6 +23919,9 @@ msgstr "O valor contábil da unidade não é visível para você, então seu cus
 
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "As unidades de medida que você compra, estoca e vende"
+
+msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
+msgstr ""
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "O sistema de depreciação fiscal dos EUA com tabelas de classe de propriedade do IRS, executado como um calendário fiscal separado ao lado do calendário contábil."

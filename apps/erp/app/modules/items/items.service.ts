@@ -9384,6 +9384,31 @@ export async function checkRevisionLock(
  * The first refusal among several locks, else the first warning. An update
  * that can move a row checks both the method it leaves and the one it joins.
  */
+/**
+ * The one make method that every row in `ids` belongs to, or null when the
+ * rows are missing or span several methods. A bulk bill of material or bill of
+ * process write checks one method's lock, so its rows must share it.
+ */
+export async function getSingleMakeMethodId(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  table: "methodMaterial" | "methodOperation",
+  ids: string[]
+) {
+  const rows = await client
+    .from(table)
+    .select("makeMethodId")
+    .in("id", ids)
+    .eq("companyId", companyId);
+  const makeMethodIds = new Set(
+    (rows.data ?? []).map((row) => row.makeMethodId)
+  );
+  return {
+    data: makeMethodIds.size === 1 ? [...makeMethodIds][0] : null,
+    error: rows.error
+  };
+}
+
 export async function checkRevisionLocks(
   client: SupabaseClient<Database>,
   companyId: string,

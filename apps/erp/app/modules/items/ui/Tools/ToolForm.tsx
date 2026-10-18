@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, TEMP_STAGING_BUCKET } from "@carbon/files";
+import { convertKbToString } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { ValidatedForm } from "@carbon/form";
 import {
@@ -24,7 +24,6 @@ import {
 import { getFileSizeLimit, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
@@ -45,7 +44,10 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { ReplenishmentSystemIcon, TrackingTypeIcon } from "~/components/Icons";
-import { UploadProgress } from "~/components/UploadProgress";
+import {
+  InterruptedUploadNotice,
+  UploadProgress
+} from "~/components/UploadProgress";
 import {
   useCompanySettings,
   useCurrencyDecimals,
@@ -86,7 +88,8 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
   const [modelIsUploading, setModelIsUploading] = useState(false);
   const [modelFile, setModelFile] = useState<File | null>(null);
   const { carbon } = useCarbon();
-  const { upload, runUpload } = useModelUpload();
+  const { upload, runUpload, interrupted, dismissInterrupted } =
+    useModelUpload("new-tool");
   const {
     company: { id: companyId },
     id: userId
@@ -98,18 +101,15 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
       setModelIsUploading(true);
     });
 
-    const modelId = nanoid();
-    const fileExtension = file.name.split(".").pop();
-    const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
-
     // Resumable (TUS) upload — a standard buffered upload times out on multi-GB
     // CAD files. The record goes in after it: inserting it starts the
-    // optimise, which reads the file.
-    const { error: uploadError } = await runUpload({
-      bucket: TEMP_STAGING_BUCKET,
-      path: fileName,
-      file
-    });
+    // optimise, which reads the file. The id and path are the upload's: a
+    // resumed upload keeps its own.
+    const {
+      error: uploadError,
+      modelId,
+      modelPath: fileName
+    } = await runUpload(file);
     const recordInsert = uploadError
       ? null
       : await carbon.from("modelUpload").insert({
@@ -406,6 +406,14 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                       <p className="text-xs text-muted-foreground group-hover:text-foreground">
                         {t`Supports ${supportedModelTypes.join(", ")} files`}
                       </p>
+                      {interrupted && (
+                        <InterruptedUploadNotice
+                          className="mt-3"
+                          name={interrupted.name}
+                          percent={interrupted.percent}
+                          onDismiss={dismissInterrupted}
+                        />
+                      )}
                     </Loading>
                   )}
                 </div>

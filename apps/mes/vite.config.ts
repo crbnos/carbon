@@ -2,20 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  applyDotenvToProcessEnv,
-  clientOnlyAlias,
-  linguiWithoutIdQuery,
-  precompressedAssets,
-  stackActivity,
-} from "@carbon/dev/vite";
+import { applyDotenvToProcessEnv, carbon } from "@carbon/dev/vite";
 import { reactRouter } from "@react-router/dev/vite";
-import { getConfig } from "@lingui/conf";
-import { lingui } from "@lingui/vite-plugin";
-import optimizeLocales from "@react-aria/optimize-locales-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
-import { defineConfig, PluginOption } from "vite";
+import { defineConfig } from "vite";
 
 export default defineConfig(({ command, mode, isSsrBuild }) => {
   applyDotenvToProcessEnv(mode, import.meta.dirname);
@@ -125,21 +116,25 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
       allowedHosts: [".ngrok-free.app", ".w.modal.host", ".w.modal.dev", ".dev", ".localhost", "host.docker.internal"],
     },
     plugins: [
-      stackActivity(),
       tailwindcss(),
-      linguiWithoutIdQuery(lingui({ macroTransform: true })),
       reactRouter(),
-      precompressedAssets({ command, mode }),
-      // react-aria ships strings for ~34 locales; keep the ones the app translates.
-      optimizeLocales.vite({ locales: getConfig().locales }),
-      // unpdf's bundled PDF.js engine is a dead lazy chunk in the browser, which
-      // runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it out there
-      // only: on the server it is the one engine PDF reading has.
-      clientOnlyAlias(
-        "unpdf/pdfjs",
-        path.resolve(import.meta.dirname, "app/ssr-shims/unpdf-pdfjs-stub.mjs")
-      ),
-    ] as PluginOption[],
+      carbon({
+        command,
+        mode,
+        locales: true,
+        precompress: true,
+        splitServer: true,
+        // unpdf's bundled PDF.js engine is a dead lazy chunk in the browser,
+        // which runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it
+        // out there only: on the server it is the one engine PDF reading has.
+        clientOnly: {
+          "unpdf/pdfjs": path.resolve(
+            import.meta.dirname,
+            "app/ssr-shims/unpdf-pdfjs-stub.mjs"
+          ),
+        },
+      }),
+    ],
     resolve: {
       tsconfigPaths: true,
       alias: {

@@ -5,13 +5,16 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteQuoteOperationAndReprice } from "~/modules/sales/sales.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
+// One `id` per operation, so the bill of process's Delete Selected is one
+// request and the line is repriced once.
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(deleteQuoteOperationAndReprice.input).request(
-    args
-  );
+  const input = await validator(
+    z.object({ id: zfd.repeatable(z.array(z.string().min(1)).min(1)) })
+  ).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.sales.deleteQuoteOperationAndReprice(input.data);
+  return api.sales.deleteQuoteOperationsAndReprice({ ids: input.data.id });
 }

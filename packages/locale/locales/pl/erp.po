@@ -7600,6 +7600,9 @@ msgstr "Usuń Zamówienie Sprzedaży"
 msgid "Delete Schedule"
 msgstr "Usuń harmonogram"
 
+msgid "Delete Selected"
+msgstr "Usuń wybrane"
+
 msgid "Delete Service"
 msgstr "Usuń usługę"
 
@@ -8500,6 +8503,7 @@ msgstr "Każda jednostka fizyczna otrzymuje swoją własną jednostkę śledzeni
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
 msgstr "Każde przesłanie zastępuje: {0}. Inne edycje pozostają."
+msgstr "Każde wysłanie zastępuje: {0}. Inne edycje pozostają."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Każdy sprzedawca umowy najmu lub umowy (lub jej twórca) otrzymuje codzienne podsumowanie swoich faktur."
@@ -17890,6 +17894,13 @@ msgstr "Przesłania z Onshape przestały aktualizować artykuł. Ponowne przesł
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "Przesłania zastępują tylko pola, które strona Pól Onshape ustawia na Aktualizuj przy każdym przesłaniu."
+msgstr "Wysłania nie zmieniają pól tego artykułu, dlatego edycje wykonane tutaj pozostają."
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr "Wysłania z Onshape przestają aktualizować ten artykuł. Wysłanie tej części z Onshape ponownie ją łączy."
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgstr "Wysłania zastępują tylko pola, które strona Pól Onshape ustawia na Aktualizuj przy każdym wysłaniu."
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Umieść tę opłatę na osobnej fakturze, zatrzymanej do przeglądu zanim zostanie zaksięgowana. W przeciwnym razie przejdzie na następną fakturę umowy."
@@ -23911,6 +23922,9 @@ msgstr "Wartość księgowa sztuki nie jest dla ciebie widoczna, dlatego jej kos
 
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "Jednostki miary, w których kupujesz, magazynujesz i sprzedajesz"
+
+msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
+msgstr ""
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "Amerykański system amortyzacji podatkowej z tabelami klas mienia IRS, uruchamiany jako oddzielny harmonogram podatkowy obok harmonogramu księgi."

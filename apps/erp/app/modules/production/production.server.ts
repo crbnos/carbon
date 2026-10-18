@@ -2444,6 +2444,41 @@ export const deleteJobMaterial = defineServiceFn({
 });
 
 /**
+ * Remove several materials from a job's methods.
+ *
+ * @remarks
+ * The bill of material's Delete Selected: `deleteJobMaterial` for many rows,
+ * with the job's operation dependencies recalculated once.
+ */
+export const deleteJobMaterials = defineServiceFn({
+  input: z.object({ jobId: z.string(), ids: z.array(z.string()).min(1) }),
+  permission: { delete: "production" },
+
+  async run(ctx, { jobId, ids }) {
+    const job = await service.requireJob(ctx, jobId);
+    if (job instanceof CarbonError) return job;
+    const deleted = await ctx.asCaller.supabase
+      .from("jobMaterial")
+      .delete()
+      .in("id", ids)
+      .eq("jobId", jobId)
+      .eq("companyId", ctx.company.id);
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete job materials",
+        deleted.error
+      );
+    }
+    const recalculated = await service.recalculateJob(ctx, jobId, {
+      requirements: false
+    });
+    if (recalculated) return recalculated;
+    return { ids };
+  }
+});
+
+/**
  * Add an operation to a job's method.
  *
  * @remarks
@@ -2576,6 +2611,58 @@ export const deleteJobOperation = defineServiceFn({
     });
     if (recalculated) return recalculated;
     return { id };
+  }
+});
+
+/**
+ * Remove several operations from a job's methods.
+ *
+ * @remarks
+ * The bill of process's Delete Selected: `deleteJobOperation` for many rows.
+ * Refused when any of them has recorded production events; the job's
+ * operation dependencies are recalculated once.
+ */
+export const deleteJobOperations = defineServiceFn({
+  input: z.object({ jobId: z.string(), ids: z.array(z.string()).min(1) }),
+  permission: { delete: "production" },
+
+  async run(ctx, { jobId, ids }) {
+    const job = await service.requireJob(ctx, jobId);
+    if (job instanceof CarbonError) return job;
+    const client = ctx.asCaller.supabase;
+    const events = await client
+      .from("productionEvent")
+      .select("id", { count: "exact", head: true })
+      .in("jobOperationId", ids)
+      .eq("companyId", ctx.company.id);
+    if (events.error) {
+      return ctx.error(
+        "internal",
+        "Failed to check for recorded production events",
+        events.error
+      );
+    }
+    if ((events.count ?? 0) > 0) {
+      return ctx.error(
+        "rule",
+        "Cannot delete an operation that has recorded production events"
+      );
+    }
+
+    const deleted = await client
+      .from("jobOperation")
+      .delete()
+      .in("id", ids)
+      .eq("jobId", jobId)
+      .eq("companyId", ctx.company.id);
+    if (deleted.error) {
+      return ctx.error("internal", deleted.error.message, deleted.error);
+    }
+    const recalculated = await service.recalculateJob(ctx, jobId, {
+      requirements: false
+    });
+    if (recalculated) return recalculated;
+    return { ids };
   }
 });
 

@@ -45,7 +45,8 @@ import {
   LuGitPullRequest,
   LuGitPullRequestCreate,
   LuGitPullRequestCreateArrow,
-  LuRedoDot
+  LuRedoDot,
+  LuTrash
 } from "react-icons/lu";
 import { useFetchers, useParams } from "react-router";
 import type { z } from "zod";
@@ -333,28 +334,37 @@ const QuoteBillOfMaterial = ({
     }));
   };
 
-  const onRemoveItem = async (id: string) => {
+  // One request for every saved row, so "Delete Selected" removes the checked
+  // rows together rather than racing one fetcher submit per row.
+  const onRemoveItems = (ids: string[]) => {
     if (!permissions.can("update", "sales") || isDisabled) return;
 
-    // Check if this is a temporary item (exists in temporaryItems state)
-    if (temporaryItems[id]) {
-      setTemporaryItems((prev) => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      fetcher.submit(new FormData(), {
+    const without = <T,>(state: Record<string, T>) =>
+      Object.fromEntries(
+        Object.entries(state).filter(([id]) => !ids.includes(id))
+      );
+
+    // Temporary rows were never saved: dropping them from state is enough.
+    setTemporaryItems(without);
+    const savedIds = ids.filter((id) => !temporaryItems[id]);
+    if (savedIds.length > 0) {
+      const formData = new FormData();
+      for (const id of savedIds) formData.append("id", id);
+      fetcher.submit(formData, {
         method: "post",
-        action: path.to.deleteQuoteMaterial(quoteId, lineId, id)
+        action: path.to.deleteQuoteMaterials(quoteId, lineId)
       });
     }
 
     setSelectedItemId(null);
-    setOrderState((prev) => {
-      const { [id]: _, ...rest } = prev;
-      return rest;
-    });
+    setOrderState(without);
+    setCheckedState(without);
   };
+
+  const onRemoveItem = (id: string) => onRemoveItems([id]);
+  const checkedIds = items
+    .filter((item) => item.checked)
+    .map((item) => item.id);
 
   const updateSortOrder = useDebounce(
     (updates: Record<string, number>) => {
@@ -483,14 +493,26 @@ const QuoteBillOfMaterial = ({
         </CardHeader>
 
         <CardAction>
-          <Button
-            ref={addItemButtonRef}
-            variant="secondary"
-            isDisabled={isDisabled || !permissions.can("update", "sales")}
-            onClick={onAddItem}
-          >
-            <Trans>Add Item</Trans>
-          </Button>
+          <div className="flex items-center gap-2">
+            {checkedIds.length > 1 && (
+              <Button
+                variant="destructive"
+                leftIcon={<LuTrash />}
+                isDisabled={isReadOnly}
+                onClick={() => onRemoveItems(checkedIds)}
+              >
+                <Trans>Delete Selected</Trans>
+              </Button>
+            )}
+            <Button
+              ref={addItemButtonRef}
+              variant="secondary"
+              isDisabled={isDisabled || !permissions.can("update", "sales")}
+              onClick={onAddItem}
+            >
+              <Trans>Add Item</Trans>
+            </Button>
+          </div>
         </CardAction>
       </HStack>
       <CardContent>

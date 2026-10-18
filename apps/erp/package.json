@@ -41,7 +41,6 @@
     "@internationalized/date": "catalog:",
     "@lingui/core": "catalog:",
     "@lingui/react": "catalog:",
-    "@modelcontextprotocol/sdk": "1.31.0",
     "@monaco-editor/react": "4.7.0",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",

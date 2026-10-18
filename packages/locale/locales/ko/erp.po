@@ -7600,6 +7600,9 @@ msgstr "수주 삭제"
 msgid "Delete Schedule"
 msgstr "일정 삭제"
 
+msgid "Delete Selected"
+msgstr "선택 삭제"
+
 msgid "Delete Service"
 msgstr "서비스 삭제"
 
@@ -8500,6 +8503,7 @@ msgstr "각 물리적 개는 자신의 추적 대상과 고유 번호를 받습�
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
 msgstr "각 푸시는 다음을 교체합니다: {0}. 다른 편집은 유지됩니다."
+msgstr "각 푸시는 다음을 대체합니다: {0}. 다른 편집은 유지됩니다."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "각 임차료 계약 또는 계약의 영업 담당자(또는 작성자)는 매일 해당 송장 요약을 받습니다."
@@ -17890,6 +17894,13 @@ msgstr "Onshape의 푸시가 이 품목 업데이트를 중지합니다. Onshape
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "푸시는 Onshape의 필드 페이지에서 모든 푸시마다 업데이트로 설정하는 필드만 교체합니다."
+msgstr "푸시는 이 품목의 필드를 변경하지 않으므로 여기서 만든 편집은 유지됩니다."
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr "Onshape에서의 푸시가 이 품목을 더 이상 업데이트하지 않습니다. Onshape에서 이 부품을 다시 푸시하면 다시 연결됩니다."
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgstr "푸시는 Onshape 필드 페이지에서 \"매번 푸시할 때 업데이트\"로 설정된 필드만 대체합니다."
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "이 비용을 검토 후 전기할 별도의 송장에 보관합니다. 그렇지 않으면 계약의 다음 송장에 포함됩니다."
@@ -23911,6 +23922,9 @@ msgstr "자산의 장부가액이 표시되지 않으므로, 그 매출원가 �
 
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "구매, 재고, 판매 시 사용하는 측정 단위"
+
+msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
+msgstr ""
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "미국 세금 감가상각 시스템으로, IRS 자산 클래스 테이블과 함께 별도의 세금 스케줄로 실행됩니다."

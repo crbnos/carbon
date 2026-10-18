@@ -90,6 +90,7 @@ import {
   LuSend,
   LuShieldX,
   LuSquareChartGantt,
+  LuTrash,
   LuTriangleAlert,
   LuWorkflow
 } from "react-icons/lu";
@@ -595,7 +596,7 @@ const JobBillOfProcess = ({
   const isReadOnly = isDisabled || !permissions.can("update", "production");
 
   const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "parts")) return;
+    if (isReadOnly) return;
     setCheckedState((prev) => ({
       ...prev,
       [id]: !prev[id]
@@ -624,33 +625,37 @@ const JobBillOfProcess = ({
     setSelectedItemId(operationId);
   };
 
-  const onRemoveItem = async (id: string) => {
-    if (!permissions.can("update", "production")) return;
+  // One request for every saved row, so "Delete Selected" removes the checked
+  // rows together rather than racing one fetcher submit per row.
+  const onRemoveItems = (ids: string[]) => {
+    if (isReadOnly) return;
 
-    const operation = operationsById.get(id);
-    if (!operation) return;
-
-    if (temporaryItems[id]) {
-      setTemporaryItems((prev) => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      deleteOperationFetcher.submit(
-        { id },
-        {
-          method: "post",
-          action: path.to.jobOperationsDelete(jobId)
-        }
+    const without = <T,>(state: Record<string, T>) =>
+      Object.fromEntries(
+        Object.entries(state).filter(([id]) => !ids.includes(id))
       );
+
+    // Temporary rows were never saved: dropping them from state is enough.
+    setTemporaryItems(without);
+    const savedIds = ids.filter((id) => !temporaryItems[id]);
+    if (savedIds.length > 0) {
+      const formData = new FormData();
+      for (const id of savedIds) formData.append("id", id);
+      deleteOperationFetcher.submit(formData, {
+        method: "post",
+        action: path.to.jobOperationsDelete(jobId)
+      });
     }
 
     setSelectedItemId(null);
-    setOrderState((prev) => {
-      const { [id]: _, ...rest } = prev;
-      return rest;
-    });
+    setOrderState(without);
+    setCheckedState(without);
   };
+
+  const onRemoveItem = (id: string) => onRemoveItems([id]);
+  const checkedIds = items
+    .filter((item) => item.checked)
+    .map((item) => item.id);
 
   const onReorder = (items: ItemWithData[]) => {
     if (!permissions.can("update", "production") || isDisabled) return;
@@ -1052,18 +1057,30 @@ const JobBillOfProcess = ({
         </CardHeader>
 
         <CardAction>
-          <Button
-            ref={addOperationButtonRef}
-            variant="secondary"
-            isDisabled={
-              !permissions.can("update", "production") ||
-              selectedItemId !== null ||
-              isDisabled
-            }
-            onClick={onAddItem}
-          >
-            <Trans>Add Operation</Trans>
-          </Button>
+          <div className="flex items-center gap-2">
+            {checkedIds.length > 1 && (
+              <Button
+                variant="destructive"
+                leftIcon={<LuTrash />}
+                isDisabled={isReadOnly}
+                onClick={() => onRemoveItems(checkedIds)}
+              >
+                <Trans>Delete Selected</Trans>
+              </Button>
+            )}
+            <Button
+              ref={addOperationButtonRef}
+              variant="secondary"
+              isDisabled={
+                !permissions.can("update", "production") ||
+                selectedItemId !== null ||
+                isDisabled
+              }
+              onClick={onAddItem}
+            >
+              <Trans>Add Operation</Trans>
+            </Button>
+          </div>
         </CardAction>
       </HStack>
       <CardContent>

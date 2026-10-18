@@ -9,14 +9,17 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+import { zfd } from "zod-form-data";
 
+// One `id` per operation, so the bill of process's Delete Selected is one
+// request.
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(z.object({ id: z.string().min(1) })).request(
-    args
-  );
+  const input = await validator(
+    z.object({ id: zfd.repeatable(z.array(z.string().min(1)).min(1)) })
+  ).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.items.deleteMethodOperation(input.data);
+  const result = await api.items.deleteMethodOperations({ ids: input.data.id });
   if (result.data?.notice) {
     return data(result, await flash(args.request, success(result.data.notice)));
   }

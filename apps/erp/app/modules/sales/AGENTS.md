@@ -96,8 +96,10 @@ the ones tagged `@mcp` as `sales_<name>`:
   `convertQuote`, `attachQuoteFile`; `createQuoteLine` / `updateQuoteLine` /
   `configureQuoteLine` / `copyItemMethodToQuoteLine` / `copyQuoteLineMethod`;
   `createQuoteMaterial` / `updateQuoteMaterial` / `deleteQuoteMaterialAndReprice` /
+  `deleteQuoteMaterialsAndReprice` (unpublished, Delete Selected: many rows, one reprice) /
   `copyItemMethodToQuoteMaterial`; `createQuoteOperation` / `updateQuoteOperation` /
-  `deleteQuoteOperationAndReprice`; `acceptDigitalQuote` / `rejectDigitalQuote`
+  `deleteQuoteOperationAndReprice` / `deleteQuoteOperationsAndReprice` (unpublished, Delete
+  Selected: operations of one line, one reprice); `acceptDigitalQuote` / `rejectDigitalQuote`
   (system only: the public share link runs them through `shareLinkContext`, `~/modules/service-context.server`)
 - Orders: `updateSalesOrderDetails`, `setSalesOrderStatus`, `updateSalesOrderField`,
   `confirmSalesOrder`; `createSalesOrderLine` / `updateSalesOrderLine` / `shipSalesOrderLine`;

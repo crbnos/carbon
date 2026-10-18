@@ -184,12 +184,11 @@ Refactor one at a time; each PR should leave the tree green.
   edge would be a `lib → ee → lib` cycle. (The job-side executors in
   `packages/jobs/src/workflows/` stay in jobs — Inngest-coupled, like backups.)
 - ✅ **MCP** — protocol engine moved to `packages/ee/src/mcp/` (`@carbon/ee/mcp`
-  pure logic; `@carbon/ee/mcp.server` = `server.ts`). `createMcpServer` embeds
+  pure logic; `@carbon/ee/mcp.server` = `server.ts`). `serveMcpRequest` embeds
   `requireEntitlement("MCP")` (route catches `EntitlementError` → 402), replacing
   the former deletable in-route `companyHasFeature`. The dispatch, tool manifest and
   generated `tool-metadata.json` STAY in the app (derive from `~/modules/*`) and are
-  INJECTED as `deps`. Note: `server.ts` is `@ts-nocheck`, so the live endpoint needs a
-  smoke test before merge (typecheck can't cover its body).
+  INJECTED as `deps`.
 - Note (context): Planning was NOT a gated feature — MRP + scheduling are now the
   community `@carbon/planning` package.
 - ⬜ Still on `requirePlan`/`companyHasPlan`, pending an architecture/policy decision

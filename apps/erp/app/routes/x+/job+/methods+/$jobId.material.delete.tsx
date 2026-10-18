@@ -5,10 +5,19 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
+// One `id` per material, so the bill of material's Delete Selected is one
+// request and the job is recalculated once.
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator().request(args, { params: ["jobId", "id"] });
+  const input = await validator(
+    z.object({ id: zfd.repeatable(z.array(z.string().min(1)).min(1)) })
+  ).request(args, { params: ["jobId"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.production.deleteJobMaterial(input.params);
+  return api.production.deleteJobMaterials({
+    jobId: input.params.jobId,
+    ids: input.data.id
+  });
 }

@@ -6,16 +6,18 @@ import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
+import { zfd } from "zod-form-data";
 
+// One `id` per operation, so the bill of process's Delete Selected is one
+// request and the job is recalculated once.
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(z.object({ id: z.string().min(1) })).request(
-    args,
-    { params: ["jobId"] }
-  );
+  const input = await validator(
+    z.object({ id: zfd.repeatable(z.array(z.string().min(1)).min(1)) })
+  ).request(args, { params: ["jobId"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.production.deleteJobOperation({
+  return api.production.deleteJobOperations({
     jobId: input.params.jobId,
-    id: input.data.id
+    ids: input.data.id
   });
 }
