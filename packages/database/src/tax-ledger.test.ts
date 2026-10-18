@@ -192,8 +192,64 @@ describe("buildTaxLedgerRows", () => {
       taxAmount: 200,
       recoverableAmount: 100,
       recoverablePercent: 0.5,
-      supplierId: "supp"
+      supplierId: "supp",
+      selfAssessed: false
     });
+  });
+
+  it("records a self-assessed line on every one of its rows, and a void keeps it", () => {
+    const rows = buildTaxLedgerRows({
+      ...base,
+      source: "Purchase",
+      documentType: "Purchase Invoice",
+      customerId: null,
+      supplierId: "supp",
+      lines: [
+        {
+          documentLineId: "line",
+          taxCodeId: "use-tax",
+          taxableBase: 1000,
+          components: splitLineTax({
+            base: 1000,
+            lineTax: 82.5,
+            components: [
+              component(),
+              component({
+                id: "city",
+                name: "City of Austin",
+                taxPercent: 0.02,
+                sequence: 2
+              })
+            ],
+            scale: SCALE
+          }),
+          taxPercent: 0.0825,
+          taxAmount: 82.5,
+          exempt: null,
+          selfAssessed: true
+        },
+        {
+          documentLineId: "other",
+          taxCodeId: null,
+          taxableBase: 100,
+          components: [],
+          taxPercent: 0.1,
+          taxAmount: 10,
+          exempt: null
+        }
+      ]
+    });
+    expect(rows.map((r) => [r.documentLineId, r.selfAssessed])).toEqual([
+      ["line", true],
+      ["line", true],
+      ["other", false]
+    ]);
+    const voided = negateTaxLedgerRows(rows, {
+      journalId: "void-jrn",
+      postingDate: "2026-10-17",
+      createdBy: "user"
+    });
+    expect(voided.map((r) => r.selfAssessed)).toEqual([true, true, false]);
   });
 
   it("negates every amount for a void", () => {

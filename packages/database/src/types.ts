@@ -68951,6 +68951,7 @@ export type Database = {
           postingDate: string
           recoverableAmount: number
           recoverablePercent: number
+          selfAssessed: boolean
           source: Database["public"]["Enums"]["taxLedgerSource"]
           supplierId: string | null
           taxableAmount: number
@@ -68984,6 +68985,7 @@ export type Database = {
           postingDate: string
           recoverableAmount?: number
           recoverablePercent?: number
+          selfAssessed?: boolean
           source: Database["public"]["Enums"]["taxLedgerSource"]
           supplierId?: string | null
           taxableAmount?: number
@@ -69017,6 +69019,7 @@ export type Database = {
           postingDate?: string
           recoverableAmount?: number
           recoverablePercent?: number
+          selfAssessed?: boolean
           source?: Database["public"]["Enums"]["taxLedgerSource"]
           supplierId?: string | null
           taxableAmount?: number

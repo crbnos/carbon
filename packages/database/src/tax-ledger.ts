@@ -41,6 +41,10 @@ export type TaxLedgerLine = {
     reason: Database["public"]["Enums"]["taxExemptionReason"] | null;
     certificateNumber: string | null;
   } | null;
+  /** The company owes the tax itself (a Reverse Charge purchase): the
+   *  supplier charged none. Recorded on the row so the liability report
+   *  never reads the live tax code. False when omitted. */
+  selfAssessed?: boolean;
 };
 
 export type BuildTaxLedgerRowsInput = {
@@ -114,7 +118,8 @@ export function buildTaxLedgerRows(
       currencyCode: input.currencyCode,
       exchangeRate: input.exchangeRate,
       taxExemptionReason: line.exempt?.reason ?? null,
-      exemptionCertificateNumber: line.exempt?.certificateNumber ?? null
+      exemptionCertificateNumber: line.exempt?.certificateNumber ?? null,
+      selfAssessed: line.selfAssessed ?? false
     };
   };
 

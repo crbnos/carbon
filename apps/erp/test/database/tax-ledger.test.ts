@@ -13,11 +13,13 @@ import {
   journalLinesOf,
   newJournals,
   seed,
+  stampCutover,
   USER,
   unwrap
 } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
 import { databaseTest } from "./fixtures/local-database";
+import { getTaxLiability } from "~/modules/accounting/accounting.service";
 import {
   postPurchaseInvoice,
   postSalesInvoice
@@ -32,7 +34,8 @@ async function taxCode(
     name: string;
     taxPercent: number;
     recoverablePercent?: number;
-  }>
+  }>,
+  calculationType: "Normal" | "Reverse Charge" = "Normal"
 ): Promise<string> {
   const id = `${f.prefix}-tax-${key}`;
   await seed(f, async (trx) => {
@@ -46,7 +49,13 @@ async function taxCode(
       .execute();
     await trx
       .insertInto("taxCode")
-      .values({ id, name: id, companyId: f.companyId, createdBy: USER })
+      .values({
+        id,
+        name: id,
+        calculationType,
+        companyId: f.companyId,
+        createdBy: USER
+      })
       .execute();
     await trx
       .insertInto("taxCodeComponent")
@@ -75,6 +84,7 @@ async function ledgerOf(f: Fixture, documentId: string) {
       "taxableAmount",
       "taxAmount",
       "recoverableAmount",
+      "selfAssessed",
       "journalId"
     ])
     .where("companyId", "=", f.companyId)
@@ -250,6 +260,101 @@ databaseTest(
 
       const [row] = await ledgerOf(f, invoiceId);
       expect(row).toMatchObject({ taxAmount: 200, recoverableAmount: 200 });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a reverse-charge purchase invoice records its rows as self-assessed, and the liability report keeps them after the code changes",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stampCutover(f);
+      const code = await taxCode(
+        f,
+        "use-tax",
+        [{ name: "Use Tax", taxPercent: 0.0825 }],
+        "Reverse Charge"
+      );
+      const invoiceId = `${f.prefix}-purchase-invoice-rc`;
+      await seed(f, async (trx) => {
+        const interaction = await trx
+          .insertInto("supplierInteraction")
+          .values({ supplierId: f.supplierId, companyId: f.companyId })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("purchaseInvoice")
+          .values({
+            id: invoiceId,
+            invoiceId: "PI-RC",
+            supplierId: f.supplierId,
+            supplierInteractionId: interaction.id,
+            currencyCode: "USD",
+            exchangeRate: 1,
+            status: "Draft",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("purchaseInvoiceDelivery")
+          .values({ id: invoiceId, companyId: f.companyId })
+          .execute();
+        await trx
+          .insertInto("purchaseInvoiceLine")
+          .values({
+            invoiceId,
+            invoiceLineType: "G/L Account",
+            accountId: f.account("supplies"),
+            quantity: 1,
+            supplierUnitPrice: 1000,
+            supplierTaxAmount: 0,
+            taxPercent: 0.0825,
+            taxCodeId: code,
+            exchangeRate: 1,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+
+      unwrap(
+        await invokePosting(
+          handlesOf(f.ctx),
+          "post-purchase-invoice",
+          { type: "post", invoiceId },
+          postPurchaseInvoice
+        )
+      );
+      const rows = await ledgerOf(f, invoiceId);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        componentName: "Use Tax",
+        taxAmount: 82.5,
+        selfAssessed: true
+      });
+
+      const selfAssessedTax = async () =>
+        (
+          await getTaxLiability(f.db, f.companyId, {
+            startDate: f.cutoverDate,
+            endDate: f.periodEnd
+          })
+        ).find((row) => row.componentName === "Use Tax")?.selfAssessedTax;
+      expect(await selfAssessedTax()).toBe(82.5);
+
+      // The ledger is a snapshot: a code edited after posting changes no
+      // past figure.
+      await f.db
+        .updateTable("taxCode")
+        .set({ calculationType: "Normal" })
+        .where("id", "=", code)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(await selfAssessedTax()).toBe(82.5);
     } finally {
       await f.cleanup();
     }

@@ -665,7 +665,15 @@ describe("recoverable purchase tax", () => {
       taxesShipping: false,
       components: [{ ...vat(0), id: "tx", taxPercent: 0.0825 }]
     };
-    const line = (taxAmount: number) => ({
+    const line = (
+      taxAmount: number,
+      position: Partial<{
+        id: string;
+        sortOrder: number;
+        createdAt: string;
+        description: string | null;
+      }> = {}
+    ) => ({
       id: "l",
       invoiceLineType: "Part",
       conversionFactor: 1,
@@ -673,7 +681,11 @@ describe("recoverable purchase tax", () => {
       unitPrice: 1000,
       shippingCost: 0,
       taxAmount,
-      taxCodeId: "use-tax"
+      taxCodeId: "use-tax",
+      sortOrder: 1,
+      createdAt: "2026-10-01T00:00:00+00:00",
+      description: null as string | null,
+      ...position
     });
 
     it("self-assesses from the components and keeps AP net", () => {
@@ -711,6 +723,44 @@ describe("recoverable purchase tax", () => {
       expect(() =>
         withPurchaseTax([line(82.5)], new Map([["use-tax", useTax]]))
       ).toThrow(/Clear the line's tax amount/);
+    });
+
+    it("names the refused line as the invoice lists it, never by its id", () => {
+      // Listed by sortOrder, then createdAt: the freight line is line 2
+      // though it was created first.
+      const lines = [
+        line(50, {
+          id: "freight-id",
+          sortOrder: 2,
+          createdAt: "2026-10-01T00:00:00+00:00",
+          description: "Freight services"
+        }),
+        line(0, {
+          id: "first-id",
+          sortOrder: 1,
+          createdAt: "2026-10-02T00:00:00+00:00",
+          description: "Ship together"
+        }),
+        line(0, {
+          id: "late-id",
+          sortOrder: 2,
+          createdAt: "2026-10-03T00:00:00+00:00"
+        })
+      ];
+      const refusal = () =>
+        withPurchaseTax(lines, new Map([["use-tax", useTax]]));
+      expect(refusal).toThrow(
+        "Line 2 (Freight services) has a Reverse Charge tax code and a tax amount of 50. A supplier charges no tax on a reverse charge, and Carbon self-assesses it when it posts. Clear the line's tax amount."
+      );
+      expect(refusal).not.toThrow(/freight-id/);
+
+      // No description: the position alone.
+      expect(() =>
+        withPurchaseTax(
+          [lines[1]!, { ...lines[2]!, taxAmount: 10 }],
+          new Map([["use-tax", useTax]])
+        )
+      ).toThrow(/^Line 2 has a Reverse Charge tax code/);
     });
   });
 

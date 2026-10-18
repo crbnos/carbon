@@ -16527,6 +16527,42 @@ type TaxedPurchaseLine = {
   taxCodeId: string | null;
 };
 
+/** What names a purchase line to the user: where the invoice lists it. */
+type PositionedPurchaseLine = {
+  id: string;
+  /** DOUBLE PRECISION: node-postgres hands it over as a string. */
+  sortOrder: number | string;
+  /** A timestamp: a string through PostgREST, a `Date` through Kysely. */
+  createdAt: string | Date;
+  description?: string | null;
+};
+
+/** The moment a row was created, for ordering only (an absolute instant). */
+function createdInstant(value: string | Date): number {
+  return value instanceof Date ? value.getTime() : Date.parse(value);
+}
+
+/**
+ * "Line 2 (Freight services)": the line's 1-based position among the
+ * invoice's lines in the order the purchase invoice lists them
+ * (`getPurchaseInvoiceLines`: sortOrder, then createdAt), and its
+ * description when it has one. `lines` must be every line of the invoice.
+ */
+function purchaseInvoiceLineLabel(
+  line: PositionedPurchaseLine,
+  lines: ReadonlyArray<PositionedPurchaseLine>
+): string {
+  const ordered = [...lines].sort(
+    (a, b) =>
+      Number(a.sortOrder) - Number(b.sortOrder) ||
+      createdInstant(a.createdAt) - createdInstant(b.createdAt) ||
+      a.id.localeCompare(b.id)
+  );
+  const position = ordered.findIndex((other) => other.id === line.id) + 1;
+  const description = line.description?.trim();
+  return description ? `Line ${position} (${description})` : `Line ${position}`;
+}
+
 /**
  * Each purchase line with its tax split by its code's components (base
  * amounts): the supplier's tax for a Normal code, self-assessed tax for a
@@ -16535,9 +16571,12 @@ type TaxedPurchaseLine = {
  *
  * Refuses a Reverse Charge line that carries a tax amount: the supplier
  * charges no tax on a reverse charge, so that amount would be paid to the
- * supplier AND self-assessed — the same tax twice.
+ * supplier AND self-assessed — the same tax twice. `lines` is every line of
+ * one invoice, so the refusal can name the line as the invoice lists it.
  */
-export function withPurchaseTax<T extends TaxedPurchaseLine>(
+export function withPurchaseTax<
+  T extends TaxedPurchaseLine & PositionedPurchaseLine
+>(
   lines: ReadonlyArray<T>,
   taxCodes: ReadonlyMap<string, TaxCodeInput>
 ): Array<T & Pick<PurchasePostingLine, "taxParts" | "selfAssessedParts">> {
@@ -16549,7 +16588,7 @@ export function withPurchaseTax<T extends TaxedPurchaseLine>(
     if (code.calculationType === "Reverse Charge") {
       if (!equals(line.taxAmount ?? 0, 0)) {
         throw new InvalidInputError(
-          `Purchase invoice line ${line.id} has a Reverse Charge tax code and a tax amount of ${line.taxAmount}. A supplier charges no tax on a reverse charge, and Carbon self-assesses it when it posts. Clear the line's tax amount.`
+          `${purchaseInvoiceLineLabel(line, lines)} has a Reverse Charge tax code and a tax amount of ${line.taxAmount}. A supplier charges no tax on a reverse charge, and Carbon self-assesses it when it posts. Clear the line's tax amount.`
         );
       }
       return {
@@ -16596,7 +16635,8 @@ export function purchaseTaxLedgerLines(
         taxAmount: selfAssessed
           ? (amounts?.selfAssessedTaxBase ?? 0)
           : (line.taxAmount ?? 0),
-        exempt: null
+        exempt: null,
+        selfAssessed
       };
     });
 }
@@ -16759,7 +16799,8 @@ export async function negateDocumentTaxLedger(
       "currencyCode",
       "exchangeRate",
       "taxExemptionReason",
-      "exemptionCertificateNumber"
+      "exemptionCertificateNumber",
+      "selfAssessed"
     ])
     .where("companyId", "=", args.companyId)
     .where("documentType", "=", args.documentType)

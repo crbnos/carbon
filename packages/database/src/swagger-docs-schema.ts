@@ -63169,6 +63169,9 @@ export default {
             $ref: "#/parameters/rowFilter.taxLedger.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.taxLedger.selfAssessed"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -63315,6 +63318,9 @@ export default {
             $ref: "#/parameters/rowFilter.taxLedger.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.taxLedger.selfAssessed"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -63413,6 +63419,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.taxLedger.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.taxLedger.selfAssessed"
           },
           {
             $ref: "#/parameters/body.taxLedger"
@@ -149044,7 +149053,8 @@ export default {
         "documentTaxableAmount",
         "documentTaxAmount",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "selfAssessed"
       ],
       properties: {
         id: {
@@ -149192,6 +149202,11 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        selfAssessed: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -203166,6 +203181,12 @@ export default {
     },
     "rowFilter.taxLedger.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.taxLedger.selfAssessed": {
+      name: "selfAssessed",
       required: false,
       in: "query",
       type: "string"

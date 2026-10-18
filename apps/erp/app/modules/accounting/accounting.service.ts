@@ -22263,9 +22263,11 @@ export type TaxLiabilityRow = {
  * Tax collected and recoverable per authority and component, from the tax
  * ledger of Posted journals dated in the range (spec "Tax Liability
  * report"). Sales rows give the collected tax and the taxable and exempt
- * sales; purchase rows give the recoverable tax, and on a Reverse Charge
- * code the self-assessed tax owed. A line taxed by a bare percent (no code)
- * has no authority or component.
+ * sales; purchase rows give the recoverable tax, and a row posted as
+ * self-assessed (a Reverse Charge code) the tax owed. That flag was
+ * recorded at posting, so editing or deleting a code later changes no past
+ * figure. A line taxed by a bare percent (no code) has no authority or
+ * component.
  */
 export async function getTaxLiability(
   db: Kysely<KyselyDatabase>,
@@ -22290,11 +22292,6 @@ export async function getTaxLiability(
         .onRef("taxAuthority.id", "=", "taxLedger.taxAuthorityId")
         .onRef("taxAuthority.companyId", "=", "taxLedger.companyId")
     )
-    .leftJoin("taxCode", (join) =>
-      join
-        .onRef("taxCode.id", "=", "taxLedger.taxCodeId")
-        .onRef("taxCode.companyId", "=", "taxLedger.companyId")
-    )
     .select([
       "taxLedger.taxAuthorityId",
       "taxAuthority.name as authorityName",
@@ -22303,7 +22300,7 @@ export async function getTaxLiability(
       sumWhere("Sales", "exemptAmount").as("exemptSales"),
       sumWhere("Sales", "taxAmount").as("taxCollected"),
       sumWhere("Purchase", "taxableAmount").as("taxablePurchases"),
-      sql<number>`coalesce(sum(case when "taxLedger"."source" = 'Purchase' and "taxCode"."calculationType" = 'Reverse Charge' then "taxLedger"."taxAmount" else 0 end), 0)`.as(
+      sql<number>`coalesce(sum(case when "taxLedger"."source" = 'Purchase' and "taxLedger"."selfAssessed" then "taxLedger"."taxAmount" else 0 end), 0)`.as(
         "selfAssessedTax"
       ),
       sumWhere("Purchase", "recoverableAmount").as("recoverableTax")
