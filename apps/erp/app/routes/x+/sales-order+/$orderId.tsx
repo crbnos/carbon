@@ -13,7 +13,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCustomer } from "~/modules/sales/sales.service";
 import {
   SalesOrderExplorer,
   SalesOrderHeader,
@@ -59,7 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "sales",
     bypassRls: true
   });
-  const { client, companyId } = auth;
+  const { companyId } = auth;
   const api = carbonFor(auth);
 
   const { orderId } = params;
@@ -98,7 +97,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       opportunityId: salesOrder.data?.opportunityId ?? null
     }),
     salesOrder.data?.customerId
-      ? getCustomer(client, salesOrder.data.customerId)
+      ? api.sales.getCustomer({ customerId: salesOrder.data.customerId })
       : null,
     invoiceIds.length > 0
       ? api.sales.getSalesOrderInvoicesByIds({ invoiceIds })

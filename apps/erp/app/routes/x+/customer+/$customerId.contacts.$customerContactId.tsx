@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import {
   assertIsPost,
   badRequest,
@@ -16,24 +17,22 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { customerContactValidator } from "~/modules/sales/sales.models";
-import {
-  getCustomerContact,
-  updateCustomerContact
-} from "~/modules/sales/sales.service";
+import { updateCustomerContact } from "~/modules/sales/sales.service";
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const api = carbonFor(auth);
 
   const { customerId, customerContactId } = params;
   if (!customerId) throw notFound("customerId not found");
   if (!customerContactId) throw notFound("customerContactId not found");
 
-  const contact = await getCustomerContact(client, customerContactId);
+  const contact = await api.sales.getCustomerContact({ customerContactId });
   if (contact.error) {
     throw redirect(
       path.to.customerContacts(customerId),

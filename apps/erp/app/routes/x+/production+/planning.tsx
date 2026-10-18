@@ -21,10 +21,7 @@ import {
   PLANNING_DRAWER_PARAM,
   resolvePlanningActionScope
 } from "~/modules/production/production.models";
-import {
-  getPlanningActions,
-  getProductionPlanning
-} from "~/modules/production/production.service";
+import { getPlanningActions } from "~/modules/production/production.service";
 import type { ProductionPlanningItem } from "~/modules/production/types";
 import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
 import {
@@ -108,13 +105,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       periods: periodIds
     }),
     drawerItemId
-      ? getProductionPlanning(client, locationId, companyId, periodIds, {
+      ? api.production.getProductionPlanning({
           search: null,
           limit: 1,
           offset: 0,
           sorts: [],
           filters: [{ column: "id", operator: "eq", value: drawerItemId }],
-          asOf
+          asOf,
+          locationId,
+          periods: periodIds
         })
       : null
   ]);
@@ -137,7 +136,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
   const pageItems = (items.data?.rows ?? []) as ProductionPlanningItem[];
-  const linkedItem = (drawerItemRead?.data?.[0] ??
+  const linkedItem = (drawerItemRead?.data?.rows?.[0] ??
     null) as ProductionPlanningItem | null;
   const drawerItem =
     linkedItem && !pageItems.some((item) => item.id === linkedItem.id)

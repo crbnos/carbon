@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import {
   getAppUrl,
   QUICKBOOKS_CLIENT_ID,
@@ -21,10 +22,7 @@ import { getLogger } from "@carbon/logger";
 import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  getIntegration,
-  upsertCompanyIntegration
-} from "~/modules/settings/settings.service";
+import { upsertCompanyIntegration } from "~/modules/settings/settings.service";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
@@ -35,9 +33,10 @@ export const config = {
 const logger = getLogger("erp", "quickbooks", "oauth");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const caller = await requirePermissions(request, {
     update: "settings"
   });
+  const { client, userId, companyId } = caller;
 
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());
@@ -111,7 +110,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     // Sync starts off on a new connection so accounts can be mapped first; a
     // reconnect to the same organization keeps the switch where it was.
-    const existing = await getIntegration(client, QuickBooks.id, companyId);
+    const existing = await carbonFor(caller).settings.getIntegration({
+      id: QuickBooks.id
+    });
     const syncEnabled = syncEnabledOnConnect(existing.data?.metadata, realmId);
 
     const createdQuickBooksIntegration = await upsertCompanyIntegration(

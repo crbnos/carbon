@@ -17,7 +17,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams, useSubmit } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
-import { getCustomer, getSalesOrderLines } from "~/modules/sales/sales.service";
+import { getSalesOrderLines } from "~/modules/sales/sales.service";
 import {
   getQuoteLinePricesByQuoteId,
   getQuoteLines
@@ -106,7 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [customer, opportunity, presentationExchangeRate, supplierPriceMap] =
     await Promise.all([
-      getCustomer(client, quote.data?.customerId ?? ""),
+      api.sales.getCustomer({ customerId: quote.data?.customerId ?? "" }),
       api.sales.getOpportunity({ opportunityId: quote.data?.opportunityId }),
       quote.data?.currencyCode
         ? api.accounting.getExchangeRate({

@@ -11,12 +11,6 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { usePermissions } from "~/hooks";
-import {
-  getCustomer,
-  getCustomerContacts,
-  getCustomerLocations,
-  getCustomerTax
-} from "~/modules/sales/sales.service";
 import { CustomerHeader, CustomerSidebar } from "~/modules/sales/ui/Customer";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -33,18 +27,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, {
     view: "sales"
   });
-  const { client } = auth;
   const api = carbonFor(auth);
 
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
 
   const [customer, contacts, locations, tags, customerTax] = await Promise.all([
-    getCustomer(client, customerId),
-    getCustomerContacts(client, customerId),
-    getCustomerLocations(client, customerId),
+    api.sales.getCustomer({ customerId }),
+    api.sales.getCustomerContacts({ customerId }),
+    api.sales.getCustomerLocations({ customerId }),
     api.shared.getTagsList({ table: "customer" }),
-    getCustomerTax(client, customerId)
+    api.sales.getCustomerTax({ customerId })
   ]);
 
   if (customer.error) {

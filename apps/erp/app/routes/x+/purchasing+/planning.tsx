@@ -22,7 +22,6 @@ import {
   resolvePlanningActionScope
 } from "~/modules/production/production.models";
 import { getPlanningActions } from "~/modules/production/production.service";
-import { getPurchasingPlanning } from "~/modules/purchasing/purchasing.service";
 import type { PurchasingPlanningItem } from "~/modules/purchasing/types";
 import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";
 import {
@@ -105,13 +104,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       periods: periodIds
     }),
     drawerItemId
-      ? getPurchasingPlanning(client, locationId, companyId, periodIds, {
+      ? api.purchasing.getPurchasingPlanning({
           search: null,
           limit: 1,
           offset: 0,
           sorts: [],
           filters: [{ column: "id", operator: "eq", value: drawerItemId }],
-          asOf
+          asOf,
+          locationId,
+          periods: periodIds
         })
       : null
   ]);
@@ -134,7 +135,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
   const pageItems = (items.data?.rows ?? []) as PurchasingPlanningItem[];
-  const linkedItem = (drawerItemRead?.data?.[0] ??
+  const linkedItem = (drawerItemRead?.data?.rows?.[0] ??
     null) as PurchasingPlanningItem | null;
   const drawerItem =
     linkedItem && !pageItems.some((item) => item.id === linkedItem.id)
