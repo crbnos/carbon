@@ -5,7 +5,10 @@
 import { writeFile } from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SyncOnshapeElementInput } from "./onshape-sync-element";
-import { runOnshapeElementSync } from "./onshape-sync-element";
+import {
+  runOnshapeDrawingSync,
+  runOnshapeElementSync
+} from "./onshape-sync-element";
 
 const mocks = vi.hoisted(() => ({
   client: {
@@ -289,6 +292,48 @@ describe("with the assembler", () => {
   it("skips an export the fetch found past the upload limit", async () => {
     mocks.invoke.mockResolvedValue({ tooLarge: true });
     const result = await sync();
+    expect(result.tooLarge).toBe(true);
+    expect(mocks.attach).not.toHaveBeenCalled();
+  });
+});
+
+describe("released drawing exports", () => {
+  const drawing = {
+    companyId: "company",
+    userId: "user",
+    itemId: "saddle-item",
+    sourceDocument: "Part" as const,
+    documentId: "released-document",
+    versionId: "released-version",
+    drawingElementId: "drw-1",
+    assetBaseName: "SADDLE.A"
+  };
+
+  it("translates, waits with step.sleep, then attaches the PDF", async () => {
+    mocks.client.getTranslation.mockResolvedValueOnce({
+      id: "drawing-drw-1",
+      requestState: "ACTIVE"
+    });
+    await runOnshapeDrawingSync(step, carbon, drawing, "drawing");
+    expect(mocks.client.createDrawingTranslation).toHaveBeenCalledOnce();
+    expect(step.sleep).toHaveBeenCalledOnce();
+    expect(mocks.attach.mock.calls[0]![1]).toMatchObject({
+      itemId: "saddle-item",
+      documents: [{ fileName: "SADDLE.A.pdf" }]
+    });
+  });
+
+  it("skips a PDF past the document limit without failing", async () => {
+    const { OnshapeAssetTooLargeError } = await import("@carbon/ee/onshape");
+    mocks.client.downloadExternalData.mockRejectedValue(
+      new OnshapeAssetTooLargeError("too large")
+    );
+    const result = await runOnshapeDrawingSync(
+      step,
+      carbon,
+      drawing,
+      "drawing"
+    );
     expect(result.tooLarge).toBe(true);
     expect(mocks.attach).not.toHaveBeenCalled();
   });

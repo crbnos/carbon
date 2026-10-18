@@ -32,7 +32,7 @@ vi.mock("../../client", () => ({
 vi.mock("./onshape-sync-element", () => ({
   ONSHAPE_CHECKPOINTING: {},
   runOnshapeElementSync: mocks.sync,
-  syncOnshapeDrawingAssetsToItem: mocks.drawing
+  runOnshapeDrawingSync: mocks.drawing
 }));
 vi.mock("./onshape-element-sync", () => ({ onshapeElementSyncFunction: {} }));
 vi.mock("../tasks/assembler-client", () => ({ ASSEMBLER_CONCURRENCY: [] }));
@@ -78,6 +78,7 @@ function database(
       return query;
     }),
     in: vi.fn().mockReturnThis(),
+    ilike: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn(async () => ({ error: null, data: items[0] ?? null })),
     then: (resolve: (value: unknown) => unknown) =>
       resolve({ error: null, data: items })
@@ -165,6 +166,33 @@ describe("release identity", () => {
       releaseKey: "SADDLE.A"
     });
     expect(db.filters).toContainEqual(["readableIdWithRevision", "SADDLE.A"]);
+  });
+});
+
+describe("released drawings", () => {
+  it("resolves a drawing to the model item sharing its number, exporting nothing yet", async () => {
+    mocks.getRevisions.mockResolvedValue({
+      items: [{ ...released, partNumber: "DRW-SADDLE", elementType: 2 }]
+    });
+    const result = await resolveOnshapeRevision(
+      database([
+        {
+          id: "model-item",
+          readableIdWithRevision: "PRT-SADDLE.A",
+          modelUploadId: null
+        }
+      ]).client,
+      { ...input, partNumber: "DRW-SADDLE", elementType: 2 }
+    );
+    expect(result).toMatchObject({
+      itemId: "model-item",
+      drawing: {
+        itemId: "model-item",
+        drawingElementId: "studio",
+        assetBaseName: "PRT-SADDLE.A"
+      }
+    });
+    expect(mocks.drawing).not.toHaveBeenCalled();
   });
 });
 

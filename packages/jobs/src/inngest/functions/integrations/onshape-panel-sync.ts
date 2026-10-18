@@ -8,8 +8,8 @@ import { z } from "zod";
 import { inngest } from "../../client";
 import {
   ONSHAPE_CHECKPOINTING,
-  runOnshapeElementSync,
-  syncOnshapeDrawingAssetsToItem
+  runOnshapeDrawingSync,
+  runOnshapeElementSync
 } from "./onshape-sync-element";
 
 /**
@@ -48,8 +48,10 @@ export const onshapePanelSyncFunction = inngest.createFunction(
 
     if (elementKind === "drawing") {
       // Release pushes only; no model, so no optimize or thumbnail.
-      return step.run("sync-drawing-assets", () =>
-        syncOnshapeDrawingAssetsToItem(carbon, {
+      return runOnshapeDrawingSync(
+        step,
+        carbon,
+        {
           companyId: payload.companyId,
           userId: payload.userId,
           // The panel pushes on its own connection.
@@ -61,7 +63,8 @@ export const onshapePanelSyncFunction = inngest.createFunction(
           sourceWvm: payload.wvm,
           drawingElementId: payload.elementId,
           assetBaseName: payload.assetBaseName
-        })
+        },
+        "drawing"
       );
     }
 

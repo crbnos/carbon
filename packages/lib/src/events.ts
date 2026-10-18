@@ -709,6 +709,22 @@ export type Events = {
     };
   };
 
+  // One released Onshape drawing's PDF onto an item (step.invoked by the backfill)
+  "carbon/onshape-drawing-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      integrationId?: string;
+      itemId: string;
+      sourceDocument: "Part";
+      documentId: string;
+      versionId: string;
+      drawingElementId: string;
+      assetBaseName?: string;
+      sourceWvm?: "w" | "v";
+    };
+  };
+
   // The assembler copies one finished Onshape translation into staging
   // (step.invoked by the element sync)
   "carbon/onshape-fetch": {

@@ -7,6 +7,7 @@ import type { OnshapeOAuthIntegrationId } from "@carbon/ee/onshape/integration-i
 import { inngest } from "../../client";
 import {
   ONSHAPE_CHECKPOINTING,
+  runOnshapeDrawingSync,
   runOnshapeElementSync
 } from "./onshape-sync-element";
 
@@ -35,5 +36,29 @@ export const onshapeElementSyncFunction = inngest.createFunction(
           | undefined
       },
       "element"
+    )
+);
+
+/** One released drawing's PDF export as its own run (the backfill
+ *  `step.invoke`s it per drawing), for the same reason as the element sync. */
+export const onshapeDrawingSyncFunction = inngest.createFunction(
+  {
+    id: "onshape-drawing-sync",
+    checkpointing: ONSHAPE_CHECKPOINTING,
+    retries: 3,
+    concurrency: { key: "event.data.itemId", limit: 1 }
+  },
+  { event: "carbon/onshape-drawing-sync" },
+  async ({ event, step }) =>
+    runOnshapeDrawingSync(
+      step,
+      getCarbonServiceRole(),
+      {
+        ...event.data,
+        integrationId: event.data.integrationId as
+          | OnshapeOAuthIntegrationId
+          | undefined
+      },
+      "drawing"
     )
 );

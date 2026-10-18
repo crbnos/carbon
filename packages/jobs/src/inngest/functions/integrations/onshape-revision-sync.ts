@@ -4,10 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import {
-  getOnshapeClient,
-  OnshapeAssetTooLargeError
-} from "@carbon/ee/onshape";
+import { getOnshapeClient } from "@carbon/ee/onshape";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { inngest } from "../../client";
@@ -23,9 +20,10 @@ import {
 import { withRateLimitRetry } from "./onshape-rate-limit";
 import {
   ONSHAPE_CHECKPOINTING,
+  runOnshapeDrawingSync,
   runOnshapeElementSync,
-  type SyncOnshapeElementInput,
-  syncOnshapeDrawingAssetsToItem
+  type SyncOnshapeDrawingInput,
+  type SyncOnshapeElementInput
 } from "./onshape-sync-element";
 
 // Go-forward sync: one released Onshape revision ->
@@ -84,6 +82,13 @@ export interface OnshapeRevisionModel {
   releaseKey: string;
 }
 
+/** A released drawing to export onto the model item sharing its number. */
+export interface OnshapeRevisionDrawing {
+  drawing: SyncOnshapeDrawingInput;
+  itemId: string;
+  releaseKey?: string;
+}
+
 /**
  * Resolve one released revision to what to do with it: a final result (a
  * skip, or a drawing already attached), or the model to export onto its item.
@@ -92,7 +97,9 @@ export interface OnshapeRevisionModel {
 export async function resolveOnshapeRevision(
   carbon: CarbonClient,
   input: OnshapeRevisionSyncInput
-): Promise<OnshapeRevisionSyncResult | OnshapeRevisionModel> {
+): Promise<
+  OnshapeRevisionSyncResult | OnshapeRevisionModel | OnshapeRevisionDrawing
+> {
   const onshape = await getOnshapeClient(carbon, input.companyId, input.userId);
   if (onshape.error || !onshape.client) {
     throw new Error(
@@ -174,8 +181,10 @@ export async function resolveOnshapeRevision(
     if (!target) {
       return { synced: false, skippedReason: "no-matching-item" };
     }
-    try {
-      const attached = await syncOnshapeDrawingAssetsToItem(carbon, {
+    return {
+      itemId: target.id,
+      releaseKey: target.readableIdWithRevision ?? undefined,
+      drawing: {
         companyId: input.companyId,
         userId: input.userId,
         itemId: target.id,
@@ -184,23 +193,8 @@ export async function resolveOnshapeRevision(
         versionId: input.versionId,
         drawingElementId: input.elementId,
         assetBaseName: target.readableIdWithRevision ?? undefined
-      });
-      return {
-        synced: true,
-        itemId: target.id,
-        modelUploadId: attached.modelUploadId,
-        releaseKey: target.readableIdWithRevision ?? undefined
-      };
-    } catch (syncError) {
-      if (syncError instanceof OnshapeAssetTooLargeError) {
-        // Permanent: a retry can't shrink the export. Skip, don't fail.
-        console.warn(
-          `resolveOnshapeRevision: skipping oversized drawing ${input.partNumber}: ${syncError.message}`
-        );
-        return { synced: false, skippedReason: "asset-too-large" };
       }
-      throw syncError;
-    }
+    };
   }
 
   // MODEL (elementType 0 = part studio, 1 = assembly): export STEP + attach.
@@ -304,6 +298,23 @@ export const onshapeRevisionSyncFunction = inngest.createFunction(
         `revision ${payload.partNumber}`
       )
     );
+    if ("drawing" in resolved) {
+      const attached = await runOnshapeDrawingSync(
+        step,
+        carbon,
+        resolved.drawing,
+        "drawing"
+      );
+      // An oversized PDF is permanent: a retry can't shrink the export.
+      return attached.tooLarge
+        ? { synced: false, skippedReason: "asset-too-large" as const }
+        : {
+            synced: true,
+            itemId: resolved.itemId,
+            modelUploadId: attached.modelUploadId,
+            releaseKey: resolved.releaseKey
+          };
+    }
     if (!("element" in resolved)) return resolved;
 
     // The sync stores the RAW Onshape export. A new model row starts the

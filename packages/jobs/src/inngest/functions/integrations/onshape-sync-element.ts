@@ -77,51 +77,6 @@ const POLL_MAX_DELAY_MS = 15000;
 // assembler's problem, not ours.
 const DOCUMENT_MAX_BYTES = getFileSizeLimit("DOCUMENT_UPLOAD").bytes;
 
-async function waitForTranslation(
-  client: OnshapeClient,
-  translationId: string
-): Promise<OnshapeTranslation> {
-  let delay = POLL_INITIAL_DELAY_MS;
-  for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
-    const translation = await client.getTranslation(translationId);
-    if (translation.requestState === "DONE") {
-      return translation;
-    }
-    if (translation.requestState === "FAILED") {
-      throw new Error(
-        `Onshape translation ${translationId} FAILED: ${
-          translation.failureReason ?? "unknown"
-        }`
-      );
-    }
-    await new Promise((resolve) => setTimeout(resolve, delay));
-    delay = Math.min(delay * 1.5, POLL_MAX_DELAY_MS);
-  }
-  throw new Error(
-    `Onshape translation ${translationId} did not finish after ${POLL_MAX_ATTEMPTS} polls`
-  );
-}
-
-async function downloadTranslationBytes(
-  client: OnshapeClient,
-  translation: OnshapeTranslation,
-  maxBytes: number
-): Promise<Uint8Array> {
-  const foreignId = translation.resultExternalDataIds?.[0];
-  const documentId = translation.resultDocumentId;
-  if (!foreignId || !documentId) {
-    throw new Error(
-      `Onshape translation ${translation.id} DONE but has no resultExternalDataIds/resultDocumentId`
-    );
-  }
-  // Throws OnshapeAssetTooLargeError past the cap — callers treat that as a
-  // permanent skip (retrying cannot shrink the asset).
-  const buffer = await client.downloadExternalData(documentId, foreignId, {
-    maxBytes
-  });
-  return new Uint8Array(buffer);
-}
-
 /**
  * Checkpointing for the functions that run this pipeline: consecutive steps
  * (existing → translate → first poll; drawings → attach → thumbnail) run in
@@ -244,6 +199,7 @@ export async function runOnshapeElementSync(
     step,
     carbon,
     input,
+    label,
     prefix,
     [started.model, ...started.drawings.map((d) => d.id)].flatMap((id) =>
       id ? [id] : []
@@ -363,9 +319,15 @@ export async function runOnshapeElementSync(
   };
 }
 
+/** Who the Onshape calls are made as. */
+type OnshapeCredentials = Pick<
+  SyncOnshapeElementInput,
+  "companyId" | "userId" | "integrationId"
+>;
+
 async function onshapeClient(
   carbon: CarbonClient,
-  input: Pick<SyncOnshapeElementInput, "companyId" | "userId" | "integrationId">
+  input: OnshapeCredentials
 ): Promise<OnshapeClient> {
   const onshape = await getOnshapeClient(
     carbon,
@@ -457,9 +419,10 @@ function startModelTranslation(
 /** Poll every translation together until all are done, sleeping (as a step,
  *  holding nothing) between polls. A failed translation fails the sync. */
 async function waitForTranslations(
-  step: ElementSyncStep,
+  step: Pick<ElementSyncStep, "run" | "sleep">,
   carbon: CarbonClient,
-  input: SyncOnshapeElementInput,
+  input: OnshapeCredentials,
+  label: string,
   prefix: string,
   ids: string[]
 ): Promise<Record<string, FinishedTranslation>> {
@@ -476,17 +439,14 @@ async function waitForTranslations(
     const polled: (FinishedTranslation | null)[] = await step.run(
       `${prefix}-poll-${attempt}`,
       () =>
-        withRateLimitRetry(
-          async () => {
-            const client = await onshapeClient(carbon, input);
-            return Promise.all(
-              waiting.map(async (id) =>
-                finishedTranslation(await client.getTranslation(id))
-              )
-            );
-          },
-          `poll ${input.assetBaseName ?? input.modelElementId}`
-        )
+        withRateLimitRetry(async () => {
+          const client = await onshapeClient(carbon, input);
+          return Promise.all(
+            waiting.map(async (id) =>
+              finishedTranslation(await client.getTranslation(id))
+            )
+          );
+        }, `poll ${label}`)
     );
     for (const translation of polled) {
       if (translation) finished[translation.id] = translation;
@@ -636,46 +596,72 @@ export interface SyncOnshapeDrawingInput {
   sourceWvm?: "w" | "v"; // path segment for the drawing translation; default "v"
 }
 
+export type DrawingSyncResult = AttachOnshapeAssetsResult & {
+  /** The PDF is past the document upload limit: a permanent skip. */
+  tooLarge?: boolean;
+};
+
 // Export ONE released Onshape DRAWING element as a PDF and attach it as a document
-// on the given Carbon item. Drawings are released as their own elements (DRW-xxxx,
-// elementType 2) separate from the model, so the caller resolves which item the
-// drawing belongs to (by shared part number) and passes it here. No model is
-// touched — only a PDF document is added/updated (idempotent via the attach
-// helper's replace-not-append rule).
-export async function syncOnshapeDrawingAssetsToItem(
+// on the given Carbon item, as resumable steps like the element sync's:
+// `translate`, `poll-n` / `sleep-n` (holding no function between polls), then
+// `attach` (download the PDF and record it). Drawings are released as their own
+// elements (DRW-xxxx, elementType 2) separate from the model, so the caller
+// resolves which item the drawing belongs to (by shared part number) and passes
+// it here. No model is touched — only a PDF document is added/updated
+// (idempotent via the attach helper's replace-not-append rule).
+export async function runOnshapeDrawingSync(
+  step: Pick<ElementSyncStep, "run" | "sleep">,
   carbon: CarbonClient,
-  input: SyncOnshapeDrawingInput
-): Promise<AttachOnshapeAssetsResult> {
-  const onshape = await getOnshapeClient(
+  input: SyncOnshapeDrawingInput,
+  prefix: string
+): Promise<DrawingSyncResult> {
+  const label = input.assetBaseName ?? input.drawingElementId;
+  const translationId: string = await step.run(`${prefix}-translate`, () =>
+    withRateLimitRetry(async () => {
+      const client = await onshapeClient(carbon, input);
+      const translation = await client.createDrawingTranslation(
+        input.documentId,
+        input.versionId,
+        input.drawingElementId,
+        {
+          formatName: "PDF",
+          storeInDocument: false,
+          wvm: input.sourceWvm ?? "v"
+        }
+      );
+      return translation.id;
+    }, `translate ${label}`)
+  );
+  const finished = await waitForTranslations(
+    step,
     carbon,
-    input.companyId,
-    input.userId,
-    input.integrationId
+    input,
+    label,
+    prefix,
+    [translationId]
   );
-  if (onshape.error || !onshape.client) {
-    throw new Error(`getOnshapeClient failed: ${onshape.error ?? "no client"}`);
-  }
-  const client = onshape.client;
+  const translation = finished[translationId]!;
 
-  const pdfTranslation = await client.createDrawingTranslation(
-    input.documentId,
-    input.versionId,
-    input.drawingElementId,
-    { formatName: "PDF", storeInDocument: false, wvm: input.sourceWvm ?? "v" }
+  return step.run(`${prefix}-attach`, () =>
+    withRateLimitRetry(async (): Promise<DrawingSyncResult> => {
+      const client = await onshapeClient(carbon, input);
+      const pdf = await downloadPdf(client, translation);
+      if (!pdf) {
+        return {
+          modelUploadId: null,
+          documentIds: [],
+          preservedPriorModelAsDocument: false,
+          tooLarge: true
+        };
+      }
+      const baseName = input.assetBaseName ?? translation.name ?? "drawing";
+      return attachOnshapeAssetsToItem(carbon, {
+        companyId: input.companyId,
+        createdBy: input.userId,
+        itemId: input.itemId,
+        sourceDocument: input.sourceDocument,
+        documents: [{ fileName: `${baseName}.pdf`, bytes: pdf }]
+      });
+    }, `attach ${label}`)
   );
-  const pdfDone = await waitForTranslation(client, pdfTranslation.id);
-  const pdfBytes = await downloadTranslationBytes(
-    client,
-    pdfDone,
-    DOCUMENT_MAX_BYTES
-  );
-  const baseName = input.assetBaseName ?? pdfDone.name ?? "drawing";
-
-  return attachOnshapeAssetsToItem(carbon, {
-    companyId: input.companyId,
-    createdBy: input.userId,
-    itemId: input.itemId,
-    sourceDocument: input.sourceDocument,
-    documents: [{ fileName: `${baseName}.pdf`, bytes: pdfBytes }]
-  });
 }
