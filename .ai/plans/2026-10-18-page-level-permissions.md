@@ -3,7 +3,7 @@
 **Spec:** .ai/specs/2026-10-18-page-level-permissions.md
 **Research:** .ai/research/page-level-permissions.md
 **Closest sibling:** the permission editors today (`EmployeeTypeForm.ee.tsx`, `EmployeePermissionsForm.ee.tsx`, `BulkEditPermissionsForm.ee.tsx`, `ApiKeysForm.tsx`)
-**Branch:** Phase 0 on `claude/service-function-wrapping-13f04f`. Phases 1 to 4 on `feat/page-level-permissions`, cut from `main` after Phase 0 merges.
+**Branch:** `claude/service-function-wrapping-13f04f`, every phase. Do not cut another branch.
 
 ## Progress
 
@@ -44,12 +44,12 @@ Phase 4 — cleanup
 ## Dependencies
 
 - Task 2 needs Task 1.
-- Phase 1 needs Phase 0 merged into `main`.
+- Phase 1 needs Phase 0 committed.
 - Task 4 needs Task 3 (the `module` values). Tasks 5 and 6 need Task 4 and generated types.
 - Task 7 needs Task 6. Task 8 needs Tasks 3 and 6.
 - Task 9 needs Task 8. Tasks 10 to 13 need Task 9. Tasks 10 to 13 are independent of each other after Task 10 creates `AccessGrid`.
 - Tasks 14 and 15 need Task 9. Task 16 needs Tasks 7 to 15.
-- Phase 3 needs Phases 1 and 2 merged. Task 17 comes first. Tasks 18 to 23 need Task 17 and are independent of each other, but Tasks 19 to 21 each touch many files: run them one at a time in one worktree. Task 24 needs Tasks 18 to 23. Task 25 needs Task 24.
+- Phase 3 needs Phases 1 and 2 committed and verified (Task 16). Task 17 comes first. Tasks 18 to 23 need Task 17 and are independent of each other, but Tasks 19 to 21 each touch many files: run them one at a time in one worktree. Task 24 needs Tasks 18 to 23. Task 25 needs Task 24.
 - Task 26 needs Phase 3 released.
 
 ## Rules for every task
@@ -152,7 +152,7 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
 
 ## Task 3: Add the access registry, levels and the TS resolver
 
-**Depends on:** Phase 0 merged
+**Depends on:** Phase 0 committed
 **Files:**
 - Create: `packages/database/src/access/levels.ts`
 - Create: `packages/database/src/access/registry.ts`
@@ -583,7 +583,7 @@ grep -n "future hires only" docs/content/src/glossary/terms.ts
 
 ## Task 17: Define the pages of all 14 modules in the registry
 
-**Depends on:** Phases 1 and 2 merged
+**Depends on:** Task 16
 **Files:**
 - Create: `packages/database/src/access/pages/<module>.ts` for the 14 modules in the spec's page table
 - Modify: `packages/database/src/access/registry.ts` — `PAGES` collects the module files
