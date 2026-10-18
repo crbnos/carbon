@@ -103,6 +103,9 @@ import * as service from "./purchasing.service";
 
 const logger = getLogger("erp", "purchasing");
 
+/** How long a model link in an RFQ email works: a supplier may open it days later. */
+const RFQ_MODEL_LINK_SECONDS = 7 * 24 * 60 * 60;
+
 /** Custom field values, as `setCustomFields` reads them from a form. */
 const customFieldsInput = z.record(
   z.string(),
@@ -121,9 +124,6 @@ const customFieldsInput = z.record(
  *
  * @mcp
  */
-
-/** How long a model link in an RFQ email works: a supplier may open it days later. */
-const RFQ_MODEL_LINK_SECONDS = 7 * 24 * 60 * 60;
 
 export const createPurchasingRfq = defineServiceFn({
   input: purchasingRfqValidator

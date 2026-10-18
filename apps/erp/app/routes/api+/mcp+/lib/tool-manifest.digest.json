@@ -1,5 +1,5 @@
 {
-  "totalTools": 1611,
+  "totalTools": 1612,
   "modules": 14,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -900,6 +900,7 @@
     {"name":"purchasing_convertSupplierQuoteToOrder","classification":"WRITE","schema":"ed4c93e2b28c","response":"873673b16fc8","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_createPurchaseOrderLine","classification":"WRITE","schema":"3cd5255bcf67","response":"3797626bd17e","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_createPurchaseReturnOrderCredit","classification":"WRITE","schema":"71e626ec2145","response":"00404e686415","permission":"invoicing:create","paginates":false},
+    {"name":"purchasing_createPurchasingRfq","classification":"WRITE","schema":"6c41ec826827","response":"0c1a1b93cca3","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_createPurchasingRFQLine","classification":"WRITE","schema":"5fa277599ba0","response":"3797626bd17e","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_createReplacementPurchaseOrder","classification":"WRITE","schema":"ceebeb4f9cac","response":"3797626bd17e","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_createSupplier","classification":"WRITE","schema":"3741922f8489","response":"3797626bd17e","permission":"purchasing:create","paginates":false},
