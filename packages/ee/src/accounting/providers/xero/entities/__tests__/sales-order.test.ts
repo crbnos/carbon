@@ -15,6 +15,8 @@ import {
  * A sales order goes to Xero as a Quote. Each line carries Carbon's tax: the
  * line's rate on the amount the line is sent with, at the mapped sales
  * `TaxType` (a legacy line matches its percentage; an untaxed one is NONE).
+ * A quote with no taxed line at all goes out as it did before tax codes: no
+ * `TaxType` and no `TaxAmount`, so Xero applies the account's default rate.
  */
 
 const XERO_TAX_RATES: Xero.TaxRate[] = [
@@ -49,20 +51,24 @@ function makeSalesOrderSyncer(
     // The tax-code mapping read.
     execute: async () => taxMappings
   };
+  const listTaxRates = vi.fn(async () => XERO_TAX_RATES);
   const syncer = new SalesOrderSyncer({
     database: query as never,
     companyId: "company-1",
-    provider: { id: "xero", listTaxRates: async () => XERO_TAX_RATES } as never,
+    provider: { id: "xero", listTaxRates } as never,
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType: "salesOrder"
   });
   const internals = syncer as unknown as Record<string, unknown>;
   internals.getRemoteId = async () => null;
   internals.ensureDependencySynced = vi.fn(async () => "contact-1");
-  return syncer as unknown as {
-    mapToRemote(local: XeroSalesOrder): Promise<Xero.Quote>;
-    ensureDependencySynced: unknown;
-  };
+  return Object.assign(
+    syncer as unknown as {
+      mapToRemote(local: XeroSalesOrder): Promise<Xero.Quote>;
+      ensureDependencySynced: unknown;
+    },
+    { listTaxRates }
+  );
 }
 
 const line = (overrides: Partial<XeroSalesOrderLine>): XeroSalesOrderLine => ({
@@ -113,6 +119,46 @@ describe("Xero SalesOrderSyncer.mapToRemote (TaxType and TaxAmount)", () => {
       TaxType: "OUTPUT2",
       TaxAmount: 20
     });
+  });
+
+  it("sends neither TaxType nor TaxAmount when no line is taxed", async () => {
+    const syncer = makeSalesOrderSyncer();
+    const payload = await syncer.mapToRemote(
+      salesOrder([
+        line({ id: "sol-1" }),
+        line({ id: "sol-2", lineAmount: 40 }),
+        line({ id: "sol-3", salesOrderLineType: "Comment" })
+      ])
+    );
+    expect(payload.LineAmountTypes).toBe("Exclusive");
+    expect(payload.LineItems).toHaveLength(2);
+    for (const item of payload.LineItems ?? []) {
+      expect(item).not.toHaveProperty("TaxType");
+      expect(item).not.toHaveProperty("TaxAmount");
+    }
+    // A company with no tax codes never waits on GET /TaxRates.
+    expect(syncer.listTaxRates).not.toHaveBeenCalled();
+  });
+
+  it("states NONE on an untaxed line beside a coded one", async () => {
+    const payload = await makeSalesOrderSyncer([
+      {
+        entityId: "tc_uk20:sales",
+        externalId: "OUTPUT2",
+        metadata: { externalName: "20% (VAT on Income)", externalRate: 0.2 }
+      }
+    ]).mapToRemote(
+      salesOrder([
+        line({ id: "sol-1", taxCodeId: "tc_uk20", taxPercent: 0.2 }),
+        line({ id: "sol-2" })
+      ])
+    );
+    expect(
+      payload.LineItems?.map((item) => [item.TaxType, item.TaxAmount])
+    ).toEqual([
+      ["OUTPUT2", 20],
+      ["NONE", 0]
+    ]);
   });
 
   it("matches a legacy 5% line by its percentage, and sends NONE untaxed", async () => {

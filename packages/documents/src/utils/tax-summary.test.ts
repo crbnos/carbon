@@ -259,15 +259,53 @@ describe("resolveSellerRegistration", () => {
           }
         ],
         company,
-        "2026-10-17"
+        "2026-10-17",
+        false
       )
     ).toBe("GB123456789");
   });
 
-  it("falls back to the company's tax ID", () => {
-    expect(resolveSellerRegistration([], company, "2026-10-17")).toBe("TAX-1");
+  it("falls back to the company's tax ID once the company has tax codes", () => {
+    expect(resolveSellerRegistration([], company, "2026-10-17", true)).toBe(
+      "TAX-1"
+    );
     expect(
-      resolveSellerRegistration(null, { ...company, taxId: null }, "2026-10-17")
+      resolveSellerRegistration(
+        null,
+        { ...company, taxId: null },
+        "2026-10-17",
+        true
+      )
+    ).toBeNull();
+  });
+
+  it("prints nothing for a company with no registration in force and no tax codes", () => {
+    // As before tax codes: `company.taxId` alone never printed a seller number.
+    expect(
+      resolveSellerRegistration(null, company, "2026-10-17", false)
+    ).toBeNull();
+    expect(
+      resolveSellerRegistration(
+        [
+          {
+            countryCode: "GB",
+            state: null,
+            registrationNumber: "GB-OLD",
+            effectiveDate: null,
+            endDate: "2025-12-31"
+          },
+          {
+            countryCode: "DE",
+            state: null,
+            registrationNumber: "DE123",
+            effectiveDate: null,
+            endDate: null
+          }
+        ],
+        company,
+        "2026-10-17",
+        false
+      )
     ).toBeNull();
   });
 });

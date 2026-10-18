@@ -158,6 +158,8 @@ async function loadTaxSummary(args: {
   lines: SalesInvoiceLine[];
   headerShipping: number;
   taxRegistrations: Parameters<typeof resolveSellerRegistration>[0];
+  /** The company has adopted tax codes: it prints `company.taxId`. */
+  hasActiveTaxCodes: boolean;
   taxLedger: Parameters<typeof postedTaxSummaryEntries>[0] | null;
   currencyDecimals: number | null;
 }): Promise<
@@ -232,7 +234,8 @@ async function loadTaxSummary(args: {
     sellerRegistration: resolveSellerRegistration(
       args.taxRegistrations,
       args.company,
-      date
+      date,
+      args.hasActiveTaxCodes
     )
   };
 }
@@ -268,6 +271,7 @@ export async function loadSalesInvoiceDocument(args: {
     shippingMethods,
     documentTemplate,
     taxRegistrations,
+    activeTaxCode,
     taxLedger
   ] = await Promise.all([
     getCompanyWithPublicLogos(client, companyId, storageUrl),
@@ -326,6 +330,14 @@ export async function loadSalesInvoiceDocument(args: {
       .from("taxRegistration")
       .select("countryCode, state, registrationNumber, effectiveDate, endDate")
       .eq("companyId", companyId),
+    // Has the company adopted tax codes? Decides whether `company.taxId`
+    // prints as the seller's tax number.
+    client
+      .from("taxCode")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .limit(1),
     client
       .from("taxLedger")
       .select(
@@ -454,6 +466,7 @@ export async function loadSalesInvoiceDocument(args: {
       (salesInvoiceShipment.data?.shippingCost ?? 0) *
       (salesInvoice.data.exchangeRate ?? 1),
     taxRegistrations: taxRegistrations.data,
+    hasActiveTaxCodes: (activeTaxCode.data?.length ?? 0) > 0,
     taxLedger: taxLedger.data,
     currencyDecimals
   });

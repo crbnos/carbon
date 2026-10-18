@@ -270,7 +270,10 @@ export type TaxRegistrationRow = {
 /**
  * The seller's tax number to print: its registration for the company's own
  * country in force on `date` (a national one first, then one for the
- * company's state), else `company.taxId`.
+ * company's state), else `company.taxId` — but only for a company that has
+ * adopted tax codes (`hasActiveTaxCodes`). A company with neither a
+ * registration in force nor an active code prints no seller number, as
+ * before tax codes.
  */
 export function resolveSellerRegistration(
   registrations: ReadonlyArray<TaxRegistrationRow> | null | undefined,
@@ -279,7 +282,8 @@ export function resolveSellerRegistration(
     stateProvince?: string | null;
     taxId?: string | null;
   },
-  date: string
+  date: string,
+  hasActiveTaxCodes: boolean
 ): string | null {
   const inForce = (registrations ?? []).filter(
     (registration) =>
@@ -291,5 +295,6 @@ export function resolveSellerRegistration(
     inForce.find((r) => !r.state) ??
     inForce.find((r) => r.state && r.state === company.stateProvince) ??
     inForce[0];
-  return registration?.registrationNumber || company.taxId || null;
+  if (registration?.registrationNumber) return registration.registrationNumber;
+  return hasActiveTaxCodes ? company.taxId || null : null;
 }
