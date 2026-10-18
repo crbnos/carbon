@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,12 +14,9 @@ import { data, useLoaderData, useNavigate } from "react-router";
 import { fixedAssetCapitalizeValidator } from "~/modules/accounting/accounting.models";
 import {
   getCapitalizationCost,
-  getDefaultAccounts,
   invokeAssetTransfer
 } from "~/modules/accounting/accounting.service";
 import { FixedAssetCapitalizeForm } from "~/modules/accounting/ui/FixedAssets";
-import { getTrackedEntity } from "~/modules/inventory/inventory.service";
-import { getItem } from "~/modules/items/items.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -30,9 +28,11 @@ const logger = getLogger("erp", "fixed-asset-capitalize");
 const RENTAL_FLEET_CLASS_NAME = "Rental Fleet";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting"
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const searchParams = new URL(request.url).searchParams;
   const itemId = searchParams.get("itemId");
@@ -61,8 +61,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     timeZone,
     accountDefaults
   ] = await Promise.all([
-    getTrackedEntity(client, trackedEntityId),
-    getItem(client, itemId),
+    api.inventory.getTrackedEntity({ trackedEntityId }),
+    api.items.getItem({ id: itemId }),
     getCapitalizationCost(client, getDatabaseClient(), {
       companyId,
       userId,
@@ -78,7 +78,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("isConstructionInProgress", false)
       .order("name"),
     getCompanyTimeZone(client, companyId),
-    getDefaultAccounts(client, companyId)
+    api.accounting.getDefaultAccounts({})
   ]);
 
   if (

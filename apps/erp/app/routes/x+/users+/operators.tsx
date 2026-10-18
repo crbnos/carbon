@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -23,10 +24,7 @@ import { useLoaderData, useNavigate } from "react-router";
 import { EmployeeAvatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
-import {
-  getConsoleOperators,
-  getEmployeeTypes
-} from "~/modules/users/users.service";
+import type { getConsoleOperators } from "~/modules/users/users.service";
 import type { ListItem } from "~/types";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -38,11 +36,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "users",
     role: "employee",
     bypassRls: true
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -52,14 +51,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [operators, employeeTypes] = await Promise.all([
-    getConsoleOperators(client, companyId, {
+    api.users.getConsoleOperators({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getEmployeeTypes(client, companyId)
+    api.users.getEmployeeTypes({})
   ]);
 
   if (operators.error) {
@@ -73,9 +72,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    count: operators.count ?? 0,
-    operators: operators.data ?? [],
-    employeeTypes: employeeTypes.data ?? []
+    count: operators.data?.count ?? 0,
+    operators: operators.data?.rows ?? [],
+    employeeTypes: employeeTypes.data?.rows ?? []
   };
 }
 

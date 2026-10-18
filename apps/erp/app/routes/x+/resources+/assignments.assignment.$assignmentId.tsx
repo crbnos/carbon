@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,10 +12,6 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { trainingAssignmentValidator } from "~/modules/resources/resources.models";
-import {
-  getTrainingAssignment,
-  getTrainingsList
-} from "~/modules/resources/resources.service";
 import type { TrainingListItem } from "~/modules/resources/types";
 import { TrainingAssignmentForm } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
@@ -27,10 +23,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
+  const { companyId } = auth;
+  const api = carbonFor(auth);
 
   const { assignmentId } = params;
   if (!assignmentId) {
@@ -41,8 +39,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [assignment, trainings] = await Promise.all([
-    getTrainingAssignment(client, assignmentId),
-    getTrainingsList(client, companyId)
+    api.resources.getTrainingAssignment({ assignmentId }),
+    api.resources.getTrainingsList({})
   ]);
 
   if (assignment.error || assignment.data.companyId !== companyId) {

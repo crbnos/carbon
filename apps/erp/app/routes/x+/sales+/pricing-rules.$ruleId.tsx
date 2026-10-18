@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,7 +14,6 @@ import { useLoaderData } from "react-router";
 import { pricingRuleValidator } from "~/modules/sales/sales.models";
 import {
   duplicatePricingRule,
-  getPricingRule,
   updatePricingRule
 } from "~/modules/sales/sales.service";
 import { toMatchedRule } from "~/modules/sales/sales.utils";
@@ -21,15 +21,16 @@ import PricingRuleForm from "~/modules/sales/ui/Pricing/PricingRuleForm";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { ruleId } = params;
   if (!ruleId) throw notFound("ruleId not found");
 
-  const pricingRule = await getPricingRule(client, ruleId);
+  const pricingRule = await api.sales.getPricingRule({ id: ruleId });
   if (pricingRule.error) {
     throw redirect(
       path.to.salesPricingRules,

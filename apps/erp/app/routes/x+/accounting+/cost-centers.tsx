@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -22,7 +23,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
 import { SettingsPageHeading } from "~/components/SettingsPage";
-import { getCostCentersTree } from "~/modules/accounting/accounting.service";
 import {
   CostCentersListView,
   CostCentersTreeView
@@ -36,13 +36,15 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const [costCenters, approvalRules] = await Promise.all([
-    getCostCentersTree(client, companyId),
+    api.accounting.getCostCentersTree({}),
     getApprovalRulesForApprover(client, "purchaseOrder", companyId)
   ]);
 

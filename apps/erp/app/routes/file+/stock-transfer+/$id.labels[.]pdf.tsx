@@ -2,24 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ProductLabelPDF } from "@carbon/documents/pdf";
 import { labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import {
-  getCompany,
   getCompanyLogoForLabel,
-  getCompanySettings,
   getDocumentTemplateConfig,
   resolveLabelLogo
 } from "~/modules/settings/settings.service";
 import { getStockTransferLabelItems } from "./labels.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -28,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const labelParam = url.searchParams.get("labelSize");
   const lineIdParam = url.searchParams.get("lineId");
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
   const labelSizeId =
     labelParam || companySettings.data?.productLabelSize || "avery5163";
 
@@ -61,7 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companyId,
     "trackingLabel"
   );
-  const company = await getCompany(client, companyId);
+  const company = await api.settings.getCompany({});
   const companyLogo = await getCompanyLogoForLabel(client, companyId);
   const logo = await resolveLabelLogo(companyLogo, template, labelSize);
 

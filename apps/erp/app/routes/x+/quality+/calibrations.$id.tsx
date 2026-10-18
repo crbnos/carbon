@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -16,7 +17,6 @@ import type z from "zod";
 import type { calibrationAttempt } from "~/modules/quality/quality.models";
 import { gaugeCalibrationRecordValidator } from "~/modules/quality/quality.models";
 import {
-  getGaugeCalibrationRecord,
   getQualityFiles,
   upsertGaugeCalibrationRecord
 } from "~/modules/quality/quality.service";
@@ -33,16 +33,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [record, files] = await Promise.all([
-    getGaugeCalibrationRecord(client, id),
+    api.quality.getGaugeCalibrationRecord({ id }),
     getQualityFiles(client, id, companyId)
   ]);
 

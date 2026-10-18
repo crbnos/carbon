@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,10 +16,6 @@ import { getUnattributedMachineTimes } from "~/modules/production/production.ser
 import MachineTimeTable from "~/modules/production/ui/MachineTime/MachineTimeTable.ee";
 import MachineTimeUpgradeOverlay from "~/modules/production/ui/MachineTime/MachineTimeUpgradeOverlay.ee";
 import { parseMachineTimeListFilters } from "~/modules/production/ui/MachineTime/machine-time-filters.ee";
-import {
-  getLocationsList,
-  getWorkCentersList
-} from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -29,10 +26,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production",
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -41,8 +40,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [machineTimes, workCenters, locations] = await Promise.all([
     getUnattributedMachineTimes(client, companyId, { filters, limit, offset }),
-    getWorkCentersList(client, companyId),
-    getLocationsList(client, companyId)
+    api.resources.getWorkCentersList({}),
+    api.resources.getLocationsList({})
   ]);
 
   if (machineTimes.error) {

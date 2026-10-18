@@ -5,11 +5,16 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as salesServer from "~/modules/sales/sales.server";
 import * as sales from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { registerTestCarbon } from "../../../../test/register-carbon";
 import { loader } from "./$orderId";
 
-vi.mock("@carbon/auth", () => ({
+registerTestCarbon({ sales: salesServer });
+
+vi.mock("@carbon/auth", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   error: (cause: unknown, message: string) => ({ cause, message })
 }));
 vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
@@ -47,7 +52,8 @@ vi.mock("~/utils/path", () => ({
     }
   }
 }));
-vi.mock("~/modules/sales/sales.service", () => ({
+vi.mock("~/modules/sales/sales.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getCustomer: vi.fn(),
   getOpportunity: vi.fn(),
   getOpportunityDocuments: vi.fn(),

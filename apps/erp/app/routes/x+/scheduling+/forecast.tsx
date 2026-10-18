@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { Badge, Button, ClientOnly, cn, useDebounce } from "@carbon/react";
 import { datetime, formatDate } from "@carbon/utils";
@@ -27,15 +28,7 @@ import { Empty } from "~/components";
 import { Gantt } from "~/components/Gantt";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
-import {
-  getDepartmentsList,
-  getShiftsWithTimes
-} from "~/modules/people/people.service";
-import {
-  getCapacityReservationsForResources,
-  getForecastNonWorkingIntervals,
-  getMaintenanceDowntimeForResources
-} from "~/modules/production/production.service";
+import { getForecastNonWorkingIntervals } from "~/modules/production/production.service";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
 import type {
   ForecastRange,
@@ -54,7 +47,6 @@ import type {
   WorkCenterAvailability
 } from "~/modules/production/ui/Schedule/WorkCenterAvailabilityPopover";
 import { WorkCenterAvailabilityPopover } from "~/modules/production/ui/Schedule/WorkCenterAvailabilityPopover";
-import { getWorkCentersByLocation } from "~/modules/resources/resources.service";
 import {
   getLocationTimeZone,
   resolveLocationId
@@ -131,9 +123,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production"
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = url.searchParams;
@@ -162,9 +156,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationResult
   ] = await Promise.all([
     getLocationTimeZone(client, locationId, companyId),
-    getShiftsWithTimes(client, companyId, locationId),
-    getWorkCentersByLocation(client, locationId),
-    getDepartmentsList(client, companyId),
+    api.people.getShiftsWithTimes({ locationId }),
+    api.resources.getWorkCentersByLocation({ locationId }),
+    api.people.getDepartmentsList({}),
     client
       .from("location")
       .select("name, requiresStaffing")
@@ -216,11 +210,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const [reservations, maintenanceResult] = await Promise.all([
-    getCapacityReservationsForResources(client, companyId, locationId, {
-      from: new Date(windowStartMs).toISOString(),
-      to: new Date(windowEndMs).toISOString()
+    api.production.getCapacityReservationsForResources({
+      locationId,
+      window: {
+        from: new Date(windowStartMs).toISOString(),
+        to: new Date(windowEndMs).toISOString()
+      }
     }),
-    getMaintenanceDowntimeForResources(client, companyId, locationId)
+    api.production.getMaintenanceDowntimeForResources({ locationId })
   ]);
 
   // Open outages that take a work center offline, as [start, end) windows for

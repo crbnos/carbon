@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,13 +16,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import RiskRegisterCard from "~/modules/quality/ui/RiskRegister/RiskRegisterCard";
-import {
-  getFailureModesList,
-  getMaintenanceDispatch,
-  getMaintenanceDispatchComments,
-  getMaintenanceDispatchEvents,
-  getMaintenanceDispatchItems
-} from "~/modules/resources/resources.service";
+import type { getMaintenanceDispatch } from "~/modules/resources/resources.service";
 import { MaintenanceDispatchExplorer } from "~/modules/resources/ui/Maintenance/MaintenanceDispatchExplorer";
 import MaintenanceDispatchHeader from "~/modules/resources/ui/Maintenance/MaintenanceDispatchHeader";
 import {
@@ -55,19 +50,21 @@ async function getMaintenanceDispatchFiles(
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { dispatchId } = params;
   if (!dispatchId) throw new Error("Could not find dispatchId");
 
   const [dispatch, events, items, comments, failureModes] = await Promise.all([
-    getMaintenanceDispatch(client, dispatchId),
-    getMaintenanceDispatchEvents(client, dispatchId),
-    getMaintenanceDispatchItems(client, dispatchId),
-    getMaintenanceDispatchComments(client, dispatchId),
-    getFailureModesList(client, companyId)
+    api.resources.getMaintenanceDispatch({ dispatchId }),
+    api.resources.getMaintenanceDispatchEvents({ dispatchId }),
+    api.resources.getMaintenanceDispatchItems({ dispatchId }),
+    api.resources.getMaintenanceDispatchComments({ dispatchId }),
+    api.resources.getFailureModesList({})
   ]);
 
   if (dispatch.error) {

@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAssemblyInstructions } from "~/modules/production/production.service";
 import AssemblyInstructionsTable from "~/modules/production/ui/Assemblies/AssemblyInstructionsTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -19,17 +19,19 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production",
     role: "employee"
   });
+  const { companyId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
   const { limit, offset } = getGenericQueryFilters(searchParams);
 
-  const instructions = await getAssemblyInstructions(client, {
+  const instructions = await api.production.getAssemblyInstructions({
     companyId,
     search: search ?? undefined,
     limit,
@@ -37,8 +39,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   return {
-    instructions: instructions.data ?? [],
-    count: instructions.count ?? 0
+    instructions: instructions.data?.rows ?? [],
+    count: instructions.data?.count ?? 0
   };
 }
 

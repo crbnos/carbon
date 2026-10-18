@@ -2,17 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getItemStockQuantitiesByLocation } from "~/modules/items/items.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const api = carbonFor(auth);
 
   const { locationId } = params;
   if (!locationId) throw new Error("Could not find locationId");
 
-  return await getItemStockQuantitiesByLocation(client, companyId, locationId);
+  return await api.items.getItemStockQuantitiesByLocation({ locationId });
 }

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { carbon, carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -89,10 +89,7 @@ import { useSettings } from "~/hooks";
 // Deep service import (not the ~/modules/accounting barrel) to keep this
 // route's type graph light — see the TS2589 note in
 // ~/modules/settings/ui/Integrations/index.ts.
-import {
-  getAccountsList,
-  getActiveDimensionsWithValues
-} from "~/modules/accounting/accounting.service";
+import { getActiveDimensionsWithValues } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   accountMappingAiSuggestValidator,
@@ -469,12 +466,11 @@ async function getDimensionSyncTabData(
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      update: "settings"
-    }
-  );
+  const auth = await requirePermissions(request, {
+    update: "settings"
+  });
+  const { client, companyId, companyGroupId } = auth;
+  const api = carbonFor(auth);
 
   const { id: integrationId } = params;
   if (!integrationId) throw new Error("Integration ID not found");
@@ -496,7 +492,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // partitioned by account class. Options over CHOICE_CARD_MAX_OPTIONS render
   // as a Select automatically.
   if (integrationId === "ramp") {
-    const accountsResult = await getAccountsList(client, companyGroupId, {
+    const accountsResult = await api.accounting.getAccountsList({
       isGroup: false
     });
     const accounts = accountsResult.data ?? [];
@@ -516,11 +512,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     dynamicOptions.reimbursementBankAccountId = assetOptions;
   }
 
-  const integrationData = await getIntegration(
-    client,
-    integrationId,
-    companyId
-  );
+  const integrationData = await api.settings.getIntegration({
+    id: integrationId
+  });
 
   if (integrationData.error || !integrationData.data) {
     return {

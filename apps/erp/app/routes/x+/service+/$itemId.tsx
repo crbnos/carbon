@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -31,10 +32,7 @@ import {
   getItemFiles,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
-  getMethodTree,
   getPartUsedIn,
-  getService,
-  getSupplierParts,
   streamItemSupersession
 } from "~/modules/items/items.service";
 import type { ItemFile, ServiceSummary } from "~/modules/items/types";
@@ -42,7 +40,6 @@ import { BoMActions, BoMExplorer } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
 import { ServiceHeader, ServiceProperties } from "~/modules/items/ui/Services";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -53,10 +50,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -68,9 +67,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   const [serviceSummary, supplierParts, tags] = await Promise.all([
-    getService(client, itemId, companyId),
-    getSupplierParts(client, itemId, companyId),
-    getTagsList(client, companyId, "service")
+    api.items.getService({ itemId }),
+    api.items.getSupplierParts({ id: itemId }),
+    api.shared.getTagsList({ table: "service" })
   ]);
 
   if (serviceSummary.error) {
@@ -103,7 +102,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
       if (fullMethod.error || !fullMethod.data) return null;
 
-      const tree = await getMethodTree(client, fullMethod.data.id);
+      const tree = await api.items.getMethodTree({
+        makeMethodId: fullMethod.data.id
+      });
       if (tree.error) return null;
 
       const methods = tree.data.length > 0 ? flattenTree(tree.data[0]) : [];

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,23 +11,23 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { attributeCategoryValidator } from "~/modules/people/people.models";
-import {
-  getAttributeCategory,
-  updateAttributeCategory
-} from "~/modules/people/people.service";
+import { updateAttributeCategory } from "~/modules/people/people.service";
 import { AttributeCategoryForm } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "people",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { categoryId } = params;
   if (!categoryId) throw notFound("Invalid categoryId");
 
-  const attributeCategory = await getAttributeCategory(client, categoryId);
+  const attributeCategory = await api.people.getAttributeCategory({
+    id: categoryId
+  });
   if (attributeCategory.error) {
     throw redirect(
       path.to.attributes,

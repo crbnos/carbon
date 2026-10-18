@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,23 +11,21 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { sequenceValidator } from "~/modules/settings/settings.models";
-import {
-  getSequence,
-  updateSequence
-} from "~/modules/settings/settings.service";
+import { updateSequence } from "~/modules/settings/settings.service";
 import { SequenceForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "settings",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { tableId } = params;
   if (!tableId) throw notFound("tableId not found");
 
-  const sequence = await getSequence(client, tableId, companyId);
+  const sequence = await api.settings.getSequence({ table: tableId });
   if (sequence.error) {
     throw redirect(
       path.to.sequences,

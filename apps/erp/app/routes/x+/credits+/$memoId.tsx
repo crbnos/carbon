@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -14,7 +15,6 @@ import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { memoValidator } from "~/modules/invoicing/invoicing.models";
 import {
   getMemo,
-  getMemoApplications,
   getSettlementRelatedItems,
   upsertMemo
 } from "~/modules/invoicing/invoicing.service";
@@ -49,13 +49,15 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "invoicing"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
   const { memoId } = params;
   if (!memoId) throw notFound("Missing memoId");
 
-  const memo = await getMemo(client, memoId, companyId);
+  const memo = await api.invoicing.getMemo({ id: memoId });
   if (memo.error || !memo.data) {
     throw redirect(
       path.to.invoicing,
@@ -63,7 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const applications = await getMemoApplications(client, companyId, memoId);
+  const applications = await api.invoicing.getMemoApplications({ memoId });
 
   return {
     memo: memo.data,

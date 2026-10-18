@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -27,14 +28,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useSettings, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { CONSTRUCTION_IN_PROGRESS_ENABLED } from "~/modules/accounting/accounting.models";
-import {
-  getAssetDepreciationHistory,
-  getFixedAsset,
-  getFixedAssetCipCosts,
-  getFixedAssetDisposal,
-  getFixedAssetRelatedItems,
-  getFixedAssetTransfers
-} from "~/modules/accounting/accounting.service";
+import { getFixedAssetRelatedItems } from "~/modules/accounting/accounting.service";
 import {
   DepreciationRunStatus,
   FixedAssetCipCosts,
@@ -42,7 +36,6 @@ import {
   FixedAssetHeader,
   FixedAssetNotes
 } from "~/modules/accounting/ui/FixedAssets";
-import { getWorkCenter } from "~/modules/resources/resources.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -55,20 +48,22 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw new Error("Could not find fixedAssetId");
 
   const [asset, depreciationHistory, disposal, transfers, cipCosts] =
     await Promise.all([
-      getFixedAsset(client, fixedAssetId, companyId),
-      getAssetDepreciationHistory(client, fixedAssetId),
-      getFixedAssetDisposal(client, fixedAssetId),
-      getFixedAssetTransfers(client, fixedAssetId, companyId),
-      getFixedAssetCipCosts(client, fixedAssetId, companyId)
+      api.accounting.getFixedAsset({ id: fixedAssetId }),
+      api.accounting.getAssetDepreciationHistory({ fixedAssetId }),
+      api.accounting.getFixedAssetDisposal({ fixedAssetId }),
+      api.accounting.getFixedAssetTransfers({ fixedAssetId }),
+      api.accounting.getFixedAssetCipCosts({ fixedAssetId })
     ]);
 
   if (asset.error) {
@@ -93,7 +88,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [workCenter, cipJobs] = await Promise.all([
     asset.data.workCenterId
-      ? getWorkCenter(client, asset.data.workCenterId)
+      ? api.resources.getWorkCenter({ id: asset.data.workCenterId })
       : null,
     cipJobIds.length > 0
       ? client

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,9 +11,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getTimecardEntries } from "~/modules/people/people.service";
 import { TimecardsTable } from "~/modules/people/ui/Timecards";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -23,11 +22,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "people"
   });
+  const api = carbonFor(auth);
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
   if (!companySettings.data?.timeCardEnabled) {
     throw redirect(
       path.to.people,
@@ -47,7 +47,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const entries = await getTimecardEntries(client, companyId, {
+  const entries = await api.people.getTimecardEntries({
     search,
     limit,
     offset,
@@ -66,8 +66,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    entries: entries.data ?? [],
-    count: entries.count ?? 0
+    entries: entries.data?.rows ?? [],
+    count: entries.data?.count ?? 0
   };
 }
 

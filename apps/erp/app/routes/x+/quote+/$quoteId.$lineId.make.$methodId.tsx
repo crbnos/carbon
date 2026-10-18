@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,22 +16,19 @@ import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel } from "~/components";
 import { usePermissions } from "~/hooks";
 import {
-  getQuoteMakeMethod,
-  getQuoteMaterialsByMethodId,
-  getQuoteOperationsByMethodId
-} from "~/modules/sales/sales.service";
-import {
   QuoteBillOfMaterial,
   QuoteBillOfProcess,
   QuoteMakeMethodTools
 } from "~/modules/sales/ui/Quotes";
-import { getModelByItemId, getTagsList } from "~/modules/shared/shared.service";
+import { getModelByItemId } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const { client } = auth;
+  const api = carbonFor(auth);
 
   const { quoteId, lineId, methodId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -38,10 +36,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!methodId) throw new Error("Could not find methodId");
 
   const [makeMethod, materials, operations, tags] = await Promise.all([
-    getQuoteMakeMethod(client, methodId),
-    getQuoteMaterialsByMethodId(client, methodId),
-    getQuoteOperationsByMethodId(client, methodId),
-    getTagsList(client, companyId, "operation")
+    api.sales.getQuoteMakeMethod({ quoteMakeMethodId: methodId }),
+    api.sales.getQuoteMaterialsByMethodId({ quoteMakeMethodId: methodId }),
+    api.sales.getQuoteOperationsByMethodId({ quoteMakeMethodId: methodId }),
+    api.shared.getTagsList({ table: "operation" })
   ]);
 
   if (makeMethod.error) {

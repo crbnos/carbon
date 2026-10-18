@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -22,11 +22,8 @@ import {
 } from "~/modules/items/items.models";
 import {
   getItemChangeNoticeDataOnce,
-  getItemManufacturing,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId,
   getRevisionLock
 } from "~/modules/items/items.service";
 import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items/types";
@@ -46,16 +43,17 @@ import {
   MakeMethodTools
 } from "~/modules/items/ui/Item";
 import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -109,10 +107,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [methodMaterials, methodOperations, tags, toolManufacturing] =
     await Promise.all([
-      getMethodMaterialsByMakeMethod(client, fullMethod.data.id),
-      getMethodOperationsByMakeMethodId(client, fullMethod.data.id),
-      getTagsList(client, companyId, "operation"),
-      getItemManufacturing(client, itemId, companyId)
+      api.items.getMethodMaterialsByMakeMethod({
+        makeMethodId: fullMethod.data.id
+      }),
+      api.items.getMethodOperationsByMakeMethodId({
+        makeMethodId: fullMethod.data.id
+      }),
+      api.shared.getTagsList({ table: "operation" }),
+      api.items.getItemManufacturing({ id: itemId })
     ]);
 
   return {

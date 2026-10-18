@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -15,11 +16,6 @@ import {
   getBalloons,
   getInspection,
   getInspectionDocument,
-  getInspectionGauges,
-  getInspectionMeasurements,
-  getInspectionSamplingPlans,
-  getInspectionTrackedEntities,
-  getIssueTypesList,
   getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
 } from "~/modules/quality/quality.service";
@@ -33,7 +29,6 @@ import type {
   IssueTypeListItem
 } from "~/modules/quality/types";
 import InspectionView from "~/modules/quality/ui/Inspections/InspectionView";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -51,17 +46,19 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
   const { id } = params;
   invariant(id, "id is required");
 
   const [inspection, settings, issueTypes] = await Promise.all([
     getInspection(client, id),
-    getCompanySettings(client, companyId),
-    getIssueTypesList(client, companyId)
+    api.settings.getCompanySettings({}),
+    api.quality.getIssueTypesList({})
   ]);
 
   if (inspection.error || !inspection.data) {
@@ -104,19 +101,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     balloons,
     receipt
   ] = await Promise.all([
-    getInspectionSamplingPlans(client, id, companyId),
-    getInspectionMeasurements(client, id, companyId),
-    getInspectionGauges(client, companyId, id),
+    api.quality.getInspectionSamplingPlans({ inspectionId: id }),
+    api.quality.getInspectionMeasurements({ inspectionId: id }),
+    api.quality.getInspectionGauges({ inspectionId: id }),
     getRecentInspectionGauges(getDatabaseClient(), {
       inspectionId: id,
       companyId
     }),
     isReceiptSource && insp.sourceDocumentLineId
-      ? getInspectionTrackedEntities(
-          client,
-          insp.sourceDocumentLineId,
-          companyId
-        )
+      ? api.quality.getInspectionTrackedEntities({
+          receiptLineId: insp.sourceDocumentLineId
+        })
       : Promise.resolve({ data: null, error: null }),
     insp.inspectionDocumentId
       ? getInspectionDocument(serviceRole, insp.inspectionDocumentId, companyId)

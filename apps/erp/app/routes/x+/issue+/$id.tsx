@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -14,17 +15,8 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import {
-  getChangeNoticesForNonConformance,
-  getItemFiles
-} from "~/modules/items/items.service";
-import {
-  getIssue,
-  getIssueAssociations,
-  getIssueSuppliers,
-  getIssueTypesList,
-  getRequiredActionsList
-} from "~/modules/quality/quality.service";
+import { getItemFiles } from "~/modules/items/items.service";
+import { getIssueAssociations } from "~/modules/quality/quality.service";
 import type { IssueAssociationNode } from "~/modules/quality/types";
 import {
   IssueAssociationsSkeleton,
@@ -32,7 +24,6 @@ import {
 } from "~/modules/quality/ui/Issue/IssueAssociations";
 import IssueHeader from "~/modules/quality/ui/Issue/IssueHeader";
 import IssueProperties from "~/modules/quality/ui/Issue/IssueProperties";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -57,10 +48,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -73,13 +66,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags,
     changeNotices
   ] = await Promise.all([
-    getIssue(client, id),
-    getIssueTypesList(client, companyId),
-    getRequiredActionsList(client, companyId),
-    getIssueSuppliers(client, id, companyId),
-    getTagsList(client, companyId, "nonConformance"),
+    api.quality.getIssue({ nonConformanceId: id }),
+    api.quality.getIssueTypesList({}),
+    api.quality.getRequiredActionsList({}),
+    api.quality.getIssueSuppliers({ id }),
+    api.shared.getTagsList({ table: "nonConformance" }),
     // Reverse Linked-NCR cross-link (4a): COs referencing this issue.
-    getChangeNoticesForNonConformance(client, id, companyId)
+    api.items.getChangeNoticesForNonConformance({ nonConformanceId: id })
   ]);
 
   if (nonConformance.error) {

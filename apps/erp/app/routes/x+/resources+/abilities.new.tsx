@@ -2,22 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { abilityValidator } from "~/modules/resources/resources.models";
-import { getProcessesWithoutAbility } from "~/modules/resources/resources.service";
 import { AbilityForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     create: "resources"
   });
+  const api = carbonFor(auth);
 
-  const processes = await getProcessesWithoutAbility(client, companyId);
+  const processes = await api.resources.getProcessesWithoutAbility({});
 
   return {
     processes: (processes.data ?? []).map((p) => ({

@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getShippedTrackedEntitiesForCustomer } from "~/modules/sales/sales.service";
 
 // Candidate serials/batches for a sales-return receipt line — the picker
 // source for return-receipt tracking (ReturnEntityForm). "Which serial is it"
@@ -14,9 +14,11 @@ import { getShippedTrackedEntitiesForCustomer } from "~/modules/sales/sales.serv
 // additionally returns the entities currently assigned to that receipt line
 // (attributes "Receipt Line").
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const lineId = url.searchParams.get("lineId");
@@ -46,12 +48,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [candidates, assigned] = await Promise.all([
     customerId && itemId
-      ? getShippedTrackedEntitiesForCustomer(
-          client,
-          companyId,
-          customerId,
-          itemId
-        )
+      ? api.sales.getShippedTrackedEntitiesForCustomer({ customerId, itemId })
       : Promise.resolve({ data: [], error: null }),
     receiptLineId
       ? client

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -17,11 +18,6 @@ import { useRouteData } from "~/hooks";
 import { usePermissions } from "~/hooks/usePermissions";
 import {
   getConfigurationRules,
-  getItemManufacturing,
-  getMakeMethodById,
-  getMakeMethods,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId,
   getRevisionLock
 } from "~/modules/items/items.service";
 import { getConfigurationParameters } from "~/modules/items/items.utils";
@@ -31,14 +27,16 @@ import {
   BillOfProcess,
   MakeMethodTools
 } from "~/modules/items/ui/Item";
-import { getModelByItemId, getTagsList } from "~/modules/shared/shared.service";
+import { getModelByItemId } from "~/modules/shared/shared.service";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { itemId, makeMethodId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -52,11 +50,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     partManufacturing,
     revisionLock
   ] = await Promise.all([
-    getMakeMethodById(client, makeMethodId, companyId),
-    getMethodMaterialsByMakeMethod(client, makeMethodId),
-    getMethodOperationsByMakeMethodId(client, makeMethodId),
-    getTagsList(client, companyId, "operation"),
-    getItemManufacturing(client, itemId, companyId),
+    api.items.getMakeMethodById({ makeMethodId }),
+    api.items.getMethodMaterialsByMakeMethod({ makeMethodId }),
+    api.items.getMethodOperationsByMakeMethodId({ makeMethodId }),
+    api.shared.getTagsList({ table: "operation" }),
+    api.items.getItemManufacturing({ id: itemId }),
     getRevisionLock(client, { itemId, companyId })
   ]);
 
@@ -131,7 +129,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     partManufacturing: partManufacturing.data,
     ...configData,
     model: getModelByItemId(client, makeMethod.data.itemId),
-    makeMethods: getMakeMethods(client, makeMethod.data.itemId, companyId),
+    makeMethods: api.items.getMakeMethods({ itemId: makeMethod.data.itemId }),
     tags: tags.data ?? [],
     revisionStatus: revisionLock.revisionStatus,
     releaseControl: revisionLock.releaseControl

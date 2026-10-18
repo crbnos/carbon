@@ -2,16 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import {
-  getMaterialFormsList,
-  getMaterialSubstancesList,
-  getUnitOfMeasuresList
-} from "~/modules/items/items.service";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -28,15 +23,16 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const api = carbonFor(auth);
 
   const [unitOfMeasures, locations, forms, substances] = await Promise.all([
-    getUnitOfMeasuresList(client, companyId),
-    getLocationsList(client, companyId),
-    getMaterialFormsList(client, companyId),
-    getMaterialSubstancesList(client, companyId)
+    api.items.getUnitOfMeasuresList({}),
+    api.resources.getLocationsList({}),
+    api.items.getMaterialFormsList({}),
+    api.items.getMaterialSubstancesList({})
   ]);
 
   return {

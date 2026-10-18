@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { flattenTree } from "~/components/TreeView";
 import type { BomItemAttributes } from "~/modules/items/items.service";
-import { getBomItemAttributes } from "~/modules/items/items.service";
 import { getJobMethodTree } from "~/modules/production/production.utils";
 import type { JobOperation } from "~/modules/production/types";
 import type { BomOperation } from "~/utils/bom";
@@ -56,9 +56,11 @@ const operationHeaders = [
 ];
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   const withOperations = request.url.includes("withOperations=true");
@@ -114,7 +116,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       jobId
         ? client.from("job").select("quantity").eq("id", jobId).single()
         : null,
-      getBomItemAttributes(client, companyId, itemIds)
+      api.items.getBomItemAttributes({ itemIds })
     ]
   );
 

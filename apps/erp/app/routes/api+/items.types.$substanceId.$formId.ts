@@ -2,17 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getMaterialTypeList } from "~/modules/items/items.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   if (!params.substanceId || !params.formId) {
     return data(
@@ -21,12 +22,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return await getMaterialTypeList(
-    client,
-    params.substanceId,
-    params.formId,
-    companyId
-  );
+  return await api.items.getMaterialTypeList({
+    materialSubstanceId: params.substanceId,
+    materialFormId: params.formId
+  });
 }
 
 export const clientLoader = cachedClientLoader<typeof loader>();

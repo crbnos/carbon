@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -25,9 +26,7 @@ import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { revenueScheduleTypes } from "~/modules/accounting/accounting.models";
 import {
   getCompanyToday,
-  getPeriodRunRelatedItems,
-  getRevenueRecognitionRun,
-  getRevenueRecognitionRunLines
+  getPeriodRunRelatedItems
 } from "~/modules/accounting/accounting.service";
 import {
   getNextPeriodEnd,
@@ -59,16 +58,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { runId } = params;
   if (!runId) throw new Error("Could not find runId");
 
   const [run, lines, companyToday] = await Promise.all([
-    getRevenueRecognitionRun(client, runId, companyId),
-    getRevenueRecognitionRunLines(client, runId, companyId),
+    api.accounting.getRevenueRecognitionRun({ id: runId }),
+    api.accounting.getRevenueRecognitionRunLines({ runId }),
     getCompanyToday(client, companyId)
   ]);
 

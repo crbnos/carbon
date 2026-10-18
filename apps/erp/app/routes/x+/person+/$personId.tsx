@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { accountProfileValidator } from "@carbon/account";
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,9 +13,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import { getEmployeeSummary } from "~/modules/people/people.service";
 import { PersonPreview, PersonSidebar } from "~/modules/people/ui/Person";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import {
   getAllAttributeCategories,
   updatePublicAccount
@@ -34,18 +33,20 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "people"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 
   const [employeeSummary, attributeCategories, companySettings] =
     await Promise.all([
-      getEmployeeSummary(client, personId, companyId),
+      api.people.getEmployeeSummary({ employeeId: personId }),
       getAllAttributeCategories(client, personId, companyId),
-      getCompanySettings(client, companyId)
+      api.settings.getCompanySettings({})
     ]);
 
   if (employeeSummary.error) {

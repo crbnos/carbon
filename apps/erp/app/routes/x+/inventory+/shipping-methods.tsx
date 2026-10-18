@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,8 +11,6 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAccountsList } from "~/modules/accounting/accounting.service";
-import { getShippingMethods } from "~/modules/inventory/inventory.service";
 import { ShippingMethodsTable } from "~/modules/inventory/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -23,13 +22,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "inventory",
-      role: "employee"
-    }
-  );
+  const auth = await requirePermissions(request, {
+    view: "inventory",
+    role: "employee"
+  });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -38,14 +35,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [shippingMethods] = await Promise.all([
-    getShippingMethods(client, companyId, {
+    api.inventory.getShippingMethods({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getAccountsList(client, companyGroupId)
+    api.accounting.getAccountsList({})
   ]);
 
   if (shippingMethods.error) {
@@ -56,8 +53,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    shippingMethods: shippingMethods.data ?? [],
-    count: shippingMethods.count ?? 0
+    shippingMethods: shippingMethods.data?.rows ?? [],
+    count: shippingMethods.data?.count ?? 0
   };
 }
 

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,20 +12,20 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { getRevenueRecognitionRun } from "~/modules/accounting/accounting.service";
 import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { runId } = params;
   if (!runId) throw notFound("runId not found");
 
-  const run = await getRevenueRecognitionRun(client, runId, companyId);
+  const run = await api.accounting.getRevenueRecognitionRun({ id: runId });
   if (run.error) {
     throw redirect(
       path.to.revenueRecognitionRuns,

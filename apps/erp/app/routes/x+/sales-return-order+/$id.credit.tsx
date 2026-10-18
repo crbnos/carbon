@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,10 +11,7 @@ import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { salesReturnOrderCreditValidator } from "~/modules/sales/sales.models";
-import {
-  createSalesReturnOrderCredit,
-  getCreditableQuantities
-} from "~/modules/sales/sales.service";
+import { createSalesReturnOrderCredit } from "~/modules/sales/sales.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -21,14 +19,17 @@ import { path } from "~/utils/path";
 // Feeds the Issue Credit modal: per-line creditable pool (received − already
 // credited over non-voided memos) with the pricing needed for the preview.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const creditable = await getCreditableQuantities(client, id, companyId);
+  const creditable = await api.sales.getCreditableQuantities({
+    salesReturnOrderId: id
+  });
   if (creditable.error) {
     console.error("Failed to load creditable quantities:", creditable.error);
   }

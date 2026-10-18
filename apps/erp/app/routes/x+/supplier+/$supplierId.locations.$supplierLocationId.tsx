@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import {
   assertIsPost,
   badRequest,
@@ -16,24 +17,24 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { supplierLocationValidator } from "~/modules/purchasing/purchasing.models";
-import {
-  getSupplierLocation,
-  updateSupplierLocation
-} from "~/modules/purchasing/purchasing.service";
+import { updateSupplierLocation } from "~/modules/purchasing/purchasing.service";
 import SupplierLocationForm from "~/modules/purchasing/ui/Supplier/SupplierLocationForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "purchasing"
   });
+  const api = carbonFor(auth);
 
   const { supplierId, supplierLocationId } = params;
   if (!supplierId) throw notFound("supplierId not found");
   if (!supplierLocationId) throw notFound("supplierLocationId not found");
 
-  const location = await getSupplierLocation(client, supplierLocationId);
+  const location = await api.purchasing.getSupplierLocation({
+    supplierContactId: supplierLocationId
+  });
   if (location.error) {
     throw redirect(
       path.to.supplierLocations(supplierId),

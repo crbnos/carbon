@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,20 +12,20 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { maintenanceScheduleValidator } from "~/modules/resources/resources.models";
-import { getMaintenanceSchedule } from "~/modules/resources/resources.service";
 import MaintenanceScheduleForm from "~/modules/resources/ui/MaintenanceSchedule/MaintenanceScheduleForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { scheduleId } = params;
   if (!scheduleId) throw notFound("scheduleId not found");
 
-  const schedule = await getMaintenanceSchedule(client, scheduleId);
+  const schedule = await api.resources.getMaintenanceSchedule({ scheduleId });
 
   if (schedule.error) {
     throw redirect(

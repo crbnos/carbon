@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,9 +11,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getShifts } from "~/modules/people/people.service";
 import { ShiftsTable } from "~/modules/people/ui/Shifts";
-import { getLocations } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -23,11 +22,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "people",
     role: "employee",
     bypassRls: true
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -36,8 +36,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [shifts, locations] = await Promise.all([
-    getShifts(client, companyId, { search, limit, offset, sorts, filters }),
-    getLocations(client, companyId)
+    api.people.getShifts({ search, limit, offset, sorts, filters }),
+    api.resources.getLocations({})
   ]);
 
   if (shifts.error) {
@@ -48,9 +48,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    shifts: shifts.data ?? [],
-    locations: locations.data ?? [],
-    count: shifts.count ?? 0
+    shifts: shifts.data?.rows ?? [],
+    locations: locations.data?.rows ?? [],
+    count: shifts.data?.count ?? 0
   };
 }
 

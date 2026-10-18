@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -14,20 +15,9 @@ import {
 import { pluckUnique, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  expandStorageUnitIdsWithDescendants,
-  getInventoryItems,
-  getStorageTypesList,
-  getStorageUnitsList
-} from "~/modules/inventory/inventory.service";
+import { expandStorageUnitIdsWithDescendants } from "~/modules/inventory/inventory.service";
 import type { InventoryItem } from "~/modules/inventory/types";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
-import {
-  getMaterialFormsList,
-  getMaterialSubstancesList
-} from "~/modules/items/items.service";
-import { getLocationsList } from "~/modules/resources/resources.service";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -38,10 +28,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory",
     bypassRls: true
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -77,7 +69,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await api.resources.getLocationsList({});
     if (locations.error || !locations.data?.length) {
       // `path.to.inventory` *is* this route — redirecting here loops forever.
       // On error bail to the app root; with zero locations (a company that
@@ -100,18 +92,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [inventoryItems, forms, substances, tags, storageTypes, storageUnits] =
     await Promise.all([
-      getInventoryItems(client, locationId, companyId, {
+      api.inventory.getInventoryItems({
         search,
         limit,
         offset,
         sorts,
-        filters
+        filters,
+        locationId
       }),
-      getMaterialFormsList(client, companyId),
-      getMaterialSubstancesList(client, companyId),
-      getTagsList(client, companyId),
-      getStorageTypesList(client, companyId),
-      getStorageUnitsList(client, companyId)
+      api.items.getMaterialFormsList({}),
+      api.items.getMaterialSubstancesList({}),
+      api.shared.getTagsList({}),
+      api.inventory.getStorageTypesList({}),
+      api.inventory.getStorageUnitsList({})
     ]);
 
   if (inventoryItems.error) {
@@ -127,8 +120,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const uniqueTags = pluckUnique(tags.data, (t) => t.name);
 
   return {
-    count: inventoryItems.count ?? 0,
-    inventoryItems: (inventoryItems.data ?? []) as InventoryItem[],
+    count: inventoryItems.data?.count ?? 0,
+    inventoryItems: (inventoryItems.data?.rows ?? []) as InventoryItem[],
     locationId,
     forms: forms.data ?? [],
     substances: substances.data ?? [],

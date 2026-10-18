@@ -2,17 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import type { UnreleasedChangeOrderItem } from "~/modules/items/items.service";
 import {
   getConsumable,
   getItemFiles,
-  getMakeMethods,
   getMaterial,
   getPart,
-  getPickMethods,
-  getSupplierParts,
   getTool,
   getUnreleasedChangeOrderForItem
 } from "~/modules/items/items.service";
@@ -26,8 +24,6 @@ import type {
   SupplierPart,
   Tool
 } from "~/modules/items/types";
-import { getLocationsList } from "~/modules/resources/resources.service";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { ListItem } from "~/types";
 
 type CommonFields = {
@@ -58,10 +54,12 @@ const typeConfig = {
 } as const;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -89,12 +87,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     unreleasedChangeOrder
   ] = await Promise.all([
     getSummary(client, itemId, companyId),
-    getSupplierParts(client, itemId, companyId),
-    getPickMethods(client, itemId, companyId),
-    getTagsList(client, companyId, tagTable),
-    needsMakeMethods ? getMakeMethods(client, itemId, companyId) : null,
+    api.items.getSupplierParts({ id: itemId }),
+    api.items.getPickMethods({ itemId }),
+    api.shared.getTagsList({ table: tagTable }),
+    needsMakeMethods ? api.items.getMakeMethods({ itemId }) : null,
     getItemFiles(client, itemId, companyId),
-    getLocationsList(client, companyId),
+    api.resources.getLocationsList({}),
     getUnreleasedChangeOrderForItem(client, { itemId, companyId })
   ]);
 

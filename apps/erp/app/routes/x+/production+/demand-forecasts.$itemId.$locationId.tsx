@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,7 +14,6 @@ import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { demandProjectionValidator } from "~/modules/production/production.models";
-import { getDemandProjections } from "~/modules/production/production.service";
 import DemandProjectionsForm from "~/modules/production/ui/DemandProjection/DemandProjectionForm";
 import {
   getLocationTimeZone,
@@ -25,9 +25,11 @@ import { path } from "~/utils/path";
 const WEEKS_TO_PROJECT = 52;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { itemId, locationId } = params;
 
@@ -42,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   // Load existing demand forecasts for this item and location
-  const existingProjections = await getDemandProjections(client, {
+  const existingProjections = await api.production.getDemandProjections({
     itemId,
     locationId,
     companyId,

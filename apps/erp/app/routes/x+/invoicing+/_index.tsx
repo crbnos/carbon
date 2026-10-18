@@ -2,21 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
-import {
-  getApAging,
-  getApTieOut,
-  getArAging,
-  getArTieOut,
-  getPayments
-} from "~/modules/invoicing/invoicing.service";
 import type { AgingTotals, RecentPayment } from "~/modules/invoicing/ui";
 import { InvoicingDashboard } from "~/modules/invoicing/ui";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -64,9 +57,11 @@ function sumAging(rows: AgingRow[]): AgingTotals {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "invoicing"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const asOfDate = datetime
     .today(await getCompanyTimeZone(client, companyId))
@@ -75,19 +70,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // GL tie-outs only mean something once journals count — skip them
   // entirely before the accounting cutover.
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
   const accountingSetUp = hasAccountingCutover(companySettings.data);
 
   const [arAging, apAging, arTieOut, apTieOut, payments] = await Promise.all([
-    getArAging(client, companyId, asOfDate, { bucketDays: BUCKET_DAYS }),
-    getApAging(client, companyId, asOfDate, { bucketDays: BUCKET_DAYS }),
+    api.invoicing.getArAging({
+      asOfDate,
+      options: { bucketDays: BUCKET_DAYS }
+    }),
+    api.invoicing.getApAging({
+      asOfDate,
+      options: { bucketDays: BUCKET_DAYS }
+    }),
     accountingSetUp
-      ? getArTieOut(client, companyId, asOfDate)
+      ? api.invoicing.getArTieOut({ asOfDate })
       : Promise.resolve({ data: null }),
     accountingSetUp
-      ? getApTieOut(client, companyId, asOfDate)
+      ? api.invoicing.getApTieOut({ asOfDate })
       : Promise.resolve({ data: null }),
-    getPayments(client, companyId, {
+    api.invoicing.getPayments({
       search: null,
       paymentType: null,
       status: null,
@@ -108,7 +109,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ap: sumAging((apAging.data ?? []) as AgingRow[]),
     arTieOut: arTieOut.data ?? null,
     apTieOut: apTieOut.data ?? null,
-    recentPayments: (payments.data ?? []) as unknown as RecentPayment[]
+    recentPayments: (payments.data?.rows ?? []) as unknown as RecentPayment[]
   };
 }
 

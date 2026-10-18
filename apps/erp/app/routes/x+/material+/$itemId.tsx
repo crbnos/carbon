@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,11 +16,7 @@ import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
 import {
   getItemFiles,
-  getMakeMethods,
-  getMaterial,
   getMaterialUsedIn,
-  getPickMethods,
-  getSupplierParts,
   streamItemSupersession
 } from "~/modules/items/items.service";
 import type { ItemFile, MaterialSummary } from "~/modules/items/types";
@@ -29,7 +26,6 @@ import {
   MaterialHeader,
   MaterialProperties
 } from "~/modules/items/ui/Materials";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -42,10 +38,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -58,10 +56,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [materialSummary, supplierParts, pickMethods, tags] = await Promise.all(
     [
-      getMaterial(client, itemId, companyId),
-      getSupplierParts(client, itemId, companyId),
-      getPickMethods(client, itemId, companyId),
-      getTagsList(client, companyId, "material")
+      api.items.getMaterial({ itemId }),
+      api.items.getSupplierParts({ id: itemId }),
+      api.items.getPickMethods({ itemId }),
+      api.shared.getTagsList({ table: "material" })
     ]
   );
 
@@ -82,7 +80,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
-    makeMethods: getMakeMethods(client, itemId, companyId),
+    makeMethods: api.items.getMakeMethods({ itemId }),
     tags: tags.data ?? [],
     usedIn: getMaterialUsedIn(client, itemId, companyId)
   };

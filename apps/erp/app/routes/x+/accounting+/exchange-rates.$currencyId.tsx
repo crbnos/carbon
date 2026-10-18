@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
@@ -13,11 +13,6 @@ import {
   currencyFormValidator,
   exchangeRateOverrideValidator
 } from "~/modules/accounting/accounting.models";
-import {
-  getCurrency,
-  getExchangeRateHistory,
-  getExchangeRates
-} from "~/modules/accounting/accounting.service";
 import { ExchangeRateForm } from "~/modules/accounting/ui/ExchangeRates";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -27,21 +22,22 @@ const resetForm = z.object({
 });
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { currencyId } = params;
   if (!currencyId) throw notFound("currencyId not found");
 
-  const currency = await getCurrency(client, currencyId);
+  const currency = await api.accounting.getCurrency({ currencyId });
   const code = currency.data?.code;
 
   const [exchangeRates, exchangeRateHistory] = code
     ? await Promise.all([
-        getExchangeRates(client, companyId),
-        getExchangeRateHistory(client, code)
+        api.accounting.getExchangeRates({}),
+        api.accounting.getExchangeRateHistory({ currencyCode: code })
       ])
     : [{ data: null }, { data: [] }];
 

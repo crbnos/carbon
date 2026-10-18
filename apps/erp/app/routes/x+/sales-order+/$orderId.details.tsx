@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -17,11 +17,6 @@ import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
 import { salesOrderValidator } from "~/modules/sales/sales.models";
-import {
-  getSalesOrder,
-  getSalesOrderPayment,
-  getSalesOrderShipment
-} from "~/modules/sales/sales.service";
 import type {
   Opportunity,
   SalesOrder,
@@ -42,17 +37,18 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const api = carbonFor(auth);
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
   const [order, payment, shipment] = await Promise.all([
-    getSalesOrder(client, orderId),
-    getSalesOrderPayment(client, orderId),
-    getSalesOrderShipment(client, orderId)
+    api.sales.getSalesOrder({ salesOrderId: orderId }),
+    api.sales.getSalesOrderPayment({ salesOrderId: orderId }),
+    api.sales.getSalesOrderShipment({ salesOrderId: orderId })
   ]);
 
   if (order.error) {

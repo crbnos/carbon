@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,12 +11,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getCustomerStatuses,
-  getCustomers
-} from "~/modules/sales/sales.service";
 import { CustomersTable } from "~/modules/sales/ui/Customers";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -27,10 +23,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales",
     bypassRls: true
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -40,15 +37,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [customers, customerStatuses, tags] = await Promise.all([
-    getCustomers(client, companyId, {
+    api.sales.getCustomers({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getCustomerStatuses(client, companyId),
-    getTagsList(client, companyId, "customer")
+    api.sales.getCustomerStatuses({}),
+    api.shared.getTagsList({ table: "customer" })
   ]);
 
   if (customers.error) {
@@ -59,9 +56,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    count: customers.count ?? 0,
-    customers: customers.data ?? [],
-    customerStatuses: customerStatuses.data ?? [],
+    count: customers.data?.count ?? 0,
+    customers: customers.data?.rows ?? [],
+    customerStatuses: customerStatuses.data?.rows ?? [],
     tags: tags.data ?? []
   };
 }

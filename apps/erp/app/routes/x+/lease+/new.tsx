@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -20,10 +21,7 @@ import {
   LeaseDetailsForm,
   LeaseSetupSteps
 } from "~/modules/purchasing/ui/Leases";
-import {
-  getCompanySettings,
-  getNextSequence
-} from "~/modules/settings/settings.service";
+import { getNextSequence } from "~/modules/settings/settings.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -36,11 +34,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     create: "purchasing"
   });
+  const { companyId } = auth;
+  const api = carbonFor(auth);
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
   // Without the settings the lease would be discounted at 0 % unnoticed.
   if (companySettings.error) {
     logger.error("company settings read failed for a new lease", {

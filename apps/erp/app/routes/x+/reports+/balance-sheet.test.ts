@@ -8,6 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as accounting from "~/modules/accounting/accounting.server";
 import {
   getCompaniesInGroup,
   getConsolidatedPeriodSeriesForReport,
@@ -18,9 +19,12 @@ import {
 import type { ChartPeriodSeries } from "~/modules/accounting/types";
 import { NET_INCOME_ACCOUNT_ID } from "~/modules/accounting/types";
 import { exportPeriodReport } from "~/modules/accounting/ui/Reports/exportReport";
+import { registerTestCarbon } from "../../../../test/register-carbon";
 import { loader } from "./balance-sheet";
 import { loader as incomeStatementLoader } from "./income-statement";
 import { loader as trialBalanceLoader } from "./trial-balance";
+
+registerTestCarbon({ accounting });
 
 vi.mock("@carbon/auth", async (importOriginal) => ({
   ...(await importOriginal<object>()),

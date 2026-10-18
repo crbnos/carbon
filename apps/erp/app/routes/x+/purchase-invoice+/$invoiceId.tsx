@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,21 +12,11 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
-import {
-  getCompanyHasOpenCredits,
-  getPurchaseInvoice,
-  getPurchaseInvoiceDelivery,
-  getPurchaseInvoiceLines
-} from "~/modules/invoicing/invoicing.service";
+import { getCompanyHasOpenCredits } from "~/modules/invoicing/invoicing.service";
 import { PurchaseInvoiceHeader } from "~/modules/invoicing/ui";
 import PurchaseInvoiceExplorer from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceExplorer";
 import PurchaseInvoiceProperties from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties";
-import {
-  getSupplier,
-  getSupplierInteraction,
-  getSupplierInteractionDocuments
-} from "~/modules/purchasing/purchasing.service";
+import { getSupplierInteractionDocuments } from "~/modules/purchasing/purchasing.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -50,21 +41,20 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "invoicing"
-    }
-  );
+  const auth = await requirePermissions(request, {
+    view: "invoicing"
+  });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   const [purchaseInvoice, purchaseInvoiceLines, purchaseInvoiceDelivery] =
     await Promise.all([
-      getPurchaseInvoice(client, invoiceId),
-      getPurchaseInvoiceLines(client, invoiceId),
-      getPurchaseInvoiceDelivery(client, invoiceId)
+      api.invoicing.getPurchaseInvoice({ purchaseInvoiceId: invoiceId }),
+      api.invoicing.getPurchaseInvoiceLines({ purchaseInvoiceId: invoiceId }),
+      api.invoicing.getPurchaseInvoiceDelivery({ purchaseInvoiceId: invoiceId })
     ]);
 
   if (purchaseInvoice.error) {
@@ -80,19 +70,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [supplier, interaction, orgHasCredits, currency, rampMapping] =
     await Promise.all([
       purchaseInvoice.data?.supplierId
-        ? getSupplier(client, purchaseInvoice.data.supplierId)
+        ? api.purchasing.getSupplier({
+            supplierId: purchaseInvoice.data.supplierId
+          })
         : null,
-      getSupplierInteraction(
-        client,
-        purchaseInvoice.data.supplierInteractionId!
-      ),
+      api.purchasing.getSupplierInteraction({
+        opportunityId: purchaseInvoice.data.supplierInteractionId!
+      }),
       getCompanyHasOpenCredits(client, companyId, "purchase"),
       purchaseInvoice.data?.currencyCode
-        ? getCurrencyByCode(
-            client,
-            companyGroupId,
-            purchaseInvoice.data.currencyCode
-          )
+        ? api.accounting.getCurrencyByCode({
+            currencyCode: purchaseInvoice.data.currencyCode
+          })
         : null,
       // Ramp origin/sync badge. Read via the user-scoped client — if RLS denies
       // (or there is no mapping), fall back to null silently.

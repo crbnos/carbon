@@ -2,14 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getReturnableLinesForCustomer } from "~/modules/sales/sales.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const customerId = url.searchParams.get("customerId");
@@ -22,17 +23,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return { lines: [], totalCount: 0 };
   }
 
-  const result = await getReturnableLinesForCustomer(
-    client,
-    companyId,
-    customerId,
-    {
-      salesOrderId: salesOrderId ?? undefined,
-      search: search ?? undefined,
-      limit: Number.isFinite(limitParam) && limitParam > 0 ? limitParam : 5,
-      offset: Number.isFinite(offsetParam) && offsetParam > 0 ? offsetParam : 0
-    }
-  );
+  const result = await api.sales.getReturnableLinesForCustomer({
+    salesOrderId: salesOrderId ?? undefined,
+    search: search ?? undefined,
+    limit: Number.isFinite(limitParam) && limitParam > 0 ? limitParam : 5,
+    offset: Number.isFinite(offsetParam) && offsetParam > 0 ? offsetParam : 0,
+    customerId
+  });
 
   if (result.error) {
     console.error("Failed to load returnable sales lines:", result.error);

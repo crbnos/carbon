@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -22,16 +23,12 @@ import {
 } from "~/modules/items/items.models";
 import {
   getBomHasShelfLifeManagedInput,
-  getItemQuantities,
-  getItemShelfLife,
-  getPickMethod,
   upsertPickMethod,
   upsertPickMethodWithShelfLife
 } from "~/modules/items/items.service";
 import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
 import type { Material, UnitOfMeasureListItem } from "~/modules/items/types";
 import { PickMethodForm } from "~/modules/items/ui/Item";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores";
@@ -40,9 +37,11 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -56,7 +55,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [userDefaults, shelfLife, bomHasShelfLifeManagedInput, rulesData] =
     await Promise.all([
       locationId ? null : getUserDefaults(client, userId, companyId),
-      getItemShelfLife(client, itemId),
+      api.items.getItemShelfLife({ itemId }),
       getBomHasShelfLifeManagedInput(client, itemId, companyId),
       getStorageRulesDataForTarget(client, {
         targetType: "item",
@@ -80,7 +79,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await api.resources.getLocationsList({});
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.material(itemId),
@@ -95,8 +94,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   let [materialInventory, quantities, itemStorageUnitQuantities] =
     await Promise.all([
-      getPickMethod(client, itemId, companyId, locationId),
-      getItemQuantities(client, itemId, companyId, locationId),
+      api.items.getPickMethod({ itemId, locationId }),
+      api.items.getItemQuantities({ itemId, locationId }),
       getItemStorageUnitQuantities(client, itemId, companyId, locationId)
     ]);
 
@@ -119,12 +118,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    materialInventory = await getPickMethod(
-      client,
-      itemId,
-      companyId,
-      locationId
-    );
+    materialInventory = await api.items.getPickMethod({ itemId, locationId });
     if (materialInventory.error || !materialInventory.data) {
       throw redirect(
         path.to.material(itemId),

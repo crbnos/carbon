@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,24 +11,25 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { partnerValidator } from "~/modules/resources/resources.models";
-import {
-  getPartner,
-  upsertPartner
-} from "~/modules/resources/resources.service";
+import { upsertPartner } from "~/modules/resources/resources.service";
 import { PartnerForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources"
   });
+  const api = carbonFor(auth);
 
   const { supplierLocationId, abilityId } = params;
   if (!supplierLocationId) throw notFound("Partner ID was not found");
   if (!abilityId) throw notFound("Ability ID was not found");
 
-  const partner = await getPartner(client, supplierLocationId, abilityId);
+  const partner = await api.resources.getPartner({
+    partnerId: supplierLocationId,
+    abilityId
+  });
 
   if (partner.error) {
     throw redirect(

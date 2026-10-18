@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { carbon, carbonFor } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,25 +11,23 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { moveAccountValidator } from "~/modules/accounting/accounting.models";
-import {
-  getAccount,
-  getGroupAccounts
-} from "~/modules/accounting/accounting.service";
 import { MoveAccountForm } from "~/modules/accounting/ui/ChartOfAccounts";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
+  const { client, companyGroupId } = auth;
+  const api = carbonFor(auth);
 
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");
 
   const [account, allGroupAccounts] = await Promise.all([
-    getAccount(client, accountId),
-    getGroupAccounts(client, companyGroupId)
+    api.accounting.getAccount({ accountId }),
+    api.accounting.getGroupAccounts({})
   ]);
 
   if (account.error || !account.data) {

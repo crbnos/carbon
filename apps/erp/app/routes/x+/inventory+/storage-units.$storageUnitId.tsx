@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
@@ -10,28 +10,26 @@ import { RecordOutlet, useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { storageUnitValidator } from "~/modules/inventory/inventory.models";
-import {
-  getEffectiveWorkCenterId,
-  getStorageUnit
-} from "~/modules/inventory/inventory.service";
+import { getEffectiveWorkCenterId } from "~/modules/inventory/inventory.service";
 import { StorageUnitForm } from "~/modules/inventory/ui";
-import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory",
     role: "employee"
   });
+  const { client } = auth;
+  const api = carbonFor(auth);
 
   const { storageUnitId } = params;
   if (!storageUnitId) throw notFound("storageUnitId not found");
 
   const [storageUnit, effectiveWorkCenter, workCenters] = await Promise.all([
-    getStorageUnit(client, storageUnitId),
+    api.inventory.getStorageUnit({ storageUnitId }),
     getEffectiveWorkCenterId(client, storageUnitId),
-    getWorkCentersList(client, companyId)
+    api.resources.getWorkCentersList({})
   ]);
 
   const ownWorkCenterId = storageUnit?.data?.workCenterId ?? null;

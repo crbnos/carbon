@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,24 +12,22 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { scrapReasonValidator } from "~/modules/production/production.models";
-import {
-  getScrapReason,
-  upsertScrapReason
-} from "~/modules/production/production.service";
+import { upsertScrapReason } from "~/modules/production/production.service";
 import ScrapReasonForm from "~/modules/production/ui/ScrapReasons/ScrapReasonForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { scrapReasonId } = params;
   if (!scrapReasonId) throw notFound("scrapReasonId not found");
 
-  const scrapReason = await getScrapReason(client, scrapReasonId);
+  const scrapReason = await api.production.getScrapReason({ scrapReasonId });
 
   if (scrapReason.error) {
     throw redirect(

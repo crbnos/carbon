@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -37,17 +38,21 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "purchase-order-line-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "purchasing",
     role: "employee",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { orderId, lineId } = params;
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const line = await getPurchaseOrderLine(client, lineId);
+  const line = await api.purchasing.getPurchaseOrderLine({
+    purchaseOrderLineId: lineId
+  });
   if (line.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),

@@ -11,7 +11,8 @@ const getCharge = vi.hoisted(() => vi.fn());
 const flash = vi.hoisted(() => vi.fn(async () => ({})));
 const EmptyComponent = vi.hoisted(() => () => null);
 
-vi.mock("@carbon/auth", () => ({
+vi.mock("@carbon/auth", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   error: (cause: unknown, message: string) => ({ cause, message }),
   // Transitively imported (~/modules/settings reads it at module load to build
   // PUBLIC_STORAGE_URL_PREFIX); the mock must export it or the module errors.
@@ -56,7 +57,10 @@ vi.mock("~/modules/accounting/ui/JournalEntries", () => ({
   JournalEntryStatus: EmptyComponent
 }));
 vi.mock("~/modules/invoicing/ui", () => ({ ChargeStatus: EmptyComponent }));
-vi.mock("~/modules/invoicing/invoicing.service", () => ({ getCharge }));
+vi.mock("~/modules/invoicing/invoicing.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  getCharge
+}));
 vi.mock("~/utils/path", () => ({
   path: {
     to: {
@@ -67,7 +71,11 @@ vi.mock("~/utils/path", () => ({
   }
 }));
 
+import * as invoicing from "~/modules/invoicing/invoicing.server";
+import { registerTestCarbon } from "../../../../test/register-carbon";
 import { loader } from "./charges.$id";
+
+registerTestCarbon({ invoicing });
 
 type FailingTable = "account" | "document" | null;
 

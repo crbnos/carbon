@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,20 +13,20 @@ import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { locationValidator } from "~/modules/resources/resources.models";
-import { getLocation } from "~/modules/resources/resources.service";
 import { LocationForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources"
   });
+  const api = carbonFor(auth);
 
   const { locationId } = params;
   if (!locationId) throw notFound("Location ID was not found");
 
-  const location = await getLocation(client, locationId);
+  const location = await api.resources.getLocation({ locationId });
 
   if (location.error) {
     throw redirect(

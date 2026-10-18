@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -14,10 +15,7 @@ import { data, useLoaderData } from "react-router";
 import { SettingsPage } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
 import { defaultAccountValidator } from "~/modules/accounting/accounting.models";
-import {
-  getDefaultAccounts,
-  updateDefaultAccounts
-} from "~/modules/accounting/accounting.service";
+import { updateDefaultAccounts } from "~/modules/accounting/accounting.service";
 import type { AccountListItem } from "~/modules/accounting/types";
 import { AccountDefaultsForm } from "~/modules/accounting/ui/AccountDefaults";
 import type { Handle } from "~/utils/handle";
@@ -29,11 +27,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting"
   });
+  const api = carbonFor(auth);
 
-  const defaultAccounts = await getDefaultAccounts(client, companyId);
+  const defaultAccounts = await api.accounting.getDefaultAccounts({});
 
   if (defaultAccounts.error || !defaultAccounts.data) {
     throw redirect(

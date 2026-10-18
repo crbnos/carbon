@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -20,7 +21,6 @@ import {
 } from "~/modules/invoicing/invoicing.models";
 import {
   getPurchaseInvoice,
-  getPurchaseInvoiceLine,
   upsertPurchaseInvoiceLine
 } from "~/modules/invoicing/invoicing.service";
 import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
@@ -35,15 +35,19 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "invoicing",
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");
 
-  const purchaseInvoiceLine = await getPurchaseInvoiceLine(client, lineId);
+  const purchaseInvoiceLine = await api.invoicing.getPurchaseInvoiceLine({
+    purchaseInvoiceLineId: lineId
+  });
 
   return {
     purchaseInvoiceLine: purchaseInvoiceLine?.data ?? null,

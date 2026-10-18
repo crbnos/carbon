@@ -4,7 +4,7 @@
 
 import type { AccountProfileData } from "@carbon/account";
 import { accountProfileValidator } from "@carbon/account";
-import { carbon } from "@carbon/api/carbon.server";
+import { carbon, carbonFor } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,14 +13,15 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { getAccount } from "~/modules/users/users.service";
 
 const logger = getLogger("erp", "account-profile");
 
 // Data and writes for the Profile pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
-  const user = await getAccount(client, userId);
+  const auth = await requirePermissions(request, {});
+  const { userId } = auth;
+  const api = carbonFor(auth);
+  const user = await api.users.getAccount({ id: userId });
 
   if (user.error) {
     logger.error("Failed to get user", { userId, error: user.error });

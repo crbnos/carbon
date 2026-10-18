@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { CarbonEdition } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { TooltipProvider } from "@carbon/react";
@@ -13,19 +14,19 @@ import type {
 } from "react-router";
 import { Outlet } from "react-router";
 import { MeshGradientBackground } from "~/components/MeshGradientBackground";
-import { getLocationsList } from "~/modules/resources/resources.service";
-import { getCompany } from "~/modules/settings/settings.service";
 import { onboardingSequence, path } from "~/utils/path";
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const auth = await requirePermissions(request, {});
+  const { companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const [company, stripeCustomer, locations] = await Promise.all([
-    getCompany(client, companyId),
+    api.settings.getCompany({}),
     getStripeCustomerByCompanyId(companyId, userId),
-    getLocationsList(client, companyId)
+    api.resources.getLocationsList({})
   ]);
 
   const pathname = new URL(request.url).pathname;

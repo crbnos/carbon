@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,20 +11,21 @@ import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { customerPartValidator } from "~/modules/items/items.models";
-import { getItem, upsertItemCustomerPart } from "~/modules/items/items.service";
+import { upsertItemCustomerPart } from "~/modules/items/items.service";
 import CustomerPartForm from "~/modules/items/ui/Item/CustomerPartForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const itemData = await getItem(client, itemId);
+  const itemData = await api.items.getItem({ id: itemId });
   const readableId = itemData?.data?.readableIdWithRevision;
 
   return {

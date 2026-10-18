@@ -2,17 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getUserSelectGroups } from "~/modules/users/users.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const type = url.searchParams.get("type") || undefined;
@@ -22,7 +23,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     Math.max(1, Number(url.searchParams.get("limit")) || 25)
   );
 
-  const result = await getUserSelectGroups(client, companyId, {
+  const result = await api.users.getUserSelectGroups({
     type,
     limit: limit + 1, // fetch one extra row to compute hasMore
     offset

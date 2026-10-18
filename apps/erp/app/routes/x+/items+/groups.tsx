@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,8 +11,6 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAccountsList } from "~/modules/accounting/accounting.service";
-import { getItemPostingGroups } from "~/modules/items/items.service";
 import { ItemPostingGroupsTable } from "~/modules/items/ui/ItemPostingGroups";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -23,13 +22,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "parts",
-      role: "employee"
-    }
-  );
+  const auth = await requirePermissions(request, {
+    view: "parts",
+    role: "employee"
+  });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -38,14 +35,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [itemPostingGroups, accounts] = await Promise.all([
-    getItemPostingGroups(client, companyId, {
+    api.items.getItemPostingGroups({
       limit,
       offset,
       sorts,
       search,
       filters
     }),
-    getAccountsList(client, companyGroupId)
+    api.accounting.getAccountsList({})
   ]);
 
   if (itemPostingGroups.error) {
@@ -63,8 +60,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    itemPostingGroups: itemPostingGroups.data ?? [],
-    count: itemPostingGroups.count ?? 0,
+    itemPostingGroups: itemPostingGroups.data?.rows ?? [],
+    count: itemPostingGroups.data?.count ?? 0,
     accounts: accounts.data ?? []
   };
 }

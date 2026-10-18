@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,12 +13,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
-  getActiveDimensionsWithValues,
-  getDefaultAccounts
-} from "~/modules/accounting/accounting.service";
-import {
-  getOpenReimbursementsForEmployee,
-  getReimbursement,
+  type getOpenReimbursementsForEmployee,
   getReimbursementRelatedItems
 } from "~/modules/invoicing/invoicing.service";
 import {
@@ -41,21 +37,18 @@ export const handle: Handle = {
  * only for the update permission and the Draft-only lock on a direct URL.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "invoicing"
-    }
-  );
+  const auth = await requirePermissions(request, {
+    view: "invoicing"
+  });
+  const { client, companyId, companyGroupId } = auth;
+  const api = carbonFor(auth);
 
   const { reimbursementId } = params;
   if (!reimbursementId) throw new Error("Could not find reimbursementId");
 
-  const reimbursement = await getReimbursement(
-    client,
-    companyId,
-    reimbursementId
-  );
+  const reimbursement = await api.invoicing.getReimbursement({
+    id: reimbursementId
+  });
   if (reimbursement.error || !reimbursement.data) {
     throw redirect(
       path.to.reimbursements,
@@ -108,24 +101,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .eq("entityType", "reimbursement")
         .eq("entityId", reimbursementId)
         .maybeSingle(),
-      getActiveDimensionsWithValues(client, companyGroupId, companyId),
+      api.accounting.getActiveDimensionsWithValues({}),
       // What is still owed. Only a Posted reimbursement has a booked payable,
       // and the balance is what decides whether "Pay expense" is offered at all
       // — there is no `paidAmount` column; the settlement rows are the truth.
       reimbursement.data.status === "Posted"
-        ? getOpenReimbursementsForEmployee(
-            client,
-            companyId,
-            reimbursement.data.employeeId,
-            reimbursement.data.currencyCode
-          )
+        ? api.invoicing.getOpenReimbursementsForEmployee({
+            employeeId: reimbursement.data.employeeId,
+            currencyCode: reimbursement.data.currencyCode
+          })
         : Promise.resolve({
             data: [] as Awaited<
               ReturnType<typeof getOpenReimbursementsForEmployee>
             >["data"],
             error: null
           }),
-      getDefaultAccounts(client, companyId)
+      api.accounting.getDefaultAccounts({})
     ]);
 
   const auxiliaryError = accounts.error ?? journal.error;

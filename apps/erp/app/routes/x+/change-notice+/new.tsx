@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
@@ -11,7 +11,6 @@ import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUser } from "~/hooks";
 import { changeNoticeValidator } from "~/modules/items/items.models";
-import { getChangeNoticeTypesList } from "~/modules/items/items.service";
 import { ChangeNoticeForm } from "~/modules/items/ui/ChangeNotice";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -24,11 +23,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const api = carbonFor(auth);
 
-  const types = await getChangeNoticeTypesList(client, companyId);
+  const types = await api.items.getChangeNoticeTypesList({});
 
   // "Create Change Notice" from an Issue (NCR) links here with the source in the
   // query string. Pre-link the non-conformance so the created CO references it

@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import type { LoaderFunctionArgs } from "react-router";
 import { flattenTree } from "~/components/TreeView";
-import { getQuoteMethodTrees } from "~/modules/sales/sales.service";
 import type { BomOperation } from "~/utils/bom";
 import {
   calculateMadePartCosts,
@@ -16,9 +16,11 @@ import {
 import { makeDurations } from "~/utils/duration";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   const withOperations = request.url.includes("withOperations=true");
@@ -36,7 +38,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return { data: [], error: "Failed to load quote line" };
   }
 
-  const methodTrees = await getQuoteMethodTrees(client, quote.data?.quoteId);
+  const methodTrees = await api.sales.getQuoteMethodTrees({
+    quoteId: quote.data?.quoteId
+  });
 
   if (methodTrees.error) {
     return { data: [], error: methodTrees.error };

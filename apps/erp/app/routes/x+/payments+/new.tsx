@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -19,7 +19,6 @@ import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
-import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
 import { paymentValidator } from "~/modules/invoicing/invoicing.models";
 import {
   checkDepositDocument,
@@ -29,7 +28,6 @@ import {
   getSeededDiscounts
 } from "~/modules/invoicing/invoicing.service";
 import { PaymentForm } from "~/modules/invoicing/ui";
-import { getCompany } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -42,10 +40,9 @@ import { path } from "~/utils/path";
 //   amount      -> fallback total when no invoiceId is supplied
 //   salesOrderId / rentalAgreementId -> seeds the deposit document
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    { create: "invoicing" }
-  );
+  const auth = await requirePermissions(request, { create: "invoicing" });
+  const { client, companyId, companyGroupId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const customerId = url.searchParams.get("customerId");
@@ -61,8 +58,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const partyId = paymentType === "Receipt" ? customerId : supplierId;
 
   const [company, defaults, depositDocuments] = await Promise.all([
-    getCompany(client, companyId),
-    getDefaultAccounts(client, companyId),
+    api.settings.getCompany({}),
+    api.accounting.getDefaultAccounts({}),
     getDepositDocuments(client, companyId, [salesOrderId])
   ]);
   const bankAccount = defaults.data?.bankCashAccount ?? "";

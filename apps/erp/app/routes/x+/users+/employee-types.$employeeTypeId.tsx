@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { makeCompanyPermissionsFromEmployeeType } from "@carbon/ee/permissions.server";
@@ -12,17 +12,15 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { EmployeeTypeForm } from "~/modules/users/ui";
 import { employeeTypeValidator } from "~/modules/users/users.models";
-import {
-  getEmployeeType,
-  getPermissionsByEmployeeType
-} from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   await requireFeature({
     request,
@@ -36,8 +34,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!employeeTypeId) throw notFound("employeeTypeId not found");
 
   const [employeeType, employeeTypePermissions] = await Promise.all([
-    getEmployeeType(client, employeeTypeId),
-    getPermissionsByEmployeeType(client, employeeTypeId)
+    api.users.getEmployeeType({ employeeTypeId }),
+    api.users.getPermissionsByEmployeeType({ employeeTypeId })
   ]);
 
   return {

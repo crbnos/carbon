@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -24,10 +25,7 @@ import { Trans } from "@lingui/react/macro";
 import { LuTrash, LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useFetcher, useLoaderData, useNavigate } from "react-router";
-import {
-  deleteAccountingPeriod,
-  getAccountingPeriodDeletability
-} from "~/modules/accounting/accounting.service";
+import { deleteAccountingPeriod } from "~/modules/accounting/accounting.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -37,19 +35,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");
 
-  const check = await getAccountingPeriodDeletability(
-    client,
-    periodId,
-    companyId
-  );
+  const check = await api.accounting.getAccountingPeriodDeletability({
+    periodId
+  });
   if (check.error || !check.data) {
     throw redirect(
       path.to.accountingPeriods,

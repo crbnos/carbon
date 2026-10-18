@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -9,7 +10,6 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  getAccount,
   getAccountLedger,
   getAccountLedgerSummary,
   getConsolidatedAccountLedger
@@ -20,13 +20,12 @@ import { path } from "~/utils/path";
 const LEDGER_PAGE_SIZE = 50;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "accounting",
-      role: "employee"
-    }
-  );
+  const auth = await requirePermissions(request, {
+    view: "accounting",
+    role: "employee"
+  });
+  const { client, companyId, companyGroupId } = auth;
+  const api = carbonFor(auth);
 
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");
@@ -49,7 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     : (companiesParam ?? companyId);
 
   const [account, drill] = await Promise.all([
-    getAccount(client, accountId),
+    api.accounting.getAccount({ accountId }),
     isConsolidated
       ? getConsolidatedAccountLedger(companyGroupId, {
           accountId,

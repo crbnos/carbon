@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
@@ -10,19 +10,19 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 import { riskRegisterValidator } from "~/modules/quality/quality.models";
-import { getRisk } from "~/modules/quality/quality.service";
 import RiskRegisterForm from "~/modules/quality/ui/RiskRegister/RiskRegisterForm";
 import { getParams, path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
+  const api = carbonFor(auth);
   const { id } = params;
   invariant(id, "id is required");
 
-  const risk = await getRisk(client, id);
+  const risk = await api.quality.getRisk({ riskId: id });
   if (risk.error || !risk.data) {
     throw new Response("Not Found", { status: 404 });
   }

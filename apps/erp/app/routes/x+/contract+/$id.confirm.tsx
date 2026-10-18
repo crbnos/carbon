@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
@@ -10,7 +10,6 @@ import { getLogger } from "@carbon/logger";
 import { getLinkedStripeCustomerId } from "@carbon/stripe/send-sales-invoice.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { stripeCustomerChoiceValidator } from "~/modules/invoicing/invoicing.models";
-import { getContract } from "~/modules/sales/sales.service";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "contract-confirm");
@@ -23,14 +22,16 @@ export async function loader({
   request,
   params
 }: LoaderFunctionArgs): Promise<{ stripeCustomerLinked: boolean }> {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const { companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const contract = await getContract(client, id, companyId);
+  const contract = await api.sales.getContract({ customerContractId: id });
   if (contract.error || contract.data?.companyId !== companyId) {
     return { stripeCustomerLinked: false };
   }

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,33 +11,28 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { customerPartValidator } from "~/modules/items/items.models";
-import {
-  getItem,
-  getItemCustomerPart,
-  upsertItemCustomerPart
-} from "~/modules/items/items.service";
+import { upsertItemCustomerPart } from "~/modules/items/items.service";
 import CustomerPartForm from "~/modules/items/ui/Item/CustomerPartForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { customerPartToItemId } = params;
   if (!customerPartToItemId)
     throw new Error("Could not find customerPartToItemId");
 
-  const customerPart = await getItemCustomerPart(
-    client,
-    customerPartToItemId,
-    companyId
-  );
+  const customerPart = await api.items.getItemCustomerPart({
+    id: customerPartToItemId
+  });
 
   if (!customerPart?.data) throw new Error("Could not find customer part");
 
-  const itemData = await getItem(client, customerPart.data.itemId);
+  const itemData = await api.items.getItem({ id: customerPart.data.itemId });
   const readableId = itemData?.data?.readableIdWithRevision;
 
   return {

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -9,10 +10,6 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import {
-  getLocationsList,
-  getMaintenanceSchedulesByLocation
-} from "~/modules/resources/resources.service";
 import type { MaintenanceSchedule } from "~/modules/resources/types";
 import MaintenanceSchedulesTable from "~/modules/resources/ui/MaintenanceSchedule/MaintenanceSchedulesTable";
 import type { Handle } from "~/utils/handle";
@@ -25,10 +22,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -37,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const locations = await getLocationsList(client, companyId);
+  const locations = await api.resources.getLocationsList({});
   const locationsList = locations.data ?? [];
 
   // Default to first location if none specified
@@ -52,20 +50,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
-  const schedules = await getMaintenanceSchedulesByLocation(
-    client,
-    companyId,
-    selectedLocationId,
-    {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }
-  );
+  const schedules = await api.resources.getMaintenanceSchedulesByLocation({
+    search,
+    limit,
+    offset,
+    sorts,
+    filters,
+    locationId: selectedLocationId
+  });
 
-  if (!schedules.data) {
+  if (!schedules.data?.rows) {
     return data(
       {
         data: [] as MaintenanceSchedule[],
@@ -81,8 +75,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    data: (schedules.data ?? []) as MaintenanceSchedule[],
-    count: schedules.count ?? 0,
+    data: (schedules.data?.rows ?? []) as MaintenanceSchedule[],
+    count: schedules.data?.count ?? 0,
     locations: locationsList,
     locationId: selectedLocationId
   };

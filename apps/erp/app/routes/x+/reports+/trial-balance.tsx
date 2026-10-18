@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,10 +14,8 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { financialReportParamsValidator } from "~/modules/accounting/accounting.models";
 import {
-  getCompaniesInGroup,
   getConsolidatedBalancesForReport,
   getFinancialStatementBalances,
-  getFiscalYearSettings,
   translateCompanyBalances
 } from "~/modules/accounting/accounting.service";
 import type { Chart } from "~/modules/accounting/types";
@@ -39,13 +38,12 @@ export const handle: Handle = {
 export const shouldRevalidate = revalidateIgnoringOffset;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "accounting",
-      role: "employee"
-    }
-  );
+  const auth = await requirePermissions(request, {
+    view: "accounting",
+    role: "employee"
+  });
+  const { client, companyId, companyGroupId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   // Invalid params fall back to defaults — a bad bookmark must not 500
@@ -64,8 +62,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     : false;
 
   const [companies, fiscalYearSettings] = await Promise.all([
-    getCompaniesInGroup(client, companyGroupId),
-    getFiscalYearSettings(client, companyId)
+    api.accounting.getCompaniesInGroup({}),
+    api.accounting.getFiscalYearSettings({})
   ]);
   const fiscalStartMonth =
     months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,7 +11,6 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import { getRisks } from "~/modules/quality/quality.service";
 import type { Risk } from "~/modules/quality/types";
 import RiskRegistersTable from "~/modules/quality/ui/RiskRegister/RiskRegistersTable";
 import type { Handle } from "~/utils/handle";
@@ -23,10 +23,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -34,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const risks = await getRisks(client, companyId, {
+  const risks = await api.quality.getRisks({
     search,
     limit,
     offset,
@@ -50,8 +51,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return data({
-    count: risks.count ?? 0,
-    risks: (risks.data ?? []) as unknown as Risk[]
+    count: risks.data?.count ?? 0,
+    risks: (risks.data?.rows ?? []) as unknown as Risk[]
   });
 }
 

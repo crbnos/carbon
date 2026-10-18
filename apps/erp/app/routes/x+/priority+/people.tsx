@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -20,23 +21,8 @@ import { useCallback, useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  getEmployeeDepartments,
-  getEmployeeShifts,
-  getShiftsWithTimes
-} from "~/modules/people/people.service";
-import {
   buildPeopleCapacityBuckets,
-  getActiveEmployeeAbilities,
-  getLocationEmployees,
-  getPeopleAbsences,
-  getPeopleAbsencesRange,
-  getPeopleAssignments,
-  getPeopleAssignmentsRange,
-  getPeopleCapacityOperations,
-  getWorkCenterCalendarHoursByDay,
-  getWorkCenterRequiredAbilities,
-  getWorkCenterReservationsRange,
-  getWorkCenterShifts
+  getWorkCenterCalendarHoursByDay
 } from "~/modules/production/production.service";
 import { OvertimeDialog } from "~/modules/production/ui/Schedule/People/OvertimeDialog";
 import { PeopleBoard } from "~/modules/production/ui/Schedule/People/PeopleBoard";
@@ -46,7 +32,6 @@ import { PeopleMatrix } from "~/modules/production/ui/Schedule/People/PeopleMatr
 import { PeopleWeekBoard } from "~/modules/production/ui/Schedule/People/PeopleWeekBoard";
 import { assignmentMatchesShift } from "~/modules/production/ui/Schedule/People/peopleShared";
 import { TimeOffDialog } from "~/modules/production/ui/Schedule/People/TimeOffDialog";
-import { getWorkCentersByLocation } from "~/modules/resources/resources.service";
 import {
   getLocationTimeZone,
   resolveLocationId
@@ -100,9 +85,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production"
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -163,15 +150,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     employeeJobs,
     employeeShiftRows
   ] = await Promise.all([
-    getPeopleAssignments(client, companyId, { locationId, date }),
-    getPeopleAbsences(client, companyId, date),
-    getLocationEmployees(client, companyId, locationId),
-    getWorkCentersByLocation(client, locationId),
-    getWorkCenterRequiredAbilities(client, companyId, locationId),
-    getActiveEmployeeAbilities(client, companyId),
-    getShiftsWithTimes(client, companyId, locationId),
-    getEmployeeDepartments(client, companyId),
-    getEmployeeShifts(client, companyId)
+    api.production.getPeopleAssignments({ locationId, date }),
+    api.production.getPeopleAbsences({ date }),
+    api.production.getLocationEmployees({ locationId }),
+    api.resources.getWorkCentersByLocation({ locationId }),
+    api.production.getWorkCenterRequiredAbilities({ locationId }),
+    api.production.getActiveEmployeeAbilities({}),
+    api.people.getShiftsWithTimes({ locationId }),
+    api.people.getEmployeeDepartments({}),
+    api.people.getEmployeeShifts({})
   ]);
 
   // resolve the requested department against this location's real departments
@@ -315,32 +302,34 @@ export async function loader({ request }: LoaderFunctionArgs) {
       reservations,
       workCenterShiftRows
     ] = await Promise.all([
-      getPeopleAssignmentsRange(client, companyId, {
+      api.production.getPeopleAssignmentsRange({
         locationId,
         startDate: weekStartDate,
         endDate: weekEndDate
       }),
-      getPeopleAbsencesRange(client, companyId, {
+      api.production.getPeopleAbsencesRange({
         startDate: weekStartDate,
         endDate: weekEndDate
       }),
       // the week board doesn't show demand — skip the heavy operation scan.
       // Null start = no floor: Past due spans back to the earliest open op.
       view !== "board"
-        ? getPeopleCapacityOperations(client, companyId, {
+        ? api.production.getPeopleCapacityOperations({
             locationId,
             startDate: null,
             endDate: weekEndDate
           })
         : Promise.resolve({ data: [], error: null }),
       view === "capacity"
-        ? getWorkCenterReservationsRange(client, companyId, {
+        ? api.production.getWorkCenterReservationsRange({
             startAt: weekWindowStart.toISOString(),
             endAt: weekWindowEnd.toISOString()
           })
         : Promise.resolve({ data: [], error: null }),
       view === "capacity" && capacityWorkCenterIds.length > 0
-        ? getWorkCenterShifts(client, companyId, capacityWorkCenterIds)
+        ? api.production.getWorkCenterShifts({
+            workCenterIds: capacityWorkCenterIds
+          })
         : Promise.resolve({ data: [], error: null })
     ]);
 
@@ -416,7 +405,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // the manning board shows where the workload is (who to put where).
   let requiredHoursByWorkCenter: Record<string, number> = {};
   if (view === "board" && range === "day") {
-    const dayOperations = await getPeopleCapacityOperations(client, companyId, {
+    const dayOperations = await api.production.getPeopleCapacityOperations({
       locationId,
       startDate: date,
       endDate: date

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { CarbonEdition, getUser } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
@@ -25,7 +26,7 @@ import { useMemo } from "react";
 import { LuMoveLeft, LuPhoneCall } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { Form, useFetcher, useLoaderData } from "react-router";
-import { getCompany, getPlans } from "~/modules/settings/settings.service";
+import { getCompany } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "plan");
@@ -85,12 +86,14 @@ function usePlans() {
 }
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const auth = await requirePermissions(request, {});
+  const { companyId } = auth;
+  const api = carbonFor(auth);
   if (CarbonEdition !== Edition.Cloud) {
     throw redirect(path.to.authenticatedRoot);
   }
 
-  const plans = await getPlans(client);
+  const plans = await api.settings.getPlans({});
 
   if (!companyId) {
     throw redirect(path.to.onboarding.company);

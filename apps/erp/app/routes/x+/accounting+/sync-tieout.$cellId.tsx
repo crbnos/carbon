@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -30,7 +31,6 @@ import { useLoaderData, useNavigate } from "react-router";
 import { Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
-import { getAccountingSyncTieOutCell } from "~/modules/accounting/accounting.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -63,19 +63,18 @@ const INTEGRATION_LABELS: Record<string, string> = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { cellId } = params;
   if (!cellId) throw notFound("cellId not found");
 
-  const cellDetail = await getAccountingSyncTieOutCell(
-    client,
-    companyId,
+  const cellDetail = await api.accounting.getAccountingSyncTieOutCell({
     cellId
-  );
+  });
   if (cellDetail.error || !cellDetail.data) {
     throw redirect(
       path.to.accountingSyncTieOut,

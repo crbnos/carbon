@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,7 +13,6 @@ import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getProductionProjections } from "~/modules/production/production.service";
 import DemandProjectionsTable from "~/modules/production/ui/DemandProjection/DemandProjectionTable";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
 import {
@@ -33,11 +33,13 @@ export const handle: Handle = {
 export const WEEKS_TO_PROJECT = 12 * 4;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production",
     role: "employee",
     bypassRls: true
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -59,19 +61,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     WEEKS_TO_PROJECT
   );
 
-  const projections = await getProductionProjections(
-    client,
+  const projections = await api.production.getProductionProjections({
+    search,
+    limit,
+    offset,
+    sorts,
+    filters,
     locationId,
-    periods.map((p) => p.id),
-    companyId,
-    {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }
-  );
+    periods: periods.map((p) => p.id)
+  });
 
   if (projections.error) {
     throw redirect(
@@ -84,8 +82,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    projections: projections.data ?? [],
-    count: projections.data?.length ?? 0,
+    projections: projections.data?.rows ?? [],
+    count: projections.data?.rows?.length ?? 0,
     locationId,
     periods
   };

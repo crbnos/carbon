@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getIssueWorkflows } from "~/modules/quality/quality.service";
 import IssueWorkflowsTable from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowsTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -19,10 +19,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -30,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const procedures = await getIssueWorkflows(client, companyId, {
+  const procedures = await api.quality.getIssueWorkflows({
     search,
     limit,
     offset,
@@ -39,8 +40,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   return {
-    procedures: procedures.data ?? [],
-    count: procedures.count ?? 0
+    procedures: procedures.data?.rows ?? [],
+    count: procedures.data?.count ?? 0
   };
 }
 

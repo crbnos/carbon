@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,16 +16,10 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams, useSubmit } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import {
   getCustomer,
-  getOpportunity,
   getOpportunityDocuments,
-  getQuote,
-  getQuoteMethodTrees,
-  getQuotePayment,
-  getQuoteShipment,
   getSalesOrderLines
 } from "~/modules/sales/sales.service";
 import {
@@ -38,7 +33,6 @@ import {
   QuoteProperties
 } from "~/modules/sales/ui/Quotes";
 import { useOptimisticDocumentDrag } from "~/modules/sales/ui/Quotes/QuoteExplorer";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -60,10 +54,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -75,13 +71,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // to be this company's.
   const [quote, shipment, payment, lines, prices, methods, companySettings] =
     await Promise.all([
-      getQuote(client, quoteId),
-      getQuoteShipment(client, quoteId),
-      getQuotePayment(client, quoteId),
+      api.sales.getQuote({ quoteId }),
+      api.sales.getQuoteShipment({ quoteId }),
+      api.sales.getQuotePayment({ quoteId }),
       getQuoteLines(client, quoteId),
       getQuoteLinePricesByQuoteId(client, quoteId),
-      getQuoteMethodTrees(client, quoteId),
-      getCompanySettings(client, companyId)
+      api.sales.getQuoteMethodTrees({ quoteId }),
+      api.settings.getCompanySettings({})
     ]);
 
   if (quote.error) {
@@ -115,9 +111,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [customer, opportunity, presentationExchangeRate, supplierPriceMap] =
     await Promise.all([
       getCustomer(client, quote.data?.customerId ?? ""),
-      getOpportunity(client, quote.data?.opportunityId),
+      api.sales.getOpportunity({ opportunityId: quote.data?.opportunityId }),
       quote.data?.currencyCode
-        ? getExchangeRate(client, companyId, quote.data.currencyCode)
+        ? api.accounting.getExchangeRate({
+            currencyCode: quote.data.currencyCode
+          })
         : null,
       getSupplierPriceBreaksForItems(client, Array.from(buyItemIds))
     ]);

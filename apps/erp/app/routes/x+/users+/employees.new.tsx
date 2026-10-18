@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,15 +15,16 @@ import {
   createEmployeeValidator,
   US_PERSON_ATTESTATION_REQUIRED
 } from "~/modules/users/users.models";
-import { getInvitable, originOf } from "~/modules/users/users.service";
+import { originOf } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     create: "users"
   });
+  const api = carbonFor(auth);
 
-  const invitable = await getInvitable(client, companyId);
+  const invitable = await api.users.getInvitable({});
   if (invitable.error) {
     throw redirect(
       path.to.employeeAccounts,

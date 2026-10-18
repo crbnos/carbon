@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { carbon, carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -18,12 +18,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
-import {
-  getLocationsList,
-  getWorkCentersList
-} from "~/modules/resources/resources.service";
 import { printerRouteValidator } from "~/modules/settings/settings.models";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { AssignmentsCard, PrintersCard } from "~/modules/settings/ui/Printing";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
@@ -35,16 +30,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "settings"
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const [companySettings, printerRoutes, workCenters, locations, userDefaults] =
     await Promise.all([
-      getCompanySettings(client, companyId),
+      api.settings.getCompanySettings({}),
       getPrinterRoutes(client, companyId),
-      getWorkCentersList(client, companyId),
-      getLocationsList(client, companyId),
+      api.resources.getWorkCentersList({}),
+      api.resources.getLocationsList({}),
       getUserDefaults(client, userId, companyId)
     ]);
 

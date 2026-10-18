@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,7 +13,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { issueTypeValidator } from "~/modules/quality/quality.models";
 import {
-  getIssueType,
   getIssueTypeByName,
   upsertIssueType
 } from "~/modules/quality/quality.service";
@@ -21,15 +21,18 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const nonConformanceType = await getIssueType(client, id);
+  const nonConformanceType = await api.quality.getIssueType({
+    nonConformanceTypeId: id
+  });
 
   if (nonConformanceType.error) {
     throw redirect(

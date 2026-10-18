@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,25 +12,25 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import { customerContractLineValidator } from "~/modules/sales/sales.models";
-import {
-  getContract,
-  getContractLine,
-  upsertContractLine
-} from "~/modules/sales/sales.service";
+import { getContract, upsertContractLine } from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractLineForm } from "~/modules/sales/ui/Contracts";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const { companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id, lineId } = params;
   if (!id) throw notFound("id not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const line = await getContractLine(client, lineId, companyId);
+  const line = await api.sales.getContractLine({
+    customerContractLineId: lineId
+  });
   if (
     line.error ||
     line.data.companyId !== companyId ||

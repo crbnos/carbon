@@ -2,20 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import type { JobReleaseReadiness } from "~/modules/production/production.service";
-import { getJobReleaseReadiness } from "~/modules/production/production.service";
 
 // What releasing a batch would release, and what stands in its way: the
 // Draft/Planned jobs behind `?batchId=` (an existing batch) or `?jobId=`
 // (the builder's selection, before the batch exists). Already-released jobs are
 // left out — their outside operations were handled when they were released.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const batchId = url.searchParams.get("batchId");
@@ -48,11 +50,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data({ error: "Failed to load the batch's jobs" }, { status: 500 });
   }
 
-  const readiness = await getJobReleaseReadiness(
-    client,
-    (unreleased.data ?? []).map((job) => job.id),
-    companyId
-  );
+  const readiness = await api.production.getJobReleaseReadiness({
+    jobIds: (unreleased.data ?? []).map((job) => job.id)
+  });
   if (readiness.error || !readiness.data) {
     return data(
       { error: "Failed to validate the batch's jobs" },

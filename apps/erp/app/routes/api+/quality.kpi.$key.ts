@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { QualityKPIs } from "~/modules/quality/quality.models";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 
 // --- ISO Week Helpers ---
 
@@ -50,9 +50,11 @@ const PRIORITY_ORDER = ["Critical", "High", "Medium", "Low"] as const;
 // --- Loader ---
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -73,7 +75,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     case "weeklyTracking": {
       const [issuesResult, settingsResult] = await Promise.all([
         getIssuesQuery(client, { companyId, issueTypeId }),
-        getCompanySettings(client, companyId)
+        api.settings.getCompanySettings({})
       ]);
 
       const issues = issuesResult.data ?? [];

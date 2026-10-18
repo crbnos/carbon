@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { carbon, carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   documentTemplateTypeSchema,
@@ -17,14 +17,7 @@ import { useLoaderData } from "react-router";
 import { DocumentTemplateEditor } from "~/components/DocumentTemplateEditor";
 import { usePermissions } from "~/hooks";
 import { documentTemplateValidator } from "~/modules/settings/settings.models";
-import {
-  getCompany,
-  getCompanySettings,
-  getDocumentSections,
-  getDocumentTemplate,
-  getTerms,
-  listPreviewEntities
-} from "~/modules/settings/settings.service";
+import { listPreviewEntities } from "~/modules/settings/settings.service";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -34,10 +27,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "settings",
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const documentType = documentTemplateTypeSchema.parse(params.type);
 
@@ -50,18 +45,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     company,
     companySettings
   ] = await Promise.all([
-    getDocumentTemplate(client, companyId, documentType),
-    getDocumentSections(client, companyId),
+    api.settings.getDocumentTemplate({ documentType }),
+    api.settings.getDocumentSections({}),
     // Custom field definitions for this record type, to offer as insertable
     // blocks. The customField `table` matches the document type.
     getCustomFieldsSchemas(client, { companyId, table: documentType }),
     // Recent records to optionally preview against live data.
     listPreviewEntities(client, companyId, documentType),
     // Company terms setting — seeds the Terms block when it has no content.
-    getTerms(client, companyId),
-    getCompany(client, companyId),
+    api.settings.getTerms({}),
+    api.settings.getCompany({}),
     // Company's configured label stock — seeds the label-size preview picker.
-    getCompanySettings(client, companyId)
+    api.settings.getCompanySettings({})
   ]);
 
   // Map the document type to the relevant company terms setting (the Terms

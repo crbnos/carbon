@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -17,14 +17,9 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import {
-  getQualityDocument,
-  getQualityDocumentVersions
-} from "~/modules/quality/quality.service";
 import QualityDocumentEditor from "~/modules/quality/ui/Documents/QualityDocumentEditor";
 import QualityDocumentHeader from "~/modules/quality/ui/Documents/QualityDocumentHeader";
 import QualityDocumentProperties from "~/modules/quality/ui/Documents/QualityDocumentProperties";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -56,10 +51,12 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality",
     bypassRls: true
   });
+  const { companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -67,10 +64,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Kick off approval in parallel — it only needs document.status, so we chain
   // off the document fetch rather than waiting for Promise.all to settle.
   // Approval only gates Draft / Archived → Active.
-  const documentPromise = getQualityDocument(client, id);
+  const documentPromise = api.quality.getQualityDocument({ id });
   const [document, tags, approval] = await Promise.all([
     documentPromise,
-    getTagsList(client, companyId, "qualityDocument"),
+    api.shared.getTagsList({ table: "qualityDocument" }),
     documentPromise.then((d) =>
       d.data?.status === "Draft" || d.data?.status === "Archived"
         ? getDocumentApprovalState(getCarbonServiceRole(), {
@@ -102,7 +99,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     document: document.data,
-    versions: getQualityDocumentVersions(client, document.data, companyId),
+    versions: api.quality.getQualityDocumentVersions(document.data),
     tags: tags.data ?? [],
     approval
   };

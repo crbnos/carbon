@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -14,14 +15,7 @@ import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getCustomer,
-  getOpportunity,
   getOpportunityDocuments,
-  getQuote,
-  getSalesOrder,
-  getSalesOrderInvoiceLines,
-  getSalesOrderInvoicePaymentsByIds,
-  getSalesOrderInvoicesByIds,
-  getSalesOrderLines,
   getSalesOrderRelatedItems
 } from "~/modules/sales/sales.service";
 import {
@@ -65,10 +59,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
@@ -78,10 +74,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // the originating quote waits for the opportunity.
   const serviceRole = getCarbonServiceRole();
   const [salesOrder, lines, companySettings, invoiceLines] = await Promise.all([
-    getSalesOrder(client, orderId),
-    getSalesOrderLines(client, orderId),
+    api.sales.getSalesOrder({ salesOrderId: orderId }),
+    api.sales.getSalesOrderLines({ salesOrderId: orderId }),
     getCompanySettings(serviceRole, companyId),
-    getSalesOrderInvoiceLines(client, orderId)
+    api.sales.getSalesOrderInvoiceLines({ salesOrderId: orderId })
   ]);
 
   if (salesOrder.error) {
@@ -102,15 +98,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ) as string[];
 
   const [opportunity, customer, invoices, payments] = await Promise.all([
-    getOpportunity(client, salesOrder.data?.opportunityId ?? null),
+    api.sales.getOpportunity({
+      opportunityId: salesOrder.data?.opportunityId ?? null
+    }),
     salesOrder.data?.customerId
       ? getCustomer(client, salesOrder.data.customerId)
       : null,
     invoiceIds.length > 0
-      ? getSalesOrderInvoicesByIds(client, invoiceIds)
+      ? api.sales.getSalesOrderInvoicesByIds({ invoiceIds })
       : null,
     invoiceIds.length > 0
-      ? getSalesOrderInvoicePaymentsByIds(client, companyId, invoiceIds)
+      ? api.sales.getSalesOrderInvoicePaymentsByIds({ invoiceIds })
       : null
   ]);
 
@@ -145,7 +143,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const quote = opportunity.data.quotes[0]?.id
-    ? await getQuote(client, opportunity.data.quotes[0].id)
+    ? await api.sales.getQuote({ quoteId: opportunity.data.quotes[0].id })
     : null;
 
   let invoicedAmount = 0;

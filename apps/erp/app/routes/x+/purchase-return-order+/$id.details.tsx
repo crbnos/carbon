@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Card,
@@ -18,27 +19,25 @@ import { Hyperlink } from "~/components";
 import { useDateFormatter } from "~/hooks";
 import ShipmentStatus from "~/modules/inventory/ui/Shipments/ShipmentStatus";
 import MemoStatus from "~/modules/invoicing/ui/Memo/MemoStatus";
-import {
-  getPurchaseReturnOrderCredits,
-  getPurchaseReturnOrderIssues,
-  getPurchaseReturnOrderShipments
-} from "~/modules/purchasing/purchasing.service";
 import PurchaseReturnOrderSummary from "~/modules/purchasing/ui/PurchaseReturnOrders/PurchaseReturnOrderSummary";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "purchasing"
   });
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [shipments, credits, issues] = await Promise.all([
-    getPurchaseReturnOrderShipments(client, id, companyId),
-    getPurchaseReturnOrderCredits(client, id, companyId),
-    getPurchaseReturnOrderIssues(client, id, companyId)
+    api.purchasing.getPurchaseReturnOrderShipments({
+      purchaseReturnOrderId: id
+    }),
+    api.purchasing.getPurchaseReturnOrderCredits({ purchaseReturnOrderId: id }),
+    api.purchasing.getPurchaseReturnOrderIssues({ purchaseReturnOrderId: id })
   ]);
 
   return {

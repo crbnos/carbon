@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -16,10 +16,6 @@ import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData, useUser } from "~/hooks";
 import { purchaseOrderValidator } from "~/modules/purchasing/purchasing.models";
-import {
-  getPurchaseOrder,
-  getPurchaseOrderPayment
-} from "~/modules/purchasing/purchasing.service";
 import type {
   PurchaseOrder,
   PurchaseOrderDelivery,
@@ -41,16 +37,17 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "purchasing"
   });
+  const api = carbonFor(auth);
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
   const [purchaseOrder, purchaseOrderPayment] = await Promise.all([
-    getPurchaseOrder(client, orderId),
-    getPurchaseOrderPayment(client, orderId)
+    api.purchasing.getPurchaseOrder({ purchaseOrderId: orderId }),
+    api.purchasing.getPurchaseOrderPayment({ purchaseOrderId: orderId })
   ]);
 
   if (purchaseOrderPayment.error) {

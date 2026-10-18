@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -18,15 +19,18 @@ import {
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const api = carbonFor(auth);
 
   const { itemId, rateId } = params;
   if (!itemId) throw notFound("itemId not found");
   if (!rateId) throw notFound("rateId not found");
 
-  const rate = await getCustomerItemRentalRate(client, rateId, companyId);
+  const rate = await api.sales.getCustomerItemRentalRate({
+    customerItemRentalRateId: rateId
+  });
   if (rate.error || rate.data.itemId !== itemId) {
     throw redirect(
       path.to.partSales(itemId),

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -9,14 +10,15 @@ import { makeEmptyPermissionsFromModules } from "@carbon/ee/permissions.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getModules } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   await requireFeature({
     request,
@@ -26,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     feature: "PERMISSIONS"
   });
 
-  const modules = await getModules(client);
+  const modules = await api.users.getModules({});
   if (modules.error || modules.data === null) {
     return data(
       {

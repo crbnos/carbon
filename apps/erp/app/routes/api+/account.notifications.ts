@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { AccountNotificationsData } from "@carbon/account";
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -13,17 +14,16 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { notificationPreferenceValidator } from "~/modules/users/users.models";
-import {
-  getNotificationPreferences,
-  upsertNotificationPreference
-} from "~/modules/users/users.service";
+import { upsertNotificationPreference } from "~/modules/users/users.service";
 
 // Data and writes for the Notifications pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {});
+  const auth = await requirePermissions(request, {});
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const [preferences, slackIntegration, emailPlanEnabled] = await Promise.all([
-    getNotificationPreferences(client, userId, companyId),
+    api.users.getNotificationPreferences({}),
     // Service role: companyIntegration SELECT requires settings_view, which
     // regular employees don't have.
     getCarbonServiceRole()

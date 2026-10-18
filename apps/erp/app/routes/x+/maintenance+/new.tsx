@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
@@ -10,7 +10,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { maintenanceDispatchValidator } from "~/modules/resources/resources.models";
-import { getFailureModesList } from "~/modules/resources/resources.service";
 import MaintenanceDispatchForm from "~/modules/resources/ui/Maintenance/MaintenanceDispatchForm";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
@@ -23,12 +22,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     create: "resources"
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const [failureModes, defaults] = await Promise.all([
-    getFailureModesList(client, companyId),
+    api.resources.getFailureModesList({}),
     getUserDefaults(client, userId, companyId)
   ]);
 

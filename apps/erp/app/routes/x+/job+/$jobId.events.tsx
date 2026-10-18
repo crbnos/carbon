@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,19 +11,15 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
-import {
-  getJobOperationsList,
-  getProductionEvents
-} from "~/modules/production/production.service";
 import { ProductionEventsTable } from "~/modules/production/ui/Jobs";
-import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { path, requestReferrer } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production"
   });
+  const api = carbonFor(auth);
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -33,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const operations = await getJobOperationsList(client, jobId);
+  const operations = await api.production.getJobOperationsList({ jobId });
   if (operations.error) {
     redirect(
       requestReferrer(request) ?? path.to.job(jobId),
@@ -54,14 +51,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [events, workCenters] = await Promise.all([
-    getProductionEvents(client, operations.data?.map((o) => o.id) ?? [], {
+    api.production.getProductionEvents({
       search,
       limit,
       offset,
       sorts,
-      filters
+      filters,
+      jobOperationIds: operations.data?.map((o) => o.id) ?? []
     }),
-    getWorkCentersList(client, companyId)
+    api.resources.getWorkCentersList({})
   ]);
 
   if (events.error) {
@@ -72,8 +70,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    count: events.count ?? 0,
-    events: events.data ?? [],
+    count: events.data?.count ?? 0,
+    events: events.data?.rows ?? [],
     workCenters: workCenters.data ?? [],
     operations: operations.data ?? []
   };

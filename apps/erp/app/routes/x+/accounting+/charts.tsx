@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,10 +12,6 @@ import { msg } from "@lingui/core/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getChartOfAccounts,
-  getFiscalYearSettings
-} from "~/modules/accounting/accounting.service";
 import type { Chart } from "~/modules/accounting/types";
 import { ChartOfAccountsTree } from "~/modules/accounting/ui/ChartOfAccounts";
 import ChartOfAccountsTableFilters from "~/modules/accounting/ui/ChartOfAccounts/ChartOfAccountsTableFilters";
@@ -31,14 +28,12 @@ export const handle: Handle = {
 export const shouldRevalidate = revalidateIgnoringOffset;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "accounting",
-      role: "employee",
-      bypassRls: true
-    }
-  );
+  const auth = await requirePermissions(request, {
+    view: "accounting",
+    role: "employee",
+    bypassRls: true
+  });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -47,12 +42,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const endDate = searchParams.get("endDate") || null;
 
   const [chartOfAccounts, fiscalYearSettings] = await Promise.all([
-    getChartOfAccounts(client, companyGroupId, {
+    api.accounting.getChartOfAccounts({
       incomeBalance: null,
       startDate,
       endDate
     }),
-    getFiscalYearSettings(client, companyId)
+    api.accounting.getFiscalYearSettings({})
   ]);
 
   if (chartOfAccounts.error) {

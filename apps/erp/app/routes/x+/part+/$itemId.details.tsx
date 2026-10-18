@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -24,11 +24,8 @@ import {
 import {
   getConfigurationRules,
   getItemChangeNoticeDataOnce,
-  getItemManufacturing,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId,
   getRevisionLock
 } from "~/modules/items/items.service";
 import { getConfigurationParameters } from "~/modules/items/items.utils";
@@ -51,16 +48,17 @@ import {
 import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm";
 import { methodVersionSlot } from "~/modules/items/ui/Item/MakeMethodTools";
 import { ConfigurationParametersForm } from "~/modules/items/ui/Parts";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -78,8 +76,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       getRevisionLock(client, { itemId, companyId }),
       // Part → CO traceability (4b): CO history for this part + type labels.
       getItemChangeNoticeDataOnce(client, itemId, companyId),
-      getTagsList(client, companyId, "operation"),
-      getItemManufacturing(client, itemId, companyId)
+      api.shared.getTagsList({ table: "operation" }),
+      api.items.getItemManufacturing({ id: itemId })
     ]);
   const revisionStatus = revisionLock.revisionStatus;
   const releaseControl = revisionLock.releaseControl;
@@ -108,8 +106,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [fullMethod, methodMaterials, methodOperations, configData] =
     await Promise.all([
       getMakeMethodByIdOnce(client, makeMethod.id, companyId),
-      getMethodMaterialsByMakeMethod(client, makeMethod.id),
-      getMethodOperationsByMakeMethodId(client, makeMethod.id),
+      api.items.getMethodMaterialsByMakeMethod({ makeMethodId: makeMethod.id }),
+      api.items.getMethodOperationsByMakeMethodId({
+        makeMethodId: makeMethod.id
+      }),
       partManufacturing.data?.requiresConfiguration
         ? Promise.all([
             getConfigurationParameters(client, itemId, companyId),

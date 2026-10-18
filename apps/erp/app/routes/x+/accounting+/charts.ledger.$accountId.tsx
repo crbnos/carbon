@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -9,11 +10,7 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getAccount,
-  getAccountLedger,
-  getAccountLedgerSummary
-} from "~/modules/accounting/accounting.service";
+import { getAccountLedgerSummary } from "~/modules/accounting/accounting.service";
 import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
 
@@ -24,11 +21,13 @@ const LEDGER_PAGE_SIZE = 50;
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // bypassRls matches the chart of accounts page, whose balances span every
   // company in the group regardless of the user's per-company roles
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting",
     role: "employee",
     bypassRls: true
   });
+  const { client, companyGroupId } = auth;
+  const api = carbonFor(auth);
 
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");
@@ -42,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // bypassRls makes `client` the service role and the ledger read below is
   // unscoped by company, so the account must be proven to be this group's
   // before any of its lines are read.
-  const account = await getAccount(client, accountId);
+  const account = await api.accounting.getAccount({ accountId });
   if (account.error || !account.data) {
     throw redirect(
       path.to.chartOfAccounts,
@@ -58,7 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [ledger, summary] = await Promise.all([
-    getAccountLedger(client, {
+    api.accounting.getAccountLedger({
       accountId,
       companyId: null,
       startDate,
@@ -75,8 +74,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     account: account.data,
-    lines: ledger.data ?? [],
-    count: ledger.count ?? 0,
+    lines: ledger.data?.rows ?? [],
+    count: ledger.data?.count ?? 0,
     summary: summary.data ?? { opening: 0, netChange: 0, closing: 0 },
     startDate,
     endDate,

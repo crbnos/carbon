@@ -8,7 +8,7 @@
 // files would do; `apply` runs the same plan in one transaction through the
 // apply-account-import server function.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -45,7 +45,6 @@ import {
   AccountImportCsvErrors,
   AccountImportReview
 } from "~/modules/accounting/ui/ChartOfAccounts";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -69,10 +68,12 @@ function returnPath(params: URLSearchParams) {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     update: "accounting"
   });
-  const settings = await getCompanySettings(client, companyId);
+  const { companyId } = auth;
+  const api = carbonFor(auth);
+  const settings = await api.settings.getCompanySettings({});
   if (settings.error) {
     logger.error("Failed to read the company settings", {
       companyId,

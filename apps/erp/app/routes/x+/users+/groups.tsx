@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,7 +13,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import type { Group } from "~/modules/users/types";
 import { GroupsTable } from "~/modules/users/ui";
-import { getGroups } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -23,10 +23,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -35,7 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const groups = await getGroups(client, companyId, {
+  const groups = await api.users.getGroups({
     search,
     uid,
     limit,
@@ -52,9 +53,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    groups: (groups.data ? arrayToTree(groups.data) : []) as Group[],
+    groups: (groups.data?.rows
+      ? arrayToTree(groups.data?.rows)
+      : []) as Group[],
     error: null,
-    count: groups.count ?? 0
+    count: groups.data?.count ?? 0
   };
 }
 

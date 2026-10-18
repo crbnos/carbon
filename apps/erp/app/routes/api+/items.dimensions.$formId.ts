@@ -2,28 +2,26 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getMaterialDimensionList } from "~/modules/items/items.service";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   if (!params.formId) {
     return data({ error: "Form ID is required" }, { status: 400 });
   }
 
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await api.settings.getCompanySettings({});
 
-  return await getMaterialDimensionList(
-    client,
-    params.formId,
-    settings?.data?.useMetric ?? false,
-    companyId
-  );
+  return await api.items.getMaterialDimensionList({
+    materialFormId: params.formId,
+    isMetric: settings?.data?.useMetric ?? false
+  });
 }

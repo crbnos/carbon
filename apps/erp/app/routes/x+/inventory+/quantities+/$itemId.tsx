@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -22,18 +23,16 @@ import { useSetAppBarOverride } from "~/components/Layout/Mobile";
 import { RecordHero } from "~/components/Layout/RecordHeader";
 import { useUrlParams } from "~/hooks";
 import InventoryItemHeader from "~/modules/inventory/ui/Inventory/InventoryItemHeader";
-import {
-  getItem,
-  getPickMethod,
-  upsertPickMethod
-} from "~/modules/items/items.service";
+import { upsertPickMethod } from "~/modules/items/items.service";
 import { resolveLocationId } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory"
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const { itemId } = params;
   if (!itemId) throw notFound("itemId not found");
@@ -68,7 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   // Now get the pick method (it should definitely exist)
-  const pickMethod = await getPickMethod(client, itemId, companyId, locationId);
+  const pickMethod = await api.items.getPickMethod({ itemId, locationId });
   if (pickMethod.error || !pickMethod.data) {
     throw redirect(
       path.to.inventory,
@@ -79,7 +78,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const item = await getItem(client, itemId);
+  const item = await api.items.getItem({ id: itemId });
   if (item.error || !item.data) {
     throw redirect(
       path.to.inventory,

@@ -246,7 +246,15 @@ function read(
 }
 
 type Envelope = { data?: unknown; error?: unknown; count?: number | null };
-type DataOf<R> = R extends { data: infer D } ? D : never;
+// A failure branch (`error` that cannot be null) is a refusal, never data: its
+// `data: null` must not widen the success branch's data.
+type DataOf<R> = R extends { data: infer D }
+  ? R extends { error: infer E }
+    ? null extends E
+      ? D
+      : never
+    : D
+  : never;
 
 /**
  * What a building block returned, as the service function's result: the

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -21,11 +22,7 @@ import { DateTime, Hyperlink } from "~/components";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { useSettings, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
-import {
-  getDepreciationRun,
-  getDepreciationRunLines,
-  getPeriodRunRelatedItems
-} from "~/modules/accounting/accounting.service";
+import { getPeriodRunRelatedItems } from "~/modules/accounting/accounting.service";
 import { depreciationRunLineDisplay } from "~/modules/accounting/accounting.utils";
 import {
   DepreciationRunDocuments,
@@ -52,16 +49,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { depreciationRunId } = params;
   if (!depreciationRunId) throw new Error("Could not find depreciationRunId");
 
   const [run, lines] = await Promise.all([
-    getDepreciationRun(client, depreciationRunId),
-    getDepreciationRunLines(client, depreciationRunId)
+    api.accounting.getDepreciationRun({ id: depreciationRunId }),
+    api.accounting.getDepreciationRunLines({ depreciationRunId })
   ]);
 
   if (run.error) {

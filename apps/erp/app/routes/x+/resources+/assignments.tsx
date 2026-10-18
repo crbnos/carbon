@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -36,7 +37,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
-import { getTrainingAssignmentSummary } from "~/modules/resources/resources.service";
 import type { TrainingAssignmentSummaryItem } from "~/modules/resources/types";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -47,12 +47,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
-  const summary = await getTrainingAssignmentSummary(client, companyId);
+  const summary = await api.resources.getTrainingAssignmentSummary({});
 
   if (summary.error) {
     throw redirect(

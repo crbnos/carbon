@@ -2,26 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { carbon, carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import {
-  getAvailableTrackedEntities,
-  getPickOrder
-} from "~/modules/inventory/inventory.service";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getPickOrder } from "~/modules/inventory/inventory.service";
 
 /**
  * GET: available tracked lots for a picking line (non-lineside, deduped),
  * smart-ordered for the TrackedEntityPicker. POST: pick/unpick a chosen lot.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
   const { lineId } = params;
   if (!lineId) throw new Response("Not found", { status: 404 });
 
@@ -46,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [entities, settings, defaultOrder] = await Promise.all([
     locationId
-      ? getAvailableTrackedEntities(client, {
+      ? api.inventory.getAvailableTrackedEntities({
           itemId: line.itemId,
           companyId,
           locationId,
@@ -55,7 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           excludeLineId: lineId
         })
       : { data: [] },
-    getCompanySettings(client, companyId),
+    api.settings.getCompanySettings({}),
     locationId
       ? getPickOrder(client, { itemId: line.itemId, locationId, companyId })
       : ("Default" as const)

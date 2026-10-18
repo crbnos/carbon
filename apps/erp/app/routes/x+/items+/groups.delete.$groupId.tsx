@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,20 +12,18 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteItemPostingGroup,
-  getItemPostingGroup
-} from "~/modules/items/items.service";
+import { deleteItemPostingGroup } from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const api = carbonFor(auth);
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
 
-  const itemPostingGroup = await getItemPostingGroup(client, groupId);
+  const itemPostingGroup = await api.items.getItemPostingGroup({ id: groupId });
   if (itemPostingGroup.error) {
     throw redirect(
       path.to.itemPostingGroups,

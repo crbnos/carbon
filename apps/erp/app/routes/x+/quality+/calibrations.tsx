@@ -2,17 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getGaugeCalibrationRecords,
-  getGaugeTypesList
-} from "~/modules/quality/quality.service";
 import GaugeCalibrationRecordsTable from "~/modules/quality/ui/Calibrations/GaugeCalibrationRecordsTable";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -23,10 +19,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -36,20 +33,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [gaugeCalibrationRecords, gaugeTypes, companySettings] =
     await Promise.all([
-      getGaugeCalibrationRecords(client, companyId, {
+      api.quality.getGaugeCalibrationRecords({
         search,
         limit,
         offset,
         sorts,
         filters
       }),
-      getGaugeTypesList(client, companyId),
-      getCompanySettings(client, companyId)
+      api.quality.getGaugeTypesList({}),
+      api.settings.getCompanySettings({})
     ]);
 
   return {
-    gaugeCalibrationRecords: gaugeCalibrationRecords.data ?? [],
-    count: gaugeCalibrationRecords.count ?? 0,
+    gaugeCalibrationRecords: gaugeCalibrationRecords.data?.rows ?? [],
+    count: gaugeCalibrationRecords.data?.count ?? 0,
     gaugeTypes: gaugeTypes.data ?? [],
     useMetric: companySettings.data?.useMetric ?? false
   };

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,13 +11,8 @@ import { indexBy, indexByMapped, pluckUnique, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getSupplierReportContacts,
-  getSuppliers
-} from "~/modules/purchasing/purchasing.service";
 import type { SupplierReportContactsBySupplierId } from "~/modules/purchasing/types";
 import { SuppliersTable } from "~/modules/purchasing/ui/Supplier";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -28,10 +24,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "purchasing",
     bypassRls: true
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -43,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [suppliers, tags] = await Promise.all([
-    getSuppliers(client, companyId, {
+    api.purchasing.getSuppliers({
       search,
       type,
       status,
@@ -52,7 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getTagsList(client, companyId, "supplier")
+    api.shared.getTagsList({ table: "supplier" })
   ]);
 
   if (suppliers.error) {
@@ -62,18 +59,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const supplierIds = pluckUnique(suppliers.data, (s) => s.id);
+  const supplierIds = pluckUnique(suppliers.data?.rows, (s) => s.id);
 
-  const [purchasingRes, paymentRes, shippingRes] =
-    await getSupplierReportContacts(client, companyId, supplierIds);
+  const contacts = await api.purchasing.getSupplierReportContacts({
+    supplierIds
+  });
+  const [purchasing, payment, shipping] = contacts.data ?? [[], [], []];
 
   const purchasingBySupplierId = indexByMapped(
-    purchasingRes.data,
+    purchasing,
     (r) => r.id,
     (r) => r.purchasingContact
   );
-  const paymentBySupplierId = indexBy(paymentRes.data, (r) => r.supplierId);
-  const shippingBySupplierId = indexBy(shippingRes.data, (r) => r.supplierId);
+  const paymentBySupplierId = indexBy(payment, (r) => r.supplierId);
+  const shippingBySupplierId = indexBy(shipping, (r) => r.supplierId);
 
   const supplierReportContacts: SupplierReportContactsBySupplierId =
     Object.fromEntries(
@@ -88,8 +87,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
 
   return {
-    count: suppliers.count ?? 0,
-    suppliers: suppliers.data ?? [],
+    count: suppliers.data?.count ?? 0,
+    suppliers: suppliers.data?.rows ?? [],
     tags: tags.data ?? [],
     supplierReportContacts
   };

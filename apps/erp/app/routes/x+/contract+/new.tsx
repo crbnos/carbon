@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { redirect, suggestContractType } from "@carbon/utils";
@@ -13,7 +13,6 @@ import { useLoaderData } from "react-router";
 import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUser } from "~/hooks";
 import { customerContractValidator } from "~/modules/sales/sales.models";
-import { getCustomerContractStatuses } from "~/modules/sales/sales.service";
 import {
   ContractDetailsForm,
   ContractSetupSteps
@@ -30,9 +29,11 @@ export const handle: Handle = {
 /** A contract started from a customer (`?customerId=`) opens with that
  *  customer's currency and suggested type already filled in. */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     create: "sales"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const customerId = new URL(request.url).searchParams.get("customerId");
   if (!customerId) return { customerId: null, currencyCode: null, type: null };
@@ -44,7 +45,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("id", customerId)
       .eq("companyId", companyId)
       .maybeSingle(),
-    getCustomerContractStatuses(client, companyId, customerId)
+    api.sales.getCustomerContractStatuses({ customerId })
   ]);
   if (!customer.data) {
     return { customerId: null, currencyCode: null, type: null };

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,25 +12,22 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useParams } from "react-router";
 import invariant from "tiny-invariant";
 import { itemInspectionDocumentAssignmentValidator } from "~/modules/quality/quality.models";
-import {
-  getInspectionDocumentsForItem,
-  getItemInspectionDocumentAssignments,
-  upsertItemInspectionDocumentAssignment
-} from "~/modules/quality/quality.service";
+import { upsertItemInspectionDocumentAssignment } from "~/modules/quality/quality.service";
 import type { ItemInspectionDocumentAssignment } from "~/modules/quality/types";
 import ItemQualityView from "~/modules/quality/ui/Item/ItemQualityView";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const api = carbonFor(auth);
   const { itemId } = params;
   invariant(itemId, "itemId is required");
 
   const [documents, assignments] = await Promise.all([
-    getInspectionDocumentsForItem(client, itemId, companyId),
-    getItemInspectionDocumentAssignments(client, itemId, companyId)
+    api.quality.getInspectionDocumentsForItem({ itemId }),
+    api.quality.getItemInspectionDocumentAssignments({ itemId })
   ]);
 
   return data({

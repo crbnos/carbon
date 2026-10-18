@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { CONTROLLED_ENVIRONMENT, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -15,10 +16,6 @@ import {
   ItarCertificationsTable,
   ItarEntityCertificationStatus
 } from "~/modules/settings/ui";
-import {
-  getItarCertificationReport,
-  getItarEntityCertification
-} from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -54,10 +51,11 @@ async function getLastLoginByUserId(): Promise<Map<string, string | null>> {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "settings",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   // Controlled environments only.
   if (!CONTROLLED_ENVIRONMENT) {
@@ -65,8 +63,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [report, entityCertification, lastLoginByUserId] = await Promise.all([
-    getItarCertificationReport(client, companyId),
-    getItarEntityCertification(client, companyId),
+    api.users.getItarCertificationReport({}),
+    api.users.getItarEntityCertification({}),
     getLastLoginByUserId()
   ]);
 

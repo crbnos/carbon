@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { Combobox, cn, DatePicker, HStack, VStack } from "@carbon/react";
 import { datetime } from "@carbon/utils";
@@ -22,10 +23,6 @@ import {
 import type {
   RentalUtilizationRow,
   RentalUtilizationTotals
-} from "~/modules/accounting/accounting.service";
-import {
-  getFixedAssetClassesList,
-  getRentalUtilization
 } from "~/modules/accounting/accounting.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
@@ -48,10 +45,12 @@ function parseDateParam(raw: string | null): string | null {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   // Default: quarter to date in the company's calendar. Stopping at today
@@ -68,8 +67,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const fixedAssetClassId = url.searchParams.get("fixedAssetClassId") || null;
 
   const [utilization, classes] = await Promise.all([
-    getRentalUtilization(client, companyId, { from, to, fixedAssetClassId }),
-    getFixedAssetClassesList(client, companyId)
+    api.accounting.getRentalUtilization({ from, to, fixedAssetClassId }),
+    api.accounting.getFixedAssetClassesList({})
   ]);
   // A failed query must surface, not render as an idle fleet.
   if (utilization.error) {

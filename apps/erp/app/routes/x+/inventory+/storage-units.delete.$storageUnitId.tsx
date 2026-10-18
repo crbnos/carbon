@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -27,7 +27,6 @@ import { useLoaderData, useNavigate, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { ConfirmDelete } from "~/components/Modals";
-import { getStorageUnit } from "~/modules/inventory/inventory.service";
 import { getParams, path } from "~/utils/path";
 
 // The cascade modal sends `cascade=true` to delete the nested units too.
@@ -36,9 +35,11 @@ const deleteForm = z.object({
 });
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory"
   });
+  const { client } = auth;
+  const api = carbonFor(auth);
   const { storageUnitId } = params;
   if (!storageUnitId) throw notFound("storageUnitId not found");
 
@@ -48,7 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // build, so the cascade modal never triggered. Fetching rows and reading
   // `.data.length` is unambiguous and the direct-child list is tiny.
   const [storageUnit, children] = await Promise.all([
-    getStorageUnit(client, storageUnitId),
+    api.inventory.getStorageUnit({ storageUnitId }),
     client.from("storageUnit").select("id").eq("parentId", storageUnitId)
   ]);
 

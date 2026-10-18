@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,24 +12,22 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { supplierTypeValidator } from "~/modules/purchasing/purchasing.models";
-import {
-  getSupplierType,
-  upsertSupplierType
-} from "~/modules/purchasing/purchasing.service";
+import { upsertSupplierType } from "~/modules/purchasing/purchasing.service";
 import { SupplierTypeForm } from "~/modules/purchasing/ui/SupplierTypes";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "purchasing",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { supplierTypeId } = params;
   if (!supplierTypeId) throw notFound("supplierTypeId not found");
 
-  const supplierType = await getSupplierType(client, supplierTypeId);
+  const supplierType = await api.purchasing.getSupplierType({ supplierTypeId });
 
   if (supplierType.error) {
     throw redirect(

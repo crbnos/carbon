@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLocalTimeZone, today } from "@internationalized/date";
@@ -12,11 +12,6 @@ import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
 import { issueValidator } from "~/modules/quality/quality.models";
-import {
-  getIssueTypesList,
-  getIssueWorkflowsList,
-  getRequiredActionsList
-} from "~/modules/quality/quality.service";
 import IssueForm from "~/modules/quality/ui/Issue/IssueForm";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -28,14 +23,15 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality"
   });
+  const api = carbonFor(auth);
 
   const [workflows, types, requiredActions] = await Promise.all([
-    getIssueWorkflowsList(client, companyId),
-    getIssueTypesList(client, companyId),
-    getRequiredActionsList(client, companyId)
+    api.quality.getIssueWorkflowsList({}),
+    api.quality.getIssueTypesList({}),
+    api.quality.getRequiredActionsList({})
   ]);
 
   return {

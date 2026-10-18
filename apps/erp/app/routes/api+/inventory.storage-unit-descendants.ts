@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getStorageUnitDescendants } from "~/modules/inventory/inventory.service";
 
 /**
  * Returns every storage unit in the subtree rooted at `id` (the unit itself
@@ -14,7 +14,8 @@ import { getStorageUnitDescendants } from "~/modules/inventory/inventory.service
  * client-side gives a cleaner UX than a round-trip rejection.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, { view: "inventory" });
+  const auth = await requirePermissions(request, { view: "inventory" });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
@@ -23,7 +24,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return { data: [], error: null };
   }
 
-  const result = await getStorageUnitDescendants(client, id);
+  const result = await api.inventory.getStorageUnitDescendants({
+    storageUnitId: id
+  });
 
   if (result.error) {
     return { data: [], error: result.error };

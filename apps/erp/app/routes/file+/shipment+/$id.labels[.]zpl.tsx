@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateProductLabelZPL } from "@carbon/documents/zpl";
 import type { TrackedEntityAttributes } from "@carbon/utils";
@@ -10,22 +11,23 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getShipmentTracking } from "~/modules/inventory/inventory.utils";
 import {
   getCompanyLogoForLabel,
-  getCompanySettings,
   getDocumentTemplateConfig,
   resolveLabelLogo
 } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [companySettings, shipmentTracking] = await Promise.all([
-    getCompanySettings(client, companyId),
+    api.settings.getCompanySettings({}),
     getShipmentTracking(client, id, companyId)
   ]);
 

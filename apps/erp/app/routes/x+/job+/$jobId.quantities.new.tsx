@@ -2,29 +2,29 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { productionQuantityValidator } from "~/modules/production/production.models";
-import { getJobOperations } from "~/modules/production/production.service";
 import { ProductionQuantityForm } from "~/modules/production/ui/Jobs";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     create: "production"
   });
+  const api = carbonFor(auth);
 
   const { jobId } = params;
   if (!jobId) throw notFound("jobId not found");
 
-  const jobOperations = await getJobOperations(client, jobId);
+  const jobOperations = await api.production.getJobOperations({ jobId });
 
   const operationOptions =
-    jobOperations.data?.map((operation) => ({
+    jobOperations.data?.rows?.map((operation) => ({
       label: operation.description ?? "",
       value: operation.id
     })) ?? [];

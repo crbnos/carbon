@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { carbon, carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type {
   DocumentSectionPlacement,
@@ -31,7 +31,6 @@ import { z } from "zod";
 import { SectionFormModal } from "~/components/DocumentTemplateEditor/SectionFormModal";
 import { usePermissions } from "~/hooks";
 import { documentSectionValidator } from "~/modules/settings/settings.models";
-import { getDocumentSections } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 const PLACEMENT_LABELS: Record<DocumentSectionPlacement, string> = {
@@ -52,12 +51,13 @@ type Section = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "settings",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
-  const sections = await getDocumentSections(client, companyId);
+  const sections = await api.settings.getDocumentSections({});
   return {
     sections: withBuiltInSections(
       (sections.data ?? []) as Section[]

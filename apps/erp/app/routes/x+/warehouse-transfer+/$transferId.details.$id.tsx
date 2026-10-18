@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,7 +13,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { getWarehouseTransferLine } from "~/modules/inventory/inventory.service";
 import { WarehouseTransferLineForm } from "~/modules/inventory/ui";
 import { path } from "~/utils/path";
 
@@ -31,19 +30,19 @@ const warehouseTransferLineActionValidator = z.discriminatedUnion("type", [
 ]);
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     update: "inventory"
   });
+  const api = carbonFor(auth);
 
   const { transferId, id } = params;
   if (!transferId) throw new Error("transferId not found");
   if (!id) throw new Error("id not found");
 
-  const warehouseTransferLine = await getWarehouseTransferLine(
-    client,
+  const warehouseTransferLine = await api.inventory.getWarehouseTransferLine({
     transferId,
-    id
-  );
+    lineId: id
+  });
   if (warehouseTransferLine.error) {
     throw redirect(
       path.to.warehouseTransferDetails(transferId),

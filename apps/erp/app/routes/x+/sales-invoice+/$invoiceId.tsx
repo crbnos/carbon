@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -15,18 +16,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
-import {
-  getCompanyHasOpenCredits,
-  getSalesInvoice,
-  getSalesInvoiceLines,
-  getSalesInvoiceShipment
-} from "~/modules/invoicing/invoicing.service";
+import { getCompanyHasOpenCredits } from "~/modules/invoicing/invoicing.service";
 import SalesInvoiceExplorer from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceExplorer";
 import SalesInvoiceHeader from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceHeader";
 import SalesInvoiceProperties from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties";
 import {
   getCustomer,
-  getOpportunity,
   getOpportunityDocuments
 } from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
@@ -55,21 +50,20 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "invoicing"
-    }
-  );
+  const auth = await requirePermissions(request, {
+    view: "invoicing"
+  });
+  const { client, companyId, companyGroupId } = auth;
+  const api = carbonFor(auth);
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   const [salesInvoice, salesInvoiceLines, salesInvoiceShipment] =
     await Promise.all([
-      getSalesInvoice(client, invoiceId),
-      getSalesInvoiceLines(client, invoiceId),
-      getSalesInvoiceShipment(client, invoiceId)
+      api.invoicing.getSalesInvoice({ salesInvoiceId: invoiceId }),
+      api.invoicing.getSalesInvoiceLines({ salesInvoiceId: invoiceId }),
+      api.invoicing.getSalesInvoiceShipment({ salesInvoiceId: invoiceId })
     ]);
 
   if (salesInvoice.error) {
@@ -89,7 +83,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ? getCustomer(client, salesInvoice.data.customerId)
         : null,
       salesInvoice.data?.opportunityId
-        ? getOpportunity(client, salesInvoice.data.opportunityId)
+        ? api.sales.getOpportunity({
+            opportunityId: salesInvoice.data.opportunityId
+          })
         : null,
       getCompanySettings(serviceRole, companyId),
       getCompanyHasOpenCredits(client, companyId, "sales"),

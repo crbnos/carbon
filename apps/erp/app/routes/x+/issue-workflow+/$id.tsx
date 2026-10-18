@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,11 +14,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useNavigate, useParams } from "react-router";
 import { issueWorkflowValidator } from "~/modules/quality/quality.models";
-import {
-  getIssueWorkflow,
-  getRequiredActionsList,
-  upsertIssueWorkflow
-} from "~/modules/quality/quality.service";
+import { upsertIssueWorkflow } from "~/modules/quality/quality.service";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -33,18 +30,20 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality",
     role: "employee",
     bypassRls: true
   });
+  const { companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [workflow, requiredActions] = await Promise.all([
-    getIssueWorkflow(client, id),
-    getRequiredActionsList(client, companyId)
+    api.quality.getIssueWorkflow({ nonConformanceWorkflowId: id }),
+    api.quality.getRequiredActionsList({})
   ]);
 
   if (workflow.error) {

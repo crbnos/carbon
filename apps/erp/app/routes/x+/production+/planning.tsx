@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -48,10 +49,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production",
     bypassRls: true
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -92,7 +95,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const drawerItemId = searchParams.get(PLANNING_DRAWER_PARAM);
 
   const [items, drawerItemRead] = await Promise.all([
-    getProductionPlanning(client, locationId, companyId, periodIds, {
+    api.production.getProductionPlanning({
       search,
       limit,
       offset,
@@ -100,7 +103,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       filters: gridFilters,
       asOf,
       actionTypes,
-      actionAssignees
+      actionAssignees,
+      locationId,
+      periods: periodIds
     }),
     drawerItemId
       ? getProductionPlanning(client, locationId, companyId, periodIds, {
@@ -131,7 +136,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       error: drawerItemRead.error
     });
   }
-  const pageItems = (items.data ?? []) as ProductionPlanningItem[];
+  const pageItems = (items.data?.rows ?? []) as ProductionPlanningItem[];
   const linkedItem = (drawerItemRead?.data?.[0] ??
     null) as ProductionPlanningItem | null;
   const drawerItem =
@@ -167,7 +172,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     items: pageItems,
     // The row a `?item=` link opens the drawer on, when it is not in `items`.
     drawerItem,
-    count: items.count ?? 0,
+    count: items.data?.count ?? 0,
     planningActions: planningActions.data ?? [],
     // The Actions-column filter the rows were matched on: each row shows only
     // its actions of these types.

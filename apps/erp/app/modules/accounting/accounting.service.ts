@@ -8918,7 +8918,10 @@ export async function invokeAssetTransfer(
         return input.type === "capitalize" &&
           input.cost != null &&
           required !== "system"
-          ? { ...required, update: "accounting" }
+          ? {
+              ...(required === "member" ? {} : required),
+              update: "accounting"
+            }
           : required;
       }
     }

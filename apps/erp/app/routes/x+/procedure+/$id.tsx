@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -22,14 +23,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { useImageUpload, usePermissions } from "~/hooks";
-import {
-  getProcedure,
-  getProcedureVersions
-} from "~/modules/production/production.service";
 import ProcedureExplorer from "~/modules/production/ui/Procedures/ProcedureExplorer";
 import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader";
 import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedureProperties";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/x+/procedure+/update";
 import { useDocumentStore } from "~/stores";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -46,18 +42,20 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production",
     role: "employee",
     bypassRls: true
   });
+  const { companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [procedure, tags] = await Promise.all([
-    getProcedure(client, id),
-    getTagsList(client, companyId, "procedure")
+    api.production.getProcedure({ id }),
+    api.shared.getTagsList({ table: "procedure" })
   ]);
 
   if (procedure.error) {
@@ -80,7 +78,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     procedure: procedure.data,
     tags: tags.data ?? [],
-    versions: getProcedureVersions(client, procedure.data, companyId)
+    versions: api.production.getProcedureVersions(procedure.data)
   };
 }
 

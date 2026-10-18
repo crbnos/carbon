@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,20 +11,8 @@ import { pluckUnique, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getInventoryCount,
-  getInventoryCountLineSummary,
-  getInventoryCountLines,
-  getInventoryCountMovements,
-  getStorageTypesList,
-  getStorageUnitsListForLocation
-} from "~/modules/inventory/inventory.service";
+import { getInventoryCountLineSummary } from "~/modules/inventory/inventory.service";
 import { InventoryCountDetails } from "~/modules/inventory/ui";
-import {
-  getMaterialFormsList,
-  getMaterialSubstancesList
-} from "~/modules/items/items.service";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -41,14 +30,16 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const inventoryCount = await getInventoryCount(client, id, companyId);
+  const inventoryCount = await api.inventory.getInventoryCount({ id });
   if (inventoryCount.error || !inventoryCount.data) {
     throw redirect(
       path.to.inventoryCounts,
@@ -85,33 +76,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     storageTypes,
     storageUnits
   ] = await Promise.all([
-    getInventoryCountLines(client, id, companyId, {
+    api.inventory.getInventoryCountLines({
       search,
       limit,
       offset,
       sorts,
-      filters: allowedFilters
+      filters: allowedFilters,
+      inventoryCountId: id
     }),
     getInventoryCountLineSummary(client, id, companyId),
     // Adjustments this count has posted (empty for a never-posted Draft).
-    getInventoryCountMovements(client, companyId, id),
+    api.inventory.getInventoryCountMovements({ inventoryCountId: id }),
     // Option lists for the count-line column filters (same set the quantities
     // screen loads).
-    getMaterialFormsList(client, companyId),
-    getMaterialSubstancesList(client, companyId),
-    getTagsList(client, companyId),
-    getStorageTypesList(client, companyId),
-    getStorageUnitsListForLocation(
-      client,
-      companyId,
-      inventoryCount.data.locationId
-    )
+    api.items.getMaterialFormsList({}),
+    api.items.getMaterialSubstancesList({}),
+    api.shared.getTagsList({}),
+    api.inventory.getStorageTypesList({}),
+    api.inventory.getStorageUnitsListForLocation({
+      locationId: inventoryCount.data.locationId
+    })
   ]);
 
   // Hiding the columns client-side isn't enough — the values would ship in the
   // loader payload and CSV export. Strip them server-side through Draft AND
   // Pending; they are revealed only once Posted.
-  const lineData = (lines.data ?? []).map((line) =>
+  const lineData = (lines.data?.rows ?? []).map((line) =>
     isBlindEntry
       ? // Withhold System Qty (and the variance it can be derived from). Use null,
         // not 0, so it reads as "not available" (blank / "—" in the UI and CSV)
@@ -123,7 +113,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     inventoryCount: inventoryCount.data,
     lines: lineData,
-    count: lines.count ?? 0,
+    count: lines.data?.count ?? 0,
     summary,
     movements: movements.data ?? [],
     forms: forms.data ?? [],

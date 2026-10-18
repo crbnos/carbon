@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -14,13 +14,14 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { EmployeeTypeForm } from "~/modules/users/ui";
 import { employeeTypeValidator } from "~/modules/users/users.models";
-import { getModules } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     create: "users"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   await requireFeature({
     request,
@@ -30,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     feature: "PERMISSIONS"
   });
 
-  const modules = await getModules(client);
+  const modules = await api.users.getModules({});
   if (modules.error || modules.data === null) {
     throw redirect(
       path.to.employeeTypes,

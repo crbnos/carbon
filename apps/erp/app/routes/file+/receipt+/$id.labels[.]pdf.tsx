@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ProductLabelPDF } from "@carbon/documents/pdf";
 import { getLogger } from "@carbon/logger";
@@ -11,9 +12,7 @@ import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { getReceiptTracking } from "~/modules/inventory/inventory.utils";
 import {
-  getCompany,
   getCompanyLogoForLabel,
-  getCompanySettings,
   getDocumentTemplateConfig,
   resolveLabelLogo
 } from "~/modules/settings/settings.service";
@@ -21,16 +20,18 @@ import {
 const logger = getLogger("erp", "id-labels-pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [company, companySettings, receiptLineTracking] = await Promise.all([
-    getCompany(client, companyId),
-    getCompanySettings(client, companyId),
+    api.settings.getCompany({}),
+    api.settings.getCompanySettings({}),
     getReceiptTracking(client, id, companyId)
   ]);
 

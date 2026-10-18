@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
@@ -10,21 +10,21 @@ import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { storageTypeValidator } from "~/modules/inventory/inventory.models";
-import { getStorageType } from "~/modules/inventory/inventory.service";
 import StorageTypeForm from "~/modules/inventory/ui/StorageTypes/StorageTypeForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const storageType = await getStorageType(client, id);
+  const storageType = await api.inventory.getStorageType({ id });
 
   return {
     storageType: storageType?.data ?? null

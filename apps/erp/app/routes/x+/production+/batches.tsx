@@ -2,16 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getJobOperationBatches,
-  getJobOperationBatchMemberStats,
-  getJobOperationBatchMembers
-} from "~/modules/production/production.service";
 import BatchesTable from "~/modules/production/ui/Batches/BatchesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -23,10 +19,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -34,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const batches = await getJobOperationBatches(client, companyId, {
+  const batches = await api.production.getJobOperationBatches({
     search,
     limit,
     offset,
@@ -42,25 +39,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
     filters
   });
 
-  const batchIds = (batches.data ?? []).map((b) => b.id);
+  const batchIds = (batches.data?.rows ?? []).map((b) => b.id);
   const [stats, members] = await Promise.all([
-    getJobOperationBatchMemberStats(client, companyId, batchIds),
-    getJobOperationBatchMembers(client, companyId, batchIds)
+    api.production.getJobOperationBatchMemberStats({ batchIds }),
+    api.production.getJobOperationBatchMembers({ batchIds })
   ]);
 
   return {
-    count: batches.count ?? 0,
-    batches: (batches.data ?? []).map((b) => ({
+    count: batches.data?.count ?? 0,
+    batches: (batches.data?.rows ?? []).map((b) => ({
       ...b,
-      memberCount: stats.data[b.id]?.memberCount ?? 0,
-      totalQuantity: stats.data[b.id]?.totalQuantity ?? 0,
+      memberCount: stats.data?.[b.id]?.memberCount ?? 0,
+      totalQuantity: stats.data?.[b.id]?.totalQuantity ?? 0,
       // Header work center when assigned; else the members' shared one (the
       // board's own fallback) — a board-created batch has no header WC until
       // its card is dragged.
       workCenterName:
-        b.workCenter?.name ?? stats.data[b.id]?.workCenterName ?? null,
+        b.workCenter?.name ?? stats.data?.[b.id]?.workCenterName ?? null,
       // Member rows for the expandable sub-list.
-      members: members.data[b.id] ?? []
+      members: members.data?.[b.id] ?? []
     }))
   };
 }

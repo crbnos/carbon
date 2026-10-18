@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,10 +16,6 @@ import { CadModel, DeferredFiles } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
-  getJob,
-  getJobMakeMethodById,
-  getJobMaterialsByMethodId,
-  getJobOperationsByMethodId,
   getPartDocuments,
   getProductionDataByOperations
 } from "~/modules/production/production.service";
@@ -32,16 +29,17 @@ import {
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import {
   getModelByItemId,
-  getTagsList,
   requireCompanyRecord
 } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { jobId, methodId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -55,11 +53,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 
   const [job, makeMethod, materials, operations, tags] = await Promise.all([
-    getJob(client, jobId),
-    getJobMakeMethodById(client, methodId, companyId),
-    getJobMaterialsByMethodId(client, methodId),
-    getJobOperationsByMethodId(client, methodId),
-    getTagsList(client, companyId, "operation")
+    api.production.getJob({ id: jobId }),
+    api.production.getJobMakeMethodById({ jobMakeMethodId: methodId }),
+    api.production.getJobMaterialsByMethodId({ jobMakeMethodId: methodId }),
+    api.production.getJobOperationsByMethodId({ jobMakeMethodId: methodId }),
+    api.shared.getTagsList({ table: "operation" })
   ]);
 
   if (job.error) {

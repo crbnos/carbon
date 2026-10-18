@@ -2,28 +2,29 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateProductLabelZPL } from "@carbon/documents/zpl";
 import { labelSizes, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getTrackedEntitiesByMakeMethodId } from "~/modules/inventory/inventory.service";
 import {
   getCompanyLogoForLabel,
-  getCompanySettings,
   getDocumentTemplateConfig,
   resolveLabelLogo
 } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const auth = await requirePermissions(request, {});
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [companySettings, trackedEntities] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getTrackedEntitiesByMakeMethodId(client, id, companyId)
+    api.settings.getCompanySettings({}),
+    api.inventory.getTrackedEntitiesByMakeMethodId({ jobMakeMethodId: id })
   ]);
 
   const url = new URL(request.url);

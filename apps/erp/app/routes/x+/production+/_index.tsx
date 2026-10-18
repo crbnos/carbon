@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { activeJobStatuses } from "@carbon/database";
@@ -79,13 +80,9 @@ import { CSVLink } from "~/components/CSVLink";
 import { usePercentFormatter } from "~/hooks";
 import { useUser } from "~/hooks/useUser";
 import { KPIs } from "~/modules/production/production.models";
-import {
-  getActiveProductionEvents,
-  getUnbatchedBatchableOperationCount
-} from "~/modules/production/production.service";
+import { getUnbatchedBatchableOperationCount } from "~/modules/production/production.service";
 import type { ActiveProductionEvent } from "~/modules/production/types";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs";
-import { getWorkCentersListWithBlockingStatus } from "~/modules/resources/resources.service";
 import type { WorkCenter } from "~/modules/resources/types";
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
 import type { Handle } from "~/utils/handle";
@@ -111,9 +108,11 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production"
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const [activeJobs, assignedJobs, unbatchedOperations, workCenters] =
     await Promise.all([
@@ -128,7 +127,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .eq("companyId", companyId)
         .eq("assignee", userId),
       getUnbatchedBatchableOperationCount(client, companyId),
-      getWorkCentersListWithBlockingStatus(client, companyId)
+      api.resources.getWorkCentersListWithBlockingStatus({})
     ]);
 
   return {
@@ -136,7 +135,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     assignedJobs: assignedJobs.data?.length ?? 0,
     unbatchedOperations: unbatchedOperations.count ?? 0,
     workCenters: workCenters.data ?? [],
-    events: getActiveProductionEvents(client, companyId)
+    events: api.production.getActiveProductionEvents({})
   };
 }
 

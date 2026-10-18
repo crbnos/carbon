@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -29,12 +30,6 @@ import type {
 } from "react-router";
 import { useLoaderData, useMatches, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import {
-  getContract,
-  getContractAmendments,
-  getContractInvoiceSchedule,
-  getContractLines
-} from "~/modules/sales/sales.service";
 import type {
   Contract,
   ContractCreditMemoLinks,
@@ -74,19 +69,21 @@ export async function loader({
   request,
   params
 }: LoaderFunctionArgs): Promise<ContractRouteData> {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [contract, lines, schedule, amendments, storedRevenue, timeZone] =
     await Promise.all([
-      getContract(client, id, companyId),
-      getContractLines(client, id, companyId),
-      getContractInvoiceSchedule(client, id, companyId),
-      getContractAmendments(client, id, companyId),
+      api.sales.getContract({ customerContractId: id }),
+      api.sales.getContractLines({ customerContractId: id }),
+      api.sales.getContractInvoiceSchedule({ customerContractId: id }),
+      api.sales.getContractAmendments({ customerContractId: id }),
       client
         .from("customerContractRevenue")
         .select(

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Card,
@@ -19,26 +20,22 @@ import { useDateFormatter } from "~/hooks";
 import ReceiptStatus from "~/modules/inventory/ui/Receipts/ReceiptStatus";
 import MemoStatus from "~/modules/invoicing/ui/Memo/MemoStatus";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
-import {
-  getSalesReturnOrderCredits,
-  getSalesReturnOrderIssues,
-  getSalesReturnOrderReceipts
-} from "~/modules/sales/sales.service";
 import SalesReturnOrderSummary from "~/modules/sales/ui/SalesReturnOrders/SalesReturnOrderSummary";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [receipts, credits, issues] = await Promise.all([
-    getSalesReturnOrderReceipts(client, id, companyId),
-    getSalesReturnOrderCredits(client, id, companyId),
-    getSalesReturnOrderIssues(client, id, companyId)
+    api.sales.getSalesReturnOrderReceipts({ salesReturnOrderId: id }),
+    api.sales.getSalesReturnOrderCredits({ salesReturnOrderId: id }),
+    api.sales.getSalesReturnOrderIssues({ salesReturnOrderId: id })
   ]);
 
   return {

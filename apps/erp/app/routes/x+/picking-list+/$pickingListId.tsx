@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,9 +13,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
-  getPickingList,
   getPickingListAvailability,
-  getPickingListLines,
   getPickingListRecommendations,
   getPickingListRelatedItems
 } from "~/modules/inventory/inventory.service";
@@ -43,16 +42,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { pickingListId } = params;
   if (!pickingListId) throw new Response("Not found", { status: 404 });
 
   const [pickingList, pickingListLines, availability] = await Promise.all([
-    getPickingList(client, pickingListId),
-    getPickingListLines(client, pickingListId),
+    api.inventory.getPickingList({ pickingListId }),
+    api.inventory.getPickingListLines({ pickingListId }),
     getPickingListAvailability(client, pickingListId)
   ]);
 

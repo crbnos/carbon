@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateDownloadToken } from "@carbon/auth/download-token.server";
@@ -16,20 +17,17 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useResolved } from "~/hooks/useResolved";
-import {
-  getDocumentExtensions,
-  getDocumentLabels,
-  getDocuments
-} from "~/modules/documents/documents.service";
 import type { Document } from "~/modules/documents/types";
 import { DocumentsTable } from "~/modules/documents/ui";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "documents"
   });
+  const { companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -46,12 +44,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Only the file-type filter needs this, so it streams rather than holding
   // the page.
-  const extensions = getDocumentExtensions(client, companyId).then(
-    (result) => result.data?.map(({ extension }) => extension) ?? []
-  );
+  const extensions = api.documents
+    .getDocumentExtensions({})
+    .then((result) => result.data?.map(({ extension }) => extension) ?? []);
 
   const [documents, labels] = await Promise.all([
-    getDocuments(client, companyId, {
+    api.documents.getDocuments({
       search,
       favorite,
       recent,
@@ -62,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getDocumentLabels(client, userId)
+    api.documents.getDocumentLabels({})
   ]);
 
   if (documents.error) {
@@ -75,7 +73,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Mint a signed download token per file-backed row. Signing is a server-only
   // HS256 op over the current result set (the same set the CSV exports).
   const documentsWithDownloadTokens: Document[] = await Promise.all(
-    (documents.data ?? []).map(async (document) => ({
+    (documents.data?.rows ?? []).map(async (document) => ({
       ...document,
       downloadToken:
         document.id && document.path
@@ -89,7 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   return {
-    count: documents.count ?? 0,
+    count: documents.data?.count ?? 0,
     documents: documentsWithDownloadTokens,
     labels: labels.data ?? [],
     extensions

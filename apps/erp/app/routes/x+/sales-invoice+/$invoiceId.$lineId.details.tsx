@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { carbon, carbonFor } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
@@ -15,7 +15,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { salesInvoiceLineValidator } from "~/modules/invoicing/invoicing.models";
-import { getSalesInvoiceLine } from "~/modules/invoicing/invoicing.service";
 import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
 import { getOpportunityLineDocuments } from "~/modules/sales/sales.service";
 import {
@@ -27,15 +26,19 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "invoicing",
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");
 
-  const salesInvoiceLine = await getSalesInvoiceLine(client, lineId);
+  const salesInvoiceLine = await api.invoicing.getSalesInvoiceLine({
+    salesInvoiceLineId: lineId
+  });
 
   const itemId = salesInvoiceLine?.data?.itemId;
 

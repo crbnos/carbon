@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,26 +13,20 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import {
-  getMakeMethodById,
-  getMakeMethods,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId
-} from "~/modules/items/items.service";
 import type { ServiceSummary } from "~/modules/items/types";
 import {
   BillOfMaterial,
   BillOfProcess,
   MakeMethodTools
 } from "~/modules/items/ui/Item";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const api = carbonFor(auth);
 
   const { itemId, makeMethodId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -39,10 +34,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [makeMethod, methodMaterials, methodOperations, tags] =
     await Promise.all([
-      getMakeMethodById(client, makeMethodId, companyId),
-      getMethodMaterialsByMakeMethod(client, makeMethodId),
-      getMethodOperationsByMakeMethodId(client, makeMethodId),
-      getTagsList(client, companyId, "operation")
+      api.items.getMakeMethodById({ makeMethodId }),
+      api.items.getMethodMaterialsByMakeMethod({ makeMethodId }),
+      api.items.getMethodOperationsByMakeMethodId({ makeMethodId }),
+      api.shared.getTagsList({ table: "operation" })
     ]);
 
   if (makeMethod.error) {
@@ -100,7 +95,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workCenterId: operation.workCenterId ?? undefined,
         workInstruction: operation.workInstruction as JSONContent | null
       })) ?? [],
-    makeMethods: getMakeMethods(client, makeMethod.data.itemId, companyId),
+    makeMethods: api.items.getMakeMethods({ itemId: makeMethod.data.itemId }),
     tags: tags.data ?? []
   };
 }

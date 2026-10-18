@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -31,10 +32,7 @@ import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useFetcher, useLoaderData, useNavigate } from "react-router";
 import { generateFiscalYearPeriodsValidator } from "~/modules/accounting/accounting.models";
-import {
-  createFiscalYearPeriods,
-  getFiscalYearSettings
-} from "~/modules/accounting/accounting.service";
+import { createFiscalYearPeriods } from "~/modules/accounting/accounting.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -45,12 +43,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
-  const settings = await getFiscalYearSettings(client, companyId);
+  const settings = await api.accounting.getFiscalYearSettings({});
   const startMonth = settings.data?.startMonth
     ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
     : 1;

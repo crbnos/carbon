@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -9,7 +10,6 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import { getProjects } from "~/modules/accounting/accounting.service";
 import { ProjectsTable } from "~/modules/accounting/ui/Projects";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -21,10 +21,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -32,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const projects = await getProjects(client, companyId, {
+  const projects = await api.accounting.getProjects({
     search,
     limit,
     offset,
@@ -47,7 +48,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  return { data: projects.data ?? [], count: projects.count ?? 0 };
+  return { data: projects.data?.rows ?? [], count: projects.data?.count ?? 0 };
 }
 
 export default function ProjectsRoute() {

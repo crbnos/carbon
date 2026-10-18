@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,21 +11,19 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteFailureMode,
-  getFailureMode
-} from "~/modules/resources/resources.service";
+import { deleteFailureMode } from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
+  const api = carbonFor(auth);
   const { failureModeId } = params;
   if (!failureModeId) throw notFound("failureModeId not found");
 
-  const failureMode = await getFailureMode(client, failureModeId);
+  const failureMode = await api.resources.getFailureMode({ failureModeId });
   if (failureMode.error) {
     throw redirect(
       `${path.to.failureModes}?${getParams(request)}`,

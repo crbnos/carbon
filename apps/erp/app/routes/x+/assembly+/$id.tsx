@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -43,17 +44,8 @@ import {
   isAssemblyPlanRunning
 } from "~/modules/production/production.models";
 import {
-  getAssemblyComponentMappings,
-  getAssemblyInstruction,
-  getAssemblyInstructionStepMaterials,
-  getAssemblyInstructionStepSlides,
-  getAssemblyInstructionSteps,
-  getAssemblyInstructionStepTools,
-  getAssemblyInstructionVersions,
   getAssemblyPlanJson,
-  getAssemblyUnits,
   getFlattenedBomMaterials,
-  getLatestAssemblyPlanJob,
   isAssemblerServiceHealthy,
   upsertAssemblyInstruction
 } from "~/modules/production/production.service";
@@ -82,29 +74,32 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production",
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [instruction, steps] = await Promise.all([
-    getAssemblyInstruction(client, id),
-    getAssemblyInstructionSteps(client, id)
+    api.production.getAssemblyInstruction({ id }),
+    api.production.getAssemblyInstructionSteps({ assemblyInstructionId: id })
   ]);
 
   const instructionError = instruction.error;
   if (instructionError || !instruction.data) {
-    // A deleted/absent instruction is a normal not-found (PGRST116 = no rows),
+    // A deleted/absent instruction is a normal not-found (a notFound refusal),
     // not a server error. A stale tab left open on a deleted instruction keeps
     // revalidating (realtime + poll); logging error() on every hit spams the
     // service log. Log only genuine DB errors; redirect quietly otherwise.
-    // Entered when there's an error OR no row. Not-found = a PGRST116 (no rows)
+    // Entered when there's an error OR no row. Not-found = a notFound refusal (no rows)
     // error, or the no-error-no-row case; a genuine DB error falls through to
     // error() so it's still logged.
-    const notFound = !instructionError || instructionError.code === "PGRST116";
+    const notFound =
+      !instructionError || instructionError.category === "notFound";
     throw redirect(
       path.to.assemblyInstructions,
       await flash(
@@ -129,26 +124,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     assemblerAvailable,
     versions
   ] = await Promise.all([
-    getAssemblyInstructionStepMaterials(client, stepIds),
-    getAssemblyInstructionStepSlides(client, stepIds),
-    getAssemblyInstructionStepTools(client, stepIds),
+    api.production.getAssemblyInstructionStepMaterials({ stepIds }),
+    api.production.getAssemblyInstructionStepSlides({ stepIds }),
+    api.production.getAssemblyInstructionStepTools({ stepIds }),
     instruction.data.modelUploadId
       ? getAssemblyPlanJson(client, instruction.data.modelUploadId)
       : Promise.resolve(null),
     instruction.data.modelUploadId
-      ? getLatestAssemblyPlanJob(client, instruction.data.modelUploadId)
+      ? api.production.getLatestAssemblyPlanJob({
+          modelUploadId: instruction.data.modelUploadId
+        })
       : Promise.resolve({ data: null }),
     instruction.data.modelUploadId
-      ? getAssemblyComponentMappings(client, instruction.data.modelUploadId)
+      ? api.production.getAssemblyComponentMappings({
+          modelUploadId: instruction.data.modelUploadId
+        })
       : Promise.resolve({ data: [] }),
     instruction.data.modelUploadId
-      ? getAssemblyUnits(client, instruction.data.modelUploadId)
+      ? api.production.getAssemblyUnits({
+          modelUploadId: instruction.data.modelUploadId
+        })
       : Promise.resolve({ data: [] }),
     instruction.data.itemId
       ? getFlattenedBomMaterials(client, instruction.data.itemId, companyId)
       : Promise.resolve([]),
     isAssemblerServiceHealthy(),
-    getAssemblyInstructionVersions(client, instruction.data)
+    api.production.getAssemblyInstructionVersions(instruction.data)
   ]);
 
   return {

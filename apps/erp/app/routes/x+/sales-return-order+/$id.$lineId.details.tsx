@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,27 +12,25 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { salesReturnOrderLineValidator } from "~/modules/sales/sales.models";
-import {
-  getReturnReasonsList,
-  getSalesReturnOrderLine
-} from "~/modules/sales/sales.service";
 import { SalesReturnOrderLineForm } from "~/modules/sales/ui/SalesReturnOrders";
 import type { SalesReturnOrderLine } from "~/modules/sales/ui/SalesReturnOrders/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id: orderId, lineId } = params;
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
   const [line, returnReasons] = await Promise.all([
-    getSalesReturnOrderLine(client, lineId),
-    getReturnReasonsList(client, companyId)
+    api.sales.getSalesReturnOrderLine({ lineId }),
+    api.sales.getReturnReasonsList({})
   ]);
 
   if (line.error) {

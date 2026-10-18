@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Button,
@@ -23,7 +24,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
-import { getDepreciationRuns } from "~/modules/accounting/accounting.service";
 import { getNextPeriodEnd } from "~/modules/accounting/accounting.utils";
 import { DepreciationRunTable } from "~/modules/accounting/ui/FixedAssets";
 import type { Handle } from "~/utils/handle";
@@ -36,10 +36,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -48,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [runs, lastRun] = await Promise.all([
-    getDepreciationRuns(client, companyId, {
+    api.accounting.getDepreciationRuns({
       search,
       limit,
       offset,
@@ -69,8 +71,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const hasDraftBlocking = lastRunData?.status === "Draft";
 
   return {
-    data: runs.data ?? [],
-    count: runs.count ?? 0,
+    data: runs.data?.rows ?? [],
+    count: runs.data?.count ?? 0,
     lastPeriodEnd: lastRunData?.periodEnd ?? null,
     nextPeriodEnd,
     hasDraftBlocking

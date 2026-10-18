@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { carbon, carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -52,10 +52,6 @@ import {
   invoiceNotificationValidator,
   settingsToggle
 } from "~/modules/settings/settings.models";
-import {
-  getAccountsReceivableBillingAddress,
-  getCompanySettings
-} from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -65,14 +61,16 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "settings"
   });
+  const { companyId } = auth;
+  const api = carbonFor(auth);
 
   const [companySettings, arBillingAddress, stripeAccountId] =
     await Promise.all([
-      getCompanySettings(client, companyId),
-      getAccountsReceivableBillingAddress(client, companyId),
+      api.settings.getCompanySettings({}),
+      api.settings.getAccountsReceivableBillingAddress({}),
       getStripeConnectAccountId(getCarbonServiceRole(), companyId)
     ]);
   if (!companySettings.data)

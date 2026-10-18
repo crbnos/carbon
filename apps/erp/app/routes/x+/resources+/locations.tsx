@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,7 +11,6 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getLocations } from "~/modules/resources/resources.service";
 import { LocationsTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -22,11 +22,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources",
     role: "employee",
     bypassRls: true
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -34,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const locations = await getLocations(client, companyId, {
+  const locations = await api.resources.getLocations({
     search,
     limit,
     offset,
@@ -50,8 +51,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    locations: locations.data ?? [],
-    count: locations.count ?? 0
+    locations: locations.data?.rows ?? [],
+    count: locations.data?.count ?? 0
   };
 }
 

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,30 +13,26 @@ import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { getBatchProperties } from "~/modules/inventory/inventory.service";
 import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
 import { itemPurchasingValidator } from "~/modules/items/items.models";
-import {
-  getItemCostHistory,
-  getItemReplenishment,
-  upsertItemPurchasing
-} from "~/modules/items/items.service";
+import { upsertItemPurchasing } from "~/modules/items/items.service";
 import type { SupplierPart } from "~/modules/items/types";
 import { ItemPurchasingForm, SupplierParts } from "~/modules/items/ui/Item";
 import { ItemCostHistoryChart } from "~/modules/items/ui/Item/ItemCostHistoryChart";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const api = carbonFor(auth);
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
   const [partPurchasingResult, itemCostHistory] = await Promise.all([
-    getItemReplenishment(client, itemId, companyId),
-    getItemCostHistory(client, itemId, companyId)
+    api.items.getItemReplenishment({ itemId }),
+    api.items.getItemCostHistory({ itemId })
   ]);
 
   if (partPurchasingResult.error) {
@@ -50,7 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     partPurchasing: partPurchasingResult.data,
-    batchProperties: getBatchProperties(client, [itemId], companyId),
+    batchProperties: api.inventory.getBatchProperties({ itemIds: [itemId] }),
     itemCostHistory: itemCostHistory.data ?? []
   };
 }

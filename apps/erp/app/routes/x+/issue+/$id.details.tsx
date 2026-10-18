@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -19,12 +20,7 @@ import {
   isIssueLocked,
   issueValidator
 } from "~/modules/quality/quality.models";
-import {
-  getIssue,
-  getIssueActionTasks,
-  getIssueReviewers,
-  updateIssue
-} from "~/modules/quality/quality.service";
+import { getIssue, updateIssue } from "~/modules/quality/quality.service";
 import type { IssueAssociationNode } from "~/modules/quality/types";
 import {
   ActionTasksList,
@@ -39,10 +35,12 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality",
     bypassRls: true
   });
+  const { client } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -59,8 +57,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     nonConformance: nonConformance.data,
-    actionTasks: getIssueActionTasks(client, id, companyId),
-    reviewers: getIssueReviewers(client, id, companyId)
+    actionTasks: api.quality.getIssueActionTasks({ id }),
+    reviewers: api.quality.getIssueReviewers({ id })
   };
 }
 

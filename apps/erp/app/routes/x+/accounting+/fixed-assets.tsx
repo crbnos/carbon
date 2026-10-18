@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { Button, RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -11,10 +12,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
-import {
-  getFixedAssetClassesList,
-  getFixedAssets
-} from "~/modules/accounting/accounting.service";
 import { FixedAssetsTable } from "~/modules/accounting/ui/FixedAssets";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -26,10 +23,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -44,7 +42,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [assets, assetClasses] = await Promise.all([
-    getFixedAssets(client, companyId, {
+    api.accounting.getFixedAssets({
       search,
       status,
       limit,
@@ -52,12 +50,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getFixedAssetClassesList(client, companyId)
+    api.accounting.getFixedAssetClassesList({})
   ]);
 
   return {
-    data: assets.data ?? [],
-    count: assets.count ?? 0,
+    data: assets.data?.rows ?? [],
+    count: assets.data?.count ?? 0,
     assetClasses: assetClasses.data ?? []
   };
 }

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,25 +10,24 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { getWorkCenterCapitalCost } from "~/modules/accounting/accounting.service";
 import { workCenterValidator } from "~/modules/resources/resources.models";
-import { getWorkCenter } from "~/modules/resources/resources.service";
 import { WorkCenterForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw notFound("Invalid work center id");
 
   const [workCenter, capitalCost] = await Promise.all([
-    getWorkCenter(client, id),
-    getWorkCenterCapitalCost(client, id, companyId)
+    api.resources.getWorkCenter({ id }),
+    api.accounting.getWorkCenterCapitalCost({ workCenterId: id })
   ]);
   if (workCenter.error) {
     throw redirect(

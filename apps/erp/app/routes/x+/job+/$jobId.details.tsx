@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -38,14 +38,8 @@ import {
   jobValidator
 } from "~/modules/production/production.models";
 import {
-  getJob,
   getJobDocumentsWithItemId,
-  getJobMakeMethodById,
-  getJobMaterialsByMethodId,
-  getJobOperationsByMethodId,
-  getJobPurchaseOrderLines,
-  getProductionDataByOperations,
-  getRootMakeMethod
+  getProductionDataByOperations
 } from "~/modules/production/production.service";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production/types";
 import {
@@ -58,20 +52,19 @@ import {
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
-import {
-  getTagsList,
-  requireCompanyRecord
-} from "~/modules/shared/shared.service";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -82,9 +75,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // is returned unless it passes.
   const [, job, rootMethod, tags] = await Promise.all([
     requireCompanyRecord(client, "job", companyId, { id: jobId }),
-    getJob(client, jobId),
-    getRootMakeMethod(client, jobId, companyId),
-    getTagsList(client, companyId, "operation")
+    api.production.getJob({ id: jobId }),
+    api.production.getRootMakeMethod({ jobId }),
+    api.shared.getTagsList({ table: "operation" })
   ]);
   if (job.error) {
     throw redirect(
@@ -96,7 +89,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (rootMethod.error) {
     return {
       notes: (job.data?.notes ?? {}) as JSONContent,
-      purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
+      purchaseOrderLines: api.production.getJobPurchaseOrderLines({ jobId }),
       materials: [],
       operations: [],
       makeMethod: null,
@@ -113,14 +106,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const methodId = rootMethod.data.id;
 
   const [materials, operations, makeMethod] = await Promise.all([
-    getJobMaterialsByMethodId(client, methodId),
-    getJobOperationsByMethodId(client, methodId),
-    getJobMakeMethodById(client, methodId, companyId)
+    api.production.getJobMaterialsByMethodId({ jobMakeMethodId: methodId }),
+    api.production.getJobOperationsByMethodId({ jobMakeMethodId: methodId }),
+    api.production.getJobMakeMethodById({ jobMakeMethodId: methodId })
   ]);
 
   return {
     notes: (job.data?.notes ?? {}) as JSONContent,
-    purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
+    purchaseOrderLines: api.production.getJobPurchaseOrderLines({ jobId }),
     materials:
       materials?.data?.map((m) => ({
         ...m,

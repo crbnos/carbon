@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,10 +11,6 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getAbilitiesList,
-  getPartners
-} from "~/modules/resources/resources.service";
 import { PartnersTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -25,11 +22,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources",
     role: "employee",
     bypassRls: true
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -38,14 +36,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [partners] = await Promise.all([
-    getPartners(client, companyId, {
+    api.resources.getPartners({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getAbilitiesList(client, companyId)
+    api.resources.getAbilitiesList({})
   ]);
 
   if (partners.error) {
@@ -56,8 +54,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    partners: partners.data ?? [],
-    count: partners.count ?? 0
+    partners: partners.data?.rows ?? [],
+    count: partners.data?.count ?? 0
   };
 }
 

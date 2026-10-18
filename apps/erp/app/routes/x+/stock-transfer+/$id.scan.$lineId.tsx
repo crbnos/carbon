@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
@@ -16,12 +16,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { stockTransferLineScanValidator } from "~/modules/inventory/inventory.models";
-import { getAvailableTrackedEntities } from "~/modules/inventory/inventory.service";
 import type {
   StockTransfer,
   StockTransferLine
 } from "~/modules/inventory/types";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 /**
@@ -29,9 +27,11 @@ import { path } from "~/utils/path";
  * Select tab, not just Scan — the same contract the picking-list picker uses.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { lineId } = params;
   if (!lineId) throw new Response("Not found", { status: 404 });
@@ -53,7 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const entities =
     locationId && line.data.itemId
-      ? await getAvailableTrackedEntities(client, {
+      ? await api.inventory.getAvailableTrackedEntities({
           itemId: line.data.itemId,
           companyId,
           locationId,
@@ -66,7 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         })
       : { data: [] };
 
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await api.settings.getCompanySettings({});
   const shelfLife = (settings.data?.inventoryShelfLife ?? {}) as {
     nearExpiryWarningDays?: number | null;
     expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";

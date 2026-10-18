@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import { pluckUnique } from "@carbon/utils";
@@ -9,10 +10,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
 import type { BomItemAttributes } from "~/modules/items/items.service";
-import {
-  getBomItemAttributes,
-  getMethodTree
-} from "~/modules/items/items.service";
 import type { Method } from "~/modules/items/types";
 import type { BomOperation, WorkCenterRate } from "~/utils/bom";
 import {
@@ -62,9 +59,11 @@ const operationHeaders = [
 ];
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   const withOperations = request.url.includes("withOperations=true");
@@ -83,7 +82,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  const methodTree = await getMethodTree(client, id);
+  const methodTree = await api.items.getMethodTree({ makeMethodId: id });
   if (methodTree.error) {
     return new Response(headers, {
       headers: {
@@ -116,7 +115,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .from("workCenters")
         .select("id, active, laborRate, machineRate, overheadRate, processes")
         .eq("companyId", companyId),
-      getBomItemAttributes(client, companyId, itemIds)
+      api.items.getBomItemAttributes({ itemIds })
     ]);
 
   const itemAttributes =

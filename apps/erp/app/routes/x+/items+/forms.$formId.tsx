@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,24 +12,22 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { materialFormValidator } from "~/modules/items/items.models";
-import {
-  getMaterialForm,
-  upsertMaterialForm
-} from "~/modules/items/items.service";
+import { upsertMaterialForm } from "~/modules/items/items.service";
 import { MaterialShapeForm } from "~/modules/items/ui/MaterialShapes";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { formId } = params;
   if (!formId) throw notFound("formId not found");
 
-  const materialForm = await getMaterialForm(client, formId);
+  const materialForm = await api.items.getMaterialForm({ id: formId });
 
   if (materialForm.data?.companyId === null) {
     throw redirect(

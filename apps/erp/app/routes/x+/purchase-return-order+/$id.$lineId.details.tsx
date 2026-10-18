@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,32 +12,27 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { purchaseReturnOrderLineValidator } from "~/modules/purchasing/purchasing.models";
-import {
-  getPurchaseReturnOrder,
-  getPurchaseReturnOrderLine,
-  getPurchaseReturnOrderLineTrackedEntities,
-  getReturnableEntitiesForSupplier
-} from "~/modules/purchasing/purchasing.service";
 import { PurchaseReturnOrderLineForm } from "~/modules/purchasing/ui/PurchaseReturnOrders";
 import type { PurchaseReturnOrderLine } from "~/modules/purchasing/ui/PurchaseReturnOrders/types";
-import { getReturnReasonsList } from "~/modules/sales/sales.service";
 // returnReason is shared reference data; its list read lives in the sales module
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "purchasing"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id: orderId, lineId } = params;
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
   const [purchaseReturnOrder, line, returnReasons] = await Promise.all([
-    getPurchaseReturnOrder(client, orderId),
-    getPurchaseReturnOrderLine(client, lineId),
-    getReturnReasonsList(client, companyId)
+    api.purchasing.getPurchaseReturnOrder({ purchaseReturnOrderId: orderId }),
+    api.purchasing.getPurchaseReturnOrderLine({ lineId }),
+    api.sales.getReturnReasonsList({})
   ]);
 
   if (line.error) {
@@ -51,14 +46,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [trackedEntities, returnableEntities] = await Promise.all([
-    getPurchaseReturnOrderLineTrackedEntities(client, [lineId]),
+    api.purchasing.getPurchaseReturnOrderLineTrackedEntities({
+      lineIds: [lineId]
+    }),
     purchaseReturnOrder.data?.supplierId
-      ? getReturnableEntitiesForSupplier(
-          client,
-          companyId,
-          purchaseReturnOrder.data.supplierId,
-          line.data.itemId
-        )
+      ? api.purchasing.getReturnableEntitiesForSupplier({
+          supplierId: purchaseReturnOrder.data.supplierId,
+          itemId: line.data.itemId
+        })
       : Promise.resolve({ data: [], error: null })
   ]);
 

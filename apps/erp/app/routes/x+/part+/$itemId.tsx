@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -33,11 +34,7 @@ import {
   getItemFiles,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
-  getMethodTree,
-  getPart,
   getPartUsedIn,
-  getPickMethods,
-  getSupplierParts,
   getUnreleasedChangeOrderForItem,
   streamItemSupersession
 } from "~/modules/items/items.service";
@@ -54,7 +51,6 @@ import {
   UsedInTree
 } from "~/modules/items/ui/Item/UsedIn";
 import { PartHeader, PartProperties } from "~/modules/items/ui/Parts";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -68,10 +64,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -90,10 +88,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     allChangeNotices,
     unreleasedChangeOrder
   ] = await Promise.all([
-    getPart(client, itemId, companyId),
-    getSupplierParts(client, itemId, companyId),
-    getPickMethods(client, itemId, companyId),
-    getTagsList(client, companyId, "part"),
+    api.items.getPart({ itemId }),
+    api.items.getSupplierParts({ id: itemId }),
+    api.items.getPickMethods({ itemId }),
+    api.shared.getTagsList({ table: "part" }),
     // Every CO, any status; the open subset (which locks manual version/revision
     // creation) is derived below.
     findChangeNoticesForItemOnce(client, { itemId, companyId }),
@@ -148,7 +146,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
     if (fullMethod.error || !fullMethod.data) return null;
 
-    const tree = await getMethodTree(client, fullMethod.data.id);
+    const tree = await api.items.getMethodTree({
+      makeMethodId: fullMethod.data.id
+    });
     if (tree.error) return null;
 
     const methods =

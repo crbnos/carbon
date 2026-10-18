@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,19 +12,19 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { GroupForm } from "~/modules/users/ui";
 import { groupValidator } from "~/modules/users/users.models";
-import { getGroupMembers } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
 
-  const groupWithMembers = await getGroupMembers(client, groupId);
+  const groupWithMembers = await api.users.getGroupMembers({ groupId });
 
   if (groupWithMembers.error) {
     redirect(

@@ -2,17 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ProductLabelPDF } from "@carbon/documents/pdf";
 import { getLogger } from "@carbon/logger";
 import { labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getTrackedEntitiesByMakeMethodId } from "~/modules/inventory/inventory.service";
 import {
-  getCompany,
   getCompanyLogoForLabel,
-  getCompanySettings,
   getDocumentTemplateConfig,
   resolveLabelLogo
 } from "~/modules/settings/settings.service";
@@ -20,15 +18,17 @@ import {
 const logger = getLogger("erp", "id-labels-pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const auth = await requirePermissions(request, {});
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [company, companySettings, trackedEntities] = await Promise.all([
-    getCompany(client, companyId),
-    getCompanySettings(client, companyId),
-    getTrackedEntitiesByMakeMethodId(client, id, companyId)
+    api.settings.getCompany({}),
+    api.settings.getCompanySettings({}),
+    api.inventory.getTrackedEntitiesByMakeMethodId({ jobMakeMethodId: id })
   ]);
 
   if (company.error) {

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -16,20 +16,20 @@ import {
   batchRuleInitialValues,
   processValidator
 } from "~/modules/resources/resources.models";
-import { getProcess } from "~/modules/resources/resources.service";
 import { ProcessForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources"
   });
+  const api = carbonFor(auth);
 
   const { processId } = params;
   if (!processId) throw notFound("processId was not found");
 
-  const process = await getProcess(client, processId);
+  const process = await api.resources.getProcess({ processId });
 
   if (process.error) {
     throw redirect(

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -30,12 +31,7 @@ import { LuChevronRight, LuImage } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { DateTime } from "~/components";
-import {
-  getPurchasingRFQ,
-  getPurchasingRFQLines
-} from "~/modules/purchasing/purchasing.service";
 import type { PurchasingRFQLine } from "~/modules/purchasing/types";
-import { getCompany } from "~/modules/settings/settings.service";
 import type { Company } from "~/modules/settings/types";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
@@ -53,14 +49,16 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   // Require authentication - this is an internal preview
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "purchasing"
   });
+  const { client } = auth;
+  const api = carbonFor(auth);
 
   const [rfqResult, linesResult, company] = await Promise.all([
-    getPurchasingRFQ(client, id),
-    getPurchasingRFQLines(client, id),
-    getCompany(client, companyId)
+    api.purchasing.getPurchasingRFQ({ id }),
+    api.purchasing.getPurchasingRFQLines({ purchasingRfqId: id }),
+    api.settings.getCompany({})
   ]);
 
   if (rfqResult.error || !rfqResult.data) {

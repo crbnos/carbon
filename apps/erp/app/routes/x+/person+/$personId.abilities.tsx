@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,24 +11,23 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PersonAbilities, PersonTrainings } from "~/modules/people/ui/Person";
-import {
-  getEmployeeAbilities,
-  getTrainingAssignmentStatusForEmployee
-} from "~/modules/resources/resources.service";
 import type { TrainingAssignmentStatusItem } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "people"
   });
+  const api = carbonFor(auth);
 
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 
   const [employeeAbilities, trainings] = await Promise.all([
-    getEmployeeAbilities(client, personId, companyId),
-    getTrainingAssignmentStatusForEmployee(client, companyId, personId)
+    api.resources.getEmployeeAbilities({ employeeId: personId }),
+    api.resources.getTrainingAssignmentStatusForEmployee({
+      employeeId: personId
+    })
   ]);
 
   if (employeeAbilities.error) {

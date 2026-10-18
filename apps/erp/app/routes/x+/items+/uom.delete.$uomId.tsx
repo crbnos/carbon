@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,7 +13,6 @@ import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteUnitOfMeasure,
-  getUnitOfMeasure,
   getUnitOfMeasureUsage
 } from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
@@ -29,14 +29,15 @@ function describeUsage(usage: { tableName: string; count: number }[]) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const api = carbonFor(auth);
 
   const { uomId } = params;
   if (!uomId) throw notFound("uomId not found");
 
-  const unitOfMeasure = await getUnitOfMeasure(client, uomId, companyId);
+  const unitOfMeasure = await api.items.getUnitOfMeasure({ id: uomId });
   if (unitOfMeasure.error) {
     throw redirect(
       `${path.to.uoms}?${getParams(request)}`,
@@ -48,7 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   // Checked up front so the modal can explain before the DB guard has to.
-  const usage = await getUnitOfMeasureUsage(client, uomId);
+  const usage = await api.items.getUnitOfMeasureUsage({ id: uomId });
   if (usage.error) {
     throw redirect(
       `${path.to.uoms}?${getParams(request)}`,

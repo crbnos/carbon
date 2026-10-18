@@ -2,14 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getReturnableLinesForSupplier } from "~/modules/purchasing/purchasing.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "purchasing"
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const supplierId = url.searchParams.get("supplierId");
@@ -22,17 +23,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return { lines: [], totalCount: 0 };
   }
 
-  const result = await getReturnableLinesForSupplier(
-    client,
-    companyId,
-    supplierId,
-    {
-      purchaseOrderId: purchaseOrderId ?? undefined,
-      search: search ?? undefined,
-      limit: Number.isFinite(limitParam) && limitParam > 0 ? limitParam : 5,
-      offset: Number.isFinite(offsetParam) && offsetParam > 0 ? offsetParam : 0
-    }
-  );
+  const result = await api.purchasing.getReturnableLinesForSupplier({
+    purchaseOrderId: purchaseOrderId ?? undefined,
+    search: search ?? undefined,
+    limit: Number.isFinite(limitParam) && limitParam > 0 ? limitParam : 5,
+    offset: Number.isFinite(offsetParam) && offsetParam > 0 ? offsetParam : 0,
+    supplierId
+  });
 
   if (result.error) {
     console.error("Failed to load returnable receipt lines:", result.error);

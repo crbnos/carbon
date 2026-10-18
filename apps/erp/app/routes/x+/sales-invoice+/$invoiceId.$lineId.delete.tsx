@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,22 +13,21 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { isSalesInvoiceLocked } from "~/modules/invoicing/invoicing.models";
-import {
-  getSalesInvoice,
-  getSalesInvoiceLine
-} from "~/modules/invoicing/invoicing.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     delete: "invoicing"
   });
+  const api = carbonFor(auth);
   const { lineId, invoiceId } = params;
   if (!lineId) throw notFound("lineId not found");
   if (!invoiceId) throw notFound("invoiceId not found");
 
-  const invoice = await getSalesInvoice(client, invoiceId);
+  const invoice = await api.invoicing.getSalesInvoice({
+    salesInvoiceId: invoiceId
+  });
   await requireUnlocked({
     request,
     isLocked: isSalesInvoiceLocked(invoice.data?.status),
@@ -36,7 +35,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     message: "Cannot delete lines on a locked sales invoice."
   });
 
-  const salesInvoiceLine = await getSalesInvoiceLine(client, lineId);
+  const salesInvoiceLine = await api.invoicing.getSalesInvoiceLine({
+    salesInvoiceLineId: lineId
+  });
   if (salesInvoiceLine.error) {
     throw redirect(
       path.to.salesInvoiceDetails(invoiceId),

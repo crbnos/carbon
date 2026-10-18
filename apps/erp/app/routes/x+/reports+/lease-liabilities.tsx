@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import {
@@ -41,7 +42,6 @@ import {
   useQuantityFormatter,
   useUrlParams
 } from "~/hooks";
-import { getLeaseLiabilities } from "~/modules/accounting/accounting.service";
 import type { LeaseLiabilityRow } from "~/modules/accounting/lease-liabilities";
 import { useLesseeClassificationLabel } from "~/modules/purchasing/ui/Leases";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
@@ -69,10 +69,12 @@ function parseDateParam(raw: string | null): string | null {
 export async function loader({ request }: LoaderFunctionArgs) {
   // The lease tables' RLS is purchasing_view: without it every lease reads
   // as absent and the report would show no liability at all.
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: ["accounting", "purchasing"],
     role: "employee"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const asOf =
@@ -82,7 +84,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let to = parseDateParam(url.searchParams.get("to")) ?? undefined;
   if (from && to && to < from) [from, to] = [to, from];
 
-  const report = await getLeaseLiabilities(client, companyId, {
+  const report = await api.accounting.getLeaseLiabilities({
     asOf,
     from,
     to

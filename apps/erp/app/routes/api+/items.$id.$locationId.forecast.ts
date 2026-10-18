@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -16,13 +17,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { mergeDemandProjections } from "~/modules/items/demand-projection";
 import {
-  getDemandForecastSources,
   getItemDemand,
   getItemQuantities,
-  getOpenJobMaterials,
-  getOpenProductionOrders,
-  getOpenPurchaseOrderLines,
-  getOpenSalesOrderLines
+  getOpenJobMaterials
 } from "~/modules/items/items.service";
 import { bucketSupplyByPeriod } from "~/modules/items/ui/Item/planningSupplyDemand";
 import {
@@ -167,9 +164,11 @@ async function getRedirectedOpenJobMaterials(
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "parts"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id: itemId, locationId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -199,12 +198,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       periods: periods.map((p) => p.id ?? ""),
       companyId
     }),
-    getItemQuantities(client, itemId, companyId, locationId),
-    getOpenSalesOrderLines(client, { itemId, companyId, locationId }),
-    getOpenJobMaterials(client, { itemId, companyId, locationId }),
-    getOpenProductionOrders(client, { itemId, companyId, locationId }),
-    getOpenPurchaseOrderLines(client, { itemId, companyId, locationId }),
-    getDemandForecastSources(client, {
+    api.items.getItemQuantities({ itemId, locationId }),
+    api.items.getOpenSalesOrderLines({ itemId, companyId, locationId }),
+    api.items.getOpenJobMaterials({ itemId, companyId, locationId }),
+    api.items.getOpenProductionOrders({ itemId, companyId, locationId }),
+    api.items.getOpenPurchaseOrderLines({ itemId, companyId, locationId }),
+    api.items.getDemandForecastSources({
       itemId,
       locationId,
       periods: periods.map((p) => p.id ?? ""),

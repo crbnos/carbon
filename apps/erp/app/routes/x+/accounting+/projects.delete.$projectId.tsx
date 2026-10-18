@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,20 +11,18 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteProject,
-  getProject
-} from "~/modules/accounting/accounting.service";
+import { deleteProject } from "~/modules/accounting/accounting.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "accounting"
   });
+  const api = carbonFor(auth);
   const { projectId } = params;
   if (!projectId) throw notFound("projectId not found");
 
-  const project = await getProject(client, companyId, projectId);
+  const project = await api.accounting.getProject({ projectId });
   if (project.error) {
     throw redirect(
       `${path.to.projects}?${getParams(request)}`,

@@ -2,20 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  getUserSelectGroups,
-  searchUsersForSelect
-} from "~/modules/users/users.service";
+import { searchUsersForSelect } from "~/modules/users/users.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     role: "employee"
   });
+  const { client, companyId, userId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const q = url.searchParams.get("q")?.trim();
@@ -32,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     .filter(Boolean);
 
   const [groupsResult, usersResult] = await Promise.all([
-    getUserSelectGroups(client, companyId, {
+    api.users.getUserSelectGroups({
       type,
       search: q,
       limit: 10,

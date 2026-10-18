@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
@@ -10,20 +10,20 @@ import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { kanbanValidator } from "~/modules/inventory/inventory.models";
-import { getKanban } from "~/modules/inventory/inventory.service";
 import { KanbanForm } from "~/modules/inventory/ui";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "inventory",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const kanban = await getKanban(client, id, companyId);
+  const kanban = await api.inventory.getKanban({ kanbanId: id });
 
   return {
     kanban: kanban?.data ?? null

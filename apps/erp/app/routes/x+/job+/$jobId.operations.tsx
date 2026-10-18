@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,19 +11,16 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
-import {
-  getJob,
-  getJobOperations
-} from "~/modules/production/production.service";
 import { JobOperationsTable } from "~/modules/production/ui/Jobs";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "production",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -33,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const job = await getJob(client, jobId);
+  const job = await api.production.getJob({ id: jobId });
   if (job.error) {
     throw redirect(
       path.to.jobs,
@@ -41,12 +39,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const operations = await getJobOperations(client, jobId, {
+  const operations = await api.production.getJobOperations({
     search,
     limit,
     offset,
     sorts,
-    filters
+    filters,
+    jobId
   });
 
   if (operations.error) {
@@ -60,8 +59,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    count: operations.count ?? 0,
-    operations: operations.data ?? []
+    count: operations.data?.count ?? 0,
+    operations: operations.data?.rows ?? []
   };
 }
 

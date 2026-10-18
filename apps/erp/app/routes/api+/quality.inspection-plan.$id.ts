@@ -2,13 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  getInspectionDocument,
-  getInspectionPlan
-} from "~/modules/quality/quality.service";
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;
@@ -24,9 +21,11 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality"
   });
+  const { companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) {
@@ -36,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const documentResult = await getInspectionDocument(client, id, companyId);
+  const documentResult = await api.quality.getInspectionDocument({ id });
   if (documentResult.error) {
     return data(
       {
@@ -56,7 +55,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const planResult = await getInspectionPlan(client, id);
+  const planResult = await api.quality.getInspectionPlan({
+    inspectionDocumentId: id
+  });
   if (planResult.error) {
     return data(
       {

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -33,22 +34,20 @@ import { Enumerable } from "~/components/Enumerable";
 import { Confirm } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { JournalEntryStatus } from "~/modules/accounting/ui/JournalEntries";
-import { getCharge } from "~/modules/invoicing/invoicing.service";
 import { ChargeStatus } from "~/modules/invoicing/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "invoicing"
-    }
-  );
+  const auth = await requirePermissions(request, {
+    view: "invoicing"
+  });
+  const { client, companyId, companyGroupId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const charge = await getCharge(client, companyId, id);
+  const charge = await api.invoicing.getCharge({ id });
   if (charge.error || !charge.data) {
     throw redirect(
       path.to.charges,

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,15 +12,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useMatches, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import {
-  getRentableFleetAssets,
-  getRentalAgreement,
-  getRentalAgreementCharges,
-  getRentalAgreementDeposits,
-  getRentalAgreementLines,
-  getRentalAgreementRelatedDocuments,
-  getRentalBillingPeriods
-} from "~/modules/sales/sales.service";
 import type {
   RentalInvoiceLinks,
   RentalLeaseLineInputs
@@ -41,14 +33,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const rentalAgreement = await getRentalAgreement(client, id, companyId);
+  const rentalAgreement = await api.sales.getRentalAgreement({
+    rentalAgreementId: id
+  });
   if (rentalAgreement.error || !rentalAgreement.data) {
     throw redirect(
       path.to.rentalAgreements,
@@ -65,12 +61,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const customerContactId = rentalAgreement.data.customerContactId;
   const [lines, charges, periods, deposits, rentableAssets, contact, related] =
     await Promise.all([
-      getRentalAgreementLines(client, id, companyId),
-      getRentalAgreementCharges(client, id, companyId),
-      getRentalBillingPeriods(client, id, companyId),
-      getRentalAgreementDeposits(client, id, companyId),
+      api.sales.getRentalAgreementLines({ rentalAgreementId: id }),
+      api.sales.getRentalAgreementCharges({ rentalAgreementId: id }),
+      api.sales.getRentalBillingPeriods({ rentalAgreementId: id }),
+      api.sales.getRentalAgreementDeposits({ rentalAgreementId: id }),
       rentalAgreement.data.status === "Draft"
-        ? getRentableFleetAssets(client, companyId)
+        ? api.sales.getRentableFleetAssets({})
         : Promise.resolve({ data: [], error: null }),
       // Whether invoices can be emailed: the contact's email.
       customerContactId
@@ -81,7 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             .eq("companyId", companyId)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null }),
-      getRentalAgreementRelatedDocuments(client, id, companyId)
+      api.sales.getRentalAgreementRelatedDocuments({ rentalAgreementId: id })
     ]);
 
   // `salesInvoiceLineId` on periods and charges has no foreign key, so the

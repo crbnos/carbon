@@ -16254,8 +16254,9 @@ export async function authorizePostingCaller(
   if (required === "system") {
     throw new ForbiddenError("Only server-side callers may run this");
   }
+  const needed = required === "member" ? {} : required;
   if (caller.type === "apiKey") {
-    return authorizeApiKey(db, companyId, caller.apiKey, required);
+    return authorizeApiKey(db, companyId, caller.apiKey, needed);
   }
   const { rows } = await sql<{
     claims: Record<string, unknown> | null;
@@ -16265,7 +16266,7 @@ export async function authorizePostingCaller(
   if (claims.role === "customer" || claims.role === "supplier") {
     throw new ForbiddenError();
   }
-  if (!hasPermissions(permissionsFromClaims(claims), companyId, required)) {
+  if (!hasPermissions(permissionsFromClaims(claims), companyId, needed)) {
     throw new ForbiddenError();
   }
 }

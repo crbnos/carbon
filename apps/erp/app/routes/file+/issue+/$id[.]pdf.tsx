@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ensureFont, IssuePDF } from "@carbon/documents/pdf";
 import {
@@ -13,28 +14,17 @@ import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  getIssue,
-  getIssueActionTasks,
-  getIssueApprovalTasks,
-  getIssueAssociations,
-  getIssueItems,
-  getIssueReviewers,
-  getIssueTypes,
-  getRequiredActionsList
-} from "~/modules/quality/quality.service";
-import {
-  getCompany,
-  getDocumentTemplate,
-  resolveSections
-} from "~/modules/settings/settings.service";
+import { getIssueAssociations } from "~/modules/quality/quality.service";
+import { resolveSections } from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "issue", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "quality"
   });
+  const { client, companyId } = auth;
+  const api = carbonFor(auth);
 
   const { id } = params;
   if (!id) throw new Error("Could not find issue id");
@@ -49,14 +39,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     requiredActions,
     items
   ] = await Promise.all([
-    getCompany(client, companyId),
-    getIssue(client, id),
-    getIssueTypes(client, companyId),
-    getIssueActionTasks(client, id, companyId),
-    getIssueApprovalTasks(client, id, companyId),
-    getIssueReviewers(client, id, companyId),
-    getRequiredActionsList(client, companyId),
-    getIssueItems(client, id, companyId)
+    api.settings.getCompany({}),
+    api.quality.getIssue({ nonConformanceId: id }),
+    api.quality.getIssueTypes({}),
+    api.quality.getIssueActionTasks({ id }),
+    api.quality.getIssueApprovalTasks({ id }),
+    api.quality.getIssueReviewers({ id }),
+    api.quality.getRequiredActionsList({}),
+    api.quality.getIssueItems({ id })
   ]);
 
   // Get associations separately (returns plain object, not wrapped in { data })
@@ -179,11 +169,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { locale } = getPreferenceHeaders(request);
 
-  const documentTemplate = await getDocumentTemplate(
-    client,
-    companyId,
-    "issue"
-  );
+  const documentTemplate = await api.settings.getDocumentTemplate({
+    documentType: "issue"
+  });
   const templateConfig = toDocumentTemplate(documentTemplate.data, "issue");
   const resolved = resolveTemplate("issue", templateConfig);
   const sections = await resolveSections(
@@ -198,7 +186,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       company={company.data as any}
       locale={locale}
       nonConformance={nonConformance.data}
-      nonConformanceTypes={nonConformanceTypes.data ?? []}
+      nonConformanceTypes={nonConformanceTypes.data?.rows ?? []}
       actionTasks={actionTasks.data ?? []}
       requiredActions={requiredActions.data ?? []}
       reviewers={reviewers.data ?? []}

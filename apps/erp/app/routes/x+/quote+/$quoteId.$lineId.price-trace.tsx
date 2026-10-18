@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
@@ -12,7 +13,6 @@ import type {
 } from "react-router";
 import { data } from "react-router";
 import {
-  getQuoteLinePriceTraces,
   QuoteLockedError,
   repriceQuoteLineFromRules
 } from "~/modules/sales/sales.service";
@@ -27,21 +27,21 @@ export const shouldRevalidate: ShouldRevalidateFunction = () => false;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Read-only: explains the stored prices, writes nothing.
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
+  const { companyId } = auth;
+  const api = carbonFor(auth);
 
   const { quoteId, lineId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const traces = await getQuoteLinePriceTraces(
-    client,
-    companyId,
+  const traces = await api.sales.getQuoteLinePriceTraces({
     quoteId,
-    lineId
-  );
+    quoteLineId: lineId
+  });
   if (traces.error) {
     logger.error("Failed to load quote line price traces", {
       companyId,

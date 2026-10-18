@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,12 +13,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { EmployeesTable } from "~/modules/users/ui";
-import {
-  getEmployees,
-  getEmployeeTypes,
-  getUnrevokedInviteEmails,
-  getUsersWithVerifiedMfa
-} from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -28,11 +23,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "users",
     role: "employee",
     bypassRls: true
   });
+  const { companyId } = auth;
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -42,10 +39,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [employees, employeeTypes, invites, mfaUsers] = await Promise.all([
-    getEmployees(client, companyId, { search, limit, offset, sorts, filters }),
-    getEmployeeTypes(client, companyId),
-    getUnrevokedInviteEmails(client, companyId),
-    getUsersWithVerifiedMfa(client, companyId)
+    api.users.getEmployees({ search, limit, offset, sorts, filters }),
+    api.users.getEmployeeTypes({}),
+    api.users.getUnrevokedInviteEmails({}),
+    api.users.getUsersWithVerifiedMfa({})
   ]);
 
   if (mfaUsers.error) {
@@ -72,9 +69,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    count: employees.count ?? 0,
-    employees: employees.data ?? [],
-    employeeTypes: employeeTypes.data,
+    count: employees.data?.count ?? 0,
+    employees: employees.data?.rows ?? [],
+    employeeTypes: employeeTypes.data?.rows,
     unrevokedInviteEmails: invites.data?.map((i) => i.email) ?? [],
     // Surfaced rather than swallowed: a missing/stale RPC (e.g. PostgREST's
     // schema cache not yet reloaded after the migration) otherwise looks

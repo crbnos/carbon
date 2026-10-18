@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,26 +12,23 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useNavigate } from "react-router";
 import { useRouteData, useUrlParams } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people/types";
-import {
-  getCustomFields,
-  updateCustomFieldsSortOrder
-} from "~/modules/settings/settings.service";
+import { updateCustomFieldsSortOrder } from "~/modules/settings/settings.service";
 import { CustomFieldsTableDetail } from "~/modules/settings/ui";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "settings",
     role: "employee"
   });
+  const api = carbonFor(auth);
 
   const { table } = params;
   if (!table) throw notFound("Invalid table");
 
   const [customFields, tags] = await Promise.all([
-    getCustomFields(client, table, companyId),
-    getTagsList(client, companyId, table)
+    api.settings.getCustomFields({ table }),
+    api.shared.getTagsList({ table })
   ]);
 
   if (customFields.error) {

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbonFor } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -10,9 +11,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getSuggestions } from "~/modules/resources/resources.service";
 import { SuggestionsTable } from "~/modules/resources/ui";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -23,11 +22,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const auth = await requirePermissions(request, {
     view: "resources",
     role: "employee",
     bypassRls: true
   });
+  const api = carbonFor(auth);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -36,14 +36,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [suggestions, tags] = await Promise.all([
-    getSuggestions(client, companyId, {
+    api.resources.getSuggestions({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getTagsList(client, companyId, "suggestion")
+    api.shared.getTagsList({ table: "suggestion" })
   ]);
 
   if (suggestions.error) {
@@ -57,9 +57,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    suggestions: suggestions.data ?? [],
+    suggestions: suggestions.data?.rows ?? [],
     tags: tags.data ?? [],
-    count: suggestions.count ?? 0
+    count: suggestions.data?.count ?? 0
   };
 }
 
