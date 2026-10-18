@@ -6,9 +6,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import { z } from "zod";
 import { inngest } from "../../client";
+import { ASSEMBLER_CONCURRENCY } from "../tasks/assembler-client";
 import {
-  syncOnshapeDrawingAssetsToItem,
-  syncOnshapeElementAssetsToItem
+  runOnshapeElementSync,
+  syncOnshapeDrawingAssetsToItem
 } from "./onshape-sync-element";
 
 /**
@@ -35,7 +36,10 @@ export const onshapePanelSyncFunction = inngest.createFunction(
   {
     id: "onshape-panel-sync",
     retries: 1,
-    concurrency: { key: "event.data.itemId", limit: 1 }
+    concurrency: [
+      { key: "event.data.itemId", limit: 1 },
+      ...ASSEMBLER_CONCURRENCY
+    ]
   },
   { event: "carbon/onshape-panel-sync" },
   async ({ event, step }) => {
@@ -63,8 +67,12 @@ export const onshapePanelSyncFunction = inngest.createFunction(
       );
     }
 
-    const result = await step.run("sync-element-assets", () =>
-      syncOnshapeElementAssetsToItem(carbon, {
+    // A new model row starts its own optimise, which also renders the
+    // thumbnail; an unchanged export reuses its model.
+    return runOnshapeElementSync(
+      step,
+      carbon,
+      {
         companyId: payload.companyId,
         userId: payload.userId,
         integrationId: ONSHAPE_V2_INTEGRATION_ID,
@@ -79,11 +87,8 @@ export const onshapePanelSyncFunction = inngest.createFunction(
         modelElementId: payload.elementId,
         modelElementKind: elementKind,
         assetBaseName: payload.assetBaseName
-      })
+      },
+      "element"
     );
-
-    // A new model row starts its own optimise, which also renders the
-    // thumbnail; an unchanged export reuses its model.
-    return result;
   }
 );

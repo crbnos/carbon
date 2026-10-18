@@ -247,7 +247,7 @@ function errorMessage(error: ErrorBody, fallback: string): string {
  * honoring Retry-After; a genuine outage / permanent rejection fails fast.
  */
 export async function submitAssemblerJob(opts: {
-  action: "convert" | "optimize" | "plan" | "compact" | "thumbnail";
+  action: AssemblerAction;
   jobId: string;
   body: unknown;
   logger: { warn: (msg: string, meta?: unknown) => void };
@@ -429,7 +429,7 @@ async function cancelAssemblerJob(
 // version-pinned Inngest type import while staying structurally compatible with
 // the real `step` tools. `run` returns `any` because Inngest wraps the result in
 // `Jsonify<T>` (not a bare `T`) — call sites annotate the awaited value.
-type StepTools = {
+export type StepTools = {
   run: (id: string, fn: () => unknown) => Promise<any>;
   waitForEvent: (
     id: string,
@@ -451,7 +451,7 @@ const TRANSIENT_FAILURES = new Set([
 
 export type JobDecision =
   | { kind: "return"; result: Json; stats: Json }
-  | { kind: "fail"; message: string }
+  | { kind: "fail"; message: string; code?: string }
   | { kind: "resubmit"; reason: string }
   | { kind: "wait"; runningSince: number | null };
 
@@ -483,7 +483,11 @@ export function decideJobStep(
         !outcome.code || TRANSIENT_FAILURES.has(outcome.code.toUpperCase());
       return transient && canResubmit
         ? { kind: "resubmit", reason: outcome.error }
-        : { kind: "fail", message: outcome.error };
+        : {
+            kind: "fail",
+            message: outcome.error,
+            ...(outcome.code ? { code: outcome.code } : {})
+          };
     }
     case "lost":
       return canResubmit
@@ -514,6 +518,25 @@ export function decideJobStep(
   }
 }
 
+export type AssemblerAction =
+  | "convert"
+  | "optimize"
+  | "plan"
+  | "compact"
+  | "thumbnail"
+  | "fetch";
+
+/** A job the service could not finish, with its error code when it gave one
+ *  (e.g. `LIMIT_EXCEEDED`), so a caller can tell a permanent skip from a fault. */
+export class AssemblerJobError extends NonRetriableError {
+  readonly code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "AssemblerJobError";
+    this.code = code;
+  }
+}
+
 type AssemblerLogger = {
   warn: (msg: string, meta?: unknown) => void;
   info: (msg: string, meta?: unknown) => void;
@@ -522,7 +545,7 @@ type AssemblerLogger = {
 type AssemblerJobSpec = {
   /** Namespaces this job's Inngest step ids (a caller may run several). */
   idPrefix: string;
-  action: "convert" | "optimize" | "plan" | "compact" | "thumbnail";
+  action: AssemblerAction;
   jobId: string;
   /** Build the request body (signs a fresh source URL) — run inside a step. */
   buildBody: () => Promise<unknown>;
@@ -663,7 +686,7 @@ export async function runAssemblerJob(
           cancelAssemblerJob(jobId, baseUrl, logger)
         );
       }
-      throw new NonRetriableError(decision.message);
+      throw new AssemblerJobError(decision.message, decision.code);
     }
     resubmits += 1;
     runningSince = null;

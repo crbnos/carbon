@@ -688,6 +688,27 @@ export type Events = {
     };
   };
 
+  // One Onshape element's export onto an item (step.invoked by the backfill)
+  "carbon/onshape-element-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      integrationId?: string;
+      itemId: string;
+      sourceDocument: "Part";
+      documentId: string;
+      versionId: string;
+      sourceWvm?: "w" | "v";
+      sourceMicroversionId?: string;
+      modelElementId: string;
+      modelElementKind: "partstudio" | "assembly";
+      partId?: string | null;
+      configuration?: string | null;
+      drawingElementIds?: string[];
+      assetBaseName?: string;
+    };
+  };
+
   // Onshape released-asset backfill / reconcile
   "carbon/onshape-backfill": {
     data: {

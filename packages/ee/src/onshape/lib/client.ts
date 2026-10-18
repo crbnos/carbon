@@ -291,6 +291,25 @@ export class OnshapeClient {
     }
   }
 
+  /**
+   * Where a translation result downloads from and the bearer to send, for a
+   * caller that downloads it elsewhere (the assembler's `fetch`, so a large
+   * export never passes through this process). The token is the one this
+   * client holds: build the client right before handing it on. Counted as a
+   * live call, since the download is one.
+   */
+  externalDataDownload(
+    documentId: string,
+    foreignId: string
+  ): { url: string; authorization: string } {
+    const path = `/api/v10/documents/d/${documentId}/externaldata/${foreignId}`;
+    void this.countLiveCall(path);
+    return {
+      url: `${this.baseUrl.replace(/\/+$/, "")}${path}`,
+      authorization: `Bearer ${this.accessToken}`
+    };
+  }
+
   /** Counts in Redis `onshape:api-calls:<year>`; never awaited. */
   private async countLiveCall(path: string) {
     try {
