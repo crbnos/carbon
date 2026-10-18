@@ -11,7 +11,6 @@ import { redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useUser } from "~/hooks";
-import { resolvePurchaseLineTax } from "~/modules/accounting/accounting.service";
 import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import {
   isPurchaseInvoiceLocked,
@@ -23,6 +22,7 @@ import {
 } from "~/modules/invoicing/invoicing.service";
 import type { PurchaseInvoice } from "~/modules/invoicing/types";
 import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
+import { resolveCreatedPurchaseLineTax } from "~/modules/purchasing/purchasing.service";
 import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
@@ -74,22 +74,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  // A request that names no tax code (the API, MCP) takes the line's
-  // resolved tax. The form always sends the field, so its pick stands.
-  if (!formData.has("taxCodeId")) {
-    const tax = await resolvePurchaseLineTax(client, {
-      companyId,
-      companyGroupId,
-      supplierId: purchaseInvoice.data?.supplierId,
-      itemId: d.itemId,
-      documentDate: purchaseInvoice.data?.dateIssued,
-      currencyCode: purchaseInvoice.data?.currencyCode,
-      unitPrice: d.supplierUnitPrice ?? 0,
-      quantity: d.quantity ?? 0,
-      shippingCost: d.supplierShippingCost ?? 0
-    });
-    if (tax) Object.assign(d, tax);
-  }
+  const tax = await resolveCreatedPurchaseLineTax(client, {
+    companyId,
+    companyGroupId,
+    supplierId: purchaseInvoice.data?.supplierId,
+    documentDate: purchaseInvoice.data?.dateIssued,
+    currencyCode: purchaseInvoice.data?.currencyCode,
+    itemId: d.itemId,
+    unitPrice: d.supplierUnitPrice ?? 0,
+    quantity: d.quantity ?? 0,
+    shippingCost: d.supplierShippingCost ?? 0,
+    // The form posts the field: an empty one is a cleared code. A request
+    // that does not takes the supplier's code.
+    taxCodeId: formData.has("taxCodeId") ? (d.taxCodeId ?? "") : undefined,
+    taxPercent: d.taxPercent,
+    supplierTaxAmount: d.supplierTaxAmount ?? 0
+  });
+  Object.assign(d, tax);
 
   const createPurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
     ...d,

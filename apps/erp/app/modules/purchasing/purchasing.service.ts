@@ -121,13 +121,15 @@ import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
-  getExchangeRate
+  getExchangeRate,
+  resolvePurchaseLineTax
 } from "../accounting/accounting.service";
 import type { PurchaseInvoice } from "../invoicing/types";
 import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "../production/planning-action-claims";
+import { isItemTaxable } from "../sales/sales.service";
 import * as sharedPostings from "../shared/shared.service";
 import {
   allocateJournalLineIds,
@@ -2121,6 +2123,84 @@ export async function upsertPurchaseOrderLine(
     .insert([{ ...normalized, sortOrder: maxSortOrder + 1 }])
     .select("id")
     .single();
+}
+
+type PurchaseLineTax = {
+  taxCodeId: string | undefined;
+  taxPercent: number;
+  supplierTaxAmount: number;
+};
+
+/**
+ * The tax a line on a non-taxable item stores — no code, 0% and no amount,
+ * whatever was sent — or null when the item may carry tax (or there is no
+ * item). Shared by every purchase order and purchase invoice line write.
+ */
+export async function nonTaxableItemTax(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemId: string | null | undefined
+): Promise<PurchaseLineTax | null> {
+  return (await isItemTaxable(client, companyId, itemId))
+    ? null
+    : { taxCodeId: undefined, taxPercent: 0, supplierTaxAmount: 0 };
+}
+
+/**
+ * The tax a line created on a purchase order or purchase invoice keeps: the
+ * purchase twin of `resolveCreatedLineTax` (sales).
+ *
+ * - A line on a non-taxable item takes none (`nonTaxableItemTax`).
+ * - A `taxCodeId` that is sent decides. A code is kept with the sent percent
+ *   and amount; an empty string means the user cleared the code, and the
+ *   sent percent and amount stand.
+ * - A caller that sends no `taxCodeId` (the API, an MCP tool, a workflow)
+ *   gets the supplier's resolved tax (`resolvePurchaseLineTax`). With no code
+ *   to apply, the sent percent and amount stand.
+ *
+ * A read failure keeps what was sent.
+ */
+export async function resolveCreatedPurchaseLineTax(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    supplierId: string | null | undefined;
+    /** The document's date; the company's today when it has none. */
+    documentDate: string | null | undefined;
+    currencyCode: string | null | undefined;
+    itemId: string | null | undefined;
+    unitPrice: number;
+    quantity: number;
+    shippingCost: number;
+    taxCodeId: string | undefined;
+    taxPercent: number;
+    supplierTaxAmount: number;
+  }
+): Promise<PurchaseLineTax> {
+  const zero = await nonTaxableItemTax(client, args.companyId, args.itemId);
+  if (zero) return zero;
+
+  const submitted = {
+    taxCodeId: args.taxCodeId || undefined,
+    taxPercent: args.taxPercent,
+    supplierTaxAmount: args.supplierTaxAmount
+  };
+  if (args.taxCodeId !== undefined) return submitted;
+
+  const resolved = await resolvePurchaseLineTax(client, {
+    companyId: args.companyId,
+    companyGroupId: args.companyGroupId,
+    supplierId: args.supplierId,
+    // The item is taxable (or there is none): no second read of it.
+    itemId: null,
+    documentDate: args.documentDate,
+    currencyCode: args.currencyCode,
+    unitPrice: args.unitPrice,
+    quantity: args.quantity,
+    shippingCost: args.shippingCost
+  });
+  return resolved ?? submitted;
 }
 
 export async function updatePurchaseOrderLineOrder(

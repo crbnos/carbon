@@ -5307,7 +5307,9 @@ export const upsertPurchaseOrderDelivery = defineServiceFn({
  * Create a purchase order line
  *
  * @remarks
- * Upsert purchase order line
+ * Upsert purchase order line. A line sent with no `taxCodeId` takes the
+ * supplier's tax code at the order date; an empty `taxCodeId` keeps the sent
+ * percent with no code. A non-taxable item carries no tax, whatever was sent.
  *
  * @mcp
  */
@@ -5352,6 +5354,12 @@ export const createPurchaseOrderLine = defineServiceFn({
       .describe(
         "Applied when creating; on update a field left out keeps its value."
       ),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe(
+        "Omit to take the supplier's tax code; an empty string keeps the sent percent with no code."
+      ),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -5360,11 +5368,35 @@ export const createPurchaseOrderLine = defineServiceFn({
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    // A new line takes the tax the form would have opened with: the
+    // supplier's code when none is sent, and none for a non-taxable item.
+    // A failed read of the order leaves the sent tax, as the form's would.
+    const order = input.id
+      ? null
+      : await service.getPurchaseOrder(client, input.purchaseOrderId);
+    const tax = input.id
+      ? await service.nonTaxableItemTax(client, companyId, input.itemId)
+      : await service.resolveCreatedPurchaseLineTax(client, {
+          companyId,
+          companyGroupId: ctx.company.groupId,
+          supplierId: order?.data?.supplierId,
+          documentDate: order?.data?.orderDate,
+          currencyCode: order?.data?.currencyCode,
+          itemId: input.itemId,
+          unitPrice: input.supplierUnitPrice ?? 0,
+          quantity: input.purchaseQuantity ?? 0,
+          shippingCost: input.supplierShippingCost ?? 0,
+          taxCodeId: input.taxCodeId,
+          taxPercent: input.taxPercent,
+          supplierTaxAmount: input.supplierTaxAmount ?? 0
+        });
     return unwrap(
       ctx,
       await service.upsertPurchaseOrderLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
+        client,
+        payload(ctx, { ...input, ...tax }).forCreate() as never
       )
     );
   }
@@ -5374,7 +5406,8 @@ export const createPurchaseOrderLine = defineServiceFn({
  * Update a purchase order line
  *
  * @remarks
- * Upsert purchase order line
+ * Upsert purchase order line. A non-taxable item carries no tax, whatever was
+ * sent.
  *
  * @mcp
  */
@@ -5420,6 +5453,7 @@ export const updatePurchaseOrderLine = defineServiceFn({
           "Applied when creating; on update a field left out keeps its value."
         )
         .optional(),
+      taxCodeId: z.string().optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()
@@ -5429,11 +5463,18 @@ export const updatePurchaseOrderLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    // A non-taxable item carries no tax, whatever was sent. A line whose item
+    // is left out keeps its stored one.
+    const itemId =
+      input.itemId ??
+      (await service.getPurchaseOrderLine(client, input.id)).data?.itemId;
+    const tax = await service.nonTaxableItemTax(client, ctx.company.id, itemId);
     return unwrap(
       ctx,
       await service.upsertPurchaseOrderLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+        client,
+        payload(ctx, { ...input, ...tax }).forUpdate() as never
       )
     );
   }

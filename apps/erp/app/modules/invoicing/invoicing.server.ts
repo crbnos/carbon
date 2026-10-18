@@ -26,7 +26,9 @@ import {
 } from "~/modules/items/items.service";
 import {
   deletePurchaseInvoiceLineReleasingLeases,
-  deletePurchaseInvoiceReleasingLeases
+  deletePurchaseInvoiceReleasingLeases,
+  nonTaxableItemTax,
+  resolveCreatedPurchaseLineTax
 } from "~/modules/purchasing/purchasing.service";
 import {
   deleteRentalCreditMemoReleasingPeriods,
@@ -2548,7 +2550,10 @@ export const upsertPurchaseInvoiceDelivery = defineServiceFn({
  * Create a purchase invoice line
  *
  * @remarks
- * Upsert purchase invoice line
+ * Upsert purchase invoice line. A line sent with no `taxCodeId` takes the
+ * supplier's tax code at the invoice date; an empty `taxCodeId` keeps the
+ * sent percent with no code. A non-taxable item carries no tax, whatever was
+ * sent.
  *
  * @mcp
  */
@@ -2601,6 +2606,12 @@ export const createPurchaseInvoiceLine = defineServiceFn({
       .describe(
         "Applied when creating; on update a field left out keeps its value."
       ),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe(
+        "Omit to take the supplier's tax code; an empty string keeps the sent percent with no code."
+      ),
     requiredDate: z.string().optional(),
     locationId: z.string().optional(),
     storageUnitId: z.string().optional(),
@@ -2613,11 +2624,35 @@ export const createPurchaseInvoiceLine = defineServiceFn({
   }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    // A new line takes the tax the form would have opened with: the
+    // supplier's code when none is sent, and none for a non-taxable item.
+    // A failed read of the invoice leaves the sent tax, as the form's would.
+    const invoice = input.id
+      ? null
+      : await service.getPurchaseInvoice(client, input.invoiceId);
+    const tax = input.id
+      ? await nonTaxableItemTax(client, companyId, input.itemId)
+      : await resolveCreatedPurchaseLineTax(client, {
+          companyId,
+          companyGroupId: ctx.company.groupId,
+          supplierId: invoice?.data?.supplierId,
+          documentDate: invoice?.data?.dateIssued,
+          currencyCode: invoice?.data?.currencyCode,
+          itemId: input.itemId,
+          unitPrice: input.supplierUnitPrice ?? 0,
+          quantity: input.quantity ?? 0,
+          shippingCost: input.supplierShippingCost,
+          taxCodeId: input.taxCodeId,
+          taxPercent: input.taxPercent,
+          supplierTaxAmount: input.supplierTaxAmount
+        });
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
+        client,
+        payload(ctx, { ...input, ...tax }).forCreate() as never
       )
     );
   }
@@ -2627,7 +2662,8 @@ export const createPurchaseInvoiceLine = defineServiceFn({
  * Update a purchase invoice line
  *
  * @remarks
- * Upsert purchase invoice line
+ * Upsert purchase invoice line. A non-taxable item carries no tax, whatever
+ * was sent.
  *
  * @mcp
  */
@@ -2681,6 +2717,7 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
           "Applied when creating; on update a field left out keeps its value."
         )
         .optional(),
+      taxCodeId: z.string().optional(),
       requiredDate: z.string().optional(),
       locationId: z.string().optional(),
       storageUnitId: z.string().optional(),
@@ -2694,11 +2731,18 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    // A non-taxable item carries no tax, whatever was sent. A line whose item
+    // is left out keeps its stored one.
+    const itemId =
+      input.itemId ??
+      (await service.getPurchaseInvoiceLine(client, input.id)).data?.itemId;
+    const tax = await nonTaxableItemTax(client, ctx.company.id, itemId);
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+        client,
+        payload(ctx, { ...input, ...tax }).forUpdate() as never
       )
     );
   }

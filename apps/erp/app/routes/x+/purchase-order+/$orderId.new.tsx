@@ -11,7 +11,6 @@ import { redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { resolvePurchaseLineTax } from "~/modules/accounting/accounting.service";
 import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import {
@@ -20,6 +19,7 @@ import {
 } from "~/modules/purchasing/purchasing.models";
 import {
   getPurchaseOrder,
+  resolveCreatedPurchaseLineTax,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
@@ -89,22 +89,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  // A request that names no tax code (the API, MCP) takes the line's
-  // resolved tax. The form always sends the field, so its pick stands.
-  if (!formData.has("taxCodeId")) {
-    const tax = await resolvePurchaseLineTax(client, {
-      companyId,
-      companyGroupId,
-      supplierId: purchaseOrder.data?.supplierId,
-      itemId: d.itemId,
-      documentDate: purchaseOrder.data?.orderDate,
-      currencyCode: purchaseOrder.data?.currencyCode,
-      unitPrice: d.supplierUnitPrice ?? 0,
-      quantity: d.purchaseQuantity ?? 0,
-      shippingCost: d.supplierShippingCost ?? 0
-    });
-    if (tax) Object.assign(d, tax);
-  }
+  const tax = await resolveCreatedPurchaseLineTax(client, {
+    companyId,
+    companyGroupId,
+    supplierId: purchaseOrder.data?.supplierId,
+    documentDate: purchaseOrder.data?.orderDate,
+    currencyCode: purchaseOrder.data?.currencyCode,
+    itemId: d.itemId,
+    unitPrice: d.supplierUnitPrice ?? 0,
+    quantity: d.purchaseQuantity ?? 0,
+    shippingCost: d.supplierShippingCost ?? 0,
+    // The form posts the field: an empty one is a cleared code. A request
+    // that does not takes the supplier's code.
+    taxCodeId: formData.has("taxCodeId") ? (d.taxCodeId ?? "") : undefined,
+    taxPercent: d.taxPercent,
+    supplierTaxAmount: d.supplierTaxAmount ?? 0
+  });
+  Object.assign(d, tax);
 
   const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {
     ...d,
