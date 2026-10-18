@@ -8502,7 +8502,6 @@ msgstr "Cada unidad física obtiene su propia entidad rastreada y número único
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr "Cada envío reemplaza: {0}. Las otras ediciones se mantienen."
 msgstr "Cada inserción reemplaza: {0}. Otros cambios permanecen."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
@@ -17890,13 +17889,6 @@ msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "Los envíos no cambian los campos de este artículo, por lo que las ediciones realizadas aquí permanecen."
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Los envíos desde Onshape dejan de actualizar este artículo. Enviar esta pieza desde Onshape nuevamente la vincula de nuevo."
-
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "Los envíos reemplazan solo los campos que la página Campos de Onshape establece para Actualizar en cada envío."
-msgstr "Las inserciones no modifican los campos de este artículo, así que los cambios realizados aquí permanecen."
-
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
 msgstr "Las inserciones de Onshape dejan de modificar este artículo. Al insertar de nuevo esta pieza de Onshape, se vincula nuevamente."
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
@@ -23924,7 +23916,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "Las unidades de medida en las que compras, almacenas y vendes"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
-msgstr ""
+msgstr "La carga de <0>{name}</0> se detuvo en {stopped}%. Suelta el mismo archivo de nuevo para continuar."
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "El sistema de depreciación fiscal de EE.UU. con tablas de clase de propiedad del IRS, ejecutado como un programa fiscal separado junto al programa contable."

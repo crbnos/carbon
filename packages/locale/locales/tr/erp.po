@@ -8502,7 +8502,6 @@ msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr "Her itme şunları değiştirir: {0}. Diğer düzenlemeler kalır."
 msgstr "Her gönderim şunları değiştirir: {0}. Diğer düzenlemeler kalır."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
@@ -17890,13 +17889,6 @@ msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "İtmeler bu stok kartının alanlarını değiştirmez, bu nedenle burada yapılan düzenlemeler kalır."
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Onshape'ten gelen itmeleri bu stok kartını güncellemeyi durdur. Bu parçayı Onshape'ten tekrar itmek geri bağlar."
-
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "İtmeler yalnızca Onshape'in Alanlar sayfasında her itme üzerinde Güncelle olarak ayarlanan alanları değiştirir."
-msgstr "Gönderimleri bu stok kartının alanlarını değiştirmez, bu yüzden burada yapılan düzenlemeler kalır."
-
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
 msgstr "Onshape'ten gelen gönderimleri bu stok kartını artık güncellemeyecektir. Bu parçayı Onshape'ten yeniden göndermek onu yeniden bağlayacaktır."
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
@@ -23924,7 +23916,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "Satın aldığınız, stokladığınız ve sattığınız ölçü birimleri"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
-msgstr ""
+msgstr "<0>{name}</0> dosyasının yüklenmesi %{stopped} konumunda durdu. Devam etmek için aynı dosyayı tekrar bırakın."
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "IRS mülkiyet sınıfı tabloları ile ABD vergi amortisman sistemi, kitap çizelgesi ile birlikte ayrı bir vergi planı olarak çalıştırılır."

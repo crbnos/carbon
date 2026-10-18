@@ -8502,7 +8502,6 @@ msgstr "각 물리적 개는 자신의 추적 대상과 고유 번호를 받습�
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr "각 푸시는 다음을 교체합니다: {0}. 다른 편집은 유지됩니다."
 msgstr "각 푸시는 다음을 대체합니다: {0}. 다른 편집은 유지됩니다."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
@@ -17890,13 +17889,6 @@ msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "푸시가 이 품목의 필드를 변경하지 않으므로 여기서 만든 편집은 유지됩니다."
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Onshape의 푸시가 이 품목 업데이트를 중지합니다. Onshape에서 이 부품을 다시 푸시하면 다시 링크됩니다."
-
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "푸시는 Onshape의 필드 페이지에서 모든 푸시마다 업데이트로 설정하는 필드만 교체합니다."
-msgstr "푸시는 이 품목의 필드를 변경하지 않으므로 여기서 만든 편집은 유지됩니다."
-
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
 msgstr "Onshape에서의 푸시가 이 품목을 더 이상 업데이트하지 않습니다. Onshape에서 이 부품을 다시 푸시하면 다시 연결됩니다."
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
@@ -23924,7 +23916,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "구매, 재고, 판매 시 사용하는 측정 단위"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
-msgstr ""
+msgstr "<0>{name}</0>의 업로드가 {stopped}%에서 중단되었습니다. 계속하려면 같은 파일을 다시 놓으세요."
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "미국 세금 감가상각 시스템으로, IRS 자산 클래스 테이블과 함께 별도의 세금 스케줄로 실행됩니다."

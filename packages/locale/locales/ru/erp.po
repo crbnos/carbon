@@ -8502,7 +8502,6 @@ msgstr "Каждая физическая единица получает сво
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr "Каждая загрузка заменяет: {0}. Остальные изменения сохраняются."
 msgstr "Каждая отправка заменяет: {0}. Остальные изменения сохраняются."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
@@ -17890,13 +17889,6 @@ msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "Загрузки не изменяют поля этой номенклатуры, поэтому сделанные здесь изменения сохраняются."
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Загрузки из Onshape больше не будут обновлять эту номенклатуру. Загрузка этой детали из Onshape снова свяжет ее."
-
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "Загрузки заменяют только те поля, которые на странице Fields в Onshape установлены на обновление при каждой загрузке."
-msgstr "Отправки не изменяют поля этой номенклатуры, поэтому сделанные здесь изменения остаются."
-
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
 msgstr "Отправки из Onshape прекращают обновление этой номенклатуры. Повторная отправка этой детали из Onshape свяжет её обратно."
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
@@ -23924,7 +23916,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "Единицы измерения, в которых вы покупаете, храните и продаете"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
-msgstr ""
+msgstr "Загрузка файла <0>{name}</0> остановилась на {stopped}%. Перетащите тот же файл ещё раз, чтобы продолжить."
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "Американская система налоговой амортизации с таблицами категорий имущества IRS, работающая как отдельный налоговый график вместе с графиком книг."

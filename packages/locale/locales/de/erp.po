@@ -8502,7 +8502,6 @@ msgstr "Jede physische Einheit erhält ihre eigene verfolgte Einheit und eine ei
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr "Jeder Push ersetzt: {0}. Andere Änderungen bleiben erhalten."
 msgstr "Jeder Push ersetzt: {0}. Andere Änderungen bleiben bestehen."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
@@ -17890,13 +17889,6 @@ msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "Push-Vorgänge ändern die Felder dieses Artikels nicht, daher bleiben hier vorgenommene Änderungen erhalten."
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Übertragungen aus Onshape aktualisieren diesen Artikel nicht mehr. Wenn Sie diesen Teil erneut aus Onshape übertragen, wird er wieder verlinkt."
-
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "Übertragungen ersetzen nur die Felder, die auf der Seite Felder von Onshape auf Bei jedem Push aktualisieren gesetzt sind."
-msgstr "Pushes ändern nicht die Felder dieses Artikels. Daher bleiben hier vorgenommene Änderungen bestehen."
-
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
 msgstr "Pushes von Onshape stoppen die Aktualisierung dieses Artikels. Das erneute Pushen dieses Teils von Onshape stellt die Verknüpfung wieder her."
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
@@ -23924,7 +23916,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "Die Maßeinheiten, in denen Sie kaufen, lagern und verkaufen"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
-msgstr ""
+msgstr "Das Hochladen von <0>{name}</0> wurde bei {stopped}% unterbrochen. Laden Sie dieselbe Datei erneut hoch, um fortzufahren."
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "Das US-Steuersystem für Abschreibung mit IRS-Anlageklassen-Tabellen, das als separater Steuerstundungsplan neben dem Handelsabschreibungsplan läuft."

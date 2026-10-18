@@ -8502,7 +8502,6 @@ msgstr "प्रत्येक भौतिक इकाई को अपन�
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr "प्रत्येक पुश बदलता है: {0}। अन्य संपादन रहते हैं।"
 msgstr "प्रत्येक पुश प्रतिस्थापित करता है: {0}। अन्य संपादन बने रहते हैं।"
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
@@ -17890,13 +17889,6 @@ msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "पुश इस आइटम के फील्ड नहीं बदलते हैं, इसलिए यहां किए गए संपादन रहते हैं।"
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Onshape से पुश इस आइटम को अपडेट करना बंद करते हैं। Onshape से इस पार्ट को फिर से पुश करने से यह वापस जुड़ जाता है।"
-
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "पुश केवल उन फील्ड को बदलते हैं जो Onshape के Fields पृष्ठ पर प्रत्येक पुश पर अपडेट के लिए सेट हैं।"
-msgstr "पुशेस इस आइटम के फील्ड को नहीं बदलते, इसलिए यहाँ किए गए संपादन बने रहते हैं।"
-
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
 msgstr "Onshape से पुशेस इस आइटम को अपडेट करना बंद कर देते हैं। Onshape से इस पार्ट को फिर से पुश करने से यह फिर से लिंक हो जाता है।"
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
@@ -23924,7 +23916,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "आप जो इकाइयाँ खरीदते, स्टॉक करते और बेचते हैं"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
-msgstr ""
+msgstr "<0>{name}</0> को अपलोड करना {stopped}% पर बंद हुआ। जारी रखने के लिए एक ही फ़ाइल को फिर से ड्रॉप करें।"
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "अमेरिकी कर मूल्यह्रास प्रणाली IRS संपत्ति-वर्ग तालिकाओं के साथ, पुस्तक अनुसूची के साथ एक अलग कर अनुसूची के रूप में चलाई जाती है।"

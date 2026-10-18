@@ -8502,7 +8502,6 @@ msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr "每次推送会替换：{0}。其他编辑保留。"
 msgstr "每次推送替换: {0}. 其他编辑保留。"
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
@@ -17890,13 +17889,6 @@ msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "推送不会改变此物料的字段，因此此处所做的编辑将保留。"
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "来自 Onshape 的推送停止更新此物料。再次从 Onshape 推送此零件将其重新链接。"
-
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "推送仅替换 Onshape 的「字段」页面设置为「每次推送时更新」的字段。"
-msgstr "推送不会更改此物料的字段，所以在此处进行的编辑保留。"
-
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
 msgstr "来自 Onshape 的推送停止更新此物料。再次从 Onshape 推送此零件将其链接回。"
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
@@ -23924,7 +23916,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "您购买、库存和销售的计量单位"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
-msgstr ""
+msgstr "<0>{name}</0>的上传在{stopped}%处停止。请再次放入相同文件以继续。"
 
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "美国税务折旧系统,包含国税局资产等级表,作为独立的税务计划与账簿计划并行运行。"
