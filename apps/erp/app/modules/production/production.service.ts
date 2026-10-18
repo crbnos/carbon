@@ -7210,7 +7210,7 @@ export async function getAssemblyInstruction(
   return client
     .from("assemblyInstruction")
     .select(
-      "*, modelUpload(id, name, modelPath, glbPath, graphPath, componentCount, processingStatus, processingError)"
+      "*, modelUpload(id, name, modelPath, glbPath, graphPath, componentCount, processingStatus, processingError), item(modelUploadId)"
     )
     .eq("id", id)
     .single();

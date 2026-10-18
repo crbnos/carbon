@@ -14193,6 +14193,9 @@ msgstr "新IC事务"
 msgid "New Inspection Plan"
 msgstr "新检验计划"
 
+msgid "New instruction"
+msgstr ""
+
 msgid "New Inventory Count"
 msgstr "新建库存盘点"
 
@@ -23247,6 +23250,9 @@ msgstr "覆盖在激活时保持，并在审计日志中记录其原因。"
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "跟踪实体的父子链 - 一个单位从什么构成以及它变成了什么。"
+
+msgid "The part has a newer model than this instruction."
+msgstr ""
 
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "当需要该零件的父级被构造时，该零件被制造为其自己的工作。"

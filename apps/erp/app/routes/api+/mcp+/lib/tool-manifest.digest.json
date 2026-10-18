@@ -714,7 +714,7 @@
     {"name":"production_getActiveJobOperationsByLocation","classification":"READ","schema":"98cf602352a0","response":"a3fa2c06d591","permission":"production:view","paginates":false},
     {"name":"production_getActiveProductionEvents","classification":"READ","schema":"31b84d65b2ac","response":"9d447facd100","permission":"production:view","paginates":false},
     {"name":"production_getAssemblyComponentMappings","classification":"READ","schema":"dfce1b9bc52e","response":"da74e5f4208a","permission":"production:view","paginates":false},
-    {"name":"production_getAssemblyInstruction","classification":"READ","schema":"7f8214d1083f","response":"4080592cc20d","permission":"production:view","paginates":false},
+    {"name":"production_getAssemblyInstruction","classification":"READ","schema":"7f8214d1083f","response":"6c2955045911","permission":"production:view","paginates":false},
     {"name":"production_getAssemblyInstructions","classification":"READ","schema":"ad4033782f45","response":"79381095f84d","permission":"production:view","paginates":true},
     {"name":"production_getAssemblyInstructionsForItem","classification":"READ","schema":"30ab89ff5be9","response":"89a844d50556","permission":"production:view","paginates":false},
     {"name":"production_getAssemblyInstructionStepMaterials","classification":"READ","schema":"c478d26d5ff3","response":"89a5f52bebf8","permission":"production:view","paginates":false},

@@ -14193,6 +14193,9 @@ msgstr "Nova Transação IC"
 msgid "New Inspection Plan"
 msgstr "Novo Plano de Inspeção"
 
+msgid "New instruction"
+msgstr ""
+
 msgid "New Inventory Count"
 msgstr "Novo Inventário"
 
@@ -23247,6 +23250,9 @@ msgstr "A sobrescrita é mantida na ativação e registrada no log de auditoria 
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "A cadeia pai-filho de entidades rastreadas - a partir do que uma unidade foi construída e no que se tornou."
+
+msgid "The part has a newer model than this instruction."
+msgstr ""
 
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "A peça é fabricada como seu próprio trabalho quando o pai que a necessita é construído."

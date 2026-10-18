@@ -14193,6 +14193,9 @@ msgstr "Новая транзакция IC"
 msgid "New Inspection Plan"
 msgstr "Новый план контроля"
 
+msgid "New instruction"
+msgstr ""
+
 msgid "New Inventory Count"
 msgstr "Новый подсчет инвентаря"
 
@@ -23247,6 +23250,9 @@ msgstr "Переопределение сохраняется при актив�
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "Цепь родитель-потомок отслеживаемых объектов — из чего была построена единица и чем она стала."
+
+msgid "The part has a newer model than this instruction."
+msgstr ""
 
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "Деталь производится как собственное задание, когда производится родитель, который ее нужен."

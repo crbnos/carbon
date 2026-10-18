@@ -14193,6 +14193,9 @@ msgstr "신규 IC 거래"
 msgid "New Inspection Plan"
 msgstr "새 검사 계획"
 
+msgid "New instruction"
+msgstr ""
+
 msgid "New Inventory Count"
 msgstr "신규 재고 실사"
 
@@ -23247,6 +23250,9 @@ msgstr "재정의는 활성화 시 유지되며 그 이유와 함께 감사 로�
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "추적 개체의 상하위 연결 관계로, 해당 유닛이 무엇으로부터 만들어졌고 무엇이 되었는지를 나타냅니다."
+
+msgid "The part has a newer model than this instruction."
+msgstr ""
 
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "상위 품목이 제작될 때 이 품목은 별도의 작업으로 제조됩니다."

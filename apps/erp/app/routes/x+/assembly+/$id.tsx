@@ -30,6 +30,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
+  Link,
   useFetcher,
   useLoaderData,
   useParams,
@@ -236,6 +237,13 @@ export default function AssemblyInstructionRoute() {
   // stale or missing — surface that over the viewer and fade "none"-motion
   // steps in rather than animating fallback paths the plan is about to replace.
   const isPlanning = isAssemblyPlanRunning(planJob);
+
+  // Steps name the model's node ids, so they cannot follow the part onto a
+  // new model (a re-push from CAD, a new upload): offer a fresh instruction.
+  const currentModelUploadId = instruction.item?.modelUploadId;
+  const isModelOutdated =
+    Boolean(currentModelUploadId) &&
+    currentModelUploadId !== instruction.modelUploadId;
 
   // null = the default below (the first row of the list).
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
@@ -677,6 +685,21 @@ export default function AssemblyInstructionRoute() {
                 <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full flex-col">
                   {isPhone ? <AssemblyInstructionOverviewHero /> : null}
                   <div className="relative min-h-0 w-full flex-1 bg-card">
+                    {isModelOutdated && instruction.itemId && (
+                      <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-lg">
+                        <span className="text-xs font-medium text-foreground">
+                          {t`The part has a newer model than this instruction.`}
+                        </span>
+                        {permissions.can("create", "production") && (
+                          <Link
+                            to={`${path.to.newAssemblyInstruction}?itemId=${instruction.itemId}`}
+                            className="whitespace-nowrap text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                          >
+                            {t`New instruction`}
+                          </Link>
+                        )}
+                      </div>
+                    )}
                     {glbPath && graphPath && isPlanning && (
                       <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-lg">
                         <Spinner className="h-3.5 w-3.5" />

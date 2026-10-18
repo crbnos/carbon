@@ -14193,6 +14193,9 @@ msgstr "नया IC लेनदेन"
 msgid "New Inspection Plan"
 msgstr "नई निरीक्षण योजना"
 
+msgid "New instruction"
+msgstr ""
+
 msgid "New Inventory Count"
 msgstr "नई इन्वेंटरी गणना"
 
@@ -23247,6 +23250,9 @@ msgstr "ओवरराइड को सक्रियण में रखा �
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "ट्रैक किए गए इकाइयों की मातृ-बाल श्रृंखला - एक इकाई किस चीज़ से बनाई गई थी और यह क्या बन गई।"
+
+msgid "The part has a newer model than this instruction."
+msgstr ""
 
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "जब माता-पिता जो इसकी आवश्यकता है वह बनाया जाता है तब भाग अपनी स्वयं की नौकरी के रूप में निर्मित होता है।"

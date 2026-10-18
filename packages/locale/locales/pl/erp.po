@@ -14193,6 +14193,9 @@ msgstr "Nowa Transakcja IC"
 msgid "New Inspection Plan"
 msgstr "Nowy Plan kontroli"
 
+msgid "New instruction"
+msgstr ""
+
 msgid "New Inventory Count"
 msgstr "Nowa inwentaryzacja"
 
@@ -23247,6 +23250,9 @@ msgstr "Nadpisanie jest zachowywane w momencie aktywacji i rejestrowane w dzienn
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "Łańcuch parent-child śledzonych jednostek - z czego jednostka została zbudowana i czym się stała."
+
+msgid "The part has a newer model than this instruction."
+msgstr ""
 
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "Część jest wytwarzana jako swoje własne zadanie, gdy rodzic, który jej potrzebuje, jest zbudowany."

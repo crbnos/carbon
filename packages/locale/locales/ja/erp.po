@@ -14193,6 +14193,9 @@ msgstr "新しいIC取引"
 msgid "New Inspection Plan"
 msgstr "新しい検査計画"
 
+msgid "New instruction"
+msgstr ""
+
 msgid "New Inventory Count"
 msgstr "新しい在庫数"
 
@@ -23247,6 +23250,9 @@ msgstr "上書きは有効化時に保持され、その理由とともに監査
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "追跡されたエンティティの親子チェーン—ユニットが何から構築され、それが何になったか。"
+
+msgid "The part has a newer model than this instruction."
+msgstr ""
 
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "必要な親が構築される場合、部品は独自のジョブとして製造されます。"
