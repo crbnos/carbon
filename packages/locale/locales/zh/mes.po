@@ -2181,7 +2181,7 @@ msgid "Updated {0}"
 msgstr "更新于 {0}"
 
 msgid "Updated avatar"
-msgstr ""
+msgstr "已更新头像"
 
 msgid "Updated successfully"
 msgstr "更新成功"

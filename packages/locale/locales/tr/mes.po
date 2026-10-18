@@ -2181,7 +2181,7 @@ msgid "Updated {0}"
 msgstr "{0} tarihinde güncellendi"
 
 msgid "Updated avatar"
-msgstr ""
+msgstr "Avatar güncellendi"
 
 msgid "Updated successfully"
 msgstr "Başarıyla güncellendi"
