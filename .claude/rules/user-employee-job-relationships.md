@@ -97,8 +97,10 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   don't conflate "role" the enum with "role" the job title (`employeeJob.title`).
 - Permission company-ID array `"0"` means "all companies" — don't string-match a literal company id only.
 - Deactivating an employee (`deactivateEmployee` in `packages/auth/src/services/users.server.ts`)
-  removes the company from `userPermission.permissions`, deletes the `userToCompany` row and every
-  `membership` in groups owned by that company, and sets `employee.active = false`.
+  removes the company from `userPermission.permissions`, deletes the person's own `permission` rows
+  in the company (their overrides, so a re-invite starts from the employee type), deletes the
+  `userToCompany` row and every `membership` in groups owned by that company, and sets
+  `employee.active = false`.
   It does **not** clear `user.active`, delete the `employee` or `employeeJob` rows, or scrub stored
   userId references (assignee columns, `workCenterEmployee`, notification-group settings arrays).
 - **The claims cache is invalidated by the deactivate\* functions themselves**, not by their

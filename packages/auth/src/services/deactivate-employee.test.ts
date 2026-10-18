@@ -127,6 +127,9 @@ describe("deactivateEmployee", () => {
     expect(ops).toContainEqual(
       expect.objectContaining({ table: "membership", op: "delete" })
     );
+    expect(ops).toContainEqual(
+      expect.objectContaining({ table: "permission", op: "delete" })
+    );
     expect(result.success).toBe(true);
   });
 

@@ -247,7 +247,7 @@ export async function deactivateEmployee(
 
   const groupIds = companyGroups.data?.map((g) => g.id) ?? [];
 
-  const [updatePermissions, userToCompanyDelete, employeeDeactivate] =
+  const [updatePermissions, userToCompanyDelete, employeeDeactivate, grants] =
     await Promise.all([
       serviceRole
         .from("userPermission")
@@ -262,6 +262,13 @@ export async function deactivateEmployee(
         .from("employee")
         .update({ active: false })
         .eq("id", userId)
+        .eq("companyId", companyId),
+      // The person's own grants: a re-invite gives the role's access, and an
+      // old override must not come back with it.
+      serviceRole
+        .from("permission")
+        .delete()
+        .eq("userId", userId)
         .eq("companyId", companyId),
       // "employeeJob" is deliberately left in place. It carries org placement —
       // title, start date, department, shift, manager, location, tags, custom
@@ -294,6 +301,10 @@ export async function deactivateEmployee(
 
   if (employeeDeactivate.error) {
     return error(employeeDeactivate.error, "Failed to deactivate employee");
+  }
+
+  if (grants.error) {
+    return error(grants.error, "Failed to remove the employee's access");
   }
 
   logRoleChange({
