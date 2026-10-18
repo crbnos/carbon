@@ -129,7 +129,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
         let outputs = vec![Output {
             name: "raw".into(),
             content_type: "application/zstd".into(),
-            bytes: out.bytes.into(),
+            bytes: out.bytes,
         }];
         jobs.finish(&job_id, outputs, done, None).await;
     });
@@ -141,7 +141,7 @@ struct CompactErr {
 }
 
 struct Compacted {
-    bytes: Vec<u8>,
+    bytes: bytes::Bytes,
     input_bytes: u64,
     kind: &'static str,
 }
@@ -160,7 +160,7 @@ fn compress(src_path: &str, mode: Mode, level: i32) -> Result<Compacted, Compact
                 let _ = std::fs::remove_file(&xbf);
                 return Err(e);
             }
-            let bytes = zstd_file(&xbf_str, level).map_err(|e| CompactErr {
+            let bytes = zstd_file_mapped(&xbf_str, level).map_err(|e| CompactErr {
                 code: "compact_failed",
                 message: e,
             });
@@ -172,7 +172,7 @@ fn compress(src_path: &str, mode: Mode, level: i32) -> Result<Compacted, Compact
             })
         }
         Mode::Zstd => {
-            let bytes = zstd_file(src_path, level).map_err(|e| CompactErr {
+            let bytes = zstd_file_mapped(src_path, level).map_err(|e| CompactErr {
                 code: "compact_failed",
                 message: e,
             })?;
@@ -185,10 +185,20 @@ fn compress(src_path: &str, mode: Mode, level: i32) -> Result<Compacted, Compact
     }
 }
 
-/// Stream a file through zstd into an owned buffer (the compressed artifact is
-/// small — read is streaming, only the result is held).
-pub(crate) fn zstd_file(path: &str, level: i32) -> Result<Vec<u8>, String> {
-    let file = std::fs::File::open(path).map_err(|e| format!("open {path}: {e}"))?;
-    zstd::stream::encode_all(std::io::BufReader::new(file), level)
-        .map_err(|e| format!("zstd encode: {e}"))
+/// zstd `path` into a temp file and hand it back memory-mapped: the page cache
+/// holds the compressed bytes, not the heap. The file is unlinked at once; the
+/// map keeps it readable until the bytes drop.
+pub(crate) fn zstd_file_mapped(path: &str, level: i32) -> Result<bytes::Bytes, String> {
+    let out = http::temp_path("zst");
+    let written = (|| {
+        let input = std::fs::File::open(path).map_err(|e| format!("open {path}: {e}"))?;
+        let output = std::fs::File::create(&out).map_err(|e| format!("create temp: {e}"))?;
+        let mut writer = std::io::BufWriter::new(output);
+        zstd::stream::copy_encode(std::io::BufReader::new(input), &mut writer, level)
+            .map_err(|e| format!("zstd encode: {e}"))?;
+        std::io::Write::flush(&mut writer).map_err(|e| format!("flush temp: {e}"))?;
+        http::map_file(&out).map_err(|e| format!("map temp: {e}"))
+    })();
+    let _ = std::fs::remove_file(&out);
+    written
 }
