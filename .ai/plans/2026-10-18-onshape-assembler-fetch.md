@@ -209,3 +209,23 @@ A jobs deploy against an assembler without `fetch` fails the sync with a 404
   `modelUpload` is `.step`, optimize succeeds, Download returns STEP, a new assembly
   instruction converts and plans; re-push the same release ⇒ no translate/fetch step in
   the Inngest run; a part with a drawing shows model + drawing translated concurrently.
+
+## As built (2026-10-18)
+
+- A2 and A6 landed as one commit: removing the `run-job` CLI and `?sync` is what
+  let one `request::parse` serve both runtimes (`src/request.rs`).
+- A4's "admission before download" became a separate bound: `source.rs` source
+  slots (cores + 2), held from download until the `Source` drops (which deletes
+  the file). Taking a memory grant first would let `Grant::resize` release it
+  while waiting and admit new downloads anyway.
+- A3 kept `callback_url` on ended jobs (the Lambda worker re-sends the
+  callback); only upload URLs are cleared.
+- A5's GLB fix shifts the header and JSON into the binary buffer's allocation
+  (`layout_glb`), pinned byte-for-byte against `gltf`'s `Glb::to_vec`.
+- C3 changed after reading Inngest's concurrency guide: no Onshape function
+  carries `ASSEMBLER_CONCURRENCY` (every executing step counts against a
+  function's keys, so the polls took the five shared slots). The fetch is its
+  own function, `onshape-fetch`, `step.invoke`d by the pipeline.
+- Not done: the live verification (needs an Onshape document pushed through a
+  local stack with a local assembler), and Inngest checkpointing (a client-wide
+  change that needs the Vercel function's max duration for `maxRuntime`).
