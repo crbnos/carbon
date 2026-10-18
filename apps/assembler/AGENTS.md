@@ -202,8 +202,15 @@ or timed-out invocation takes the job over; the request body stays in
 **Cancel stops transfers.** `track` gives each job a cancel token; `cancel`
 fires it at once on the replica running the job, and the heartbeat fires it on
 any other within 10 s. Downloads and uploads race it (`http::unless_canceled`)
-and fail `canceled`. A compute already running is not interrupted; its result
-is dropped.
+and fail `canceled`.
+
+**A compute has a deadline** (`compute.rs`, 60 min; Lambda's 900 s comes
+first there). OCCT and FCL cannot be interrupted and a blocking thread cannot
+be killed, so past the deadline, or on a cancel, the job ends at once
+(`COMPUTE_TIMEOUT` / `canceled`) and the thread finishes in the background
+still holding the job's memory grant: admission never hands out memory a
+stuck thread may still be using. A plan's grant lives inside its work (it is
+resized as parts are counted), so it is released the same way.
 
 **Secrets stay out of payloads, records and errors.**
 - The Lambda self-invoke spec is `{ action, job_id, traceparent }` and nothing

@@ -19,7 +19,7 @@
 //! re-running compact on an already-compacted model is a no-op-safe passthrough.
 
 use crate::jobs::{Done, Output};
-use crate::{admission, http, telemetry, AppState};
+use crate::{admission, compute, http, telemetry, AppState};
 use serde_json::json;
 use std::time::Instant;
 
@@ -77,7 +77,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
         let level = ZSTD_LEVEL;
 
         let res = {
-            let _grant = admission
+            let grant = admission
                 .acquire(admission::estimate_mb(http::file_len(src.path()).await))
                 .await;
             // The wait may have been long: a job cancelled meanwhile is dropped
@@ -88,7 +88,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
             // Running from here on: the wait for memory is queue time, not work.
             jobs.set_status(&job_id, "running").await;
             eprintln!("[{job_id}] compact running");
-            telemetry::in_span("compute", tokio::task::spawn_blocking(move || compress(&src_str, mode, level))).await
+            compute::run(Some(grant), move || compress(&src_str, mode, level)).await
         };
         drop(src);
 
@@ -100,9 +100,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
                 return;
             }
             Err(e) => {
-                let msg = format!("compact panicked: {e}");
+                let msg = format!("compact {e}");
                 eprintln!("[{job_id}] {msg}");
-                jobs.set_error(&job_id, "compact_failed", msg).await;
+                jobs.set_error(&job_id, e.code("compact_failed"), msg).await;
                 return;
             }
         };

@@ -7,7 +7,7 @@
 //! uploaded to its submit-time URL.
 
 use crate::jobs::{opts_hash, Done, Output};
-use crate::{admission, config, http, telemetry, AppState};
+use crate::{admission, compute, config, http, telemetry, AppState};
 use planner::steps::PlanUnit;
 use serde_json::{json, Value};
 use std::time::Instant;
@@ -78,7 +78,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
         jobs.set_status(&job_id, "running").await;
         eprintln!("[{job_id}] plan running");
         let runtime = tokio::runtime::Handle::current();
-        let res = telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
+        // The grant moves into the work (it is resized as parts are counted),
+        // so it is released when the thread really ends.
+        let res = compute::run(None, move || {
             let grant = std::sync::Mutex::new(grant);
             planner::steps::plan_step_observed(
                 &tmp_str,
@@ -96,7 +98,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                     runtime.block_on(grant.resize(estimate));
                 },
             )
-        }))
+        })
         .await;
         drop(src);
 
@@ -157,9 +159,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                     .await;
             }
             Err(e) => {
-                let msg = format!("plan panicked: {e}");
+                let msg = format!("plan {e}");
                 eprintln!("[{job_id}] {msg}");
-                jobs.set_error(&job_id, "TESSELLATION_FAILED", msg).await;
+                jobs.set_error(&job_id, e.code("TESSELLATION_FAILED"), msg).await;
             }
         }
     });

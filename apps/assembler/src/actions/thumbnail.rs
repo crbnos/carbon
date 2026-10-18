@@ -9,7 +9,7 @@
 //! its submit-time URL.
 
 use crate::jobs::{Done, Output};
-use crate::{admission, http, telemetry, AppState};
+use crate::{admission, compute, http, telemetry, AppState};
 use serde_json::json;
 use std::time::Instant;
 
@@ -48,7 +48,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ThumbnailReq) {
         let (size, direction) = (req.size, req.direction);
 
         let res = {
-            let _grant = admission
+            let grant = admission
                 .acquire(admission::estimate_mb(http::file_len(src.path()).await))
                 .await;
             // The wait may have been long: a job cancelled meanwhile is dropped
@@ -59,7 +59,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ThumbnailReq) {
             // Running from here on: the wait for memory is queue time, not work.
             jobs.set_status(&job_id, "running").await;
             eprintln!("[{job_id}] thumbnail running");
-            telemetry::in_span("compute", tokio::task::spawn_blocking(move || render(&src_str, size, direction))).await
+            compute::run(Some(grant), move || render(&src_str, size, direction)).await
         };
         drop(src);
 
@@ -71,9 +71,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: ThumbnailReq) {
                 return;
             }
             Err(e) => {
-                let msg = format!("thumbnail panicked: {e}");
+                let msg = format!("thumbnail {e}");
                 eprintln!("[{job_id}] {msg}");
-                jobs.set_error(&job_id, "thumbnail_failed", msg).await;
+                jobs.set_error(&job_id, e.code("thumbnail_failed"), msg).await;
                 return;
             }
         };

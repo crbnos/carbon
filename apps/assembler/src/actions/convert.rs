@@ -9,7 +9,7 @@
 
 use crate::cache::{CachedConvert, ResultCache};
 use crate::jobs::{Done, Output};
-use crate::{admission, config, http, progress, telemetry, AppState};
+use crate::{admission, compute, config, http, progress, telemetry, AppState};
 use serde_json::json;
 use std::sync::Arc;
 use std::time::Instant;
@@ -93,7 +93,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                 let tmp_str = src.path_string();
                 let cache_ins = Arc::clone(&cache);
                 let (lin, ang, optimize) = (req.lin, req.ang, req.optimize);
-                let res = telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
+                let res = compute::run(Some(grant), move || {
                     // Compacted retained raws are BinXCAF (`.xbf`) — binary, no
                     // STEP header to unit-detect (already mm); running the lossy
                     // text scan on them is wasted work at best.
@@ -127,11 +127,8 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                             },
                         )
                     })
-                }))
+                })
                 .await;
-                // Free the memory before anything else awaits: the source's
-                // delete and the upload need none of it.
-                drop(grant);
                 drop(src);
                 match res {
                     Ok(Ok(entry)) => entry,
@@ -142,9 +139,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                         return;
                     }
                     Err(e) => {
-                        let msg = format!("convert panicked: {e}");
+                        let msg = format!("convert {e}");
                         eprintln!("[{job_id}] {msg}");
-                        jobs.set_error(&job_id, "TESSELLATION_FAILED", msg).await;
+                        jobs.set_error(&job_id, e.code("TESSELLATION_FAILED"), msg).await;
                         return;
                     }
                 }

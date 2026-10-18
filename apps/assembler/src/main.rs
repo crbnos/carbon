@@ -20,6 +20,7 @@
 mod actions;
 mod admission;
 mod cache;
+mod compute;
 mod config;
 mod dispatch;
 mod error;

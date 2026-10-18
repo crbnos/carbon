@@ -14,7 +14,7 @@
 
 use crate::formats::{self, Format};
 use crate::jobs::{Done, Output};
-use crate::{admission, http, telemetry, AppState};
+use crate::{admission, compute, http, telemetry, AppState};
 use serde_json::json;
 use std::time::{Duration, Instant};
 
@@ -232,7 +232,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
         let thumbnail = req.thumbnail.as_ref().map(|t| (t.size, t.direction));
 
         let res = {
-            let _grant = admission
+            let grant = admission
                 .acquire(admission::estimate_mb(http::file_len(src.path()).await))
                 .await;
             // The wait may have been long: a job cancelled meanwhile is dropped
@@ -248,9 +248,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
                 opts.codec
             );
             opts.deadline = opts.budget.map(|b| Instant::now() + b);
-            telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
+            compute::run(Some(grant), move || {
                 run_ingest(&tmp_str, &declared, ext.as_deref(), &opts, compact, thumbnail)
-            }))
+            })
             .await
         };
         drop(src);
@@ -263,9 +263,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
                 return;
             }
             Err(e) => {
-                let msg = format!("optimize panicked: {e}");
+                let msg = format!("optimize {e}");
                 eprintln!("[{job_id}] {msg}");
-                jobs.set_error(&job_id, "optimize_failed", msg).await;
+                jobs.set_error(&job_id, e.code("optimize_failed"), msg).await;
                 return;
             }
         };
