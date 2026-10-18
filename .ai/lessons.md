@@ -3919,3 +3919,13 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Inside a step, make the request short. Wait between requests with `step.waitForEvent` or `step.sleep`, which hold no slot. Treat a 5xx answer as "unreachable", not as a lost job.
 
 **Applies to:** every Inngest function that polls an external service.
+
+## A service function's result is not the building block's result
+
+**Context:** 1,145 loader reads moved from `.service` building blocks to `api.<module>.<fn>(input)` (2026-10-18).
+
+**Problem:** The two results differ in four ways that a codemod changes silently. `paged` answers `data: { rows, count }`, not `data` and `count`. `unwrap` drops `count`. A refusal is `{ category, message, status }`, so a `PGRST116` check never matches. A service function that returns its building block's value as is (no `unwrap`/`paged`) answers `{ data: value }`, and a throw comes back as `{ error }`, not a throw. The `unwrap` data type also took the failure branch's `null` until `DataOf` was fixed, so 570 loader reads of `.data` after an `.error` check broke at once.
+
+**Rule:** Classify each service function by what its `run` returns before a caller swaps to it (`unwrap`, `paged`, or a plain value) and skip one the classifier does not know. Read a plain value with `dataOrThrow`. When a type error repeats hundreds of times, fix the shared type, not the call sites.
+
+**Applies to:** every move from a building block to its service function, in loaders, actions, jobs and tests.

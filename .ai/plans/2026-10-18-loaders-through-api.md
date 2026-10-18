@@ -45,37 +45,61 @@ Actions (832 direct calls) are out of scope: follow-up with the same codemod.
 ## Tasks
 
 ### A. `"member"` permission
-- [ ] `packages/api/src/permissions.ts`: `Permissions = RequiredPermissions | "system" | "member"`
-- [ ] `packages/api/src/service-fn.server.ts` `allows`: `"member"` → `hasPermissions(claims, companyId, {})`
-- [ ] `scripts/lib/service-fn-metadata.ts` `leafPermission`: string literal `"member"` → `{ module: null, actions: [] }`
-- [ ] grep every other reader of a service function's `permission` (docs generator, tests) and handle `"member"`
-- [ ] codemod: `permission: {}` → `permission: "member"` in `apps/erp/app/modules/*/*.server.ts`
-- [ ] codemod: the 283 lookup wrappers (`perm-stricter`, view-only) → `"member"`
-- [ ] `service-fn-file` check refuses `permission: {}`; test case
-- [ ] verify: `pnpm --filter @carbon/api test`, `pnpm --filter @carbon/checks test`, typecheck `@carbon/api`
+- [x] `packages/api/src/permissions.ts`: `Permissions = RequiredPermissions | "system" | "member"`
+- [x] `packages/api/src/service-fn.server.ts` `allows`: `"member"` → `hasPermissions(claims, companyId, {})`
+- [x] `scripts/lib/service-fn-metadata.ts` `leafPermission`: string literal `"member"` → `{ module: null, actions: [] }`
+- [x] grep every other reader of a service function's `permission` (docs generator, tests) and handle `"member"`
+- [x] codemod: `permission: {}` → `permission: "member"` in `apps/erp/app/modules/*/*.server.ts`
+- [x] codemod: the lookup wrappers (`perm-stricter`, view-only) → `"member"` (138 service functions)
+- [x] `service-fn-file` check refuses `permission: {}`; test case
+- [x] verify: `pnpm --filter @carbon/api test`, `pnpm --filter @carbon/checks test`, typecheck `@carbon/api`
 
 ### B. Loader codemod (`scratchpad/loaders-codemod.ts`, ts-morph)
-- [ ] re-run inventory + classify after A (lookups become `auto`)
-- [ ] per file: `const { … } = await requirePermissions(…)` → `const auth = …; const { <names still used> } = auth; const api = carbonFor(auth);`
-- [ ] per call: `fn(client, companyId, a, b)` → `api.<module>.<wrapper>({ <field>: a, … })`, a whole-input arg spread (`{ ...x }`, an object literal inlined)
-- [ ] paged: rewrite `.data` / `.count` reads of the result binding; a binding used any other way → manual
-- [ ] an `unwrap` result whose `.count` is read → manual (the wrapper drops it)
-- [ ] imports: drop swapped names from the `.service` import (keep as `type` when only `typeof` uses remain), add `carbonFor`
-- [ ] dry run prints the per-file diff count; apply; `pnpm exec biome check --write` on touched files
-- [ ] verify: `pnpm exec turbo run typecheck --filter=erp --concurrency=1`; fix the fallout (error `.code` reads, null-vs-undefined inputs, zod refinements) by hand
+- [x] re-run inventory + classify after A (lookups become `auto`)
+- [x] per file: `const { … } = await requirePermissions(…)` → `const auth = …; const { <names still used> } = auth; const api = carbonFor(auth);`
+- [x] per call: `fn(client, companyId, a, b)` → `api.<module>.<wrapper>({ <field>: a, … })`, a whole-input arg spread (`{ ...x }`, an object literal inlined)
+- [x] paged: rewrite `.data` / `.count` reads of the result binding; a binding used any other way → manual
+- [x] an `unwrap` result whose `.count` is read → manual (the wrapper drops it)
+- [x] imports: drop swapped names from the `.service` import (keep as `type` when only `typeof` uses remain), add `carbonFor`
+- [x] dry run prints the per-file diff count; apply; `pnpm exec biome check --write` on touched files
+- [x] verify: `pnpm exec turbo run typecheck --filter=erp --concurrency=1`; fix the fallout (error `.code` reads, null-vs-undefined inputs, zod refinements) by hand
 
 ### C. Manual leftovers
-- [ ] the 58 `manual` calls: swap by hand where the input maps, else baseline with a reason
-- [ ] report the 11 write-gated loader calls to the user (not changed)
+- [x] the 58 `manual` calls: swap by hand where the input maps, else baseline with a reason
+- [x] report the 11 write-gated loader calls to the user (not changed)
 
 ### D. Guard
-- [ ] `packages/checks/src/conformance/loader-reads-through-api.ts` + test, copied from `route-action-shape`
-- [ ] baseline the remaining hits (`service-role`, write-gated, manual)
-- [ ] `.claude/rules/module-files.md`: a loader section (`carbonFor(auth)`, `"member"`, helpers stay direct)
+- [x] `packages/checks/src/conformance/loader-reads-through-api.ts` + test, copied from `route-action-shape`
+- [x] baseline the remaining hits (`service-role`, write-gated, manual)
+- [x] `.claude/rules/module-files.md`: a loader section (`carbonFor(auth)`, `"member"`, helpers stay direct)
 
 ### E. Verify
-- [ ] typecheck `erp`, `@carbon/api`, `@carbon/checks` (one at a time)
+- [x] typecheck `erp`, `@carbon/api`, `@carbon/checks` (one at a time)
 - [ ] `pnpm run lint`
-- [ ] `pnpm run generate:mcp`: digest changes only for the loosened permissions
+- [x] `pnpm run generate:mcp`: digest changes only for the loosened permissions
 - [ ] browser: `/smoke-test` plus the pages behind the loosened lookups, as a user without settings/resources view
 - [ ] changelog line for the loosened API permissions (only when the user asks for the entry)
+
+## Result (2026-10-18)
+
+Loader calls to a wrapped building block: 1,611 → 204, all baselined in
+`loader-reads-through-api` with a reason class.
+
+| Stays direct | Calls | Why |
+|---|---|---|
+| service role | 122 | public share pages, PDFs, system reads |
+| page types derived from the building block | 26 | change notice page, storage-unit search, item demand, quote order lines |
+| write-gated, or a write on GET | 15 | `resolveSections`, `resolvePriceList`, `createAssemblyInstruction`, 6 × `upsertPickMethod` |
+| another company of the group | 14 | consolidated reports, subsidiary settings |
+| `unwrap` drops `.count` | 6 | the wrapper would have to page (a contract change) |
+| wrapper takes a client or a Kysely `db` | 7 | Onshape auth, agent thread, out-of-service refusal, company today, period close, job receipts |
+| portal-account routes | 4 | onboarding, `link` (`allowPortalAccounts`) |
+| app shell | 3 | `x+/_layout` |
+| `payload` stamps the group or the user | 3 | analytics lines, user select search |
+| the input names another person | 2 | person attributes (the wrapper reads the caller's own) |
+| bound to `authorized` with `companyId` | 2 | people shifts, outside operations: can move by hand |
+
+Deviations: `DataOf` (`service-tools.server.ts`) fixed so `unwrap`'s data
+excludes the failure branch's `null` (122 MCP response schemas lose it);
+`dataOrThrow` added for plain-value service functions. Not done: browser
+verification and a pass over action reads.
