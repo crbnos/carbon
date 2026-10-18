@@ -536,8 +536,8 @@ msgstr "{from}–{to} / {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 件の工程"
 
-#. placeholder {0}: module.pages.length
-msgid "{granted}/{0} pages"
+#. placeholder {0}: modules.length
+msgid "{granted} of {0} modules"
 msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
@@ -639,6 +639,13 @@ msgstr "{onHand}在庫"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} はリビジョン {0} として編集のため再度オープンされます。仕入先に送信済みの文書は、ファイナライズして発注書を再送信するまで変更されません。"
+
+msgid "{overrides} overridden"
+msgstr ""
+
+#. placeholder {0}: module.pages.length
+msgid "{pagesGranted}/{0} pages"
+msgstr ""
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# 部品} other {# 部品}}"
@@ -10907,9 +10914,6 @@ msgstr "等級"
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "全員にフルアクセスを付与するのではなく、各ユーザーに細粒度で、モジュール単位の権限を付与します。"
 
-msgid "Granted"
-msgstr ""
-
 msgid "Grants Ability"
 msgstr "スキルを付与"
 
@@ -20760,6 +20764,13 @@ msgstr "毎週の所要量予測値を設定"
 
 msgid "Set due date"
 msgstr "期日を設定"
+
+#. placeholder {0}: stepLabel[step]
+msgid "Set every module to {0}"
+msgstr ""
+
+msgid "Set here"
+msgstr ""
 
 msgid "Set Pricing"
 msgstr "価格設定"

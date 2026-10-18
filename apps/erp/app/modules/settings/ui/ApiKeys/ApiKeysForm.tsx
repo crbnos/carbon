@@ -140,6 +140,7 @@ const ApiKeyForm = ({
                   onChange={setGrants}
                   label={t`Access`}
                   isDisabled={isDisabled}
+                  columnCaps={{ accounting: "Edit" }}
                 />
               </VStack>
             </ModalBody>

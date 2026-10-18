@@ -536,8 +536,8 @@ msgstr "{count}개 중 {from}–{to}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to}/{count} 공정"
 
-#. placeholder {0}: module.pages.length
-msgid "{granted}/{0} pages"
+#. placeholder {0}: modules.length
+msgid "{granted} of {0} modules"
 msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
@@ -639,6 +639,13 @@ msgstr "{onHand}개 재고"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열립니다. 이미 공급업체로 전송된 문서는 리비전을 완료하고 다시 전송할 때까지 변경되지 않습니다."
+
+msgid "{overrides} overridden"
+msgstr ""
+
+#. placeholder {0}: module.pages.length
+msgid "{pagesGranted}/{0} pages"
+msgstr ""
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# 부품} other {# 부품}}"
@@ -10907,9 +10914,6 @@ msgstr "등급"
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "모든 사용자에게 전체 접근 권한을 부여하는 대신 각 사용자에게 모듈별 세밀한 권한을 부여합니다."
 
-msgid "Granted"
-msgstr ""
-
 msgid "Grants Ability"
 msgstr "역량 부여"
 
@@ -20760,6 +20764,13 @@ msgstr "각 주별 소요량 예측값 설정"
 
 msgid "Set due date"
 msgstr "마감일 설정"
+
+#. placeholder {0}: stepLabel[step]
+msgid "Set every module to {0}"
+msgstr ""
+
+msgid "Set here"
+msgstr ""
 
 msgid "Set Pricing"
 msgstr "가격 책정 설정"

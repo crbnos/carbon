@@ -536,8 +536,8 @@ msgstr "{from}–{to} 共 {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "第{from}–{to}个工序（共{count}个）"
 
-#. placeholder {0}: module.pages.length
-msgid "{granted}/{0} pages"
+#. placeholder {0}: modules.length
+msgid "{granted} of {0} modules"
 msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
@@ -639,6 +639,13 @@ msgstr "{onHand}库存"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。已发送给供应商的文件在您完成并重新发送订单前保持不变。"
+
+msgid "{overrides} overridden"
+msgstr ""
+
+#. placeholder {0}: module.pages.length
+msgid "{pagesGranted}/{0} pages"
+msgstr ""
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# 零件} other {# 零件}}"
@@ -10907,9 +10914,6 @@ msgstr "等级"
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "向每个用户授予细粒度、按模块权限，而不是给予所有人完全访问权。"
 
-msgid "Granted"
-msgstr ""
-
 msgid "Grants Ability"
 msgstr "授予能力"
 
@@ -20760,6 +20764,13 @@ msgstr "为每周设置需求预测值"
 
 msgid "Set due date"
 msgstr "设置到期日"
+
+#. placeholder {0}: stepLabel[step]
+msgid "Set every module to {0}"
+msgstr ""
+
+msgid "Set here"
+msgstr ""
 
 msgid "Set Pricing"
 msgstr "设置定价"

@@ -536,8 +536,8 @@ msgstr "{from}–{to} sur {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} sur {count} opérations"
 
-#. placeholder {0}: module.pages.length
-msgid "{granted}/{0} pages"
+#. placeholder {0}: modules.length
+msgid "{granted} of {0} modules"
 msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
@@ -639,6 +639,13 @@ msgstr "{onHand} en stock"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} sera rouvert pour modification en tant que révision {0}. Le document déjà envoyé au fournisseur reste inchangé jusqu'à ce que vous le finalisiez et le renvoiez."
+
+msgid "{overrides} overridden"
+msgstr ""
+
+#. placeholder {0}: module.pages.length
+msgid "{pagesGranted}/{0} pages"
+msgstr ""
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# pièce} other {# pièces}}"
@@ -10907,9 +10914,6 @@ msgstr "Grades"
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Accorder à chaque utilisateur des autorisations granulaires par module au lieu de donner un accès complet à tous."
 
-msgid "Granted"
-msgstr ""
-
 msgid "Grants Ability"
 msgstr "Accorde une compétence"
 
@@ -20760,6 +20764,13 @@ msgstr "Définir les valeurs de prévision de besoins pour chaque semaine"
 
 msgid "Set due date"
 msgstr "Définir la date d'échéance"
+
+#. placeholder {0}: stepLabel[step]
+msgid "Set every module to {0}"
+msgstr ""
+
+msgid "Set here"
+msgstr ""
 
 msgid "Set Pricing"
 msgstr "Définir la tarification"

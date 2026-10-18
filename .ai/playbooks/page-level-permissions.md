@@ -10,9 +10,12 @@ Routes: /x/users/employee-types, /x/users/employees/<userId>, /x/settings/api-ke
 
 ## Steps
 ### 1. Role grid (employee type)
-- Open /x/users/employee-types/new. Each module row has four step buttons labelled
-  "<Module>: View|Create|Update|Delete" (`aria-pressed` = filled). Clicking a step sets that
-  level; clicking the highest filled step steps down one ("Inventory: Update" → Edit).
+- Open /x/users/employee-types/new. Each module row is a `radiogroup` (labelled with the module)
+  of four `radio` steps labelled "<Module>: View|Create|Update|Delete" (`aria-checked` = the
+  level). Clicking a step sets that level; clicking the highest filled step steps down one
+  ("Inventory: Update" → Edit). Arrow keys move the level from the focused step.
+- On a type, key or bulk edit, the column headings are buttons that set every module to
+  that level (again: clear).
 - A module with pages has an `aria-expanded` button; its page rows have their own steps.
 - The hidden `input[name=data]` holds the grants JSON; check it before submitting.
 - requestSubmit the form that contains `input[name=data]` (NOT a click on Save).

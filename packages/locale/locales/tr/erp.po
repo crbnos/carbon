@@ -536,8 +536,8 @@ msgstr "{from}–{to} / {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} /{count} operasyon"
 
-#. placeholder {0}: module.pages.length
-msgid "{granted}/{0} pages"
+#. placeholder {0}: modules.length
+msgid "{granted} of {0} modules"
 msgstr ""
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
@@ -639,6 +639,13 @@ msgstr "{onHand} elde"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} revizyon {0} olarak düzenlenmek üzere yeniden açılacaktır. Tedarikçiye gönderilen belge, siparişi sonlandırıp yeniden gönderene kadar değişmez."
+
+msgid "{overrides} overridden"
+msgstr ""
+
+#. placeholder {0}: module.pages.length
+msgid "{pagesGranted}/{0} pages"
+msgstr ""
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# parça} other {# parça}}"
@@ -10907,9 +10914,6 @@ msgstr "Dereceler"
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Her kullanıcıya modüle özel, ayrıntılı izinler verin, herkes için tam erişim vermek yerine."
 
-msgid "Granted"
-msgstr ""
-
 msgid "Grants Ability"
 msgstr "Yetkinlik Verir"
 
@@ -20760,6 +20764,13 @@ msgstr "Her hafta için talep tahmin değerlerini ayarlayın"
 
 msgid "Set due date"
 msgstr "Son son tarihi belirle"
+
+#. placeholder {0}: stepLabel[step]
+msgid "Set every module to {0}"
+msgstr ""
+
+msgid "Set here"
+msgstr ""
 
 msgid "Set Pricing"
 msgstr "Fiyatlandırmayı Ayarla"
