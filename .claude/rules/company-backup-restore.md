@@ -180,6 +180,12 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   IS carried; a column missing from this set survives a cross-company restore
   still pointing at the SOURCE company's prefix (which is what left restored
   assemblies unable to load their model).
+- Grants into another company: `travelsToAnotherCompany` (`company-backup.transforms.ts`)
+  leaves out every `permission` row of a person or an API key on a remapped load
+  (restore into another company, import). People are identity and keys are secrets,
+  so neither travels, and every user ref is rewritten to the restoring user, which
+  would collide on `permission_unique`. Role grants travel with their remapped
+  `employeeType`. An own restore loads every grant.
 - FK-less id refs: `ID_REF_COLUMNS` (`src/backups/id-refs.ts`, per table) lists
   TEXT/TEXT[] columns that hold a tenant row's id with no FK — generic refs like
   `inspection.sourceDocumentId`/`sourceDocumentLineId` (receipt line OR job

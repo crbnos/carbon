@@ -42,7 +42,8 @@ import {
   assertReferentiallyClosed,
   buildIdMaps,
   buildRowTransforms,
-  loadSubstrateIds
+  loadSubstrateIds,
+  travelsToAnotherCompany
 } from "./company-backup.transforms";
 import { buildCompanyBackup } from "./company-export";
 
@@ -161,7 +162,11 @@ export async function wipeAndLoad(
       // row of a table shares one hidden class. Own restore skips transforms
       // entirely (verbatim copy) — that call site would otherwise be megamorphic
       // across the per-column closures.
-      const sourceRows = backup.data[table.name]!;
+      const sourceRows = remap
+        ? backup.data[table.name]!.filter((row) =>
+            travelsToAnotherCompany(table.name, row)
+          )
+        : backup.data[table.name]!;
       const colCount = columns.length;
       const rows: Record<string, unknown>[] = [];
       if (remap) {

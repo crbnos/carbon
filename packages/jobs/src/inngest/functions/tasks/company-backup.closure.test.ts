@@ -23,7 +23,8 @@ import {
   findDanglingReferences,
   mapCollidingRows,
   matchableUniqueGroups,
-  referencedDroppedTables
+  referencedDroppedTables,
+  travelsToAnotherCompany
 } from "./company-backup.transforms";
 
 // ── Tiny synthetic-catalog builders ─────────────────────────────────────────
@@ -927,5 +928,24 @@ describe("cross-company restore invariants", () => {
       (c) => !STORAGE_PATH_COLUMNS.has(c)
     );
     expect(missing).toEqual([]);
+  });
+});
+
+describe("travelsToAnotherCompany", () => {
+  it("keeps a role's grant and leaves out a person's or an API key's", () => {
+    const grant = { employeeTypeId: null, userId: null, apiKeyId: null };
+    expect(
+      travelsToAnotherCompany("permission", { ...grant, employeeTypeId: "et" })
+    ).toBe(true);
+    expect(
+      travelsToAnotherCompany("permission", { ...grant, userId: "u" })
+    ).toBe(false);
+    expect(
+      travelsToAnotherCompany("permission", { ...grant, apiKeyId: "k" })
+    ).toBe(false);
+  });
+
+  it("keeps every row of any other table", () => {
+    expect(travelsToAnotherCompany("item", { userId: "u" })).toBe(true);
   });
 });

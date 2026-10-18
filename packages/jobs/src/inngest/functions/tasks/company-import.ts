@@ -32,7 +32,8 @@ import {
   loadSubstrateIds,
   mapCollidingRows,
   matchableUniqueGroups,
-  referencedDroppedTables
+  referencedDroppedTables,
+  travelsToAnotherCompany
 } from "./company-backup.transforms";
 
 const INSERT_CHUNK_SIZE = 200;
@@ -328,7 +329,11 @@ export const companyImportFunction = inngest.createFunction(
             scrubEmail
           });
           const skips = collisionSkips.get(table.name);
-          const allRows = backup.data[table.name]!;
+          const allRows = remap
+            ? backup.data[table.name]!.filter((row) =>
+                travelsToAnotherCompany(table.name, row)
+              )
+            : backup.data[table.name]!;
           const originalRows = skips
             ? allRows.filter(
                 (row) => !(typeof row.id === "string" && skips.has(row.id))

@@ -424,6 +424,21 @@ export function buildRowTransforms(
 }
 
 /**
+ * Whether a backup row can be loaded into ANOTHER company. A grant on a person
+ * or an API key cannot: people are identity and keys are secrets, so neither
+ * travels, and every user ref is rewritten to the restoring user, which would
+ * collide on `permission_unique`. Only role grants come along. Into its own
+ * company a backup loads every row.
+ */
+export function travelsToAnotherCompany(
+  table: string,
+  row: { [col: string]: unknown }
+): boolean {
+  if (table !== "permission") return true;
+  return row.userId == null && row.apiKeyId == null;
+}
+
+/**
  * Reseed drops tables the target already populated (`filterUnpopulated`) — but a
  * dropped table whose ids the kept rows still REFERENCE cannot simply vanish:
  * with no id map, every FK into it is nulled (nullable) or left dangling at the
