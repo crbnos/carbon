@@ -546,6 +546,9 @@ msgstr "{from}–{to} von {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} von {count} Arbeitsgängen"
 
+msgid "{granted}/{total} pages"
+msgstr ""
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Und # weiterer Datensatz.} other {Und # weitere Datensätze.}}"
 
@@ -678,9 +681,6 @@ msgstr "{sectionLineCount} Positionen"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} ausgewählt"
-
-msgid "{set} of {total}"
-msgstr ""
 
 msgid "{stale} changed since the page loaded"
 msgstr ""
@@ -10528,6 +10528,10 @@ msgstr "Versandstandort"
 msgid "Full"
 msgstr ""
 
+#. placeholder {0}: module.label
+msgid "Full access to {0}"
+msgstr ""
+
 msgid "Full name"
 msgstr "Vollständiger Name"
 
@@ -16371,9 +16375,6 @@ msgstr "Seite"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Seite {pdfViewPage} von {documentPageCount}"
 
-msgid "Pages"
-msgstr ""
-
 msgid "Paid Amount:"
 msgstr "Bezahlter Betrag:"
 
@@ -20758,6 +20759,9 @@ msgstr "Legen Sie Prognosewerte für den Bedarf für jede Woche fest"
 
 msgid "Set due date"
 msgstr "Fälligkeitsdatum festlegen"
+
+msgid "Set module-level access, then expand a module to fine-tune access for each of its pages."
+msgstr ""
 
 msgid "Set Pricing"
 msgstr "Preisfindung festlegen"

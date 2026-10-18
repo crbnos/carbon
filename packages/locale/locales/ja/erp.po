@@ -546,6 +546,9 @@ msgstr "{from}–{to} / {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 件の工程"
 
+msgid "{granted}/{total} pages"
+msgstr ""
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {他に # 件のレコード} other {他に # 件のレコード}}"
 
@@ -678,9 +681,6 @@ msgstr "{sectionLineCount} 明細"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 件が選択されています"
-
-msgid "{set} of {total}"
-msgstr ""
 
 msgid "{stale} changed since the page loaded"
 msgstr ""
@@ -10528,6 +10528,10 @@ msgstr "出荷拠点"
 msgid "Full"
 msgstr ""
 
+#. placeholder {0}: module.label
+msgid "Full access to {0}"
+msgstr ""
+
 msgid "Full name"
 msgstr "氏名"
 
@@ -16371,9 +16375,6 @@ msgstr "ページ"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "ページ {pdfViewPage} / {documentPageCount}"
 
-msgid "Pages"
-msgstr ""
-
 msgid "Paid Amount:"
 msgstr "支払済み金額:"
 
@@ -20758,6 +20759,9 @@ msgstr "毎週の所要量予測値を設定"
 
 msgid "Set due date"
 msgstr "期日を設定"
+
+msgid "Set module-level access, then expand a module to fine-tune access for each of its pages."
+msgstr ""
 
 msgid "Set Pricing"
 msgstr "価格設定"

@@ -426,7 +426,7 @@ file:
 | Today | Becomes |
 |---|---|
 | `x+/users+/employee-types.$employeeTypeId.tsx`, `ui/EmployeeTypes/EmployeeTypeForm.ee.tsx` | The role grid: module rows that expand to page rows, one level per row |
-| `x+/users+/employees.$employeeId.tsx`, `ui/Employees/EmployeePermissionsForm.ee.tsx` | The person's Access tab: the role's level in grey, the override in a select |
+| `x+/users+/employees.$employeeId.tsx`, `ui/Employees/EmployeePermissionsForm.ee.tsx` | The person's Access tab: the role's level faded, an override in solid checkboxes |
 | `ui/Employees/BulkEditPermissionsForm.ee.tsx` | Bulk overrides for the selected people |
 | `x+/settings+/api-keys…`, `settings/ui/ApiKeys/ApiKeysForm.tsx` | The same grid for a key |
 
@@ -435,12 +435,16 @@ four forms with their own checkbox tables.
 
 ## UI Changes
 
-- **Role grid** (archetype: settings form, as `EmployeeTypeForm`): one row per
-  module with a level select and an "N of M pages" count. Expanding a row shows
-  its pages, each with a level select capped at the page's `maxLevel`. A page
-  row left empty shows the module level in grey.
-- **Person Access tab**: the same grid. Each row shows the role's level and an
-  override select ("Role default", None to Full).
+- **Role grid** (archetype: settings form, as `EmployeeTypeForm`; layout from
+  the user's mockup): one collapsible row per module with an "N/M pages" badge
+  and a checkbox that gives Full on the whole module. Expanding a row shows its
+  pages, each with View, Create, Update and Delete checkboxes. The checkboxes
+  are a ladder over the stored level: ticking Update ticks View and Create
+  (Edit), unticking View clears the row. A box above the page's `maxLevel` is
+  disabled. A page row without its own grant shows the module level, faded.
+- **Person Access tab**: the same grid. A row without an override shows the
+  role's level, faded; a row with one shows a "Role default" button that
+  removes it.
 - **API key form**: the same grid. "Select all" never sets Full on Accounting
   pages.
 - **Access view**: on the person page, a read-only grid of effective levels
@@ -552,3 +556,4 @@ approval rules cover "who may approve". The key format leaves room to add them.
 - 2026-10-18: Scope widened to every module in one deploy (158 pages in 14 modules), with page-enforced shared tables (`item.type`, `memo.direction`). Module keys removed after the switch. Docs and glossary added to the change list. Fixed the name of the function that copies a role at invite (`createEmployeeAccount`).
 - 2026-10-18: From phase 3 a gate names a page and its lowest level (`{ "inventory.receipts": "Edit" }`); the database keeps action keys. ERP code authenticates through one `authorize`, which replaces `carbon`, `carbonFor` and `requirePermissions`; the Onshape panel's gate becomes `authorizePanel`. Answered by the user.
 - 2026-10-18: `authorize` lives in `@carbon/auth/auth.server`, next to `requirePermissions`, which becomes internal; the ERP registers the `api` binding with `registerApi`. MES, academy and starter use `authorize` too, so the import check is not needed. Answered by the user.
+- 2026-10-18: The grid follows the user's mockup: modules as collapsible rows with an "N/M pages" badge and a select-all checkbox (Full on the module), pages with View, Create, Update and Delete checkboxes that form a ladder over the stored level. Answered by the user.

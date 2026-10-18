@@ -546,6 +546,9 @@ msgstr "{from}–{to} 共 {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "第{from}–{to}个工序（共{count}个）"
 
+msgid "{granted}/{total} pages"
+msgstr ""
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {还有 # 条记录。} other {还有 # 条记录。}}"
 
@@ -678,9 +681,6 @@ msgstr "{sectionLineCount} 行"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 已选择"
-
-msgid "{set} of {total}"
-msgstr ""
 
 msgid "{stale} changed since the page loaded"
 msgstr ""
@@ -10528,6 +10528,10 @@ msgstr "发货地点"
 msgid "Full"
 msgstr ""
 
+#. placeholder {0}: module.label
+msgid "Full access to {0}"
+msgstr ""
+
 msgid "Full name"
 msgstr "全名"
 
@@ -16371,9 +16375,6 @@ msgstr "页面"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "第 {pdfViewPage} 页，共 {documentPageCount} 页"
 
-msgid "Pages"
-msgstr ""
-
 msgid "Paid Amount:"
 msgstr "已支付金额："
 
@@ -20758,6 +20759,9 @@ msgstr "为每周设置需求预测值"
 
 msgid "Set due date"
 msgstr "设置到期日"
+
+msgid "Set module-level access, then expand a module to fine-tune access for each of its pages."
+msgstr ""
 
 msgid "Set Pricing"
 msgstr "设置定价"

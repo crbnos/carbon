@@ -19,9 +19,11 @@ The modules are Accounting, Documents, Inventory, Invoicing, Items, People, Prin
   <Field name="Full">Everything Edit allows, plus deleting records.</Field>
 </FieldTable>
 
-Every access editor in Carbon is the same grid: one row per module, with one level select on each row. The employee type editor, a person's Access tab, the bulk editor and the API key form all use it, so what you learn in one applies to the others.
+Every access editor in Carbon is the same grid. Each module is a row you expand, and each of its pages has **View**, **Create**, **Update** and **Delete** boxes. The boxes form a ladder: ticking **Update** also ticks View and Create, and unticking **View** clears the row. So each row holds one level: Update is Edit and Delete is Full.
 
-<Screenshot label="Users → Employee Types: the employee type editor with the Access grid, one level select per module" />
+The box on a module row gives Full on the whole module, and its badge counts the pages with any access. The employee type editor, a person's Access tab, the bulk editor and the API key form all use this grid.
+
+<Screenshot label="Users → Employee Types: the employee type editor with the Access grid, one module expanded to its View, Create, Update and Delete boxes" />
 
 <Callout type="note" title="Levels belong to one company">
 Each company keeps its own levels, so one person can have Full on Accounting in one company and View in another. You always edit the levels of the company you are signed in to. See [multi-company setup](/docs/reference/intercompany) for how a person spans several companies.
@@ -54,13 +56,13 @@ Before levels, access was four checkboxes per module. Carbon converted each type
 
 ## Personal overrides and bulk edits
 
-A person's **Access** tab, under **Users → Accounts**, shows the same grid. A row left at **Role default** takes the level of the person's employee type, which the select shows in brackets. Choose a level to override it. The override wins over the type, so it can add access or remove it.
+A person's **Access** tab, under **Users → Accounts**, shows the same grid. A row you have not changed follows the person's employee type, and its boxes show faded. Tick or untick a box to override it. The override wins over the type, so it can add access or remove it, and the row's **Role default** button removes it again.
 
 Changing a person's employee type changes what they inherit. Their overrides stay.
 
 Below the grid, **Current access** lists each module's level as saved and where it comes from: the Admin employee type, an override, the role, or no grant. A level that grew in the conversion carries a note that names what it gained.
 
-To change many people at once, use the bulk editor from the accounts list. Select the users and a **Type of Permission Update**, then set a level on the modules you want to change. Modules left at **No change** keep what each person has.
+To change many people at once, use the bulk editor from the accounts list. Select the users and a **Type of Permission Update**, then tick the boxes on the modules you want to change. Rows you do not touch keep what each person has, and a row's **No change** button returns it to that.
 
 <FieldTable>
   <Field name="Add Permissions">Raise each chosen module to at least the level you set. A person who already has a higher level keeps it.</Field>
@@ -141,7 +143,7 @@ A bulk action (bulk permission edit, group edit, deactivate, resend or revoke in
 The person has None on that module. Open their **Access** tab under **Users → Accounts**: **Current access** shows each module's level and its source. Give at least View through their employee type or a personal override. Row-level security enforces the same levels for API access.
 
 ### Editing an employee type didn't change someone's access
-The person has a personal override on that module, and an override wins over the type. Set that row back to **Role default** on their Access tab. A person with the Admin type always has Full, whatever the grid says.
+The person has a personal override on that module, and an override wins over the type. Use the row's **Role default** button on their Access tab. A person with the Admin type always has Full, whatever the grid says.
 
 ### A level is higher than the admin set it
 The conversion from checkboxes to levels rounded up to the lowest level that covered every checkbox. The type editor lists these under **Converted access that grew**, and a person's Current access shows "Gained … in the conversion". Lower the level and save.

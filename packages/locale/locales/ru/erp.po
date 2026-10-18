@@ -546,6 +546,9 @@ msgstr "{from}–{to} из {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} из {count} операций"
 
+msgid "{granted}/{total} pages"
+msgstr ""
+
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Еще # запись.} other {Еще # записей.}}"
 
@@ -678,9 +681,6 @@ msgstr "{sectionLineCount} строк"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} выбрано"
-
-msgid "{set} of {total}"
-msgstr ""
 
 msgid "{stale} changed since the page loaded"
 msgstr ""
@@ -10528,6 +10528,10 @@ msgstr "Площадка отгрузки"
 msgid "Full"
 msgstr ""
 
+#. placeholder {0}: module.label
+msgid "Full access to {0}"
+msgstr ""
+
 msgid "Full name"
 msgstr "Полное имя"
 
@@ -16371,9 +16375,6 @@ msgstr "Страница"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Страница {pdfViewPage} из {documentPageCount}"
 
-msgid "Pages"
-msgstr ""
-
 msgid "Paid Amount:"
 msgstr "Оплаченная сумма:"
 
@@ -20758,6 +20759,9 @@ msgstr "Установить значения прогноза потребно�
 
 msgid "Set due date"
 msgstr "Установить срок выполнения"
+
+msgid "Set module-level access, then expand a module to fine-tune access for each of its pages."
+msgstr ""
 
 msgid "Set Pricing"
 msgstr "Установить ценообразование"
