@@ -30,15 +30,30 @@
     "picocolors": "^1.1.1"
   },
   "peerDependencies": {
+    "@lingui/conf": "*",
+    "@lingui/vite-plugin": "*",
+    "@react-aria/optimize-locales-plugin": "*",
     "vite": "*"
   },
   "devDependencies": {
     "@carbon/config": "*",
+    "@lingui/conf": "catalog:",
+    "@lingui/vite-plugin": "catalog:",
+    "@react-aria/optimize-locales-plugin": "catalog:",
     "@types/node": "20.19.39",
     "@types/pg": "^8.11.6",
     "rimraf": "5.0.10",
     "tsx": "4.21.0",
     "typescript": "5.8.3",
+    "vite": "catalog:",
     "vitest": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "@lingui/conf": {
+      "optional": true
+    },
+    "@react-aria/optimize-locales-plugin": {
+      "optional": true
+    }
   }
 }

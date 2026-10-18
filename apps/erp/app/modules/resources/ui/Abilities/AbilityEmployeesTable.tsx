@@ -24,7 +24,7 @@ import { useNavigate } from "react-router";
 import { EmployeeAvatar, New, Table } from "~/components";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useDateFormatter, usePermissions } from "~/hooks";
-import type { Ability } from "~/modules/resources";
+import type { Ability } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 import EmployeeAbilityStatus, {
   getEmployeeAbilityStatus

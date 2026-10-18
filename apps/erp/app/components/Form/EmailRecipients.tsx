@@ -31,7 +31,7 @@ import {
   useState
 } from "react";
 import { LuUsers } from "react-icons/lu";
-import type { User, UserSelectGroup } from "~/modules/users";
+import type { User, UserSelectGroup } from "~/modules/users/types";
 import { isValidEmail } from "~/utils/form";
 import { path } from "~/utils/path";
 

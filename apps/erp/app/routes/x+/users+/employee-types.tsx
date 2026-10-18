@@ -10,9 +10,9 @@ import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import {
   EmployeeTypesTable,
-  EmployeeTypesUpgradeOverlay,
-  getEmployeeTypes
-} from "~/modules/users";
+  EmployeeTypesUpgradeOverlay
+} from "~/modules/users/ui";
+import { getEmployeeTypes } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

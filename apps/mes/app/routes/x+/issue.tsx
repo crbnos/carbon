@@ -9,10 +9,9 @@ import { flash } from "@carbon/auth/session.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import { issueValidator } from "~/services/models";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -101,9 +100,10 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const issued = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("issue", {
+  const issued = await erpPosting(
+    "issue",
+    { companyId, userId },
+    {
       id: jobOperationId,
       type: "partToOperation",
       itemId,
@@ -111,7 +111,8 @@ export async function action({ request }: ActionFunctionArgs) {
       jobOperationStepId,
       quantity,
       adjustmentType
-    });
+    }
+  );
 
   if (issued.error) {
     throw redirect(

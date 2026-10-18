@@ -17,6 +17,17 @@ describe("encodeCsv", () => {
     const csv = encodeCsv([{ "=cmd|calc": "safe" }]);
     expect(csv).toBe("cmd|calc\r\nsafe");
   });
+  it("strips formula prefixes in every column of a table, the first included", () => {
+    expect(encodeCsvTable(["a", "b"], [["=1+1", "=2+2"]])).toBe(
+      "a,b\r\n1+1,2+2"
+    );
+  });
+  it("keeps string cells as they are with formulaSafe false", () => {
+    const csv = encodeCsv([{ phone: "+1 555 0100", note: "=draft" }], {
+      formulaSafe: false
+    });
+    expect(csv).toBe("phone,note\r\n+1 555 0100,=draft");
+  });
   it("respects an explicit field order and empty value", () => {
     const csv = encodeCsv([{ b: 1, a: 2 }], {
       fields: ["a", "b", "c"],

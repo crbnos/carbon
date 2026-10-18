@@ -33,10 +33,7 @@ import {
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
 import { quoteFinalizeValidator } from "../../sales.models";
-import {
-  getQuoteLinePricesByQuoteId,
-  getQuoteLines
-} from "../../sales.service";
+import { getQuoteLinePricesByQuoteId, getQuoteLines } from "../../sales.utils";
 import type {
   Quotation,
   QuotationLine,

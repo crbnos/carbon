@@ -9,6 +9,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useMemo } from "react";
 import { useFetcher } from "react-router";
+import type { action as trackingAction } from "~/routes/x+/receipt+/lines.tracking";
 import { path } from "~/utils/path";
 import type { Receipt, ReceiptLine } from "../../types";
 
@@ -53,13 +54,22 @@ export function ReturnEntityForm({
     candidates: CandidateEntity[];
     assigned: AssignedRow[];
   }>();
-  const assignFetcher = useAction<{ error?: string }>({
+  const assignFetcher = useAction<typeof trackingAction>({
+    onError: () => {
+      // Shown under the picker instead of as a toast.
+    },
     onSettled: (data) => {
       if (data) {
         reload();
       }
     }
   });
+
+  const assignResult = assignFetcher.data;
+  const assignError =
+    assignResult && "error" in assignResult
+      ? assignResult.error?.message
+      : null;
 
   const reload = () => {
     if (line.lineId) {
@@ -152,10 +162,8 @@ export function ReturnEntityForm({
             if (value) assign(value, null, current);
           }}
         />
-        {assignFetcher.data?.error && (
-          <span className="text-xs text-destructive">
-            {assignFetcher.data.error}
-          </span>
+        {assignError && (
+          <span className="text-xs text-destructive">{assignError}</span>
         )}
       </VStack>
     );
@@ -198,10 +206,8 @@ export function ReturnEntityForm({
           </HStack>
         );
       })}
-      {assignFetcher.data?.error && (
-        <span className="text-xs text-destructive">
-          {assignFetcher.data.error}
-        </span>
+      {assignError && (
+        <span className="text-xs text-destructive">{assignError}</span>
       )}
     </VStack>
   );

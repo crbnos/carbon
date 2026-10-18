@@ -10,10 +10,10 @@ import InventoryCountStatus from "./InventoryCountStatus";
 import InventoryCountsTable from "./InventoryCountsTable";
 
 export {
-  InventoryCountsTable,
   InventoryCountConfirmModal,
   InventoryCountDetails,
   InventoryCountForm,
   InventoryCountLines,
-  InventoryCountStatus
+  InventoryCountStatus,
+  InventoryCountsTable
 };

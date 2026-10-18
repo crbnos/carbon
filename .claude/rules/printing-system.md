@@ -111,8 +111,11 @@ Realtime-enabled. RLS gated on `printing_*` permissions (Printing module). Clean
 - **Manual route** `apps/{erp,mes}/app/routes/x+/print.tsx` (`path.to.manualPrint` = `/x/print`):
   validates `manualPrintValidator`, calls `trigger("print-job", ...)`.
 - **Settings** `apps/erp/app/routes/x+/settings+/printing.tsx` (`path.to.printingSettings`): printers CRUD
-  + test print, per-location assignment rows; actions invalidate the Redis cache. Print jobs UI:
-  `printing.jobs.tsx` (`path.to.printingSettingsJobs`) with reprint (origin `reprint`) + realtime.
+  + test print, per-location assignment rows, through the `savePrinterRoute` / `testPrinterRoute` /
+  `removePrinterRoute` and `assignPrinter` service functions (`apps/erp/app/modules/settings/settings.server.ts`),
+  which invalidate the Redis cache; deleting a route clears every assignment that named it. Print jobs
+  UI: `printing.jobs.tsx` (`path.to.printingSettingsJobs`) with reprint (`reprintPrintJob`,
+  origin `reprint`) + realtime.
 - **Label file routes** (interactive download, ERP) under `apps/erp/app/routes/file+/` — e.g.
   `stock-transfer+/$id.labels[.]{pdf,zpl}.tsx` (+ `labels.server.ts` `getStockTransferLabelItems`),
   `storage-unit+/labels[.]{pdf,zpl}.tsx`, plus `entity+`, `receipt+`, `shipment+`, `operation+`, `kanban+`.
@@ -121,9 +124,9 @@ Realtime-enabled. RLS gated on `printing_*` permissions (Printing module). Clean
 
 After a business event, code checks `getCachedPrinterConfig(...).autoPrint` (default `true` when null),
 wrapped in try/catch that never blocks the parent op, then `trigger("print-job", ...)`:
-- Receipt post `x+/receipt+/$receiptId.post.tsx` (receiving); Shipment post `$shipmentId.post.tsx`
-  (shipping; also prints `Split` entities); Stock-transfer split `x+/stock-transfer+/$id.line.quantity.tsx`
-  (Split + Entity reprint); MES first-operation completion `apps/mes/app/routes/x+/complete.tsx` (workCenter).
+- Receipt post `postReceipt` (receiving); Shipment post `postShipment` (shipping; also prints
+  `Split` entities); Stock-transfer split, from the line pick operations (Split + Entity reprint) —
+  all in `apps/erp/app/modules/inventory/inventory.server.ts`; MES first-operation completion `apps/mes/app/routes/x+/complete.tsx` (workCenter).
 
 ## Gotchas
 

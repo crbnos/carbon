@@ -13,13 +13,16 @@ import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getStockTransfer, getStockTransferLines } from "~/modules/inventory";
+import {
+  getStockTransfer,
+  getStockTransferLines
+} from "~/modules/inventory/inventory.service";
 import {
   getCompany,
   getDocumentTemplate,
   resolveSections
-} from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+} from "~/modules/settings/settings.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 const logger = getLogger("erp", "stock-transfer", "pdf");
 

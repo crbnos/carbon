@@ -10,10 +10,8 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
-import {
-  supplierProcessValidator,
-  upsertSupplierProcess
-} from "~/modules/purchasing";
+import { supplierProcessValidator } from "~/modules/purchasing/purchasing.models";
+import { upsertSupplierProcess } from "~/modules/purchasing/purchasing.service";
 import SupplierProcessForm from "~/modules/purchasing/ui/Supplier/SupplierProcessForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

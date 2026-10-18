@@ -40,8 +40,8 @@ import {
   cutoverStepValidator,
   openingTrialBalanceImportValidator,
   openingTrialBalanceValidator
-} from "~/modules/accounting";
-import { getActivationCutover } from "~/modules/accounting/accounting.server";
+} from "~/modules/accounting/accounting.models";
+import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   mapTrialBalanceAccounts,
   parseTrialBalanceCsv

@@ -9,6 +9,7 @@ import type {
   PrinterRoute,
   PrintingSettings
 } from "@carbon/printing";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -22,7 +23,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   LuBlocks,
   LuHandCoins,
@@ -30,7 +31,6 @@ import {
   LuMapPin,
   LuTruck
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 
 type AssignmentUpdate = {
   locationId: string;
@@ -56,7 +56,9 @@ export function AssignmentsCard({
   }[];
 }) {
   const { t } = useLingui();
-  const assignmentFetcher = useFetcher<{ success: boolean; message: string }>();
+  const assignmentFetcher = useAction({
+    onSuccess: () => toast.success(t`Assignment updated`)
+  });
 
   const printerRouteOptions = useMemo(
     () => [
@@ -84,21 +86,6 @@ export function AssignmentsCard({
     }
     return map;
   }, [workCenters]);
-
-  useEffect(() => {
-    if (
-      assignmentFetcher.data?.success === true &&
-      assignmentFetcher.data?.message
-    ) {
-      toast.success(assignmentFetcher.data.message);
-    }
-    if (
-      assignmentFetcher.data?.success === false &&
-      assignmentFetcher.data?.message
-    ) {
-      toast.error(assignmentFetcher.data.message);
-    }
-  }, [assignmentFetcher.data?.message, assignmentFetcher.data?.success]);
 
   const submitAssignment = useCallback(
     (data: AssignmentUpdate) => {

@@ -67,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // end of this event on an End. The routes post every event it ended.
   const db = getDatabaseClient();
   const postEnded = (ids: string[]) =>
-    postEndedProductionEvents(client, db, { companyId, userId, ids });
+    postEndedProductionEvents(client, { companyId, userId, ids });
 
   if (productionAction === "Start") {
     const machineWorkCenterId =

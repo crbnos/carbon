@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -14,6 +15,7 @@ import {
   ValidatedForm,
   validator
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -28,7 +30,6 @@ import {
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
 import {
   LuLayers,
   LuPackageCheck,
@@ -39,21 +40,18 @@ import {
   LuUndo2
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
-  getCompanySettings,
   incompletePickingListPolicyValidator,
   kanbanOutputTypes,
   kanbanOutputValidator,
   returnPickedMaterialTimingValidator,
-  shelfLifeSettingsValidator,
-  updateIncompletePickingListPolicySetting,
-  updateKanbanOutputSetting,
-  updateReturnPickedMaterialTimingSetting,
-  updateShelfLifeSettings
-} from "~/modules/settings";
+  shelfLifeSettingsValidator
+} from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -84,116 +82,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { companySettings: companySettings.data };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  switch (intent) {
-    case "kanbanOutput":
-      const kanbanOutputValidation = await validator(
-        kanbanOutputValidator
-      ).validate(formData);
-
-      if (kanbanOutputValidation.error) {
-        return { success: false, message: "Invalid form data" };
+// One form per card, told apart by its intent: each becomes the fields of
+// `settings.inventory.update` it saves (the operation drops `intent`).
+const inventorySettingsForm = z.discriminatedUnion("intent", [
+  kanbanOutputValidator.extend({ intent: z.literal("kanbanOutput") }),
+  shelfLifeSettingsValidator
+    .extend({ intent: z.literal("shelfLife") })
+    .transform(({ intent: _, ...shelfLife }) => ({
+      inventoryShelfLife: {
+        ...shelfLife,
+        nearExpiryWarningDays: shelfLife.nearExpiryWarningDays ?? null
       }
+    })),
+  incompletePickingListPolicyValidator.extend({
+    intent: z.literal("incompletePickingListPolicy")
+  }),
+  returnPickedMaterialTimingValidator.extend({
+    intent: z.literal("returnPickedMaterialTiming")
+  })
+]);
 
-      const kanbanOutputResult = await updateKanbanOutputSetting(
-        client,
-        companyId,
-        kanbanOutputValidation.data.kanbanOutput
-      );
-      if (kanbanOutputResult.error)
-        return {
-          success: false,
-          message: kanbanOutputResult.error.message
-        };
-
-      return { success: true, message: "Kanban output setting updated" };
-
-    case "shelfLife":
-      const shelfLifeValidation = await validator(
-        shelfLifeSettingsValidator
-      ).validate(formData);
-
-      if (shelfLifeValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const shelfLifeResult = await updateShelfLifeSettings(client, companyId, {
-        nearExpiryWarningDays: shelfLifeValidation.data.nearExpiryWarningDays,
-        defaultShelfLifeDays: shelfLifeValidation.data.defaultShelfLifeDays,
-        calculatedInputScope: shelfLifeValidation.data.calculatedInputScope,
-        expiredEntityPolicy: shelfLifeValidation.data.expiredEntityPolicy
-      });
-      if (shelfLifeResult.error)
-        return {
-          success: false,
-          message: shelfLifeResult.error.message
-        };
-
-      return {
-        success: true,
-        message: "Shelf life & expiry settings updated"
-      };
-
-    case "incompletePickingListPolicy":
-      const pickingPolicyValidation = await validator(
-        incompletePickingListPolicyValidator
-      ).validate(formData);
-
-      if (pickingPolicyValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const pickingPolicyResult =
-        await updateIncompletePickingListPolicySetting(
-          client,
-          companyId,
-          pickingPolicyValidation.data.incompletePickingListPolicy
-        );
-      if (pickingPolicyResult.error)
-        return {
-          success: false,
-          message: pickingPolicyResult.error.message
-        };
-
-      return {
-        success: true,
-        message: "Picking list completion policy updated"
-      };
-
-    case "returnPickedMaterialTiming":
-      const returnTimingValidation = await validator(
-        returnPickedMaterialTimingValidator
-      ).validate(formData);
-
-      if (returnTimingValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const returnTimingResult = await updateReturnPickedMaterialTimingSetting(
-        client,
-        companyId,
-        returnTimingValidation.data.returnPickedMaterialTiming
-      );
-      if (returnTimingResult.error)
-        return {
-          success: false,
-          message: returnTimingResult.error.message
-        };
-
-      return {
-        success: true,
-        message: "Material return timing updated"
-      };
-  }
-
-  return { success: false, message: "Invalid form data" };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(inventorySettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updateInventorySettings(input.data);
 }
 
 const outputLabels: Record<(typeof kanbanOutputTypes)[number], string> = {
@@ -205,17 +118,17 @@ const outputLabels: Record<(typeof kanbanOutputTypes)[number], string> = {
 export default function InventorySettingsRoute() {
   const { t } = useLingui();
   const { companySettings } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-
-  useEffect(() => {
-    if (fetcher.data?.success === true && fetcher?.data?.message) {
-      toast.success(fetcher.data.message);
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.kanbanOutput) toast.success(t`Kanban output setting updated`);
+      else if (data.inventoryShelfLife)
+        toast.success(t`Shelf life & expiry settings updated`);
+      else if (data.incompletePickingListPolicy)
+        toast.success(t`Picking list completion policy updated`);
+      else toast.success(t`Material return timing updated`);
     }
-
-    if (fetcher.data?.success === false && fetcher?.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data?.message, fetcher.data?.success]);
+  });
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">

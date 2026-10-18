@@ -10,7 +10,7 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { operationTypes, standardFactorType } from "../shared";
+import { operationTypes, standardFactorType } from "../shared/shared.models";
 
 // Batch compatibility rule levels — mirrors BatchRuleLevel in @carbon/utils.
 // A tuple literal is needed for z.enum; kept in sync with BATCH_RULE_DIMENSIONS.

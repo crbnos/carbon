@@ -28,8 +28,11 @@ import {
 } from "~/components/Form";
 import { useFlags, useUser } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import type { getEmployeeTypes, getInvitable } from "~/modules/users";
-import { createEmployeeValidator } from "~/modules/users";
+import { createEmployeeValidator } from "~/modules/users/users.models";
+import type {
+  getEmployeeTypes,
+  getInvitable
+} from "~/modules/users/users.service";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 

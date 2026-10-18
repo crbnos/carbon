@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getInspections } from "~/modules/quality";
+import { getInspections } from "~/modules/quality/quality.service";
 import InspectionsTable from "~/modules/quality/ui/Inspections/InspectionsTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -11,7 +11,7 @@ import {
   getFailureModesList,
   getLocationsList,
   getMaintenanceDispatchesByLocation
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service";
 import MaintenanceDispatchesTable from "~/modules/resources/ui/Maintenance/MaintenanceDispatchesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

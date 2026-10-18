@@ -9,11 +9,11 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import type { MaintenanceSchedule } from "~/modules/resources";
 import {
   getLocationsList,
   getMaintenanceSchedulesByLocation
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service";
+import type { MaintenanceSchedule } from "~/modules/resources/types";
 import MaintenanceSchedulesTable from "~/modules/resources/ui/MaintenanceSchedule/MaintenanceSchedulesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

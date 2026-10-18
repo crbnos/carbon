@@ -7,8 +7,16 @@
  * Carbon app so the browser tab icon is uniform across erp, mes, academy,
  * starter, and docs.
  *
- * Theme-aware: light theme uses the light mark, dark theme uses the dark mark.
- * The referenced assets (`carbon-mark-light.png`, `carbon-mark-dark.png`,
+ * One icon for every background: a dark mark with an opaque white glyph
+ * (`carbon-favicon.svg`, and `carbon-favicon.png` for browsers without SVG
+ * favicons). It does not follow `prefers-color-scheme`. That follows the OS,
+ * not the tab strip: Arc's sidebar and a dark Chrome theme on a light OS are
+ * dark while the scheme says light, and an adaptive mark drew dark on dark
+ * there. Nor two PNGs switched by `media`: Chrome does not apply `media` to
+ * icon links reliably, and dropped the mark after loading. A new file name is
+ * also what makes browsers drop an icon they cached.
+ *
+ * The referenced assets (`carbon-favicon.svg`, `carbon-favicon.png`,
  * `apple-touch-icon.png`, `site.webmanifest`) must exist in each app's
  * `public/` dir — static assets are served per-origin, so they are copied into
  * every app rather than imported from here.
@@ -20,21 +28,21 @@ export type FaviconLink = {
   rel: string;
   href: string;
   type?: string;
-  media?: string;
+  sizes?: string;
 };
 
 export const faviconLinks: FaviconLink[] = [
   {
     rel: "icon",
     type: "image/png",
-    href: "/carbon-mark-light.png",
-    media: "(prefers-color-scheme: light)"
+    href: "/carbon-favicon.png",
+    sizes: "480x480"
   },
   {
     rel: "icon",
-    type: "image/png",
-    href: "/carbon-mark-dark.png",
-    media: "(prefers-color-scheme: dark)"
+    type: "image/svg+xml",
+    href: "/carbon-favicon.svg",
+    sizes: "any"
   },
   {
     rel: "apple-touch-icon",

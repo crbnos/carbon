@@ -15,9 +15,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { Table } from "~/components";
 import { useCurrencyFormatter, useUrlParams } from "~/hooks";
-import type { LeaseNetInvestmentRow } from "~/modules/accounting";
-import { getLeaseNetInvestment } from "~/modules/accounting";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import type { LeaseNetInvestmentRow } from "~/modules/accounting/accounting.service";
+import { getLeaseNetInvestment } from "~/modules/accounting/accounting.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

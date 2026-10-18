@@ -9,11 +9,13 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  getPurchaseOrder,
   isPurchaseOrderLocked,
-  purchaseOrderPaymentValidator,
+  purchaseOrderPaymentValidator
+} from "~/modules/purchasing/purchasing.models";
+import {
+  getPurchaseOrder,
   upsertPurchaseOrderPayment
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

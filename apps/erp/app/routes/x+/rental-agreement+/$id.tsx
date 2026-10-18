@@ -19,7 +19,7 @@ import {
   getRentalAgreementLines,
   getRentalAgreementRelatedDocuments,
   getRentalBillingPeriods
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import type {
   RentalInvoiceLinks,
   RentalLeaseLineInputs

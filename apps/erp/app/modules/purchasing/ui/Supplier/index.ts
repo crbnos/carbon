@@ -18,6 +18,7 @@ import SupplierShippingForm from "./SupplierShippingForm";
 import SupplierSidebar from "./SupplierSidebar";
 import SuppliersTable from "./SuppliersTable";
 import SupplierTaxForm from "./SupplierTaxForm";
+
 export {
   SupplierBankAccountForm,
   SupplierBankAccounts,
@@ -29,10 +30,10 @@ export {
   SupplierLocations,
   SupplierParts,
   SupplierPaymentForm,
-  SupplierProcessForm,
   SupplierProcesses,
+  SupplierProcessForm,
   SupplierShippingForm,
   SupplierSidebar,
-  SupplierTaxForm,
-  SuppliersTable
+  SuppliersTable,
+  SupplierTaxForm
 };

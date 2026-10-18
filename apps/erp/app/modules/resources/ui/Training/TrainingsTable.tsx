@@ -31,7 +31,7 @@ import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
-import type { TrainingListItem } from "~/modules/resources";
+import type { TrainingListItem } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 import TrainingStatus from "./TrainingStatus";
 

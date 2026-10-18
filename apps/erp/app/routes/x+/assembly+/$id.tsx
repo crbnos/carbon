@@ -6,11 +6,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useRevalidator } from "@carbon/query";
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
   ClientOnly,
   Spinner,
+  toast,
   useInterval,
   useMode,
   useViewport
@@ -29,6 +30,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
+  Link,
   useFetcher,
   useLoaderData,
   useParams,
@@ -39,6 +41,9 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { usePermissions } from "~/hooks";
 import {
   assemblyInstructionValidator,
+  isAssemblyPlanRunning
+} from "~/modules/production/production.models";
+import {
   getAssemblyComponentMappings,
   getAssemblyInstruction,
   getAssemblyInstructionStepMaterials,
@@ -50,11 +55,10 @@ import {
   getAssemblyUnits,
   getFlattenedBomMaterials,
   getLatestAssemblyPlanJob,
-  isAssemblyPlanRunning,
-  toViewerStep,
+  isAssemblerServiceHealthy,
   upsertAssemblyInstruction
-} from "~/modules/production";
-import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
+} from "~/modules/production/production.service";
+import { toViewerStep } from "~/modules/production/production.utils";
 import AssemblyInstructionExplorer from "~/modules/production/ui/Assemblies/AssemblyInstructionExplorer";
 import AssemblyInstructionHeader, {
   AssemblyInstructionOverviewHero
@@ -64,6 +68,9 @@ import { SUB_ASSEMBLY_PARAM } from "~/modules/production/ui/Assemblies/AssemblyS
 import { ModelConvertProgress } from "~/modules/production/ui/Assemblies/ModelConvertProgress";
 import { useBuildOrientation } from "~/modules/production/ui/Assemblies/useBuildOrientation";
 import { useStepMotionEditor } from "~/modules/production/ui/Assemblies/useStepMotionEditor";
+import type { action as cancelJobAction } from "~/routes/x+/assembly+/$id.jobs.cancel";
+import type { action as convertModelAction } from "~/routes/x+/assembly+/$id.model.convert";
+import type { action as setComponentsAction } from "~/routes/x+/assembly+/$id.steps.components.$stepId";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
@@ -231,6 +238,13 @@ export default function AssemblyInstructionRoute() {
   // steps in rather than animating fallback paths the plan is about to replace.
   const isPlanning = isAssemblyPlanRunning(planJob);
 
+  // Steps name the model's node ids, so they cannot follow the part onto a
+  // new model (a re-push from CAD, a new upload): offer a fresh instruction.
+  const currentModelUploadId = instruction.item?.modelUploadId;
+  const isModelOutdated =
+    Boolean(currentModelUploadId) &&
+    currentModelUploadId !== instruction.modelUploadId;
+
   // null = the default below (the first row of the list).
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const [draftComponentNodeIds, setDraftComponentNodeIds] = useState<
@@ -282,7 +296,7 @@ export default function AssemblyInstructionRoute() {
   // Autosave the active step's components (Add/remove in the Details panel) via a
   // partial-update route, mirroring the motion-path autosave — never touching
   // the title/typed fields.
-  const componentsFetcher = useFetcher<{ success: boolean }>();
+  const componentsFetcher = useAction<typeof setComponentsAction>();
   const saveComponentNodeIds = useCallback(
     (stepId: string, componentNodeIds: string[]) => {
       const formData = new FormData();
@@ -624,8 +638,15 @@ export default function AssemblyInstructionRoute() {
     () => revalidator.revalidate(),
     isActivelyConverting ? 2000 : isAwaitingPickup ? 5000 : null
   );
-  const cancelPlanFetcher = useFetcher<{ success: boolean }>();
-  const retryFetcher = useFetcher<{}>();
+  const cancelPlanFetcher = useAction<typeof cancelJobAction>({
+    onSuccess: ({ data }) =>
+      toast.success(
+        data?.cancelled ? t`Job cancelled` : t`No running job to cancel`
+      )
+  });
+  const retryFetcher = useAction<typeof convertModelAction>({
+    onSuccess: () => toast.success(t`Model conversion started`)
+  });
 
   return (
     <PanelProvider key={id}>
@@ -664,6 +685,21 @@ export default function AssemblyInstructionRoute() {
                 <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full flex-col">
                   {isPhone ? <AssemblyInstructionOverviewHero /> : null}
                   <div className="relative min-h-0 w-full flex-1 bg-card">
+                    {isModelOutdated && instruction.itemId && (
+                      <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-lg">
+                        <span className="text-xs font-medium text-foreground">
+                          {t`The part has a newer model than this instruction.`}
+                        </span>
+                        {permissions.can("create", "production") && (
+                          <Link
+                            to={`${path.to.newAssemblyInstruction}?itemId=${instruction.itemId}`}
+                            className="whitespace-nowrap text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                          >
+                            {t`New instruction`}
+                          </Link>
+                        )}
+                      </div>
+                    )}
                     {glbPath && graphPath && isPlanning && (
                       <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-lg">
                         <Spinner className="h-3.5 w-3.5" />

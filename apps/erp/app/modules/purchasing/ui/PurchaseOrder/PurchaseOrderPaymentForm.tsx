@@ -27,7 +27,7 @@ import { usePermissions, useRouteData } from "~/hooks";
 import {
   isPurchaseOrderLocked,
   purchaseOrderPaymentValidator
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.models";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.payment";
 import { path } from "~/utils/path";
 

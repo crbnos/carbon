@@ -2,39 +2,30 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import type {
-  DocumentBlock,
-  DocumentSettings,
-  DocumentTheme
-} from "@carbon/documents/template";
 import {
   documentTemplateTypeSchema,
   getDocumentLabel,
   resolveTemplate,
   withBuiltInSections
 } from "@carbon/documents/template";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { DocumentTemplateEditor } from "~/components/DocumentTemplateEditor";
 import { usePermissions } from "~/hooks";
+import { documentTemplateValidator } from "~/modules/settings/settings.models";
 import {
-  documentTemplateValidator,
   getCompany,
   getCompanySettings,
   getDocumentSections,
   getDocumentTemplate,
   getTerms,
-  resolveSections,
-  upsertDocumentSection,
-  upsertDocumentTemplate
-} from "~/modules/settings";
-import { listPreviewEntities } from "~/modules/settings/documentPreview.server";
-import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
+  listPreviewEntities
+} from "~/modules/settings/settings.service";
+import { getCustomFieldsSchemas } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -137,84 +128,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
-
-  const validation = await validator(documentTemplateValidator).validate(
-    await request.formData()
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const {
-    documentType,
-    blocks,
-    theme,
-    settings,
-    headerSectionId,
-    footerSectionId,
-    headerConfig
-  } = validation.data;
-
-  // The logo/header layout is edited inline but lives on the (company-global)
-  // header section. Persist it onto that section first, preserving its current
-  // name/content, so the change applies wherever the header is referenced.
-  if (headerConfig && headerSectionId) {
-    const resolved = await resolveSections(client, companyId, [
-      headerSectionId
-    ]);
-    const header = resolved[headerSectionId];
-    const section = await upsertDocumentSection(client, {
-      id: headerSectionId,
-      companyId,
-      name: header?.name ?? "Default Header",
-      placement: "header",
-      content: (header?.content ?? { type: "doc", content: [] }) as JSONContent,
-      config: headerConfig as Record<string, unknown>,
-      createdBy: userId,
-      updatedBy: userId
-    });
-    if (section.error) {
-      return data(
-        { success: false },
-        await flash(request, error(section.error, "Failed to save header"))
-      );
-    }
-  }
-
-  const upsert = await upsertDocumentTemplate(client, {
-    companyId,
-    documentType,
-    // Validated at runtime by documentTemplateValidator; the form-data
-    // inferred type is looser than the schema output, so assert here.
-    blocks: blocks as DocumentBlock[],
-    theme: theme as DocumentTheme,
-    settings: settings as DocumentSettings,
-    headerSectionId: headerSectionId || null,
-    footerSectionId: footerSectionId || null,
-    createdBy: userId,
-    updatedBy: userId
-  });
-
-  if (upsert.error) {
-    return data(
-      { success: false },
-      await flash(
-        request,
-        error(upsert.error, "Failed to save document layout")
-      )
-    );
-  }
-
-  return data(
-    { success: true },
-    await flash(request, success("Saved document layout"))
-  );
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(documentTemplateValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.saveDocumentTemplate(input.data);
 }
 
 export default function DocumentTemplateRoute() {

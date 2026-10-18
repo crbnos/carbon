@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getPaymentTerms } from "~/modules/accounting";
+import { getPaymentTerms } from "~/modules/accounting/accounting.service";
 import { PaymentTermsTable } from "~/modules/accounting/ui/PaymentTerms";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -46,6 +46,7 @@ function services() {
     companyId: "co1",
     companyGroupId: "cg1",
     ownerId: "u1",
+    permissions: {},
     runId: "run1",
     workflowId: "wf1"
   });
@@ -100,7 +101,8 @@ describe("runAction routing", () => {
           client,
           companyId: "co1",
           companyGroupId: "cg1",
-          userId: "u1"
+          userId: "u1",
+          permissions: {}
         }
       })
     );

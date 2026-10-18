@@ -1,15 +1,37 @@
 name: Deploy Apps
 
-# Called by build-images.yml once this commit's carbon/erp and carbon/mes
-# images are pushed. Run by hand, it deploys the images of the commit it is
+# Called by build-images.yml once this commit's images are pushed: with
+# `apps` after carbon/erp and carbon/mes, with `assembler` after
+# carbon/assembler. Run by hand, it deploys the images of the commit it is
 # run on, which must already exist.
 on:
   workflow_call:
+    inputs:
+      apps:
+        type: boolean
+        default: false
+      assembler:
+        type: boolean
+        default: false
   workflow_dispatch:
+    inputs:
+      apps:
+        description: "Deploy ERP and MES"
+        type: boolean
+        default: true
+      assembler:
+        description: "Deploy the assembler"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write # the image role's public.ecr.aws login
 
 jobs:
   deploy:
     name: Deploy
+    if: inputs.apps
     runs-on: ubuntu-latest
     # One deploy at a time. A newer commit waiting replaces an older one that
     # had not started yet: it deploys the newer images anyway.
@@ -25,16 +47,16 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -57,3 +79,99 @@ jobs:
     needs: deploy
     uses: ./.github/workflows/inngest.yml
     secrets: inherit
+
+  # One leg per AWS account (prod and govcloud); each deploys only its own
+  # account's workspaces (DEPLOY_AWS_ACCOUNT_ID, read by ci/src/assembler.ts).
+  assembler:
+    name: Deploy assembler (${{ matrix.env.stage }})
+    if: inputs.assembler
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-assembler-${{ matrix.env.stage }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        env:
+          - stage: prod
+            access_key_id: ASSEMBLER_AWS_ACCESS_KEY_ID
+            secret_access_key: ASSEMBLER_AWS_SECRET_ACCESS_KEY
+            region: ASSEMBLER_AWS_REGION
+          - stage: govcloud
+            access_key_id: AWS_ACCESS_KEY_ID
+            secret_access_key: AWS_SECRET_ACCESS_KEY
+            region: AWS_REGION
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # build-images.yml pushes to vars.IMAGE_REGISTRY. An authenticated pull
+      # from public.ecr.aws counts against the account, not the runner's
+      # shared quota; without the login the pull stays anonymous.
+      - if: vars.IMAGE_AWS_REGION != ''
+        uses: aws-actions/configure-aws-credentials@v6
+        continue-on-error: true
+        with:
+          aws-region: ${{ vars.IMAGE_AWS_REGION }}
+          role-to-assume: ${{ vars.IMAGE_AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.IMAGE_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.IMAGE_AWS_SECRET_ACCESS_KEY }}
+      - if: vars.IMAGE_AWS_REGION != ''
+        uses: docker/login-action@v4
+        continue-on-error: true
+        with:
+          registry: public.ecr.aws
+        env:
+          AWS_REGION: us-east-1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          # Drops the image role's session token, which would otherwise ride
+          # along with these keys.
+          unset-current-credentials: true
+          aws-access-key-id: ${{ secrets[matrix.env.access_key_id] }}
+          aws-secret-access-key: ${{ secrets[matrix.env.secret_access_key] }}
+          aws-region: ${{ secrets[matrix.env.region] }}
+
+      - name: Resolve deploy account
+        run: echo "DEPLOY_AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> "$GITHUB_ENV"
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # A Lambda pulls its image from a private ECR repository in its own
+      # account, so copy the commit's image there. Pull and push rather than
+      # re-tag across registries: the copy stays one linux/amd64 manifest,
+      # the only shape Lambda accepts.
+      - name: Copy the image into this account
+        env:
+          FROM: ${{ vars.IMAGE_REGISTRY }}/carbon/assembler:${{ github.sha }}
+          TO: ${{ steps.ecr.outputs.registry }}/carbon/assembler:${{ github.sha }}
+        run: |
+          docker pull --platform linux/amd64 "$FROM"
+          docker tag "$FROM" "$TO"
+          docker push "$TO"
+
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install compatible Pulumi version
+        run: |
+          curl -fsSL https://get.pulumi.com | sh -s -- --version 3.212.0
+          echo "$HOME/.pulumi/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy
+        env:
+          STAGE: ${{ matrix.env.stage }}
+        run: pnpm --filter ci ci:assembler

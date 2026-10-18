@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useRuleViolations } from "@carbon/ee/rules";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -16,7 +17,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Hidden, Submit, TextArea } from "~/components/Form";
-import { inventoryAdjustmentValidator } from "~/modules/inventory";
+import { inventoryAdjustmentValidator } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
 type UnscrapModalProps = {
@@ -44,53 +45,67 @@ export function UnscrapModal({
   onClose
 }: UnscrapModalProps) {
   const { t } = useLingui();
+  // The adjustment route answers a blocking storage rule with its violations,
+  // not an error: the modal stays open until the unscrap lands, and a refusal
+  // is toasted.
+  const unscrap = useRuleViolations({
+    action: path.to.inventoryItemAdjustment(itemId),
+    onSuccess: onClose
+  });
 
   return (
-    <Modal open={open} onOpenChange={(v) => !v && onClose()}>
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.inventoryItemAdjustment(itemId)}
-          validator={inventoryAdjustmentValidator}
-          defaultValues={{
-            itemId,
-            trackedEntityId,
-            adjustmentType: "Unscrap",
-            quantity,
-            comment: ""
-          }}
-          onSubmit={onClose}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              {label ? <Trans>Unscrap {label}</Trans> : <Trans>Unscrap</Trans>}
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>
-                Restore this entity to available stock at the bin and cost it
-                was scrapped from.
-              </Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="itemId" />
-            <Hidden name="trackedEntityId" />
-            <Hidden name="adjustmentType" />
-            <Hidden name="quantity" />
-            <VStack spacing={4}>
-              <TextArea name="comment" label={t`Comment`} />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false}>
-              <Trans>Unscrap</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+    <>
+      <Modal open={open} onOpenChange={(v) => !v && onClose()}>
+        <ModalContent>
+          <ValidatedForm
+            method="post"
+            action={path.to.inventoryItemAdjustment(itemId)}
+            fetcher={unscrap.fetcher}
+            validator={inventoryAdjustmentValidator}
+            defaultValues={{
+              itemId,
+              trackedEntityId,
+              adjustmentType: "Unscrap",
+              quantity,
+              comment: ""
+            }}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                {label ? (
+                  <Trans>Unscrap {label}</Trans>
+                ) : (
+                  <Trans>Unscrap</Trans>
+                )}
+              </ModalTitle>
+              <ModalDescription>
+                <Trans>
+                  Restore this entity to available stock at the bin and cost it
+                  was scrapped from.
+                </Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <Hidden name="itemId" />
+              <Hidden name="trackedEntityId" />
+              <Hidden name="adjustmentType" />
+              <Hidden name="quantity" />
+              <VStack spacing={4}>
+                <TextArea name="comment" label={t`Comment`} />
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Submit withBlocker={false}>
+                <Trans>Unscrap</Trans>
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
+      <unscrap.ViolationModal />
+    </>
   );
 }

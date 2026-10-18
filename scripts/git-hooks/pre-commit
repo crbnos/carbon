@@ -23,8 +23,9 @@ if git diff --cached --name-only | grep -qE '\.(tsx?|jsx?)$|\.po$'; then
     fi
 fi
 
-# Regenerate MCP tools if any .service.ts file was modified
-if git diff --cached --name-only | grep -q '\.service\.ts$'; then
+# Regenerate MCP tools if a service file, or a module's .server.ts (where the
+# defineServiceFn operations and the router live), was modified
+if git diff --cached --name-only | grep -qE '\.service\.ts$|^apps/erp/app/modules/.*\.server\.ts$'; then
     if ! npx tsx scripts/generate-mcp.ts; then
         echo "✗ MCP tool metadata could not be regenerated. Nothing was staged."
         exit 1
@@ -67,7 +68,7 @@ fi
 # worse than none, since it reads as "nothing changed". The file set is the
 # //#generate:mcp inputs in turbo.json; keep the two in step.
 # Set CARBON_SKIP_MANIFEST_CHECK=1 to skip.
-if [ -z "$CARBON_SKIP_MANIFEST_CHECK" ] && git diff --cached --name-only | grep -qE '^(apps/erp/app/modules/.*\.ts|apps/erp/app/(types|utils)/.*|apps/erp/app/routes/api\+/mcp\+/lib/mcp-(blocked-tools|exposure)\.ts|packages/(account|api|database|documents|files|locale|logger|notifications|printing|utils)/src/.*|packages/database/supabase/functions/shared/.*|packages/database/supabase/migrations/.*|scripts/(generate-mcp|lib/.*)\.ts)$'; then
+if [ -z "$CARBON_SKIP_MANIFEST_CHECK" ] && git diff --cached --name-only | grep -qE '^(apps/erp/app/(modules|components/TreeView|services|types|utils)/.*|apps/erp/tsconfig\.json|packages/(account|api|auth|database|documents|ee|env|files|form|jobs|kv|lib|locale|logger|notifications|onboarding|planning|printing|react|stripe|utils)/src/.*|scripts/generate-mcp\.ts|scripts/lib/.*)$'; then
     echo "Checking the API operation manifest digest..."
     if ! pnpm --silent check:manifest; then
         echo ""

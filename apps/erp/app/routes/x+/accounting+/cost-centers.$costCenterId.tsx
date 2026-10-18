@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { costCenterValidator } from "~/modules/accounting/accounting.models";
 import {
-  costCenterValidator,
   getCostCenter,
   upsertCostCenter
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { CostCenterForm } from "~/modules/accounting/ui/CostCenters";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

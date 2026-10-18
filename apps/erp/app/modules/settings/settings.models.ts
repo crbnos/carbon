@@ -14,7 +14,7 @@ import { isValidTimeZone, labelSizes } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
-import { DataType } from "~/modules/shared";
+import { DataType } from "~/modules/shared/types";
 
 export const modulesType = [
   "Accounting",
@@ -86,6 +86,17 @@ export const apiKeyValidator = z.object({
       })
   )
 });
+
+/** An API key form's fields as saved: the form posts its scopes as one JSON string. */
+export function apiKeyFields({
+  scopes,
+  ...form
+}: z.output<typeof apiKeyValidator>) {
+  return {
+    ...form,
+    scopes: (scopes ? JSON.parse(scopes) : {}) as Record<string, string[]>
+  };
+}
 
 const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
 
@@ -243,6 +254,22 @@ export const digitalQuoteValidator = z.object({
     .optional(),
   digitalQuoteIncludesPurchaseOrders: zfd.checkbox()
 });
+
+/**
+ * A settings switch's form: `intent` names the switch and `enabled` is
+ * "true" or "false". Parses to the one field it saves, `{ [field]: boolean }`.
+ */
+export function settingsToggle<
+  const Intent extends string,
+  const Field extends string
+>(intent: Intent, field: Field) {
+  return z
+    .object({ intent: z.literal(intent), enabled: z.string().optional() })
+    .transform(
+      ({ enabled }) =>
+        ({ [field]: enabled === "true" }) as { [K in Field]: boolean }
+    );
+}
 
 export const jobCompletedValidator = z.object({
   inventoryJobCompletedNotificationGroup: z.array(z.string()).optional(),
@@ -557,7 +584,7 @@ export const workCenterDeviceUpsertValidator = z.object({
  * account — the journal syncer resolves provider account codes from the
  * mapping's stored externalCode, so the code must be persisted.
  */
-const accountMappingEntrySchema = z.object({
+export const accountMappingEntrySchema = z.object({
   accountId: z.string().min(1),
   externalId: z.string().min(1),
   externalCode: z.string().optional(),
@@ -691,7 +718,7 @@ export const syncEnabledValidator = z.object({
  * (dimension sync off). The action re-validates the slots against the
  * provider's declared targets via validateDimensionSlots before writing.
  */
-const dimensionSlotEntrySchema = z.object({
+export const dimensionSlotEntrySchema = z.object({
   dimensionId: z.string().min(1),
   target: z.string().min(1),
   autoCreate: z.boolean().optional()
@@ -734,7 +761,7 @@ export const dimensionValueMappingUpsertValidator = z.object({
   externalName: zfd.text(z.string().optional())
 });
 
-const dimensionValueMappingEntrySchema = z.object({
+export const dimensionValueMappingEntrySchema = z.object({
   dimensionId: z.string().min(1),
   valueId: z.string().min(1),
   externalId: z.string().min(1),
@@ -797,6 +824,18 @@ const billingAddress = {
 export const accountsPayableBillingAddressValidator = z.object(billingAddress);
 export const accountsReceivableBillingAddressValidator =
   z.object(billingAddress);
+
+/** A billing address form's fields as saved: a blank field clears it. */
+export function billingAddressFields(
+  form: z.output<typeof accountsPayableBillingAddressValidator>
+) {
+  return Object.fromEntries(
+    Object.keys(billingAddress).map((key) => [
+      key,
+      form[key as keyof typeof form] ?? null
+    ])
+  ) as { [K in keyof typeof billingAddress]: string | null };
+}
 
 export const timeCardSettingsValidator = z.object({
   timeCardEnabled: zfd.checkbox()

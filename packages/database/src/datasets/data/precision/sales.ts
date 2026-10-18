@@ -446,7 +446,7 @@ export const STATUS_ORDERS: SalesStatusOrderSpec[] = [
 ];
 
 // Released order — "To Ship and Invoice". The status is written by the app
-// (releaseSalesOrder), not derived by a trigger, but it must still agree with
+// (confirmSalesOrder), not derived by a trigger, but it must still agree with
 // what getSalesOrderStatus would compute: nothing sent and nothing invoiced.
 export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
   {

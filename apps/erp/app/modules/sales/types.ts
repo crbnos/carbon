@@ -5,7 +5,7 @@
 import type { Database } from "@carbon/database";
 import type { z } from "zod";
 import type { jobStatus } from "../production/production.models";
-import type { QuantityEffect } from "../shared";
+import type { QuantityEffect } from "../shared/types";
 import type {
   getCustomer,
   getCustomerBankAccounts,
@@ -19,9 +19,7 @@ import type {
   getPricingRule,
   getPricingRules,
   getQuoteLinePrices,
-  getQuoteLines,
   getQuoteMakeMethod,
-  getQuoteMaterials,
   getQuoteMethodTrees,
   getQuoteOperation,
   getQuotePayment,
@@ -37,6 +35,7 @@ import type {
   priceSourceTypes
 } from "./sales.service";
 import type {
+  getQuoteLines,
   pricingRuleConfigurationPriceValidator,
   QuoteLinePriceSource
 } from "./sales.utils";
@@ -234,10 +233,6 @@ export type QuotationListItem = NonNullable<
 
 export type QuotationLine = NonNullable<
   Awaited<ReturnType<typeof getQuoteLines>>["data"]
->[number];
-
-export type QuotationMaterial = NonNullable<
-  Awaited<ReturnType<typeof getQuoteMaterials>>["data"]
 >[number];
 
 export type QuotationOperation = NonNullable<

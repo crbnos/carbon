@@ -79,7 +79,9 @@ secret), `SUPABASE_JWT_SECRET` (optional), plus
 `INNGEST_SERVE_HOST`, `INNGEST_TLS_HOST`.
 
 **Auth / session** — `SESSION_SECRET` (required; also signs the short-lived,
-single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`), `AUTH_PROVIDERS`
+single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`),
+`AUTH_COOKIE_SUFFIX` (optional; suffixes the auth cookie names when another deployment
+shares `DOMAIN` — EU sets `eu`, see `authentication-system.md`), `AUTH_PROVIDERS`
 (`email,google,azure,passkey,sso`; gate via `isAuthProviderEnabled`),
 `CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`. `IS_VERCEL` reads
 Vercel's own `VERCEL=1`. `BOT_PROTECTION` (`botid` | `turnstile`, unset = BotID for
@@ -126,8 +128,12 @@ account notifications loader and the app shell loader (`pushPublicKey`), not
 `getBrowserEnv()` for the authorize URL; `RAMP_CLIENT_SECRET`, server-only for code
 exchange/token refresh), Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
 `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`, `SLACK_STATE_SECRET`,
-`SLACK_OAUTH_REDIRECT_URL`), OnShape (`ONSHAPE_CLIENT_ID/SECRET`,
-`ONSHAPE_OAUTH_REDIRECT_URL`), Xero, QuickBooks, Jira (each `*_CLIENT_ID/SECRET`,
+`SLACK_OAUTH_REDIRECT_URL`), Onshape (two Onshape apps, no shared variable:
+`ONSHAPE_CLIENT_ID/SECRET` + `ONSHAPE_OAUTH_REDIRECT_URL` for the `onshape` sync
+integration, `ONSHAPE_V2_CLIENT_ID/SECRET` + `ONSHAPE_V2_OAUTH_REDIRECT_URL` for the
+`onshape-v2` panel. `crbn up` writes `ONSHAPE_V2_OAUTH_REDIRECT_URL`
+into `.env.local` from the stack's `ERP_URL`, so each worktree host must be registered
+on the panel's Onshape app, or pinned in `.env` with `#force`), Xero, QuickBooks, Jira (each `*_CLIENT_ID/SECRET`,
 plus webhook/redirect/state secrets), `EXCHANGE_RATES_API_KEY`,
 `GOOGLE_PLACES_API_KEY`, AI keys `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`.
 
@@ -190,6 +196,13 @@ deprecated alias), `APP_ENV` (`production | preview | development`; alias
 `app.carbon.ms` based on `CONTROLLED_ENVIRONMENT`. In preview, derive from
 `VERCEL_URL`. In dev, honor the `ERP_URL`/`MES_URL` that `crbn up` wrote into
 `.env.local` (portless `*.dev` hostnames), else `localhost:3000`/`3001`.
+
+MES posts to the ERP over HTTP (`erpPostingUrl`, `apps/mes/app/services/erp.ts`)
+and does not use `getAppUrl()` for it: on a preview that is MES itself. It takes
+`ERP_URL`; without it, `localhost:3000` in local dev and `app.carbon.ms` /
+`itar.carbon.ms` on Carbon Cloud production (`CARBON_EDITION=cloud`, not a
+preview). Anywhere else a posting fails with a configuration error, so a
+self-hosted or preview MES needs `ERP_URL`.
 
 ## Gotchas
 

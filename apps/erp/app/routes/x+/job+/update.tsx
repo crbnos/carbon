@@ -2,343 +2,69 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { scrapAllowance, unchecked } from "@carbon/utils";
+import { carbon } from "@carbon/api/carbon.server";
+import { CarbonError, toResult } from "@carbon/api/service-fn.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  calculateJobPriority,
-  isJobLocked,
-  makeToAssetItemError,
-  recalculateJobRequirements,
-  upsertJobMethod
-} from "~/modules/production";
-import { isSalesOrderClosed } from "~/modules/sales";
-import { getDatabaseClient } from "~/services/database.server";
-import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import type { deadlineTypes } from "~/modules/production/production.models";
 
-const logger = getLogger("erp", "update");
+// The jobs table's bulk actions and the job properties panel: one field of
+// one or more jobs per post.
+const updateForm = z.object({
+  ids: zfd.repeatableOfType(z.string()),
+  field: z.enum([
+    "delete",
+    "itemId",
+    "deadlineType",
+    "dueDate",
+    "quantity",
+    "scrapQuantity",
+    "salesOrderId",
+    "salesOrderLineId",
+    "customerId",
+    "jobId",
+    "locationId",
+    "storageUnitId",
+    "startDate",
+    "unitOfMeasureCode"
+  ]),
+  value: zfd.text(z.string().optional())
+});
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
-  });
+const invalid = (message: string) =>
+  toResult({ data: null, error: new CarbonError("validation", message) });
 
-  const formData = await request.formData();
-  const ids = formData.getAll("ids");
-  const field = formData.get("field");
-  const value = formData.get("value");
-
-  if (typeof field !== "string") {
-    return { error: { message: "Invalid form data" }, data: null };
-  }
-
-  // Per-ID locked check
-  const jobs = await client
-    .from("job")
-    .select("id, status, quantity, fixedAssetClassId, fixedAssetId")
-    .in("id", ids as string[]);
-
-  const lockedError = requireUnlockedBulk({
-    statuses: (jobs.data ?? []).map((j) => j.status),
-    checkFn: isJobLocked,
-    message: "Cannot modify a locked job. Reopen it first."
-  });
-  if (lockedError) return lockedError;
-
-  const serviceRole = await getCarbonServiceRole();
-
-  if (field === "delete") {
-    return await client
-      .from("job")
-      .delete()
-      .in("id", ids as string[])
-      .eq("companyId", companyId);
-  }
-  if (typeof value !== "string" && value !== null) {
-    return { error: { message: "Invalid form data" }, data: null };
-  }
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(updateForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { ids, field, value } = input.data;
+  const job = (await carbon(args.request)).production;
 
   switch (field) {
+    case "delete":
+      return job.deleteJobs({ ids });
     case "itemId":
-      if (!value) {
-        return { error: { message: "Invalid form data" }, data: null };
-      }
-
-      const [item, manufacturing] = await Promise.all([
-        client
-          .from("item")
-          .select(
-            "name, readableIdWithRevision, defaultMethodType, unitOfMeasureCode, modelUploadId, itemTrackingType"
-          )
-          .eq("id", value)
-          .eq("companyId", companyId)
-          .single(),
-        client
-          .from("itemReplenishment")
-          .select("lotSize, scrapPercentage")
-          .eq("itemId", value)
-          .single()
-      ]);
-
-      // A Make to Asset job keeps the item rule its form and release apply.
-      const lotSize = manufacturing?.data?.lotSize ?? 0;
-      for (const job of jobs.data ?? []) {
-        const itemError = makeToAssetItemError({
-          ...job,
-          itemTrackingType: item.data?.itemTrackingType,
-          quantity: lotSize === 0 ? job.quantity : lotSize
-        });
-        if (itemError) {
-          return { error: { message: itemError }, data: null };
-        }
-      }
-
-      const [itemUpdate, makeMethodUpdate] = await Promise.all([
-        client
-          .from("job")
-          .update({
-            itemId: value,
-            unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
-            quantity:
-              (manufacturing?.data?.lotSize ?? 0) === 0
-                ? undefined
-                : (manufacturing?.data?.lotSize ?? 0),
-            modelUploadId: item.data?.modelUploadId ?? null,
-            scrapQuantity: scrapAllowance(
-              manufacturing?.data?.lotSize ?? 0,
-              manufacturing?.data?.scrapPercentage ?? 0
-            ),
-            updatedBy: userId,
-            updatedAt: new Date().toISOString()
-          })
-          .in("id", ids as string[])
-          .eq("companyId", companyId),
-
-        client
-          .from("jobMakeMethod")
-          .update({
-            itemId: value,
-            updatedBy: userId,
-            updatedAt: new Date().toISOString()
-          })
-          .in("jobId", ids as string[])
-          .is("parentMaterialId", null)
-          .eq("companyId", companyId)
-      ]);
-
-      if (itemUpdate.error) {
-        return itemUpdate;
-      }
-
-      if (makeMethodUpdate.error) {
-        return makeMethodUpdate;
-      }
-
-      for await (const id of ids) {
-        const upsertMethod = await upsertJobMethod(
-          serviceRole,
-          getDatabaseClient(),
-          "itemToJob",
-          {
-            sourceId: value,
-            targetId: id as string,
-            companyId,
-            userId
-          }
-        );
-
-        if (upsertMethod.error) {
-          upsertMethod.error;
-        }
-
-        await trigger("recalculate", {
-          type: "jobRequirements",
-          id: id as string,
-          companyId,
-          userId
-        });
-      }
-
-      return itemUpdate;
-    case "deadlineType":
+      if (!value) return invalid("Invalid form data");
+      return job.setJobItem({ ids, itemId: value });
     case "dueDate":
-      // When dueDate or deadlineType changes, recalculate priority
-      for await (const id of ids) {
-        // Get the current job to access its data
-        const currentJob = await client
-          .from("job")
-          .select("dueDate, deadlineType, locationId")
-          .eq("id", id as string)
-          .eq("companyId", companyId)
-          .single();
-
-        if (currentJob.error || !currentJob.data) {
-          return currentJob;
-        }
-
-        // Determine the new dueDate and deadlineType after this update
-        const newDueDate =
-          field === "dueDate" ? (value ?? null) : currentJob.data.dueDate;
-        const newDeadlineType =
-          field === "deadlineType" ? value : currentJob.data.deadlineType;
-
-        if (!newDeadlineType) {
-          return {
-            error: { message: "Invalid deadline type" },
-            data: null
-          };
-        }
-
-        // Calculate new priority
-        const priority = await calculateJobPriority(client, {
-          jobId: id as string,
-          dueDate: newDueDate,
-          deadlineType: newDeadlineType as
-            | "ASAP"
-            | "Hard Deadline"
-            | "Soft Deadline"
-            | "No Deadline",
-          companyId,
-          locationId: currentJob.data.locationId
-        });
-
-        // Update the job with new field value and priority
-        const updateResult = await client
-          .from("job")
-          .update(
-            unchecked({
-              [field]: value ? value : null,
-              priority,
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-          )
-          .eq("id", id as string)
-          .eq("companyId", companyId);
-
-        if (updateResult.error) {
-          return updateResult;
-        }
-      }
-
-      return { error: null, data: null };
-    case "customerId":
-    case "jobId":
-    case "locationId":
-    case "storageUnitId":
-    case "startDate":
-    case "unitOfMeasureCode":
-      return await client
-        .from("job")
-        .update(
-          unchecked({
-            [field]: value ? value : null,
-            updatedBy: userId,
-            updatedAt: new Date().toISOString()
-          })
-        )
-        .in("id", ids as string[])
-        .eq("companyId", companyId);
+      return job.setJobDeadline({ ids, dueDate: value ?? null });
+    case "deadlineType":
+      return job.setJobDeadline({
+        ids,
+        deadlineType: value as (typeof deadlineTypes)[number]
+      });
     case "quantity":
     case "scrapQuantity":
-      const quantityUpdate = await client
-        .from("job")
-        .update(
-          unchecked({
-            [field]: value ? value : null,
-            updatedBy: userId,
-            updatedAt: new Date().toISOString()
-          })
-        )
-        .in("id", ids as string[])
-        .eq("companyId", companyId);
-
-      if (quantityUpdate.error) {
-        return quantityUpdate;
-      }
-
-      for await (const id of ids) {
-        const recalculate = await recalculateJobRequirements(
-          serviceRole,
-          getDatabaseClient(),
-          {
-            id: id as string,
-            companyId,
-            userId
-          }
-        );
-        if (recalculate.error) {
-          logger.error(recalculate.error);
-          return recalculate;
-        }
-      }
-
-      return quantityUpdate;
+      return job.setJobQuantity({ ids, [field]: Number(value) });
     case "salesOrderId":
+      // Linking goes through the line; the order alone can only be cleared.
+      if (value) return invalid(`Invalid value: ${value} for field: ${field}`);
+      return job.setJobSalesOrderLine({ ids, salesOrderLineId: null });
     case "salesOrderLineId":
-      if (!value) {
-        // Unlink: clear the sales order + line (customerId is left as-is).
-        return await client
-          .from("job")
-          .update({
-            salesOrderId: null,
-            salesOrderLineId: null,
-            updatedBy: userId,
-            updatedAt: new Date().toISOString()
-          })
-          .in("id", ids as string[])
-          .eq("companyId", companyId);
-      }
-
-      // Linking is done via the line — resolve its order + customer from it.
-      if (field !== "salesOrderLineId") {
-        return {
-          error: { message: `Invalid value: ${value} for field: ${field}` },
-          data: null
-        };
-      }
-
-      const salesOrderLine = await client
-        .from("salesOrderLine")
-        .select("id, salesOrderId, salesOrder(customerId, status)")
-        .eq("id", value)
-        .eq("companyId", companyId)
-        .single();
-
-      if (salesOrderLine.error || !salesOrderLine.data) {
-        return {
-          error: { message: "Sales order line not found" },
-          data: null
-        };
-      }
-
-      if (isSalesOrderClosed(salesOrderLine.data.salesOrder?.status)) {
-        return {
-          error: {
-            message: "Cannot link a job to a completed or cancelled sales order"
-          },
-          data: null
-        };
-      }
-
-      return await client
-        .from("job")
-        .update({
-          salesOrderId: salesOrderLine.data.salesOrderId,
-          salesOrderLineId: salesOrderLine.data.id,
-          customerId: salesOrderLine.data.salesOrder?.customerId ?? null,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .in("id", ids as string[])
-        .eq("companyId", companyId);
+      return job.setJobSalesOrderLine({ ids, salesOrderLineId: value ?? null });
     default:
-      return {
-        error: { message: `Invalid field: ${field}` },
-        data: null
-      };
+      return job.setJobFields({ ids, [field]: value ?? null });
   }
 }

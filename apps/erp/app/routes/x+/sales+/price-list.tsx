@@ -7,7 +7,10 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getBaseCatalog, resolvePriceList } from "~/modules/sales";
+import {
+  getBaseCatalog,
+  resolvePriceList
+} from "~/modules/sales/sales.service";
 import PriceListTable from "~/modules/sales/ui/Pricing/PriceOverridesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

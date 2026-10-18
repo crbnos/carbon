@@ -210,20 +210,21 @@ describe("Rillet revenue recognition native sales components", () => {
       ).size
     ).toBe(5);
   });
-  it.each([
-    0, 3
-  ])("uses %i decimal serialization for document net/native tax", (decimals) => {
-    const source = charges();
-    source.currencyDecimalPlaces = decimals;
-    const payload = mapSalesInvoiceToRilletInvoice(mapArguments(source));
-    expect(payload.tax_amount?.amount).toBe(decimals === 0 ? "10" : "10.400");
-    // Merchandise converts to exactly 80 at rate 0.8, so largest-remainder
-    // leaves it alone; the JPY rounding unit goes to the non-taxable add-on,
-    // whose 2.4 is the only component carrying a fractional remainder.
-    expect(payload.items[0]?.total_amount.amount).toBe(
-      decimals === 0 ? "80" : "80.000"
-    );
-  });
+  it.each([0, 3])(
+    "uses %i decimal serialization for document net/native tax",
+    (decimals) => {
+      const source = charges();
+      source.currencyDecimalPlaces = decimals;
+      const payload = mapSalesInvoiceToRilletInvoice(mapArguments(source));
+      expect(payload.tax_amount?.amount).toBe(decimals === 0 ? "10" : "10.400");
+      // Merchandise converts to exactly 80 at rate 0.8, so largest-remainder
+      // leaves it alone; the JPY rounding unit goes to the non-taxable add-on,
+      // whose 2.4 is the only component carrying a fractional remainder.
+      expect(payload.items[0]?.total_amount.amount).toBe(
+        decimals === 0 ? "80" : "80.000"
+      );
+    }
+  );
   it("does not need an item on a merchandise line, and never falls back to the shipping product", () => {
     // A merchandise line used to REQUIRE `itemId` because it resolved a
     // per-item Rillet product. It no longer does — the synthetic sales product
@@ -350,30 +351,30 @@ describe("Rillet actual invoice preflight", () => {
     expect(test.ensureShippingProduct).not.toHaveBeenCalled();
     expect(test.provider.createInvoice).not.toHaveBeenCalled();
   });
-  it.each([
-    "assetDisposal",
-    "missingSalesAccount"
-  ] as const)("refuses %s before the CUSTOMER is pushed to Rillet", async (option) => {
-    // Both refusals are PURE — they read the document and the local invoice
-    // only. Running them after `ensureDependencySynced("customer", …)` creates
-    // a Rillet counterparty in the customer's books for an invoice Rillet will
-    // never receive. Xero already ordered it this way; QBO had the same defect
-    // and was fixed in the same change as this.
-    const source = charges();
-    if (option === "assetDisposal") {
-      source.lines[0]!.invoiceLineType = "Fixed Asset";
-    } else {
-      source.salesRevenueAccountId = null;
-    }
-    const test = setupInvoice();
+  it.each(["assetDisposal", "missingSalesAccount"] as const)(
+    "refuses %s before the CUSTOMER is pushed to Rillet",
+    async (option) => {
+      // Both refusals are PURE — they read the document and the local invoice
+      // only. Running them after `ensureDependencySynced("customer", …)` creates
+      // a Rillet counterparty in the customer's books for an invoice Rillet will
+      // never receive. Xero already ordered it this way; QBO had the same defect
+      // and was fixed in the same change as this.
+      const source = charges();
+      if (option === "assetDisposal") {
+        source.lines[0]!.invoiceLineType = "Fixed Asset";
+      } else {
+        source.salesRevenueAccountId = null;
+      }
+      const test = setupInvoice();
 
-    await expect(test.map(source)).rejects.toMatchObject({
-      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
-    });
-    expect(test.ensureDependencySynced).not.toHaveBeenCalled();
-    expect(test.ensureSalesProduct).not.toHaveBeenCalled();
-    expect(test.provider.createInvoice).not.toHaveBeenCalled();
-  });
+      await expect(test.map(source)).rejects.toMatchObject({
+        failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+      });
+      expect(test.ensureDependencySynced).not.toHaveBeenCalled();
+      expect(test.ensureSalesProduct).not.toHaveBeenCalled();
+      expect(test.provider.createInvoice).not.toHaveBeenCalled();
+    }
+  );
   it("provisions ONE sales product for the whole invoice, whatever the items", async () => {
     // The point of the change: three merchandise lines, one product call.
     const test = setupInvoice();

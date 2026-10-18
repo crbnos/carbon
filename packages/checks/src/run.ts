@@ -17,6 +17,10 @@ import {
   findUnsyncedDocumentSequences
 } from "./conformance/document-sequence-synced";
 import { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
+import {
+  FUNCTION_REDEFINITION_KEEPS_CHANGES,
+  findDroppedFunctionChanges
+} from "./conformance/function-redefinition-keeps-changes";
 import { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 import { journalStatusFilter } from "./conformance/journal-status-filter";
 import { moduleShape } from "./conformance/module-shape";
@@ -49,24 +53,36 @@ import { noRawRedirect } from "./conformance/no-raw-redirect";
 import { noRawRevalidator } from "./conformance/no-raw-revalidator";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
+import { noServerCodeInClient } from "./conformance/no-server-code-in-client";
 import { noStateCopyOfLoaderData } from "./conformance/no-state-copy-of-loader-data";
 import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
-import { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
+import { routeActionShape } from "./conformance/route-action-shape";
+import { serviceFnFile } from "./conformance/service-fn-file";
+import {
+  findUndeclaredSideEffectImports,
+  SIDE_EFFECT_IMPORT_DECLARED
+} from "./conformance/side-effect-import-declared";
 import { spdxLicenseHeader } from "./conformance/spdx-license-header";
+import {
+  findStampColumnMismatches,
+  STAMP_MATCHES_COLUMNS
+} from "./conformance/stamp-matches-columns";
 import { loadDbTableColumns } from "./sources/db-columns";
 import { loadDocumentSequenceSources } from "./sources/document-sequences";
-import {
-  loadEdgeFunctions,
-  loadServerFunctions
-} from "./sources/edge-functions";
+import { loadEdgeFunctions } from "./sources/edge-functions";
 import { loadLicenseFiles } from "./sources/license-files";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
-import { loadModules, modulesDir } from "./sources/modules";
+import {
+  loadModuleServerFiles,
+  loadModules,
+  modulesDir
+} from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
+import { loadSideEffectPackages } from "./sources/side-effect-packages";
 import {
   loadTypescriptFiles,
   REQUEST_HANDLING_ROOTS,
@@ -85,7 +101,8 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
 /** Checks that run over server-side TS, not SQL migrations. */
 export const SERVER_CHECKS: ConformanceCheck[] = [
   noLocalTimezone,
-  noZeroConcurrency
+  noZeroConcurrency,
+  routeActionShape
 ];
 
 /** Checks that run over ALL app + shared-package TS (client and server). */
@@ -93,6 +110,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noRawRounding,
   noInlineFractionDigits,
   noDbClientInService,
+  noServerCodeInClient,
+  serviceFnFile,
   noDefaultOnEffects,
   noUnroundedTrackedQuantity,
   noIntegrationIdBranching,
@@ -107,9 +126,6 @@ export const TS_CHECKS: ConformanceCheck[] = [
 export const EDGE_FUNCTION_CHECKS: ConformanceCheck[] = [
   edgeFunctionAuthorizesCaller
 ];
-
-/** Checks that run once per `@carbon/server-functions` entry point. */
-export const SERVER_FN_CHECKS: ConformanceCheck[] = [serverFnAuthorizesCaller];
 
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];
 
@@ -193,13 +209,25 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       indexRedirectBeforeLoaders
     ]),
     ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
-    ...scanAll(loadServerFunctions(root), SERVER_FN_CHECKS),
     ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader]),
     ...findDuplicatedAppFiles(loadTypescriptFiles(root, SHARED_APP_DIRS)).map(
       (violation) => ({ checkId: NO_DUPLICATED_APP_FILE, violation })
     ),
     ...findUnsyncedDocumentSequences(loadDocumentSequenceSources(root)).map(
       (violation) => ({ checkId: DOCUMENT_SEQUENCE_SYNCED, violation })
+    ),
+    ...findDroppedFunctionChanges(loadSqlFiles(migrationsDir(root))).map(
+      (violation) => ({
+        checkId: FUNCTION_REDEFINITION_KEEPS_CHANGES,
+        violation
+      })
+    ),
+    ...findStampColumnMismatches(
+      loadModuleServerFiles(root),
+      loadDbTableColumns(root)
+    ).map((violation) => ({ checkId: STAMP_MATCHES_COLUMNS, violation })),
+    ...findUndeclaredSideEffectImports(loadSideEffectPackages(root)).map(
+      (violation) => ({ checkId: SIDE_EFFECT_IMPORT_DECLARED, violation })
     )
   ];
 }

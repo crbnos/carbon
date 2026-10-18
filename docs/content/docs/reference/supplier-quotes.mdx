@@ -9,7 +9,7 @@ Each RFQ exchange stores one quote per supplier. You can compare the responses a
 
 ## Where a quote comes from
 
-Most quotes are the response half of an RFQ. You send a purchasing RFQ to several suppliers, and each supplier's reply becomes its own supplier quote, all hanging off the same request. A quote can also be entered directly, without a preceding RFQ, when you already have pricing to record.
+Most quotes are the response half of an RFQ. You send a purchasing RFQ to several suppliers, and each supplier's reply becomes its own supplier quote, all hanging off the same request. The RFQ email carries the files attached to the RFQ and its lines, plus each part's original CAD file (the file you uploaded or pushed from CAD). Models go in as attachments while the email stays under 25 MB; the rest are download links in the email that work for 7 days. A quote can also be entered directly, without a preceding RFQ, when you already have pricing to record.
 
 Either way the quote lives under a **supplier interaction**, the umbrella record that ties this supplier's quote, RFQ, and any resulting purchase order together so you can trace the whole exchange in one place.
 
@@ -83,7 +83,7 @@ Finalizing with the notification method set to `Email` but no supplier contact s
 Your company requires supplier approval, and this supplier's status isn't `Active`. Approve the supplier (set them to Active) before converting the quote, or the Convert to Order action stays blocked.
 
 ### "Failed to convert quote to order"
-The convert server function returned an error. Common underlying causes: the quote or its lines were not found, or required supplier payment/shipping records are missing. Confirm the quote has lines and the supplier's payment and shipping terms are set, then retry.
+The conversion returned an error. Common underlying causes: the quote or its lines were not found, or required supplier payment/shipping records are missing. Confirm the quote has lines and the supplier's payment and shipping terms are set, then retry.
 
 ### Why is the quote read-only / why can't I edit lines?
 A supplier quote is editable only while its status is `Draft`. Any other status (`Active`, `Expired`, `Declined`, `Cancelled`) locks it. Record revised pricing on a fresh quote rather than editing a finalized one.

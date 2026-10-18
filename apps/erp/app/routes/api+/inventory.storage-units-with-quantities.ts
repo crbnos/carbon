@@ -5,8 +5,8 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
-import { getStorageUnitsListForLocation } from "~/modules/inventory";
-import { getItemStorageUnitQuantities } from "~/modules/items/items.service";
+import { getStorageUnitsListForLocation } from "~/modules/inventory/inventory.service";
+import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

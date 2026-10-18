@@ -12,6 +12,7 @@ import {
 } from "@carbon/logger/tracing.server";
 import { serve } from "inngest/remix";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { scopesFromPermissions } from "./v1+/lib/base.server";
 import { callOperation } from "./v1+/lib/call.server";
 
 const logger = getLogger("erp", "inngest");
@@ -39,10 +40,18 @@ const functionIds = new Set(
 let dispatchWired = false;
 function wireWorkflowDispatch() {
   if (dispatchWired) return;
-  // A running workflow acts as its already-authorized owner; the per-operation
-  // scope gate applies to API keys only.
-  setWorkflowDispatch((name, context, args) =>
-    callOperation(name, { ...context, authKind: "session", scopes: {} }, args)
+  // A running workflow acts as its owner, so the operation's permission is
+  // checked against the owner's permissions, read for this run.
+  setWorkflowDispatch((name, { permissions, ...context }, args) =>
+    callOperation(
+      name,
+      {
+        ...context,
+        authKind: "session",
+        scopes: scopesFromPermissions(permissions, context.companyId)
+      },
+      args
+    )
   );
   dispatchWired = true;
 }

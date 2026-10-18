@@ -34,7 +34,7 @@ describe("noRawRevalidator", () => {
     expect(
       scan(
         `import { useRevalidator as useRouterRevalidator } from "react-router";\n`,
-        "packages/query/src/useRevalidator.ts"
+        "packages/react/src/hooks/useRevalidator.ts"
       )
     ).toEqual([]);
   });

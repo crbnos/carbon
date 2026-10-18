@@ -10,7 +10,7 @@ paths:
   - "apps/mes/app/routes/x+/inspection*.tsx"
   - "packages/database/src/quality.ts"
   - "packages/database/supabase/migrations/*inspection*.sql"
-  - "packages/server-functions/src/post-receipt/index.ts"
+  - "apps/erp/app/modules/inventory/inventory.service.ts"
 ---
 
 # Inspection System
@@ -176,9 +176,9 @@ RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/c
   station is its operation's `workCenterId`; **all receipts are one station**.
   No Gauge column on the no-document "Overall result" row.
 
-## Receipt → inspection flow (`post-receipt/index.ts`, server function)
+## Receipt → inspection flow (`postReceipt`, `inventory.service.ts`)
 
-`packages/server-functions/src/post-receipt/index.ts`:
+`apps/erp/app/modules/inventory/inventory.service.ts`:
 1. Loads items (`id, itemTrackingType, replenishmentSystem`), company `samplingStandard`,
    Receipt-usage `itemInspectionDocumentAssignment` rows (`assignmentByItemId`), and the
    assigned documents' `inspectionFeature` rows + default sampling columns.
@@ -295,7 +295,7 @@ discrete entity per sample; non-serial (Batch/Inventory/Non-Inventory) record pa
 status to flip, so a Reject posts a compensating write-off instead (see disposition).
 
 **Reject / disposition GL posting.** A non-tracked `Inventory` reject and every NCR disposition
-route their inventory value through the **`post-nonconformance` server function** (`itemLedger` +
+route their inventory value through the **`post-nonconformance` posting** (`postNonconformance`, `quality.service.ts`: `itemLedger` +
 `costLedger` relief + a `journal` offset to `accountDefault.scrapAccount` for every company,
 Provisional before the accounting cutover; idempotent per `(documentType, documentId)`). The reject route
 (`$id.reject.tsx`) invokes it with the lot write-off (`documentType 'Inbound Inspection'`,
@@ -342,9 +342,11 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 - **Server** — the transactional engine lives in **`@carbon/database/quality`**
   (`packages/database/src/quality.ts`; moved 2026-07-26 so ERP and MES run one
   engine). Every function takes a `Kysely<KyselyDatabase>` first param; ERP's
-  `quality.server.ts` curries `getDatabaseClient()` into those engine calls, and
+  `quality.service.ts` wraps those engine calls with the caller's `db` (a
+  route's `getDatabaseClient()`, a service function's `ctx.asSystem.pg`), and
   also holds the plan editor's server-only helpers (legacy save-payload
-  translation, the balloon-region vision call). `packages/database/src/sampling.ts`
+  translation `translateLegacyInspectionSavePayload`, the balloon-region vision
+  call `runInspectionBalloonRegionVisionAnalysis`). `packages/database/src/sampling.ts`
   is the pure resolver; the engine and `post-receipt` both consume it, so they share ONE resolver copy
   (ERP's `samplingStandards.ts` client copy remains for UI previews).
   - **Closed guards + linked-sample locks (2026-07-27):** all three terminal
@@ -385,8 +387,8 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     predicate against the committed terminal status, and matches nothing. ERP
     receipt lots do NOT pass it, preserving re-disposition (write-off retry)
     semantics.
-  - NCR auto-creation lives in the **reject route** (`x+/inspection+/$id.reject.tsx`),
-    optional via `createNcr`, linking through `nonConformanceInspection`; the description
+  - NCR auto-creation lives in the **`rejectInspection` operation** (`quality.server.ts`,
+    called by `x+/inspection+/$id.reject.tsx`), optional via `createNcr`, linking through `nonConformanceInspection`; the description
     includes a "Failed features" block built from the lot's measurements.
 - **Service** `quality.service.ts`: `getInspections` (list), `getInspection`,
   `getInspectionTrackedEntities`, `getInspectionSamplingPlans` (embeds

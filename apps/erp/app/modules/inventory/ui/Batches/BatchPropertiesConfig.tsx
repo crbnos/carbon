@@ -81,11 +81,7 @@ export default function BatchPropertiesConfig({
 
   const submit = useSubmit();
   const fetcher = useAction<typeof batchPropertyAction>({
-    onError: (data) => {
-      if (data?.success === false) {
-        toast.error(t`Failed to update batch property`);
-      }
-    }
+    onError: () => toast.error(t`Failed to update batch property`)
   });
 
   const propertiesById = new Map<string, BatchProperty>(

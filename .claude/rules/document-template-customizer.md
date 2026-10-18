@@ -70,7 +70,7 @@ with a live-record preview combobox), `context.tsx` (state/actions), plus
   `settings.models.ts`) and calls `upsertDocumentTemplate`.
 - `x+/templates+/$type.preview.tsx` — POST renders the draft layout via
   `DOCUMENT_PDFS` (optionally against a real record via `previewId`;
-  `documentPreview.server.ts`).
+  `buildPreviewProps` in `settings.service.ts`).
 - File routes `file+/<doc>+/$id[.]pdf.tsx` — canonical consume path:
   `getDocumentTemplate` → `toDocumentTemplate` → `resolveTemplate` →
   `resolveSections(collectSectionIds(...))` → `ensureFont(...)` →

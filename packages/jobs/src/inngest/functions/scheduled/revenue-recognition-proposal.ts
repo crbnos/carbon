@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { postingOrThrow } from "@carbon/api/postings.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { Kysely } from "kysely";
@@ -111,12 +111,14 @@ export const revenueRecognitionProposalFunction = inngest.createFunction(
             }
 
             // Posting stays a human action in the ERP; this only drafts the run.
-            const proposal = await serverFns
-              .system({ db, companyId: company.id, userId: "system" })
-              .invokeOrThrow("propose-revenue-recognition-run", {
+            const proposal = await postingOrThrow(
+              "propose-revenue-recognition-run",
+              { db, companyId: company.id, userId: "system" },
+              {
                 periodEnd,
                 type
-              });
+              }
+            );
 
             logger.info(
               proposal

@@ -7,7 +7,7 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { QualityKPIs } from "~/modules/quality/quality.models";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 
 // --- ISO Week Helpers ---
 

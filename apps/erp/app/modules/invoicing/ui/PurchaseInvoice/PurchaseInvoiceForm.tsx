@@ -36,7 +36,7 @@ import {
   useRouteData,
   useSupplierApprovalRequired
 } from "~/hooks";
-import { purchaseInvoiceValidator } from "~/modules/invoicing";
+import { purchaseInvoiceValidator } from "~/modules/invoicing/invoicing.models";
 import { path } from "~/utils/path";
 import { isPurchaseInvoiceLocked } from "../../invoicing.models";
 import { usePurchaseInvoiceAutoFill } from "./usePurchaseInvoiceAutoFill";

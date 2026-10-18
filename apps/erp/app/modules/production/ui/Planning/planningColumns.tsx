@@ -30,7 +30,7 @@ import {
   getReorderPolicyDescription,
   ItemReorderPolicy
 } from "~/modules/items/ui/Item/ItemReorderPolicy";
-import type { ProductionPlanningItem } from "~/modules/production";
+import type { ProductionPlanningItem } from "~/modules/production/types";
 import {
   LatestOrderDateCell,
   latestOrderDateExportValue
@@ -45,7 +45,7 @@ import {
   planningWeekStripSize,
   planningWeekValues
 } from "~/modules/production/ui/Planning/PlanningWeekStrip";
-import type { PurchasingPlanningItem } from "~/modules/purchasing";
+import type { PurchasingPlanningItem } from "~/modules/purchasing/types";
 
 // Labels as descriptors: this factory is not a component, so it cannot use
 // `useLingui`'s `t`; the grid's `i18n` renders them.

@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ServerFnError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { createMappingService } from "@carbon/ee/accounting";
 import type { RampClient, RampTransaction } from "@carbon/ee/ramp.server";
-import { ServerFnError } from "@carbon/server-functions/errors";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -18,12 +18,11 @@ const runDatabaseTests = process.env.RUN_RAMP_DB_TESTS === "true";
 
 // Only the posting operation is substituted; everything else is real Postgres.
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/server-functions", () => {
-  const bind = (actor: string) => (fields: object) => ({
-    invoke: (_name: string, input: unknown) => post({ ...fields, actor }, input)
-  });
-  return { serverFns: { system: bind("system"), as: bind("caller") } };
-});
+// A posting with a client runs as the caller behind it, else as the system.
+vi.mock("@carbon/api/postings.server", () => ({
+  posting: (_name: string, handles: { client?: unknown }, input: unknown) =>
+    post({ ...handles, actor: handles.client ? "caller" : "system" }, input)
+}));
 
 vi.mock("@carbon/ee/ramp.server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/ee/ramp.server")>()),

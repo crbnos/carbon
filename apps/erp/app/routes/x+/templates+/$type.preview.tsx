@@ -18,8 +18,11 @@ import { getPreferenceHeaders, labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { getCompany, resolveSections } from "~/modules/settings";
-import { buildPreviewProps } from "~/modules/settings/documentPreview.server";
+import {
+  buildPreviewProps,
+  getCompany,
+  resolveSections
+} from "~/modules/settings/settings.service";
 
 /**
  * Renders a sample of the document with the draft block layout, server-side.

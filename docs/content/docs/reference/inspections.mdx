@@ -27,7 +27,7 @@ When a receipt posts for a `requiresInspection` item, its tracked entities are s
 
 ### What triggers a lot
 
-The `requiresInspection` flag lives on the item (`item.requiresInspection`, added in `20260419094132_inbound-inspections.sql:6`). The `post-receipt` server function reads it and, for each received line whose item requires inspection and has `receivedQuantity > 0`, resolves a sampling plan and inserts an `inboundInspection` row with a fresh `II`-prefixed readable id. The checkbox that sets the flag only appears on **purchased** items (Buy replenishment), so inbound inspection is a receiving-side gate, not an every-item one.
+The `requiresInspection` flag lives on the item (`item.requiresInspection`, added in `20260419094132_inbound-inspections.sql:6`). The `post-receipt` posting reads it and, for each received line whose item requires inspection and has `receivedQuantity > 0`, resolves a sampling plan and inserts an `inboundInspection` row with a fresh `II`-prefixed readable id. The checkbox that sets the flag only appears on **purchased** items (Buy replenishment), so inbound inspection is a receiving-side gate, not an every-item one.
 
 ### Recording samples
 

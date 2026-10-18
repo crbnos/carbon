@@ -35,7 +35,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { incoterms } from "~/modules/shared";
+import { incoterms } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/sales-order+/$orderId.shipment";
 import { path } from "~/utils/path";
 import {

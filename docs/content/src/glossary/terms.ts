@@ -539,12 +539,12 @@ export const terms = {
   },
   "cycle-billing": {
     term: msg`Cycle billing`,
-    definition: msg`Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears).`,
+    definition: msg`Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears).`,
     href: "/docs/reference/rental-agreements#billing"
   },
   "billing-cycle": {
     term: msg`Billing cycle`,
-    definition: msg`How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days.`,
+    definition: msg`How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days.`,
     href: "/docs/reference/rental-agreements#billing"
   },
   "billing-timing": {

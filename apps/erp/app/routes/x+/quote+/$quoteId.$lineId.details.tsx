@@ -2,19 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  dedupeViolations,
-  evaluateSalesRuleLines,
-  isBlocked
-} from "@carbon/ee/rules.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { breakQuantities, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment, Suspense, useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -22,36 +18,25 @@ import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData, useUser } from "~/hooks";
-import type {
-  Quotation,
-  QuotationOperation,
-  QuotationPrice,
-  QuoteLinePriceRow,
-  QuoteMethod
-} from "~/modules/sales";
+import { quoteLineValidator } from "~/modules/sales/sales.models";
 import {
-  buildMakeToOrderPriceRows,
-  buildPullFromInventoryPriceRows,
-  buildPurchaseToOrderPriceRows,
   getConfigurationParametersByQuoteLineId,
   getModelByQuoteLineId,
   getOpportunityLineDocuments,
-  getQuote,
   getQuoteLine,
   getQuoteLinePrices,
   getQuoteMaterialsByMethodId,
   getQuoteOperationsByLine,
   getQuoteOperationsByMethodId,
   getRelatedPricesForQuoteLine,
-  getRootQuoteMakeMethod,
-  isQuoteLocked,
-  quoteLineValidator,
-  reconcileQuantityBreaks
-} from "~/modules/sales";
-import {
-  recordSalesRuleOutcome,
-  saveQuoteLineWithPrices
-} from "~/modules/sales/sales.server";
+  getRootQuoteMakeMethod
+} from "~/modules/sales/sales.service";
+import type {
+  Quotation,
+  QuotationOperation,
+  QuotationPrice,
+  QuoteMethod
+} from "~/modules/sales/types";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -67,12 +52,13 @@ import {
 } from "~/modules/sales/ui/Quotes";
 import QuoteLinePricingHistory from "~/modules/sales/ui/Quotes/QuoteLinePricingHistory";
 import QuoteLineRiskRegister from "~/modules/sales/ui/Quotes/QuoteLineRiskRegister";
-import { getTagsList, type SupplierPriceMap } from "~/modules/shared";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import type { SupplierPriceMap } from "~/modules/shared/shared.models";
+import {
+  getTagsList,
+  requireCompanyRecord
+} from "~/modules/shared/shared.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
-import { sanitize } from "~/utils/supabase";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { client, companyId } = await requirePermissions(request, {
@@ -173,208 +159,24 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   };
 };
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  // Still the authorization gate, and load-bearing: the write below goes
-  // through Kysely, which bypasses RLS entirely.
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "sales"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(quoteLineValidator).request(args, {
+    params: ["quoteId", "lineId"]
   });
-
-  const { quoteId, lineId } = params;
-  if (!quoteId) throw new Error("Could not find quoteId");
-  if (!lineId) throw new Error("Could not find lineId");
-
-  // The rule evaluation, evidence and price writes below use the service role
-  // (or Kysely) and key on the URL ids.
-  await requireCompanyRecord(getCarbonServiceRole(), "quoteLine", companyId, {
+  if ("invalid" in input) return input.invalid;
+  const { quoteId, lineId } = input.params;
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
+  const result = await api.sales.updateQuoteLine({
+    ...input.data,
     id: lineId,
-    quoteId
+    quoteId,
+    customFields: setCustomFields(formData),
+    acknowledged: formData.get("acknowledged") === "true"
   });
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
-  });
-  const quote = await getQuote(viewClient, quoteId);
-  await requireUnlocked({
-    request,
-    isLocked: isQuoteLocked(quote.data?.status),
-    redirectTo: path.to.quote(quoteId),
-    message: "Cannot modify a locked quote. Reopen it first."
-  });
-
-  const formData = await request.formData();
-
-  const validation = await validator(quoteLineValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  // The line update and its price reconciliation have to land together. Prices
-  // are COMPUTED first (the builders only read), so a pricing failure aborts
-  // before anything is written; the three writes then commit in one
-  // transaction. Previously the line update committed on its own, and a
-  // resolver failure left it saved with its new breaks unpriced.
-  const serviceRole = getCarbonServiceRole();
-
-  // Sales-rule enforcement: evaluate before the line is written. Blocked
-  // submissions return violations for the form's violation modal;
-  // acknowledged warns pass through on re-submit.
-  const acknowledged = formData.get("acknowledged") === "true";
-  const { violations, ruleNames } = await evaluateSalesRuleLines({
-    client: serviceRole,
-    companyId,
-    userId,
-    surface: "quoteLine",
-    // Quote lines carry a quantity-break array rather than a single
-    // transaction quantity. Evaluate the largest break — it is the one most
-    // likely to trip a `gt` threshold, so it is the conservative choice.
-    lines: breakQuantities(d.quantity).map((quantity) => ({
-      lineId,
-      itemId: d.itemId ?? null,
-      quantity
-    })),
-    customerId: quote.data?.customerId ?? null,
-    customerLocationId: quote.data?.customerLocationId ?? null
-  });
-  const deduped = dedupeViolations(violations);
-  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
-    await recordSalesRuleOutcome(serviceRole, {
-      companyId,
-      userId,
-      documentType: "quote",
-      documentId: quoteId,
-      documentLineId: lineId,
-      itemId: d.itemId ?? null,
-      outcome: "blocked",
-      violations: deduped,
-      ruleNames
-    });
-    return { error: null, data: null, violations: deduped, ruleNames };
-  }
-  const existingPrices = await serviceRole
-    .from("quoteLinePrice")
-    .select("quantity")
-    .eq("quoteLineId", lineId)
-    .eq("companyId", companyId);
-
-  if (existingPrices.error) {
-    throw redirect(
-      path.to.quoteLine(quoteId, lineId),
-      await flash(
-        request,
-        error(existingPrices.error, "Failed to read existing quote line prices")
-      )
-    );
-  }
-
-  // Reconcile in both directions. Seeding is method-specific and only covers
-  // the three types below, but PRUNING is unconditional: a break removed from a
-  // Make to Stock line — or from a line whose breaks were all cleared — would
-  // otherwise leave rows behind that render as selectable options on the
-  // customer share page and trip the finalize validation.
-  const { added: addedQuantities, removed: removedQuantities } =
-    reconcileQuantityBreaks(
-      (existingPrices.data ?? []).map((p) => p.quantity),
-      d.quantity ?? []
-    );
-
-  const methodType = d.methodType;
-  const needsSeed =
-    methodType === "Make to Order" ||
-    methodType === "Pull from Inventory" ||
-    methodType === "Purchase to Order";
-
-  let priceRows: QuoteLinePriceRow[] = [];
-  if (needsSeed && addedQuantities.length > 0) {
-    // The stored line still holds the OLD itemId — the new one is only in the
-    // validated form data — so pass it through rather than let the builder read
-    // a value this same request is about to change.
-    const built =
-      methodType === "Make to Order"
-        ? await buildMakeToOrderPriceRows(
-            serviceRole,
-            quoteId,
-            lineId,
-            addedQuantities,
-            userId,
-            d.itemId
-          )
-        : methodType === "Pull from Inventory"
-          ? await buildPullFromInventoryPriceRows(
-              serviceRole,
-              companyId,
-              quoteId,
-              lineId,
-              addedQuantities,
-              userId,
-              d.itemId
-            )
-          : await buildPurchaseToOrderPriceRows(
-              serviceRole,
-              companyId,
-              quoteId,
-              lineId,
-              addedQuantities,
-              userId,
-              d.itemId
-            );
-
-    if (built.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, lineId),
-        await flash(
-          request,
-          error(
-            built.error,
-            `Failed to calculate ${methodType} prices for new quantities`
-          )
-        )
-      );
-    }
-    priceRows = built.rows;
-  }
-
-  try {
-    await saveQuoteLineWithPrices({
-      companyId,
-      quoteId,
-      lineId,
-      line: {
-        ...sanitize({ ...d, updatedBy: userId }),
-        customFields: setCustomFields(formData)
-      },
-      removedQuantities,
-      priceRows
-    });
-  } catch (err) {
-    // Kysely throws on rollback — nothing was written.
-    throw redirect(
-      path.to.quoteLine(quoteId, lineId),
-      await flash(request, error(err, "Failed to update quote line"))
-    );
-  }
-
-  // Acknowledged proceed: record only after the write committed — evidence
-  // (and its notification) must describe a change that actually landed.
-  if (deduped.length > 0) {
-    await recordSalesRuleOutcome(serviceRole, {
-      companyId,
-      userId,
-      documentType: "quote",
-      documentId: quoteId,
-      documentLineId: lineId,
-      itemId: d.itemId ?? null,
-      outcome: "acknowledged",
-      violations: deduped,
-      ruleNames
-    });
-  }
-
+  // An error is toasted; the violation modal reads `violations`.
+  if (!result.data) return result;
+  if ("violations" in result.data) return result.data;
   throw redirect(path.to.quoteLine(quoteId, lineId));
 }
 

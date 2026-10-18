@@ -6,6 +6,7 @@ import type {
   ApprovalDecision,
   DocumentApprovalState
 } from "@carbon/ee/approvals";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -28,6 +29,7 @@ import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ApprovalDecisionModal from "~/components/Modals/ApprovalDecision";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import type { action as updateAction } from "~/routes/x+/quality-document+/update";
 import { useDocumentStore } from "~/stores";
 import { path } from "~/utils/path";
 import type { QualityDocument } from "../../types";
@@ -54,7 +56,7 @@ const QualityDocumentHeader = () => {
   const displayName = liveTitle ?? routeData?.document?.name ?? "";
   const newVersionDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
-  const statusFetcher = useFetcher<{ error?: { message: string } }>();
+  const statusFetcher = useAction<typeof updateAction>();
   const approvalFetcher = useFetcher<{
     error?: string;
     success?: boolean;

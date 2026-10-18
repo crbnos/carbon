@@ -10,12 +10,12 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getSupplierTypes } from "~/modules/purchasing";
+import { getSupplierTypes } from "~/modules/purchasing/purchasing.service";
+import { SupplierAccountsTable } from "~/modules/users/ui";
 import {
   getSuppliers,
-  getUnrevokedInviteEmails,
-  SupplierAccountsTable
-} from "~/modules/users";
+  getUnrevokedInviteEmails
+} from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

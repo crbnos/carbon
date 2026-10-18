@@ -161,7 +161,9 @@ export type Events = {
     data: {
       modelUploadId: string;
       companyId: string;
-      userId: string;
+      // Absent when the database sends it: the `queue_model_pipeline` handler
+      // on a new modelUpload row, and the stuck-job cleanup's resend.
+      userId?: string;
       // format is derived from the stored file inside the job, not passed here.
       // Force a fresh optimise of an already-Successful model (the badge's
       // refresh action) — bypasses the already-optimized guard and mints a
@@ -172,9 +174,9 @@ export type Events = {
   };
 
   // Compact the retained raw (STEP → BinXCAF `.xbf.zst`, mesh → `.{ext}.zst`)
-  // so it never lingers as the fat upload. Fired after model-optimize settles
-  // (success, already-optimized, or failure) — decoupled so an optimize
-  // failure can't strand a fat raw for the prune to delete.
+  // so it never lingers as the fat upload. A successful optimise compacts
+  // inline; this fires when model-optimize skips (already optimised, a format
+  // it does not read, no assembler) or fails, so the raw still leaves staging.
   "carbon/model-compact": {
     data: {
       modelUploadId: string;
@@ -663,6 +665,77 @@ export type Events = {
       // Echoed into the run record so the page can find its own run.
       requestId?: string;
       trigger?: "manual" | "schedule";
+    };
+  };
+
+  // Panel push: export one element's assets onto the item the push linked.
+  "carbon/onshape-panel-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      itemId: string;
+      documentId: string;
+      wvm: "w" | "v";
+      wvmId: string;
+      elementId: string;
+      elementKind: "partstudio" | "assembly" | "drawing";
+      partId?: string;
+      /** Non-default configuration to export; absent = default. */
+      configuration?: string;
+      assetBaseName?: string;
+      /** Workspace pushes: the part microversion the review saw. */
+      microversionId?: string;
+    };
+  };
+
+  // One Onshape element's export onto an item (step.invoked by the backfill)
+  "carbon/onshape-element-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      integrationId?: string;
+      itemId: string;
+      sourceDocument: "Part";
+      documentId: string;
+      versionId: string;
+      sourceWvm?: "w" | "v";
+      sourceMicroversionId?: string;
+      modelElementId: string;
+      modelElementKind: "partstudio" | "assembly";
+      partId?: string | null;
+      configuration?: string | null;
+      drawingElementIds?: string[];
+      assetBaseName?: string;
+    };
+  };
+
+  // One released Onshape drawing's PDF onto an item (step.invoked by the backfill)
+  "carbon/onshape-drawing-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      integrationId?: string;
+      itemId: string;
+      sourceDocument: "Part";
+      documentId: string;
+      versionId: string;
+      drawingElementId: string;
+      assetBaseName?: string;
+      sourceWvm?: "w" | "v";
+    };
+  };
+
+  // The assembler copies one finished Onshape translation into staging
+  // (step.invoked by the element sync)
+  "carbon/onshape-fetch": {
+    data: {
+      companyId: string;
+      userId: string;
+      integrationId?: string;
+      translationId: string;
+      documentId: string;
+      foreignId: string;
+      stagedPath: string;
     };
   };
 

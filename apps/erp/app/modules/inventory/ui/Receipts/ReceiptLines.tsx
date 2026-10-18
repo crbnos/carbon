@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { isPreviewableDocumentType, storage } from "@carbon/files";
+import {
+  getDocumentType,
+  isPreviewableDocumentType,
+  storage
+} from "@carbon/files";
 import { Boolean, Number, Submit, ValidatedForm } from "@carbon/form";
 import { useAction, useRevalidator } from "@carbon/query";
 import {
@@ -58,14 +62,7 @@ import {
   LuTrash,
   LuX
 } from "react-icons/lu";
-import {
-  Await,
-  Outlet,
-  useFetcher,
-  useFetchers,
-  useParams,
-  useSubmit
-} from "react-router";
+import { Await, Outlet, useFetchers, useParams, useSubmit } from "react-router";
 import { z } from "zod";
 import {
   DocumentPreview,
@@ -80,15 +77,15 @@ import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData, useUser } from "~/hooks";
+import { splitValidator } from "~/modules/inventory/inventory.models";
 import type {
   BatchProperty,
   ItemTracking,
   Receipt,
   ReceiptLine,
   RentalReceiptLine
-} from "~/modules/inventory";
-import { splitValidator } from "~/modules/inventory";
-import { getDocumentType } from "~/modules/shared/shared.service";
+} from "~/modules/inventory/types";
+import type { action as splitAction } from "~/routes/x+/receipt+/lines.split";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
@@ -102,7 +99,7 @@ const ReceiptLines = () => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
-  const fetcher = useFetcher();
+  const fetcher = useAction();
 
   const { upload, deleteFile, getPath } = useReceiptFiles(receiptId);
   const routeData = useRouteData<{
@@ -386,7 +383,7 @@ function ReceiptFixedAssetLineItem({
   isReadOnly: boolean;
   className?: string;
 }) {
-  const fetcher = useFetcher();
+  const fetcher = useAction();
   const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
 
   const updateField = (field: string, value: string) => {
@@ -450,7 +447,7 @@ function ReceiptRentalLineItem({
   className?: string;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher();
+  const fetcher = useAction();
   const [notes, setNotes] = useState(line.notes ?? "");
   const [takeOutOfService, setTakeOutOfService] = useState(
     line.takeOutOfService
@@ -1294,8 +1291,12 @@ function SerialForm({
           method: "POST",
           body: formData
         });
+        // The operation's result, `{ data, error }`; a refused form is a 422.
+        const result: { error: { message: string } | null } | null = response.ok
+          ? await response.json()
+          : null;
 
-        if (response.ok) {
+        if (result && !result.error) {
           // Clear error if submission was successful
           setErrors((prev) => {
             const newErrors = { ...prev };
@@ -1305,7 +1306,8 @@ function SerialForm({
         } else {
           setErrors((prev) => ({
             ...prev,
-            [serialNumber.index]: "Serial number already exists"
+            [serialNumber.index]:
+              result?.error?.message ?? "Serial number already exists"
           }));
         }
       } catch (error) {
@@ -1448,13 +1450,7 @@ function SplitReceiptLineModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useAction<{ success: boolean }>({
-    onSuccess: (data) => {
-      if (data?.success) {
-        onClose();
-      }
-    }
-  });
+  const fetcher = useAction<typeof splitAction>({ onSuccess: onClose });
   return (
     <Modal open onOpenChange={onClose}>
       <ModalContent>

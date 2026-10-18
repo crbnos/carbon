@@ -8,7 +8,6 @@ import type {
   getChangeNoticeActions,
   getChangeNotices,
   getChangeNoticeTypes,
-  getConfigurationParameters,
   getConfigurationRules,
   getConsumable,
   getConsumables,
@@ -19,7 +18,6 @@ import type {
   getItemPostingGroups,
   getItemPostingGroupsList,
   getItemQuantities,
-  getItemStorageUnitQuantities,
   getMakeMethods,
   getMaterial,
   getMaterialDimensions,
@@ -44,6 +42,10 @@ import type {
   getUnitOfMeasure,
   getUnitOfMeasuresList
 } from "./items.service";
+import type {
+  getConfigurationParameters,
+  getItemStorageUnitQuantities
+} from "./items.utils";
 
 export type ItemRevisionStatus =
   Database["public"]["Enums"]["itemRevisionStatus"];

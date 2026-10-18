@@ -9,14 +9,15 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { supplierShippingValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getSupplierShipping,
-  supplierShippingValidator,
   updateSupplierShipping
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import SupplierShippingForm from "~/modules/purchasing/ui/Supplier/SupplierShippingForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
     view: "purchasing"

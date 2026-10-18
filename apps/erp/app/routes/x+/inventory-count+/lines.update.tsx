@@ -2,60 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { validationError, validator } from "@carbon/form";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  inventoryCountLineValidator,
-  updateInventoryCountLine
-} from "~/modules/inventory";
-import { getDatabaseClient } from "~/services/database.server";
+import { inventoryCountLineValidator } from "~/modules/inventory/inventory.models";
 
-// Inline count entry persists one line at a time via a fetcher. The Draft-only
-// guard is enforced atomically inside `updateInventoryCountLine` (a single
-// conditional UPDATE), so there's no read-then-write race with a concurrent
-// Confirm.
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(inventoryCountLineValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, countedQuantity } = validation.data;
-
-  let updated: { id: string } | undefined;
-  try {
-    updated = await updateInventoryCountLine(getDatabaseClient(), {
-      id,
-      countedQuantity,
-      companyId,
-      countedBy: userId
-    });
-  } catch (err) {
-    return data(
-      { error: error(err, "Failed to update count") },
-      { status: 500 }
-    );
-  }
-
-  // No row matched: the line doesn't exist or the count is no longer Draft.
-  if (!updated) {
-    return data(
-      { error: "Counts can only be edited while the document is Draft" },
-      { status: 409 }
-    );
-  }
-
-  return { success: true };
+// Inline count entry persists one line at a time. The Draft-only guard is part
+// of the operation's single UPDATE, so a concurrent Confirm cannot slip in.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(inventoryCountLineValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.inventory.updateInventoryCountLine(input.data);
+  // The count grid saves with a plain fetch, which reads only the status.
+  return data(result, { status: result.error?.status ?? 200 });
 }

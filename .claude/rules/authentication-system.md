@@ -171,7 +171,7 @@ querying), and every route entry point checks it too — login buttons, the
   capturing Kysely driver): `seedSsoIdentityForUser` (one user, idempotent
   `ON CONFLICT (provider_id, provider) DO NOTHING`) — called best-effort/logged by
   `seedSsoIdentityForNewUser` in all three ERP account-creation flows
-  (`users.server.ts` create{Customer,Employee,Supplier}Account); and, run from the
+  (`users.service.ts` create{Customer,Employee,Supplier}Account); and, run from the
   domain-claim flows, `backfillSsoIdentitiesForDomain` (verify → seed EVERY
   existing non-SSO user on the domain) and `removeSsoIdentitiesForDomain` (unregister
   → delete, keyed on the email column so it also removes GoTrue's self-healed
@@ -202,7 +202,8 @@ querying), and every route entry point checks it too — login buttons, the
   invite routes and jobs `user-admin.ts`) routes covered-domain invite emails to
   `/login?email=...` instead of `/invite/<code>`, so the IdP is never bypassed.
   Employee invites outside the covered domains are refused up front
-  (`getSsoInviteDomainError` in ERP `users.server.ts` → `uncoveredSsoDomainError`).
+  (`refuseEmailOutsideSso` in ERP `users.service.ts` → `uncoveredSsoDomainError`: a
+  `rule` refusal, or `unavailable` when the domains cannot be read).
 - **Config**: GoTrue SAML via `SAML_ENABLED` / `SAML_PRIVATE_KEY` in root `.env`
   (compose substitution → `GOTRUE_SAML_*`; `crbn reload` does not read root `.env` —
   see `.ai/lessons.md`).
@@ -247,7 +248,18 @@ why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
 - `createCookieSessionStorage`, cookie name **`carbon`**, `httpOnly`, `sameSite: "lax"`
   (`"none"` in Test edition, always with `Secure` — browsers drop `None` without it),
   `secure`/`domain` from `DOMAIN` in non-test. Payload stored
-  under key `SESSION_KEY = "auth"`; `SESSION_MAX_AGE = 7 days`.
+  under key `SESSION_KEY = "auth"`; `SESSION_MAX_AGE = 7 days`. Every write of this
+  cookie passes `SESSION_MAX_AGE`, flash writes included: the toast shares the
+  cookie, and a write without it turned the session into one that ends when the
+  browser closes.
+- **Cookie names are per deployment.** `authCookieName` (`utils/cookie.ts`) appends
+  `AUTH_COOKIE_SUFFIX` to `carbon`, `companyId`, `carbon-push` and
+  `carbon-oauth-state`. US and EU production both set `DOMAIN` to `carbon.ms`, so
+  with one name each region overwrote the other's cookie and failed its signature
+  (EU has its own `SESSION_SECRET`), signing users out. EU sets the suffix (`eu`) on
+  its ERP and MES; unset keeps the plain names. Changing `DOMAIN` instead is not a
+  fix: the browser still sends the parent-domain cookie, and it changes the passkey
+  `RP_ID`.
 - `requireAuthSession` reads/validates; `getOrRefreshAuthSession` refreshes within
   `REFRESH_ACCESS_TOKEN_THRESHOLD` (10 min) of expiry via `refreshAccessToken`.
 - `destroyAuthSession` clears auth + company-id cookies, redirects to login.
@@ -410,9 +422,10 @@ flows call `redis.del(getPermissionCacheKey(userId))`.
 does one lookup even though both `requirePermissions` and the v1 scope read need
 the row. Unknown keys are cached too (the literal `"null"`), so a bad key
 hammering the endpoint doesn't hammer Postgres. Redis being down falls through to
-the DB. Busting: the api-keys settings routes call `invalidateApiKeyCache`
-(`~/modules/settings/settings.server.ts` → `bustApiKeyCache`) after an edit and
-BEFORE a delete (the keyHash is unreadable once the row is gone), so a scope
+the DB. Busting: the api-key service functions (`updateApiKey`, `revokeApiKey` in
+`settings.server.ts`) call `invalidateApiKeyCache` (`settings.service.ts` →
+`bustApiKeyCache`) after an edit, and BEFORE and after a delete (the keyHash is
+unreadable once the row is gone), so a scope
 change or revocation takes effect immediately; the worst-case lag for any other
 writer is the 30s TTL. Then:
 
@@ -530,8 +543,8 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   token. Negatives are never cached — `getAuthAccountByAccessToken` also returns null
   on a transient network error. Bounds how long a deleted/deactivated account keeps
   being accepted; signing out never revoked a live access token anyway.
-- ERP's `~/modules/users/users.server` re-exports `getUserClaims` from `@carbon/auth`;
-  it used to carry a drifted copy that missed the cache TTL. Don't reintroduce one.
+- ERP code imports `getUserClaims` from `@carbon/auth/users.server`; the ERP used to
+  carry a drifted copy that missed the cache TTL. Don't reintroduce one.
 - Service-role clients bypass RLS — only use behind `bypassRls` + employee role.
 - API key `scopes: {}` denies, not grants. Don't assume empty = full access.
 - Edition matters: Enterprise rejects unknown-user login; Cloud gates API keys by plan

@@ -2,13 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import type { ZodSchema } from "zod";
+import { z } from "zod";
 import {
   attributeBooleanValidator,
   attributeCustomerValidator,
@@ -16,119 +13,35 @@ import {
   attributeNumericValidator,
   attributeSupplierValidator,
   attributeTextValidator,
-  attributeUserValidator,
-  upsertUserAttributeValue
-} from "~/modules/account";
-import { getAttribute } from "~/modules/people";
-import { getUserClaims } from "~/modules/users/users.server";
+  attributeUserValidator
+} from "~/modules/users/users.models";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
+/** The value's form, by the attribute's data type. */
+const attributeValueForm = z.discriminatedUnion("type", [
+  attributeBooleanValidator.extend({ type: z.literal("boolean") }),
+  attributeNumericValidator.extend({ type: z.literal("numeric") }),
+  attributeTextValidator.extend({ type: z.literal("date") }),
+  attributeTextValidator.extend({ type: z.literal("list") }),
+  attributeTextValidator.extend({ type: z.literal("text") }),
+  attributeUserValidator.extend({ type: z.literal("user") }),
+  attributeCustomerValidator.extend({ type: z.literal("customer") }),
+  attributeSupplierValidator.extend({ type: z.literal("supplier") }),
+  attributeFileValidator.extend({ type: z.literal("file") })
+]);
 
-  const { client, companyId, userId } = await requirePermissions(request, {});
-  const { userId: targetUserId } = params;
-
-  if (!targetUserId) {
-    throw new Error("No user id provided");
-  }
-
-  const formData = await request.formData();
-
-  const attributeId = formData.get("userAttributeId") as string;
-  if (!attributeId) throw new Error("No attribute id provided");
-
-  const clientClaims = await getUserClaims(userId, companyId);
-  const canUpdateAnyUser =
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    clientClaims.permissions["resources"]?.update?.includes(companyId);
-
-  if (!canUpdateAnyUser && userId !== targetUserId) {
-    return data(
-      null,
-      await flash(request, error(null, "Unauthorized: Cannot update attribute"))
-    );
-  }
-
-  if (!canUpdateAnyUser && userId === targetUserId) {
-    // check if this is a self managed attribute
-    const attribute = await getAttribute(client, attributeId);
-    if (attribute.error) {
-      return data(
-        null,
-        await flash(request, error(attribute.error, "Failed to get attribute"))
-      );
-    }
-
-    const canSelfManage = attribute.data?.canSelfManage ?? false;
-    if (!canSelfManage) {
-      return data(
-        null,
-        await flash(
-          request,
-          error(null, "Unauthorized: Cannot update attribute")
-        )
-      );
-    }
-  }
-
-  const type = formData.get("type") as string;
-  if (!type) throw new Error("No type provided");
-
-  const v = getValidatorByType(type);
-
-  const validation = await validator(v as ZodSchema).validate(formData);
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const upsertAttributeValue = await upsertUserAttributeValue(client, {
-    // validator(v as ZodSchema) intentionally erases the union of attribute-value
-    // schemas; v4's ZodSchema output is `unknown` (was `any` in v3), so restore the
-    // permissive spread the runtime already relies on.
-    ...(validation.data as any),
-    userId: targetUserId,
-    updatedBy: userId
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(attributeValueForm).request(args, {
+    params: ["userId"]
   });
-  if (upsertAttributeValue.error) {
-    return data(
-      null,
-      await flash(
-        request,
-        error(upsertAttributeValue.error, "Failed to update attribute value")
-      )
-    );
-  }
-
-  return data(null, await flash(request, success("Updated attribute value")));
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.users.upsertAttributeValue({
+    ...input.data,
+    userId: input.params.userId
+  });
 }
 
 export default function UserAttributeValueRoute() {
   // React Router bug
   return null;
-}
-
-function getValidatorByType(type: string) {
-  switch (type) {
-    case "boolean":
-      return attributeBooleanValidator;
-    case "date":
-      return attributeTextValidator;
-    case "list":
-      return attributeTextValidator;
-    case "numeric":
-      return attributeNumericValidator;
-    case "text":
-      return attributeTextValidator;
-    case "user":
-      return attributeUserValidator;
-    case "supplier":
-      return attributeSupplierValidator;
-    case "customer":
-      return attributeCustomerValidator;
-    case "file":
-      return attributeFileValidator;
-
-    default:
-      throw new Error("Invalid type provided");
-  }
 }

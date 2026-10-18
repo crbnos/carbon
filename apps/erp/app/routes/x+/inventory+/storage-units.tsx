@@ -16,10 +16,10 @@ import {
   getStorageUnitRoots,
   getStorageUnitSubtrees,
   searchStorageUnitsWithAncestors
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
 import StorageUnitsTable from "~/modules/inventory/ui/StorageUnits/StorageUnitsTable";
-import { getLocationsList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

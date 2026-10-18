@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   HStack,
   ModalDrawer,
@@ -16,18 +17,17 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
-import { useFetcher, useParams } from "react-router";
+import { useState } from "react";
+import { useParams } from "react-router";
 import type { z } from "zod";
 import { Hidden, Item, Number, StorageUnit, Submit } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
   inventoryItemTypes,
   isStockTransferLocked,
-  type StockTransfer,
   stockTransferLineValidator
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.models";
+import type { StockTransfer } from "~/modules/inventory/types";
 import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
@@ -55,7 +55,14 @@ const StockTransferLineForm = ({
   const routeData = useRouteData<{
     stockTransfer: StockTransfer;
   }>(path.to.stockTransfer(id));
-  const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
+  // A modal closes on the new record; an error is toasted and the form stays.
+  const fetcher = useAction({
+    onSuccess: () => {
+      if (type !== "modal") return;
+      onClose?.();
+      toast.success(t`Created stock transfer line`);
+    }
+  });
   const [items] = useItems();
   const [itemId, setItemId] = useState<string | null>(
     initialValues.itemId ?? null
@@ -96,19 +103,6 @@ const StockTransferLineForm = ({
     setItemType(itemType);
     setItemTrackingType(trackingType);
   };
-
-  useEffect(() => {
-    if (type !== "modal") return;
-
-    if (fetcher.state === "loading" && fetcher.data?.data) {
-      onClose?.();
-      toast.success(t`Created stock transfer line`);
-    } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(
-        t`Failed to create stock transfer line: ${fetcher.data.error.message}`
-      );
-    }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
 
   const isEditing = initialValues.id !== undefined;
   const isLocked = isStockTransferLocked(routeData?.stockTransfer?.status);

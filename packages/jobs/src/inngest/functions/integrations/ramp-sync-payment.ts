@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { posting } from "@carbon/api/postings.server";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
@@ -9,7 +10,6 @@ import {
   upsertLocalPaymentDraft
 } from "@carbon/ee/accounting";
 import type { RampBill, RampBillPayment } from "@carbon/ee/ramp.server";
-import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 
@@ -194,12 +194,14 @@ export async function createOrResumeRampPayment(
   return ensureRampPaymentPosted({
     stage: () => stageRampPaymentDraft(db, args),
     post: async (paymentRowId) => {
-      const response = await serverFns
-        .as({ client, db, companyId: args.companyId, userId: args.actorId })
-        .invoke("post-payment", {
+      const response = await posting(
+        "post-payment",
+        { client, db, companyId: args.companyId, userId: args.actorId },
+        {
           type: "post",
           paymentId: paymentRowId
-        });
+        }
+      );
       return {
         error: Boolean(response.error),
         message: response.error?.message

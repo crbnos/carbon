@@ -15,16 +15,21 @@ in the migrations — **newest wins**; core tables created in
 
 ## Code (real paths)
 
-- `quality.service.ts` — issue/task/association/reviewer service functions.
+- `quality.service.ts` — the building blocks: issue/task/association/reviewer
+  queries and writes, `closeIssue`, the disposition writers
+  (`dispositionInspection`) and the inspection engine bindings
+  (`@carbon/database/quality`).
 - `quality.models.ts` — zod validators + status/enum const arrays.
-- `quality.server.ts` — server helpers (e.g. `closeIssue`, task creation glue).
+- `quality.server.ts` — the operations, one `defineServiceFn` const each
+  (`createIssue`, `setIssueStatus`, `completeIssue`, `rejectInspection`, …).
+  A route calls them as `api.quality.setIssueStatus(input)`.
 - `ui/Issue/` — `IssueHeader`, `IssueContent`, `IssueForm`, `IssueProperties`,
   `IssueStatus`, `DispositionStatus`, `IssueTask`, `ActionTasksList`,
   `ReviewersList`, `AssociatedItemsList`, `IssueAssociations`, `IssuesTable`
   (see `ui/Issue/index.ts`). Plus `ui/IssueTypes/`, `ui/IssueWorkflows/`,
   `ui/RequiredActions/`, `ui/Actions/`.
-- Task creation server function: `packages/server-functions/src/create/index.ts`,
-  case `"nonConformanceTasks"`.
+- Task creation: `createDocument` (`apps/erp/app/modules/shared/shared.service.ts`,
+  the `create` posting), case `"nonConformanceTasks"`.
 
 ## Status enums (verified in `quality.models.ts` + migrations)
 
@@ -51,7 +56,8 @@ in the migrations — **newest wins**; core tables created in
   `nonConformanceItemTrackedEntity` links. `AssociatedItemsList.tsx` renders these as
   an inline-editable quantity + disposition `Select` (no entity chips; "Move entities"
   stays gated on `links.length > 0`). The quantity saves through `item+/update.tsx`
-  (`field: "quantity"`) → `updateIssueItemQuantity` (`quality-disposition.server.ts`),
+  (`field: "quantity"`) → `updateIssueItemField` → `updateIssueItemQuantity`
+  (`quality.service.ts`),
   which refuses rows with entity links (their quantity is the link sum) and any NCR with
   a `nonConformanceInspection` link (the reject already wrote off the lot, and
   `closeIssue` restores `row.quantity` on Use As Is / Rework). The write is a
@@ -63,8 +69,9 @@ in the migrations — **newest wins**; core tables created in
   `nonConformanceItemTrackedEntity` / `nonConformanceInspection` rows or changes
   `nonConformanceItem.quantity` takes it first, inside its transaction, before touching
   any item row: the quantity edit, `assignEntitiesToIssueItem`, `splitIssueItem`, the
-  inspection association (`$id.association.new.tsx`), `new.tsx` job-operation
-  auto-link, the ERP inspection reject, sales-return escalation, and MES
+  inspection association (`createIssueAssociation`), the job-operation auto-link of
+  `createIssue`, the ERP inspection reject (`rejectInspection`), sales-return
+  escalation, and MES
   `linkIssueDispositionContext` (which also writes the MES reject's inspection link, via
   `createQualityIssue({ inspectionId })`). `linkEntitiesToIssueItemRow` is the shared
   find-or-create-row + link + grow-quantity step. A new writer of those tables must take
@@ -74,7 +81,7 @@ in the migrations — **newest wins**; core tables created in
   the original, no entity subdivision), so MRB can e.g. scrap N and use-as-is the
   rest. `closeIssue` still requires every row (tracked or not) to be non-`Pending`.
 - **Disposition GL/cost posting** (`closeIssue` + inspection reject): inventory value
-  movements go through the **`post-nonconformance` server function** (`itemLedger` +
+  movements go through the **`post-nonconformance` posting** (`postNonconformance`, `quality.service.ts`: `itemLedger` +
   `costLedger` relief via `calculateCOGS` + a balanced `journal` offset to
   `accountDefault.scrapAccount` for every company — Provisional before the accounting
   cutover, when an empty `scrapAccount` becomes a stand-in line on retained earnings;
@@ -86,15 +93,16 @@ in the migrations — **newest wins**; core tables created in
   non-tracked `Inventory` **inspection-originated** Use-As-Is/Rework → `+row.qty` restore
   (undoing the reject write-off); tracked Use-As-Is/Rework and any `Non-Inventory` move
   no value. Origin detected via the `nonConformanceInspection` link. Reopen is blocked
-  once a `Non-Conformance` `itemLedger` row exists (`$id.status.tsx`). See
+  once a `Non-Conformance` `itemLedger` row exists (`setIssueStatus`). See
   `.claude/rules/inspection-system.md` and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 
 ## Workflow (header buttons → routes)
 
 `IssueHeader.tsx` (all gated by `permissions.can("update","quality")`):
-- **Start** (when `Registered`) → POST `path.to.issueStatus(id)` `{status:"In Progress"}`.
-- **Complete** (when `In Progress`) → `path.to.closeIssue(id)` (sets `Closed`, clears
-  assignee, sets `closeDate`).
+- **Start** (when `Registered`) → POST `path.to.issueStatus(id)` `{status:"In Progress"}`
+  → `setIssueStatus`, which takes only Registered / In Progress.
+- **Complete** (when `In Progress`) → `path.to.closeIssue(id)` → `completeIssue`
+  (posts the dispositions, sets `Closed`, clears assignee, sets `closeDate`).
 - **Reopen** (when `In Progress`/`Closed`, not locked) → `issueStatus` `{status:"Registered"}`.
 - **Delete Issue** → `path.to.deleteIssue(id)`.
 
@@ -103,13 +111,13 @@ the issue is still `Registered` (`IssueTask.tsx`, one-shot).
 
 Tasks (`IssueTask.tsx` `statusActions`): **Start** (`Pending`→`In Progress`),
 **Complete** (`In Progress`→`Completed`), **Reopen** (`Completed`/`Skipped`→`Pending`).
-Task status writes go to `path.to.issueTaskStatus`; `updateIssueTaskStatus` sets
-`completedDate` on `Completed`.
+Task status writes go to `path.to.issueTaskStatus` → `setIssueTaskStatus`;
+`updateIssueTaskStatus` sets `completedDate` on `Completed`.
 
 ## Required actions & system action types
 
 Issues carry `requiredActionIds TEXT[]` (IDs into `nonConformanceRequiredAction`).
-The `create` server function inserts one `nonConformanceActionTask` per id (1-indexed
+The `create` posting inserts one `nonConformanceActionTask` per id (1-indexed
 `sortOrder`). `nonConformanceRequiredAction.systemType` (enum
 `nonConformanceSystemActionType`, added `20260313000001`):
 `Containment`, `Corrective`, `Preventive`, `Verification`, `Communication`. System
@@ -119,7 +127,7 @@ or change `systemType`); unique per `(companyId, systemType)`. Custom actions ha
 
 ## Approvals / MRB / reviewers
 
-`approvalRequirements nonConformanceApproval[]` → the server function inserts a
+`approvalRequirements nonConformanceApproval[]` → the posting inserts a
 `nonConformanceApprovalTask` per requirement. When `MRB` is newly required it
 seeds two `nonConformanceReviewer` rows (`title: "Engineering"`, `"Quality"`);
 removing MRB deletes the reviewers; existing reviewers are left untouched.

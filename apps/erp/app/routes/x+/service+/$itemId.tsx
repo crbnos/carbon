@@ -27,24 +27,22 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
-import type { ItemFile, ServiceSummary } from "~/modules/items";
 import {
   getItemFiles,
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce,
   getMethodTree,
   getPartUsedIn,
   getService,
-  getSupplierParts
-} from "~/modules/items";
-import {
-  getMakeMethodByIdOnce,
-  getMakeMethodsOnce,
+  getSupplierParts,
   streamItemSupersession
-} from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
+import type { ItemFile, ServiceSummary } from "~/modules/items/types";
 import { BoMActions, BoMExplorer } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
 import { ServiceHeader, ServiceProperties } from "~/modules/items/ui/Services";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

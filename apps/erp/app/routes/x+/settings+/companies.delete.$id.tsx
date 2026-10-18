@@ -11,7 +11,10 @@ import { isInternalEmail, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteSubsidiary, getSubsidiary } from "~/modules/settings";
+import {
+  deleteSubsidiary,
+  getSubsidiary
+} from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "settings-companies-delete");

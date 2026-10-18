@@ -2,37 +2,26 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  applyDotenvToProcessEnv,
-  clientOnlyAlias,
-  linguiWithoutIdQuery,
-  precompressedAssets,
-  stackActivity,
-} from "@carbon/dev/vite";
+import { applyDotenvToProcessEnv, carbon } from "@carbon/dev/vite";
 import { reactRouter } from "@react-router/dev/vite";
-import { getConfig } from "@lingui/conf";
-import { lingui } from "@lingui/vite-plugin";
-import optimizeLocales from "@react-aria/optimize-locales-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
-import { defineConfig, PluginOption } from "vite";
+import { defineConfig } from "vite";
 
 export default defineConfig(({ command, mode, isSsrBuild }) => {
   applyDotenvToProcessEnv(mode, import.meta.dirname);
 
   /**
-   * SSR dependencies that must be bundled into the server output rather than
-   * left as bare `import`s. Applied to BOTH `ssr.noExternal` (honored by the
-   * dev server and the plain `react-router build`) and
-   * `environments.ssr.resolve.noExternal`.
+   * Dev-server SSR dependencies that must be inlined rather than left as bare
+   * `import`s. A production build inlines every dependency (see the ERP's
+   * vite.config.ts for why). Applied to BOTH `ssr` and
+   * `environments.ssr.resolve`.
    *
    * The second location is not redundant: with `future.v8_viteEnvironmentApi`
    * enabled, the Vercel preset builds each route group as a named server-bundle
    * environment (`ssr_bundle_*`), and React Router's server-bundle environment
    * resolver merges `viteUserConfig.environments.ssr` — NOT the top-level `ssr`
-   * config. Without this, `zustand` (default-imported by @react-three/fiber,
-   * see below) is externalized in the Vercel Lambda and crashes the function on
-   * cold start with "does not provide an export named 'default'".
+   * config.
    */
   const ssrNoExternal = [
     "react-dropzone",
@@ -65,6 +54,11 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
      */
     "@dicebear/styles",
   ];
+
+  const ssrResolve =
+    command === "build"
+      ? { noExternal: true as const }
+      : { noExternal: ssrNoExternal };
 
   return {
     // ASSETS_URL bakes a CDN asset base into the client build (Dockerfile
@@ -102,14 +96,18 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
     define: {
       global: "globalThis",
     },
-    ssr: {
-      noExternal: ssrNoExternal,
-    },
+    ssr: ssrResolve,
     environments: {
       ssr: {
-        resolve: {
-          noExternal: ssrNoExternal,
-        },
+        resolve: ssrResolve,
+        // Bundled CommonJS that reads __dirname/__filename (yoga-layout under
+        // react-pdf, libheif) runs in ES module output, where neither exists.
+        ...(command === "build" && {
+          define: {
+            __dirname: "import.meta.dirname",
+            __filename: "import.meta.filename",
+          },
+        }),
       },
     },
     server: {
@@ -118,21 +116,25 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
       allowedHosts: [".ngrok-free.app", ".w.modal.host", ".w.modal.dev", ".dev", ".localhost", "host.docker.internal"],
     },
     plugins: [
-      stackActivity(),
       tailwindcss(),
-      linguiWithoutIdQuery(lingui({ macroTransform: true })),
       reactRouter(),
-      precompressedAssets({ command, mode }),
-      // react-aria ships strings for ~34 locales; keep the ones the app translates.
-      optimizeLocales.vite({ locales: getConfig().locales }),
-      // unpdf's bundled PDF.js engine is a dead lazy chunk in the browser, which
-      // runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it out there
-      // only: on the server it is the one engine PDF reading has.
-      clientOnlyAlias(
-        "unpdf/pdfjs",
-        path.resolve(import.meta.dirname, "app/ssr-shims/unpdf-pdfjs-stub.mjs")
-      ),
-    ] as PluginOption[],
+      carbon({
+        command,
+        mode,
+        locales: true,
+        precompress: true,
+        splitServer: true,
+        // unpdf's bundled PDF.js engine is a dead lazy chunk in the browser,
+        // which runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it
+        // out there only: on the server it is the one engine PDF reading has.
+        clientOnly: {
+          "unpdf/pdfjs": path.resolve(
+            import.meta.dirname,
+            "app/ssr-shims/unpdf-pdfjs-stub.mjs"
+          ),
+        },
+      }),
+    ],
     resolve: {
       tsconfigPaths: true,
       alias: {

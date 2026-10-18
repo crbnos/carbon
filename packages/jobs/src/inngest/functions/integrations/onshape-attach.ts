@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { openAsBlob } from "node:fs";
+import { createHash } from "node:crypto";
 import type { Database } from "@carbon/database";
 import {
   getCompanyPrivateBucket,
@@ -11,20 +11,19 @@ import {
 } from "@carbon/files";
 import { isUniqueViolation } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import { resolveModelSourceBucket } from "../tasks/assembler-client";
 
 // Carbon-side attachment of Onshape released assets to an item. Lives in
 // @carbon/jobs (not @carbon/ee): it needs the service-role client + document
 // writes, and the release-sync/backfill Inngest functions (its callers) live here.
 //
-// The caller (release-sync job) is responsible for:
+// The caller (the Onshape sync pipeline) is responsible for:
 //   - resolving `itemId` by matching the Onshape part number + revision against
 //     item.readableIdWithRevision (LINK-ONLY: skip if no match, do NOT create);
-//   - downloading the GLTF/PDF from Onshape (OnshapeClient export methods);
-//   - sending the "carbon/model-optimize" event for the returned modelUploadId
-//     (the assembler turns the raw export into the viewer GLB) and the
-//     "carbon/model-thumbnail" fallback (both via step.sendEvent).
+//   - staging the STEP export (the assembler's `fetch` puts it in temp-staging)
+//     and downloading drawing PDFs.
+// A new modelUpload row starts the model pipeline itself (the
+// `queue_model_pipeline` statement handler), so no caller sends model-optimize.
 
 type CarbonClient = SupabaseClient<Database>;
 type DocumentSourceType = Database["public"]["Enums"]["documentSourceType"];
@@ -34,12 +33,14 @@ export interface OnshapeAssetFile {
   bytes: Uint8Array;
 }
 
-// Raw model export on disk. Streamed into storage via openAsBlob — a
-// whole-vehicle GLTF export reaches 1.7GB and must never be buffered in memory.
+// A raw model export already in temp-staging, put there by whoever fetched it
+// (the assembler's `fetch`, or the no-assembler fallback). Never read here: a
+// whole-vehicle STEP export reaches several GB.
 export interface OnshapeModelFile {
   fileName: string;
-  localPath: string;
+  stagedPath: string; // key in TEMP_STAGING_BUCKET
   size: number;
+  contentHash: string; // of the bytes, from whoever staged them
   // Stable ID derived by the exporter from the exact released source + its
   // selection generation. An ID identifies immutable bytes, never a filename.
   sourceId?: string;
@@ -50,7 +51,10 @@ export interface AttachOnshapeAssetsInput {
   createdBy: string; // userId for audit (the Onshape integration installer)
   itemId: string; // resolved Carbon item (caller guarantees it exists)
   sourceDocument: DocumentSourceType; // e.g. "Part"
-  model?: OnshapeModelFile; // raw GLTF -> item's modelUpload (optimized by the assembler)
+  model?: OnshapeModelFile; // raw STEP -> item's modelUpload (optimized by the assembler)
+  // A model the sync found already exported (same released source): link it,
+  // nothing to move. Exclusive with `model`.
+  existingModelId?: string;
   documents?: OnshapeAssetFile[]; // drawing PDFs -> item documents
 }
 
@@ -58,10 +62,6 @@ export interface AttachOnshapeAssetsResult {
   modelUploadId: string | null;
   documentIds: string[];
   preservedPriorModelAsDocument: boolean;
-}
-
-function modelContentType(extension: string): string {
-  return extension === "glb" ? "model/gltf-binary" : "model/gltf+json";
 }
 
 function fileExtension(fileName: string): string {
@@ -118,30 +118,29 @@ async function ensureImmutableModel(
     }
     return result.data;
   };
-  if (await lookup()) return modelId;
+  const staging = carbon.storage.from(TEMP_STAGING_BUCKET);
+  if (await lookup()) {
+    // Already attached: the staged copy is a duplicate of its bytes.
+    await staging.remove([input.model.stagedPath]);
+    return modelId;
+  }
 
-  const extension = fileExtension(input.model.fileName) || "gltf";
+  // The stem must be the model id (the artifacts route derives the id from
+  // the file name), so the staged object moves to its final key.
+  const extension = fileExtension(input.model.fileName) || "step";
   const modelPath = `${input.companyId}/models/${modelId}.${extension}`;
-  const contentType = modelContentType(extension);
-  const rawBlob = await openAsBlob(input.model.localPath, {
-    type: contentType
-  });
-  const uploaded = await carbon.storage
-    .from(TEMP_STAGING_BUCKET)
-    .upload(modelPath, rawBlob, { upsert: false, contentType });
-  // A concurrent redelivery (or a retry after upload but before DB insert) can
-  // already own these immutable bytes. Never overwrite them. Both callers then
-  // converge through the modelUpload primary key below.
-  if (
-    uploaded.error &&
-    !(
-      "statusCode" in uploaded.error &&
-      String(uploaded.error.statusCode) === "409"
-    )
-  ) {
-    throw new Error(
-      `attachOnshapeAssetsToItem: model upload failed: ${uploaded.error.message}`
-    );
+  const moved = await staging.move(input.model.stagedPath, modelPath);
+  // A concurrent redelivery, or a retry after the move but before the insert,
+  // already moved these immutable bytes: the final object is what counts.
+  // Never overwrite it. Both callers then converge on the primary key below.
+  if (moved.error) {
+    const landed = await staging.info(modelPath);
+    if (landed.error) {
+      throw new Error(
+        `attachOnshapeAssetsToItem: model move failed: ${moved.error.message}`
+      );
+    }
+    await staging.remove([input.model.stagedPath]);
   }
   const inserted = await carbon
     .from("modelUpload")
@@ -166,6 +165,29 @@ async function ensureImmutableModel(
     }
   }
   return modelId;
+}
+
+// An export with no immutable source (an assembly, or a workspace part with
+// no microversion) is named by its bytes. Unchanged bytes reuse their model.
+// Changed bytes get a new model: every derived file (the compacted raw, the
+// preview, the assembly graph) is keyed by the model id, and a durable copy is
+// never overwritten, so refreshing a model in place kept the old geometry.
+// The bytes' hash comes from whoever staged them, so nothing reads them again.
+export function contentSourceId(
+  companyId: string,
+  itemId: string,
+  model: Pick<OnshapeModelFile, "fileName" | "contentHash">
+): string {
+  const hash = createHash("sha256").update(
+    JSON.stringify([
+      "content-v2",
+      companyId,
+      itemId,
+      model.fileName,
+      model.contentHash
+    ])
+  );
+  return `onshape-${hash.digest("hex")}`;
 }
 
 // "Replace rather than append": one document row per storage path, so re-running
@@ -301,11 +323,10 @@ export async function attachOnshapeAssetsToItem(
   // --- Primary model -> modelUpload + item.modelUploadId --------------------
   // The raw export lands in temp-staging exactly like a manual CadModel upload
   // (path stem == modelUpload.id — the artifacts route derives the id from the
-  // filename); the caller then fires "carbon/model-optimize" so the assembler
-  // produces the viewer GLB.
-  if (input.model) {
-    const extension = fileExtension(input.model.fileName) || "gltf";
-
+  // filename); inserting the row starts the optimise that produces the viewer
+  // GLB.
+  const model = input.model;
+  if (model || input.existingModelId) {
     // Resolve the current model before linking a released source. Item identity
     // and its manufacturing records are unchanged; only its model pointer moves.
     const currentItem = await carbon
@@ -337,101 +358,13 @@ export async function attachOnshapeAssetsToItem(
     }
     const priorModel = priorResult?.data ?? null;
 
-    if (input.model.sourceId !== undefined) {
-      modelUploadId = await ensureImmutableModel(
+    modelUploadId =
+      input.existingModelId ??
+      (await ensureImmutableModel(
         carbon,
-        { companyId, createdBy, model: input.model },
-        input.model.sourceId
-      );
-    } else {
-      // Compatibility for callers that do not supply an immutable source identity.
-      // openAsBlob streams the file from disk on demand — the export is never
-      // read into memory.
-      const rawBlob = await openAsBlob(input.model.localPath, {
-        type: modelContentType(extension)
-      });
-
-      if (priorModel?.modelPath && priorModel.name === input.model.fileName) {
-        // Same model re-synced → refresh the raw + row in place. No new
-        // modelUpload, no repoint, no preserve. The row's modelPath may point at
-        // a zstd-compacted raw (model-optimize compacts after optimising), so
-        // upload to the canonical staging path and repoint rather than
-        // overwriting the stored object.
-        const modelPath = `${companyId}/models/${priorModel.id}.${extension}`;
-        const reupload = await carbon.storage
-          .from(TEMP_STAGING_BUCKET)
-          .upload(modelPath, rawBlob, {
-            upsert: true,
-            contentType: modelContentType(extension)
-          });
-        if (reupload.error) {
-          throw new Error(
-            `attachOnshapeAssetsToItem: model re-upload failed: ${reupload.error.message}`
-          );
-        }
-        if (priorModel.modelPath !== modelPath) {
-          // Best-effort: drop the superseded object (e.g. the old .zst compact).
-          await carbon.storage
-            .from(TEMP_STAGING_BUCKET)
-            .remove([priorModel.modelPath])
-            .catch(() => {});
-        }
-        const refresh = await carbon
-          .from("modelUpload")
-          .update({
-            modelPath,
-            size: input.model.size,
-            originalSize: input.model.size,
-            updatedBy: createdBy,
-            updatedAt: new Date().toISOString()
-          })
-          .eq("id", priorModel.id)
-          .eq("companyId", companyId);
-        if (refresh.error) {
-          throw new Error(
-            `attachOnshapeAssetsToItem: modelUpload refresh failed: ${refresh.error.message}`
-          );
-        }
-        modelUploadId = priorModel.id;
-      } else {
-        // New model (or a genuinely different one). Upload + insert a fresh row.
-        const modelId = nanoid();
-        const modelPath = `${companyId}/models/${modelId}.${extension}`;
-        const modelUpload = await carbon.storage
-          .from(TEMP_STAGING_BUCKET)
-          .upload(modelPath, rawBlob, {
-            upsert: true,
-            contentType: modelContentType(extension)
-          });
-        if (modelUpload.error) {
-          throw new Error(
-            `attachOnshapeAssetsToItem: model upload failed: ${modelUpload.error.message}`
-          );
-        }
-        const modelRecord = await carbon
-          .from("modelUpload")
-          .insert({
-            id: modelId,
-            modelPath,
-            name: input.model.fileName,
-            size: input.model.size,
-            // Frozen as-uploaded bytes: `size` is later overwritten with the
-            // compacted (.zst) stored size (model-optimize), but the viewer's
-            // reduction badge compares the original.
-            originalSize: input.model.size,
-            companyId,
-            createdBy
-          })
-          .select("id")
-          .single();
-        if (modelRecord.error) {
-          throw new Error(
-            `attachOnshapeAssetsToItem: modelUpload insert failed: ${modelRecord.error.message}`
-          );
-        }
-        modelUploadId = modelId;
-      }
-    }
+        { companyId, createdBy, model: model! },
+        model!.sourceId ?? contentSourceId(companyId, itemId, model!)
+      ));
 
     if (modelUploadId !== priorModelId) {
       // Preserve a genuinely different prior model (e.g. a manual upload) as a
@@ -445,27 +378,35 @@ export async function attachOnshapeAssetsToItem(
       // prefix minted by ensureImmutableModel): those are superseded
       // auto-generated artifacts, kept as a record for existing references but
       // never re-attached as a misleading duplicate document.
-      const priorIsOnshapeGeneration = (priorModel?.id ?? "").startsWith(
-        "onshape-"
-      );
+      // One exception, for an export with no source id only: a prior model
+      // with the same file name is that export's earlier sync. Those syncs
+      // refreshed one row in place and gave it a plain id, so the prefix cannot
+      // mark them. Main overwrote such a row; here it stays in storage, just
+      // not re-listed as a document.
+      const priorIsOnshapeGeneration =
+        (priorModel?.id ?? "").startsWith("onshape-") ||
+        (model !== undefined &&
+          model.sourceId === undefined &&
+          priorModel?.name === model.fileName);
       if (priorModel?.modelPath && !priorIsOnshapeGeneration) {
         const preservedName = stripSpecialCharacters(
           priorModel.name ?? `prior-model-${priorModel.id}`
         );
         const preservedPath = `${companyId}/parts/${itemId}/${preservedName}`;
-        // Raw sources live in temp-staging since the assembler pipeline;
-        // older rows live in the company or legacy private bucket. Copy into
-        // the company bucket so the preserved file sits with the item's
-        // documents.
+        // The raw source is in the company bucket once durable, else in
+        // temp-staging. Copy it into the company bucket so the preserved file
+        // sits with the item's documents.
         const priorBucket = await resolveModelSourceBucket(
-          carbon,
+          companyId,
           priorModel.modelPath
         );
-        const copied = await carbon.storage
-          .from(priorBucket)
-          .copy(priorModel.modelPath, preservedPath, {
-            destinationBucket: getCompanyPrivateBucket(companyId)
-          });
+        const copied = priorBucket
+          ? await carbon.storage
+              .from(priorBucket)
+              .copy(priorModel.modelPath, preservedPath, {
+                destinationBucket: getCompanyPrivateBucket(companyId)
+              })
+          : { error: { message: "the prior model file is not in storage" } };
         if (copied.error && !/already exists/i.test(copied.error.message)) {
           console.error(
             `attachOnshapeAssetsToItem: failed to copy prior model ${priorModel.id} for preservation`,

@@ -490,7 +490,7 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
       <div className="flex w-full min-w-0 items-center justify-between gap-2">
         <div className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden">
           {bomId && (
-            <Badge variant="outline" className="flex-shrink-0">
+            <Badge variant="outline" className="flex-shrink-0 font-mono">
               {bomId}
             </Badge>
           )}
@@ -498,7 +498,7 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
         </div>
         <div className="flex flex-shrink-0 items-center gap-1">
           {node.data.isRoot ? (
-            <Badge variant="outline" className="whitespace-nowrap">
+            <Badge variant="outline" className="whitespace-nowrap font-mono">
               V{getRootVersion(node)}
             </Badge>
           ) : (
@@ -615,7 +615,7 @@ function BoMNodeData({ node }: { node: BoMNode }) {
 
   return (
     <HStack spacing={1}>
-      <Badge className="text-xs tabular-nums" variant="outline">
+      <Badge className="text-xs font-mono tabular-nums" variant="outline">
         <MethodIcon
           type={node.data.methodType}
           isKit={node.data.kit ?? undefined}

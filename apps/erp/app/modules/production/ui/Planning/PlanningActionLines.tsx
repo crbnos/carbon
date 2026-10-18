@@ -39,8 +39,8 @@ import {
 import { Link } from "react-router";
 import { Assignee, DateTime } from "~/components";
 import { useQuantityFormatter } from "~/hooks";
-import type { PlanningAction } from "~/modules/production";
 import type { planningActionType } from "~/modules/production/production.models";
+import type { PlanningAction } from "~/modules/production/types";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import { path } from "~/utils/path";
 import JobStatus from "../Jobs/JobStatus";

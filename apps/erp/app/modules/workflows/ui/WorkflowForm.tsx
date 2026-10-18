@@ -39,11 +39,10 @@ const WorkflowForm = ({
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const fetcher = useAction<{ id: string } | { success: false }>({
-    onSettled: (data) => {
-      if (data && "id" in data) {
-        navigate(path.to.workflow(data.id));
-      }
+  // Creating returns the new workflow; renaming redirects with no data.
+  const fetcher = useAction<{ data: { id: string } | null }>({
+    onSuccess: (result) => {
+      if (result.data) navigate(path.to.workflow(result.data.id));
     }
   });
 

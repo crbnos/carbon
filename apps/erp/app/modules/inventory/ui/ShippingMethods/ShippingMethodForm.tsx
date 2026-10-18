@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   HStack,
   ModalDrawer,
@@ -16,9 +17,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
-import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
   Account,
@@ -32,7 +30,7 @@ import { usePermissions } from "~/hooks";
 import {
   shippingCarrierType,
   shippingMethodValidator
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
 type ShippingMethodFormProps = {
@@ -50,20 +48,14 @@ const ShippingMethodForm = ({
 }: ShippingMethodFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
-  const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
-
-  useEffect(() => {
-    if (type !== "modal") return;
-
-    if (fetcher.state === "loading" && fetcher.data?.data) {
+  // A modal closes on the new record; an error is toasted and the form stays.
+  const fetcher = useAction({
+    onSuccess: () => {
+      if (type !== "modal") return;
       onClose?.();
       toast.success(t`Created shipping method`);
-    } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(
-        t`Failed to create shipping method: ${fetcher.data.error.message}`
-      );
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  });
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing

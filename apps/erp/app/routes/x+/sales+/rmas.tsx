@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getSalesReturnOrders } from "~/modules/sales";
+import { getSalesReturnOrders } from "~/modules/sales/sales.service";
 import { SalesReturnOrdersTable } from "~/modules/sales/ui/SalesReturnOrders";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

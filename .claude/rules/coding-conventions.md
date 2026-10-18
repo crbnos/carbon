@@ -13,7 +13,7 @@ rules — this file does not repeat them:
 |-------|------|
 | DB / migrations / RLS / multi-tenancy | [conventions-database.md](conventions-database.md) |
 | ValidatedForm + zod validators + actions | [conventions-forms.md](conventions-forms.md) |
-| Service functions (`{module}.service.ts`) | [conventions-services.md](conventions-services.md) |
+| Service functions (`{module}.server.ts`, `{module}.service.ts`) | [conventions-services.md](conventions-services.md), [module-files.md](module-files.md) |
 | Components, animation, polish | [conventions-ui.md](conventions-ui.md) |
 
 ## Stack & Tooling
@@ -65,17 +65,17 @@ ERP feature code is organized by module under `apps/erp/app/modules/{module}/`:
 
 ```
 modules/{module}/
+├── {module}.server.ts    # defineServiceFn operations: the module's API
+├── {module}.service.ts   # building blocks the operations call (server-only)
 ├── {module}.models.ts    # zod validators + derived types
-├── {module}.service.ts   # Supabase/Kysely data operations
-├── {module}.server.ts    # server-only helpers (optional)
+├── {module}.utils.ts     # browser-safe helpers (optional)
 ├── types.ts              # shared types (optional)
-├── index.ts              # barrel: re-exports models/service/types
 └── ui/                   # feature components
 ```
 
-`index.ts` is a barrel of `export * from "./..."` (see
-`apps/erp/app/modules/sales/index.ts`). Import from the module root
-(`~/modules/sales`), not deep files.
+There is no barrel. Import from the file that defines the thing
+(`~/modules/sales/sales.models`, never `~/modules/sales`). Full rules and the
+checks that enforce them: [module-files.md](module-files.md).
 
 **Folder names are kebab-case.** Multi-word directories use hyphens, not
 camelCase — `packages/ee/src/paperless-parts`, `packages/ee/src/rules` (not
@@ -86,9 +86,9 @@ as are the React component filenames inside them (`StorageRuleForm.tsx`). The
 `{module}.*.ts` service/model file prefixes mirror their folder name.
 
 **A feature is not automatically a module.** A module is a business domain, and
-it owns exactly one `{module}.models.ts` / `{module}.service.ts` pair. Sub-features
+it owns exactly one `{module}.server.ts` / `{module}.service.ts` / `{module}.models.ts` set. Sub-features
 live *inside* their domain module as a `ui/{Feature}/` folder plus functions in
-that one service/models file — e.g. storage rules live in `~/modules/inventory`
+those files — e.g. storage rules live in `~/modules/inventory`
 and sales rules in `~/modules/sales`, not in standalone `modules/storage-rules` /
 `modules/sales-rules` directories. Create a new module only for a genuinely new
 domain.
@@ -101,9 +101,16 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
 - File-based via `remix-flat-routes`. Conventions seen in `apps/*/app/routes/`:
   `_index.tsx`, `_layout.tsx` and `_public+/` (pathless), `x+/`, `api+/`, `file+/`
   (folder groups), `$param` (dynamic segments), `[.]pdf` (escaped literals).
-- Loaders/actions destructure args typed by `react-router`; the first thing an
-  authenticated handler does is `await requirePermissions(request, { ... })`,
+- Loaders/actions destructure args typed by `react-router`. The first thing an
+  authenticated loader does is `await requirePermissions(request, { ... })`,
   destructuring `{ client, companyId, userId }` (also `email`, `companyGroupId`).
+- An action checks the request with `validator(schema).request(args, …)`
+  (`@carbon/form`), calls ONE service function through `carbon(request)`
+  (`@carbon/api/carbon.server`) and returns its result, or
+  `respond(request, result).redirect(...)` for a navigating form. The service
+  function holds the permission and the write. See
+  [conventions-forms.md](conventions-forms.md) and [module-files.md](module-files.md).
+  Older actions still run `assertIsPost` → `requirePermissions` → a building block.
 - Loaders/actions return **plain objects** or `data(value, responseInit)`.
   Do NOT use `json(...)` — that is the old Remix helper and is not the convention here.
 - A layout does NOT export `shouldRevalidate` to skip its loader. Single fetch
@@ -136,7 +143,7 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   `@carbon/utils`. The loaders of a matched branch run in parallel, so without it every
   parent loader runs for a request that is about to be redirected. Enforced by the
   `index-redirect-before-loaders` check (`@carbon/checks`).
-- On success an action throws a redirect (`throw redirect(...)`), not `return`.
+- A legacy action throws its success redirect (`throw redirect(...)`), not `return`.
   A cached `api+` loader exports `clientLoader = cachedClientLoader<typeof loader>()`;
   no route exports a `clientAction`.
 
@@ -181,8 +188,9 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
 
 - zod, imported as `import { z } from "zod"`, with `zfd` from `zod-form-data`
   for FormData coercion: `zfd.text(...)`, `zfd.numeric(...)`, `zfd.checkbox()`.
-- Validate in route actions with `validator(schema).validate(formData)` from
-  `@carbon/form` — not `schema.parse()`. Full pattern in conventions-forms.md.
+- Validate in route actions with `validator(schema).request(args, …)` from
+  `@carbon/form` (legacy actions: `validator(schema).validate(formData)`) — not
+  `schema.parse()`. Full pattern in conventions-forms.md.
 
 ## State
 

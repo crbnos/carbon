@@ -11,16 +11,15 @@ import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-
 import {
   getSupplier,
   getSupplierContacts,
   getSupplierLocations,
   getSupplierTax
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import SupplierHeader from "~/modules/purchasing/ui/Supplier/SupplierHeader";
 import SupplierSidebar from "~/modules/purchasing/ui/Supplier/SupplierSidebar";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

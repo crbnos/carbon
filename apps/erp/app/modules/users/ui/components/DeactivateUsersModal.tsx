@@ -15,7 +15,7 @@ import {
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { UserSelect } from "~/components/Selectors";
-import { deactivateUsersValidator } from "~/modules/users";
+import { deactivateUsersValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 type DeactivateUsersModalProps = {

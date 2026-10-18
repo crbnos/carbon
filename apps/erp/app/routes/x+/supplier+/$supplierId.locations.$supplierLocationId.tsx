@@ -15,11 +15,11 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
+import { supplierLocationValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getSupplierLocation,
-  supplierLocationValidator,
   updateSupplierLocation
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import SupplierLocationForm from "~/modules/purchasing/ui/Supplier/SupplierLocationForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

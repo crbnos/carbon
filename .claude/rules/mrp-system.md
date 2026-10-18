@@ -125,7 +125,9 @@ Phase-7 write) and throws on failure.
    `runMrp` from `@carbon/planning`, calls it **in-process** with the Kysely
    handle the route passed in (never built in the service file), and preserves
    the `{ data, error }` shape (catching the throw). The planning tables submit
-   to this via `path.to.api.mrp(locationId)`.
+   to this via `path.to.api.mrp(locationId)`. The API / MCP's `production_runMRP`
+   (`runMRP` in `production.server.ts`) runs the same with the service role and
+   the same `update: "inventory"`.
 
    **Event triggers** — the same `runMRP` runs after a document changes demand
    or supply: job status changes (`x+/job+/$jobId.status.tsx`, and
@@ -144,7 +146,7 @@ Phase-7 write) and throws on failure.
    "salesOrder"`, `id?` (required for non-company), `companyId`, `userId`.
    Computation engine is
    `packages/database/src/mrp-engine.ts` (`explodeBom(...)`, `@carbon/database/mrp-engine`),
-   also used by get-method (`@carbon/server-functions`).
+   also used by `getMethod` (`production.service.ts`).
 
    - **Periods**: generates/fetches weekly `period` rows 72 weeks forward from
      today on the company's clock (`WEEKS_TO_FORECAST = 18 * 4`, `"Week"`
@@ -606,8 +608,8 @@ never offered a Cancel, Defer or Expedite.
   `modules/production/ui/Planning/PlanningActionLines.tsx`; every mutation posts
   to the existing `planning.update.tsx` cases (`apply`/`dismiss`/`reopen`/`assign`).
   **Cancel** on a job runs `cancelJob` (`production.server.ts`), the job status
-  route's own path: picked material back, picking lists closed, then
-  Cancelled. On a PO line it DELETES the line, in one statement that also
+  route's own path: Cancelled (only from Draft / Planned here), then picked
+  material back and picking lists closed. On a PO line it DELETES the line, in one statement that also
   requires a Draft / Planned PO and nothing received or invoiced; when that
   guard holds the row back the action goes back to Open as "Review on PO".
   Never `shortClosePurchaseOrderLine` — it recomputes the header status from
@@ -621,7 +623,7 @@ never offered a Cancel, Defer or Expedite.
   the target dates, one UPDATE of due date + priority via the pure
   `nextJobPriority`), then the route sends ONE `schedule-inputs-changed`
   event for the batch (a "reorder" event re-stamps the whole company whatever
-  its job id). Increase / Decrease / Cancel on jobs call server functions
+  its job id). Increase / Decrease / Cancel on jobs call postings
   with their own transactions, so they stay per job — grouped by job, three
   jobs at a time (`async.map`), each claimed right before its own change.
   The claim and release inside a transaction live in
@@ -638,13 +640,16 @@ never offered a Cancel, Defer or Expedite.
   `releasePlanningActionClaim`, which deletes the claimed row instead when an
   MRP run has meanwhile written an Open row for the same need (the reopen hits
   the natural-key index, 23505); a failed release is reported, not swallowed.
-  Job Cancel is the one exception: `cancelJob`'s cleanup steps run in their own
-  transactions, so a release between the read and the cancel is not caught.
-  **Permissions:** both `planning.update` routes run with the service role, so
-  their `requirePermissions` is the only check — `create` for `order`,
-  `update` for everything else, plus `purchasing_delete` (read from the claims)
-  for a Cancel that deletes a PO line. An assignee or responsible employee is
-  saved only after `isActiveCompanyEmployee` (`shared.server.ts`), and
+  Job Cancel holds its condition the same way: `cancelJob` flips the status
+  first, guarded on Draft / Planned, and returns material only after it.
+  **Permissions:** both `planning.update` routes make one service-function
+  call per `action` (`orderPlannedJobs`, `applyPlanningActions`, … in
+  `production.server.ts`; `orderPlannedPurchases`, `applyPlanningActions`, … in
+  `purchasing.server.ts`). Each function's `permission` is the gate, and its
+  body writes as the system: `create` for an order, `update` for everything
+  else. Purchasing Apply deletes a PO line for a Cancel only when the caller
+  also holds `delete: "purchasing"` (`ctx.can`). An assignee or responsible employee is
+  saved only after `isActiveCompanyEmployee` (`shared.service.ts`), and
   `planningAction` is read-only through the API (manifest rule: read is
   `anyOf("production_view", "purchasing_view")`, since both planning pages
   read it with the user's client; MRP and these routes write it with the
@@ -753,7 +758,7 @@ never offered a Cancel, Defer or Expedite.
     revert — the edit stands.
     A Draft job (listed, editable, charted as new supply, but NOT MRP supply)
     shows a **Plan** button when no action targets it (`renderRowCommand`):
-    `planning.update` `planJob` checks the location, that no sales order owns
+    `planJobFromPlanning` (`production.server.ts`) checks the location, that no sales order owns
     it and that it is Draft, then `planDraftJob` (`production.server.ts`) recalculates
     its requirements (a failure leaves it Draft, as `releaseJobs` does), flips
     it to Planned (`updateJobStatus` `fromStatuses: ["Draft"]`) and runs MRP —
@@ -830,7 +835,7 @@ never offered a Cancel, Defer or Expedite.
   mismatch) until then. Generated types mark every RPC column non-null; the new
   ones are not (`PlanningGridColumns` in `production/types.ts`).
 - **Create planned orders** — `planning.update.tsx` in each module:
-  - production (`create: "production"`, role `employee`): inserts jobs +
+  - production (`orderPlannedJobs`, `create: "production"`): inserts jobs +
     job methods, upserts `supplyForecast` (`'Production Order'`), then
     `recalculateJobRequirements()`.
   - purchasing (`create: "purchasing"`, role `employee`): one PO per supplier

@@ -6,7 +6,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { updateJobOperationBatch } from "~/modules/production";
+import { updateJobOperationBatch } from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 // Bulk dissolve — one server-fn dissolve per selected batch. Each is independent:

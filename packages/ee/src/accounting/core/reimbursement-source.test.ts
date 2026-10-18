@@ -103,17 +103,17 @@ describe("resolveReimbursementSyncGate", () => {
     ).toBe(true);
   });
 
-  it.each([
-    "Draft",
-    "Voided"
-  ] as const)("skips a %s reimbursement WITH a reason, so its journal keeps pushing", (status) => {
-    const gate = resolveReimbursementSyncGate({
-      reimbursementId: "REIMB-1",
-      status
-    });
-    expect(gate).not.toBe(true);
-    expect(gate).toMatch(/must be posted/i);
-  });
+  it.each(["Draft", "Voided"] as const)(
+    "skips a %s reimbursement WITH a reason, so its journal keeps pushing",
+    (status) => {
+      const gate = resolveReimbursementSyncGate({
+        reimbursementId: "REIMB-1",
+        status
+      });
+      expect(gate).not.toBe(true);
+      expect(gate).toMatch(/must be posted/i);
+    }
+  );
 });
 
 describe("validateReimbursementAccountMapping", () => {

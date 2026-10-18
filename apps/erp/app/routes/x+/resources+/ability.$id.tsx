@@ -10,7 +10,8 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { AbilityEmployeesTable, getAbility } from "~/modules/resources";
+import { getAbility } from "~/modules/resources/resources.service";
+import { AbilityEmployeesTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

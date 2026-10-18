@@ -34,10 +34,13 @@ import {
   leaseTermColumns,
   leaseTerminateValidator,
   leaseValidator,
+  lockedReturnLineField,
   PURCHASE_ORDER_LOCKED_STATUSES,
+  purchaseOrderDeleteRefusal,
   purchaseOrderStatusType,
   purchaseOrderValidator,
   resolveLeaseDates,
+  splitRfqModelAttachments,
   supplierQuoteValidator
 } from "./purchasing.models";
 
@@ -73,21 +76,18 @@ describe("canCreatePurchaseOrderRevision", () => {
     { currentStatus: "To Receive", orderDate: null, expected: false }
   ];
 
-  it.each(
-    reopenMatrix
-  )("reopen from $currentStatus (orderDate: $orderDate) → eligible: $expected", ({
-    currentStatus,
-    orderDate,
-    expected
-  }) => {
-    expect(
-      canCreatePurchaseOrderRevision({
-        newStatus: "Draft",
-        currentStatus,
-        orderDate
-      })
-    ).toBe(expected);
-  });
+  it.each(reopenMatrix)(
+    "reopen from $currentStatus (orderDate: $orderDate) → eligible: $expected",
+    ({ currentStatus, orderDate, expected }) => {
+      expect(
+        canCreatePurchaseOrderRevision({
+          newStatus: "Draft",
+          currentStatus,
+          orderDate
+        })
+      ).toBe(expected);
+    }
+  );
 
   it("follows the same matrix when reopening to Planned", () => {
     for (const { currentStatus, orderDate, expected } of reopenMatrix) {
@@ -549,5 +549,103 @@ describe("lease action validators", () => {
         reason: " "
       }).success
     ).toBe(false);
+  });
+});
+
+describe("purchaseOrderDeleteRefusal", () => {
+  it("allows a Draft or Planned order whoever asks", () => {
+    for (const status of ["Draft", "Planned"]) {
+      expect(
+        purchaseOrderDeleteRefusal({ status, requestedBy: "u2", userId: "u1" })
+      ).toBeNull();
+    }
+  });
+
+  it("refuses every released or closed order", () => {
+    for (const status of PURCHASE_ORDER_LOCKED_STATUSES) {
+      expect(
+        purchaseOrderDeleteRefusal({ status, requestedBy: null, userId: "u1" })
+      ).toBe("status");
+    }
+  });
+
+  it("lets only the requester delete an order that needs approval", () => {
+    const needsApproval = { status: "Needs Approval", userId: "u1" };
+    expect(
+      purchaseOrderDeleteRefusal({ ...needsApproval, requestedBy: "u1" })
+    ).toBeNull();
+    expect(
+      purchaseOrderDeleteRefusal({ ...needsApproval, requestedBy: "u2" })
+    ).toBe("notRequester");
+    // No pending request left: nothing to protect.
+    expect(
+      purchaseOrderDeleteRefusal({ ...needsApproval, requestedBy: null })
+    ).toBeNull();
+  });
+});
+
+describe("lockedReturnLineField", () => {
+  const saved = {
+    quantity: 4,
+    itemId: "item-1",
+    unitPrice: 10,
+    restockFeePercent: 0.1,
+    unitOfMeasureCode: "EA",
+    purchaseOrderLineId: "pol-1",
+    receiptLineId: null,
+    purchaseInvoiceLineId: null
+  };
+  const unchanged = {
+    quantity: 4,
+    itemId: "item-1",
+    unitPrice: 10,
+    restockFeePercent: 0.1,
+    unitOfMeasureCode: "EA",
+    purchaseOrderLineId: "pol-1"
+  };
+
+  it("passes a change that moves no locked field", () => {
+    expect(lockedReturnLineField(unchanged, saved)).toBeNull();
+  });
+
+  it("names the first locked field that moves", () => {
+    expect(lockedReturnLineField({ ...unchanged, quantity: 5 }, saved)).toBe(
+      "Quantity"
+    );
+    expect(
+      lockedReturnLineField({ ...unchanged, receiptLineId: "rl-1" }, saved)
+    ).toBe("Receipt line link");
+  });
+
+  it("ignores a field that was not sent", () => {
+    expect(
+      lockedReturnLineField(
+        {
+          ...unchanged,
+          restockFeePercent: undefined,
+          unitOfMeasureCode: undefined
+        },
+        saved
+      )
+    ).toBeNull();
+  });
+});
+
+describe("splitRfqModelAttachments", () => {
+  const model = (id: string, size: number) => ({ id, size });
+
+  it("attaches what fits in line order and links the rest", () => {
+    const { attach, link } = splitRfqModelAttachments(
+      [model("a", 10), model("big", 30), model("b", 5)],
+      20
+    );
+    expect(attach.map((m) => m.id)).toEqual(["a", "b"]);
+    expect(link.map((m) => m.id)).toEqual(["big"]);
+  });
+
+  it("links every model when documents already use the budget", () => {
+    const { attach, link } = splitRfqModelAttachments([model("a", 1)], -5);
+    expect(attach).toEqual([]);
+    expect(link.map((m) => m.id)).toEqual(["a"]);
   });
 });

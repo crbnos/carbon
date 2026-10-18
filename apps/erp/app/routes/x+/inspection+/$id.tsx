@@ -19,12 +19,10 @@ import {
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getInspectionTrackedEntities,
-  getIssueTypesList
-} from "~/modules/quality";
-import {
+  getIssueTypesList,
   getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
-} from "~/modules/quality/quality.server";
+} from "~/modules/quality/quality.service";
 import type {
   InspectionGauge,
   InspectionMeasurement,
@@ -35,7 +33,8 @@ import type {
   IssueTypeListItem
 } from "~/modules/quality/types";
 import InspectionView from "~/modules/quality/ui/Inspections/InspectionView";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -90,7 +89,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // The lot references its inspection document live — resolve per-lot plan
   // rows for any features added to the document after receipt.
   if (insp.inspectionDocumentId) {
-    await reconcileInspectionSamplingPlans(id, companyId);
+    await reconcileInspectionSamplingPlans(getDatabaseClient(), id, companyId);
   }
 
   const isReceiptSource = insp.sourceDocument === "Receipt";
@@ -108,7 +107,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getInspectionSamplingPlans(client, id, companyId),
     getInspectionMeasurements(client, id, companyId),
     getInspectionGauges(client, companyId, id),
-    getRecentInspectionGauges({ inspectionId: id, companyId }),
+    getRecentInspectionGauges(getDatabaseClient(), {
+      inspectionId: id,
+      companyId
+    }),
     isReceiptSource && insp.sourceDocumentLineId
       ? getInspectionTrackedEntities(
           client,

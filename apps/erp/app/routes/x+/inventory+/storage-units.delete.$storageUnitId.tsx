@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   Button,
@@ -22,13 +24,16 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteStorageUnit,
-  deleteStorageUnitCascade,
-  getStorageUnit
-} from "~/modules/inventory";
+import { getStorageUnit } from "~/modules/inventory/inventory.service";
 import { getParams, path } from "~/utils/path";
+
+// The cascade modal sends `cascade=true` to delete the nested units too.
+const deleteForm = z.object({
+  cascade: zfd.checkbox({ trueValue: "true" })
+});
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -62,46 +67,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { storageUnit: storageUnit.data, childCount };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(deleteForm).request(args, {
+    params: ["storageUnitId"]
   });
-
-  const { storageUnitId } = params;
-  if (!storageUnitId) {
-    throw redirect(
-      path.to.storageUnits,
-      await flash(request, error(params, "Failed to get a storageUnit id"))
-    );
-  }
-
-  const formData = await request.formData();
-  const cascade = formData.get("cascade") === "true";
-
-  const deleteResult = cascade
-    ? await deleteStorageUnitCascade(client, storageUnitId)
-    : await deleteStorageUnit(client, storageUnitId);
-
-  if (deleteResult.error) {
-    throw redirect(
-      path.to.storageUnits,
-      await flash(
-        request,
-        error(deleteResult.error, "Failed to delete storage unit")
-      )
-    );
-  }
-
-  throw redirect(
-    `${path.to.storageUnits}?${getParams(request)}`,
-    await flash(
-      request,
-      success(
-        cascade
-          ? "Successfully deleted storage unit and nested units"
-          : "Successfully deleted storage unit"
-      )
-    )
+  if ("invalid" in input) return input.invalid;
+  const { cascade } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.inventory.removeStorageUnit({
+    storageUnitId: input.params.storageUnitId,
+    cascade
+  });
+  return respond(args.request, result).redirect(
+    `${path.to.storageUnits}?${getParams(args.request)}`,
+    {
+      message: cascade
+        ? "Successfully deleted storage unit and nested units"
+        : "Successfully deleted storage unit"
+    }
   );
 }
 

@@ -15,7 +15,7 @@ import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { draftRentalAgreementSetupPath } from "~/modules/sales/sales.server";
+import { draftRentalAgreementSetupPath } from "~/modules/sales/sales.service";
 import type { RentalAgreementRouteData } from "~/modules/sales/ui/Rentals";
 import {
   LeaseClassificationPreview,

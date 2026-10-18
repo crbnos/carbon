@@ -12,9 +12,9 @@ import { data, useParams } from "react-router";
 import { useCurrencyFormatter, useRouteData } from "~/hooks";
 import {
   isMaintenanceDispatchLocked,
-  maintenanceDispatchItemValidator,
-  upsertMaintenanceDispatchItem
-} from "~/modules/resources";
+  maintenanceDispatchItemValidator
+} from "~/modules/resources/resources.models";
+import { upsertMaintenanceDispatchItem } from "~/modules/resources/resources.service";
 import type { MaintenanceDispatchItem } from "~/modules/resources/types";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

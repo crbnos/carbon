@@ -16,7 +16,7 @@ import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
-import { getSyncOperationReadableIds } from "~/modules/settings/settings.server";
+import { getSyncOperationReadableIds } from "~/modules/settings/settings.service";
 import {
   formatTrigger,
   getEntityLabel

@@ -19,7 +19,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
 import { Hidden, Input, Submit, TextArea, Users } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { documentValidator } from "~/modules/documents";
+import { documentValidator } from "~/modules/documents/documents.models";
 import { path } from "~/utils/path";
 
 type DocumentFormProps = {

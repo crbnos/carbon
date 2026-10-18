@@ -18,7 +18,7 @@ import {
 import {
   getEnforcementRuleAssignmentCounts,
   getEnforcementRules
-} from "~/modules/shared";
+} from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

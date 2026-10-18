@@ -14,12 +14,15 @@ import {
   useNavigate,
   useSearchParams
 } from "react-router";
-import type { AccountClass, AccountIncomeBalance } from "~/modules/accounting";
+import { accountValidator } from "~/modules/accounting/accounting.models";
 import {
-  accountValidator,
   getGroupAccounts,
   upsertAccount
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
+import type {
+  AccountClass,
+  AccountIncomeBalance
+} from "~/modules/accounting/types";
 import { ChartOfAccountForm } from "~/modules/accounting/ui/ChartOfAccounts";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

@@ -26,12 +26,12 @@ import {
 import { Avatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { Customer } from "~/modules/users";
+import type { Customer } from "~/modules/users/types";
 import {
   DeactivateUsersModal,
   ResendInviteModal,
   RevokeInviteModal
-} from "~/modules/users";
+} from "~/modules/users/ui";
 import { useCustomers } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";

@@ -68,24 +68,32 @@ import {
   useCurrencyFormatter,
   usePercentFormatter
 } from "~/hooks";
-import { getCurrenciesList, getPaymentTermsList } from "~/modules/accounting";
-import { getShippingMethodsList } from "~/modules/inventory";
-import type { SalesOrderLine } from "~/modules/sales";
 import {
-  externalQuoteValidator,
+  getCurrenciesList,
+  getPaymentTermsList
+} from "~/modules/accounting/accounting.service";
+import { getShippingMethodsList } from "~/modules/inventory/inventory.service";
+import { externalQuoteValidator } from "~/modules/sales/sales.models";
+import {
   getOpportunity,
   getQuoteByExternalId,
   getQuoteCustomerDetails,
-  getQuoteLinePricesByQuoteId,
-  getQuoteLines,
   getQuotePayment,
   getQuoteShipment,
   getSalesOrderLines,
   getSalesTerms
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
+import {
+  getQuoteLinePricesByQuoteId,
+  getQuoteLines
+} from "~/modules/sales/sales.utils";
+import type { SalesOrderLine } from "~/modules/sales/types";
 import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
-import { getCompany, getCompanySettings } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/api+/sales.digital-quote.$id";
 import { path } from "~/utils/path";
 

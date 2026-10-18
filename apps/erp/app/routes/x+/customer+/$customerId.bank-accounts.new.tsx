@@ -10,10 +10,8 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useNavigate, useParams } from "react-router";
 import { useUser } from "~/hooks";
-import {
-  customerBankAccountValidator,
-  upsertCustomerBankAccount
-} from "~/modules/sales";
+import { customerBankAccountValidator } from "~/modules/sales/sales.models";
+import { upsertCustomerBankAccount } from "~/modules/sales/sales.service";
 import CustomerBankAccountForm from "~/modules/sales/ui/Customer/CustomerBankAccountForm";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";

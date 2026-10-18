@@ -25,8 +25,11 @@ import {
   getOpenSalesOrderLines
 } from "~/modules/items/items.service";
 import { bucketSupplyByPeriod } from "~/modules/items/ui/Item/planningSupplyDemand";
-import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  getOrCreatePeriods
+} from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 
 const defaultResponse = {
   demand: [],
@@ -175,7 +178,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const today = datetime.today(
     await getLocationTimeZone(client, locationId, companyId)
   );
-  const periods = await getOrCreatePeriods(today, WEEKS_TO_FORECAST);
+  const periods = await getOrCreatePeriods(
+    getDatabaseClient(),
+    today,
+    WEEKS_TO_FORECAST
+  );
 
   const [
     demand,

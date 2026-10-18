@@ -15,11 +15,11 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
+import { customerContactValidator } from "~/modules/sales/sales.models";
 import {
-  customerContactValidator,
   getCustomerContact,
   updateCustomerContact
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

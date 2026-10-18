@@ -46,12 +46,12 @@ import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Process } from "~/modules/resources";
+import type { Process } from "~/modules/resources/types";
 import {
   type OperationType,
   operationTypes,
   standardFactorType
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 

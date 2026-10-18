@@ -2,13 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ServerFnError } from "@carbon/api/errors";
 import { createMappingService } from "@carbon/ee/accounting";
 import {
   confirmSyncs,
   type RampBill,
   type RampClient
 } from "@carbon/ee/ramp.server";
-import { ServerFnError } from "@carbon/server-functions/errors";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getJobDatabaseClient } from "../../../db";
@@ -21,12 +21,11 @@ import type { RampSyncContext } from "./ramp-sync-shared";
 // Only the posting operation is substituted. All staging, status transitions,
 // queries, mappings, FKs and rollback use real Postgres.
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/server-functions", () => {
-  const bind = (actor: string) => (fields: object) => ({
-    invoke: (_name: string, input: unknown) => post({ ...fields, actor }, input)
-  });
-  return { serverFns: { system: bind("system"), as: bind("caller") } };
-});
+// A posting with a client runs as the caller behind it, else as the system.
+vi.mock("@carbon/api/postings.server", () => ({
+  posting: (_name: string, handles: { client?: unknown }, input: unknown) =>
+    post({ ...handles, actor: handles.client ? "caller" : "system" }, input)
+}));
 
 vi.mock("@carbon/ee/ramp.server", async (original) => ({
   ...(await original<typeof import("@carbon/ee/ramp.server")>()),
@@ -400,29 +399,30 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
       expect(post).toHaveBeenCalledTimes(1);
     }, 30000);
 
-    it.each([
-      "Pending",
-      "Voided"
-    ] as const)("never posts or confirms a mapped %s invoice", async (status) => {
-      const { args, ctx, ramp, post } = await fixture();
-      const staged = await stageOrResumeRampBill(db, args);
-      await db
-        .updateTable("purchaseInvoice")
-        .set({ status })
-        .where("companyId", "=", scope.companyId)
-        .where("id", "=", staged.invoiceRowId)
-        .execute();
-      vi.mocked(confirmSyncs).mockClear();
-      expect(await syncRampBills(ctx, ramp, undefined)).toMatchObject({
-        created: 0,
-        reconfirmed: 0,
-        failed: 1
-      });
-      expect(vi.mocked(confirmSyncs).mock.calls.at(-1)?.[2].successful).toEqual(
-        []
-      );
-      expect(post).not.toHaveBeenCalled();
-    }, 30000);
+    it.each(["Pending", "Voided"] as const)(
+      "never posts or confirms a mapped %s invoice",
+      async (status) => {
+        const { args, ctx, ramp, post } = await fixture();
+        const staged = await stageOrResumeRampBill(db, args);
+        await db
+          .updateTable("purchaseInvoice")
+          .set({ status })
+          .where("companyId", "=", scope.companyId)
+          .where("id", "=", staged.invoiceRowId)
+          .execute();
+        vi.mocked(confirmSyncs).mockClear();
+        expect(await syncRampBills(ctx, ramp, undefined)).toMatchObject({
+          created: 0,
+          reconfirmed: 0,
+          failed: 1
+        });
+        expect(
+          vi.mocked(confirmSyncs).mock.calls.at(-1)?.[2].successful
+        ).toEqual([]);
+        expect(post).not.toHaveBeenCalled();
+      },
+      30000
+    );
 
     it("adopts one exact legacy system Draft without changing its source mapping on collision", async () => {
       const { args, ctx } = await fixture();

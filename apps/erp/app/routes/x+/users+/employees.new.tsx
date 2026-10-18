@@ -2,38 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  assertIsPost,
-  CONTROLLED_ENVIRONMENT,
-  error,
-  success
-} from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { InviteEmail } from "@carbon/documents/email";
-import { companyHasFeature } from "@carbon/ee/plan.server";
-import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
-import { sendEmail } from "@carbon/lib/email.server";
-import { getLogger } from "@carbon/logger";
-import { datetime, getClientIp, redirect } from "@carbon/utils";
-import { render } from "@react-email/components";
-import { nanoid } from "nanoid";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { CreateEmployeeModal } from "~/modules/users/ui";
 import {
-  CreateEmployeeModal,
   createEmployeeValidator,
-  getInvitable
-} from "~/modules/users";
-import {
-  createEmployeeAccount,
-  getSsoInviteDomainError
-} from "~/modules/users/users.server";
+  US_PERSON_ATTESTATION_REQUIRED
+} from "~/modules/users/users.models";
+import { getInvitable, originOf } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "employees-new");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -56,142 +39,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "users"
-  });
-
-  const validation = await validator(createEmployeeValidator).validate(
-    await request.formData()
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const {
-    email,
-    firstName,
-    lastName,
-    locationId,
-    employeeType,
-    usPersonAttestation
-  } = validation.data;
-
-  // Community / Starter ships "everyone is an admin": authoring roles is gated,
-  // so an invited user always receives the seeded Admin employee type,
-  // regardless of what the (hidden) form control submitted. `companyHasFeature`
-  // blocks the Community edition outright and applies the plan check on Cloud.
-  let effectiveEmployeeType = employeeType;
-  const canAuthorRoles = await companyHasFeature(client, companyId, {
-    feature: "PERMISSIONS"
-  });
-  if (!canAuthorRoles) {
-    const adminType = await client
-      .from("employeeType")
-      .select("id")
-      .eq("companyId", companyId)
-      .eq("systemType", "Admin")
-      .maybeSingle();
-    if (adminType.data?.id) {
-      effectiveEmployeeType = adminType.data.id;
-    }
-  }
-
-  // Controlled environments require the inviter to attest the invitee is a
-  // U.S. person (22 CFR 120.62) before the invite can be created.
-  if (CONTROLLED_ENVIRONMENT && !usPersonAttestation) {
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(createEmployeeValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { ip, city } = originOf(args.request);
+  const api = await carbon(args.request);
+  const result = await api.users.inviteEmployee({ ...input.data, ip, city });
+  if (result.error?.message === US_PERSON_ATTESTATION_REQUIRED) {
     return validationError({
-      fieldErrors: {
-        usPersonAttestation:
-          "You must confirm a reasonable basis that this individual is a U.S. person"
-      }
+      fieldErrors: { usPersonAttestation: result.error.message }
     });
   }
-
-  // Once SSO is active for the company, an employee invite outside its
-  // covered domains is refused before anything is created or emailed.
-  const ssoDomainError = await getSsoInviteDomainError(
-    getCarbonServiceRole(),
-    companyId,
-    email
-  );
-  if (ssoDomainError) {
-    return validationError({
-      fieldErrors: { email: ssoDomainError }
-    });
+  // The SSO domain check, the operation's only rule refusal.
+  if (result.error?.category === "rule") {
+    return validationError({ fieldErrors: { email: result.error.message } });
   }
-
-  const result = await createEmployeeAccount(client, {
-    email: email.toLowerCase(),
-    firstName,
-    lastName,
-    employeeType: effectiveEmployeeType,
-    locationId,
-    companyId,
-    createdBy: userId,
-    attestedBy: CONTROLLED_ENVIRONMENT ? userId : null,
-    attestedAt: CONTROLLED_ENVIRONMENT ? datetime.timestamp() : null
-  });
-
-  if (!result.success) {
-    logger.error(result);
-    throw redirect(
-      path.to.employeeAccounts,
-      await flash(
-        request,
-        error(result, result.message ?? "Failed to create employee account")
-      )
-    );
-  }
-
-  const location = request.headers.get("x-vercel-ip-city") ?? "Unknown";
-  const ip = getClientIp(request) ?? "127.0.0.1";
-  const [company, user] = await Promise.all([
-    client.from("company").select("name").eq("id", companyId).single(),
-    client.from("user").select("email, fullName").eq("id", userId).single()
-  ]);
-
-  if (!company.data || !user.data) {
-    throw new Error("Failed to load company or user");
-  }
-
-  const inviteLink = await getSsoAwareInviteLink(
-    getCarbonServiceRole(),
-    email,
-    result.code,
-    companyId
-  );
-
-  await sendEmail({
-    to: email,
-    subject: `You have been invited to join ${company.data?.name} on Carbon`,
-    headers: {
-      "X-Entity-Ref-ID": nanoid()
-    },
-    html: await render(
-      InviteEmail({
-        invitedByEmail: user.data.email,
-        invitedByName: user.data.fullName ?? "",
-        email,
-        name: `${firstName} ${lastName}`.trim(),
-        companyName: company.data.name,
-        inviteLink,
-        ip,
-        location,
-        controlledEnvironment: CONTROLLED_ENVIRONMENT
-      })
-    )
-  });
-
-  throw redirect(
-    path.to.personJob(result.userId),
-    await flash(request, success("Successfully invited employee"))
+  return respond(args.request, result).redirect(
+    result.data
+      ? path.to.personJob(result.data.userId)
+      : path.to.employeeAccounts,
+    { message: "Successfully invited employee" }
   );
 }
 
-export default function () {
+export default function NewEmployeeRoute() {
   const { invitable } = useLoaderData<typeof loader>();
 
   return <CreateEmployeeModal invitable={invitable} />;

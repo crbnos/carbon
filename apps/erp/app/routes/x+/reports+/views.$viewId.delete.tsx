@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteReportView } from "~/modules/accounting";
+import { deleteReportView } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 
 // Delete a saved report view. Posted to by the ConfirmDelete modal on both the

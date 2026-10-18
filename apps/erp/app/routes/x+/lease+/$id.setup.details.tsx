@@ -13,12 +13,14 @@ import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
-  getLease,
   leaseDurationOf,
   leaseValidator,
   resolveLeaseDates
-} from "~/modules/purchasing";
-import { updateDraftLease } from "~/modules/purchasing/purchasing.server";
+} from "~/modules/purchasing/purchasing.models";
+import {
+  getLease,
+  updateDraftLease
+} from "~/modules/purchasing/purchasing.service";
 import type { LeaseRouteData } from "~/modules/purchasing/ui/Leases";
 import { LeaseDetailsForm } from "~/modules/purchasing/ui/Leases";
 import { getDatabaseClient } from "~/services/database.server";

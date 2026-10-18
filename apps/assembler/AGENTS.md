@@ -118,9 +118,9 @@ One trace per job: the caller's `traceparent` → the request span
 - **A job is spawned with `telemetry::spawn_job`, never bare `tokio::spawn`.**
   The job outlives its request, so the span context has to travel with the task;
   a bare spawn starts a job whose spans belong to no trace.
-- **Across the Lambda self-invoke the parent rides in the run-job spec**
+- **Across the Lambda self-invoke the parent rides in the worker spec**
   (`traceparent`, written by `telemetry::inject` in `lambda_dispatch`, restored
-  by `telemetry::attach` in `run::spawn_from_spec`). A spec built anywhere else
+  by `telemetry::attach` in `main::spawn_traced`). A spec built anywhere else
   can carry the same key.
 - **Outbound requests go through `http::{download_hashed, upload, post_json}`**,
   which record the host only. The URLs are signed, and error text that quotes
@@ -144,8 +144,14 @@ deploy time; `ci/src/assembler.ts` does not set any yet.
 Every action is an async job: POST returns 202 and the job runs in a background
 task. Callers pass signed upload URLs at submit (`X-Carbon-Upload-Urls`) and a
 `callback_url`; the job uploads its outputs and POSTs the terminal envelope the
-moment compute ends. `GET /v1/jobs/{id}?wait=<secs>` long-polls (capped at 25 s)
-and is the fallback when the callback is lost.
+moment compute ends. `GET /v1/jobs/{id}` is the fallback when the callback is
+lost. It accepts `?wait=<secs>` (a long poll, capped at 25 s), but
+`runAssemblerJob` never sends it: a long poll is an executing Inngest step, so
+it held a slot of the shared concurrency key for its whole wait. The runner
+polls once per wake and waits between polls in `waitForEvent`, which holds no
+slot. A 5xx poll counts as unreachable, not as a lost job. When the runner gives
+up on a job that is still queued or running, it calls
+`POST /v1/jobs/{id}/cancel` (best effort) so the job does not keep its memory.
 
 **Job status + pointers live in Redis** (`jobs.rs`): `asm:job:{jobId}` →
 `{status, result, stats, …}`. Redis is required, so a restart, a sibling replica
@@ -160,21 +166,70 @@ retries a lost connection with delays that double from 1 s to 5 s, so the
 service is healthy again within seconds of Redis returning. The crate's
 defaults wait forever and back off to a minute or two.
 
-**Outputs go from memory to storage.** The service has no storage credentials.
-When the submit carried a URL for every output, `finish()` PUTs them straight
-from `Bytes` and stores nothing. Otherwise (no URLs at submit, or that upload
-failed) the outputs are **parked** and the job stays `uploading` until a poll
-brings fresh URLs (late-mint):
+**Outputs go from memory to storage, never through Redis.** The service has no
+storage credentials: the caller signs one upload URL per output at submit
+(`X-Carbon-Upload-Urls`), and `finish()` PUTs each output straight from `Bytes`.
+A PUT that fails is retried after 1, 2 and 4 s; still failing (or a missing
+URL), the job fails with `UPLOAD_FAILED` and the caller resubmits with fresh
+URLs. Outputs are never parked for a later poll: a late-mint hand-off used to
+keep them on disk, or in Redis on Lambda, which put whole models in a shared
+Redis.
 
-- on a standing service, as files under `<tmp>/asm-pending/<hash of job id>/`,
-  memory-mapped for the upload and swept after the pending TTL;
-- on Lambda, in Redis (`asm:pending:{jobId}`, same TTL), because the poll there
-  is answered by a different invocation than the one that computed.
+**One parser per action** (`src/request.rs`). `POST /v1/{action}` and the
+Lambda worker both parse the body through `request::parse`, so a default
+cannot differ between runtimes. Convert and plan share one tessellation
+(`config::TESSELLATION_*`): nodeIds hash the tessellated positions, so a
+graph.json and a plan.json made at different deflections disagree. A plan
+needs `meta.planPath` (400 without); there is no inline plan result, no
+`?sync` mode and no `run-job` CLI.
 
-A parked job not drained within the TTL is abandoned (the caller resubmits).
-Disk parking is per instance: with more than one standing replica a late-mint
-poll must reach the replica that computed, so pass the URLs at submit. (Legacy:
-a plan with no `planPath` returns the plan inline in the job record.)
+**Job state is a Redis hash, changed only while the job is active.** A
+record is `asm:job2:{id}` (fields `action`, `status`, `result`, `stats`,
+`error`, `upload_urls`, `callback_url`). Every status change goes through one
+Lua script (`TRANSITION`) that checks the job is still pending, starting,
+running or uploading before it writes, so a finish can never overwrite a cancel
+that landed meanwhile.
+
+**Leases: who is running a job.** A working job (not `pending`) holds
+`asm:lease:{id}` (30 s), renewed every 10 s by the process's `heartbeat` for
+every job `jobs::track` lists (`telemetry::spawn_job` tracks each job). A poll
+that finds a working job with no lease ends it `WORKER_LOST`, which the caller
+resubmits: the process running it died. On Lambda the lease is the worker's
+claim (`SET NX`): of two deliveries one runs, and a redelivery after a crashed
+or timed-out invocation takes the job over; the request body stays in
+`asm:req:{id}` until the job ends so it can.
+
+**Cancel stops transfers.** `track` gives each job a cancel token; `cancel`
+fires it at once on the replica running the job, and the heartbeat fires it on
+any other within 10 s. Downloads and uploads race it (`http::unless_canceled`)
+and fail `canceled`.
+
+**A compute has a deadline** (`compute.rs`, 60 min; Lambda's 900 s comes
+first there). OCCT and FCL cannot be interrupted and a blocking thread cannot
+be killed, so past the deadline, or on a cancel, the job ends at once
+(`COMPUTE_TIMEOUT` / `canceled`) and the thread finishes in the background
+still holding the job's memory grant: admission never hands out memory a
+stuck thread may still be using. A plan's grant lives inside its work (it is
+resized as parts are counted), so it is released the same way.
+
+**Secrets stay out of payloads, records and errors.**
+- The Lambda self-invoke spec is `{ action, job_id, traceparent }` and nothing
+  else. The request body waits in Redis (`asm:req:{id}`, 2 h) and the worker
+  reads it (`GET`); it is deleted when the job ends (`ended()`), so a
+  redelivery can take over a job whose worker died. No signed URL, caller
+  token or service key rides in the Invoke payload, which AWS keeps for its
+  async retries, but the stored body holds them, a `fetch`'s `authorization`
+  included, until the job ends.
+- `/events` is mounted only on Lambda, where only an IAM-signed Invoke reaches
+  it; a spec names a job, so a delivery can only start a pending job with the
+  body its create stored.
+- A job's upload URLs are cleared when it ends. Its `callback_url` stays (the
+  worker re-sends the callback; it only reports that one job).
+- Every reqwest error goes through `without_url()`: signed URLs keep their
+  token in the query string, and the message is logged, stored on the job and
+  returned to the caller.
+- The shared HTTP client follows no redirects: a redirect would reach a host
+  `validate_url` never checked.
 
 **Content-hash result cache** (`asm:result:{model}:{contentHash}:{optsHash}:v{CODE_VERSION}`
 → pointer, 24 h): a repeat of the same model + bytes + options + code version
@@ -204,6 +259,28 @@ Built to sit as a small always-on pod beside other workloads.
   above the whole budget takes all of it and runs alone. Nothing is rejected.
   The reservation covers the compute only, not the download or the upload. CPU
   is bounded separately by the blocking pool (cores + 2).
+- **Downloaded sources are bounded too** (`source.rs`). A job takes one of
+  `cores + 2` source slots before it downloads and holds it until its `Source`
+  drops, which deletes the file on every path (a panic included). A queue past
+  that waits with no file on disk; it used to hold every queued job's source
+  at once.
+- **Every transfer has a deadline**: a download 1 h end to end (the 60 s read
+  timeout only catches a stalled one), an upload 2 min plus 2 MB/s of body, the
+  Lambda self-invoke 10 s. A create claims `asm:create:{id}` (`SET NX`, 30 s,
+  released when done) so two POSTs with one key cannot both spawn; a Lambda
+  worker claims the job's lease (`claim_lease`, `SET NX`), so of two live
+  deliveries exactly one runs. Callbacks from `set_error`/`cancel` go out in their own task.
+- **A waiting job is `pending` or `starting`, not `running`.** Each action sets
+  `running` only after `admission.acquire` returns. On Lambda the worker inlet
+  sets `starting` when it takes a `pending` job, before the download and the
+  admission wait, so a second delivery of the same job finds it taken and does
+  not run it again. The job API reports both `pending` and `starting` as
+  `queued`, and both count as active for cancel. A job cancelled while it
+  waited for memory is dropped right after admission, before any compute.
+  `runAssemblerJob` (`@carbon/jobs`, `tasks/assembler-client.ts`) starts an
+  action's time budget at `running`, so time spent queued behind other jobs never
+  fails a job. The optimize action's own deadline (`opts.deadline`) also starts
+  after admission, not at the download.
 - **The estimate is not a limit.** Nothing stops a job from using more than it
   was admitted for, and geometry can be far heavier than its file size: a
   5 MB plate with 1,200 drilled holes still peaks at 840 MB, thirteen times its
@@ -227,8 +304,8 @@ Built to sit as a small always-on pod beside other workloads.
   prints its settings at exit.
 - **The convert result cache** is files under `<tmp>/asm-cache` (2 GiB LRU, off
   on Lambda), memory-mapped when a hit is served and cleared at startup.
-- **`<tmp>` must be real disk** with room for the cache, parked outputs and
-  downloaded sources. A memory-backed `emptyDir` would charge all of it to the
+- **`<tmp>` must be real disk** with room for the cache and downloaded
+  sources. A memory-backed `emptyDir` would charge all of it to the
   pod's memory limit. The server clears downloaded sources (`geometry-*`) left
   by an earlier process when it starts: a killed container skips its own
   cleanup and the volume outlives the restart.
@@ -238,11 +315,38 @@ Built to sit as a small always-on pod beside other workloads.
 - **CI + registry** — no workflow yet builds/publishes the `carbon-occt` base or
   the `carbon-assembler` image, or deploys the container.
 
+## Fetch
+
+`POST /v1/fetch` `{ source: { url, authorization? }, maxBytes?, output: { path?,
+contentType? } }` copies the file at `source.url` into storage unchanged, as the
+`raw` output, and returns `{ contentHash, outputs: { raw: { path, bytes } } }`
+(`contentHash` = xxh3-128 hex). It exists so a caller never holds a large file:
+the Onshape sync has the assembler pull a STEP export straight from Onshape into
+staging instead of streaming it through the app's function.
+
+- `authorization` is sent as the `Authorization` header (marked sensitive) and
+  lives only in the request: never in the job record, a log or a span. On
+  Lambda the request is the stored body (`asm:req:{id}`), so the token sits in
+  Redis until the job ends, at most the request's 2 h.
+- `fetch` alone follows redirects, at most five and each to a URL that passes
+  `validate_url`; reqwest drops `Authorization` on a redirect to another host.
+- Outside dev mode `fetch` connects only to public addresses: its resolver
+  (`PublicOnly`) drops private, loopback, link-local, CGNAT and IPv6
+  unique-local results and refuses a host with none left. Its URL is the one a
+  third party decides (an Onshape Government tenant URL is the customer's to
+  set); every other action reaches our own signed storage URLs, which a
+  self-hosted install may serve from a private network. `validate_url` checks
+  IP literals by the same rule (`config::is_public_ip`).
+- `maxBytes` fails the job `LIMIT_EXCEEDED` (413), from `Content-Length` when
+  sent, else as the bytes cross it.
+- No zstd decoding: the stored bytes are exactly what the source served.
+- No memory grant (no compute); it takes a source slot like every download.
+
 ## Thumbnails
 
 `POST /v1/thumbnail` `{ source: { url }, output: { path?, size?, direction? } }`
 renders the GLB at `source.url` to a square PNG (300 px unless `size` says
-otherwise) and late-mint uploads it as the `thumbnail` output.
+otherwise) and uploads it as the `thumbnail` output.
 
 The camera is the viewer's: a 45° perspective looking at the centre of the
 bounding box, standing back far enough to fit the bounding sphere (`FOV_DEGREES`
@@ -258,6 +362,23 @@ re-framed to fit the whole model, whatever the viewer's zoom or pan. The caller 
 lossless `convert` GLB). It replaced a headless-browser screenshot of the viewer
 page. A Draco-compressed GLB is refused (`thumbnail_failed`); textures and vertex
 colours are ignored in favour of the material colour.
+
+## Ingest (optimize with compact and thumbnail)
+
+A new model is processed by ONE `/v1/optimize` job, which reads the raw once.
+Two optional request fields add outputs:
+
+| Field | Output | What it writes |
+|---|---|---|
+| `compact: { path? }` | `raw` (`application/zstd`) | A STEP is converted to BinXCAF once; the optimiser tessellates from that xbf, and the xbf is compressed (`.xbf.zst`). A mesh source is compressed as it is. An xbf source needs nothing. |
+| `thumbnail: { path?, size?, direction? }` | `thumbnail` (`image/png`) | Rendered from the optimised GLB in memory, with the camera of `/v1/thumbnail`. |
+
+Neither extra can fail the job: a failed compaction or render becomes a warning
+and the output is left out. The caller is `@carbon/jobs` `tasks/model-optimize.ts`.
+It asks for `compact` only while the raw is still in `temp-staging`; without a
+`raw` output it copies the raw out of staging as it is. `/v1/compact` and
+`/v1/thumbnail` stay for the cases outside ingest: a raw left in staging with the
+assembler off, and a thumbnail from a captured camera direction.
 
 ## meshopt / Draco compression
 

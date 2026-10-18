@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { createHmac } from "node:crypto";
+import { assemblerCallbackToken } from "@carbon/api/internal-call";
 import type { Database, Json } from "@carbon/database";
+import { findStorageObjectBuckets } from "@carbon/database/storage-objects";
 import {
   ASSEMBLER_JOB_CONCURRENCY,
   ASSEMBLER_SERVICE_API_KEY,
@@ -16,48 +17,45 @@ import {
 } from "@carbon/env";
 import {
   getCompanyPrivateBucket,
-  LEGACY_PRIVATE_BUCKET,
+  isUnsafeStoragePath,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { NonRetriableError } from "inngest";
+import { NonRetriableError, RetryAfterError } from "inngest";
+import { getJobDatabaseClient } from "../../../db";
 
 // Shared client for the assembler service's `/v1` action-RPC API. Submit
 // creates a job (202) with upload URLs + a completion-callback URL in the
-// request; the run then waits on the callback's event, with a single late-mint
-// poll as the timeout fallback. See .ai/specs/2026-07-15-assembler-deployment.md.
+// request; the run then waits on the callback's event in slices, polling the
+// job between slices. See .ai/specs/2026-07-15-assembler-deployment.md.
 
-// Submits are short; a tight per-request timeout catches an unreachable service.
+// Submits and polls are short; a tight per-request timeout catches an
+// unreachable service.
 const REQUEST_TIMEOUT_MS = 60 * 1000;
-// Bounded backoff when the service 429s (all slots busy), honoring Retry-After.
-const BUSY_RETRIES = 4;
-// GET /v1/jobs/{id}?wait=N holds the request open until the job finishes (or N
-// elapses), so completion is near-immediate and a whole job costs a handful of
-// checkpointed steps, not hundreds of short polls. Client timeout must exceed it.
-export const LONG_POLL_WAIT_S = 25;
-const LONG_POLL_TIMEOUT_MS = (LONG_POLL_WAIT_S + 10) * 1000;
-// Floor between polls — negligible when the service holds ~25s, but stops a loop
-// from hammering Inngest when a poll returns immediately (404, blip, no ?wait).
-export const POLL_GAP = "3s";
+// One wait for the completion callback. Between slices the run polls, which
+// catches a callback that fired while no wait was registered.
+const WAIT_SLICE_MS = 5 * 60 * 1000;
+// How long a job may sit in the service's queue (waiting for memory) before
+// the run gives up on it. Queue time does not count against the action's own
+// budget, which starts when the service reports the job running.
+const MAX_QUEUED_MS = 6 * 60 * 60 * 1000;
+// Resubmits after a failure that is not reproducible (a crash, a lost record).
+const MAX_RESUBMITS = 2;
 
 export const assemblerAuthHeaders: Record<string, string> =
   ASSEMBLER_SERVICE_API_KEY
     ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
     : {};
 
-// Shared bounded concurrency queue for EVERY assembler-backed function
-// (optimize, compact, convert, plan). They all park on the assembler completion
-// event (`runAssemblerJob` → `step.waitForEvent`, up to 15 min), and a parked run
-// holds its concurrency slot the whole wait — so without a cap a burst (e.g. the
-// viewer's per-view optimise auto-fire) exhausts account concurrency and starves
-// the `event-queue` drainer + its handlers. One shared `env`-scoped key across all
-// four functions bounds the TOTAL in flight, leaving the rest of the account free.
-// The cap ≈ how many assembler jobs should run at once (the service 429s past its
-// real capacity, so more parked runs buy nothing); the WASM raw tier renders while
-// an optimise waits, so a low cap never blocks a user from viewing a model.
-// Default 5: a per-function limit above the Inngest plan's account concurrency
-// fails app sync outright ("function has higher concurrency limits than your
-// plan"), and 5 is the smallest plan cap in play. Override via
+// One shared concurrency key for every assembler-backed function. It bounds
+// the steps that run at once (submits and polls, each a short request), so a
+// burst of uploads cannot take the account's concurrency from
+// the `event-queue` drainer. It does NOT bound the jobs in the service: a run
+// waiting in `waitForEvent` holds no slot (Inngest counts executing steps
+// only). The service bounds its own work by memory (`admission.rs`) and queues
+// the rest. Default 5: a per-function limit above the Inngest plan's account
+// concurrency fails app sync ("function has higher concurrency limits than
+// your plan"), and 5 is the smallest plan cap in play. Override via
 // ASSEMBLER_JOB_CONCURRENCY where the plan allows more.
 export const ASSEMBLER_CONCURRENCY: [
   { scope: "env"; key: string; limit: number }
@@ -141,31 +139,45 @@ export async function signSourceUrl(
 }
 
 /**
- * Resolve which bucket a model's raw source lives in. Current uploads land in
- * `temp-staging`, durable copies in the company's own bucket, and pre-migration
- * rows in the legacy `private` bucket — signing against the wrong bucket fails
- * with "Object not found", so probe in that order (same resolution as the ERP
- * model.artifacts route).
+ * Which bucket holds a model's raw source: the company's own bucket once it
+ * is durable, else `temp-staging`. Null when it is in neither, so the caller
+ * can fail the job for good instead of signing a path that does not exist.
+ *
+ * Null too for a path outside the row's company. Any insert path can name a
+ * file (the forms insert under RLS, which does not check `modelPath`), and
+ * these jobs read storage as the service role: `temp-staging` is shared, so
+ * without this check one company could have another's upload processed into
+ * its own bucket.
  */
 export async function resolveModelSourceBucket(
-  client: SupabaseClient<Database>,
+  companyId: string,
+  modelPath: string
+): Promise<string | null> {
+  if (
+    !modelPath.startsWith(`${companyId}/`) ||
+    isUnsafeStoragePath(modelPath)
+  ) {
+    return null;
+  }
+  const buckets = await findStorageObjectBuckets(getJobDatabaseClient(), {
+    names: [modelPath],
+    buckets: [getCompanyPrivateBucket(companyId), TEMP_STAGING_BUCKET]
+  });
+  return buckets.get(modelPath) ?? null;
+}
+
+/** The source bucket, or a non-retriable failure when the file is gone. */
+export async function requireModelSourceBucket(
+  companyId: string,
   modelPath: string
 ): Promise<string> {
-  const companySegment = modelPath.split("/")[0] ?? "";
-  const buckets = [
-    TEMP_STAGING_BUCKET,
-    // A key with no companyId segment can't resolve a company bucket.
-    ...(companySegment ? [getCompanyPrivateBucket(companySegment)] : []),
-    LEGACY_PRIVATE_BUCKET
-  ];
-  for (const bucket of buckets) {
-    const probe = await client.storage
-      .from(bucket)
-      .info(modelPath)
-      .catch(() => ({ data: null, error: true as const }));
-    if (!probe.error && probe.data) return bucket;
+  const bucket = await resolveModelSourceBucket(companyId, modelPath);
+  if (!bucket) {
+    throw new NonRetriableError(
+      `Source file no longer exists in storage: ${modelPath}`
+    );
   }
-  return LEGACY_PRIVATE_BUCKET;
+  return bucket;
 }
 
 /**
@@ -235,7 +247,7 @@ function errorMessage(error: ErrorBody, fallback: string): string {
  * honoring Retry-After; a genuine outage / permanent rejection fails fast.
  */
 export async function submitAssemblerJob(opts: {
-  action: "convert" | "optimize" | "plan" | "compact" | "thumbnail";
+  action: AssemblerAction;
   jobId: string;
   body: unknown;
   logger: { warn: (msg: string, meta?: unknown) => void };
@@ -249,108 +261,102 @@ export async function submitAssemblerJob(opts: {
   const base = opts.baseUrl ?? assemblerBaseUrl();
   const payload = JSON.stringify(body);
 
-  for (let attempt = 0; ; attempt++) {
-    let response: Response;
-    try {
-      response = await fetch(`${base}/v1/${action}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Idempotency-Key": jobId,
-          ...assemblerAuthHeaders,
-          ...(opts.uploadUrls && Object.keys(opts.uploadUrls).length > 0
-            ? { "X-Carbon-Upload-Urls": JSON.stringify(opts.uploadUrls) }
-            : {})
-        },
-        body: payload,
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-      });
-    } catch (e) {
-      const err = e as Error;
-      // A timeout may be transient (briefly saturated) — let Inngest retry.
-      // Genuine unreachability (down, DNS, TLS) is permanent — fail fast.
-      if (err.name === "TimeoutError" || err.name === "AbortError") {
-        throw new Error(
-          `Assembler service timed out after ${REQUEST_TIMEOUT_MS}ms`
-        );
-      }
-      throw new NonRetriableError(
-        `Assembler service unreachable: ${err.message}`
+  let response: Response;
+  try {
+    response = await fetch(`${base}/v1/${action}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": jobId,
+        ...assemblerAuthHeaders,
+        ...(opts.uploadUrls && Object.keys(opts.uploadUrls).length > 0
+          ? { "X-Carbon-Upload-Urls": JSON.stringify(opts.uploadUrls) }
+          : {})
+      },
+      body: payload,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    });
+  } catch (e) {
+    const err = e as Error;
+    // A timeout may be transient (briefly saturated) — let Inngest retry.
+    // Genuine unreachability (down, DNS, TLS) is permanent — fail fast.
+    if (err.name === "TimeoutError" || err.name === "AbortError") {
+      throw new Error(
+        `Assembler service timed out after ${REQUEST_TIMEOUT_MS}ms`
       );
     }
+    throw new NonRetriableError(
+      `Assembler service unreachable: ${err.message}`
+    );
+  }
 
-    if (response.status === 429 && attempt < BUSY_RETRIES) {
-      const retryAfter = Number(response.headers.get("retry-after")) || 15;
-      const waitMs = Math.min(retryAfter * 1000 * (attempt + 1), 120_000);
-      logger.warn(`assembler /v1/${action} busy (429); backing off`, {
-        jobId,
-        attempt,
-        waitMs
-      });
-      await new Promise((resolve) => setTimeout(resolve, waitMs));
-      continue;
-    }
+  // Busy: Inngest retries the step when the service says, without holding a
+  // step (and its concurrency slot) asleep in the meantime.
+  if (response.status === 429) {
+    const retryAfter = Number(response.headers.get("retry-after")) || 15;
+    logger.warn(`assembler /v1/${action} busy (429); retrying`, { jobId });
+    throw new RetryAfterError(
+      `Assembler service busy for ${action}`,
+      `${retryAfter}s`
+    );
+  }
 
-    const result = (await response.json().catch(() => null)) as {
-      ok?: boolean;
-      error?: ErrorBody;
-    } | null;
-    if (!response.ok || !result?.ok) {
-      // Non-429 errors are an outage (5xx) or permanent rejection (4xx):
-      // retrying holds the job for nothing — fail fast.
-      throw new NonRetriableError(
-        errorMessage(
-          result?.error,
-          `Assembler service returned ${response.status}`
-        )
-      );
-    }
-    return;
+  const result = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    error?: ErrorBody;
+  } | null;
+  if (!response.ok || !result?.ok) {
+    const message = errorMessage(
+      result?.error,
+      `Assembler service returned ${response.status}`
+    );
+    // A 5xx is the service or its gateway (a cold Lambda, a restarting pod):
+    // Inngest retries the step. A 4xx is a rejection a retry repeats.
+    if (response.status >= 500) throw new Error(message);
+    throw new NonRetriableError(message);
   }
 }
 
 export type JobResult = { result: Json; stats: Json };
 
+/** What the service says about a job, as a run acts on it. */
+export type JobOutcome =
+  | { status: "done"; result: Json; stats: Json }
+  | { status: "failed"; error: string; code?: string }
+  | { status: "canceled" }
+  /** Waiting for memory, or not started on the Lambda worker yet. */
+  | { status: "queued" }
+  | { status: "running" }
+  /** The poll did not reach the service. */
+  | { status: "unreachable" }
+  /** The service has no record of the job. */
+  | { status: "lost" };
+
 /**
- * One GET /v1/jobs/{id}?wait=N poll. Mints fresh signed upload URLs (late-mint)
- * for this poll via `mintUploadUrls` and sends them in X-Carbon-Upload-Urls, so
- * the service PUTs finished artifacts with seconds-old tokens. Transient
- * failures (dropped hold, 404 on a Redis-backed store, blip) read as "pending"
- * so the caller long-polls again rather than failing the run.
+ * One GET /v1/jobs/{id} poll; it answers at once (the run waits between polls in
+ * `waitForEvent`, which holds no concurrency slot).
  */
 export async function pollAssemblerJobOnce(opts: {
   jobId: string;
-  mintUploadUrls: () => Promise<Record<string, string>>;
   /** Override the target base (e.g. the ECS overflow service). Default: `ASSEMBLER_SERVICE_URL`. */
   baseUrl?: string;
-}): Promise<
-  | { status: "pending" }
-  | { status: "done"; result: Json; stats: Json }
-  | { status: "error"; error: string; code?: string }
-> {
-  const { jobId, mintUploadUrls } = opts;
+}): Promise<JobOutcome> {
+  const { jobId } = opts;
   const base = opts.baseUrl ?? assemblerBaseUrl();
-  const uploadUrls = await mintUploadUrls();
-  const headers: Record<string, string> = {
-    ...assemblerAuthHeaders,
-    ...(Object.keys(uploadUrls).length > 0
-      ? { "X-Carbon-Upload-Urls": JSON.stringify(uploadUrls) }
-      : {})
-  };
 
   let response: Response;
   try {
-    response = await fetch(
-      `${base}/v1/jobs/${jobId}?wait=${LONG_POLL_WAIT_S}`,
-      {
-        headers,
-        signal: AbortSignal.timeout(LONG_POLL_TIMEOUT_MS)
-      }
-    );
+    response = await fetch(`${base}/v1/jobs/${jobId}`, {
+      headers: assemblerAuthHeaders,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    });
   } catch {
-    return { status: "pending" };
+    return { status: "unreachable" };
   }
-  if (response.status === 404) return { status: "pending" };
+  if (response.status === 404) return { status: "lost" };
+  // A 5xx is the service (or its load balancer) mid-deploy: wait it out
+  // rather than fail a job that may still finish.
+  if (response.status >= 500) return { status: "unreachable" };
 
   const body = (await response.json().catch(() => null)) as {
     ok?: boolean;
@@ -364,49 +370,173 @@ export async function pollAssemblerJobOnce(opts: {
   if (!response.ok || !body?.job) {
     throw new Error(`GET /v1/jobs returned ${response.status}`);
   }
-  const job = body.job;
-  if (job.status === "succeeded") {
-    return {
-      status: "done",
-      result: job.result ?? null,
-      stats: job.stats ?? null
-    };
+  return jobOutcome(body.job);
+}
+
+function jobOutcome(job: {
+  status?: string;
+  result?: Json;
+  stats?: Json;
+  error?: { code?: string; message?: string } | null;
+}): JobOutcome {
+  switch (job.status) {
+    case "succeeded":
+      return {
+        status: "done",
+        result: job.result ?? null,
+        stats: job.stats ?? null
+      };
+    case "failed":
+      return {
+        status: "failed",
+        error: job.error?.message ?? "Job failed",
+        code: job.error?.code
+      };
+    case "canceled":
+      return { status: "canceled" };
+    case "queued":
+      return { status: "queued" };
+    default:
+      return { status: "running" };
   }
-  if (job.status === "failed") {
-    return {
-      status: "error",
-      error: job.error?.message ?? "Job failed",
-      code: job.error?.code
-    };
+}
+
+/** Best-effort: a failed cancel only leaves the job to finish unread. */
+async function cancelAssemblerJob(
+  jobId: string,
+  baseUrl: string | undefined,
+  logger: AssemblerLogger
+): Promise<void> {
+  const base = baseUrl ?? assemblerBaseUrl();
+  try {
+    const response = await fetch(`${base}/v1/jobs/${jobId}/cancel`, {
+      method: "POST",
+      headers: assemblerAuthHeaders,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    });
+    if (!response.ok) {
+      logger.warn("assembler job cancel refused", {
+        jobId,
+        status: response.status
+      });
+    }
+  } catch (error) {
+    logger.warn("assembler job cancel failed", { jobId, error });
   }
-  if (job.status === "canceled") {
-    return { status: "error", error: "Job canceled" };
-  }
-  return { status: "pending" };
 }
 
 // The minimal Inngest step surface the router needs; keeps this module free of a
 // version-pinned Inngest type import while staying structurally compatible with
 // the real `step` tools. `run` returns `any` because Inngest wraps the result in
 // `Jsonify<T>` (not a bare `T`) — call sites annotate the awaited value.
-type StepTools = {
+export type StepTools = {
   run: (id: string, fn: () => unknown) => Promise<any>;
-  sleep: (id: string, duration: string | number) => Promise<unknown>;
   waitForEvent: (
     id: string,
     opts: { event: string; timeout: string | number; if?: string }
   ) => Promise<any | null>;
 };
 
-type PollOutcome = Awaited<ReturnType<typeof pollAssemblerJobOnce>>;
+/**
+ * Failures a resubmit can fix: the source or an output could not travel, the
+ * service could not start the job, the process running it died
+ * (`WORKER_LOST`: its lease ran out), or it gave no reason. Any other failure
+ * is the input's, and a resubmit only repeats it.
+ */
+const TRANSIENT_FAILURES = new Set([
+  "READ_FAILED",
+  "UPLOAD_FAILED",
+  "BUSY",
+  "DISPATCH_FAILED",
+  "WORKER_LOST"
+]);
 
-/** Failures the same input always reproduces: a retry only repeats them. */
-const DETERMINISTIC_FAILURES = new Set(["invalid_input", "thumbnail_failed"]);
+export type JobDecision =
+  | { kind: "return"; result: Json; stats: Json }
+  | { kind: "fail"; message: string; code?: string }
+  | { kind: "resubmit"; reason: string }
+  | { kind: "wait"; runningSince: number | null };
 
-function jobFailure(message: string, code: string | undefined): Error {
-  return code && DETERMINISTIC_FAILURES.has(code)
-    ? new NonRetriableError(message)
-    : new Error(message);
+/**
+ * What a run does after the service's answer. Pure, so the budgets are
+ * testable. `now`, `submittedAt` and `runningSince` are epoch ms read inside
+ * steps, so a replay sees the same values.
+ */
+export function decideJobStep(
+  outcome: JobOutcome,
+  state: {
+    action: string;
+    now: number;
+    submittedAt: number;
+    runningSince: number | null;
+    resubmits: number;
+    maxWaitMs: number;
+  }
+): JobDecision {
+  const { action, now, submittedAt, resubmits, maxWaitMs } = state;
+  const canResubmit = resubmits < MAX_RESUBMITS;
+  switch (outcome.status) {
+    case "done":
+      return { kind: "return", result: outcome.result, stats: outcome.stats };
+    case "canceled":
+      return { kind: "fail", message: `assembler ${action} canceled` };
+    case "failed": {
+      const transient =
+        !outcome.code || TRANSIENT_FAILURES.has(outcome.code.toUpperCase());
+      return transient && canResubmit
+        ? { kind: "resubmit", reason: outcome.error }
+        : {
+            kind: "fail",
+            message: outcome.error,
+            ...(outcome.code ? { code: outcome.code } : {})
+          };
+    }
+    case "lost":
+      return canResubmit
+        ? { kind: "resubmit", reason: "the service has no record of the job" }
+        : {
+            kind: "fail",
+            message: `assembler ${action} lost its job ${resubmits + 1} times`
+          };
+    default: {
+      const runningSince =
+        outcome.status === "running"
+          ? (state.runningSince ?? now)
+          : state.runningSince;
+      if (runningSince !== null && now - runningSince > maxWaitMs) {
+        return {
+          kind: "fail",
+          message: `assembler ${action} did not finish within ${maxWaitMs}ms of starting`
+        };
+      }
+      if (now - submittedAt > MAX_QUEUED_MS + maxWaitMs) {
+        return {
+          kind: "fail",
+          message: `assembler ${action} waited more than ${MAX_QUEUED_MS}ms for the service`
+        };
+      }
+      return { kind: "wait", runningSince };
+    }
+  }
+}
+
+export type AssemblerAction =
+  | "convert"
+  | "optimize"
+  | "plan"
+  | "compact"
+  | "thumbnail"
+  | "fetch";
+
+/** A job the service could not finish, with its error code when it gave one
+ *  (e.g. `LIMIT_EXCEEDED`), so a caller can tell a permanent skip from a fault. */
+export class AssemblerJobError extends NonRetriableError {
+  readonly code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "AssemblerJobError";
+    this.code = code;
+  }
 }
 
 type AssemblerLogger = {
@@ -417,41 +547,70 @@ type AssemblerLogger = {
 type AssemblerJobSpec = {
   /** Namespaces this job's Inngest step ids (a caller may run several). */
   idPrefix: string;
-  action: "convert" | "optimize" | "plan" | "compact" | "thumbnail";
+  action: AssemblerAction;
   jobId: string;
   /** Build the request body (signs a fresh source URL) — run inside a step. */
   buildBody: () => Promise<unknown>;
-  /** Mint fresh signed upload URLs for the completion artifacts (late-mint). */
+  /** Sign one upload URL per output the action writes (`signUploadUrls`);
+   *  called at every (re)submit, so a resubmit gets fresh URLs. */
   mintUploadUrls: () => Promise<Record<string, string>>;
+  /** How long the job may run once the service starts it. */
   maxWaitMs: number;
   logger: AssemblerLogger;
 };
 
-/** Mirrors `assemblerCallbackToken` in the ERP callback route — both sides
- * derive the per-job token from SESSION_SECRET so no state is stored. */
-function callbackToken(jobId: string): string {
-  return createHmac("sha256", SESSION_SECRET ?? "")
-    .update(`assembler-callback:${jobId}`)
-    .digest("hex");
+/** A storage bucket that can sign an upload URL: `storage(client).company(id)`
+ *  or `client.storage.from(bucket)`. */
+type UploadBucket = {
+  createSignedUploadUrl: (
+    path: string,
+    options: { upsert: boolean }
+  ) => Promise<{
+    data: { signedUrl: string } | null;
+    error: { message: string } | null;
+  }>;
+};
+
+/**
+ * Sign one upload URL per output, keyed by the output name the action writes.
+ * Throws when any URL cannot be signed: the service fails a job with
+ * `UPLOAD_FAILED` when an output has no URL, after doing all of its work.
+ */
+export async function signUploadUrls(
+  targets: Record<string, { bucket: UploadBucket; path: string }>
+): Promise<Record<string, string>> {
+  const signed = await Promise.all(
+    Object.entries(targets).map(async ([name, { bucket, path }]) => {
+      const upload = await bucket.createSignedUploadUrl(path, { upsert: true });
+      if (!upload.data) {
+        throw new Error(
+          `Failed to sign the ${name} upload URL for ${path}: ${upload.error?.message ?? "no URL"}`
+        );
+      }
+      return [name, internalizeStorageUrl(upload.data.signedUrl)] as const;
+    })
+  );
+  return Object.fromEntries(signed);
 }
 
 /** The completion-webhook URL minted into the job spec at submit. */
 function callbackUrl(jobId: string): string {
-  return `${ERP_URL}/api/assembler/callback?token=${callbackToken(jobId)}`;
+  return `${ERP_URL}/api/assembler/callback?token=${assemblerCallbackToken(SESSION_SECRET ?? "", jobId)}`;
 }
 
 /**
- * Run an assembler action to completion — event-driven: submit (with upload
- * URLs + a minted callback URL) -> waitForEvent on the callback's event ->
- * on timeout, ONE late-mint poll (covers a lost callback and drains any
- * still-pending upload with fresh URLs). Returns terminal `{ result, stats }`;
- * throws on job error / timeout.
+ * Run an assembler action to completion: submit (with upload URLs and a
+ * callback URL), then alternate a poll and a wait for the callback's event
+ * until the job ends. The poll between waits catches a callback that fired
+ * while no wait was registered. A transient failure or a lost job is
+ * resubmitted under the same id; anything else throws `NonRetriableError`
+ * (an Inngest retry would only replay the remembered steps).
  */
 export async function runAssemblerJob(
   step: StepTools,
   spec: AssemblerJobSpec,
   baseUrl?: string
-): Promise<{ result: Json; stats: Json }> {
+): Promise<JobResult> {
   const {
     idPrefix,
     action,
@@ -462,7 +621,7 @@ export async function runAssemblerJob(
     logger
   } = spec;
 
-  await step.run(`${idPrefix}-submit`, async () => {
+  const submit = async () => {
     const [body, uploadUrls] = await Promise.all([
       buildBody(),
       mintUploadUrls()
@@ -478,73 +637,66 @@ export async function runAssemblerJob(
       baseUrl,
       uploadUrls
     });
-  });
+    return Date.now();
+  };
 
-  // Fast jobs (small models, warm/cached assembler) can complete — and fire
-  // their callback — in the gap between the submit step finishing and this
-  // run registering its waitForEvent; the event then matches nothing and the
-  // run parks for the FULL timeout. Poll once up front so an already-terminal
-  // job returns immediately; the wait only covers genuinely in-flight work.
-  const early: PollOutcome = await step.run(`${idPrefix}-early-poll`, () =>
-    pollAssemblerJobOnce({ jobId, mintUploadUrls, baseUrl })
-  );
-  if (early.status === "done") {
-    return { result: early.result, stats: early.stats };
-  }
-  if (early.status === "error") {
-    if (early.error === "Job canceled") {
-      throw new NonRetriableError(`assembler ${action} canceled`);
-    }
-    throw jobFailure(early.error, early.code);
-  }
+  const submittedAt: number = await step.run(`${idPrefix}-submit`, submit);
+  let runningSince: number | null = null;
+  let resubmits = 0;
 
-  const done = await step.waitForEvent(`${idPrefix}-wait`, {
-    event: "carbon/assembler-job-done",
-    timeout: maxWaitMs,
-    if: `async.data.jobId == "${jobId}"`
-  });
-
-  if (done) {
-    const data = (
-      done as {
-        data?: {
-          status?: string;
-          result?: Json;
-          stats?: Json;
-          error?: { code?: string; message?: string } | null;
-        };
-      }
-    ).data;
-    if (data?.status === "succeeded") {
-      return { result: data.result ?? null, stats: data.stats ?? null };
-    }
-    // A user cancel is intentional — retrying would resurrect the canceled job.
-    if (data?.status === "canceled") {
-      throw new NonRetriableError(`assembler ${action} canceled`);
-    }
-    throw jobFailure(
-      data?.error?.message ?? `assembler ${action} ${data?.status ?? "failed"}`,
-      data?.error?.code
+  for (let slice = 0; ; slice++) {
+    const polled: { outcome: JobOutcome; now: number } = await step.run(
+      `${idPrefix}-poll-${slice}`,
+      async () => ({
+        outcome: await pollAssemblerJobOnce({ jobId, baseUrl }),
+        now: Date.now()
+      })
     );
-  }
+    const state = {
+      action,
+      submittedAt,
+      runningSince,
+      resubmits,
+      maxWaitMs,
+      now: polled.now
+    };
+    let decision = decideJobStep(polled.outcome, state);
 
-  // Timeout: the callback was lost (worker couldn't reach the app, or the job
-  // is genuinely still running/stuck). One late-mint poll resolves from the
-  // store — and finalizes any parked upload with fresh URLs.
-  logger.warn(`assembler ${action} completion event timed out; polling once`, {
-    jobId
-  });
-  const poll: PollOutcome = await step.run(`${idPrefix}-fallback-poll`, () =>
-    pollAssemblerJobOnce({ jobId, mintUploadUrls, baseUrl })
-  );
-  if (poll.status === "done") {
-    return { result: poll.result, stats: poll.stats };
-  }
-  if (poll.status === "error") {
-    if (poll.error === "Job canceled") {
-      throw new NonRetriableError(`assembler ${action} canceled`);
+    if (decision.kind === "wait") {
+      runningSince = decision.runningSince;
+      const done = await step.waitForEvent(`${idPrefix}-wait-${slice}`, {
+        event: "carbon/assembler-job-done",
+        timeout: WAIT_SLICE_MS,
+        if: `async.data.jobId == "${jobId}"`
+      });
+      if (!done) continue;
+      decision = decideJobStep(jobOutcome(done.data ?? {}), {
+        ...state,
+        runningSince
+      });
+      if (decision.kind === "wait") continue;
     }
-    throw jobFailure(poll.error, poll.code);
+
+    if (decision.kind === "return") {
+      return { result: decision.result, stats: decision.stats };
+    }
+    if (decision.kind === "fail") {
+      // Given up on a job the service still holds (over budget, queued too
+      // long): cancel it, so it stops taking memory nobody will read.
+      if (["queued", "running"].includes(polled.outcome.status)) {
+        await step.run(`${idPrefix}-cancel`, () =>
+          cancelAssemblerJob(jobId, baseUrl, logger)
+        );
+      }
+      throw new AssemblerJobError(decision.message, decision.code);
+    }
+    resubmits += 1;
+    runningSince = null;
+    logger.warn(`assembler ${action} resubmitted`, {
+      jobId,
+      reason: decision.reason,
+      resubmits
+    });
+    await step.run(`${idPrefix}-resubmit-${resubmits}`, submit);
   }
-  throw new Error(`assembler ${action} did not finish within ${maxWaitMs}ms`);
 }

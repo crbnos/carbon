@@ -2,10 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Submit, ValidatedForm, validator } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -20,20 +22,20 @@ import {
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
 import { Users } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
-  getCompany,
-  getCompanySettings,
   maintenanceDispatchNotificationValidator,
-  suggestionNotificationValidator,
-  updateMaintenanceDispatchNotificationSettings,
-  updateSuggestionNotificationSetting
-} from "~/modules/settings";
+  suggestionNotificationValidator
+} from "~/modules/settings/settings.models";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -70,86 +72,47 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { company: company.data, companySettings: companySettings.data };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// One form per card, told apart by its intent: each becomes the fields of
+// `settings.resources.update` it saves.
+const resourcesSettingsForm = z.discriminatedUnion("intent", [
+  suggestionNotificationValidator
+    .extend({ intent: z.literal("suggestions") })
+    .transform(({ suggestionNotificationGroup }) => ({
+      suggestionNotificationGroup: suggestionNotificationGroup ?? []
+    })),
+  maintenanceDispatchNotificationValidator
+    .extend({ intent: z.literal("maintenanceDispatchNotifications") })
+    .transform((form) => ({
+      maintenanceDispatchNotificationGroup:
+        form.maintenanceDispatchNotificationGroup ?? [],
+      qualityDispatchNotificationGroup:
+        form.qualityDispatchNotificationGroup ?? [],
+      operationsDispatchNotificationGroup:
+        form.operationsDispatchNotificationGroup ?? [],
+      otherDispatchNotificationGroup: form.otherDispatchNotificationGroup ?? []
+    }))
+]);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === "suggestions") {
-    const validation = await validator(
-      suggestionNotificationValidator
-    ).validate(formData);
-
-    if (validation.error) {
-      return { success: false, message: "Invalid form data" };
-    }
-
-    const update = await updateSuggestionNotificationSetting(
-      client,
-      companyId,
-      validation.data.suggestionNotificationGroup ?? []
-    );
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return {
-      success: true,
-      message: "Suggestion notification settings updated"
-    };
-  }
-
-  if (intent === "maintenanceDispatchNotifications") {
-    const validation = await validator(
-      maintenanceDispatchNotificationValidator
-    ).validate(formData);
-
-    if (validation.error) {
-      return { success: false, message: "Invalid form data" };
-    }
-
-    const update = await updateMaintenanceDispatchNotificationSettings(
-      client,
-      companyId,
-      {
-        maintenanceDispatchNotificationGroup:
-          validation.data.maintenanceDispatchNotificationGroup ?? [],
-        qualityDispatchNotificationGroup:
-          validation.data.qualityDispatchNotificationGroup ?? [],
-        operationsDispatchNotificationGroup:
-          validation.data.operationsDispatchNotificationGroup ?? [],
-        otherDispatchNotificationGroup:
-          validation.data.otherDispatchNotificationGroup ?? []
-      }
-    );
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return {
-      success: true,
-      message: "Maintenance dispatch notification settings updated"
-    };
-  }
-
-  return null;
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(resourcesSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updateResourcesSettings(input.data);
 }
 
 export default function ResourcesSettingsRoute() {
   const { t } = useLingui();
   const { company, companySettings } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-
-  useEffect(() => {
-    if (fetcher.data?.success === true && fetcher?.data?.message) {
-      toast.success(fetcher.data.message);
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      toast.success(
+        data.suggestionNotificationGroup
+          ? t`Suggestion notification settings updated`
+          : t`Maintenance dispatch notification settings updated`
+      );
     }
-
-    if (fetcher.data?.success === false && fetcher?.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data?.message, fetcher.data?.success]);
+  });
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">

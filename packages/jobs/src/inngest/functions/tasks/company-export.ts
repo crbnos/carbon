@@ -29,7 +29,6 @@ import {
   mapWithConcurrency,
   type ScopeExclusions,
   type ScopeViolation,
-  STORAGE_BUCKET,
   selectExportableTables,
   serializeTable,
   writeBackupManifest
@@ -247,21 +246,11 @@ export async function buildCompanyBackup(
 
   if (includeStorage === "all") {
     let totalBytes = 0;
-    // Assets live in the company's own bucket; files uploaded before the
-    // per-company bucket migration still live in the legacy shared bucket.
-    // Union both listings (same keys), preferring the company bucket's copy.
-    const [companyPaths, legacyPaths] = await Promise.all([
-      listBucketFilesRecursive(
-        client,
-        getCompanyPrivateBucket(companyId),
-        companyId
-      ),
-      listBucketFilesRecursive(client, STORAGE_BUCKET, companyId)
-    ]);
-    const byPath = new Map<string, { path: string; size: number }>();
-    for (const file of legacyPaths) byPath.set(file.path, file);
-    for (const file of companyPaths) byPath.set(file.path, file);
-    const paths = Array.from(byPath.values());
+    const paths = await listBucketFilesRecursive(
+      client,
+      getCompanyPrivateBucket(companyId),
+      companyId
+    );
     for (const file of paths) {
       const included = totalBytes + file.size <= MAX_STORAGE_TOTAL_BYTES;
       if (included) {
@@ -423,6 +412,7 @@ export const companyExportFunction = inngest.createFunction(
         const assets = await copyAssetsToBackup(
           client,
           {
+            companyId,
             sourcePaths: assetSourcePaths,
             destBucket: companyId,
             destPrefix: backupAssetsDir(name)

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -16,11 +17,13 @@ import { formatTimeOfDay } from "@carbon/utils";
 import { parseTime, Time } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useEffect, useMemo, useState } from "react";
-import { useFetcher } from "react-router";
+import { useMemo, useState } from "react";
 import { Hidden, Select, Submit } from "~/components/Form";
 import { useCompanyTimeZone } from "~/hooks";
-import { mrpScheduleTypes, mrpScheduleValidator } from "~/modules/settings";
+import {
+  mrpScheduleTypes,
+  mrpScheduleValidator
+} from "~/modules/settings/settings.models";
 
 type MrpScheduleType = (typeof mrpScheduleTypes)[number];
 
@@ -36,20 +39,13 @@ export function MrpScheduleCard({
   const { t } = useLingui();
   const { locale } = useLocale();
   const companyTimeZone = useCompanyTimeZone();
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
+  const fetcher = useAction({
+    onSuccess: () => toast.success(t`MRP schedule updated`)
+  });
   const storedTime = mrpRunTime ? parseTime(mrpRunTime).toString() : null;
   const [schedule, setSchedule] = useState<MrpScheduleType>(
     storedTime ? "Daily" : "Every 3 Hours"
   );
-
-  useEffect(() => {
-    if (fetcher.state !== "idle" || !fetcher.data?.message) return;
-    if (fetcher.data.success) {
-      toast.success(fetcher.data.message);
-    } else {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.state, fetcher.data]);
 
   const scheduleLabels: Record<MrpScheduleType, string> = {
     "Every 3 Hours": t`Every 3 hours`,

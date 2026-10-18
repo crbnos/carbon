@@ -27,23 +27,21 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
-import type { ItemFile, ToolSummary } from "~/modules/items";
+import { isChangeNoticeOpen } from "~/modules/items/items.models";
 import {
+  findChangeNoticesForItemOnce,
   getItemFiles,
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce,
   getMethodTree,
   getPartUsedIn,
   getPickMethods,
   getSupplierParts,
   getTool,
-  isChangeNoticeOpen
-} from "~/modules/items";
-import {
-  findChangeNoticesForItemOnce,
-  getMakeMethodByIdOnce,
-  getMakeMethodsOnce,
   getUnreleasedChangeOrderForItem,
   streamItemSupersession
-} from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
+import type { ItemFile, ToolSummary } from "~/modules/items/types";
 import { BoMActions, BoMExplorer } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import {
@@ -52,7 +50,7 @@ import {
   UsedInTree
 } from "~/modules/items/ui/Item/UsedIn";
 import { ToolHeader, ToolProperties } from "~/modules/items/ui/Tools";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

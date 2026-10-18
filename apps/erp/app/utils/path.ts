@@ -252,11 +252,23 @@ export const path = {
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`
         ),
+      onShapeDetach: `${api}/integrations/onshape/detach`,
       onShapeDocuments: `${api}/integrations/onshape/documents`,
       onShapeElements: (documentId: string, versionId: string) =>
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
         ),
+      onShapePanelFields: `${api}/integrations/onshape/panel/fields`,
+      onShapePanelMe: `${api}/integrations/onshape/panel/me`,
+      onShapePanelPlanAssembly: `${api}/integrations/onshape/panel/plan-assembly`,
+      onShapePanelPlanPart: `${api}/integrations/onshape/panel/plan-part`,
+      onShapePanelPlanRelease: `${api}/integrations/onshape/panel/plan-release`,
+      onShapePanelPushAssembly: `${api}/integrations/onshape/panel/push-assembly`,
+      onShapePanelPushPart: `${api}/integrations/onshape/panel/push-part`,
+      onShapePanelPushRelease: `${api}/integrations/onshape/panel/push-release`,
+      onShapePanelReleases: `${api}/integrations/onshape/panel/releases`,
+      onShapePanelSession: `${api}/integrations/onshape/panel/session`,
+      onShapePanelStatus: `${api}/integrations/onshape/panel/status`,
       onShapeSync: `${api}/integrations/onshape/sync`,
       onShapeVersions: (documentId: string) =>
         generatePath(`${api}/integrations/onshape/d/${documentId}/versions`),
@@ -407,7 +419,7 @@ export const path = {
     // The docs render every endpoint against a host. Hand them this deployment's
     // REST origin so a self-hosted or non-default-region reader sees their own
     // host instead of rest.carbon.ms; with none set the docs show `<your-host>`.
-    apiDocs: withDocsHost("https://docs.carbon.ms/api-reference"),
+    apiDocs: withDocsHost("https://docs.carbon.ms/api"),
     apiKey: (id: string) => generatePath(`${x}/settings/api-keys/${id}`),
     apiKeys: `${x}/settings/api-keys`,
     approvalRule: (id: string) =>
@@ -852,8 +864,8 @@ export const path = {
     deleteItemPostingGroup: (id: string) =>
       generatePath(`${x}/items/groups/delete/${id}`),
     deleteJob: (id: string) => generatePath(`${x}/job/${id}/delete`),
-    deleteJobMaterial: (jobId: string, id: string) =>
-      generatePath(`${x}/job/methods/${jobId}/material/delete/${id}`),
+    deleteJobMaterials: (jobId: string) =>
+      generatePath(`${x}/job/methods/${jobId}/material/delete`),
     deleteJobOperationParameter: (id: string) =>
       generatePath(`${x}/job/methods/operation/parameter/delete/${id}`),
     deleteJobOperationStep: (id: string) =>
@@ -891,8 +903,7 @@ export const path = {
       generatePath(`${x}/material/${itemId}/purchasing/${id}/delete`),
     deleteMaterialType: (id: string) =>
       generatePath(`${x}/items/types/delete/${id}`),
-    deleteMethodMaterial: (id: string) =>
-      generatePath(`${x}/items/methods/material/delete/${id}`),
+    deleteMethodMaterials: `${x}/items/methods/material/delete`,
     deleteMethodOperationParameter: (id: string) =>
       generatePath(`${x}/items/methods/operation/parameter/delete/${id}`),
     deleteMethodOperationStep: (id: string) =>
@@ -955,10 +966,8 @@ export const path = {
       generatePath(`${x}/quote/${id}/${lineId}/delete`),
     deleteQuoteLineCost: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/cost/delete`),
-    deleteQuoteMaterial: (quoteId: string, lineId: string, id: string) =>
-      generatePath(
-        `${x}/quote/methods/${quoteId}/${lineId}/material/delete/${id}`
-      ),
+    deleteQuoteMaterials: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/delete`),
     deleteQuoteOperationParameter: (id: string) =>
       generatePath(`${x}/quote/methods/operation/parameter/delete/${id}`),
     deleteQuoteOperationStep: (id: string) =>
@@ -1468,6 +1477,7 @@ export const path = {
     itemsSettings: `${x}/settings/items`,
     job: (id: string) => generatePath(`${x}/job/${id}`),
     jobBatchNumber: (id: string) => generatePath(`${x}/job/${id}/batch`),
+    jobCancel: (id: string) => generatePath(`${x}/job/${id}/cancel`),
     jobComplete: (id: string) => generatePath(`${x}/job/${id}/complete`),
     jobConfigure: (id: string) => generatePath(`${x}/job/${id}/configure`),
     jobDag: (id: string) => generatePath(`${x}/job/${id}/dag`),
@@ -1742,9 +1752,6 @@ export const path = {
     newExchangeRate: `${x}/accounting/exchange-rates/new`,
     newFailureMode: `${x}/resources/failure-modes/new`,
     newFixedAsset: `${x}/accounting/fixed-assets/new`,
-    newFixture: `${x}/fixture/new`,
-    newFixtureSupplier: (id: string) =>
-      generatePath(`${x}/fixture/${id}/purchasing/new`),
     newGauge: `${x}/quality/gauges/new`,
     newGaugeCalibrationRecord: `${x}/quality/calibrations/new`,
     newGaugeType: `${x}/quality/gauge-types/new`,
@@ -1925,6 +1932,8 @@ export const path = {
       theme: `${onboarding}/theme`,
       user: `${onboarding}/user`
     },
+    onshapePanel: "/onshape/panel",
+    onshapePanelAuth: "/onshape/auth",
     operationBatch: (id: string) =>
       generatePath(`${x}/production/batches/${id}`),
     operationBatches: `${x}/production/batches`,
@@ -2613,6 +2622,8 @@ export const path = {
       generatePath(`${x}/warehouse-transfer/${id}/status`),
     warehouseTransfers: `${x}/inventory/warehouse-transfers`,
     webhook: (id: string) => generatePath(`${x}/settings/webhooks/${id}`),
+    webhookSigningSecret: (id: string) =>
+      generatePath(`${x}/settings/webhooks/secret/${id}`),
     webhooks: `${x}/settings/webhooks`,
     workCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/${id}`),

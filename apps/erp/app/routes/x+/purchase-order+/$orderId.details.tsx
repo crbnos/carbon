@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
@@ -14,19 +15,17 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData, useUser } from "~/hooks";
+import { purchaseOrderValidator } from "~/modules/purchasing/purchasing.models";
+import {
+  getPurchaseOrder,
+  getPurchaseOrderPayment
+} from "~/modules/purchasing/purchasing.service";
 import type {
   PurchaseOrder,
   PurchaseOrderDelivery,
   PurchaseOrderLine,
   SupplierInteraction
-} from "~/modules/purchasing";
-import {
-  getPurchaseOrder,
-  getPurchaseOrderPayment,
-  isPurchaseOrderLocked,
-  purchaseOrderValidator,
-  updatePurchaseOrder
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/types";
 import {
   PurchaseOrderDeliveryForm,
   PurchaseOrderPaymentForm,
@@ -39,7 +38,6 @@ import {
 } from "~/modules/purchasing/ui/SupplierInteraction";
 import SupplierInteractionState from "~/modules/purchasing/ui/SupplierInteraction/SupplierInteractionState";
 import { getCustomFields, setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -75,79 +73,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-
-  const { orderId } = params;
-  if (!orderId) throw new Error("Could not find orderId");
-
-  // First check with basic update permission to get the PO
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "purchasing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(purchaseOrderValidator).request(args, {
+    params: ["orderId"]
   });
-
-  // Check if PO is locked
-  const purchaseOrder = await getPurchaseOrder(viewClient, orderId);
-  if (purchaseOrder.error) {
-    throw redirect(
-      path.to.purchaseOrder(orderId),
-      await flash(
-        request,
-        error(purchaseOrder.error, "Failed to load purchase order")
-      )
-    );
-  }
-
-  const isLocked = isPurchaseOrderLocked(purchaseOrder.data?.status);
-
-  // If locked, require delete permission; otherwise require update permission
-  const { client, userId } = await requirePermissions(request, {
-    ...(isLocked ? { delete: "purchasing" } : { update: "purchasing" })
+  if ("invalid" in input) return input.invalid;
+  const { data, params } = input;
+  const api = await carbon(args.request);
+  const result = await api.purchasing.updatePurchaseOrder({
+    id: params.orderId,
+    supplierId: data.supplierId,
+    currencyCode: data.currencyCode,
+    orderDate: data.orderDate,
+    supplierContactId: data.supplierContactId || null,
+    supplierLocationId: data.supplierLocationId || null,
+    supplierReference: data.supplierReference,
+    purchaseOrderType: data.purchaseOrderType,
+    notes: data.notes,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  // If locked, block all edits (no header changes allowed on locked POs)
-  await requireUnlocked({
-    request,
-    isLocked,
-    redirectTo: path.to.purchaseOrder(orderId),
-    message:
-      "Cannot modify a finalized purchase order. To make changes, please cancel this PO and create a new one."
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(purchaseOrderValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const result = await updatePurchaseOrder(client, {
-    id: orderId,
-    status: validation.data.status,
-    supplierId: validation.data.supplierId,
-    currencyCode: validation.data.currencyCode,
-    orderDate: validation.data.orderDate,
-    supplierContactId: validation.data.supplierContactId || null,
-    supplierLocationId: validation.data.supplierLocationId || null,
-    supplierReference: validation.data.supplierReference,
-    purchaseOrderType: validation.data.purchaseOrderType,
-    notes: validation.data.notes,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
-  });
-  if (result.error) {
-    throw redirect(
-      path.to.purchaseOrder(orderId),
-      await flash(
-        request,
-        error(result.error, "Failed to update purchase order")
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.purchaseOrder(orderId),
-    await flash(request, success("Updated purchase order"))
+  return respond(args.request, result).redirect(
+    path.to.purchaseOrder(params.orderId),
+    { message: "Updated purchase order" }
   );
 }
 

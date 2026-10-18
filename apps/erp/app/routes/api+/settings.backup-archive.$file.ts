@@ -8,7 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { pack as tarPack } from "tar-stream";
-import { canManageBackups } from "~/modules/settings/backups.server";
+import { canManageBackups } from "~/modules/settings/settings.service";
 
 /** List every object under a storage prefix, returning paths relative to it. */
 async function listRelative(

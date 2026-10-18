@@ -2,52 +2,29 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
-import { notifyScheduleInputsChanged } from "~/modules/production";
-import type { Ability } from "~/modules/resources";
-import { deleteEmployeeAbility } from "~/modules/resources";
+import type { Ability } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["id", "employeeAbilityId"]
   });
-
-  const { id: abilityId, employeeAbilityId } = params;
-  if (!abilityId || !employeeAbilityId) {
-    throw notFound("Invalid employee ability id");
-  }
-
-  // Soft delete — employee abilities keep their training history
-  const remove = await deleteEmployeeAbility(client, employeeAbilityId);
-  if (remove.error) {
-    throw redirect(
-      path.to.ability(abilityId),
-      await flash(
-        request,
-        error(remove.error, "Failed to remove employee from ability")
-      )
-    );
-  }
-
-  await notifyScheduleInputsChanged(
-    companyId,
-    "ability",
-    "Operator qualification removed",
-    abilityId
-  );
-
-  throw redirect(
-    path.to.ability(abilityId),
-    await flash(request, success("Removed employee from ability"))
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.removeEmployeeAbility({
+    abilityId: input.params.id,
+    employeeAbilityId: input.params.employeeAbilityId
+  });
+  return respond(args.request, result).redirect(
+    path.to.ability(input.params.id),
+    { message: "Removed employee from ability" }
   );
 }
 

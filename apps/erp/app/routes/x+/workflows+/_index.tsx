@@ -7,14 +7,14 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import type { WorkflowLastRun } from "~/modules/workflows";
+import WorkflowsTable from "~/modules/workflows/ui/WorkflowsTable";
+import WorkflowsUpgradeOverlay from "~/modules/workflows/ui/WorkflowsUpgradeOverlay";
+import type { WorkflowLastRun } from "~/modules/workflows/workflows.service";
 import {
   getWorkflowLastRuns,
   getWorkflows,
   getWorkflowVersionNumbers
-} from "~/modules/workflows";
-import WorkflowsTable from "~/modules/workflows/ui/WorkflowsTable";
-import WorkflowsUpgradeOverlay from "~/modules/workflows/ui/WorkflowsUpgradeOverlay";
+} from "~/modules/workflows/workflows.service";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
