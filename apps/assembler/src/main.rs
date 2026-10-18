@@ -28,6 +28,7 @@ mod http;
 mod jobs;
 mod progress;
 mod request;
+mod source;
 mod telemetry;
 
 use axum::{
@@ -69,6 +70,7 @@ pub struct AppState {
     pub jobs: jobs::JobStore,
     pub cache: Arc<cache::ResultCache>,
     pub progress: progress::ProgressStore,
+    pub sources: source::Sources,
 }
 
 fn main() {
@@ -90,6 +92,7 @@ async fn build_state() -> AppState {
             config::cache_bytes(),
         )),
         progress: progress::ProgressStore::default(),
+        sources: source::Sources::new(config::source_slots()),
     }
 }
 
@@ -344,20 +347,29 @@ async fn create_job(
     let job_id = resolve_job_id(&headers);
     let (upload_urls, callback_url) = submit_plumbing(&headers, &req)?;
 
-    if let Some(status) = state.jobs.existing_active(&job_id).await {
-        return Ok(created(&job_id, &action, &status));
+    // Another create with this key is in its window: it will start the job.
+    if !state.jobs.claim_create(&job_id).await {
+        return Ok(created(&job_id, &action, "queued"));
     }
-    state
-        .jobs
-        .set_pending(&job_id, &action, upload_urls, callback_url)
-        .await;
-    if dispatch::from_env() == dispatch::Dispatch::Lambda {
-        lambda_dispatch(&state, &job_id, &action, &req).await?;
-    } else {
-        eprintln!("[{job_id}] {action} queued");
-        request::spawn(&state, &job_id, parsed);
+    let started = async {
+        if let Some(status) = state.jobs.existing_active(&job_id).await {
+            return Ok(status);
+        }
+        state
+            .jobs
+            .set_pending(&job_id, &action, upload_urls, callback_url)
+            .await;
+        if dispatch::from_env() == dispatch::Dispatch::Lambda {
+            lambda_dispatch(&state, &job_id, &action, &req).await?;
+        } else {
+            eprintln!("[{job_id}] {action} queued");
+            request::spawn(&state, &job_id, parsed);
+        }
+        Ok::<_, ApiError>("queued".to_string())
     }
-    Ok(created(&job_id, &action, "queued"))
+    .await;
+    state.jobs.release_create(&job_id).await;
+    Ok(created(&job_id, &action, &started?))
 }
 
 /// Lambda-mode create path: instead of spawning in-process (this instance
@@ -406,14 +418,14 @@ async fn worker_events(
     }
     match state.jobs.internal_active(&job_id).await.as_deref() {
         Some("pending") => {
-            // Take the job before the long download and admission wait, so a
-            // second delivery in that window sees it as taken.
-            state.jobs.set_status(&job_id, "starting").await;
+            // Taking the request is the claim (GETDEL): of two deliveries of
+            // one job, exactly one gets the body and runs it.
             let Some(req) = state.jobs.take_request(&job_id).await else {
-                let message = "the request expired before a worker took it".to_string();
-                state.jobs.set_error(&job_id, "dispatch_failed", message.clone()).await;
-                return Err(ApiError::new(410, "dispatch_failed", message));
+                eprintln!("[{job_id}] worker no-op (request already taken or expired)");
+                return Ok(Json(json!({ "ok": true, "noop": true })));
             };
+            // Mark it taken before the long download and admission wait.
+            state.jobs.set_status(&job_id, "starting").await;
             if let Err(e) = spawn_traced(&state, &job_id, &action, &spec, &req) {
                 state.jobs.set_error(&job_id, "invalid_input", e.message.clone()).await;
                 return Err(e);

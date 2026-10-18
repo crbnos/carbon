@@ -26,6 +26,7 @@ pub struct PlanReq {
 pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
     let jobs = state.jobs.clone();
     let admission = state.admission.clone();
+    let sources = state.sources.clone();
     let job_id = job_id.to_string();
     telemetry::spawn_job(&job_id.clone(), "plan", async move {
         if jobs.is_canceled(&job_id).await {
@@ -33,24 +34,23 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
         }
         let started = Instant::now();
 
-        let tmp = http::temp_path("step");
-        let content_hash = match http::download_hashed(&req.source_url, &tmp, None).await {
-            Ok(h) => h,
+        let src = match sources.download(&req.source_url, "step", None).await {
+            Ok(src) => src,
             Err(e) => {
                 let msg = e.message;
                 eprintln!("[{job_id}] plan failed: source download: {msg}");
-                let _ = tokio::fs::remove_file(&tmp).await;
                 jobs.set_error(&job_id, "READ_FAILED", msg).await;
                 return;
             }
         };
+        let content_hash = src.hash;
         let opts_h = opts_hash(&req.options);
 
         // Content-hash result cache: same model + same bytes + same options +
         // same CODE_VERSION => reuse the prior plan's pointer, skip the compute.
         if let Some(model) = &req.model_upload_id {
             if let Some(done) = jobs.result_get(model, content_hash, opts_h).await {
-                let _ = tokio::fs::remove_file(&tmp).await;
+                drop(src);
                 eprintln!("[{job_id}] plan cache hit");
                 jobs.set_done(&job_id, done).await;
                 jobs.send_callback(&job_id).await;
@@ -58,22 +58,20 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
             }
         }
 
-        let tmp_str = tmp.to_string_lossy().to_string();
+        let tmp_str = src.path_string();
         let (lin, ang, clearance, path_samples, units, sequence, tolerance) =
             parse_options(&req.options);
         let mp = config::max_parts();
 
         // Sized by the source until the model is read, then by its part count:
         // the sweeps, not the read, are where a plan's memory goes.
-        let source_bytes = http::file_len(&tmp).await;
+        let source_bytes = http::file_len(src.path()).await;
         let grant = admission
             .acquire(admission::plan_estimate_mb(source_bytes, None))
             .await;
         // The wait may have been long: a job cancelled meanwhile is dropped
         // before it takes the memory it was granted.
         if jobs.is_canceled(&job_id).await {
-            drop(grant);
-            let _ = tokio::fs::remove_file(&tmp).await;
             return;
         }
         // Running from here on: the wait for memory is queue time, not work.
@@ -100,7 +98,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
             )
         }))
         .await;
-        let _ = tokio::fs::remove_file(&tmp).await;
+        drop(src);
 
         match res {
             Ok(Ok(r)) => {

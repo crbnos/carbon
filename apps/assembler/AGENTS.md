@@ -227,6 +227,17 @@ Built to sit as a small always-on pod beside other workloads.
   above the whole budget takes all of it and runs alone. Nothing is rejected.
   The reservation covers the compute only, not the download or the upload. CPU
   is bounded separately by the blocking pool (cores + 2).
+- **Downloaded sources are bounded too** (`source.rs`). A job takes one of
+  `cores + 2` source slots before it downloads and holds it until its `Source`
+  drops, which deletes the file on every path (a panic included). A queue past
+  that waits with no file on disk; it used to hold every queued job's source
+  at once.
+- **Every transfer has a deadline**: a download 1 h end to end (the 60 s read
+  timeout only catches a stalled one), an upload 2 min plus 2 MB/s of body, the
+  Lambda self-invoke 10 s. A create claims `asm:create:{id}` (`SET NX`, 30 s,
+  released when done) so two POSTs with one key cannot both spawn; a Lambda
+  worker's `GETDEL` of the request is its claim, so of two deliveries exactly
+  one runs. Callbacks from `set_error`/`cancel` go out in their own task.
 - **A waiting job is `pending` or `starting`, not `running`.** Each action sets
   `running` only after `admission.acquire` returns. On Lambda the worker inlet
   sets `starting` when it takes a `pending` job, before the download and the

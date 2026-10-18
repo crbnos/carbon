@@ -56,6 +56,7 @@ pub(crate) const ZSTD_LEVEL: i32 = 12;
 pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
     let jobs = state.jobs.clone();
     let admission = state.admission.clone();
+    let sources = state.sources.clone();
     let job_id = job_id.to_string();
     telemetry::spawn_job(&job_id.clone(), "compact", async move {
         if jobs.is_canceled(&job_id).await {
@@ -63,25 +64,25 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
         }
         let started = Instant::now();
 
-        let src = http::temp_path("src");
-        if let Err(e) = http::download_hashed(&req.source_url, &src, None).await {
-            let _ = tokio::fs::remove_file(&src).await;
-            eprintln!("[{job_id}] compact failed: source download: {}", e.message);
-            jobs.set_error(&job_id, &e.code, e.message).await;
-            return;
-        }
-        let src_str = src.to_string_lossy().to_string();
+        let src = match sources.download(&req.source_url, "src", None).await {
+            Ok(src) => src,
+            Err(e) => {
+                eprintln!("[{job_id}] compact failed: source download: {}", e.message);
+                jobs.set_error(&job_id, &e.code, e.message).await;
+                return;
+            }
+        };
+        let src_str = src.path_string();
         let mode = req.mode;
         let level = ZSTD_LEVEL;
 
         let res = {
             let _grant = admission
-                .acquire(admission::estimate_mb(http::file_len(&src).await))
+                .acquire(admission::estimate_mb(http::file_len(src.path()).await))
                 .await;
             // The wait may have been long: a job cancelled meanwhile is dropped
             // before it takes the memory it was granted.
             if jobs.is_canceled(&job_id).await {
-                let _ = tokio::fs::remove_file(&src).await;
                 return;
             }
             // Running from here on: the wait for memory is queue time, not work.
@@ -89,7 +90,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
             eprintln!("[{job_id}] compact running");
             telemetry::in_span("compute", tokio::task::spawn_blocking(move || compress(&src_str, mode, level))).await
         };
-        let _ = tokio::fs::remove_file(&src).await;
+        drop(src);
 
         let out = match res {
             Ok(Ok(o)) => o,

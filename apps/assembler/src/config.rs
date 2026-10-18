@@ -101,6 +101,13 @@ pub fn blocking_threads() -> usize {
     (cores + 2).max(2)
 }
 
+/// How many downloaded sources may sit on disk at once (see `source.rs`): one
+/// per compute the blocking pool can run, so a queue past it waits without a
+/// file of its own.
+pub fn source_slots() -> usize {
+    blocking_threads()
+}
+
 pub fn require_https() -> bool {
     std::env::var("ASSEMBLER_DEV_MODE").as_deref() != Ok("true")
 }

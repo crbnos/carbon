@@ -290,8 +290,46 @@ impl JobStore {
             rec.upload_urls = None;
             self.write(id, &rec).await;
         }
-        self.send_callback(id).await;
+        self.notify(id);
         self.wake(id);
+    }
+
+    /// Deliver the callback in its own task: its retries can take ~36 s, and
+    /// `set_error`/`cancel` run inside requests that API Gateway cuts at 30 s.
+    fn notify(&self, id: &str) {
+        let store = self.clone();
+        let id = id.to_string();
+        tokio::spawn(async move { store.send_callback(&id).await });
+    }
+
+    /// Hold the create window for `id`, so two POSTs with one Idempotency-Key
+    /// cannot both spawn (the active check and the pending write are separate
+    /// round trips). False while another create holds it. A Redis that cannot
+    /// be asked does not block the create: its own writes fail just the same.
+    pub async fn claim_create(&self, id: &str) -> bool {
+        let mut c = self.conn.clone();
+        let claimed: redis::RedisResult<Option<String>> = redis::cmd("SET")
+            .arg(create_key(id))
+            .arg(1)
+            .arg("NX")
+            .arg("EX")
+            .arg(CREATE_CLAIM_TTL_SECS)
+            .query_async(&mut c)
+            .await;
+        match claimed {
+            Ok(reply) => reply.is_some(),
+            Err(e) => {
+                eprintln!("assembler: redis create claim failed: {e}");
+                true
+            }
+        }
+    }
+
+    pub async fn release_create(&self, id: &str) {
+        let mut c = self.conn.clone();
+        if let Err(e) = c.del::<_, ()>(create_key(id)).await {
+            eprintln!("assembler: redis create release failed: {e}");
+        }
     }
 
     /// Best-effort cancel: mark canceled only if still active. The running task
@@ -303,7 +341,7 @@ impl JobStore {
             rec.upload_urls = None;
             self.write(id, &rec).await;
             // Wake the event-driven waiter immediately (terminal state).
-            self.send_callback(id).await;
+            self.notify(id);
             self.wake(id);
         }
         Some(Self::render(id, &rec))
@@ -585,6 +623,13 @@ fn job_key(id: &str) -> String {
 /// invoked at once; this only bounds a delivery AWS retries much later.
 const REQUEST_TTL_SECS: u64 = 15 * 60;
 
+/// How long a create may hold its window; released as soon as it is done.
+const CREATE_CLAIM_TTL_SECS: u64 = 30;
+
+fn create_key(id: &str) -> String {
+    format!("asm:create:{id}")
+}
+
 fn request_key(id: &str) -> String {
     format!("asm:req:{id}")
 }
@@ -713,6 +758,67 @@ mod tests {
     }
 
     const NO_WAIT: [Duration; 3] = [Duration::ZERO; 3];
+
+    /// A store on the Redis in `REDIS_URL` (the local stack's), or `None` to
+    /// skip: these pin behaviour that only Redis itself can show.
+    async fn redis_store() -> Option<JobStore> {
+        let url = std::env::var("REDIS_URL").ok().filter(|u| !u.is_empty())?;
+        let conn = connect(&url).await.ok()?;
+        Some(JobStore {
+            conn,
+            notifiers: Notifiers::default(),
+        })
+    }
+
+    fn unique(name: &str) -> String {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        format!("test-{name}-{nanos}")
+    }
+
+    #[tokio::test]
+    async fn one_create_window_per_job_id() {
+        let Some(store) = redis_store().await else { return };
+        let id = unique("claim");
+        assert!(store.claim_create(&id).await);
+        assert!(!store.claim_create(&id).await, "a second create waits it out");
+        store.release_create(&id).await;
+        assert!(store.claim_create(&id).await);
+        store.release_create(&id).await;
+    }
+
+    #[tokio::test]
+    async fn a_lambda_request_is_taken_exactly_once() {
+        let Some(store) = redis_store().await else { return };
+        let id = unique("request");
+        let body = json!({ "source": { "url": "https://storage.test/m.step" } });
+        store.put_request(&id, &body).await.unwrap();
+        assert_eq!(store.take_request(&id).await, Some(body));
+        assert_eq!(store.take_request(&id).await, None);
+    }
+
+    #[tokio::test]
+    async fn a_failed_upload_fails_the_job_and_parks_nothing() {
+        let Some(store) = redis_store().await else { return };
+        let (url, _) = flaky_storage(usize::MAX).await;
+        let id = unique("upload");
+        store
+            .set_pending(&id, "thumbnail", HashMap::from([("glb".to_string(), url)]), None)
+            .await;
+        let done = Done { result: json!({}), stats: json!({}) };
+        store.finish(&id, glb(), done, None).await;
+
+        let job = store.poll(&id, None).await.unwrap();
+        assert_eq!(job["job"]["status"], "failed");
+        assert_eq!(job["job"]["error"]["code"], "UPLOAD_FAILED");
+        let mut c = store.conn.clone();
+        let parked: Vec<String> = c.keys(format!("asm:pending:{id}*")).await.unwrap();
+        assert!(parked.is_empty());
+        let rec = store.read(&id).await.unwrap();
+        assert!(rec.upload_urls.is_none(), "an ended job keeps no signed URLs");
+    }
 
     #[tokio::test]
     async fn an_upload_that_fails_twice_then_lands_succeeds() {

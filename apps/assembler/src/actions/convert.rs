@@ -34,6 +34,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
     let cache = Arc::clone(&state.cache);
     let progress_store = state.progress.clone();
     let admission = state.admission.clone();
+    let sources = state.sources.clone();
     let job_id = job_id.to_string();
     telemetry::spawn_job(&job_id.clone(), "convert", async move {
         if jobs.is_canceled(&job_id).await {
@@ -53,17 +54,18 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
             }
         }
 
-        let tmp = http::temp_path("step");
-        let content_hash =
-            match http::download_hashed(&req.source_url, &tmp, Some(&tracker.progress)).await {
-                Ok(h) => h,
-                Err(e) => {
-                    let _ = tokio::fs::remove_file(&tmp).await;
-                    eprintln!("[{job_id}] convert failed: source download: {}", e.message);
-                    jobs.set_error(&job_id, &e.code, e.message).await;
-                    return;
-                }
-            };
+        let src = match sources
+            .download(&req.source_url, "step", Some(&tracker.progress))
+            .await
+        {
+            Ok(src) => src,
+            Err(e) => {
+                eprintln!("[{job_id}] convert failed: source download: {}", e.message);
+                jobs.set_error(&job_id, &e.code, e.message).await;
+                return;
+            }
+        };
+        let content_hash = src.hash;
         tracker.progress.set_phase(progress::PHASE_CONVERT);
 
         let key = match &req.declared_hash {
@@ -72,24 +74,23 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
         };
         let entry = match cache.get(&key) {
             Some(entry) => {
-                let _ = tokio::fs::remove_file(&tmp).await;
+                drop(src);
                 entry
             }
             None => {
                 // Held for the tessellation only: the download before it streams
                 // to disk and the upload after it holds just the outputs.
-                let _grant = admission
-                    .acquire(admission::estimate_mb(http::file_len(&tmp).await))
+                let grant = admission
+                    .acquire(admission::estimate_mb(http::file_len(src.path()).await))
                     .await;
                 // The wait may have been long: a job cancelled meanwhile is
                 // dropped before it takes the memory it was granted.
                 if jobs.is_canceled(&job_id).await {
-                    let _ = tokio::fs::remove_file(&tmp).await;
                     return;
                 }
                 // Running from here on: the wait for memory is queue time, not work.
                 jobs.set_status(&job_id, "running").await;
-                let tmp_str = tmp.to_string_lossy().to_string();
+                let tmp_str = src.path_string();
                 let cache_ins = Arc::clone(&cache);
                 let (lin, ang, optimize) = (req.lin, req.ang, req.optimize);
                 let res = telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
@@ -128,7 +129,10 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                     })
                 }))
                 .await;
-                let _ = tokio::fs::remove_file(&tmp).await;
+                // Free the memory before anything else awaits: the source's
+                // delete and the upload need none of it.
+                drop(grant);
+                drop(src);
                 match res {
                     Ok(Ok(entry)) => entry,
                     Ok(Err(e)) => {

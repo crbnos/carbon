@@ -40,6 +40,16 @@ fn clear_sources_in(dir: &std::path::Path) {
     }
 }
 
+/// The whole download, headers to last byte. The read timeout below catches a
+/// stalled connection; this catches one that trickles. Generous: a 2.5 GB
+/// source at 1 MB/s still lands.
+const DOWNLOAD_DEADLINE: std::time::Duration = std::time::Duration::from_secs(60 * 60);
+
+/// The whole upload: two minutes plus 2 MB/s of body.
+fn upload_deadline(bytes: Option<u64>) -> std::time::Duration {
+    std::time::Duration::from_secs(120 + bytes.unwrap_or(0) / (2 * 1024 * 1024))
+}
+
 /// One shared client for the process: reuses connections (keep-alive/h2)
 /// instead of paying a fresh pool + TLS handshake per download/upload.
 ///
@@ -91,7 +101,12 @@ async fn download(
     use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
 
     let limit = config::max_source_bytes();
-    let resp = client().get(url).send().await.map_err(|e| {
+    let resp = client()
+        .get(url)
+        .timeout(DOWNLOAD_DEADLINE)
+        .send()
+        .await
+        .map_err(|e| {
         ApiError::new(
             422,
             "READ_FAILED",
@@ -222,8 +237,10 @@ pub async fn upload(
 }
 
 async fn put(url: &str, body: reqwest::Body, content_type: &str) -> Result<(), ApiError> {
+    let deadline = upload_deadline(body.as_bytes().map(|b| b.len() as u64));
     let resp = client()
         .put(url)
+        .timeout(deadline)
         .header("Content-Type", content_type)
         .header("x-upsert", "true") // retried jobs re-upload to the same path
         .body(body)

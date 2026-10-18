@@ -198,6 +198,7 @@ impl ActionErr {
 pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
     let jobs = state.jobs.clone();
     let admission = state.admission.clone();
+    let sources = state.sources.clone();
     let job_id = job_id.to_string();
     telemetry::spawn_job(&job_id.clone(), "optimize", async move {
         if jobs.is_canceled(&job_id).await {
@@ -205,14 +206,15 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
         }
         let started = Instant::now();
 
-        let tmp = http::temp_path("model");
-        if let Err(e) = http::download_hashed(&req.source_url, &tmp, None).await {
-            let _ = tokio::fs::remove_file(&tmp).await;
-            eprintln!("[{job_id}] optimize failed: source download: {}", e.message);
-            jobs.set_error(&job_id, &e.code, e.message).await;
-            return;
-        }
-        let tmp_str = tmp.to_string_lossy().to_string();
+        let src = match sources.download(&req.source_url, "model", None).await {
+            Ok(src) => src,
+            Err(e) => {
+                eprintln!("[{job_id}] optimize failed: source download: {}", e.message);
+                jobs.set_error(&job_id, &e.code, e.message).await;
+                return;
+            }
+        };
+        let tmp_str = src.path_string();
         let declared = req.format.clone();
         let ext = url_ext(&req.source_url);
         let mut opts = req.opts;
@@ -221,12 +223,11 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
 
         let res = {
             let _grant = admission
-                .acquire(admission::estimate_mb(http::file_len(&tmp).await))
+                .acquire(admission::estimate_mb(http::file_len(src.path()).await))
                 .await;
             // The wait may have been long: a job cancelled meanwhile is dropped
             // before it takes the memory it was granted.
             if jobs.is_canceled(&job_id).await {
-                let _ = tokio::fs::remove_file(&tmp).await;
                 return;
             }
             // Running from here on: the wait for memory is queue time, not
@@ -242,7 +243,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
             }))
             .await
         };
-        let _ = tokio::fs::remove_file(&tmp).await;
+        drop(src);
 
         let (mut outcome, compacted, png) = match res {
             Ok(Ok(o)) => o,
@@ -683,7 +684,10 @@ fn load_source(path: &str, format: Format, head: &[u8], opts: &Opts) -> Result<S
                 .map_err(|e| ActionErr::new("invalid_input", format!("open source: {e}")))?;
             let gltf = unsafe { memmap2::Mmap::map(&file) }
                 .map_err(|e| ActionErr::new("invalid_input", format!("mmap source: {e}")))?;
-            let mut tmp = tempfile::NamedTempFile::new()
+            // `geometry-*`, so startup cleanup removes it after a kill.
+            let mut tmp = tempfile::Builder::new()
+                .prefix("geometry-")
+                .tempfile()
                 .map_err(|e| ActionErr::new("invalid_input", format!("temp glb: {e}")))?;
             {
                 let mut bw = std::io::BufWriter::new(&mut tmp);
