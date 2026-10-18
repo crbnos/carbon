@@ -1,0 +1,392 @@
+[
+  {
+    "name": "no grants",
+    "grants": [],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "None"
+  },
+  {
+    "name": "admin with no grants",
+    "grants": [],
+    "admin": true,
+    "pageId": "inventory.receipts",
+    "expected": "Full"
+  },
+  {
+    "name": "admin beats a person None",
+    "grants": [
+      {
+        "subject": "person",
+        "module": "Inventory",
+        "page": "inventory.receipts",
+        "level": "None"
+      }
+    ],
+    "admin": true,
+    "pageId": "inventory.receipts",
+    "expected": "Full"
+  },
+  {
+    "name": "role module",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": null,
+        "level": "View"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "View"
+  },
+  {
+    "name": "role page beats role module (higher)",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": null,
+        "level": "View"
+      },
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": "inventory.receipts",
+        "level": "Full"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "Full"
+  },
+  {
+    "name": "role page beats role module (lower)",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": null,
+        "level": "Edit"
+      },
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": "inventory.receipts",
+        "level": "View"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "View"
+  },
+  {
+    "name": "role page None removes role module",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": null,
+        "level": "Full"
+      },
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": "inventory.receipts",
+        "level": "None"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "None"
+  },
+  {
+    "name": "role page of another page does not apply",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": null,
+        "level": "View"
+      },
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": "inventory.shipments",
+        "level": "Edit"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "View"
+  },
+  {
+    "name": "module grant of another module does not apply",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Accounting",
+        "page": null,
+        "level": "Full"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "None"
+  },
+  {
+    "name": "person module beats role page",
+    "grants": [
+      {
+        "subject": "person",
+        "module": "Inventory",
+        "page": null,
+        "level": "Create"
+      },
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": "inventory.receipts",
+        "level": "Full"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "Create"
+  },
+  {
+    "name": "person module None removes role module",
+    "grants": [
+      {
+        "subject": "person",
+        "module": "Inventory",
+        "page": null,
+        "level": "None"
+      },
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": null,
+        "level": "Full"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "None"
+  },
+  {
+    "name": "person page beats person module",
+    "grants": [
+      {
+        "subject": "person",
+        "module": "Inventory",
+        "page": null,
+        "level": "View"
+      },
+      {
+        "subject": "person",
+        "module": "Inventory",
+        "page": "inventory.receipts",
+        "level": "Edit"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "Edit"
+  },
+  {
+    "name": "person page adds above role",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": null,
+        "level": "View"
+      },
+      {
+        "subject": "person",
+        "module": "Inventory",
+        "page": "inventory.receipts",
+        "level": "Full"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "Full"
+  },
+  {
+    "name": "person page None beats every other grant",
+    "grants": [
+      {
+        "subject": "person",
+        "module": "Inventory",
+        "page": "inventory.receipts",
+        "level": "None"
+      },
+      {
+        "subject": "person",
+        "module": "Inventory",
+        "page": null,
+        "level": "Full"
+      },
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": "inventory.receipts",
+        "level": "Full"
+      },
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": null,
+        "level": "Full"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "None"
+  },
+  {
+    "name": "person page of another page falls through to role",
+    "grants": [
+      {
+        "subject": "person",
+        "module": "Inventory",
+        "page": "inventory.shipments",
+        "level": "None"
+      },
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": null,
+        "level": "Edit"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "Edit"
+  },
+  {
+    "name": "key module",
+    "grants": [
+      {
+        "subject": "key",
+        "module": "Inventory",
+        "page": null,
+        "level": "View"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "View"
+  },
+  {
+    "name": "key page beats key module",
+    "grants": [
+      {
+        "subject": "key",
+        "module": "Inventory",
+        "page": null,
+        "level": "View"
+      },
+      {
+        "subject": "key",
+        "module": "Inventory",
+        "page": "inventory.receipts",
+        "level": "Create"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "Create"
+  },
+  {
+    "name": "key page None removes key module",
+    "grants": [
+      {
+        "subject": "key",
+        "module": "Inventory",
+        "page": null,
+        "level": "Full"
+      },
+      {
+        "subject": "key",
+        "module": "Inventory",
+        "page": "inventory.receipts",
+        "level": "None"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "None"
+  },
+  {
+    "name": "key page of another page falls through to key module",
+    "grants": [
+      {
+        "subject": "key",
+        "module": "Inventory",
+        "page": "inventory.shipments",
+        "level": "Edit"
+      },
+      {
+        "subject": "key",
+        "module": "Inventory",
+        "page": null,
+        "level": "View"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.receipts",
+    "expected": "View"
+  },
+  {
+    "name": "module page takes the module grant",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Accounting",
+        "page": null,
+        "level": "Edit"
+      }
+    ],
+    "admin": false,
+    "pageId": "accounting",
+    "expected": "Edit"
+  },
+  {
+    "name": "module page: person module beats role module",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Accounting",
+        "page": null,
+        "level": "View"
+      },
+      {
+        "subject": "person",
+        "module": "Accounting",
+        "page": null,
+        "level": "Full"
+      }
+    ],
+    "admin": false,
+    "pageId": "accounting",
+    "expected": "Full"
+  },
+  {
+    "name": "the module enum label matches the lowercase page id",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Parts",
+        "page": null,
+        "level": "Create"
+      }
+    ],
+    "admin": false,
+    "pageId": "parts",
+    "expected": "Create"
+  }
+]

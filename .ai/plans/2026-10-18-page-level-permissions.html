@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/plans/2026-10-18-page-level-permissions.md" />
-<meta name="explain-source-hash" content="49604c0dffc6e6f10ab15f4360e06e1c57a333e0" />
+<meta name="explain-source-hash" content="9117d8a10227bfc9316643aa72807cb608aed7df" />
 <title>Page-Level Permissions plan</title>
 <style>
   :root {
@@ -107,8 +107,8 @@
     <p class="kicker">Plan · claude/service-function-wrapping-13f04f · 2026-10-18 · <code>.ai/plans/2026-10-18-page-level-permissions.md</code></p>
     <h1>Page-Level Permissions — implementation plan</h1>
     <p class="tldr">When the plan is done, one permission table holds every role, person and API key level, and every module checks page keys. A browser test of each of the 158 pages with a one-page role proves it.</p>
-    <div class="progress"><span style="width: 8%"></span></div>
-    <p class="kicker">2 of 26 tasks done · spec: <code>.ai/specs/2026-10-18-page-level-permissions.md</code></p>
+    <div class="progress"><span style="width: 12%"></span></div>
+    <p class="kicker">3 of 26 tasks done · spec: <code>.ai/specs/2026-10-18-page-level-permissions.md</code></p>
   </header>
 
   <section>
@@ -173,9 +173,9 @@
         <text x="120" y="69" text-anchor="middle">1 · employee perm</text>
         <rect class="box new" x="240" y="40" width="160" height="48" rx="8" />
         <text x="320" y="69" text-anchor="middle">2 · restore views</text>
-        <rect class="box hot" x="440" y="40" width="160" height="48" rx="8" />
+        <rect class="box new" x="440" y="40" width="160" height="48" rx="8" />
         <text x="520" y="69" text-anchor="middle">3 · registry + TS</text>
-        <rect class="box risk" x="640" y="40" width="160" height="48" rx="8" />
+        <rect class="box hot" x="640" y="40" width="160" height="48" rx="8" />
         <text x="720" y="69" text-anchor="middle">4 · table</text>
         <rect class="box risk" x="840" y="40" width="160" height="48" rx="8" />
         <text x="920" y="69" text-anchor="middle">5 · RLS rules</text>
@@ -266,7 +266,7 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
         
       </div>
     </details>
-    <details class="task">
+    <details class="task done">
       <summary><b>3.</b> Add the access registry, levels and the TS resolver</summary>
       <div>
         <p class="meta">Depends on: Phase 0 committed</p>

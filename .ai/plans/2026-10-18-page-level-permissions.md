@@ -12,7 +12,7 @@ Phase 0 — fix this branch
 - [x] Task 2: Restore `view` on lookups whose tables restrict reads
 
 Phases 1 and 2 — grants, resolver, editors (one release)
-- [ ] Task 3: Add the access registry, levels and the TS resolver
+- [x] Task 3: Add the access registry, levels and the TS resolver
 - [ ] Task 4: Create the `permission` table
 - [ ] Task 5: Add RLS rules for `permission`
 - [ ] Task 6: Resolve access from grants in the SQL helpers
@@ -170,20 +170,21 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
 6. Export `PAGES`: one page per permission module, `id` = the module key, `maxLevel: "Full"`.
 7. Use these ids: accounting, documents, inventory, invoicing, parts, people, production, purchasing, quality, resources, sales, settings, users, workflows, printing.
 8. Export `type PageId = (typeof PAGES)[number]["id"]` and `type PermissionKey = \`${PageId}_${Action}\``.
-9. Export `REGISTRY_HASH`: a sha256 of `JSON.stringify(PAGES)`, first 12 hex characters.
+9. Export `REGISTRY_HASH`: an FNV-1a hash of `JSON.stringify(PAGES)` in hex. No `node:crypto`: the file runs in the browser.
 10. Export `moduleOf(pageId)`: the text before the first `.`, or the whole id.
-11. In `resolve.ts`, export `type Grant = { subject: "person" | "role" | "key"; module: string; page: string | null; level: Level }`.
-12. Export `resolveLevel(grants, pageId, { admin })`. Admin returns `"Full"`.
-13. Otherwise take the first match: person page, person module, role page, role module, key page, key module. Else `"None"`.
-14. Export `type RawClaims = { role; admin; grants: Grant[]; portal: Record<string, string[]> }`.
-15. Export `expandClaims(raw, companyId)`: for every page in `PAGES`, resolve its level.
-16. Return `{ [pageId]: { view, create, update, delete } }`, each a `[companyId]` array or `[]`.
-17. Merge `raw.portal` keys into the result with the existing `<feature>_<action>` parsing.
-18. Export `holds(expanded, key, companyId)`: the key's page holds the action for the company.
-19. Export `holdsAny(expanded, module, action, companyId)`: any page of the module holds it.
-20. In `cases.json`, write at least 20 cases: `{ grants, admin, pageId, expected }`.
-21. Cover every precedence step, Admin, None overrides, a key's own grants and a page above `maxLevel`.
-22. In `resolve.test.ts`, run every case against `resolveLevel` and test `roundUp`, `holds` and `holdsAny`.
+11. Export `clampLevel(pageId, level)`: at most the page's `maxLevel`. Grant writers call it; the resolver does not.
+12. In `resolve.ts`, export `type Grant = { subject: "person" | "role" | "key"; module: string; page: string | null; level: Level }`.
+13. Export `resolveLevel(grants, pageId, { admin })`. Admin returns `"Full"`.
+14. Otherwise take the first match: person page, person module, role page, role module, key page, key module. Else `"None"`.
+15. Export `type RawClaims = { role; admin; grants: Grant[]; portal: Record<string, string[]> }`.
+16. Export `expandClaims(raw, companyId)`: for every page in `PAGES`, resolve its level.
+17. Return `{ [pageId]: { view, create, update, delete } }`, each a `[companyId]` array or `[]`.
+18. Merge `raw.portal` keys into the result with the existing `<feature>_<action>` parsing.
+19. Export `holds(expanded, key, companyId)`: the key's page holds the action for the company.
+20. Export `holdsAny(expanded, module, action, companyId)`: any page of the module holds it.
+21. In `cases.json`, write at least 20 cases: `{ grants, admin, pageId, expected }`.
+22. Cover every precedence step, Admin, None overrides and a key's own grants.
+23. In `resolve.test.ts`, run every case against `resolveLevel` and test `roundUp`, `clampLevel`, `holds` and `holdsAny`.
 
 **Verify:**
 ```bash

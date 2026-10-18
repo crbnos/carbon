@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+/** One choice per page; each level holds every action of the levels below it. */
+export const LEVELS = ["None", "View", "Create", "Edit", "Full"] as const;
+export type Level = (typeof LEVELS)[number];
+
+export const ACTIONS = ["view", "create", "update", "delete"] as const;
+export type Action = (typeof ACTIONS)[number];
+
+/** The lowest level that holds an action. */
+export const ACTION_LEVEL: Record<Action, Level> = {
+  view: "View",
+  create: "Create",
+  update: "Edit",
+  delete: "Full"
+};
+
+export function levelHolds(level: Level, action: Action): boolean {
+  return LEVELS.indexOf(level) >= LEVELS.indexOf(ACTION_LEVEL[action]);
+}
+
+/**
+ * The lowest level that holds every granted flag: how the old four
+ * checkboxes convert. View and update without create becomes Edit.
+ */
+export function roundUp(flags: Partial<Record<Action, boolean>>): Level {
+  return LEVELS.find((level) =>
+    ACTIONS.every((action) => !flags[action] || levelHolds(level, action))
+  ) as Level;
+}
+
+export function lowerLevel(a: Level, b: Level): Level {
+  return LEVELS.indexOf(a) <= LEVELS.indexOf(b) ? a : b;
+}
