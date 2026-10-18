@@ -14,7 +14,7 @@ Phase 0 — fix this branch
 Phases 1 and 2 — grants, resolver, editors (one release)
 - [x] Task 3: Add the access registry, levels and the TS resolver
 - [ ] Task 4: Create the `permission` table
-- [ ] Task 5: Add RLS rules for `permission`
+- [x] Task 5: Add RLS rules for `permission`
 - [ ] Task 6: Resolve access from grants in the SQL helpers
 - [ ] Task 7: Convert today's permissions to grants
 - [ ] Task 8: Read claims and key scopes from grants in TS

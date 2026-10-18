@@ -1108,6 +1108,32 @@ export const manifest = {
   peopleAbsence: company("production"),
   peopleAssignment: company("production"),
   period: policies({ select: authenticated }),
+  // A role's or a person's grant is a users setting; an API key's is a settings one,
+  // as the apiKey rule is.
+  permission: policies({
+    select: or(
+      and(isNull("apiKeyId"), inCompany("companyId", "users_update")),
+      and(isNotNull("apiKeyId"), inCompany("companyId", "settings_view"))
+    ),
+    insert: or(
+      and(isNull("apiKeyId"), inCompany("companyId", "users_update")),
+      and(isNotNull("apiKeyId"), inCompany("companyId", "settings_create"))
+    ),
+    update: {
+      using: or(
+        and(isNull("apiKeyId"), inCompany("companyId", "users_update")),
+        and(isNotNull("apiKeyId"), inCompany("companyId", "settings_update"))
+      ),
+      check: or(
+        and(isNull("apiKeyId"), inCompany("companyId", "users_update")),
+        and(isNotNull("apiKeyId"), inCompany("companyId", "settings_update"))
+      )
+    },
+    delete: or(
+      and(isNull("apiKeyId"), inCompany("companyId", "users_update")),
+      and(isNotNull("apiKeyId"), inCompany("companyId", "settings_delete"))
+    )
+  }),
   periodCloseTask: company("accounting"),
   periodCloseTaskDefinition: company("accounting"),
   pickingList: company("inventory", { read: "inventory_view" }),
