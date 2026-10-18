@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/plans/2026-10-18-page-level-permissions.md" />
-<meta name="explain-source-hash" content="924218407dee9bc55cd90e966c52ca8c7d53a6db" />
+<meta name="explain-source-hash" content="dc21b14113a1b018129a439c17aa0e8203d198d1" />
 <title>Page-Level Permissions plan</title>
 <style>
   :root {
@@ -107,8 +107,8 @@
     <p class="kicker">Plan · claude/service-function-wrapping-13f04f · 2026-10-18 · <code>.ai/plans/2026-10-18-page-level-permissions.md</code></p>
     <h1>Page-Level Permissions — implementation plan</h1>
     <p class="tldr">When the plan is done, one permission table holds every role, person and API key level, and every module checks page keys. A browser test of each of the 158 pages with a one-page role proves it.</p>
-    <div class="progress"><span style="width: 31%"></span></div>
-    <p class="kicker">8 of 26 tasks done · spec: <code>.ai/specs/2026-10-18-page-level-permissions.md</code></p>
+    <div class="progress"><span style="width: 35%"></span></div>
+    <p class="kicker">9 of 26 tasks done · spec: <code>.ai/specs/2026-10-18-page-level-permissions.md</code></p>
   </header>
 
   <section>
@@ -185,9 +185,9 @@
         <text x="1120" y="69" text-anchor="middle">7 · convert data</text>
         <rect class="box new" x="1040" y="110" width="160" height="48" rx="8" />
         <text x="1120" y="139" text-anchor="middle">8 · TS claims</text>
-        <rect class="box hot" x="1240" y="40" width="160" height="48" rx="8" />
+        <rect class="box new" x="1240" y="40" width="160" height="48" rx="8" />
         <text x="1320" y="69" text-anchor="middle">9 · writers</text>
-        <rect class="box" x="1440" y="40" width="160" height="48" rx="8" />
+        <rect class="box hot" x="1440" y="40" width="160" height="48" rx="8" />
         <text x="1520" y="69" text-anchor="middle">10 · AccessGrid</text>
         <rect class="box" x="1440" y="110" width="160" height="48" rx="8" />
         <text x="1520" y="139" text-anchor="middle">14 · seeds, demo</text>
@@ -360,7 +360,7 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
         <div class="callout warn"><span class="label">Stop if</span><p>If a caller reads raw <code>&lt;module&gt;_&lt;action&gt;</code> keys from claims in a way <code>expandClaims</code> cannot serve, STOP and report.</p></div>
       </div>
     </details>
-    <details class="task">
+    <details class="task done">
       <summary><b>9.</b> Write grants from every authoring path</summary>
       <div>
         <p class="meta">Depends on: Task 8</p>

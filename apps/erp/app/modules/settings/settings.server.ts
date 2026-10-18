@@ -27,7 +27,11 @@ import {
   upsertDimensionValueMapping,
   validateDimensionSlots
 } from "@carbon/ee/accounting";
-import { deleteApiKey, upsertApiKey } from "@carbon/ee/api-keys.server";
+import {
+  deleteApiKey,
+  replaceApiKeyGrants,
+  upsertApiKey
+} from "@carbon/ee/api-keys.server";
 import {
   disableAuditLog,
   enableAuditLog,
@@ -1536,7 +1540,8 @@ export const removeDocumentSection = defineServiceFn({
 const apiKeyFields = {
   name: apiKeyValidator.shape.name,
   expiresAt: apiKeyValidator.shape.expiresAt,
-  /** Per module, the actions the key may run: `{ "sales": ["view"] }`. */
+  /** The actions the key may run, as `{ "sales_view": [companyId] }`. Each
+   *  module is stored as the lowest level holding all of its actions. */
   scopes: z.record(z.string(), z.array(z.string()))
 };
 /**
@@ -1551,6 +1556,10 @@ export const createApiKey = defineServiceFn({
   input: z.object(apiKeyFields),
   permission: { update: "users" },
   async run(ctx, { name, scopes, expiresAt }) {
+    // The grants are written without RLS, which asks this of an apiKey write.
+    if (!ctx.can({ create: "settings" })) {
+      return ctx.error("forbidden", "You do not have permission to do this");
+    }
     const rawKey = `crbn_${nanoid()}`;
     let created: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
@@ -1568,8 +1577,29 @@ export const createApiKey = defineServiceFn({
       return service.apiKeysEntitlement(ctx, err);
     }
     const key = created.data && "key" in created.data ? created.data.key : null;
-    if (created.error || !key) {
+    if (created.error || !key || !created.data) {
       return ctx.error("internal", "Failed to create API key", created.error);
+    }
+    const apiKeyId = created.data.id;
+    const granted = await replaceApiKeyGrants(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        companyId: ctx.company.id,
+        apiKeyId,
+        grants: service.apiKeyGrants(scopes, ctx.company.id),
+        actorId: ctx.auditUserId
+      }
+    ).catch((err) => ({ error: err as { message: string } }));
+    if (granted.error) {
+      // A key without its grants authorizes nothing; remove it rather than
+      // leave a key the person never saw.
+      await deleteApiKey(ctx.asCaller.supabase, apiKeyId);
+      return ctx.error(
+        "internal",
+        "Failed to save the API key's permissions",
+        granted.error
+      );
     }
     return { key };
   }
@@ -1586,6 +1616,10 @@ export const updateApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1), ...apiKeyFields }),
   permission: { update: "users" },
   async run(ctx, { id, name, scopes, expiresAt }) {
+    // The grants are written without RLS, which asks this of an apiKey write.
+    if (!ctx.can({ update: "settings" })) {
+      return ctx.error("forbidden", "You do not have permission to do this");
+    }
     let updated: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
       updated = await upsertApiKey(ctx.asCaller.supabase, {
@@ -1599,6 +1633,28 @@ export const updateApiKey = defineServiceFn({
     }
     if (updated.error) {
       return ctx.error("internal", "Failed to update API key", updated.error);
+    }
+    let granted: Awaited<ReturnType<typeof replaceApiKeyGrants>>;
+    try {
+      granted = await replaceApiKeyGrants(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        {
+          companyId: ctx.company.id,
+          apiKeyId: id,
+          grants: service.apiKeyGrants(scopes, ctx.company.id),
+          actorId: ctx.auditUserId
+        }
+      );
+    } catch (err) {
+      return service.apiKeysEntitlement(ctx, err);
+    }
+    if (granted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update the API key's permissions",
+        granted.error
+      );
     }
     // A scope or expiry edit must not keep authenticating from the 30s cache.
     await service.invalidateApiKeyCache(id, ctx.company.id);

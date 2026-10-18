@@ -155,3 +155,15 @@ export function holdsAny(
       moduleOf(page) === module && permission[action].includes(companyId)
   );
 }
+
+/** Expanded claims as flat `<page>_<action>` → company ids, as audit events carry them. */
+export function claimKeys(expanded: ExpandedClaims): Record<string, string[]> {
+  const keys: Record<string, string[]> = {};
+  for (const [page, permission] of Object.entries(expanded)) {
+    for (const action of ACTIONS) {
+      if (permission[action].length)
+        keys[`${page}_${action}`] = permission[action];
+    }
+  }
+  return keys;
+}

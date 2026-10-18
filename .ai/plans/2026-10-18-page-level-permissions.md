@@ -18,7 +18,7 @@ Phases 1 and 2 — grants, resolver, editors (one release)
 - [x] Task 6: Resolve access from grants in the SQL helpers
 - [x] Task 7: Convert today's permissions to grants
 - [x] Task 8: Read claims and key scopes from grants in TS
-- [ ] Task 9: Write grants from every authoring path
+- [x] Task 9: Write grants from every authoring path
 - [ ] Task 10: Build `AccessGrid` and the role editor
 - [ ] Task 11: Build the person Access tab and bulk overrides
 - [ ] Task 12: Build the API key grid
@@ -377,10 +377,10 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
 - Modify: `packages/auth/src/services/auth-events.server.ts` — new `logRoleAccessChange`
 
 **Steps:**
-1. Add `permissionsValidator`: `{ subject: { employeeTypeId } | { userId } | { apiKeyId }, grants: [{ module, page, level }] }`.
+1. Add `permissionsValidator`: `{ subjectType: "role" | "person" | "key", subjectId, grants: [{ module, page, level }] }`. A top-level `subjectType` lets the permission be a keyed rule.
 2. Validate `page` against `PAGES` and clamp `level` to the page's `maxLevel`.
 3. Add `upsertAccessGrants` in `users.server.ts`. Permission: `{ update: "users" }` for roles and people.
-4. Its building block in `users.service.ts` deletes the subject's grants, then inserts the new set, in `ctx.transaction`.
+4. The writer is `replaceGrants` in `@carbon/database/access-write` (Kysely, one transaction): `@carbon/ee` cannot import the ERP. `users.service.ts` `saveAccessGrants` routes to `@carbon/ee`'s `replaceAccessGrants` (roles, people) or `replaceApiKeyGrants` (keys).
 5. A `level` of `null` in the input means "no grant" (inherit). `"None"` is a stored grant.
 6. The save writes `convertedFrom = NULL` on every row of the subject.
 7. Rewrite the three `@carbon/ee` writers to call the new building block. Keep `requireEntitlement("PERMISSIONS")` first.
@@ -392,8 +392,8 @@ pnpm exec turbo run typecheck --filter=erp --concurrency=1
 13. Make the bulk job write person overrides for each selected person, in one transaction per person.
 14. Remove the permission copy from `createEmployeeAccount`, `convertConsoleOperatorToUser` and `insertInvite`.
 15. Keep the employee type assignment: access now comes from the role.
-16. In `createApiKey` and `updateApiKey`, write the key's grants through the same building block with `{ update: "settings" }`.
-17. Keep `accounting_delete` opt-in: refuse Full on any Accounting page unless the input names it explicitly.
+16. In `createApiKey` and `updateApiKey`, write the key's grants through `replaceApiKeyGrants`. Refuse unless the caller holds `settings_create` / `settings_update`: the grant write skips the RLS that guards `apiKey`.
+17. Keep `accounting_delete` opt-in: round-up makes Accounting Full only when `accounting_delete` was checked. The grid in Task 12 keeps it out of select-all.
 
 **Verify:**
 ```bash

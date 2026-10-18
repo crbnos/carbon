@@ -4,17 +4,35 @@
 
 import type { Result } from "@carbon/auth";
 import { error, getClaims, getPermissionCacheKey, success } from "@carbon/auth";
-import { logPermissionChange } from "@carbon/auth/auth-events.server";
+import {
+  logPermissionChange,
+  logRoleAccessChange
+} from "@carbon/auth/auth-events.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database, Json } from "@carbon/database";
+import { Constants, type Database, type Json } from "@carbon/database";
+import {
+  claimKeys,
+  claimsFromJson,
+  expandClaims,
+  LEVELS,
+  type Level,
+  roundUp
+} from "@carbon/database/access";
+import {
+  type GrantInput,
+  type GrantModule,
+  readGrants,
+  replaceGrants
+} from "@carbon/database/access-write";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { redis } from "@carbon/kv";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "./entitlements.server";
 
 /**
  * Commercial (Enterprise) RBAC authoring — the single, licensed source of truth
- * for creating/editing employee types, editing an individual user's permissions,
- * and building the flattened `userPermission.permissions` object. Gated to the
+ * for creating/editing employee types and editing an individual user's
+ * permissions. Every write is a `permission` grant (`replaceAccessGrants`). Gated to the
  * Business plan via the `PERMISSIONS` feature (`@carbon/ee/plan`); Community ships
  * an "everyone is an admin" experience so none of this is reachable there.
  *
@@ -22,9 +40,8 @@ import { requireEntitlement } from "./entitlements.server";
  * bulk-edit task (`carbon/update-permissions`), which previously carried its own
  * drifting copy of `updatePermissions` — this is now the only copy.
  *
- * The low-level community primitives (`makePermissionsFromEmployeeType` and
- * the invite flow's permission merge) stay in the ERP `users.service.ts`: they
- * are shared plumbing the invite flow depends on, not authoring.
+ * The invite flow's permission merge stays in the ERP `users.service.ts`: only
+ * portal invites carry permissions through it, and it is not authoring.
  */
 
 export type CompanyPermission = {
@@ -58,14 +75,16 @@ function capitalize(words: string) {
   return [first?.toLocaleUpperCase() ?? "", ...otherLetters].join("");
 }
 
-function isClaimPermission(key: string, value: unknown) {
-  const action = key.split("_")[1];
-  return (
-    action !== undefined &&
-    ["view", "create", "update", "delete"].includes(action) &&
-    Array.isArray(value)
-  );
+const MODULES = new Set<string>(Constants.public.Enums.module);
+
+/** A form's module name ("parts", "Parts") as the `module` enum value. */
+function toModule(name: string): GrantModule | null {
+  const module = capitalize(name.toLowerCase());
+  return MODULES.has(module) ? (module as GrantModule) : null;
 }
+
+const higher = (a: Level, b: Level) =>
+  LEVELS.indexOf(a) >= LEVELS.indexOf(b) ? a : b;
 
 // ---------------------------------------------------------------------------
 // Employee-type CRUD
@@ -138,23 +157,50 @@ export async function upsertEmployeeType(
     .single();
 }
 
+/**
+ * A role's module checkboxes as module grants: the lowest level holding every
+ * checked box. Unchecked is no grant. Page grants and modules the form leaves
+ * out are kept.
+ */
 export async function upsertEmployeeTypePermissions(
   client: SupabaseClient<Database>,
-  employeeTypeId: string,
-  companyId: string,
-  permissions: { name: string; permission: CompanyPermission }[]
-) {
-  await requireEntitlement(client, companyId, "PERMISSIONS");
-  const employeeTypePermissions = permissions.map(({ name, permission }) => ({
+  db: Kysely<KyselyDatabase>,
+  {
     employeeTypeId,
-    module: capitalize(name) as "Accounting",
-    view: permission.view ? [companyId] : [],
-    create: permission.create ? [companyId] : [],
-    update: permission.update ? [companyId] : [],
-    delete: permission.delete ? [companyId] : []
-  }));
-
-  return client.from("employeeTypePermission").upsert(employeeTypePermissions);
+    companyId,
+    permissions,
+    actorId,
+    ip
+  }: {
+    employeeTypeId: string;
+    companyId: string;
+    permissions: { name: string; permission: CompanyPermission }[];
+    actorId: string;
+    ip?: string;
+  }
+): Promise<Result> {
+  await requireEntitlement(client, companyId, "PERMISSIONS");
+  const edited = new Map<GrantModule, Level>();
+  for (const { name, permission } of permissions) {
+    const module = toModule(name);
+    if (module) edited.set(module, roundUp(permission));
+  }
+  const existing = await readGrants(db, companyId, { employeeTypeId });
+  const grants: GrantInput[] = [
+    ...existing.filter((g) => g.page !== null || !edited.has(g.module)),
+    ...[...edited].map(([module, level]) => ({
+      module,
+      page: null,
+      level: level === "None" ? null : level
+    }))
+  ];
+  return replaceAccessGrants(client, db, {
+    companyId,
+    subject: { employeeTypeId },
+    grants,
+    actorId,
+    ip
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -180,49 +226,25 @@ export function makeEmptyPermissionsFromModules(data: ModuleName[]) {
   }, {});
 }
 
+/** `get_claims` for one company as one checkbox set per page. */
 export function makeCompanyPermissionsFromClaims(
-  claims: Json[] | null,
+  claims: Json[] | Json | null,
   companyId: string
 ) {
   if (typeof claims !== "object" || claims === null) return null;
+  const raw = claimsFromJson(claims);
   const permissions: Record<string, CompanyPermission> = {};
-  let role: string | null = null;
-
-  Object.entries(claims).forEach(([key, value]) => {
-    // `isClaimPermission` guarantees `value` is a string[] and `key` has an
-    // action segment, so `module` is present and the array branch is the only one.
-    if (!isClaimPermission(key, value) || !Array.isArray(value)) return;
-    const [module, action] = key.split("_");
-    if (module === undefined) return;
-
-    const perm = permissions[module] ?? {
-      view: false,
-      create: false,
-      update: false,
-      delete: false
+  for (const [page, permission] of Object.entries(
+    expandClaims(raw, companyId)
+  )) {
+    permissions[page] = {
+      view: permission.view.includes(companyId),
+      create: permission.create.includes(companyId),
+      update: permission.update.includes(companyId),
+      delete: permission.delete.includes(companyId)
     };
-
-    if (action === "view") perm.view = value.includes(companyId);
-    else if (action === "create") perm.create = value.includes(companyId);
-    else if (action === "update") perm.update = value.includes(companyId);
-    else if (action === "delete") perm.delete = value.includes(companyId);
-
-    permissions[module] = perm;
-  });
-
-  if ("role" in claims) {
-    role = claims.role as string;
   }
-
-  if ("items" in permissions) {
-    delete permissions.items;
-  }
-
-  if ("messaging" in permissions) {
-    delete permissions.messaging;
-  }
-
-  return { permissions, role };
+  return { permissions, role: raw.role };
 }
 
 export function makeCompanyPermissionsFromEmployeeType(
@@ -284,8 +306,133 @@ async function isCompanyEmployee(
   return !employee.error && !!employee.data;
 }
 
+/** The user's claims in the company, as flat keys for the audit log. */
+async function auditedClaims(userId: string, companyId: string) {
+  const claims = await getClaims(getCarbonServiceRole(), userId, companyId);
+  if (claims.error || claims.data === null) return null;
+  return claimKeys(expandClaims(claimsFromJson(claims.data), companyId));
+}
+
+/** What a save changes: one entry per module or page whose grant moves. */
+function grantChanges(
+  before: { module: string; page: string | null; level: string }[],
+  after: readonly GrantInput[]
+) {
+  const key = (g: { module: string; page: string | null }) =>
+    `${g.module}\u0000${g.page ?? ""}`;
+  const from = new Map(before.map((g) => [key(g), g.level]));
+  const to = new Map(
+    after.filter((g) => g.level !== null).map((g) => [key(g), g.level])
+  );
+  const changes: {
+    module: string;
+    page: string | null;
+    from: string;
+    to: string;
+  }[] = [];
+  for (const k of new Set([...from.keys(), ...to.keys()])) {
+    const a = from.get(k) ?? "inherit";
+    const b = to.get(k) ?? "inherit";
+    if (a === b) continue;
+    const [module, page] = k.split("\u0000") as [string, string];
+    changes.push({ module, page: page || null, from: a, to: b });
+  }
+  return changes;
+}
+
+/**
+ * Replace every grant of a role or a person in the company, in one
+ * transaction. Clears the cached claims of everyone the change reaches (the
+ * person, or every employee on the role) and writes the audit event.
+ */
+export async function replaceAccessGrants(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    subject,
+    grants,
+    actorId,
+    ip,
+    reason
+  }: {
+    companyId: string;
+    subject: { employeeTypeId: string } | { userId: string };
+    grants: readonly GrantInput[];
+    actorId: string;
+    ip?: string;
+    reason?: string;
+  }
+): Promise<Result> {
+  await requireEntitlement(client, companyId, "PERMISSIONS");
+
+  if ("userId" in subject) {
+    if (!(await isCompanyEmployee(subject.userId, companyId))) {
+      return error({ companyId, userId: subject.userId }, "Employee not found");
+    }
+  } else {
+    const ownType = await db
+      .selectFrom("employeeType")
+      .select("id")
+      .where("id", "=", subject.employeeTypeId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!ownType) {
+      return error(
+        { companyId, employeeTypeId: subject.employeeTypeId },
+        "Employee type not found"
+      );
+    }
+  }
+
+  const before = await readGrants(db, companyId, subject);
+  const beforeClaims =
+    "userId" in subject ? await auditedClaims(subject.userId, companyId) : null;
+
+  try {
+    await replaceGrants(db, { companyId, subject, grants, userId: actorId });
+  } catch (err) {
+    return error(err, "Failed to update permissions");
+  }
+
+  if ("userId" in subject) {
+    await redis.del(getPermissionCacheKey(subject.userId));
+    // Audit the change (NIST 800-171 3.3.1/3.3.2): actor, target, before/after.
+    logPermissionChange({
+      actor: actorId,
+      targetUserId: subject.userId,
+      companyId,
+      ip,
+      before: beforeClaims,
+      after: await auditedClaims(subject.userId, companyId),
+      reason
+    });
+  } else {
+    const employees = await db
+      .selectFrom("employee")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("employeeTypeId", "=", subject.employeeTypeId)
+      .execute();
+    if (employees.length) {
+      await redis.del(...employees.map((e) => getPermissionCacheKey(e.id)));
+    }
+    logRoleAccessChange({
+      actor: actorId,
+      employeeTypeId: subject.employeeTypeId,
+      companyId,
+      ip,
+      changes: grantChanges(before, grants),
+      affected: employees.length
+    });
+  }
+
+  return success("Permissions updated");
+}
+
 export async function updateEmployee(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
     id,
     employeeType,
@@ -298,7 +445,7 @@ export async function updateEmployee(
     employeeType: string;
     permissions: Record<string, CompanyPermission>;
     companyId: string;
-    actorId?: string;
+    actorId: string;
     ip?: string;
   }
 ): Promise<Result> {
@@ -328,7 +475,7 @@ export async function updateEmployee(
   if (updateEmployeeEmployeeType.error)
     return error(updateEmployeeEmployeeType.error, "Failed to update employee");
 
-  return updatePermissions(client, {
+  return updatePermissions(client, db, {
     id,
     permissions,
     companyId,
@@ -337,8 +484,15 @@ export async function updateEmployee(
   });
 }
 
+/**
+ * A person's module checkboxes as overrides on their role. A module whose
+ * level equals the role's stores no override; any other level, None included,
+ * is stored. `addOnly` only raises a level. Page grants and modules the form
+ * leaves out are kept.
+ */
 export async function updatePermissions(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
     id,
     permissions,
@@ -351,7 +505,7 @@ export async function updatePermissions(
     permissions: Record<string, CompanyPermission>;
     companyId: string;
     addOnly?: boolean;
-    actorId?: string;
+    actorId: string;
     ip?: string;
   }
 ): Promise<Result> {
@@ -365,157 +519,53 @@ export async function updatePermissions(
   });
   if (claimsAdmin.error)
     return error(claimsAdmin.error, "Failed to check claims admin");
-  if (claimsAdmin.data === true) {
-    const claims = await getClaims(client, id);
-
-    if (claims.error) return error(claims.error, "Failed to get claims");
-
-    const updatedPermissions = (
-      typeof claims.data !== "object" ||
-      Array.isArray(claims.data) ||
-      claims.data === null
-        ? {}
-        : claims.data
-    ) as Record<string, string[]>;
-    delete updatedPermissions.role;
-
-    // Snapshot the effective grant set BEFORE the in-place mutation below, so
-    // the audit event carries an honest before/after diff (NIST 3.3.1/3.3.2).
-    const beforePermissions = structuredClone(updatedPermissions);
-
-    // add any missing claims to the current claims
-    Object.keys(permissions).forEach((name) => {
-      const module = name.toLowerCase();
-      if (!(`${module}_view` in updatedPermissions)) {
-        updatedPermissions[`${module}_view`] = [];
-      }
-      if (!(`${module}_create` in updatedPermissions)) {
-        updatedPermissions[`${module}_create`] = [];
-      }
-      if (!(`${module}_update` in updatedPermissions)) {
-        updatedPermissions[`${module}_update`] = [];
-      }
-      if (!(`${module}_delete` in updatedPermissions)) {
-        updatedPermissions[`${module}_delete`] = [];
-      }
-    });
-
-    if (addOnly) {
-      Object.entries(permissions).forEach(([name, permission]) => {
-        const module = name.toLowerCase();
-        if (
-          permission.view &&
-          !updatedPermissions[`${module}_view`]?.includes(companyId)
-        ) {
-          updatedPermissions[`${module}_view`]!.push(companyId);
-        }
-        if (
-          permission.create &&
-          !updatedPermissions[`${module}_create`]?.includes(companyId)
-        ) {
-          updatedPermissions[`${module}_create`]!.push(companyId);
-        }
-        if (
-          permission.update &&
-          !updatedPermissions[`${module}_update`]?.includes(companyId)
-        ) {
-          updatedPermissions[`${module}_update`]!.push(companyId);
-        }
-        if (
-          permission.delete &&
-          !updatedPermissions[`${module}_delete`]?.includes(companyId)
-        ) {
-          updatedPermissions[`${module}_delete`]!.push(companyId);
-        }
-      });
-    } else {
-      Object.entries(permissions).forEach(([name, permission]) => {
-        const module = name.toLowerCase();
-        if (permission.view) {
-          if (!updatedPermissions[`${module}_view`]?.includes(companyId)) {
-            updatedPermissions[`${module}_view`] = [
-              ...(updatedPermissions[`${module}_view`] ?? []),
-              companyId
-            ];
-          }
-        } else {
-          updatedPermissions[`${module}_view`] = (
-            updatedPermissions[`${module}_view`] as string[]
-          ).filter((c: string) => c !== companyId);
-        }
-
-        if (permission.create) {
-          if (!updatedPermissions[`${module}_create`]?.includes(companyId)) {
-            updatedPermissions[`${module}_create`] = [
-              ...(updatedPermissions[`${module}_create`] ?? []),
-              companyId
-            ];
-          }
-        } else {
-          updatedPermissions[`${module}_create`] = (
-            updatedPermissions[`${module}_create`] as string[]
-          ).filter((c: string) => c !== companyId);
-        }
-
-        if (permission.update) {
-          if (!updatedPermissions[`${module}_update`]?.includes(companyId)) {
-            updatedPermissions[`${module}_update`] = [
-              ...(updatedPermissions[`${module}_update`] ?? []),
-              companyId
-            ];
-          }
-        } else {
-          updatedPermissions[`${module}_update`] = (
-            updatedPermissions[`${module}_update`] as string[]
-          ).filter((c: string) => c !== companyId);
-        }
-
-        if (permission.delete) {
-          if (!updatedPermissions[`${module}_delete`]?.includes(companyId)) {
-            updatedPermissions[`${module}_delete`] = [
-              ...(updatedPermissions[`${module}_delete`] ?? []),
-              companyId
-            ];
-          }
-        } else {
-          updatedPermissions[`${module}_delete`] = (
-            updatedPermissions[`${module}_delete`] as string[]
-          ).filter((c: string) => c !== companyId);
-        }
-      });
-    }
-
-    // The "0" global-company wildcard is retired (NIST 800-171 3.1.5). Strip it
-    // from every array so it can never be persisted to the authoritative table.
-    for (const key of Object.keys(updatedPermissions)) {
-      const value = updatedPermissions[key];
-      if (Array.isArray(value)) {
-        updatedPermissions[key] = value.filter((c: string) => c !== "0");
-      }
-    }
-
-    const permissionsUpdate = await getCarbonServiceRole()
-      .from("userPermission")
-      .update({ permissions: updatedPermissions })
-      .eq("id", id);
-    if (permissionsUpdate.error)
-      return error(permissionsUpdate.error, "Failed to update claims");
-
-    await redis.del(getPermissionCacheKey(id));
-
-    // Audit the change (NIST 800-171 3.3.1/3.3.2): actor, target, before/after.
-    logPermissionChange({
-      actor: actorId,
-      targetUserId: id,
-      companyId,
-      ip,
-      before: beforePermissions,
-      after: updatedPermissions,
-      reason: addOnly ? "bulk-add" : "bulk-edit"
-    });
-
-    return success("Permissions updated");
+  if (claimsAdmin.data !== true) {
+    return error(null, "You do not have permission to update permissions");
   }
 
-  return error(null, "You do not have permission to update permissions");
+  const employee = await db
+    .selectFrom("employee")
+    .leftJoin("employeeType", "employeeType.id", "employee.employeeTypeId")
+    .select(["employee.employeeTypeId", "employeeType.systemType"])
+    .where("employee.id", "=", id)
+    .where("employee.companyId", "=", companyId)
+    .executeTakeFirst();
+  const roleGrants = employee?.employeeTypeId
+    ? await readGrants(db, companyId, {
+        employeeTypeId: employee.employeeTypeId
+      })
+    : [];
+  const own = await readGrants(db, companyId, { userId: id });
+  const moduleLevel = (
+    grants: { module: string; page: string | null; level: Level }[],
+    module: string
+  ) => grants.find((g) => g.page === null && g.module === module)?.level;
+  const roleLevel = (module: string): Level =>
+    employee?.systemType === "Admin"
+      ? "Full"
+      : (moduleLevel(roleGrants, module) ?? "None");
+
+  const edited = new Map<GrantModule, Level | null>();
+  for (const [name, permission] of Object.entries(permissions)) {
+    const module = toModule(name);
+    if (!module) continue;
+    let level = roundUp(permission);
+    if (addOnly) {
+      level = higher(level, moduleLevel(own, module) ?? roleLevel(module));
+    }
+    edited.set(module, level === roleLevel(module) ? null : level);
+  }
+
+  const grants: GrantInput[] = [
+    ...own.filter((g) => g.page !== null || !edited.has(g.module)),
+    ...[...edited].map(([module, level]) => ({ module, page: null, level }))
+  ];
+  return replaceAccessGrants(client, db, {
+    companyId,
+    subject: { userId: id },
+    grants,
+    actorId,
+    ip,
+    reason: addOnly ? "bulk-add" : "bulk-edit"
+  });
 }

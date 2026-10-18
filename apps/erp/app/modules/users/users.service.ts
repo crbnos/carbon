@@ -23,9 +23,17 @@ import {
 } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
+import {
+  type GrantInput,
+  type GrantSubject,
+  readGrants
+} from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { InviteEmail } from "@carbon/documents/email";
+import { replaceApiKeyGrants } from "@carbon/ee/api-keys.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { replaceAccessGrants } from "@carbon/ee/permissions.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
@@ -56,6 +64,7 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { insertEmployeeJob } from "../people/people.service";
+import { invalidateApiKeyCache } from "../settings/settings.service";
 import type { UserSelectGroupMembers } from "./types";
 
 const logger = getLogger("erp", "users");
@@ -1200,15 +1209,6 @@ export async function createEmployeeAccount(
     return { success: false, message: "Location not found" };
   }
 
-  const employeeTypePermissions = await getPermissionsByEmployeeType(
-    client,
-    employeeType
-  );
-  if (employeeTypePermissions.error) {
-    return { success: false, message: employeeTypePermissions.error.message };
-  }
-
-  const permissions = makePermissionsFromEmployeeType(employeeTypePermissions);
   const serviceRole = getCarbonServiceRole();
   const user = await getUserByEmail(email);
   let userId = "";
@@ -1285,7 +1285,8 @@ export async function createEmployeeAccount(
   const code = crypto.randomUUID();
   const invite = {
     role: "employee",
-    permissions,
+    // An employee's access comes from their employee type's grants.
+    permissions: {},
     email,
     companyId,
     createdBy,
@@ -2081,65 +2082,24 @@ export async function convertConsoleOperatorToUser(
     .single();
 
   if (employee.data?.employeeTypeId) {
-    const employeeTypePermissions = await getPermissionsByEmployeeType(
-      client,
-      employee.data.employeeTypeId
-    );
+    // Access comes from the employee type's grants.
+    const inviteResult = await insertInvite(serviceRole, {
+      role: "employee",
+      permissions: {},
+      email: email.toLowerCase(),
+      companyId,
+      createdBy,
+      code
+    });
 
-    if (!employeeTypePermissions.error) {
-      const permissions = makePermissionsFromEmployeeType(
-        employeeTypePermissions
-      );
-
-      const inviteResult = await insertInvite(serviceRole, {
-        role: "employee",
-        permissions,
-        email: email.toLowerCase(),
-        companyId,
-        createdBy,
-        code
+    if (inviteResult.error) {
+      logger.error("Failed to create invite for converted operator", {
+        error: inviteResult.error
       });
-
-      if (inviteResult.error) {
-        logger.error("Failed to create invite for converted operator", {
-          error: inviteResult.error
-        });
-      }
     }
   }
 
   return { success: true };
-}
-
-function makePermissionsFromEmployeeType({
-  data
-}: {
-  data: {
-    view: string[];
-    create: string[];
-    update: string[];
-    delete: string[];
-    module: string;
-  }[];
-}) {
-  const permissions: Record<string, string[]> = {};
-
-  data.forEach((permission) => {
-    if (!permission.module) {
-      throw new Error(
-        `Permission module is missing for permission ${JSON.stringify(data)}`
-      );
-    }
-
-    const module = permission.module.toLowerCase();
-
-    permissions[`${module}_view`] = permission.view;
-    permissions[`${module}_create`] = permission.create;
-    permissions[`${module}_update`] = permission.update;
-    permissions[`${module}_delete`] = permission.delete;
-  });
-
-  return permissions;
 }
 
 function makeCustomerPermissions(companyId: string) {
@@ -2293,6 +2253,87 @@ export async function emailAccountInvite(
 }
 
 /** `updateEmployee` / `updatePermissions` refusals, by what they mean. */
+export type AccessSubjectType = "role" | "person" | "key";
+
+function grantSubject(type: AccessSubjectType, id: string): GrantSubject {
+  if (type === "role") return { employeeTypeId: id };
+  if (type === "person") return { userId: id };
+  return { apiKeyId: id };
+}
+
+/** A role's, a person's or an API key's grants in the company. */
+export function readAccessGrants(
+  ctx: ServiceContext,
+  subjectType: AccessSubjectType,
+  subjectId: string
+) {
+  return readGrants(
+    ctx.asSystem.pg,
+    ctx.company.id,
+    grantSubject(subjectType, subjectId)
+  );
+}
+
+/**
+ * Replace the grants of a role, a person or an API key. Roles and people need
+ * role authoring (the PERMISSIONS feature), keys the API_KEYS feature; both
+ * locks run inside `@carbon/ee`. A key's cached record is dropped after.
+ */
+export async function saveAccessGrants(
+  ctx: ServiceContext,
+  {
+    subjectType,
+    subjectId,
+    grants,
+    ip
+  }: {
+    subjectType: AccessSubjectType;
+    subjectId: string;
+    grants: GrantInput[];
+    ip?: string;
+  }
+) {
+  const companyId = ctx.company.id;
+  if (subjectType === "key") {
+    let saved: Awaited<ReturnType<typeof replaceApiKeyGrants>>;
+    try {
+      saved = await replaceApiKeyGrants(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        {
+          companyId,
+          apiKeyId: subjectId,
+          grants,
+          actorId: ctx.auditUserId
+        }
+      );
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return ctx.error("entitlement", "API keys require the Business plan");
+    }
+    if (saved.error) return ctx.error("notFound", saved.error.message);
+    await invalidateApiKeyCache(subjectId, companyId);
+    return null;
+  }
+
+  const gated = await refuseUnlessPermissionsFeature(ctx);
+  if (gated) return gated;
+  const saved = await replaceAccessGrants(
+    ctx.asCaller.supabase,
+    ctx.asSystem.pg,
+    {
+      companyId,
+      subject: grantSubject(subjectType, subjectId) as
+        | { employeeTypeId: string }
+        | { userId: string },
+      grants,
+      actorId: ctx.auditUserId,
+      ip
+    }
+  );
+  return saved.success ? null : permissionsWriteError(ctx, saved.message);
+}
+
 export function permissionsWriteError(
   ctx: ServiceContext,
   message = "Failed to update permissions"

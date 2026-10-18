@@ -302,17 +302,12 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
     );
     expect(invite.sql).toMatch(/"acceptedAt" = \$\d+, "revokedAt" = \$\d+$/);
 
-    // The invite carries the permissions of the SAME type written to the
-    // employee row, under the code returned to the caller.
+    // The invite carries no permissions: access comes from the employee
+    // type written to the employee row. The code is the one returned.
     const permissions = JSON.parse(invite.parameters[1] as string);
-    expect(permissions).toEqual({
-      sales_view: [COMPANY],
-      sales_create: [COMPANY],
-      sales_update: [],
-      sales_delete: []
-    });
+    expect(permissions).toEqual({});
     expect(invite.parameters).toContain(result.code);
-    expect(permissionReads).toEqual([NEW_TYPE]);
+    expect(permissionReads).toEqual([]);
 
     // Nothing went through the non-transactional clients.
     expect(writes).toEqual([]);

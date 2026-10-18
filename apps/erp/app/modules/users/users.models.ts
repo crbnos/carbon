@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { Constants } from "@carbon/database";
+import { LEVELS, moduleOf, pageById } from "@carbon/database/access";
 import { supportedLanguages } from "@carbon/locale";
 import { NotificationTopic } from "@carbon/notifications";
 import { z } from "zod";
@@ -162,6 +164,49 @@ export const userPermissionsValidator = z.object({
   create: z.boolean(),
   update: z.boolean(),
   delete: z.boolean()
+});
+
+/**
+ * A role's, a person's or an API key's grants, replaced as one set. A null
+ * `page` covers the module; a null `level` stores no grant (inherit), and
+ * `"None"` is a stored grant that removes access.
+ */
+export const permissionsValidator = z.object({
+  subjectType: z.enum(["role", "person", "key"]),
+  subjectId: z.string().min(1),
+  grants: z
+    .array(
+      z.object({
+        module: z.enum(Constants.public.Enums.module),
+        page: z.string().min(1).nullable(),
+        level: z.enum(LEVELS).nullable()
+      })
+    )
+    .superRefine((grants, ctx) => {
+      const seen = new Set<string>();
+      grants.forEach((grant, index) => {
+        if (
+          grant.page !== null &&
+          (!pageById(grant.page) ||
+            moduleOf(grant.page) !== grant.module.toLowerCase())
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            path: [index, "page"],
+            message: `Unknown page for ${grant.module}`
+          });
+        }
+        const key = `${grant.module}:${grant.page ?? ""}`;
+        if (seen.has(key)) {
+          ctx.addIssue({
+            code: "custom",
+            path: [index],
+            message: "A page is granted twice"
+          });
+        }
+        seen.add(key);
+      });
+    })
 });
 
 export const validUserFlags = [

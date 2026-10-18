@@ -4,12 +4,13 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { updatePermissions } from "@carbon/ee/permissions.server";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
-// `updatePermissions` (the flattened-permission-object builder) is the licensed
+// `updatePermissions` (a person's overrides, as grants) is the licensed
 // authoring logic and lives once in `@carbon/ee/permissions.server`. This task
-// is just the durable wrapper for the bulk-edit path; it used to carry its own
-// drifting copy.
+// is just the durable wrapper for the bulk-edit path: one run, and one
+// transaction, per person.
 export const updatePermissionsFunction = inngest.createFunction(
   { id: "update-permissions", retries: 3 },
   { event: "carbon/update-permissions" },
@@ -21,7 +22,8 @@ export const updatePermissionsFunction = inngest.createFunction(
       logger.info(`Permission Update for ${payload.id}`);
       const { success, message } = await updatePermissions(
         serviceRole,
-        payload
+        getJobDatabaseClient(),
+        { ...payload, actorId: payload.actorId ?? "system" }
       );
       if (success) {
         logger.info(`Permission Update for ${payload.id} succeeded`);

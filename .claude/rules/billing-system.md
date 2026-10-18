@@ -111,9 +111,9 @@ claims/employee-type translators — lives once in **`@carbon/ee/permissions.ser
 no longer carries its own copy). Console-operator provisioning is `@carbon/ee/console.server`
 (`updateConsoleSetting`); the authoring UI is `.ee.tsx` in the app (it can't move
 to the package — it imports `~/components/Form` etc.).
-The community primitives it does NOT include — the invite permission merge and
-`makePermissionsFromEmployeeType` (invite snapshot) — stay in the app's
-`users.service.ts`. Community/Starter ships "everyone is an admin": you can add
+The community primitive it does NOT include — the invite permission merge, which
+portal invites still use — stays in the app's `users.service.ts`; an employee
+invite carries no permissions, since access comes from the employee type's grants. Community/Starter ships "everyone is an admin": you can add
 users (every invite defaults to the seeded `Admin` employee type) but not author
 roles. Enforcement (`requirePermissions`, RLS, `get_claims`) is unaffected and
 stays in every edition.

@@ -26,6 +26,7 @@ export type AuthEvent =
   | "permission_denied"
   | "permission_changed"
   | "role_changed"
+  | "role_access_changed"
   | "logout";
 
 /**
@@ -136,6 +137,29 @@ export function logPermissionChange(fields: {
     granted: after.filter((key) => !before.includes(key)),
     revoked: before.filter((key) => !after.includes(key)),
     reason: fields.reason
+  });
+}
+
+/**
+ * Emit a `role_access_changed` audit event (NIST 800-171 3.3.1 / 3.3.2 / AC-6):
+ * who changed which grants of an employee type, and how many employees hold it.
+ */
+export function logRoleAccessChange(fields: {
+  actor?: string | null;
+  employeeTypeId: string;
+  companyId: string;
+  changes: { module: string; page: string | null; from: string; to: string }[];
+  /** The employees whose access the change moved. */
+  affected: number;
+  ip?: string | null;
+}): void {
+  logAuthEvent("role_access_changed", {
+    actor: fields.actor ?? SYSTEM_ACTOR,
+    employeeTypeId: fields.employeeTypeId,
+    companyId: fields.companyId,
+    ip: fields.ip ?? undefined,
+    changes: fields.changes,
+    affected: fields.affected
   });
 }
 

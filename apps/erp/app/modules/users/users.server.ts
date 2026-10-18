@@ -33,6 +33,7 @@ import {
   employeeTypePermissionsValidator,
   itarEntityCertificationValidator,
   itarUserCertificationValidator,
+  permissionsValidator,
   US_PERSON_ATTESTATION_REQUIRED,
   userFlagValidator,
   userPermissionsValidator
@@ -485,14 +486,18 @@ export const updateEmployeePermissions = defineServiceFn({
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
 
-    const result = await updateEmployee(ctx.asCaller.supabase, {
-      id,
-      employeeType,
-      permissions,
-      companyId: ctx.company.id,
-      actorId: ctx.auditUserId,
-      ip
-    });
+    const result = await updateEmployee(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        id,
+        employeeType,
+        permissions,
+        companyId: ctx.company.id,
+        actorId: ctx.auditUserId,
+        ip
+      }
+    );
     if (!result.success)
       return service.permissionsWriteError(ctx, result.message);
     return { id };
@@ -570,6 +575,10 @@ export const createEmployeeType = defineServiceFn({
   async run(ctx, { name, permissions }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
+    // The grants are written without RLS, which asks this of a grant write.
+    if (!ctx.can({ update: "users" })) {
+      return ctx.error("forbidden", "You do not have permission to do this");
+    }
 
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -583,17 +592,16 @@ export const createEmployeeType = defineServiceFn({
       );
     }
 
-    const saved = await upsertEmployeeTypePermissions(
-      client,
+    const saved = await upsertEmployeeTypePermissions(client, ctx.asSystem.pg, {
       employeeTypeId,
       companyId,
-      permissions
-    );
-    if (saved.error) {
-      return ctx.error(
-        "internal",
-        "Failed to insert employee type permissions",
-        saved.error
+      permissions,
+      actorId: ctx.auditUserId
+    });
+    if (!saved.success) {
+      return service.permissionsWriteError(
+        ctx,
+        saved.message ?? "Failed to insert employee type permissions"
       );
     }
     return { id: employeeTypeId };
@@ -628,20 +636,76 @@ export const updateEmployeeType = defineServiceFn({
       );
     }
 
-    const saved = await upsertEmployeeTypePermissions(
-      client,
-      id,
-      ctx.company.id,
-      permissions
-    );
-    if (saved.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update employee type permissions",
-        saved.error
+    const saved = await upsertEmployeeTypePermissions(client, ctx.asSystem.pg, {
+      employeeTypeId: id,
+      companyId: ctx.company.id,
+      permissions,
+      actorId: ctx.auditUserId
+    });
+    if (!saved.success) {
+      return service.permissionsWriteError(
+        ctx,
+        saved.message ?? "Failed to update employee type permissions"
       );
     }
     return { id };
+  }
+});
+
+const grantSubjectRules = {
+  role: { update: "users" },
+  person: { update: "users" },
+  key: { update: "settings" }
+} as const;
+
+/**
+ * Replace the grants of a role, a person or an API key with the given set.
+ *
+ * @remarks
+ * Each grant names a module and, optionally, one of its pages, with a level:
+ * None, View, Create, Edit or Full. A null level stores no grant, so the
+ * subject inherits; None removes access. A role edit applies to everyone on
+ * the role at once. Roles and people need role authoring (the PERMISSIONS
+ * feature), API keys the API_KEYS feature.
+ */
+export const upsertAccessGrants = defineServiceFn({
+  input: permissionsValidator.extend({ ip: z.string().optional() }),
+  permission: { by: "subjectType", rules: grantSubjectRules },
+  async run(ctx, { subjectType, subjectId, grants, ip }) {
+    const refused = await service.saveAccessGrants(ctx, {
+      subjectType,
+      subjectId,
+      grants,
+      ip
+    });
+    if (refused) return refused;
+    return { subjectType, subjectId };
+  }
+});
+
+/**
+ * Remove one grant of a role, a person or an API key, so the subject inherits
+ * that module or page again.
+ */
+export const deleteAccessGrant = defineServiceFn({
+  input: z.object({
+    subjectType: permissionsValidator.shape.subjectType,
+    subjectId: z.string().min(1),
+    module: z.string().min(1),
+    page: z.string().min(1).nullable(),
+    ip: z.string().optional()
+  }),
+  permission: { by: "subjectType", rules: grantSubjectRules },
+  async run(ctx, { subjectType, subjectId, module, page, ip }) {
+    const current = await service.readAccessGrants(ctx, subjectType, subjectId);
+    const refused = await service.saveAccessGrants(ctx, {
+      subjectType,
+      subjectId,
+      grants: current.filter((g) => g.module !== module || g.page !== page),
+      ip
+    });
+    if (refused) return refused;
+    return { subjectType, subjectId };
   }
 });
 
