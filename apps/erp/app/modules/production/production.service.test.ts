@@ -37,7 +37,8 @@ const {
   planOrphanStepAdoption,
   maxToolQuantityByItem,
   buildAssemblyToolStepLinks,
-  duplicateJobOperationStep
+  duplicateJobOperationStep,
+  planSerialUnitsForCompletion
 } = await import("./production.service");
 
 // ── Assembly → BoP sync: marker reconciliation ───────────────────────────────
@@ -490,5 +491,118 @@ describe("duplicateJobOperationStep", () => {
     // The slide copy failed, so the tool/material link copies must never run.
     expect(inserts.some((i) => i.table === "jobOperationToolStep")).toBe(false);
     expect(inserts.some((i) => i.table === "jobMaterialStep")).toBe(false);
+  });
+});
+
+// ── Serial numbers at production: what a completion takes ───────────────────
+describe("planSerialUnitsForCompletion", () => {
+  type Unit = Parameters<typeof planSerialUnitsForCompletion>[0][number];
+  const unit = (overrides: Partial<Unit> & { id: string }): Unit => ({
+    status: "Reserved",
+    quantity: 1,
+    readableId: null,
+    createdAt: "2026-10-19T09:00:00.000Z",
+    received: false,
+    bookedOut: false,
+    fixedAsset: false,
+    ...overrides
+  });
+
+  it("splits an untouched seed into numbered units for a partial completion", () => {
+    const plan = planSerialUnitsForCompletion(
+      [unit({ id: "seed", quantity: 5 })],
+      2,
+      "receipt"
+    );
+    expect(plan).toEqual({
+      numberUnitIds: [],
+      split: {
+        seedId: "seed",
+        seedQuantity: 5,
+        seedReadableId: null,
+        newUnits: 2,
+        seedBecomesUnit: false
+      }
+    });
+  });
+
+  it("turns the seed itself into the last unit when the completion takes all of it", () => {
+    const plan = planSerialUnitsForCompletion(
+      [unit({ id: "seed", quantity: 3 })],
+      3,
+      "receipt"
+    );
+    expect(plan?.split).toMatchObject({ newUnits: 2, seedBecomesUnit: true });
+  });
+
+  it("takes finished units first and numbers only the unnumbered ones it takes", () => {
+    const plan = planSerialUnitsForCompletion(
+      [
+        unit({ id: "done-numbered", status: "Available", readableId: "SN-1" }),
+        unit({ id: "done-blank", status: "Available" }),
+        unit({ id: "waiting", status: "Reserved" })
+      ],
+      2,
+      "receipt"
+    );
+    expect(plan).toEqual({ numberUnitIds: ["done-blank"], split: null });
+  });
+
+  it("does nothing when every unit it takes is numbered", () => {
+    expect(
+      planSerialUnitsForCompletion(
+        [
+          unit({ id: "a", status: "Available", readableId: "SN-1" }),
+          unit({ id: "b", status: "Reserved" })
+        ],
+        1,
+        "receipt"
+      )
+    ).toBeNull();
+  });
+
+  it("skips received, scrapped and rejected units, and Consumed units never booked out", () => {
+    const plan = planSerialUnitsForCompletion(
+      [
+        unit({ id: "received", status: "Available", received: true }),
+        unit({ id: "scrapped", status: "Scrapped" }),
+        unit({ id: "rejected", status: "Rejected" }),
+        unit({ id: "consumed-in-place", status: "Consumed" }),
+        unit({ id: "issued", status: "Consumed", bookedOut: true }),
+        unit({ id: "next", status: "Reserved" })
+      ],
+      2,
+      "receipt"
+    );
+    expect(plan).toEqual({ numberUnitIds: ["issued", "next"], split: null });
+  });
+
+  it("refuses to plan when even the seed cannot cover the completion", () => {
+    expect(
+      planSerialUnitsForCompletion(
+        [unit({ id: "seed", quantity: 2 })],
+        3,
+        "receipt"
+      )
+    ).toBeNull();
+  });
+
+  it("uses the Make to Asset order: no Consumed units, none already an asset", () => {
+    const plan = planSerialUnitsForCompletion(
+      [
+        unit({ id: "issued", status: "Consumed", bookedOut: true }),
+        unit({ id: "asset", status: "Available", fixedAsset: true }),
+        unit({ id: "free", status: "Reserved" })
+      ],
+      1,
+      "asset"
+    );
+    expect(plan).toEqual({ numberUnitIds: ["free"], split: null });
+  });
+
+  it("ignores a fractional or non-positive completion", () => {
+    const units = [unit({ id: "seed", quantity: 4 })];
+    expect(planSerialUnitsForCompletion(units, 0, "receipt")).toBeNull();
+    expect(planSerialUnitsForCompletion(units, 1.5, "receipt")).toBeNull();
   });
 });

@@ -8380,6 +8380,7 @@ export type Database = {
           salesJobCompletedNotificationGroup: string[]
           salesRuleNotificationGroup: string[]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
+          serialNumberTiming: string
           shelfLabelSize: string | null
           showBomExplorerReadableId: boolean
           showCurrencyTrailingZeros: boolean
@@ -8456,6 +8457,7 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
+          serialNumberTiming?: string
           shelfLabelSize?: string | null
           showBomExplorerReadableId?: boolean
           showCurrencyTrailingZeros?: boolean
@@ -8532,6 +8534,7 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
+          serialNumberTiming?: string
           shelfLabelSize?: string | null
           showBomExplorerReadableId?: boolean
           showCurrencyTrailingZeros?: boolean

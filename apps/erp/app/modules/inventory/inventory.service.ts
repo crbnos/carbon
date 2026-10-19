@@ -22537,6 +22537,13 @@ async function produceBatchOutput(
     throw new NotFoundError("Tracked entity not found");
   }
 
+  // First-touch numbering (serialNumberTiming = 'production'). A no-op for a
+  // unit already numbered, which is every unit under the default timing.
+  await sequence.assignSerialNumberIfMissing(trx, {
+    trackedEntityId,
+    companyId
+  });
+
   if (trackedEntity.status !== "Consumed") {
     const activityId = nanoid();
     await trx
@@ -22931,6 +22938,14 @@ export async function issueMaterial(
           throw new NotFoundError("Tracked entity not found");
         }
 
+        // First-touch numbering (serialNumberTiming = 'production'). A no-op
+        // for a unit already numbered, which is every unit under the default
+        // timing.
+        await sequence.assignSerialNumberIfMissing(trx, {
+          trackedEntityId,
+          companyId
+        });
+
         if (trackedEntity.status !== "Consumed") {
           const activityId = nanoid();
           await trx
@@ -22992,8 +23007,14 @@ export async function issueMaterial(
           // sequence was configured later), so it would otherwise be created with
           // a null readableId. Resolve the job's location for the %{location}
           // token; the reservation runs in this transaction, atomic with the spawn.
+          // Under serialNumberTiming = 'production' the spawned unit stays
+          // unnumbered until it is first touched.
           let spawnReadableId: string | null = null;
-          if (trackedEntity.itemId) {
+          if (
+            trackedEntity.itemId &&
+            (await sequence.getSerialNumberTiming(trx, companyId)) !==
+              "production"
+          ) {
             let locationCode: string | null = null;
             let locationName: string | null = null;
             const jobIdForLocation = (
@@ -23258,6 +23279,16 @@ export async function issueMaterial(
           }
           scrappedEntityAttributes =
             entity.attributes as TrackedEntityAttributes;
+
+          // A unit scrapped before it completed an operation never reached a
+          // completion hook, so number it here (serialNumberTiming =
+          // 'production'). It consumed real material and needs an identifier
+          // on its scrap journal, NCR and lineage; its replacement must not
+          // take the number this unit should have had.
+          await sequence.assignSerialNumberIfMissing(trx, {
+            trackedEntityId: scrapEntityId,
+            companyId
+          });
 
           const scrapActivityId = nanoid();
           await trx

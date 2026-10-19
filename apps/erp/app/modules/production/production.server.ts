@@ -864,9 +864,11 @@ export const closeJob = defineServiceFn({
  * job's own), backflushes materials, rolls up cost and, for a Make to Asset
  * job, creates the fixed assets. It refuses a quantity of zero or below what
  * was received, a fractional quantity on a serial job, and the Make to Asset
- * rules; its message says what to fix (a `rule` error). Then the picked
- * material the job did not consume is returned to the warehouse; a failure
- * there leaves the job completed and is returned as `warning`.
+ * rules; its message says what to fix (a `rule` error). When the company
+ * numbers serials at production, the units the completion takes are split off
+ * the job's seed and numbered first. Then the picked material the job did not
+ * consume is returned to the warehouse; a failure there leaves the job
+ * completed and is returned as `warning`.
  *
  * @mcp
  */
@@ -882,6 +884,23 @@ export const completeJob = defineServiceFn({
   async run(ctx, { jobId, quantityComplete, locationId, storageUnitId }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
+
+    // Under serialNumberTiming = 'production' the units this completion takes
+    // may be unnumbered, or still one unsplit seed: the receipt is their first
+    // touch, so split and number them before the RPC receives them.
+    try {
+      await service.numberSerialUnitsForCompletion(ctx.asSystem.pg, {
+        jobId,
+        quantityComplete,
+        companyId
+      });
+    } catch (error) {
+      return ctx.error(
+        "internal",
+        "Failed to number the serial units being completed",
+        error
+      );
+    }
 
     // It must NOT write job.quantityShipped: that column is advanced only by
     // post-shipment, and the shipment builder ships quantityComplete less it.
