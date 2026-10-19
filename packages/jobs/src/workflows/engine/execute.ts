@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { MODULES, moduleOf, pageById } from "@carbon/database/access";
 import {
   batchCandidates,
   buildCatalogOverlay,
@@ -86,8 +87,14 @@ const BATCH_CONCURRENCY = 5;
 
 /** The one wording for a lost permission. Exported because the builder's test-run
  * route gates on the same permission before the walk, and two copies would drift. */
-export function noAccess(module: string): string {
-  const area = module.charAt(0).toUpperCase() + module.slice(1);
+/** A page's label, or a module's for a module or a list of pages of one shared table. */
+export function noAccess(key: string | readonly string[]): string {
+  const first = (typeof key === "string" ? key : key[0]) ?? "";
+  const page = typeof key === "string" ? pageById(key) : undefined;
+  const area =
+    page?.label ??
+    MODULES.find((module) => module.id === moduleOf(first))?.label ??
+    first.charAt(0).toUpperCase() + first.slice(1);
   return `The owner of this workflow no longer has access to ${area}.`;
 }
 
@@ -527,12 +534,17 @@ export async function walkWorkflow(params: {
 
     // Checked explicitly as well as by RLS: RLS alone returns zero rows, which
     // reads as a silent skip rather than a lost permission.
-    const module = catalog.getEvent(payload.eventId)?.permission;
+    // The page of the event's table; of a shared table, any one of its pages.
+    const pages = catalog.getEvent(payload.eventId)?.permission;
     if (
-      module !== undefined &&
-      !hasPermission(permissions, module, "view", payload.companyId)
+      pages !== undefined &&
+      ![pages]
+        .flat()
+        .some((page) =>
+          hasPermission(permissions, page, "view", payload.companyId)
+        )
     ) {
-      return refuse(noAccess(module));
+      return refuse(noAccess(pages));
     }
 
     return { ok: true as const, permissions };

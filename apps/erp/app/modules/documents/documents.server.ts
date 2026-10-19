@@ -2,13 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { defineServiceFn, refusalOf } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
+import { itemRule } from "~/modules/items/items.service";
 import { refuseUnlessOwned } from "~/modules/shared/shared.service";
 import { modelViewDirection } from "./documents.models";
 import * as service from "./documents.service";
@@ -20,11 +21,11 @@ const logger = getLogger("erp", "documents");
  * @remarks
  * The model must be the company's. `direction` is the viewer's camera (model
  * towards camera, Z up); without it the home view is drawn. Any employee may
- * ask: a preview is part of viewing, not part editing. A part's own thumbnail
- * hides the model's, so the call clears it on every part using the model.
- * That replaces the part's thumbnail, which needs permission to update parts;
- * without it the call is refused. The render writes the model's new
- * `thumbnailPath` when it lands.
+ * ask: a preview is part of viewing, not part editing. An item's own thumbnail
+ * hides the model's, so the call clears it on every item using the model.
+ * That replaces the item's thumbnail, which needs Edit on the page of each
+ * item's type; without it the call is refused. The render writes the model's
+ * new `thumbnailPath` when it lands.
  */
 export const regenerateModelThumbnail = defineServiceFn({
   input: z.object({
@@ -45,18 +46,22 @@ export const regenerateModelThumbnail = defineServiceFn({
       .select("id")
       .eq("modelUploadId", modelUploadId)
       .eq("companyId", companyId)
-      .not("thumbnailPath", "is", null)
-      .limit(1);
+      .not("thumbnailPath", "is", null);
     if (owned.error) {
       return ctx.error("internal", "Failed to read the parts", owned.error);
     }
     if (owned.data.length > 0) {
-      if (!ctx.can({ "parts.parts": "Edit" })) {
+      // Each item needs its own type's page: Tools for a tool.
+      const refused = await refusalOf(ctx, itemRule("Edit", { id: "ids" }), {
+        ids: owned.data.map((item) => item.id)
+      });
+      if (refused?.category === "forbidden") {
         return ctx.error(
           "forbidden",
-          "Replacing a part's thumbnail needs permission to update parts"
+          "Replacing an item's thumbnail needs permission to update the item"
         );
       }
+      if (refused) return refused;
       const cleared = await ctx.asCaller.supabase
         .from("item")
         .update({ thumbnailPath: null })

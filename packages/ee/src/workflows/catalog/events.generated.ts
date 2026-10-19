@@ -12,7 +12,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "customer" },
       after: { kind: "entity", of: "customer" }
     },
-    permission: "sales",
+    permission: "sales.customers",
     match: { table: "customer", operation: "UPDATE", field: "accountManagerId" }
   },
   "customer.assignee.changed": {
@@ -21,12 +21,12 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "customer" },
       after: { kind: "entity", of: "customer" }
     },
-    permission: "sales",
+    permission: "sales.customers",
     match: { table: "customer", operation: "UPDATE", field: "assignee" }
   },
   "customer.created": {
     outputs: { record: { kind: "entity", of: "customer" } },
-    permission: "sales",
+    permission: "sales.customers",
     match: { table: "customer", operation: "INSERT" }
   },
   "customer.currencyCode.changed": {
@@ -35,7 +35,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "customer" },
       after: { kind: "entity", of: "customer" }
     },
-    permission: "sales",
+    permission: "sales.customers",
     match: { table: "customer", operation: "UPDATE", field: "currencyCode" }
   },
   "customer.customerStatusId.changed": {
@@ -44,7 +44,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "customer" },
       after: { kind: "entity", of: "customer" }
     },
-    permission: "sales",
+    permission: "sales.customers",
     match: { table: "customer", operation: "UPDATE", field: "customerStatusId" }
   },
   "customer.customerTypeId.changed": {
@@ -53,12 +53,12 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "customer" },
       after: { kind: "entity", of: "customer" }
     },
-    permission: "sales",
+    permission: "sales.customers",
     match: { table: "customer", operation: "UPDATE", field: "customerTypeId" }
   },
   "customer.deleted": {
     outputs: { record: { kind: "entity", of: "customer" } },
-    permission: "sales",
+    permission: "sales.customers",
     match: { table: "customer", operation: "DELETE" }
   },
   "customer.name.changed": {
@@ -67,7 +67,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "customer" },
       after: { kind: "entity", of: "customer" }
     },
-    permission: "sales",
+    permission: "sales.customers",
     match: { table: "customer", operation: "UPDATE", field: "name" }
   },
   "customer.salesContactId.changed": {
@@ -76,7 +76,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "customer" },
       after: { kind: "entity", of: "customer" }
     },
-    permission: "sales",
+    permission: "sales.customers",
     match: { table: "customer", operation: "UPDATE", field: "salesContactId" }
   },
   "inventory.receiptPosted": {
@@ -84,7 +84,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       receipt: { kind: "entity", of: "receipt" },
       postedBy: { kind: "entity", of: "user" }
     },
-    permission: "inventory",
+    permission: "inventory.receipts",
     match: { moment: "inventory.receiptPosted" }
   },
   "inventory.shipmentPosted": {
@@ -92,7 +92,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       shipment: { kind: "entity", of: "shipment" },
       postedBy: { kind: "entity", of: "user" }
     },
-    permission: "inventory",
+    permission: "inventory.shipments",
     match: { moment: "inventory.shipmentPosted" }
   },
   "invoicing.purchaseInvoicePosted": {
@@ -100,7 +100,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       purchaseInvoice: { kind: "entity", of: "purchaseInvoice" },
       postedBy: { kind: "entity", of: "user" }
     },
-    permission: "invoicing",
+    permission: "invoicing.purchaseInvoices",
     match: { moment: "invoicing.purchaseInvoicePosted" }
   },
   "invoicing.salesInvoicePosted": {
@@ -108,7 +108,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       salesInvoice: { kind: "entity", of: "salesInvoice" },
       postedBy: { kind: "entity", of: "user" }
     },
-    permission: "invoicing",
+    permission: "invoicing.salesInvoices",
     match: { moment: "invoicing.salesInvoicePosted" }
   },
   "item.active.changed": {
@@ -117,7 +117,13 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "item" },
       after: { kind: "entity", of: "item" }
     },
-    permission: "parts",
+    permission: [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ],
     match: { table: "item", operation: "UPDATE", field: "active" }
   },
   "item.assignee.changed": {
@@ -126,12 +132,24 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "item" },
       after: { kind: "entity", of: "item" }
     },
-    permission: "parts",
+    permission: [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ],
     match: { table: "item", operation: "UPDATE", field: "assignee" }
   },
   "item.created": {
     outputs: { record: { kind: "entity", of: "item" } },
-    permission: "parts",
+    permission: [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ],
     match: { table: "item", operation: "INSERT" }
   },
   "item.defaultMethodType.changed": {
@@ -140,12 +158,24 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "item" },
       after: { kind: "entity", of: "item" }
     },
-    permission: "parts",
+    permission: [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ],
     match: { table: "item", operation: "UPDATE", field: "defaultMethodType" }
   },
   "item.deleted": {
     outputs: { record: { kind: "entity", of: "item" } },
-    permission: "parts",
+    permission: [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ],
     match: { table: "item", operation: "DELETE" }
   },
   "item.itemTrackingType.changed": {
@@ -154,7 +184,13 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "item" },
       after: { kind: "entity", of: "item" }
     },
-    permission: "parts",
+    permission: [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ],
     match: { table: "item", operation: "UPDATE", field: "itemTrackingType" }
   },
   "item.name.changed": {
@@ -163,7 +199,13 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "item" },
       after: { kind: "entity", of: "item" }
     },
-    permission: "parts",
+    permission: [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ],
     match: { table: "item", operation: "UPDATE", field: "name" }
   },
   "item.replenishmentSystem.changed": {
@@ -172,7 +214,13 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "item" },
       after: { kind: "entity", of: "item" }
     },
-    permission: "parts",
+    permission: [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ],
     match: { table: "item", operation: "UPDATE", field: "replenishmentSystem" }
   },
   "item.revisionStatus.changed": {
@@ -181,7 +229,13 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "item" },
       after: { kind: "entity", of: "item" }
     },
-    permission: "parts",
+    permission: [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ],
     match: { table: "item", operation: "UPDATE", field: "revisionStatus" }
   },
   "item.unitOfMeasureCode.changed": {
@@ -190,7 +244,13 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "item" },
       after: { kind: "entity", of: "item" }
     },
-    permission: "parts",
+    permission: [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ],
     match: { table: "item", operation: "UPDATE", field: "unitOfMeasureCode" }
   },
   "job.assignee.changed": {
@@ -199,12 +259,12 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "job" },
       after: { kind: "entity", of: "job" }
     },
-    permission: "production",
+    permission: "production.jobs",
     match: { table: "job", operation: "UPDATE", field: "assignee" }
   },
   "job.created": {
     outputs: { record: { kind: "entity", of: "job" } },
-    permission: "production",
+    permission: "production.jobs",
     match: { table: "job", operation: "INSERT" }
   },
   "job.deadlineType.changed": {
@@ -213,12 +273,12 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "job" },
       after: { kind: "entity", of: "job" }
     },
-    permission: "production",
+    permission: "production.jobs",
     match: { table: "job", operation: "UPDATE", field: "deadlineType" }
   },
   "job.deleted": {
     outputs: { record: { kind: "entity", of: "job" } },
-    permission: "production",
+    permission: "production.jobs",
     match: { table: "job", operation: "DELETE" }
   },
   "job.dueDate.changed": {
@@ -227,7 +287,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "job" },
       after: { kind: "entity", of: "job" }
     },
-    permission: "production",
+    permission: "production.jobs",
     match: { table: "job", operation: "UPDATE", field: "dueDate" }
   },
   "job.priority.changed": {
@@ -236,7 +296,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "job" },
       after: { kind: "entity", of: "job" }
     },
-    permission: "production",
+    permission: "production.jobs",
     match: { table: "job", operation: "UPDATE", field: "priority" }
   },
   "job.quantity.changed": {
@@ -245,7 +305,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "job" },
       after: { kind: "entity", of: "job" }
     },
-    permission: "production",
+    permission: "production.jobs",
     match: { table: "job", operation: "UPDATE", field: "quantity" }
   },
   "job.scrapQuantity.changed": {
@@ -254,7 +314,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "job" },
       after: { kind: "entity", of: "job" }
     },
-    permission: "production",
+    permission: "production.jobs",
     match: { table: "job", operation: "UPDATE", field: "scrapQuantity" }
   },
   "job.startDate.changed": {
@@ -263,7 +323,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "job" },
       after: { kind: "entity", of: "job" }
     },
-    permission: "production",
+    permission: "production.jobs",
     match: { table: "job", operation: "UPDATE", field: "startDate" }
   },
   "job.status.changed": {
@@ -272,7 +332,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "job" },
       after: { kind: "entity", of: "job" }
     },
-    permission: "production",
+    permission: "production.jobs",
     match: { table: "job", operation: "UPDATE", field: "status" }
   },
   "nonConformance.assignee.changed": {
@@ -281,7 +341,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "nonConformance" },
       after: { kind: "entity", of: "nonConformance" }
     },
-    permission: "quality",
+    permission: "quality.issues",
     match: { table: "nonConformance", operation: "UPDATE", field: "assignee" }
   },
   "nonConformance.closeDate.changed": {
@@ -290,17 +350,17 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "nonConformance" },
       after: { kind: "entity", of: "nonConformance" }
     },
-    permission: "quality",
+    permission: "quality.issues",
     match: { table: "nonConformance", operation: "UPDATE", field: "closeDate" }
   },
   "nonConformance.created": {
     outputs: { record: { kind: "entity", of: "nonConformance" } },
-    permission: "quality",
+    permission: "quality.issues",
     match: { table: "nonConformance", operation: "INSERT" }
   },
   "nonConformance.deleted": {
     outputs: { record: { kind: "entity", of: "nonConformance" } },
-    permission: "quality",
+    permission: "quality.issues",
     match: { table: "nonConformance", operation: "DELETE" }
   },
   "nonConformance.dueDate.changed": {
@@ -309,7 +369,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "nonConformance" },
       after: { kind: "entity", of: "nonConformance" }
     },
-    permission: "quality",
+    permission: "quality.issues",
     match: { table: "nonConformance", operation: "UPDATE", field: "dueDate" }
   },
   "nonConformance.locationId.changed": {
@@ -318,7 +378,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "nonConformance" },
       after: { kind: "entity", of: "nonConformance" }
     },
-    permission: "quality",
+    permission: "quality.issues",
     match: { table: "nonConformance", operation: "UPDATE", field: "locationId" }
   },
   "nonConformance.nonConformanceTypeId.changed": {
@@ -327,7 +387,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "nonConformance" },
       after: { kind: "entity", of: "nonConformance" }
     },
-    permission: "quality",
+    permission: "quality.issues",
     match: {
       table: "nonConformance",
       operation: "UPDATE",
@@ -340,7 +400,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "nonConformance" },
       after: { kind: "entity", of: "nonConformance" }
     },
-    permission: "quality",
+    permission: "quality.issues",
     match: { table: "nonConformance", operation: "UPDATE", field: "priority" }
   },
   "nonConformance.quantity.changed": {
@@ -349,7 +409,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "nonConformance" },
       after: { kind: "entity", of: "nonConformance" }
     },
-    permission: "quality",
+    permission: "quality.issues",
     match: { table: "nonConformance", operation: "UPDATE", field: "quantity" }
   },
   "nonConformance.source.changed": {
@@ -358,7 +418,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "nonConformance" },
       after: { kind: "entity", of: "nonConformance" }
     },
-    permission: "quality",
+    permission: "quality.issues",
     match: { table: "nonConformance", operation: "UPDATE", field: "source" }
   },
   "nonConformance.status.changed": {
@@ -367,7 +427,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "nonConformance" },
       after: { kind: "entity", of: "nonConformance" }
     },
-    permission: "quality",
+    permission: "quality.issues",
     match: { table: "nonConformance", operation: "UPDATE", field: "status" }
   },
   "production.jobHeld": {
@@ -375,7 +435,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       job: { kind: "entity", of: "job" },
       heldBy: { kind: "entity", of: "user" }
     },
-    permission: "production",
+    permission: "production.jobs",
     match: { moment: "production.jobHeld" }
   },
   "production.jobOperationCompleted": {
@@ -384,7 +444,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       jobOperation: { kind: "entity", of: "jobOperation" },
       completedBy: { kind: "entity", of: "user" }
     },
-    permission: "production",
+    permission: "production.jobs",
     match: { moment: "production.jobOperationCompleted" }
   },
   "production.jobReleased": {
@@ -392,7 +452,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       job: { kind: "entity", of: "job" },
       releasedBy: { kind: "entity", of: "user" }
     },
-    permission: "production",
+    permission: "production.jobs",
     match: { moment: "production.jobReleased" }
   },
   "purchaseOrder.assignee.changed": {
@@ -401,17 +461,17 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "purchaseOrder" },
       after: { kind: "entity", of: "purchaseOrder" }
     },
-    permission: "purchasing",
+    permission: "purchasing.purchaseOrders",
     match: { table: "purchaseOrder", operation: "UPDATE", field: "assignee" }
   },
   "purchaseOrder.created": {
     outputs: { record: { kind: "entity", of: "purchaseOrder" } },
-    permission: "purchasing",
+    permission: "purchasing.purchaseOrders",
     match: { table: "purchaseOrder", operation: "INSERT" }
   },
   "purchaseOrder.deleted": {
     outputs: { record: { kind: "entity", of: "purchaseOrder" } },
-    permission: "purchasing",
+    permission: "purchasing.purchaseOrders",
     match: { table: "purchaseOrder", operation: "DELETE" }
   },
   "purchaseOrder.orderDate.changed": {
@@ -420,7 +480,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "purchaseOrder" },
       after: { kind: "entity", of: "purchaseOrder" }
     },
-    permission: "purchasing",
+    permission: "purchasing.purchaseOrders",
     match: { table: "purchaseOrder", operation: "UPDATE", field: "orderDate" }
   },
   "purchaseOrder.purchaseOrderType.changed": {
@@ -429,7 +489,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "purchaseOrder" },
       after: { kind: "entity", of: "purchaseOrder" }
     },
-    permission: "purchasing",
+    permission: "purchasing.purchaseOrders",
     match: {
       table: "purchaseOrder",
       operation: "UPDATE",
@@ -442,7 +502,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "purchaseOrder" },
       after: { kind: "entity", of: "purchaseOrder" }
     },
-    permission: "purchasing",
+    permission: "purchasing.purchaseOrders",
     match: { table: "purchaseOrder", operation: "UPDATE", field: "status" }
   },
   "purchaseOrder.supplierId.changed": {
@@ -451,7 +511,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "purchaseOrder" },
       after: { kind: "entity", of: "purchaseOrder" }
     },
-    permission: "purchasing",
+    permission: "purchasing.purchaseOrders",
     match: { table: "purchaseOrder", operation: "UPDATE", field: "supplierId" }
   },
   "purchaseOrder.supplierLocationId.changed": {
@@ -460,7 +520,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "purchaseOrder" },
       after: { kind: "entity", of: "purchaseOrder" }
     },
-    permission: "purchasing",
+    permission: "purchasing.purchaseOrders",
     match: {
       table: "purchaseOrder",
       operation: "UPDATE",
@@ -473,7 +533,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "purchaseOrder" },
       after: { kind: "entity", of: "purchaseOrder" }
     },
-    permission: "purchasing",
+    permission: "purchasing.purchaseOrders",
     match: {
       table: "purchaseOrder",
       operation: "UPDATE",
@@ -486,7 +546,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "purchaseOrder" },
       after: { kind: "entity", of: "purchaseOrder" }
     },
-    permission: "purchasing",
+    permission: "purchasing.purchaseOrders",
     match: { table: "purchaseOrder", operation: "UPDATE", field: "tags" }
   },
   "quote.assignee.changed": {
@@ -495,7 +555,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "quote" },
       after: { kind: "entity", of: "quote" }
     },
-    permission: "sales",
+    permission: "sales.quotes",
     match: { table: "quote", operation: "UPDATE", field: "assignee" }
   },
   "quote.completedDate.changed": {
@@ -504,12 +564,12 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "quote" },
       after: { kind: "entity", of: "quote" }
     },
-    permission: "sales",
+    permission: "sales.quotes",
     match: { table: "quote", operation: "UPDATE", field: "completedDate" }
   },
   "quote.created": {
     outputs: { record: { kind: "entity", of: "quote" } },
-    permission: "sales",
+    permission: "sales.quotes",
     match: { table: "quote", operation: "INSERT" }
   },
   "quote.customerId.changed": {
@@ -518,12 +578,12 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "quote" },
       after: { kind: "entity", of: "quote" }
     },
-    permission: "sales",
+    permission: "sales.quotes",
     match: { table: "quote", operation: "UPDATE", field: "customerId" }
   },
   "quote.deleted": {
     outputs: { record: { kind: "entity", of: "quote" } },
-    permission: "sales",
+    permission: "sales.quotes",
     match: { table: "quote", operation: "DELETE" }
   },
   "quote.dueDate.changed": {
@@ -532,7 +592,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "quote" },
       after: { kind: "entity", of: "quote" }
     },
-    permission: "sales",
+    permission: "sales.quotes",
     match: { table: "quote", operation: "UPDATE", field: "dueDate" }
   },
   "quote.estimatorId.changed": {
@@ -541,7 +601,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "quote" },
       after: { kind: "entity", of: "quote" }
     },
-    permission: "sales",
+    permission: "sales.quotes",
     match: { table: "quote", operation: "UPDATE", field: "estimatorId" }
   },
   "quote.expirationDate.changed": {
@@ -550,7 +610,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "quote" },
       after: { kind: "entity", of: "quote" }
     },
-    permission: "sales",
+    permission: "sales.quotes",
     match: { table: "quote", operation: "UPDATE", field: "expirationDate" }
   },
   "quote.salesPersonId.changed": {
@@ -559,7 +619,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "quote" },
       after: { kind: "entity", of: "quote" }
     },
-    permission: "sales",
+    permission: "sales.quotes",
     match: { table: "quote", operation: "UPDATE", field: "salesPersonId" }
   },
   "quote.status.changed": {
@@ -568,7 +628,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "quote" },
       after: { kind: "entity", of: "quote" }
     },
-    permission: "sales",
+    permission: "sales.quotes",
     match: { table: "quote", operation: "UPDATE", field: "status" }
   },
   "receipt.assignee.changed": {
@@ -577,17 +637,17 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "receipt" },
       after: { kind: "entity", of: "receipt" }
     },
-    permission: "inventory",
+    permission: "inventory.receipts",
     match: { table: "receipt", operation: "UPDATE", field: "assignee" }
   },
   "receipt.created": {
     outputs: { record: { kind: "entity", of: "receipt" } },
-    permission: "inventory",
+    permission: "inventory.receipts",
     match: { table: "receipt", operation: "INSERT" }
   },
   "receipt.deleted": {
     outputs: { record: { kind: "entity", of: "receipt" } },
-    permission: "inventory",
+    permission: "inventory.receipts",
     match: { table: "receipt", operation: "DELETE" }
   },
   "receipt.invoiced.changed": {
@@ -596,7 +656,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "receipt" },
       after: { kind: "entity", of: "receipt" }
     },
-    permission: "inventory",
+    permission: "inventory.receipts",
     match: { table: "receipt", operation: "UPDATE", field: "invoiced" }
   },
   "receipt.locationId.changed": {
@@ -605,7 +665,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "receipt" },
       after: { kind: "entity", of: "receipt" }
     },
-    permission: "inventory",
+    permission: "inventory.receipts",
     match: { table: "receipt", operation: "UPDATE", field: "locationId" }
   },
   "receipt.postingDate.changed": {
@@ -614,7 +674,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "receipt" },
       after: { kind: "entity", of: "receipt" }
     },
-    permission: "inventory",
+    permission: "inventory.receipts",
     match: { table: "receipt", operation: "UPDATE", field: "postingDate" }
   },
   "receipt.sourceDocument.changed": {
@@ -623,7 +683,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "receipt" },
       after: { kind: "entity", of: "receipt" }
     },
-    permission: "inventory",
+    permission: "inventory.receipts",
     match: { table: "receipt", operation: "UPDATE", field: "sourceDocument" }
   },
   "receipt.status.changed": {
@@ -632,7 +692,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "receipt" },
       after: { kind: "entity", of: "receipt" }
     },
-    permission: "inventory",
+    permission: "inventory.receipts",
     match: { table: "receipt", operation: "UPDATE", field: "status" }
   },
   "receipt.supplierId.changed": {
@@ -641,7 +701,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "receipt" },
       after: { kind: "entity", of: "receipt" }
     },
-    permission: "inventory",
+    permission: "inventory.receipts",
     match: { table: "receipt", operation: "UPDATE", field: "supplierId" }
   },
   "sales.quoteAccepted": {
@@ -649,7 +709,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       quote: { kind: "entity", of: "quote" },
       salesOrder: { kind: "entity", of: "salesOrder" }
     },
-    permission: "sales",
+    permission: "sales.quotes",
     match: { moment: "sales.quoteAccepted" }
   },
   "sales.quoteSent": {
@@ -657,7 +717,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       quote: { kind: "entity", of: "quote" },
       sentBy: { kind: "entity", of: "user" }
     },
-    permission: "sales",
+    permission: "sales.quotes",
     match: { moment: "sales.quoteSent" }
   },
   "salesOrder.assignee.changed": {
@@ -666,7 +726,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "salesOrder" },
       after: { kind: "entity", of: "salesOrder" }
     },
-    permission: "sales",
+    permission: "sales.salesOrders",
     match: { table: "salesOrder", operation: "UPDATE", field: "assignee" }
   },
   "salesOrder.completedDate.changed": {
@@ -675,12 +735,12 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "salesOrder" },
       after: { kind: "entity", of: "salesOrder" }
     },
-    permission: "sales",
+    permission: "sales.salesOrders",
     match: { table: "salesOrder", operation: "UPDATE", field: "completedDate" }
   },
   "salesOrder.created": {
     outputs: { record: { kind: "entity", of: "salesOrder" } },
-    permission: "sales",
+    permission: "sales.salesOrders",
     match: { table: "salesOrder", operation: "INSERT" }
   },
   "salesOrder.customerId.changed": {
@@ -689,7 +749,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "salesOrder" },
       after: { kind: "entity", of: "salesOrder" }
     },
-    permission: "sales",
+    permission: "sales.salesOrders",
     match: { table: "salesOrder", operation: "UPDATE", field: "customerId" }
   },
   "salesOrder.customerReference.changed": {
@@ -698,7 +758,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "salesOrder" },
       after: { kind: "entity", of: "salesOrder" }
     },
-    permission: "sales",
+    permission: "sales.salesOrders",
     match: {
       table: "salesOrder",
       operation: "UPDATE",
@@ -707,7 +767,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
   },
   "salesOrder.deleted": {
     outputs: { record: { kind: "entity", of: "salesOrder" } },
-    permission: "sales",
+    permission: "sales.salesOrders",
     match: { table: "salesOrder", operation: "DELETE" }
   },
   "salesOrder.locationId.changed": {
@@ -716,7 +776,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "salesOrder" },
       after: { kind: "entity", of: "salesOrder" }
     },
-    permission: "sales",
+    permission: "sales.salesOrders",
     match: { table: "salesOrder", operation: "UPDATE", field: "locationId" }
   },
   "salesOrder.orderDate.changed": {
@@ -725,7 +785,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "salesOrder" },
       after: { kind: "entity", of: "salesOrder" }
     },
-    permission: "sales",
+    permission: "sales.salesOrders",
     match: { table: "salesOrder", operation: "UPDATE", field: "orderDate" }
   },
   "salesOrder.salesPersonId.changed": {
@@ -734,7 +794,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "salesOrder" },
       after: { kind: "entity", of: "salesOrder" }
     },
-    permission: "sales",
+    permission: "sales.salesOrders",
     match: { table: "salesOrder", operation: "UPDATE", field: "salesPersonId" }
   },
   "salesOrder.status.changed": {
@@ -743,7 +803,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "salesOrder" },
       after: { kind: "entity", of: "salesOrder" }
     },
-    permission: "sales",
+    permission: "sales.salesOrders",
     match: { table: "salesOrder", operation: "UPDATE", field: "status" }
   },
   "shipment.assignee.changed": {
@@ -752,12 +812,12 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "shipment" },
       after: { kind: "entity", of: "shipment" }
     },
-    permission: "inventory",
+    permission: "inventory.shipments",
     match: { table: "shipment", operation: "UPDATE", field: "assignee" }
   },
   "shipment.created": {
     outputs: { record: { kind: "entity", of: "shipment" } },
-    permission: "inventory",
+    permission: "inventory.shipments",
     match: { table: "shipment", operation: "INSERT" }
   },
   "shipment.customerId.changed": {
@@ -766,12 +826,12 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "shipment" },
       after: { kind: "entity", of: "shipment" }
     },
-    permission: "inventory",
+    permission: "inventory.shipments",
     match: { table: "shipment", operation: "UPDATE", field: "customerId" }
   },
   "shipment.deleted": {
     outputs: { record: { kind: "entity", of: "shipment" } },
-    permission: "inventory",
+    permission: "inventory.shipments",
     match: { table: "shipment", operation: "DELETE" }
   },
   "shipment.locationId.changed": {
@@ -780,7 +840,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "shipment" },
       after: { kind: "entity", of: "shipment" }
     },
-    permission: "inventory",
+    permission: "inventory.shipments",
     match: { table: "shipment", operation: "UPDATE", field: "locationId" }
   },
   "shipment.postingDate.changed": {
@@ -789,7 +849,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "shipment" },
       after: { kind: "entity", of: "shipment" }
     },
-    permission: "inventory",
+    permission: "inventory.shipments",
     match: { table: "shipment", operation: "UPDATE", field: "postingDate" }
   },
   "shipment.shippingMethodId.changed": {
@@ -798,7 +858,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "shipment" },
       after: { kind: "entity", of: "shipment" }
     },
-    permission: "inventory",
+    permission: "inventory.shipments",
     match: { table: "shipment", operation: "UPDATE", field: "shippingMethodId" }
   },
   "shipment.status.changed": {
@@ -807,7 +867,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "shipment" },
       after: { kind: "entity", of: "shipment" }
     },
-    permission: "inventory",
+    permission: "inventory.shipments",
     match: { table: "shipment", operation: "UPDATE", field: "status" }
   },
   "shipment.trackingNumber.changed": {
@@ -816,7 +876,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "shipment" },
       after: { kind: "entity", of: "shipment" }
     },
-    permission: "inventory",
+    permission: "inventory.shipments",
     match: { table: "shipment", operation: "UPDATE", field: "trackingNumber" }
   },
   "supplier.accountManagerId.changed": {
@@ -825,7 +885,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "supplier" },
       after: { kind: "entity", of: "supplier" }
     },
-    permission: "purchasing",
+    permission: "purchasing.suppliers",
     match: { table: "supplier", operation: "UPDATE", field: "accountManagerId" }
   },
   "supplier.assignee.changed": {
@@ -834,12 +894,12 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "supplier" },
       after: { kind: "entity", of: "supplier" }
     },
-    permission: "purchasing",
+    permission: "purchasing.suppliers",
     match: { table: "supplier", operation: "UPDATE", field: "assignee" }
   },
   "supplier.created": {
     outputs: { record: { kind: "entity", of: "supplier" } },
-    permission: "purchasing",
+    permission: "purchasing.suppliers",
     match: { table: "supplier", operation: "INSERT" }
   },
   "supplier.currencyCode.changed": {
@@ -848,12 +908,12 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "supplier" },
       after: { kind: "entity", of: "supplier" }
     },
-    permission: "purchasing",
+    permission: "purchasing.suppliers",
     match: { table: "supplier", operation: "UPDATE", field: "currencyCode" }
   },
   "supplier.deleted": {
     outputs: { record: { kind: "entity", of: "supplier" } },
-    permission: "purchasing",
+    permission: "purchasing.suppliers",
     match: { table: "supplier", operation: "DELETE" }
   },
   "supplier.name.changed": {
@@ -862,7 +922,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "supplier" },
       after: { kind: "entity", of: "supplier" }
     },
-    permission: "purchasing",
+    permission: "purchasing.suppliers",
     match: { table: "supplier", operation: "UPDATE", field: "name" }
   },
   "supplier.supplierStatus.changed": {
@@ -871,7 +931,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "supplier" },
       after: { kind: "entity", of: "supplier" }
     },
-    permission: "purchasing",
+    permission: "purchasing.suppliers",
     match: { table: "supplier", operation: "UPDATE", field: "supplierStatus" }
   },
   "supplier.supplierTypeId.changed": {
@@ -880,7 +940,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "supplier" },
       after: { kind: "entity", of: "supplier" }
     },
-    permission: "purchasing",
+    permission: "purchasing.suppliers",
     match: { table: "supplier", operation: "UPDATE", field: "supplierTypeId" }
   },
   "supplier.taxPercent.changed": {
@@ -889,7 +949,7 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
       before: { kind: "entity", of: "supplier" },
       after: { kind: "entity", of: "supplier" }
     },
-    permission: "purchasing",
+    permission: "purchasing.suppliers",
     match: { table: "supplier", operation: "UPDATE", field: "taxPercent" }
   }
 };

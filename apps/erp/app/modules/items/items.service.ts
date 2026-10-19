@@ -169,6 +169,12 @@ const SERVICES_LIST_COLUMNS =
 
 const logger = getLogger("erp", "items");
 
+/** Activating a method version is an edit of its item, on the item type's page. */
+export const activateMethodVersionPermission = itemRule("Edit", {
+  id: "id",
+  from: "makeMethod"
+});
+
 export async function activateMethodVersion(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -187,7 +193,7 @@ export async function activateMethodVersion(
       id
     },
     sharedPostings.convertDocument,
-    { as: sharedPostings.convertDocumentPermission }
+    { as: activateMethodVersionPermission }
   );
 }
 

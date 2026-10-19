@@ -2,27 +2,63 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Page } from "../registry";
+import type { Child, Hop, Page } from "../registry";
 
 // The Items module keeps its permission name, `parts`.
 
-/** The Items tables that hang off one item: each checks the item's type through `itemId`. */
-const ITEM_CHILDREN = [
-  "batchProperty",
-  "configurationParameter",
-  "configurationParameterGroup",
-  "configurationRule",
-  "customerPartToItem",
-  "itemCost",
-  "itemPlanning",
-  "itemReplenishment",
-  "itemShelfLife",
-  "itemSupersession",
-  "itemUnitSalePrice",
-  "makeMethod",
-  "pickMethod",
-  "supplierPart"
-].map((table) => ({ table, via: "itemId" }));
+const ITEM: Hop = ["itemId", "item"];
+const MAKE_METHOD: Hop = ["makeMethodId", "makeMethod"];
+const OPERATION: Hop = ["operationId", "methodOperation"];
+
+/**
+ * The Items tables that hang off one item: each checks the item's type through
+ * `itemId`, or through the hops of its `path` (a method's lines reach the item
+ * through `makeMethod`).
+ */
+const ITEM_CHILDREN: readonly Child[] = [
+  ...[
+    "batchProperty",
+    "configurationParameter",
+    "configurationParameterGroup",
+    "configurationRule",
+    "customerPartToItem",
+    "itemCost",
+    "itemPlanning",
+    "itemReplenishment",
+    "itemShelfLife",
+    "itemSupersession",
+    "itemUnitSalePrice",
+    "makeMethod",
+    "pickMethod",
+    "supplierPart"
+  ].map((table) => ({ table, via: "itemId" })),
+  {
+    table: "supplierPartPrice",
+    path: [["supplierPartId", "supplierPart"], ITEM]
+  },
+  { table: "methodMaterial", path: [MAKE_METHOD, ITEM] },
+  { table: "methodOperation", path: [MAKE_METHOD, ITEM] },
+  {
+    table: "methodMaterialStep",
+    path: [["methodMaterialId", "methodMaterial"], MAKE_METHOD, ITEM]
+  },
+  { table: "methodOperationParameter", path: [OPERATION, MAKE_METHOD, ITEM] },
+  { table: "methodOperationStep", path: [OPERATION, MAKE_METHOD, ITEM] },
+  { table: "methodOperationTool", path: [OPERATION, MAKE_METHOD, ITEM] },
+  {
+    table: "methodOperationStepSlide",
+    path: [["stepId", "methodOperationStep"], OPERATION, MAKE_METHOD, ITEM]
+  },
+  {
+    table: "methodOperationToolStep",
+    path: [
+      ["methodOperationToolId", "methodOperationTool"],
+      OPERATION,
+      MAKE_METHOD,
+      ITEM
+    ]
+  }
+];
 
 /** Restricted tables of other pages that an item's costing and planning tabs read. */
 const ITEM_READERS = ["costLedger", "demandActual", "supplyActual"];
@@ -32,23 +68,10 @@ export const PARTS_PAGES = [
     id: "parts.parts",
     label: "Parts",
     maxLevel: "Full",
-    // ponytail: the method tables and supplier prices reach their item through
-    // a second table (makeMethod, supplierPart), and an item points at its
-    // model. `children` names neither, so they sit on Parts for every item type.
-    tables: [
-      "item",
-      "part",
-      "methodMaterial",
-      "methodMaterialStep",
-      "methodOperation",
-      "methodOperationParameter",
-      "methodOperationStep",
-      "methodOperationStepSlide",
-      "methodOperationTool",
-      "methodOperationToolStep",
-      "supplierPartPrice",
-      "modelUpload"
-    ],
+    // An item points at its model (`item.modelUploadId`), and quotes, orders
+    // and jobs point at models too: no one row names the page, so the
+    // models table sits on Parts.
+    tables: ["item", "part", "modelUpload"],
     where: { table: "item", column: "type", value: "Part" },
     children: ITEM_CHILDREN,
     readers: ITEM_READERS,

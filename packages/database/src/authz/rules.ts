@@ -85,11 +85,13 @@ const either = (terms: RawBuilder<unknown>[]) =>
 
 /**
  * A shared table's rows, one branch per page: the page's rows and the page's
- * key. A child table reaches its parent row through `via` and checks the
- * parent's branches; the parent is in the row's own company.
+ * key. A child table reaches its parent row through its path, one `EXISTS`
+ * per hop, and checks the parent's branches. Every hop is in the company of
+ * the hop before it; the first is in `company`, the row's own company.
  */
 const branches = (
   subject: RawBuilder<unknown>,
+  company: RawBuilder<unknown>,
   table: string,
   place: Exclude<TablePlace, { kind: "page" }>,
   action: Action
@@ -106,17 +108,32 @@ const branches = (
     })
   );
   if (place.kind === "shared") return arms;
-  return sql`EXISTS (SELECT 1 FROM ${sql.id("public", owner)} WHERE ${sql.ref(`${owner}.id`)} = ${sql.ref(`${table}.${place.via}`)} AND ${sql.ref(`${owner}.companyId`)} = ${sql.ref(`${table}.companyId`)} AND ${arms})`;
+  const hop = (
+    i: number,
+    from: string,
+    inCompany: RawBuilder<unknown>
+  ): RawBuilder<unknown> => {
+    const [fk, to] = place.path[i] as readonly [string, string];
+    const rest =
+      i + 1 < place.path.length
+        ? hop(i + 1, to, sql.ref(`${to}.companyId`))
+        : arms;
+    return sql`EXISTS (SELECT 1 FROM ${sql.id("public", to)} WHERE ${sql.ref(`${to}.id`)} = ${sql.ref(`${from}.${fk}`)} AND ${sql.ref(`${to}.companyId`)} = ${inCompany} AND ${rest})`;
+  };
+  return hop(0, table, company);
 };
 
 /**
  * `subject` is one of the caller's companies (or, for anyOf, satisfies any of
  * them). A module key checks the page that owns the table instead, and a view
- * on it also admits every page that lists the table in `readers`.
+ * on it also admits every page that lists the table in `readers`. `company`
+ * is the row's own company, qualified, for a child's first hop: the table's
+ * `companyId` unless the row has none (a link row, through `exists`).
  */
 const belongsTo = (
   subject: RawBuilder<unknown>,
-  who: Who
+  who: Who,
+  company?: RawBuilder<unknown>
 ): RawBuilder<unknown> => {
   if (who === "employee")
     return sql`${subject} = ANY ((SELECT get_companies_with_employee_role())::text[])`;
@@ -140,8 +157,24 @@ const belongsTo = (
     if (place.kind === "page") {
       const key = `${place.page}_${action}`;
       add(key, () => holds(subject, key));
+    } else if (place.kind === "child" && action === "view") {
+      // A child's read never goes through its parent: the parent's SELECT
+      // reads its children (item's portal branches read supplierPart), so a
+      // lookup back would make Postgres refuse both tables as recursive.
+      for (const { page } of place.branches) {
+        const key = `${page}_view`;
+        add(key, () => holds(subject, key));
+      }
     } else {
-      add(`:${action}`, () => branches(subject, table, place, action));
+      add(`:${action}`, () =>
+        branches(
+          subject,
+          company ?? sql.ref(`${table}.companyId`),
+          table,
+          place,
+          action
+        )
+      );
     }
     if (action === "view")
       for (const reader of readersOf(table)) {
@@ -211,7 +244,7 @@ export const exists = (
     parts.push(
       isPred(condition)
         ? condition.sql(parentTable)
-        : belongsTo(sql.ref("p.companyId"), condition)
+        : belongsTo(sql.ref("p.companyId"), condition, sql.ref("p.companyId"))
     );
     return sql`EXISTS (SELECT 1 FROM ${sql.id("public", parentTable)} p WHERE ${sql.join(parts, sql` AND `)})`;
   });

@@ -113,9 +113,10 @@ describe("buildServiceFnTools", () => {
   });
 
   it("gates one module on the API and leaves several to the function", () => {
-    // A level lists every action it holds.
+    // A level lists every action it holds; a gate of one page names it.
     expect(cancel?.permission).toEqual({
       module: "production",
+      page: "production.jobs",
       actions: ["view", "create", "update"]
     });
     expect(cancel?.classification).toBe("WRITE");
@@ -249,6 +250,7 @@ export const recost = defineServiceFn({
     });
     expect(recost?.permission).toEqual({
       module: "accounting",
+      page: "accounting.reporting",
       actions: ["view", "create", "update"]
     });
   });

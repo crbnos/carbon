@@ -7947,6 +7947,8 @@ export type ConvertResult = { id?: string; convertedId?: string };
 export const convertDocumentPermission = {
   by: "type",
   rules: {
+    // `activateMethodVersion` passes the item's row rule instead: a keyed
+    // rule names one page, and a method's page is its item's type.
     methodVersionToActive: { "parts.parts": "Edit" },
     purchaseOrderToPurchaseInvoice: { "invoicing.purchaseInvoices": "Edit" },
     quoteToSalesOrder: { "sales.quotes": "Edit" },

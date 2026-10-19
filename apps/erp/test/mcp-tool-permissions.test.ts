@@ -16,6 +16,7 @@ type Tool = {
   classification: "READ" | "WRITE" | "DESTRUCTIVE";
   permission: {
     module: string | null;
+    page?: string;
     actions: string[];
     oneOf?: { pages: string[]; level: string; by: string[] };
   };
@@ -41,52 +42,52 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   // The page registry moved these tables to a page of another module, and
   // the gate follows the page. Each is pinned so the move stays visible.
   // Storage types are on Inventory → Storage Types (was parts).
-  inventory_getStorageTypes: { module: "inventory", actions: ["view"] },
-  inventory_getStorageType: { module: "inventory", actions: ["view"] },
-  inventory_getStorageTypeUsage: { module: "inventory", actions: ["view"] },
+  inventory_getStorageTypes: { module: "inventory", page: "inventory.storageTypes", actions: ["view"] },
+  inventory_getStorageType: { module: "inventory", page: "inventory.storageTypes", actions: ["view"] },
+  inventory_getStorageTypeUsage: { module: "inventory", page: "inventory.storageTypes", actions: ["view"] },
   inventory_createStorageType: {
-    module: "inventory",
+    module: "inventory", page: "inventory.storageTypes",
     actions: ["view", "create"]
   },
   inventory_updateStorageType: {
-    module: "inventory",
+    module: "inventory", page: "inventory.storageTypes",
     actions: ["view", "create", "update"]
   },
   inventory_deleteStorageTypeWithCascade: {
-    module: "inventory",
+    module: "inventory", page: "inventory.storageTypes",
     actions: ["view", "create", "update", "delete"]
   },
   // Bank details need Accounting → Bank Accounts, not the partner page.
   purchasing_getSupplierBankAccounts: {
-    module: "accounting",
+    module: "accounting", page: "accounting.bankAccounts",
     actions: ["view"]
   },
   purchasing_createSupplierBankAccount: {
-    module: "accounting",
+    module: "accounting", page: "accounting.bankAccounts",
     actions: ["view", "create"]
   },
   purchasing_updateSupplierBankAccount: {
-    module: "accounting",
+    module: "accounting", page: "accounting.bankAccounts",
     actions: ["view", "create", "update"]
   },
   purchasing_deleteSupplierBankAccount: {
-    module: "accounting",
+    module: "accounting", page: "accounting.bankAccounts",
     actions: ["view", "create", "update", "delete"]
   },
   sales_getCustomerBankAccounts: {
-    module: "accounting",
+    module: "accounting", page: "accounting.bankAccounts",
     actions: ["view"]
   },
   sales_createCustomerBankAccount: {
-    module: "accounting",
+    module: "accounting", page: "accounting.bankAccounts",
     actions: ["view", "create"]
   },
   sales_updateCustomerBankAccount: {
-    module: "accounting",
+    module: "accounting", page: "accounting.bankAccounts",
     actions: ["view", "create", "update"]
   },
   sales_deleteCustomerBankAccount: {
-    module: "accounting",
+    module: "accounting", page: "accounting.bankAccounts",
     actions: ["view", "create", "update", "delete"]
   },
   // Batch properties hang off an item: the page of the item's type (was
@@ -108,120 +109,120 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   },
   // Failure modes, dispatches and schedules are Resources pages (was
   // production; the tables' RLS was already resources).
-  production_getFailureMode: { module: "resources", actions: ["view"] },
-  production_getFailureModes: { module: "resources", actions: ["view"] },
-  production_getFailureModesList: { module: "resources", actions: ["view"] },
+  production_getFailureMode: { module: "resources", page: "resources.failureModes", actions: ["view"] },
+  production_getFailureModes: { module: "resources", page: "resources.failureModes", actions: ["view"] },
+  production_getFailureModesList: { module: "resources", page: "resources.failureModes", actions: ["view"] },
   production_createFailureMode: {
-    module: "resources",
+    module: "resources", page: "resources.failureModes",
     actions: ["view", "create"]
   },
   production_updateFailureMode: {
-    module: "resources",
+    module: "resources", page: "resources.failureModes",
     actions: ["view", "create", "update"]
   },
   production_deleteFailureMode: {
-    module: "resources",
+    module: "resources", page: "resources.failureModes",
     actions: ["view", "create", "update", "delete"]
   },
-  production_getMaintenanceDispatch: { module: "resources", actions: ["view"] },
+  production_getMaintenanceDispatch: { module: "resources", page: "resources.dispatches", actions: ["view"] },
   production_deleteMaintenanceDispatch: {
-    module: "resources",
+    module: "resources", page: "resources.dispatches",
     actions: ["view", "create", "update", "delete"]
   },
   production_getMaintenanceDispatchComments: {
-    module: "resources",
+    module: "resources", page: "resources.dispatches",
     actions: ["view"]
   },
   production_createMaintenanceDispatchComment: {
-    module: "resources",
+    module: "resources", page: "resources.dispatches",
     actions: ["view", "create"]
   },
   production_updateMaintenanceDispatchComment: {
-    module: "resources",
+    module: "resources", page: "resources.dispatches",
     actions: ["view", "create", "update"]
   },
   production_getMaintenanceDispatchEvents: {
-    module: "resources",
+    module: "resources", page: "resources.dispatches",
     actions: ["view"]
   },
   production_createMaintenanceDispatchEvent: {
-    module: "resources",
+    module: "resources", page: "resources.dispatches",
     actions: ["view", "create"]
   },
   production_updateMaintenanceDispatchEvent: {
-    module: "resources",
+    module: "resources", page: "resources.dispatches",
     actions: ["view", "create", "update"]
   },
   production_deleteMaintenanceDispatchEvent: {
-    module: "resources",
+    module: "resources", page: "resources.dispatches",
     actions: ["view", "create", "update", "delete"]
   },
   production_getMaintenanceDispatchItems: {
-    module: "resources",
+    module: "resources", page: "resources.dispatches",
     actions: ["view"]
   },
   production_createMaintenanceDispatchItem: {
-    module: "resources",
+    module: "resources", page: "resources.dispatches",
     actions: ["view", "create"]
   },
   production_updateMaintenanceDispatchItem: {
-    module: "resources",
+    module: "resources", page: "resources.dispatches",
     actions: ["view", "create", "update"]
   },
-  production_getMaintenanceSchedule: { module: "resources", actions: ["view"] },
+  production_getMaintenanceSchedule: { module: "resources", page: "resources.schedules", actions: ["view"] },
   production_createMaintenanceSchedule: {
-    module: "resources",
+    module: "resources", page: "resources.schedules",
     actions: ["view", "create"]
   },
   production_updateMaintenanceSchedule: {
-    module: "resources",
+    module: "resources", page: "resources.schedules",
     actions: ["view", "create", "update"]
   },
   production_deleteMaintenanceSchedule: {
-    module: "resources",
+    module: "resources", page: "resources.schedules",
     actions: ["view", "create", "update", "delete"]
   },
   // A kanban's job link is on Inventory → Kanbans (was production).
   production_updateKanbanJob: {
-    module: "inventory",
+    module: "inventory", page: "inventory.kanbans",
     actions: ["view", "create", "update"]
   },
   // Supplier processes are on Resources → Processes (was purchasing; the
   // table's RLS was already resources).
   purchasing_getSupplierProcessesByProcess: {
-    module: "resources",
+    module: "resources", page: "resources.processes",
     actions: ["view"]
   },
   purchasing_createSupplierProcess: {
-    module: "resources",
+    module: "resources", page: "resources.processes",
     actions: ["view", "create"]
   },
   purchasing_updateSupplierProcess: {
-    module: "resources",
+    module: "resources", page: "resources.processes",
     actions: ["view", "create", "update"]
   },
   purchasing_deleteSupplierProcess: {
-    module: "resources",
+    module: "resources", page: "resources.processes",
     actions: ["view", "create", "update", "delete"]
   },
   // Shifts are on People → Shifts (the table's RLS was already people).
   resources_deleteShift: {
-    module: "people",
+    module: "people", page: "people.shifts",
     actions: ["view", "create", "update", "delete"]
   },
   // MRP writes the Production → Material Planning tables (was inventory).
   production_runMRP: {
-    module: "production",
+    module: "production", page: "production.materialPlanning",
     actions: ["view", "create", "update"]
   },
   // API keys are on Settings → API Keys (was users).
   settings_getApiKeys: {
-    module: "settings",
+    module: "settings", page: "settings.apiKeys",
     actions: ["view", "create", "update"]
   },
   // ITAR certifications are on Settings → ITAR Certifications (was users).
-  users_getItarCertificationStatus: { module: "settings", actions: ["view"] },
-  users_getItarCertificationReport: { module: "settings", actions: ["view"] },
+  users_getItarCertificationStatus: { module: "settings", page: "settings.itarCertifications", actions: ["view"] },
+  users_getItarCertificationReport: { module: "settings", page: "settings.itarCertifications", actions: ["view"] },
   // Gated on another module than their own on purpose. Each must match the
   // permission the ERP route that does the same thing requires: an OAuth
   // connector or API key gated more loosely than the screen can do what the
@@ -229,41 +230,41 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   // is the only one.
   // Writes a GL journal: the Reconcile screen requires accounting.
   inventory_createInventoryReconciliationJournal: {
-    module: "accounting",
+    module: "accounting", page: "accounting.journalEntries",
     actions: ["view", "create"]
   },
   // A serial unit's carrying cost, and re-booking it, are accounting figures.
-  inventory_getSerialUnitCosts: { module: "accounting", actions: ["view"] },
+  inventory_getSerialUnitCosts: { module: "accounting", page: "accounting.reporting", actions: ["view"] },
   inventory_recostSerialUnit: {
-    module: "accounting",
+    module: "accounting", page: "accounting.reporting",
     actions: ["view", "create", "update"]
   },
   // Issue Credit writes a memo: its route requires invoicing.
   purchasing_createPurchaseReturnOrderCredit: {
-    module: "invoicing",
+    module: "invoicing", page: "invoicing.supplierCredits",
     actions: ["view", "create"]
   },
   sales_createSalesReturnOrderCredit: {
-    module: "invoicing",
+    module: "invoicing", page: "invoicing.creditMemos",
     actions: ["view", "create"]
   },
   // A leased asset's classification is an accounting decision.
   purchasing_overrideLeaseLineClassification: {
-    module: "accounting",
+    module: "accounting", page: "accounting.leases",
     actions: ["view", "create", "update"]
   },
   purchasing_removeLeaseLineClassificationOverride: {
-    module: "accounting",
+    module: "accounting", page: "accounting.leases",
     actions: ["view", "create", "update"]
   },
   // Creates a shipment: its route requires inventory.
   sales_shipSalesOrderLine: {
-    module: "inventory",
+    module: "inventory", page: "inventory.shipments",
     actions: ["view", "create"]
   },
   // Drafts a purchase return from an issue: its route requires purchasing.
   quality_draftIssueSupplierReturn: {
-    module: "purchasing",
+    module: "purchasing", page: "purchasing.returns",
     actions: ["view", "create"]
   },
   // Opens a quality Issue from an RMA line: Returns AND Issues, which the
@@ -276,41 +277,54 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   sales_sellRentalUnit: { module: null, actions: [] },
   // The classification override is an accounting decision.
   sales_classifyRentalUnit: {
-    module: "accounting",
+    module: "accounting", page: "accounting.revenueRecognition",
     actions: ["view", "create", "update"]
   },
   // A tie-out adjustment drafts a GL journal: its route requires accounting.
   invoicing_adjustReceivables: {
-    module: "accounting",
+    module: "accounting", page: "accounting.journalEntries",
     actions: ["view", "create"]
   },
   invoicing_adjustPayables: {
-    module: "accounting",
+    module: "accounting", page: "accounting.journalEntries",
     actions: ["view", "create"]
   },
   // Buying or selling a fixed asset creates a purchase or sales order.
   accounting_purchaseFixedAsset: {
-    module: "purchasing",
+    module: "purchasing", page: "purchasing.purchaseOrders",
     actions: ["view", "create"]
   },
-  accounting_sellFixedAsset: { module: "sales", actions: ["view", "create"] },
+  accounting_sellFixedAsset: { module: "sales", page: "sales.salesOrders", actions: ["view", "create"] },
   // Inventory value is an accounting figure: the valuation report requires
   // accounting.
-  inventory_getInventoryValuation: { module: "accounting", actions: ["view"] },
+  inventory_getInventoryValuation: { module: "accounting", page: "accounting.reporting", actions: ["view"] },
   inventory_getInventoryValuationTieOut: {
-    module: "accounting",
+    module: "accounting", page: "accounting.reporting",
     actions: ["view"]
   },
-  // A method's steps and Save Method need Jobs AND the owning page (Parts or
-  // Quotes), which the API cannot name as one module, so the function's own
-  // gate checks both.
-  production_updateMethodOperationStepOrder: { module: null, actions: [] },
+  // A quote's steps need Jobs AND Quotes, which the API cannot name as one
+  // module, so the function's own gate checks both.
   production_updateQuoteOperationStepOrder: { module: null, actions: [] },
-  production_upsertMakeMethodFromJob: { module: null, actions: [] },
-  production_upsertMakeMethodFromJobMethod: { module: null, actions: [] },
+  // An item method's steps and Save Method follow the item's type, like the
+  // method editor; Save Method also checks Jobs in `run`.
+  production_updateMethodOperationStepOrder: {
+    module: "parts",
+    actions: ["view", "create", "update"],
+    oneOf: byItemType("Edit")
+  },
+  production_upsertMakeMethodFromJob: {
+    module: "parts",
+    actions: ["view", "create", "update"],
+    oneOf: byItemType("Edit")
+  },
+  production_upsertMakeMethodFromJobMethod: {
+    module: "parts",
+    actions: ["view", "create", "update"],
+    oneOf: byItemType("Edit")
+  },
   // Enrolling the company in the Implementation Hub: Settings → Company.
   shared_enrollImplementationHub: {
-    module: "settings",
+    module: "settings", page: "settings.company",
     actions: ["view", "create", "update"]
   }
 };
@@ -482,6 +496,32 @@ describe("gates the row decides", () => {
         oneOf.filter((t) => t.permission.module === module).length
       ])
     );
-    expect(counts).toEqual({ parts: 83, invoicing: 8, accounting: 7 });
+    expect(counts).toEqual({ parts: 115, invoicing: 8, accounting: 7 });
+  });
+
+  it("lets Tools at Edit change a tool's bill of material: the method's item picks the page", () => {
+    expect(named("items_createMethodMaterial")?.oneOf).toEqual(
+      byItemType("Create")
+    );
+    expect(named("items_updateMethodOperationStep")?.oneOf).toEqual(
+      byItemType("Edit")
+    );
+    expect(named("items_deleteMethodOperationTool")?.oneOf).toEqual(
+      byItemType("Full")
+    );
+    expect(named("items_getMethodTree")?.oneOf).toEqual(byItemType("View"));
+  });
+});
+
+describe("gates of one page", () => {
+  it("publish the page, in the module they publish", () => {
+    const paged = allTools.filter((t) => t.permission.page);
+    expect(paged.length).toBeGreaterThan(1000);
+    for (const t of paged) {
+      expect(t.permission.page?.split(".")[0], t.name).toBe(
+        t.permission.module
+      );
+      expect(t.permission.oneOf, t.name).toBeUndefined();
+    }
   });
 });

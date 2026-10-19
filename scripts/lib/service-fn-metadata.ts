@@ -393,8 +393,8 @@ function publishChoice(
 }
 
 /**
- * The API gate's view of the declared permission: the module of its pages and
- * every action its levels hold. Pages of several modules publish module `null`
+ * The API gate's view of the declared permission: the module of its pages,
+ * the page when the gate names one, and every action its levels hold. Pages of several modules publish module `null`
  * (membership only) and the function's own gate decides, as it does for
  * `"employee"` (any employee of the company). A keyed rule publishes every
  * page its rules name; an `anyOf` or row rule also publishes them as `oneOf`.
@@ -462,6 +462,7 @@ export function leafPermission(leaf: ServiceFnLeaf): {
   }
 
   const modules = new Set<string>();
+  const pages = new Set<string>();
   const actions = new Set<PermissionAction>();
   for (const entry of gates.flatMap((gate) => gate.getProperties())) {
     const page = Node.isPropertyAssignment(entry)
@@ -481,6 +482,7 @@ export function leafPermission(leaf: ServiceFnLeaf): {
       );
     }
     modules.add(moduleOf(page));
+    pages.add(page);
     // A level lists every action it holds.
     for (const action of ACTIONS) {
       if (levelHolds(level[0] as Level, action)) actions.add(action);
@@ -489,10 +491,11 @@ export function leafPermission(leaf: ServiceFnLeaf): {
   const held = ACTIONS.filter((action) => actions.has(action));
   // Pages of several modules publish as membership; the function's own gate decides.
   const [module] = modules;
+  const [page] = pages;
   return {
     permission:
       modules.size === 1 && module
-        ? { module, actions: held }
+        ? { module, ...(pages.size === 1 && page ? { page } : {}), actions: held }
         : { module: null, actions: [] },
     actions: held
   };

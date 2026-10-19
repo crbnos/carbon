@@ -35,7 +35,7 @@ Phase 3 — every module to page keys (one deploy)
 - [x] Task 20: Move ERP and MES route gates to pages and levels
 - [x] Task 21: Move client permission checks to pages and levels
 - [x] Task 22: Drive the sidebar and the nav from page views
-- [ ] Task 23: Move workflow event permissions and the MCP manifest to page keys
+- [x] Task 23: Move workflow event permissions and the MCP manifest to page keys
 - [ ] Task 24: Add the module-key conformance check
 - [ ] Task 25: Verify every page in the browser
 
@@ -873,6 +873,12 @@ pnpm --filter erp test -- mcp
 ```
 
 **Out of scope:** the changelog lines for the contract change. Write them only when the user asks.
+
+**As built (2026-10-19):**
+1. A moment names its source `table` in place of a module. `buildCatalog` takes the page from the registry (`tablePages`).
+2. An `item` event lists the five item pages. The owner needs View on any one of them.
+3. Actions, operations and entity reads still name a module (`RequiredPermission`). Task 24 decides them.
+4. The digest prints `<page>:<actions>` for a gate of one page.
 
 ## Task 24: Add the module-key conformance check
 

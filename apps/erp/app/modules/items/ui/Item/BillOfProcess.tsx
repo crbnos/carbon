@@ -4,6 +4,7 @@
 
 "use client";
 import { useCarbon } from "@carbon/auth";
+import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
@@ -271,8 +272,13 @@ const BillOfProcess = ({
     releaseControl
   });
   const { isPhone } = useViewport();
+  const [allItems] = useItems();
+  const methodItem = getItemById(allItems, makeMethod.itemId);
+  const itemName = methodItem?.name;
+  // The method's item decides the page: Tools for a tool's bill of process.
   const isReadOnly =
-    permissions.has({ "parts.parts": "Edit" }) === false ||
+    !methodItem ||
+    permissions.has({ [ITEM_TYPE_PAGES[methodItem.type]]: "Edit" }) === false ||
     makeMethod.status !== "Draft" ||
     isReleaseLocked ||
     isDisabled;
@@ -283,9 +289,6 @@ const BillOfProcess = ({
   const sortOrderFetcher = useFetcher<{}>();
   const deleteOperationFetcher = useAction();
   const { id: userId } = useUser();
-
-  const [allItems] = useItems();
-  const itemName = getItemById(allItems, makeMethod.itemId)?.name;
 
   const materialItemIds = useMemo(
     () => new Set((materials ?? []).map((m) => m.itemId)),

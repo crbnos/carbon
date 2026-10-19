@@ -256,6 +256,20 @@ describe("rowRule and anyOfRule", () => {
     });
   });
 
+  it("take a child table's path from the registry", () => {
+    expect(
+      rowRule("item", "Edit", { id: "id", from: "methodOperationStep" }).row
+        .path
+    ).toEqual([
+      ["operationId", "methodOperation"],
+      ["makeMethodId", "makeMethod"],
+      ["itemId", "item"]
+    ]);
+    expect(() =>
+      rowRule("item", "Edit", { id: "id", from: "salesOrderLine" })
+    ).toThrow("must end at item, not salesOrderLine");
+  });
+
   it("refuse a path that does not end at the shared table", () => {
     expect(() =>
       rowRule("item", "View", {

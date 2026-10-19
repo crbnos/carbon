@@ -25,6 +25,18 @@ import { WORKFLOWS_PAGES } from "./pages/workflows";
  */
 export type SharedTable = { table: string; column: string; value?: string };
 
+/** `[fk, table]`: the next table's row whose `id` is this row's `fk`. */
+export type Hop = readonly [fk: string, table: string];
+
+/**
+ * A table that hangs off a shared table. `via` is the column that points at
+ * the shared row; `path` is the hops to it through other tables, ending at the
+ * shared table (`methodMaterial` → `makeMethod` → `item`).
+ */
+export type Child =
+  | { table: string; via: string }
+  | { table: string; path: readonly Hop[] };
+
 /** A permission subject: one sidebar entry (`use<Module>Submodules.tsx`). */
 export type Page = {
   /** `<module>.<page>`, or the module key for a module that has one page. */
@@ -36,7 +48,7 @@ export type Page = {
   tables: readonly string[];
   where?: SharedTable;
   /** Tables of the shared table's pages that check `where` through it. */
-  children?: readonly { table: string; via: string }[];
+  children?: readonly Child[];
   /** Restricted tables of other pages that this page reads. */
   readers?: readonly string[];
   /** Route path prefixes, used to map route files to pages. */
@@ -125,7 +137,11 @@ export type Branch = { page: string; column: string; value?: string };
 export type TablePlace =
   | { kind: "page"; page: string }
   | { kind: "shared"; branches: Branch[] }
-  | { kind: "child"; parent: string; via: string; branches: Branch[] };
+  | { kind: "child"; parent: string; path: readonly Hop[]; branches: Branch[] };
+
+/** A child's hops to its shared table: `via` is a path of one hop. */
+export const childPath = (child: Child, parent: string): readonly Hop[] =>
+  "path" in child ? child.path : [[child.via, parent]];
 
 let built:
   | { places: Map<string, TablePlace>; readers: Map<string, string[]> }
@@ -149,7 +165,8 @@ function index() {
       prev.kind !== next.kind ||
       (prev.kind === "child" &&
         next.kind === "child" &&
-        (prev.parent !== next.parent || prev.via !== next.via))
+        (prev.parent !== next.parent ||
+          JSON.stringify(prev.path) !== JSON.stringify(next.path)))
     )
       throw new Error(`registry: ${table} sits on more than one page`);
     prev.branches.push(...next.branches);
@@ -174,7 +191,7 @@ function index() {
       put(child.table, {
         kind: "child",
         parent: where.table,
-        via: child.via,
+        path: childPath(child, where.table),
         branches: [branch]
       });
     }

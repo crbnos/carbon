@@ -3,8 +3,10 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { TermId } from "@carbon/content/glossary";
+import { type PageId, placeOf } from "@carbon/database/access";
 import {
   type EventMatch,
+  type EventPermission,
   isMultiSelect,
   type RequiredPermission
 } from "../definition/catalog";
@@ -50,7 +52,8 @@ export interface RegistryEntry {
   label: string;
   /** Glossary term for the entity itself. Reused for every field that IS this record. */
   help?: TermId;
-  /** Lowercase permission module; must be an existing family. */
+  /** Lowercase permission module of a lookup and the generated update action;
+   * an event checks the page of `table` instead. */
   permission: string;
   /** Overrides the derived "A"/"An" where the vowel test gets it wrong. */
   article?: "A" | "An";
@@ -68,14 +71,29 @@ export interface RegistryEntry {
 
 export interface MomentDeclarationLike {
   label: string;
-  permission: string;
+  /** The table the moment is about: its page is the event's permission. */
+  table: string;
   outputs: Record<string, ValueType>;
 }
 
 export interface BuiltEvent {
   outputs: Record<string, ValueType>;
-  permission: string;
+  permission: EventPermission;
   match: EventMatch;
+}
+
+/**
+ * The page an event on `table` needs View on, from the access registry: the
+ * page that owns the table, or every page of a shared table (any one passes:
+ * an item event fires for every item type).
+ */
+export function tablePages(table: string): EventPermission {
+  const place = placeOf(table);
+  if (place?.kind === "page") return place.page as PageId;
+  if (place) return place.branches.map((branch) => branch.page as PageId);
+  throw new Error(
+    `Workflow table ${table} is on no page of the access registry (packages/database/src/access/pages).`
+  );
 }
 
 export interface BuiltActionInput {
@@ -499,7 +517,8 @@ export function buildCatalog(
   moments: Record<string, MomentDeclarationLike>,
   handWrittenActions: Record<string, ActionDeclarationLike>,
   handWrittenOperations: Record<string, OperationDeclarationLike>,
-  schema: SwaggerSchema
+  schema: SwaggerSchema,
+  pagesOf: (table: string) => EventPermission = tablePages
 ): BuiltCatalog {
   const problems = validateCatalogInputs(
     registry,
@@ -610,14 +629,14 @@ export function buildCatalog(
 
     events[`${name}.created`] = {
       outputs: { record },
-      permission: entry.permission,
+      permission: pagesOf(entry.table),
       match: { table: entry.table, operation: "INSERT" }
     };
     labels[`${name}.created`] = `${determiner} ${noun} is created`;
 
     events[`${name}.deleted`] = {
       outputs: { record },
-      permission: entry.permission,
+      permission: pagesOf(entry.table),
       match: { table: entry.table, operation: "DELETE" }
     };
     labels[`${name}.deleted`] = `${determiner} ${noun} is deleted`;
@@ -627,7 +646,7 @@ export function buildCatalog(
       const id = `${name}.${column}.changed`;
       events[id] = {
         outputs: { record, before: record, after: record },
-        permission: entry.permission,
+        permission: pagesOf(entry.table),
         match: { table: entry.table, operation: "UPDATE", field: column }
       };
       labels[id] = `${determiner} ${noun}'s ${watched.label} changes`;
@@ -637,7 +656,7 @@ export function buildCatalog(
   for (const [key, moment] of Object.entries(moments)) {
     events[key] = {
       outputs: moment.outputs,
-      permission: moment.permission,
+      permission: pagesOf(moment.table),
       match: { moment: key }
     };
     labels[key] = moment.label;

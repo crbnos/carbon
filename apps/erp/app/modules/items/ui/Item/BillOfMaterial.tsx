@@ -5,6 +5,7 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -192,16 +193,18 @@ const BillOfMaterial = ({
     releaseControl
   });
   const { isPhone } = useViewport();
+  const [items] = useItems();
+  const methodItem = getItemById(items, makeMethod.itemId);
+  const itemName = methodItem?.name;
+  // The method's item decides the page: Tools for a tool's bill of material.
   const isReadOnly =
-    permissions.has({ "parts.parts": "Edit" }) === false ||
+    !methodItem ||
+    permissions.has({ [ITEM_TYPE_PAGES[methodItem.type]]: "Edit" }) === false ||
     makeMethod.status !== "Draft" ||
     isReleaseLocked ||
     isDisabled;
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
-
-  const [items] = useItems();
-  const itemName = getItemById(items, makeMethod.itemId)?.name;
   const fetcher = useFetcher<{}>();
   const deleteMaterialFetcher = useAction();
   const [searchParams] = useSearchParams();

@@ -54,7 +54,7 @@ function contextFor(partsUpdate: string[]) {
       role: "employee",
       userId: "system",
       permissions: {
-        parts: {
+        "parts.parts": {
           view: [ids.company],
           create: [],
           update: partsUpdate,

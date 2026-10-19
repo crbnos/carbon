@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { manifest } from "../authz/manifest";
 import { type AnyRule, render } from "../authz/rules";
-import { MODULES, moduleOf, PAGES } from "./registry";
+import { childPath, MODULES, moduleOf, PAGES } from "./registry";
 
 /** The spec's page table (`.ai/specs/2026-10-18-page-level-permissions.md`, "The pages"). */
 const SPEC_PAGE_COUNTS: Record<string, number> = {
@@ -206,7 +206,12 @@ describe("PAGES", () => {
     const unknown = PAGES.flatMap((page) =>
       [
         ...page.tables,
-        ...("children" in page ? page.children.map((c) => c.table) : []),
+        ...("children" in page
+          ? page.children.flatMap((c) => [
+              c.table,
+              ...childPath(c, page.where.table).map(([, table]) => table)
+            ])
+          : []),
         ...("readers" in page ? page.readers : [])
       ]
         .filter((table) => !(table in manifest))
@@ -291,6 +296,32 @@ describe("PAGES", () => {
         );
         if (shared.size !== 1 || shared.has(null))
           problems.push(`${table}: a child of more than one shared table`);
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
+  it("ends each child's path at its shared table, through children of the same table", () => {
+    const problems: string[] = [];
+    for (const page of PAGES) {
+      if (!("children" in page)) continue;
+      const shared = page.where.table;
+      const paths = new Map(
+        page.children.map((c) => [c.table, childPath(c, shared)])
+      );
+      for (const [table, path] of paths) {
+        if (path.at(-1)?.[1] !== shared)
+          problems.push(`${page.id}: ${table} does not end at ${shared}`);
+        // A hop through another table follows that table's own path, so the
+        // two cannot disagree about how a row reaches the shared table.
+        const [, next] = path[0] ?? [];
+        if (next && next !== shared) {
+          const rest = JSON.stringify(path.slice(1));
+          if (JSON.stringify(paths.get(next)) !== rest)
+            problems.push(
+              `${page.id}: ${table} goes through ${next}, which is not a child with the same path`
+            );
+        }
       }
     }
     expect(problems).toEqual([]);

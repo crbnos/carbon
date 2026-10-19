@@ -71,7 +71,7 @@ describe("createWorkflowCatalog — WorkflowCatalog conformance", () => {
       "purchaseOrder.status.changed"
     );
     expect(event.id).toBe("purchaseOrder.status.changed");
-    expect(event.permission).toBe("purchasing");
+    expect(event.permission).toBe("purchasing.purchaseOrders");
     expect(event.match).toEqual({
       table: "purchaseOrder",
       operation: "UPDATE",

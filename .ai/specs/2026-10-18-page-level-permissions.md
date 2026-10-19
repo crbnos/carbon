@@ -140,10 +140,17 @@ two pages fails the registry's own test unless both pages give `where`.
 For such a table, each write rule checks the page whose `where` matches the
 row. A read rule checks it too when the table's read needs a permission; a
 table that every employee may read stays readable by every employee. A child
-table of the shared row checks the page of its parent row, through a lookup
-on the parent. Any table with an `itemId`, such as `itemCost` or
-`supplierPart`, is such a child. So Tools at Edit with Parts at View lets a
-person change a tool's cost but not a part's cost.
+table of the shared row checks the page of its parent row on each write,
+through a lookup on the parent. Any table with an `itemId`, such as
+`itemCost` or `supplierPart`, is such a child. A make method's lines reach the
+item through `makeMethod`, and supplier prices through `supplierPart`. So
+Tools at Edit with Parts at View lets a person change a tool's cost and a
+tool's bill of material, but not a part's.
+
+A child's restricted read does not look up the parent: it needs View on any
+page of the shared table, or on a page that lists it in `readers`. The
+parent's own read looks up some children (`item` reads `supplierPart` for
+portal accounts), and a lookup back is a loop Postgres refuses.
 
 ### Levels
 

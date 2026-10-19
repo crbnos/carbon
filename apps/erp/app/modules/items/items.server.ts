@@ -1119,7 +1119,7 @@ export const syncOnshapeMethod = defineServiceFn({
  */
 export const deleteMethodOperation = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", { id: "id", from: "methodOperation" }),
 
   async run(ctx, { id }) {
     const client = ctx.asCaller.supabase;
@@ -1153,7 +1153,7 @@ export const deleteMethodOperation = defineServiceFn({
  */
 export const deleteMethodOperations = defineServiceFn({
   input: z.object({ ids: z.array(z.string()).min(1) }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", { id: "ids", from: "methodOperation" }),
 
   async run(ctx, { ids }) {
     const client = ctx.asCaller.supabase;
@@ -2069,7 +2069,7 @@ export const deleteMaterialSubstance = defineServiceFn({
  */
 export const deleteMethodMaterial = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", { id: "id", from: "methodMaterial" }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -2100,7 +2100,7 @@ export const deleteMethodMaterial = defineServiceFn({
  */
 export const deleteMethodMaterials = defineServiceFn({
   input: z.object({ ids: z.array(z.string()).min(1) }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", { id: "ids", from: "methodMaterial" }),
 
   async run(ctx, { ids }) {
     const client = ctx.asCaller.supabase;
@@ -2155,7 +2155,10 @@ export const deleteMethodMaterials = defineServiceFn({
  */
 export const assertMethodOperationIsDraft = defineServiceFn({
   input: z.looseObject({ operationId: z.string() }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", {
+    id: "operationId",
+    from: "methodOperation"
+  }),
   async run(ctx, input) {
     try {
       await service.assertMethodOperationIsDraft(
@@ -2179,7 +2182,10 @@ export const assertMethodOperationIsDraft = defineServiceFn({
  */
 export const deleteMethodOperationStep = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", {
+    id: "id",
+    from: "methodOperationStep"
+  }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLock(ctx.asCaller.supabase, {
       kind: "step",
@@ -2210,7 +2216,10 @@ export const deleteMethodOperationStep = defineServiceFn({
  */
 export const deleteMethodOperationStepSlide = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", {
+    id: "id",
+    from: "methodOperationStepSlide"
+  }),
   async run(ctx, input) {
     const refusal = await service.methodStepRefusal(
       ctx.asCaller.supabase,
@@ -2235,7 +2244,10 @@ export const deleteMethodOperationStepSlide = defineServiceFn({
  */
 export const deleteMethodOperationParameter = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", {
+    id: "id",
+    from: "methodOperationParameter"
+  }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -2263,7 +2275,10 @@ export const deleteMethodOperationParameter = defineServiceFn({
  */
 export const deleteMethodOperationTool = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", {
+    id: "id",
+    from: "methodOperationTool"
+  }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -3263,7 +3278,7 @@ export const getMethodMaterials = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { "parts.parts": "View" },
+  permission: anyOfRule("item", "View"),
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3283,7 +3298,10 @@ export const getMethodMaterials = defineServiceFn({
  */
 export const getMethodMaterialsByMakeMethod = defineServiceFn({
   input: z.looseObject({ makeMethodId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", {
+    id: "makeMethodId",
+    from: "makeMethod"
+  }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3310,7 +3328,7 @@ export const getMethodOperations = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { "parts.parts": "View" },
+  permission: anyOfRule("item", "View"),
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3330,7 +3348,10 @@ export const getMethodOperations = defineServiceFn({
  */
 export const getMethodOperationsByMakeMethodId = defineServiceFn({
   input: z.looseObject({ makeMethodId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", {
+    id: "makeMethodId",
+    from: "makeMethod"
+  }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3349,7 +3370,10 @@ export const getMethodOperationsByMakeMethodId = defineServiceFn({
  */
 export const getMethodTree = defineServiceFn({
   input: z.looseObject({ makeMethodId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", {
+    id: "makeMethodId",
+    from: "makeMethod"
+  }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4630,7 +4654,10 @@ export const createMethodMaterial = defineServiceFn({
     storageUnitIds: z.record(z.string(), z.unknown()).nullable().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { "parts.parts": "Create" },
+  permission: service.itemRule("Create", {
+    id: "makeMethodId",
+    from: "makeMethod"
+  }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -4686,7 +4713,7 @@ export const updateMethodMaterial = defineServiceFn({
     })
     .required({ id: true }),
   // The route gated on create; the write runs under the update policy.
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "id", from: "methodMaterial" }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -4795,7 +4822,10 @@ export const createMethodOperation = defineServiceFn({
       )
       .optional()
   }),
-  permission: { "parts.parts": "Create" },
+  permission: service.itemRule("Create", {
+    id: "makeMethodId",
+    from: "makeMethod"
+  }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -4904,7 +4934,7 @@ export const updateMethodOperation = defineServiceFn({
     })
     .required({ id: true }),
   // The route gated on create; the write runs under the update policy.
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "id", from: "methodOperation" }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -4963,7 +4993,10 @@ export const createMethodOperationStep = defineServiceFn({
       .optional(),
     updatedAt: z.string().optional()
   }),
-  permission: { "parts.parts": "Create" },
+  permission: service.itemRule("Create", {
+    id: "operationId",
+    from: "methodOperation"
+  }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLock(ctx.asCaller.supabase, {
       kind: "operation",
@@ -5027,7 +5060,10 @@ export const updateMethodOperationStep = defineServiceFn({
       updatedAt: z.string().optional()
     })
     .required({ id: true }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", {
+    id: "id",
+    from: "methodOperationStep"
+  }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -5069,7 +5105,10 @@ export const updateMethodOperationStep = defineServiceFn({
  */
 export const duplicateMethodOperationStep = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Create" },
+  permission: service.itemRule("Create", {
+    id: "id",
+    from: "methodOperationStep"
+  }),
   async run(ctx, input) {
     const refusal = await service.methodStepRefusal(
       ctx.asCaller.supabase,
@@ -5122,7 +5161,10 @@ export const createMethodOperationStepSlide = defineServiceFn({
       .optional(),
     updatedAt: z.string().optional()
   }),
-  permission: { "parts.parts": "Create" },
+  permission: service.itemRule("Create", {
+    id: "stepId",
+    from: "methodOperationStep"
+  }),
   async run(ctx, input) {
     const refusal = await service.methodStepRefusal(
       ctx.asCaller.supabase,
@@ -5177,7 +5219,10 @@ export const updateMethodOperationStepSlide = defineServiceFn({
       updatedAt: z.string().optional()
     })
     .required({ id: true }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", {
+    id: "id",
+    from: "methodOperationStepSlide"
+  }),
   async run(ctx, input) {
     for (const ref of [{ slideId: input.id }, { stepId: input.stepId }]) {
       const refusal = await service.methodStepRefusal(
@@ -5216,7 +5261,10 @@ export const createMethodOperationParameter = defineServiceFn({
       .optional(),
     updatedAt: z.string().optional()
   }),
-  permission: { "parts.parts": "Create" },
+  permission: service.itemRule("Create", {
+    id: "operationId",
+    from: "methodOperation"
+  }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -5258,7 +5306,10 @@ export const updateMethodOperationParameter = defineServiceFn({
       updatedAt: z.string().optional()
     })
     .required({ id: true }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", {
+    id: "id",
+    from: "methodOperationParameter"
+  }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -5301,7 +5352,10 @@ export const createMethodOperationTool = defineServiceFn({
       .optional(),
     updatedAt: z.string().optional()
   }),
-  permission: { "parts.parts": "Create" },
+  permission: service.itemRule("Create", {
+    id: "operationId",
+    from: "methodOperation"
+  }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -5343,7 +5397,10 @@ export const updateMethodOperationTool = defineServiceFn({
       updatedAt: z.string().optional()
     })
     .required({ id: true }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", {
+    id: "id",
+    from: "methodOperationTool"
+  }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asCaller.supabase,
@@ -5379,7 +5436,10 @@ export const setMethodMaterialStepLink = defineServiceFn({
     linked: z.boolean(),
     quantity: z.number().nullable().optional()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", {
+    id: "methodMaterialId",
+    from: "methodMaterial"
+  }),
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
     const refusal = await service.methodStepRefusal(client, ctx.company.id, {
@@ -5444,7 +5504,10 @@ export const setMethodOperationToolStepLink = defineServiceFn({
     methodOperationStepId: z.string(),
     linked: z.boolean()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", {
+    id: "operationId",
+    from: "methodOperation"
+  }),
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
     const step = await client
@@ -6931,9 +6994,9 @@ export const createItemDocumentUploadUrl = defineServiceFn({
  */
 export const createModelUploadUrl = defineServiceFn({
   input: z.object({ name: z.string().min(1) }),
-  // A new model row is a parts create (its table's policy); linking it to a
-  // record is an update.
-  permission: { "parts.parts": "Edit" },
+  // Any item page may write a model (its table's policy); the record the
+  // model is attached to is checked when it is attached.
+  permission: anyOfRule("item", "Edit"),
   async run(ctx, { name }) {
     return unwrap(
       ctx,
@@ -6977,10 +7040,20 @@ export const insertModelUpload = defineServiceFn({
     salesOrderLineId: z.string().optional(),
     convert: z.boolean().optional()
   }),
-  permission: { "parts.parts": "Edit" },
+  // Any item page may write a model; an item it is attached to needs its own
+  // page, and the other records their own policies.
+  permission: anyOfRule("item", "Edit"),
   async run(ctx, input) {
     if (!service.isModelUploadPath(ctx.company.id, input.modelId, input.path)) {
       return ctx.error("validation", "Invalid model path");
+    }
+    if (input.itemId) {
+      const refused = await refusalOf(
+        ctx,
+        service.itemRule("Edit", { id: "itemId" }),
+        { itemId: input.itemId }
+      );
+      if (refused) return refused;
     }
     // Conversion is lazy by default: most models never become assemblies.
     const convert = !!input.convert && (await isAssemblerServiceHealthy());

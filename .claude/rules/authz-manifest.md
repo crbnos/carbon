@@ -74,7 +74,17 @@ page that owns the table in the access registry (`placeOf`, `@carbon/database/ac
   (`anyOf(<page>_view, <reader>_view …)`).
 - A shared table (`where` on several pages) gets one branch per page:
   `<column> = <value>` (or `<column> IS NOT NULL` when `where` has no value) AND that page's key.
-- A child table (`children` of a shared table) checks through its parent with `EXISTS`.
+- A child table (`children` of a shared table) writes through its parent with `EXISTS`. A
+  child names one `via` column (`itemCost.itemId`) or a hop `path`
+  (`methodMaterial` → `makeMethod` → `item`): one nested `EXISTS` per hop, each hop in the
+  company of the one before. A link row with no `companyId` (`methodMaterialStep`) starts its
+  path in the company of the `exists` parent it is checked through.
+- A child's restricted read never goes through its parent: it is `anyOf(<each page of the shared
+  entry>_view, <readers>_view)` in the row's company. The parent's SELECT reads the child (`item`'s
+  portal branches read `supplierPart`), so a lookup back made Postgres refuse both as recursive.
+  `rules.test.ts` fails on any cycle of SELECT policies.
+- `rowRule` / `itemRule` take a child's path from the registry when `from` is a child of the
+  shared table and no `path` is given.
 - A key with a dot is already a page key and renders as written. `"employee"`, portal and
   `false` actors do not change.
 

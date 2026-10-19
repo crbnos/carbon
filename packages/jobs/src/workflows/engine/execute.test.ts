@@ -169,7 +169,7 @@ describe("the owner's permissions", () => {
     expect(result.status).toBe("Failed");
   });
 
-  it("refuses the whole run when the trigger's own module is gone", async () => {
+  it("refuses the whole run when the trigger's own page is gone", async () => {
     const { ids, step } = harness();
     vi.mocked(hasPermission).mockReturnValue(false);
 
@@ -178,7 +178,8 @@ describe("the owner's permissions", () => {
     expect(ids).toEqual(["load", "custom-fields", "permissions"]);
     expect(vi.mocked(finishRun).mock.calls.at(-1)?.[1]).toMatchObject({
       status: "Failed",
-      error: "The owner of this workflow no longer has access to Purchasing."
+      error:
+        "The owner of this workflow no longer has access to Purchase Orders."
     });
   });
 });

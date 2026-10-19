@@ -241,7 +241,7 @@ export function formatToolDescription(
     const picked = oneOf.by.length > 0 ? ` (by ${oneOf.by.join(", ")})` : "";
     output += `Permission: one of ${oneOf.pages.join(", ")} at ${oneOf.level}${picked}\n`;
   } else if (tool.permission.module && action) {
-    output += `Permission: ${tool.permission.module}_${action}\n`;
+    output += `Permission: ${tool.permission.page ?? tool.permission.module}_${action}\n`;
   }
   if (options.isList) {
     if (tool.paginates) {

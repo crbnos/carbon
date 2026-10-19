@@ -125,7 +125,10 @@ function sharedCases(table: string, level: GateLevel): RowCase[] {
  * The rule of an operation on rows of a table several pages share: the page
  * the row's `where` column picks, at `level`. `from` and `path` reach that
  * table from the row the input names; left out, `id` names a row of `table`.
- * The cases come from the registry, so a page added there is a case here.
+ * A `from` the registry lists as a child of `table` needs no `path`: the
+ * rule takes the child's (`methodOperationStep` → … → `item`), the one its RLS
+ * rule follows. The cases come from the registry, so a page added there is a
+ * case here.
  */
 export function rowRule<
   const T extends string,
@@ -148,7 +151,13 @@ export function rowRule<
   };
 } {
   const from = at.from ?? table;
-  const last = at.path?.at(-1)?.[1] ?? from;
+  const place = from === table ? undefined : placeOf(from);
+  const path =
+    at.path ??
+    (place?.kind === "child" && place.parent === table
+      ? place.path
+      : undefined);
+  const last = path?.at(-1)?.[1] ?? from;
   if (last !== table) {
     throw new Error(
       `The path of a rule on ${table} must end at ${table}, not ${last}`
@@ -158,7 +167,7 @@ export function rowRule<
     row: {
       id: at.id,
       from,
-      ...(at.path ? { path: at.path } : {}),
+      ...(path ? { path } : {}),
       cases: sharedCases(table, level) as {
         column: string;
         equals?: string;

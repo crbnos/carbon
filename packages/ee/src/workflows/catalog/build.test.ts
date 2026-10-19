@@ -4,6 +4,7 @@
 
 import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { describe, expect, it } from "vitest";
+import type { EventPermission } from "../definition/catalog";
 import type { ActionInputLike } from "./actions";
 import { WORKFLOW_ACTIONS } from "./actions";
 import type {
@@ -74,10 +75,14 @@ const registry: Record<string, RegistryEntry> = {
   person: { table: "person", label: "Person", permission: "users" }
 };
 
+/** The fake tables are on no page of the access registry: each event checks this one. */
+const testPages = (table: string): EventPermission =>
+  table === "order" ? "purchasing.purchaseOrders" : "users.accounts";
+
 const moments: Record<string, MomentDeclarationLike> = {
   "order.approved": {
     label: "An order is approved",
-    permission: "purchasing",
+    table: "order",
     outputs: {
       order: { kind: "entity", of: "order" },
       approvedBy: { kind: "entity", of: "person" }
@@ -102,7 +107,7 @@ function realDefinitions(): SwaggerSchema["definitions"] {
 }
 
 describe("buildCatalog — record events", () => {
-  const built = buildCatalog(registry, moments, {}, {}, schema);
+  const built = buildCatalog(registry, moments, {}, {}, schema, testPages);
   const ev = (id: string) => need(built.events[id], id);
 
   it("emits created, deleted and one changed event per watched column", () => {
@@ -166,12 +171,12 @@ describe("buildCatalog — record events", () => {
   });
 
   it("carries the entity's permission on every event", () => {
-    expect(ev("order.created").permission).toBe("purchasing");
+    expect(ev("order.created").permission).toBe("purchasing.purchaseOrders");
   });
 });
 
 describe("buildCatalog — labels", () => {
-  const built = buildCatalog(registry, moments, {}, {}, schema);
+  const built = buildCatalog(registry, moments, {}, {}, schema, testPages);
 
   it("uses the three templates", () => {
     expect(built.labels["order.created"]).toBe("An order is created");
@@ -195,7 +200,8 @@ describe("buildCatalog — labels", () => {
       {},
       {},
       {},
-      schema
+      schema,
+      testPages
     );
     expect(built2.labels["user.created"]).toBe("A user is created");
   });
@@ -213,7 +219,8 @@ describe("buildCatalog — labels", () => {
       {},
       {},
       {},
-      schema
+      schema,
+      testPages
     );
     expect(built2.labels["quote.created"]).toBe("A quote is created");
   });
@@ -266,14 +273,15 @@ describe("buildCatalog — labels", () => {
         {},
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/contains a backtick/);
   });
 });
 
 describe("buildCatalog — moments", () => {
-  const built = buildCatalog(registry, moments, {}, {}, schema);
+  const built = buildCatalog(registry, moments, {}, {}, schema, testPages);
 
   it("passes declared outputs through unchanged and matches on the key", () => {
     expect(built.events["order.approved"]).toEqual({
@@ -281,7 +289,7 @@ describe("buildCatalog — moments", () => {
         order: { kind: "entity", of: "order" },
         approvedBy: { kind: "entity", of: "person" }
       },
-      permission: "purchasing",
+      permission: "purchasing.purchaseOrders",
       match: { moment: "order.approved" }
     });
   });
@@ -293,13 +301,14 @@ describe("buildCatalog — moments", () => {
         {
           "order.shipped": {
             label: "An order is shipped",
-            permission: "inventory",
+            table: "order",
             outputs: { carrier: { kind: "entity", of: "carrier" } }
           }
         },
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/names entity "carrier"/);
   });
@@ -311,20 +320,21 @@ describe("buildCatalog — moments", () => {
         {
           "order.shipped": {
             label: "   ",
-            permission: "inventory",
+            table: "order",
             outputs: {}
           }
         },
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/has no label/);
   });
 });
 
 describe("buildCatalog — entity properties", () => {
-  const built = buildCatalog(registry, moments, {}, {}, schema);
+  const built = buildCatalog(registry, moments, {}, {}, schema, testPages);
   const order = need(built.entities.order, "order entity");
   const person = need(built.entities.person, "person entity");
 
@@ -390,7 +400,8 @@ describe("buildCatalog — entity properties", () => {
         {},
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/foreign key points at "person"/);
   });
@@ -410,7 +421,8 @@ describe("buildCatalog — entity properties", () => {
         {},
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/not a registry entity/);
   });
@@ -429,7 +441,8 @@ describe("buildCatalog — entity properties", () => {
         {},
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/watches column "ghostColumn"/);
   });
@@ -441,7 +454,8 @@ describe("buildCatalog — entity properties", () => {
         {},
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/not in the database schema/);
   });
@@ -474,7 +488,7 @@ describe("validateCatalogInputs", () => {
       {
         "order.x": {
           label: "",
-          permission: "sales",
+          table: "order",
           outputs: { who: { kind: "entity", of: "nobody" } }
         }
       },
@@ -575,7 +589,8 @@ describe("validateCatalogInputs", () => {
         {},
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/dropped from every entity's properties/);
   });
@@ -826,6 +841,22 @@ describe("buildCatalog — enums from real schema", () => {
     // priority is a number column (double precision), not an enum
     expect(built.enums.job?.priority).toBeUndefined();
   });
+
+  it("checks the page of the event's table: a moment's own table, any item page for an item", () => {
+    expect(built.events["purchaseOrder.status.changed"]?.permission).toBe(
+      "purchasing.purchaseOrders"
+    );
+    expect(built.events["inventory.receiptPosted"]?.permission).toBe(
+      "inventory.receipts"
+    );
+    expect(built.events["item.created"]?.permission).toEqual([
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ]);
+  });
 });
 
 describe("buildCatalog — actions and operations", () => {
@@ -842,7 +873,7 @@ describe("buildCatalog — actions and operations", () => {
   };
 
   it("expands a write allowlist into one update action", () => {
-    const built = buildCatalog(writeRegistry, {}, {}, {}, schema);
+    const built = buildCatalog(writeRegistry, {}, {}, {}, schema, testPages);
     const action = need(built.actions["order.update"], "order.update");
 
     expect(Object.keys(action.inputs).sort()).toEqual([
@@ -866,7 +897,7 @@ describe("buildCatalog — actions and operations", () => {
   });
 
   it("generates no update action for an entity with no write allowlist", () => {
-    const built = buildCatalog(registry, {}, {}, {}, schema);
+    const built = buildCatalog(registry, {}, {}, {}, schema, testPages);
     expect(built.actions["order.update"]).toBeUndefined();
   });
 
@@ -904,7 +935,8 @@ describe("buildCatalog — actions and operations", () => {
         }
       },
       {},
-      schema
+      schema,
+      testPages
     );
     const inputs = built.actions["order.archive"]?.inputs;
     expect(inputs?.method?.choices).toEqual(["GET", "POST"]);
@@ -931,7 +963,8 @@ describe("buildCatalog — actions and operations", () => {
           }
         },
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/declared by hand and also generated/);
   });

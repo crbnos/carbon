@@ -3,7 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, test } from "vitest";
+import { manifest } from "./manifest";
 import {
+  type AnyRule,
   anyOf,
   company,
   custom,
@@ -184,6 +186,76 @@ describe("render: module keys become page keys", () => {
     expect(policy(render(company("parts"), "itemCost"), "INSERT")).toContain(
       `WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemCost"."itemId" AND "item"."companyId" = "itemCost"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT ${key("parts.parts_create")})::text[]))`
     );
+  });
+
+  test("a child two hops away checks its item's page through each hop, every hop in the company of the last", () => {
+    expect(
+      policy(render(company("parts"), "methodMaterial"), "UPDATE")
+    ).toContain(
+      `USING (EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodMaterial"."makeMethodId" AND "makeMethod"."companyId" = "methodMaterial"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT ${key("parts.parts_update")})::text[])) OR ("item"."type" = 'Material'`
+    );
+  });
+
+  test("a link row with no company starts its path in its parent's company", () => {
+    const insert = policy(
+      render(
+        parent("methodMaterial", "methodMaterialId", "parts"),
+        "methodMaterialStep"
+      ),
+      "INSERT"
+    );
+    expect(insert).toContain(
+      `EXISTS (SELECT 1 FROM "public"."methodMaterial" WHERE "methodMaterial"."id" = "methodMaterialStep"."methodMaterialId" AND "methodMaterial"."companyId" = "p"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod"`
+    );
+    expect(insert).not.toContain(`"methodMaterialStep"."companyId"`);
+  });
+
+  test("a child read names no parent table: any page of the shared entry, plus readers", () => {
+    const select = policy(
+      render(
+        company("parts", { read: anyOf("parts_view", "purchasing_view") }),
+        "supplierPart"
+      ),
+      "SELECT"
+    );
+    expect(select).not.toContain(`"public"."item"`);
+    expect(select).toBe(
+      `CREATE POLICY "SELECT" ON "public"."supplierPart" FOR SELECT USING (${[
+        "parts.parts_view",
+        "parts.materials_view",
+        "parts.tools_view",
+        "parts.consumables_view",
+        "parts.services_view",
+        "purchasing.suppliers_view",
+        "purchasing.purchaseOrders_view"
+      ]
+        .map((k) => `"companyId" = ANY ((SELECT ${key(k)})::text[])`)
+        .join(" OR ")
+        .replace(/^/, "(")
+        .concat(")")});`
+    );
+  });
+
+  test("no table's SELECT policy reaches back to itself", () => {
+    // A policy subquery runs under the SELECT policies of the table it reads,
+    // so a cycle of SELECT policies is what Postgres refuses as recursion.
+    const reads = new Map<string, Set<string>>();
+    for (const [table, rule] of Object.entries(manifest)) {
+      const select = policy(render(rule as AnyRule, table), "SELECT");
+      const named = [...select.matchAll(/"public"\."(\w+)"/g)]
+        .map((m) => m[1] as string)
+        .filter((name, i) => i > 0 || name !== table);
+      reads.set(table, new Set(named));
+    }
+    const cycles: string[] = [];
+    const walk = (table: string, trail: string[]) => {
+      for (const next of reads.get(table) ?? []) {
+        if (next === trail[0]) cycles.push([...trail, next].join(" → "));
+        else if (!trail.includes(next)) walk(next, [...trail, next]);
+      }
+    };
+    for (const table of reads.keys()) walk(table, [table]);
+    expect(cycles).toEqual([]);
   });
 
   test("a page key renders as written", () => {

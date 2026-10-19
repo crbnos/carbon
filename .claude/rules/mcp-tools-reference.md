@@ -70,7 +70,9 @@ any other value export in a server file fails generation.
 - **Permission**: read off the literal `permission` (pages and levels,
   `{ "inventory.receipts": "Edit" }`) and published in the manifest as the
   pages' module and every action their levels hold (Edit → view, create,
-  update). Pages of one module → `{ module, actions }`; pages of several
+  update). Pages of one module → `{ module, actions }`, plus `page` when the
+  gate names one page (`describe_tool` prints `<page>_<action>`, the digest
+  `<page>:<actions>`); pages of several
   modules, or `"employee"` (any employee of the company) →
   `{ module: null, actions: [] }`. A keyed permission (`{ by, rules }`)
   publishes every page its rules name. An `anyOf` or row rule (`rowRule`,

@@ -21,6 +21,8 @@ export type PermissionAction = "view" | "create" | "update" | "delete";
  */
 export interface ToolPermission {
   module: string | null;
+  /** The page a gate of one page names (`inventory.receipts`); the key it checks is `<page>_<action>`. */
+  page?: string;
   actions: PermissionAction[];
   /**
    * A gate that passes on any one of several pages (an `anyOf` or row rule):

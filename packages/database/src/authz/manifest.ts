@@ -7,6 +7,7 @@
 // A module key (`parts_update`) renders as the key of the page that owns the table
 // (access/registry.ts; rules.ts `render`). A page key (`purchasing.suppliers_create`) is a
 // grant to a page that does not own the table, and renders as written.
+import { ITEM_PAGES } from "../access/registry";
 import {
   always,
   and,
@@ -32,6 +33,10 @@ import {
   viaParent,
   where
 } from "./rules";
+
+/** Any one item page at `action`: for a table no one item row decides. */
+const anyItemPage = (action: "create" | "update" | "delete") =>
+  anyOf(...ITEM_PAGES.map((page) => `${page}_${action}` as const));
 
 /** The payment and memo a settlement applies are both still Draft (or absent). */
 const draftSettlement = and(
@@ -956,7 +961,13 @@ export const manifest = {
       "parts_delete"
     )
   }),
-  modelUpload: company("parts"),
+  // Items, quotes, orders and jobs point at a model; the model names none of
+  // them, so any item page may write one.
+  modelUpload: company("parts", {
+    create: anyItemPage("create"),
+    update: anyItemPage("update"),
+    delete: anyItemPage("delete")
+  }),
   nonConformance: company("quality", { read: "quality_view" }),
   nonConformanceActionProcess: company("quality", { read: "quality_view" }),
   nonConformanceActionTask: company("quality", { read: "quality_view" }),

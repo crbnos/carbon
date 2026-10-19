@@ -7483,14 +7483,14 @@ export const updateQuoteOperationStepOrder = defineServiceFn({
  * Refused unless the method is a Draft, when the item's revision is released
  * and release control enforces it, and while a change notice holds the
  * method. All or nothing: a step that is not on `operationId` refuses the
- * whole reorder. Needs parts update, as the method editor does, and
- * production update, which the step rows require.
+ * whole reorder. Needs Edit on the page of the item's type, as the method
+ * editor does; the step rows check the same page.
  *
  * @mcp
  */
 export const updateMethodOperationStepOrder = defineServiceFn({
   input: stepOrderInput,
-  permission: { "parts.parts": "Edit", "production.jobs": "Edit" },
+  permission: itemRule("Edit", { id: "operationId", from: "methodOperation" }),
   async run(ctx, { operationId, updates }) {
     const lock = await checkRevisionLock(ctx.asCaller.supabase, {
       kind: "operation",
@@ -8015,15 +8015,19 @@ const saveMethodInput = z.object({
  *
  * @remarks
  * Overwrites make method `targetId` with job `sourceId`'s root method, the
- * parts `parts` names. Needs parts update, since it rewrites the item's bill
- * of material and process, and is refused under the same revision lock.
+ * parts `parts` names. Needs Edit on the page of the item's type, since it
+ * rewrites the item's bill of material and process, and Edit on Jobs. It is
+ * refused under the same revision lock.
  *
  * @mcp destructive
  */
 export const upsertMakeMethodFromJob = defineServiceFn({
   input: saveMethodInput,
-  permission: { "production.jobs": "Edit", "parts.parts": "Edit" },
+  permission: itemRule("Edit", { id: "targetId", from: "makeMethod" }),
   async run(ctx, input) {
+    if (!ctx.can({ "production.jobs": "Edit" })) {
+      return ctx.error("forbidden", "Saving a job's method needs Edit on Jobs");
+    }
     const refusal = await saveMethodRefusal(ctx, input.targetId);
     if (refusal) return refusal;
     return unwrap(
@@ -8042,15 +8046,18 @@ export const upsertMakeMethodFromJob = defineServiceFn({
  *
  * @remarks
  * Overwrites make method `targetId` with job make method `sourceId`, the
- * parts `parts` names. Needs parts update and is refused under the same
- * revision lock as `upsertMakeMethodFromJob`.
+ * parts `parts` names. Needs Edit on the page of the item's type and on Jobs,
+ * and is refused under the same revision lock as `upsertMakeMethodFromJob`.
  *
  * @mcp destructive
  */
 export const upsertMakeMethodFromJobMethod = defineServiceFn({
   input: saveMethodInput,
-  permission: { "production.jobs": "Edit", "parts.parts": "Edit" },
+  permission: itemRule("Edit", { id: "targetId", from: "makeMethod" }),
   async run(ctx, input) {
+    if (!ctx.can({ "production.jobs": "Edit" })) {
+      return ctx.error("forbidden", "Saving a job's method needs Edit on Jobs");
+    }
     const refusal = await saveMethodRefusal(ctx, input.targetId);
     if (refusal) return refusal;
     return unwrap(

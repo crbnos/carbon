@@ -374,7 +374,7 @@ const MakeMethodTools = ({
                 className="rounded-md"
                 isLoading={isGetMethodLoading}
                 isDisabled={
-                  !permissions.has({ "parts.parts": "Edit" }) ||
+                  !permissions.has({ [ITEM_TYPE_PAGES[type]]: "Edit" }) ||
                   isGetMethodLoading ||
                   activeMethod.status !== "Draft" // Can only overwrite Draft versions
                 }
@@ -388,7 +388,7 @@ const MakeMethodTools = ({
               <MenubarItem
                 className="rounded-md"
                 isDisabled={
-                  !permissions.has({ "parts.parts": "Edit" }) ||
+                  !permissions.has({ [ITEM_TYPE_PAGES[type]]: "Edit" }) ||
                   isSaveMethodLoading
                 }
                 isLoading={isSaveMethodLoading}

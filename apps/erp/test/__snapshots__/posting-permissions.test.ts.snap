@@ -192,6 +192,55 @@ exports[`posting permissions > match the reviewed manifest 1`] = `
   "invoicing.postSalesInvoicePermission": {
     "invoicing.salesInvoices": "Edit",
   },
+  "items.activateMethodVersionPermission": {
+    "row": {
+      "cases": [
+        {
+          "column": "type",
+          "equals": "Part",
+          "then": {
+            "parts.parts": "Edit",
+          },
+        },
+        {
+          "column": "type",
+          "equals": "Material",
+          "then": {
+            "parts.materials": "Edit",
+          },
+        },
+        {
+          "column": "type",
+          "equals": "Tool",
+          "then": {
+            "parts.tools": "Edit",
+          },
+        },
+        {
+          "column": "type",
+          "equals": "Consumable",
+          "then": {
+            "parts.consumables": "Edit",
+          },
+        },
+        {
+          "column": "type",
+          "equals": "Service",
+          "then": {
+            "parts.services": "Edit",
+          },
+        },
+      ],
+      "from": "makeMethod",
+      "id": "id",
+      "path": [
+        [
+          "itemId",
+          "item",
+        ],
+      ],
+    },
+  },
   "items.syncMakeMethodPermission": {
     "row": {
       "cases": [

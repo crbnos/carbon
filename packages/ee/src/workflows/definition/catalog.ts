@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { PageId } from "@carbon/database/access";
 import { t, type ValueType } from "./types";
 
 /** How the matcher recognises this event. Only the matcher reads it. */
@@ -18,11 +19,14 @@ export interface RequiredPermission {
   action: PermissionAction;
 }
 
+/** The page an event's owner must hold View on, or the pages of which any one is enough. */
+export type EventPermission = PageId | readonly PageId[];
+
 export interface CatalogEvent {
   id: string;
   outputs: Record<string, ValueType>;
-  /** Lowercase permission module the subscribing workflow's owner must hold. */
-  permission?: string;
+  /** The page of the event's table the subscribing workflow's owner must view. */
+  permission?: EventPermission;
   match?: EventMatch;
 }
 

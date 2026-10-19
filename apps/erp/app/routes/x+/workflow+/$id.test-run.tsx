@@ -193,12 +193,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The gate comes before the read, not only inside the walk: `buildTrigger` fetches
   // the record with service role, and an ordering that only happens to be safe is one
   // an edit can quietly break. The walk re-checks against live claims.
-  const module = event?.permission;
-  if (module !== undefined) {
+  // The page of the event's table; of a shared table, any one of its pages.
+  const pages = event?.permission;
+  if (pages !== undefined) {
     const claims = await getUserClaims(gate.userId, gate.companyId);
-    const granted = claims.permissions[module]?.view ?? [];
-    if (!granted.includes(gate.companyId)) {
-      return refuse(noAccess(module), 403);
+    const granted = [pages]
+      .flat()
+      .some((page) => claims.permissions[page]?.view?.includes(gate.companyId));
+    if (!granted) {
+      return refuse(noAccess(pages), 403);
     }
   }
 
