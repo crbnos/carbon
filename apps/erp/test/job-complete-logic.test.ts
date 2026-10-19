@@ -9,6 +9,7 @@ import {
   getDefaultSerialCompleteQuantity,
   getFinishedUnreceivedQuantity,
   getReceivableSerialUnits,
+  getSerialCompleteChoice,
   type JobSerialUnit
 } from "../app/modules/production/ui/Jobs/job-complete-logic";
 
@@ -163,5 +164,87 @@ describe("getDefaultSerialCompleteQuantity", () => {
         receivableSerialCount: 1
       })
     ).toBe(3);
+  });
+});
+
+describe("getSerialCompleteChoice", () => {
+  const seed = unit({ id: "seed", quantity: 3 });
+  const none = new Set<string>();
+
+  it("lists the serials when every unit left is numbered, under either timing", () => {
+    const units = [unit({ readableId: "SN-0001" }), unit({ readableId: "SN-0002" })];
+    for (const serialNumberTiming of ["jobCreation", "production"] as const) {
+      expect(
+        getSerialCompleteChoice({
+          trackedEntities: units,
+          receivedEntityIds: none,
+          serialNumberTiming
+        })
+      ).toEqual({ mode: "serials", serials: ["SN-0001", "SN-0002"] });
+    }
+  });
+
+  it("stays locked for an unsplit seed under the default timing", () => {
+    expect(
+      getSerialCompleteChoice({
+        trackedEntities: [seed],
+        receivedEntityIds: none,
+        serialNumberTiming: "jobCreation"
+      })
+    ).toEqual({ mode: "locked" });
+  });
+
+  it("unlocks an unsplit seed when serials are numbered at production", () => {
+    expect(
+      getSerialCompleteChoice({
+        trackedEntities: [seed],
+        receivedEntityIds: none,
+        serialNumberTiming: "production"
+      })
+    ).toEqual({ mode: "numberOnReceipt", receivableCount: 3 });
+  });
+
+  it("counts numbered and unnumbered units left to receive, not received or scrapped ones", () => {
+    const units = [
+      unit({ id: "done", status: "Available", readableId: "SN-0001" }),
+      unit({ id: "blank", status: "Reserved" }),
+      unit({ id: "received", status: "Available", readableId: "SN-0002" }),
+      unit({ id: "scrapped", status: "Scrapped" }),
+      unit({ id: "issued", status: "Consumed", readableId: "SN-0003" })
+    ];
+    expect(
+      getSerialCompleteChoice({
+        trackedEntities: units,
+        receivedEntityIds: new Set(["received"]),
+        serialNumberTiming: "production"
+      })
+    ).toEqual({ mode: "numberOnReceipt", receivableCount: 2 });
+    expect(
+      getSerialCompleteChoice({
+        trackedEntities: units,
+        receivedEntityIds: new Set(["received"]),
+        serialNumberTiming: "jobCreation"
+      })
+    ).toEqual({ mode: "locked" });
+  });
+
+  it("stays locked when the receipts could not be read", () => {
+    expect(
+      getSerialCompleteChoice({
+        trackedEntities: [seed],
+        receivedEntityIds: null,
+        serialNumberTiming: "production"
+      })
+    ).toEqual({ mode: "locked" });
+  });
+
+  it("stays locked when nothing is left to receive", () => {
+    expect(
+      getSerialCompleteChoice({
+        trackedEntities: [unit({ id: "received", status: "Available" })],
+        receivedEntityIds: new Set(["received"]),
+        serialNumberTiming: "production"
+      })
+    ).toEqual({ mode: "locked" });
   });
 });

@@ -10,8 +10,10 @@
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import {
   assignSerialNumberIfMissing,
+  getNextSerialNumbers,
   getSerialNumberTiming
 } from "@carbon/database/sequence";
+import { now } from "@internationalized/date";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
 import { completeJob } from "../../app/modules/production/production.server";
@@ -22,6 +24,7 @@ import {
   jobFixture,
   seed,
   stockPart,
+  TIME_ZONE,
   USER
 } from "./fixtures/always-post";
 import { hasLocalDatabase } from "./fixtures/local-database";
@@ -261,6 +264,61 @@ describe.skipIf(!client)("serial number timing", () => {
         .where("itemId", "=", f.assemblyId)
         .executeTakeFirstOrThrow();
       expect(Number(sequence.next)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("numbers and receives untouched units when the last operation is marked Done", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "5", 3);
+
+      // Through PostgREST, as the ERP and MES write it, so the interceptors run.
+      const done = await client!
+        .from("jobOperation")
+        .update({ status: "Done" })
+        .eq("id", job.operationId)
+        .eq("companyId", f.companyId);
+      expect(done.error).toBeNull();
+
+      expect(await receivedUnits(f, job.jobId)).toEqual([
+        { readableId: "SN-001", quantity: 1 },
+        { readableId: "SN-002", quantity: 1 },
+        { readableId: "SN-003", quantity: 1 }
+      ]);
+      expect(await units(f, job.makeMethodId)).toHaveLength(3);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("formats serials in SQL with the company's date and the job's location", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await serialSetup(f, "production");
+      await seed(f, async (trx) => {
+        await trx
+          .updateTable("itemSerialSequence")
+          .set({ prefix: "%{location}-%{yyyy}-", suffix: "-X", next: 41 })
+          .where("itemId", "=", f.assemblyId)
+          .execute();
+      });
+
+      const serials = await f.db.transaction().execute((trx) =>
+        getNextSerialNumbers(trx, {
+          itemId: f.assemblyId,
+          companyId: f.companyId,
+          count: 2,
+          locationCode: "  HQ ",
+          locationName: "Headquarters"
+        })
+      );
+
+      const year = now(TIME_ZONE).year;
+      expect(serials).toEqual([`HQ-${year}-042-X`, `HQ-${year}-043-X`]);
     } finally {
       await f.cleanup();
     }

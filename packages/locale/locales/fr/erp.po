@@ -20779,6 +20779,9 @@ msgstr ""
 msgid "Serial numbers are drawn when the job is created"
 msgstr ""
 
+msgid "Serial numbers are drawn when the units are received."
+msgstr ""
+
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Les numéros de série ne sont générés que pour les articles suivis en série ou en lot."
 

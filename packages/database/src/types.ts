@@ -93119,6 +93119,16 @@ export type Database = {
         Args: { company_id: string; sequence_name: string }
         Returns: string
       }
+      get_next_serial_numbers: {
+        Args: {
+          p_company_id: string
+          p_count: number
+          p_item_id: string
+          p_location_code?: string
+          p_location_name?: string
+        }
+        Returns: string[]
+      }
       get_opportunity_with_related_records: {
         Args: { opportunity_id: string }
         Returns: {
@@ -94194,6 +94204,10 @@ export type Database = {
         Args: { p_company_id: string; p_entries: Json[] }
         Returns: number
       }
+      interpolate_serial_segment: {
+        Args: { p_location: string; p_now: string; p_value: string }
+        Returns: string
+      }
       is_claims_admin: { Args: { company: string }; Returns: boolean }
       is_last_job_operation: {
         Args: { operation_id: string }
@@ -94326,6 +94340,14 @@ export type Database = {
       nanoid_optimized: {
         Args: { alphabet: string; mask: number; size: number; step: number }
         Returns: string
+      }
+      number_serial_units_for_completion: {
+        Args: {
+          p_company_id: string
+          p_job_id: string
+          p_quantity_complete: number
+        }
+        Returns: number
       }
       populate_company_search_index: {
         Args: { p_company_id: string }

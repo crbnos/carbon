@@ -23,7 +23,8 @@ const isoWeekFromYmd = (year: number, month: number, day: number): number => {
 // Date tokens derive in the company's business timezone so document prefixes
 // roll over at the company's midnight, not the process's. The ERP's live
 // preview (`interpolateSequenceDate` in apps/erp/app/utils/string.ts) mirrors
-// this — keep the two in sync, along with get_next_sequence (SQL) and
+// this — keep the two in sync, along with get_next_sequence (SQL),
+// interpolate_serial_segment (SQL, the serial numbers' tokens) and
 // util.document_sequence_pattern (src/event-system/functions), which reads a
 // saved number back to keep the counter ahead of it.
 const interpolateSequenceDate = (value?: string | null, timezone = "UTC") => {
@@ -44,22 +45,6 @@ const interpolateSequenceDate = (value?: string | null, timezone = "UTC") => {
   }
 
   return result;
-};
-
-// Serial-number segment interpolation: the date/week tokens above, plus the
-// job-context %{location} token (location.code, falling back to location.name).
-const interpolateSerialNumber = (
-  value: string | null | undefined,
-  context: {
-    locationCode?: string | null;
-    locationName?: string | null;
-    timezone?: string;
-  }
-) => {
-  const withDates = interpolateSequenceDate(value, context.timezone);
-  if (!withDates.includes("%{location}")) return withDates;
-  const location = (context.locationCode ?? context.locationName ?? "").trim();
-  return withDates.replace(/%{location}/g, location);
 };
 
 export async function getNextSequence(
@@ -150,13 +135,15 @@ export async function getNextRevisionSequence(
 
 /**
  * Atomically reserve and format the next `count` serial numbers for an item from
- * its configured `itemSerialSequence`. Returns `[]` when the item has no sequence
- * (so callers leave `readableId` null, exactly as before). Runs inside the
- * caller's Kysely transaction, so the counter reservation commits — or rolls back
- * — together with the write that consumes the numbers.
+ * its configured `itemSerialSequence`, through the SQL `get_next_serial_numbers`.
+ * Returns `[]` when the item has no sequence (so callers leave `readableId` null,
+ * exactly as before). Runs inside the caller's Kysely transaction, so the counter
+ * reservation commits — or rolls back — together with the write that consumes
+ * the numbers.
  *
- * Each number interpolates the date/week tokens (%{yyyy} %{yy} %{mm} %{ww} %{dd})
- * plus %{location} (location.code, falling back to the location name).
+ * Each number interpolates the date/week tokens (%{yyyy} %{yy} %{mm} %{ww} %{dd}
+ * %{hh} %{ss}) in the company's timezone, plus %{location} (location.code,
+ * falling back to the location name).
  *
  * Used by `assign-serial-numbers` (the N units that exist at job creation),
  * `issue` (a unit spawned lazily on completion, e.g. after the job quantity was
@@ -175,39 +162,19 @@ export async function getNextSerialNumbers(
   }
 ): Promise<string[]> {
   if (args.count < 1) return [];
-
-  const reserved = await trx
-    .updateTable("itemSerialSequence")
-    .set({
-      next: sql<number>`"next" + ${args.count} * "step"`,
-      updatedBy: "system",
-      updatedAt: new Date().toISOString()
-    })
-    .where("itemId", "=", args.itemId)
-    .where("companyId", "=", args.companyId)
-    .returning(["next", "prefix", "suffix", "size", "step"])
-    .executeTakeFirst();
-
-  if (!reserved) return []; // item has no serial sequence configured
-
-  const size = reserved.size ?? 5;
-  const step = reserved.step ?? 1;
-  const startNext = reserved.next - args.count * step;
-  const context = {
-    locationCode: args.locationCode,
-    locationName: args.locationName,
-    timezone: await getCompanyTimeZone(trx, args.companyId)
-  };
-
-  const serials: string[] = [];
-  for (let i = 1; i <= args.count; i++) {
-    const value = startNext + i * step;
-    const counter = value.toString().padStart(size, "0");
-    const prefix = interpolateSerialNumber(reserved.prefix, context);
-    const suffix = interpolateSerialNumber(reserved.suffix, context);
-    serials.push(`${prefix}${counter}${suffix}`);
-  }
-  return serials;
+  // One allocator: get_next_serial_numbers formats in SQL, so the database's
+  // own completion path (number_serial_units_for_completion) and every
+  // TypeScript caller produce the same numbers.
+  const result = await sql<{ serials: string[] | null }>`
+    SELECT get_next_serial_numbers(
+      ${args.itemId},
+      ${args.companyId},
+      ${args.count}::integer,
+      ${args.locationCode ?? null},
+      ${args.locationName ?? null}
+    ) AS serials
+  `.execute(trx);
+  return result.rows[0]?.serials ?? [];
 }
 
 /**

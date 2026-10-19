@@ -73,7 +73,6 @@ import {
   updateRows
 } from "@carbon/database/rows";
 import {
-  getEntityJobLocation,
   getNextRevisionSequence,
   getNextSequence,
   getNextSerialNumbers,
@@ -12735,118 +12734,6 @@ export async function assignSerialNumbers(
   });
 }
 
-/** A unit of a job's root make method, as a completion sees it. */
-export type CompletionSerialUnit = {
-  id: string;
-  status: string;
-  quantity: number;
-  readableId: string | null;
-  createdAt: string;
-  /** Has a `Job Receipt` ledger row for this job. */
-  received: boolean;
-  /** Booked out of stock (a negative ledger row): issued before its receipt. */
-  bookedOut: boolean;
-  /** Already turned into a fixed asset. */
-  fixedAsset: boolean;
-};
-
-export type CompletionSerialPlan = {
-  /** Existing single units that this completion takes and that have no number. */
-  numberUnitIds: string[];
-  /**
-   * Units to split off the unsplit seed: `newUnits` new single units, plus the
-   * seed itself when the completion takes all of it (`seedBecomesUnit`).
-   */
-  split: {
-    seedId: string;
-    seedQuantity: number;
-    seedReadableId: string | null;
-    newUnits: number;
-    seedBecomesUnit: boolean;
-  } | null;
-};
-
-/**
- * Which units a completion of `delta` units will take, in the order
- * `complete_job_to_inventory` takes them (the receipt branch, or the Make to
- * Asset branch for a job that completes to a fixed asset), and which of them
- * still need a number or a split. Pure: `numberSerialUnitsForCompletion` reads
- * the units and applies the plan.
- *
- * Null when there is nothing to do, or when the job cannot cover `delta` even
- * after splitting its seed: the completion then refuses with its own message
- * and no number is spent.
- */
-export function planSerialUnitsForCompletion(
-  units: CompletionSerialUnit[],
-  delta: number,
-  target: "receipt" | "asset"
-): CompletionSerialPlan | null {
-  if (!Number.isInteger(delta) || delta <= 0) return null;
-
-  const takeable = units.filter((unit) => {
-    if (unit.quantity !== 1) return false;
-    if (target === "asset") {
-      return (
-        !["Consumed", "Rejected", "Scrapped"].includes(unit.status) &&
-        !unit.fixedAsset
-      );
-    }
-    if (unit.received) return false;
-    if (unit.status === "Consumed") return unit.bookedOut;
-    return !["Rejected", "Scrapped"].includes(unit.status);
-  });
-
-  const rank = (status: string) =>
-    status === "Available" || (target === "receipt" && status === "Consumed")
-      ? 0
-      : status === "Reserved"
-        ? 1
-        : 2;
-  // Numbered before unnumbered within a rank, as the RPC's `readableId NULLS
-  // LAST`. Once this plan numbers a unit it sorts ahead of every unnumbered
-  // one of its rank, so the RPC takes the same units.
-  const ordered = [...takeable].sort(
-    (a, b) =>
-      rank(a.status) - rank(b.status) ||
-      Number(a.readableId === null) - Number(b.readableId === null) ||
-      (a.readableId ?? "").localeCompare(b.readableId ?? "") ||
-      a.createdAt.localeCompare(b.createdAt) ||
-      a.id.localeCompare(b.id)
-  );
-
-  const taken = ordered.slice(0, delta);
-  const numberUnitIds = taken
-    .filter((unit) => unit.readableId === null)
-    .map((unit) => unit.id);
-
-  const short = delta - taken.length;
-  if (short === 0) {
-    return numberUnitIds.length > 0 ? { numberUnitIds, split: null } : null;
-  }
-
-  const seed = units
-    .filter(
-      (unit) =>
-        unit.quantity > 1 &&
-        !["Consumed", "Rejected", "Scrapped"].includes(unit.status)
-    )
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
-  if (!seed || seed.quantity < short) return null;
-
-  const seedBecomesUnit = seed.quantity === short;
-  return {
-    numberUnitIds,
-    split: {
-      seedId: seed.id,
-      seedQuantity: seed.quantity,
-      seedReadableId: seed.readableId,
-      newUnits: seedBecomesUnit ? short - 1 : short,
-      seedBecomesUnit
-    }
-  };
-}
-
 /**
  * Receipt as first touch (`companySettings.serialNumberTiming = 'production'`):
  * before `complete_job_to_inventory` takes `quantityComplete` units of a serial
@@ -12854,189 +12741,24 @@ export function planSerialUnitsForCompletion(
  * takes. Without this an untouched job would be received as one unnumbered
  * entity holding every unit.
  *
- * No-op under the default `jobCreation` timing (every unit is numbered at
- * creation), for an item with no serial sequence (its job keeps one seed by
- * design), and when nothing taken is missing a number. Commits on its own, before
- * the RPC: a completion the RPC then refuses for another reason keeps the units
- * it split and numbered, which are the job's next units either way.
+ * The SQL `number_serial_units_for_completion` does the work, so this path and
+ * the `sync_finish_job_operation` interceptor (an operation marked Done) share
+ * one implementation. It is a no-op under the default `jobCreation` timing, for
+ * an item with no serial sequence, and when the job cannot cover the
+ * completion. It commits on its own, before the RPC.
  */
 export async function numberSerialUnitsForCompletion(
   db: Kysely<KyselyDatabase>,
   args: { jobId: string; quantityComplete: number; companyId: string }
 ): Promise<{ numbered: number }> {
-  const { jobId, quantityComplete, companyId } = args;
-  return db.transaction().execute(async (trx) => {
-    if ((await getSerialNumberTiming(trx, companyId)) !== "production") {
-      return { numbered: 0 };
-    }
-
-    const job = await trx
-      .selectFrom("job")
-      .innerJoin("item", "item.id", "job.itemId")
-      .leftJoin("itemSerialSequence", (join) =>
-        join
-          .onRef("itemSerialSequence.itemId", "=", "job.itemId")
-          .onRef("itemSerialSequence.companyId", "=", "job.companyId")
-      )
-      .innerJoin("jobMakeMethod", (join) =>
-        join
-          .onRef("jobMakeMethod.jobId", "=", "job.id")
-          .on("jobMakeMethod.parentMaterialId", "is", null)
-      )
-      .select([
-        "job.itemId",
-        "job.quantityReceivedToInventory",
-        "job.fixedAssetClassId",
-        "job.fixedAssetId",
-        "item.itemTrackingType",
-        "itemSerialSequence.id as sequenceId",
-        "jobMakeMethod.id as makeMethodId",
-        "jobMakeMethod.requiresSerialTracking"
-      ])
-      .where("job.id", "=", jobId)
-      .where("job.companyId", "=", companyId)
-      .executeTakeFirst();
-    if (
-      !job ||
-      job.itemTrackingType !== "Serial" ||
-      !job.requiresSerialTracking ||
-      !job.sequenceId
-    ) {
-      return { numbered: 0 };
-    }
-
-    const delta =
-      quantityComplete - Number(job.quantityReceivedToInventory ?? 0);
-    const entities = await trx
-      .selectFrom("trackedEntity")
-      .select([
-        "id",
-        "status",
-        "quantity",
-        "readableId",
-        "createdAt",
-        "attributes"
-      ])
-      .where("companyId", "=", companyId)
-      .where(sql<boolean>`attributes->>'Job Make Method' = ${job.makeMethodId}`)
-      .forUpdate()
-      .execute();
-    if (entities.length === 0) return { numbered: 0 };
-
-    const ids = entities.map((entity) => entity.id);
-    const ledger = await trx
-      .selectFrom("itemLedger")
-      .select([
-        "trackedEntityId",
-        sql<boolean>`bool_or("documentType" = 'Job Receipt' AND "documentId" = ${jobId})`.as(
-          "received"
-        ),
-        sql<boolean>`bool_or(quantity < 0)`.as("bookedOut")
-      ])
-      .where("companyId", "=", companyId)
-      .where("trackedEntityId", "in", ids)
-      .groupBy("trackedEntityId")
-      .execute();
-    const ledgerByEntity = new Map(
-      ledger.map((row) => [row.trackedEntityId, row])
-    );
-
-    const plan = planSerialUnitsForCompletion(
-      entities.map((entity) => ({
-        id: entity.id,
-        status: entity.status,
-        quantity: Number(entity.quantity),
-        readableId: entity.readableId,
-        createdAt: String(entity.createdAt),
-        received: ledgerByEntity.get(entity.id)?.received === true,
-        bookedOut: ledgerByEntity.get(entity.id)?.bookedOut === true,
-        fixedAsset:
-          (entity.attributes as Record<string, unknown> | null)?.[
-            "Fixed Asset"
-          ] !== undefined
-      })),
-      delta,
-      job.fixedAssetClassId || job.fixedAssetId ? "asset" : "receipt"
-    );
-    if (!plan) return { numbered: 0 };
-
-    const split = plan.split;
-    const numberSeed =
-      split?.seedBecomesUnit === true && split.seedReadableId === null;
-    const count =
-      plan.numberUnitIds.length + (split?.newUnits ?? 0) + (numberSeed ? 1 : 0);
-    const serials = await getNextSerialNumbers(trx, {
-      itemId: job.itemId,
-      companyId,
-      count,
-      ...(await getEntityJobLocation(trx, { Job: jobId }, companyId))
-    });
-    if (serials.length < count) return { numbered: 0 };
-
-    const toNumber = [...plan.numberUnitIds];
-    if (numberSeed && split) toNumber.push(split.seedId);
-    const numberedSerials = serials.slice(0, toNumber.length);
-    const newSerials = serials.slice(toNumber.length);
-
-    if (toNumber.length > 0) {
-      await sql`
-        UPDATE "trackedEntity" AS te
-        SET "readableId" = v.serial
-        FROM (VALUES ${sql.join(
-          toNumber.map((id, index) => sql`(${id}, ${numberedSerials[index]})`)
-        )}) AS v(id, serial)
-        WHERE te.id = v.id
-          AND te."companyId" = ${companyId}
-          AND te."readableId" IS NULL
-      `.execute(trx);
-    }
-
-    if (split) {
-      const seed = entities.find((entity) => entity.id === split.seedId)!;
-      const fullSeed = await trx
-        .selectFrom("trackedEntity")
-        .selectAll()
-        .where("id", "=", split.seedId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirstOrThrow();
-      await trx
-        .updateTable("trackedEntity")
-        .set({
-          quantity: split.seedBecomesUnit
-            ? 1
-            : Number(seed.quantity) - split.newUnits
-        })
-        .where("id", "=", split.seedId)
-        .where("companyId", "=", companyId)
-        .execute();
-      if (newSerials.length > 0) {
-        // One millisecond apart, after every existing unit: `createdAt` is the
-        // unit axis step records are indexed by (see assignSerialNumbers), so
-        // the new units take the next positions and no existing unit moves.
-        await trx
-          .insertInto("trackedEntity")
-          .values(
-            newSerials.map((readableId, offset) => ({
-              createdAt: sql<string>`now() + ${offset + 1}::int * interval '1 millisecond'`,
-              sourceDocument: fullSeed.sourceDocument,
-              sourceDocumentId: fullSeed.sourceDocumentId,
-              sourceDocumentReadableId: fullSeed.sourceDocumentReadableId,
-              quantity: 1,
-              status: fullSeed.status,
-              attributes: fullSeed.attributes,
-              itemId: fullSeed.itemId ?? null,
-              expirationDate: fullSeed.expirationDate ?? null,
-              readableId,
-              companyId,
-              createdBy: fullSeed.createdBy
-            }))
-          )
-          .execute();
-      }
-    }
-
-    return { numbered: count };
-  });
+  const result = await sql<{ numbered: number }>`
+    SELECT number_serial_units_for_completion(
+      ${args.jobId},
+      ${args.quantityComplete}::numeric,
+      ${args.companyId}
+    ) AS numbered
+  `.execute(db);
+  return { numbered: Number(result.rows[0]?.numbered ?? 0) };
 }
 
 const sandboxLogger = getLogger("erp", "configuration-rule");

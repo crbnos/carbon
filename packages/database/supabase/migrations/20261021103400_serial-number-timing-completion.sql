@@ -1,0 +1,334 @@
+-- Serial numbers at production: number the units a job completion takes.
+--
+-- Under companySettings."serialNumberTiming" = 'production' a job's units stay
+-- unnumbered until they are first touched, and the completion that receives
+-- them is a first touch. Both completion paths call number_serial_units_for_completion
+-- before complete_job_to_inventory: the ERP's completeJob, and the
+-- sync_finish_job_operation interceptor when the last operation is marked Done.
+-- It splits what the completion takes off the job's unsplit seed and numbers
+-- every unit it takes, so the receipt never takes one unnumbered entity holding
+-- every unit.
+--
+-- get_next_serial_numbers is the one serial allocator: the TypeScript
+-- getNextSerialNumbers (@carbon/database/sequence) calls it, so job creation,
+-- first-touch numbering and completion format serials the same way. Its date
+-- tokens follow get_next_sequence: the company's timezone, ISO weeks.
+
+CREATE OR REPLACE FUNCTION public.interpolate_serial_segment(
+  p_value text,
+  p_now timestamp,
+  p_location text
+)
+ RETURNS text
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  SELECT replace(
+    replace(replace(replace(replace(replace(replace(replace(
+      COALESCE(p_value, ''),
+      '%{yyyy}', to_char(p_now, 'YYYY')),
+      '%{yy}', to_char(p_now, 'YY')),
+      '%{mm}', to_char(p_now, 'MM')),
+      '%{ww}', to_char(p_now, 'IW')),
+      '%{dd}', to_char(p_now, 'DD')),
+      '%{hh}', to_char(p_now, 'HH24')),
+      '%{ss}', to_char(p_now, 'SS')),
+    '%{location}', COALESCE(p_location, '')
+  );
+$function$;
+
+-- Reserve and format the next p_count serial numbers of an item's
+-- itemSerialSequence. Empty when the item has no sequence. Runs as the caller:
+-- the ERP and MES call it on a direct connection, and the completion below as
+-- its owner.
+CREATE OR REPLACE FUNCTION public.get_next_serial_numbers(
+  p_item_id text,
+  p_company_id text,
+  p_count integer,
+  p_location_code text DEFAULT NULL,
+  p_location_name text DEFAULT NULL
+)
+ RETURNS text[]
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_next integer;
+  v_prefix text;
+  v_suffix text;
+  v_size integer;
+  v_step integer;
+  v_now timestamp;
+  v_location text;
+  v_value integer;
+  v_serials text[] := '{}';
+BEGIN
+  IF p_count IS NULL OR p_count < 1 THEN
+    RETURN v_serials;
+  END IF;
+
+  UPDATE "itemSerialSequence"
+  SET next = next + p_count * step,
+      "updatedBy" = 'system',
+      "updatedAt" = now()
+  WHERE "itemId" = p_item_id
+    AND "companyId" = p_company_id
+  RETURNING next, prefix, suffix, size, step
+  INTO v_next, v_prefix, v_suffix, v_size, v_step;
+
+  IF NOT FOUND THEN
+    RETURN v_serials;
+  END IF;
+
+  v_now := now() AT TIME ZONE COALESCE(
+    (SELECT "timezone" FROM "company" WHERE "id" = p_company_id),
+    'UTC'
+  );
+  -- The location code, falling back to its name, with surrounding space trimmed.
+  v_location := regexp_replace(
+    COALESCE(p_location_code, p_location_name, ''),
+    '^\s+|\s+$', '', 'g'
+  );
+  v_prefix := interpolate_serial_segment(v_prefix, v_now, v_location);
+  v_suffix := interpolate_serial_segment(v_suffix, v_now, v_location);
+
+  FOR i IN 1..p_count LOOP
+    v_value := v_next - p_count * v_step + i * v_step;
+    v_serials := v_serials || (
+      v_prefix
+      || CASE
+        WHEN length(v_value::text) >= COALESCE(v_size, 5) THEN v_value::text
+        ELSE lpad(v_value::text, COALESCE(v_size, 5), '0')
+      END
+      || v_suffix
+    );
+  END LOOP;
+
+  RETURN v_serials;
+END;
+$function$;
+
+-- Receipt as first touch. Takes the units complete_job_to_inventory will take
+-- for p_quantity_complete, in its own order (the receipt branch, or the Make to
+-- Asset branch), splits what is missing off the unsplit seed and numbers every
+-- unit taken. Returns how many numbers it drew. Writes nothing when the timing
+-- is 'jobCreation', the item is not serial-tracked or has no sequence, or the
+-- job cannot cover the completion (the completion then refuses with its own
+-- message).
+CREATE OR REPLACE FUNCTION public.number_serial_units_for_completion(
+  p_job_id text,
+  p_quantity_complete numeric,
+  p_company_id text
+)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_job record;
+  v_make_method record;
+  v_delta numeric;
+  v_target text;
+  v_taken text[];
+  v_to_number text[];
+  v_short integer;
+  v_seed record;
+  v_new_units integer := 0;
+  v_seed_becomes_unit boolean := false;
+  v_count integer;
+  v_serials text[];
+  v_location record;
+BEGIN
+  PERFORM assert_company_access(p_company_id);
+
+  IF COALESCE(
+    (SELECT "serialNumberTiming" FROM "companySettings" WHERE "id" = p_company_id),
+    'jobCreation'
+  ) <> 'production' THEN
+    RETURN 0;
+  END IF;
+
+  SELECT j."itemId", j."quantityReceivedToInventory", j."fixedAssetClassId",
+         j."fixedAssetId", j."locationId", i."itemTrackingType"
+  INTO v_job
+  FROM "job" j
+  JOIN "item" i ON i."id" = j."itemId"
+  WHERE j."id" = p_job_id
+    AND j."companyId" = p_company_id;
+  IF NOT FOUND OR v_job."itemTrackingType" IS DISTINCT FROM 'Serial' THEN
+    RETURN 0;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM "itemSerialSequence"
+    WHERE "itemId" = v_job."itemId" AND "companyId" = p_company_id
+  ) THEN
+    RETURN 0;
+  END IF;
+
+  SELECT "id", "requiresSerialTracking"
+  INTO v_make_method
+  FROM "jobMakeMethod"
+  WHERE "jobId" = p_job_id
+    AND "parentMaterialId" IS NULL;
+  IF NOT FOUND OR NOT COALESCE(v_make_method."requiresSerialTracking", false) THEN
+    RETURN 0;
+  END IF;
+
+  v_delta := p_quantity_complete - COALESCE(v_job."quantityReceivedToInventory", 0);
+  IF v_delta IS NULL OR v_delta <= 0 OR v_delta <> trunc(v_delta) THEN
+    RETURN 0;
+  END IF;
+  v_target := CASE
+    WHEN v_job."fixedAssetClassId" IS NOT NULL OR v_job."fixedAssetId" IS NOT NULL
+      THEN 'asset'
+    ELSE 'receipt'
+  END;
+
+  PERFORM 1
+  FROM "trackedEntity" te
+  WHERE te.attributes->>'Job Make Method' = v_make_method."id"
+    AND te."companyId" = p_company_id
+  FOR UPDATE;
+
+  -- The units the completion takes, by the same filter and order as
+  -- complete_job_to_inventory (20261015161847_job-receipt-takes-issued-serial-units).
+  IF v_target = 'asset' THEN
+    v_taken := ARRAY(
+      SELECT te."id"
+      FROM "trackedEntity" te
+      WHERE te.attributes->>'Job Make Method' = v_make_method."id"
+        AND te."companyId" = p_company_id
+        AND te.status NOT IN ('Consumed', 'Rejected', 'Scrapped')
+        AND te.quantity = 1
+        AND NOT (te.attributes ? 'Fixed Asset')
+      ORDER BY
+        CASE te.status WHEN 'Available' THEN 0 WHEN 'Reserved' THEN 1 ELSE 2 END,
+        te."readableId" NULLS LAST,
+        te."createdAt",
+        te."id"
+      LIMIT v_delta::integer
+    );
+  ELSE
+    v_taken := ARRAY(
+      SELECT te."id"
+      FROM "trackedEntity" te
+      WHERE te.attributes->>'Job Make Method' = v_make_method."id"
+        AND te."companyId" = p_company_id
+        AND (
+          te.status NOT IN ('Consumed', 'Rejected', 'Scrapped')
+          OR (
+            te.status = 'Consumed'
+            AND EXISTS (
+              SELECT 1
+              FROM "itemLedger" il
+              WHERE il."trackedEntityId" = te."id"
+                AND il."companyId" = p_company_id
+                AND il.quantity < 0
+            )
+          )
+        )
+        AND te.quantity = 1
+        AND NOT EXISTS (
+          SELECT 1
+          FROM "itemLedger" il
+          WHERE il."trackedEntityId" = te."id"
+            AND il."documentType" = 'Job Receipt'
+            AND il."documentId" = p_job_id
+        )
+      ORDER BY
+        CASE te.status WHEN 'Available' THEN 0 WHEN 'Consumed' THEN 0 WHEN 'Reserved' THEN 1 ELSE 2 END,
+        te."readableId" NULLS LAST,
+        te."createdAt",
+        te."id"
+      LIMIT v_delta::integer
+    );
+  END IF;
+
+  -- Numbered units sort ahead of unnumbered ones of their rank, so once these
+  -- are numbered the completion takes the same units.
+  v_to_number := ARRAY(
+    SELECT te."id"
+    FROM "trackedEntity" te
+    JOIN unnest(v_taken) WITH ORDINALITY AS t(id, ord) ON t.id = te."id"
+    WHERE te."readableId" IS NULL
+    ORDER BY t.ord
+  );
+
+  v_short := v_delta::integer - COALESCE(array_length(v_taken, 1), 0);
+  IF v_short > 0 THEN
+    SELECT *
+    INTO v_seed
+    FROM "trackedEntity" te
+    WHERE te.attributes->>'Job Make Method' = v_make_method."id"
+      AND te."companyId" = p_company_id
+      AND te.status NOT IN ('Consumed', 'Rejected', 'Scrapped')
+      AND te.quantity > 1
+    ORDER BY te."createdAt"
+    LIMIT 1;
+    IF NOT FOUND OR v_seed.quantity < v_short THEN
+      RETURN 0;
+    END IF;
+    v_seed_becomes_unit := v_seed.quantity = v_short;
+    v_new_units := CASE WHEN v_seed_becomes_unit THEN v_short - 1 ELSE v_short END;
+    IF v_seed_becomes_unit AND v_seed."readableId" IS NULL THEN
+      v_to_number := v_to_number || v_seed."id";
+    END IF;
+  END IF;
+
+  v_count := COALESCE(array_length(v_to_number, 1), 0) + v_new_units;
+  IF v_count = 0 THEN
+    RETURN 0;
+  END IF;
+
+  SELECT "code", "name"
+  INTO v_location
+  FROM "location"
+  WHERE "id" = v_job."locationId"
+    AND "companyId" = p_company_id;
+
+  v_serials := get_next_serial_numbers(
+    v_job."itemId", p_company_id, v_count, v_location."code", v_location."name"
+  );
+  IF COALESCE(array_length(v_serials, 1), 0) < v_count THEN
+    RETURN 0;
+  END IF;
+
+  IF COALESCE(array_length(v_to_number, 1), 0) > 0 THEN
+    UPDATE "trackedEntity" te
+    SET "readableId" = s.serial
+    FROM unnest(
+      v_to_number,
+      v_serials[1:array_length(v_to_number, 1)]
+    ) AS s(id, serial)
+    WHERE te."id" = s.id
+      AND te."companyId" = p_company_id
+      AND te."readableId" IS NULL;
+  END IF;
+
+  IF v_short > 0 THEN
+    UPDATE "trackedEntity"
+    SET quantity = CASE WHEN v_seed_becomes_unit THEN 1 ELSE v_seed.quantity - v_new_units END
+    WHERE "id" = v_seed."id"
+      AND "companyId" = p_company_id;
+
+    -- One millisecond apart, after every existing unit: createdAt is the unit
+    -- axis step records are indexed by, so no existing unit moves.
+    INSERT INTO "trackedEntity" (
+      "createdAt", "sourceDocument", "sourceDocumentId", "sourceDocumentReadableId",
+      quantity, status, attributes, "itemId", "expirationDate", "readableId",
+      "companyId", "createdBy"
+    )
+    SELECT
+      now() + n * interval '1 millisecond',
+      v_seed."sourceDocument", v_seed."sourceDocumentId", v_seed."sourceDocumentReadableId",
+      1, v_seed.status, v_seed.attributes, v_seed."itemId", v_seed."expirationDate",
+      v_serials[COALESCE(array_length(v_to_number, 1), 0) + n],
+      p_company_id, v_seed."createdBy"
+    FROM generate_series(1, v_new_units) AS n;
+  END IF;
+
+  RETURN v_count;
+END;
+$function$;

@@ -78,6 +78,50 @@ export function getReceivableSerialUnits(
     .map((entity) => entity.readableId as string);
 }
 
+/**
+ * How the Complete dialog lets the quantity be chosen for a serial job.
+ *
+ * - `serials`: every unit left to receive is a numbered single unit, so the
+ *   dialog lists the serials a completion takes (either timing).
+ * - `numberOnReceipt`: the company numbers serials at production
+ *   (`serialNumberTiming = 'production'`) and some units are unnumbered or
+ *   still one unsplit seed. The completion numbers the units it receives
+ *   (`number_serial_units_for_completion`), so the quantity can be chosen up to
+ *   `receivableCount` even though the serials cannot be named yet.
+ * - `locked`: the quantity stays what the shop floor finished — the default
+ *   timing with unnumbered units, or receipts that could not be read.
+ */
+export type SerialCompleteChoice =
+  | { mode: "serials"; serials: string[] }
+  | { mode: "numberOnReceipt"; receivableCount: number }
+  | { mode: "locked" };
+
+export function getSerialCompleteChoice({
+  trackedEntities,
+  receivedEntityIds,
+  serialNumberTiming
+}: {
+  trackedEntities: JobSerialUnit[];
+  /** Null when the job's receipts could not be read. */
+  receivedEntityIds: ReadonlySet<string> | null;
+  serialNumberTiming: "jobCreation" | "production";
+}): SerialCompleteChoice {
+  // Without the receipts the dialog could offer a unit the job already
+  // received, whatever the timing.
+  if (!receivedEntityIds) return { mode: "locked" };
+
+  const serials = getReceivableSerialUnits(trackedEntities, receivedEntityIds);
+  if (serials) return { mode: "serials", serials };
+  if (serialNumberTiming !== "production") return { mode: "locked" };
+
+  const receivableCount = trackedEntities
+    .filter((entity) => isUnreceived(entity, receivedEntityIds))
+    .reduce((total, entity) => total + Number(entity.quantity), 0);
+  return receivableCount > 0
+    ? { mode: "numberOnReceipt", receivableCount }
+    : { mode: "locked" };
+}
+
 /** Units finished on the shop floor that the job has not received yet. */
 export function getFinishedUnreceivedQuantity(
   trackedEntities: JobSerialUnit[],

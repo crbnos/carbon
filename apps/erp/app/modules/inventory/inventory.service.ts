@@ -23356,8 +23356,14 @@ export async function issueMaterial(
             .executeTakeFirst();
           const capacity = Number(updatedOperation?.operationQuantity ?? 0);
           if (existingEntityCount < capacity) {
+            // Under serialNumberTiming = 'production' the replacement stays
+            // unnumbered until it is first touched.
             let spawnReadableId: string | null = null;
-            if (makeMethod.itemId) {
+            if (
+              makeMethod.itemId &&
+              (await sequence.getSerialNumberTiming(trx, companyId)) !==
+                "production"
+            ) {
               let locationCode: string | null = null;
               let locationName: string | null = null;
               if (job.locationId) {
@@ -24352,13 +24358,19 @@ export async function issueMaterial(
                 locationCode = loc.data?.code ?? null;
                 locationName = loc.data?.name ?? null;
               }
-              const spawnSerials = await sequence.getNextSerialNumbers(trx, {
-                itemId: subMakeMethod.itemId,
-                companyId,
-                count: 1,
-                locationCode,
-                locationName
-              });
+              // Under serialNumberTiming = 'production' the replacement stays
+              // unnumbered until it is first touched.
+              const spawnSerials =
+                (await sequence.getSerialNumberTiming(trx, companyId)) ===
+                "production"
+                  ? []
+                  : await sequence.getNextSerialNumbers(trx, {
+                      itemId: subMakeMethod.itemId,
+                      companyId,
+                      count: 1,
+                      locationCode,
+                      locationName
+                    });
               await trx
                 .insertInto("trackedEntity")
                 .values({
