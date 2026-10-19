@@ -21,6 +21,7 @@
     "./integrations/secrets": "./src/integrations/secrets.ts",
     "./action-task-entity": "./src/lib/actionTaskEntity.ts",
     "./issue-sync": "./src/issue-sync/index.ts",
+    "./issue-sync.server": "./src/issue-sync/index.server.ts",
     "./rules": "./src/rules/index.ts",
     "./rules.server": "./src/rules/server.ts",
     "./jira": "./src/jira/lib/index.ts",
