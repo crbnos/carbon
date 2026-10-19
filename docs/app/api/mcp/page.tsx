@@ -255,8 +255,10 @@ export default async function ConnectOverMcpPage() {
         agent shows that label and waits before a write.
       </P>
       <P>
-        Each key, and each OAuth user, is limited to 60 requests a minute by
-        default. On Carbon Cloud this surface is a Business-plan feature. An
+        New API keys allow 20 requests a minute, and all of a company's keys
+        share a 60-request-per-minute default. Existing keys keep their
+        configured limit. Each OAuth user is limited to 60 requests a minute.
+        On Carbon Cloud this surface is a Business-plan feature. An
         OAuth request from a Starter company returns <Code>402</Code> from the
         MCP entitlement gate. An API-key request from a Starter company is
         rejected with <Code>403</Code> during authentication. A missing module

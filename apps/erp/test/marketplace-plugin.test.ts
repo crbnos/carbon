@@ -163,6 +163,10 @@ describe("Carbon marketplace plugin", () => {
     expect(cloud).toContain(
       "Use this only when `https://app.carbon.ms` is not `https://app.carbon.ms`"
     );
+    expect(cloud).toContain("a new key allows 20 requests per minute");
+    expect(cloud).not.toContain(
+      "60 requests per minute by default, counted on the key"
+    );
     expect(cloud).toContain("If a request comes back `401`");
     expect(cloud).toContain(
       "An OAuth request from a Starter company returns `402` from the MCP entitlement gate"
@@ -195,6 +199,10 @@ describe("Carbon marketplace plugin", () => {
     );
     expect(page).toContain("Leave a private origin unpublished.");
     expect(page).toContain("plugins/carbon");
+    expect(page).toContain("New API keys allow 20 requests a minute");
+    expect(page).not.toContain(
+      "Each key, and each OAuth user, is limited to 60 requests a minute"
+    );
     expect(page).toContain("returns <Code>402</Code>");
     expect(page).toContain(
       "rejected with <Code>403</Code> during authentication."

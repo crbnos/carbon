@@ -116,8 +116,8 @@ The Grok Bot marketplace plugin uses OAuth on purpose. It ships no key.
 
 ### Rate and plan
 
-- API keys: 60 requests per minute by default, counted on the key. **Settings → API Keys** shows the limit. There is no field to change it.
-- OAuth: the same 60 per minute, counted on the user, so extra tokens do not multiply it.
+- API keys: a new key allows 20 requests per minute. All of a company's keys share 60 requests per minute unless the platform sets a company limit. Existing keys keep their own limit. **Settings → API Keys** shows it. There is no field to change it.
+- OAuth: 60 requests per minute, counted on the user, so extra tokens do not multiply it.
 - Over the limit the call returns `429` with `Retry-After` and `X-RateLimit-*`.
 - On Carbon Cloud, API and MCP access is a Business-plan feature. An OAuth request from a Starter company returns `402` from the MCP entitlement gate. API-key authentication rejects a Starter company with `403` before MCP handling. A missing API-key module scope is an MCP tool error, `API key lacks the required scope`, not HTTP `403`. Self-hosted, the Enterprise feature set requires a commercial license.
 
