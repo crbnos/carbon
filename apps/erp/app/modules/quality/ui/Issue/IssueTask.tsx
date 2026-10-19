@@ -33,7 +33,6 @@ import {
 import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatusButton";
 import { JiraIssueDialog } from "~/components/ActionTasks/Jira/IssueDialog";
 import { LinearIssueDialog } from "~/components/ActionTasks/Linear/IssueDialog";
-import { syncActionTaskNotes } from "~/components/ActionTasks/syncNotes";
 import { useProcesses } from "~/components/Form/Process";
 import SupplierAvatar from "~/components/SupplierAvatar";
 import {
@@ -232,18 +231,10 @@ export function TaskItem({
     disabled: isDisabled
   });
 
-  // Check if this action task has a linked Linear or Jira issue
-  const hasLinearLink =
-    type === "action" && !!(task as IssueActionTask).linearIssue;
-  const hasJiraLink =
-    type === "action" && !!(task as IssueActionTask).jiraIssue;
-
   const { content, setContent, onUpdateContent, onUploadImage } = useTaskNotes({
     initialContent: (task.notes ?? {}) as JSONContent,
     taskId: task.id!,
-    type,
-    hasLinearLink,
-    hasJiraLink
+    type
   });
 
   const { id } = useParams();
@@ -349,15 +340,11 @@ export function TaskItem({
 function useTaskNotes({
   initialContent,
   taskId,
-  type,
-  hasLinearLink = false,
-  hasJiraLink = false
+  type
 }: {
   initialContent: JSONContent;
   taskId: string;
   type: "investigation" | "action" | "approval" | "review";
-  hasLinearLink?: boolean;
-  hasJiraLink?: boolean;
 }) {
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
@@ -378,24 +365,6 @@ function useTaskNotes({
           updatedBy: userId
         })
         .eq("id", taskId!);
-
-      // Sync to Linear if this is an action task with a linked Linear issue
-      if (type === "action" && hasLinearLink) {
-        await syncActionTaskNotes("Linear", {
-          actionId: taskId,
-          entityType: "nonConformanceActionTask",
-          notes: content
-        });
-      }
-
-      // Sync to Jira if this is an action task with a linked Jira issue
-      if (type === "action" && hasJiraLink) {
-        await syncActionTaskNotes("Jira", {
-          actionId: taskId,
-          entityType: "nonConformanceActionTask",
-          notes: content
-        });
-      }
     },
     2500,
     true

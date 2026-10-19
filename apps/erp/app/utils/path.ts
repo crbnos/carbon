@@ -197,7 +197,6 @@ export const path = {
         )}`,
       jiraCreateIssue: `${api}/integrations/jira/issue/create`,
       jiraLinkExistingIssue: `${api}/integrations/jira/issue/link`,
-      jiraSyncNotes: `${api}/integrations/jira/issue/sync-notes`,
       jobBillOfMaterials: (id: string, withOperations: boolean = false) =>
         generatePath(
           `${api}/production/methods/${id}/bom?withOperations=${withOperations}`
@@ -221,7 +220,6 @@ export const path = {
       laborCategories: `${api}/projects/labor-categories`,
       linearCreateIssue: `${api}/integrations/linear/issue/create`,
       linearLinkExistingIssue: `${api}/integrations/linear/issue/link`,
-      linearSyncNotes: `${api}/integrations/linear/issue/sync-notes`,
       link: (companyId: string) => `${api}/link?companyId=${companyId}`,
       locationEmployees: (locationId: string) =>
         generatePath(`${api}/people/employees/${locationId}`),

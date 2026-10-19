@@ -62,22 +62,11 @@ export interface TaskAssignedEvent extends BaseNotificationEvent {
   };
 }
 
-export interface TaskNotesChangedEvent extends BaseNotificationEvent {
-  type: "task.notes.changed";
-  data: {
-    id: string;
-    table: string;
-    notes: any; // Tiptap JSONContent
-    title?: string;
-  };
-}
-
 export type NotificationEvent =
   | IssueCreatedEvent
   | IssueStatusChangedEvent
   | TaskStatusChangedEvent
-  | TaskAssignedEvent
-  | TaskNotesChangedEvent;
+  | TaskAssignedEvent;
 
 // Notification service interface
 export interface NotificationService {
