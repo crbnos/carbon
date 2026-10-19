@@ -92,7 +92,8 @@ import {
   paymentMonthIndex,
   RoundingMode,
   remeasureLease,
-  round
+  round,
+  searchFilter
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
@@ -553,12 +554,16 @@ export async function getPurchaseOrders(
 
   if (args.search) {
     query = query.or(
-      `purchaseOrderId.ilike.%${args.search}%,supplierReference.ilike.%${args.search}%`
+      searchFilter(["purchaseOrderId", "supplierReference"], args.search)
     );
   }
 
   if (args.supplierId) {
     query = query.eq("supplierId", args.supplierId);
+  }
+
+  if (args.status) {
+    query = query.eq("status", args.status as never);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -716,7 +721,7 @@ export async function getPurchasingPlanning(
 
   if (args?.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
+      searchFilter(["name", "readableIdWithRevision"], args.search)
     );
   }
 
@@ -1014,7 +1019,7 @@ export async function getSupplierQuotes(
 
   if (args.search) {
     query = query.or(
-      `supplierQuoteId.ilike.%${args.search}%,name.ilike.%${args.search}%,supplierReference.ilike%${args.search}%`
+      searchFilter(["supplierQuoteId", "supplierReference"], args.search)
     );
   }
 
@@ -3574,7 +3579,7 @@ export async function getPurchaseReturnOrders(
 
   if (args.search) {
     query = query.or(
-      `purchaseReturnOrderId.ilike.%${args.search}%,supplierReference.ilike.%${args.search}%`
+      searchFilter(["purchaseReturnOrderId", "supplierReference"], args.search)
     );
   }
 
@@ -4964,7 +4969,7 @@ export async function getLeases(
 
   if (args.search) {
     query = query.or(
-      `leaseId.ilike.%${args.search}%,name.ilike.%${args.search}%,supplierName.ilike.%${args.search}%`
+      searchFilter(["leaseId", "name", "supplierName"], args.search)
     );
   }
 

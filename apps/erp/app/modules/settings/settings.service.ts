@@ -194,7 +194,12 @@ import {
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { datetime, isInternalEmail, labelSizes } from "@carbon/utils";
+import {
+  datetime,
+  isInternalEmail,
+  labelSizes,
+  searchFilter
+} from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { type Insertable, type Selectable, sql } from "kysely";
@@ -666,12 +671,7 @@ export async function getItemSerialSequences(
     .eq("companyId", companyId);
 
   if (args.search) {
-    // Strip PostgREST filter-grammar characters so a search term can't alter the
-    // `or` expression or filter unintended columns (mirrors inventory.service.ts).
-    const search = args.search.replace(/[,()\\]/g, " ");
-    query = query.or(
-      `itemReadableId.ilike.%${search}%,itemName.ilike.%${search}%`
-    );
+    query = query.or(searchFilter(["itemReadableId", "itemName"], args.search));
   }
 
   query = setGenericQueryFilters(query, args, [

@@ -62,16 +62,28 @@ export function documentHasImages(
   return traverse(content);
 }
 
+/** Plain text as a Tiptap document: one paragraph per line, `**text**` bold. */
 export const textToTiptap = (text: string) => {
-  const lines = text.split("\n");
+  const lines = text.split(/\r\n|\r|\n/);
   const content = lines.map((line) =>
     // ProseMirror text nodes cannot be empty, so blank lines become a bare paragraph
     line === ""
       ? { type: "paragraph" }
-      : { type: "paragraph", content: [{ type: "text", text: line }] }
+      : { type: "paragraph", content: boldRuns(line) }
   );
   return { type: "doc", content };
 };
+
+function boldRuns(line: string) {
+  return line
+    .split(/(\*\*.+?\*\*)/)
+    .filter(Boolean)
+    .map((part) =>
+      part.length > 4 && part.startsWith("**") && part.endsWith("**")
+        ? { type: "text", text: part.slice(2, -2), marks: [{ type: "bold" }] }
+        : { type: "text", text: part }
+    );
+}
 
 /**
  * Convert a Tiptap JSON document to plain text (inverse of textToTiptap).

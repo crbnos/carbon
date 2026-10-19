@@ -59,11 +59,11 @@ describe("setSearchFilter", () => {
 
     expect(query.or).toHaveBeenNthCalledWith(
       1,
-      "name.ilike.%M8%,readableIdWithRevision.ilike.%M8%"
+      'name.ilike."%M8%",readableIdWithRevision.ilike."%M8%"'
     );
     expect(query.or).toHaveBeenNthCalledWith(
       2,
-      "name.ilike.%Washer%,readableIdWithRevision.ilike.%Washer%"
+      'name.ilike."%Washer%",readableIdWithRevision.ilike."%Washer%"'
     );
     expect(query.or).toHaveBeenCalledTimes(2);
   });
@@ -75,7 +75,7 @@ describe("setSearchFilter", () => {
 
     expect(query.or).toHaveBeenCalledTimes(1);
     expect(query.or).toHaveBeenCalledWith(
-      "name.ilike.%M8%,readableIdWithRevision.ilike.%M8%"
+      'name.ilike."%M8%",readableIdWithRevision.ilike."%M8%"'
     );
   });
 

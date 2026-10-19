@@ -58,7 +58,11 @@ import { resolveBuyUnitCost } from "~/modules/shared/shared.utils";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
-import { invokeCreate, invokePosting } from "../shared/shared.service";
+import {
+  invokeCreate,
+  invokePosting,
+  setOperationWorkInstruction
+} from "../shared/shared.service";
 import {
   contractAmendmentChangeValidator,
   contractDurationOf,
@@ -3353,6 +3357,28 @@ export const updateQuoteOperation = defineServiceFn({
 });
 
 /**
+ * Set the work instruction of a quote operation.
+ *
+ * @remarks
+ * Replaces the operation's work instruction; the rest of the operation and
+ * the line's price are unchanged.
+ *
+ * @param id - The quote operation's id.
+ * @param text - The work instruction as plain text: each line is a paragraph,
+ *   `**text**` is bold. Empty text clears it.
+ *
+ * @mcp
+ */
+export const setQuoteOperationWorkInstruction = defineServiceFn({
+  input: z.object({ id: z.string().min(1), text: z.string() }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, text }) {
+    return setOperationWorkInstruction(ctx, "quoteOperation", id, text);
+  }
+});
+
+/**
  * Remove an operation from a quote line's method, then reprice its line.
  *
  * @mcp destructive
@@ -6479,7 +6505,7 @@ export const getSalesOrders = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0),
     search: z.string().nullable().optional(),
-    status: z.string().nullable().optional(),
+    status: z.enum(salesOrderStatusType).nullable().optional(),
     customerId: z.string().nullable().optional()
   }),
   permission: { view: "sales" },

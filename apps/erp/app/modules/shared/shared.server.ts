@@ -58,6 +58,7 @@ import {
   importRequiresCreate,
   importSchemas
 } from "./imports.models";
+import { assignableTables } from "./shared.models";
 import * as service from "./shared.service";
 import { invokeCreate } from "./shared.service";
 
@@ -68,15 +69,22 @@ const logger = getLogger("erp", "shared");
  *
  * @remarks
  * Sets `assignee` on the row of `table` with `id`, as the caller: row-level
- * security decides what they may change. An empty `assignee` unassigns it.
+ * security decides what they may change, and a row they cannot change is
+ * `notFound`. An empty `assignee` unassigns it.
  * When someone is assigned and the table has an assignment notification,
  * they are notified: a job operation's names its job, make method and parent
  * material, and an issue task's names its issue. A failed notification comes
  * back as an error after the assignment is saved.
+ *
+ * @param table - The record's table, e.g. `job` or `jobOperation`.
+ * @param id - The record's id.
+ * @param assignee - The user id of the person to assign; empty to unassign.
+ *
+ * @mcp
  */
 export const assignRecord = defineServiceFn({
   input: z.object({
-    table: z.string().min(1),
+    table: z.enum(assignableTables),
     id: z.string().min(1),
     assignee: z.string()
   }),
@@ -84,9 +92,17 @@ export const assignRecord = defineServiceFn({
 
   async run(ctx, { table, id, assignee }) {
     const client = ctx.asCaller.supabase;
-    const assigned = await service.assign(client, { table, id, assignee });
+    const assigned = await service.assign(client, {
+      table,
+      id,
+      companyId: ctx.company.id,
+      assignee
+    });
     if (assigned.error) {
       return ctx.error("internal", "Failed to assign", assigned.error);
+    }
+    if (!assigned.data?.length) {
+      return ctx.error("notFound", "No record was found to assign");
     }
 
     const event = assignee ? service.assignmentEvent(table) : null;
@@ -98,6 +114,7 @@ export const assignRecord = defineServiceFn({
         .from("jobOperation")
         .select("*, job(id, assignee), jobMakeMethod(id, parentMaterialId)")
         .eq("id", id)
+        .eq("companyId", ctx.company.id)
         .single();
       const jobId = operation.data?.job?.id;
       const makeMethodId = operation.data?.jobMakeMethod?.id;
@@ -112,6 +129,7 @@ export const assignRecord = defineServiceFn({
         .from(table)
         .select("nonConformanceId")
         .eq("id", id)
+        .eq("companyId", ctx.company.id)
         .single();
       documentId = task.data?.nonConformanceId;
     }

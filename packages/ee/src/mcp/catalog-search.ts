@@ -26,7 +26,12 @@ export const SEARCH_ALIASES: Record<string, string[]> = {
   quotation: ["quote"],
   quotations: ["quote"],
   grn: ["receipt"],
+  // goods move on a receipt or a shipment: "receive a PO", "ship an order"
+  receive: ["receipt"],
+  received: ["receipt"],
   receiving: ["receipt"],
+  ship: ["shipment"],
+  shipped: ["shipment"],
   // quality & engineering
   ncr: ["nonconformance", "issue"],
   ncrs: ["nonconformance", "issue"],
@@ -75,6 +80,19 @@ export const PHRASE_ALIASES: Record<string, string[]> = {
   "purchase requisition": ["purchase", "order"],
   "stock on hand": ["quantities"],
   "on hand": ["quantities"]
+};
+
+/**
+ * A verb that names the document doing the work: "receive a purchase order"
+ * asks for a receipt against the order, not for the order. Tools named for
+ * that document rank first, ahead of tools that only match the order's words.
+ */
+export const DOCUMENT_VERBS: Record<string, string> = {
+  receive: "receipt",
+  received: "receipt",
+  receiving: "receipt",
+  ship: "shipment",
+  shipped: "shipment"
 };
 
 /**
@@ -248,6 +266,7 @@ export function createNameComparator(
   }
   if (words.length === 0 && phrases.length === 0) return null;
 
+  const documents = words.flatMap((word) => DOCUMENT_VERBS[word] ?? []);
   const needle = query.trim().toLowerCase();
   const hasAction = words.some(
     (word) => actions.has(word) || word in ACTION_SYNONYMS
@@ -301,6 +320,7 @@ export function createNameComparator(
     const name = tool.name.toLowerCase();
     return {
       exact: name === needle || name.slice(separator + 1) === needle ? 1 : 0,
+      document: documents.some((document) => hasStem(document)) ? 1 : 0,
       covered,
       full,
       readFirst: !hasAction && tool.classification === "READ" ? 1 : 0,
@@ -328,6 +348,7 @@ export function createNameComparator(
     const y = rankOf(b);
     return (
       y.exact - x.exact ||
+      y.document - x.document ||
       y.covered - x.covered ||
       y.full - x.full ||
       y.readFirst - x.readFirst ||

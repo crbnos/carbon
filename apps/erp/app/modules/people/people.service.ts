@@ -6,7 +6,7 @@ import type { ServiceContext } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { datetime } from "@carbon/utils";
+import { datetime, searchFilter } from "@carbon/utils";
 import { getDayOfWeek, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -378,7 +378,7 @@ export async function getContacts(
 
   if (args.search) {
     query = query.or(
-      `firstName.ilike.%${args.search}%,lastName.ilike.%${args.search}%,email.ilike.%${args.search}%`
+      searchFilter(["firstName", "lastName", "email"], args.search)
     );
   }
 
@@ -998,9 +998,7 @@ export async function getTimecardEntries(
     .eq("companyId", companyId);
 
   if (args.search) {
-    query = query.or(
-      `firstName.ilike.%${args.search}%,lastName.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["firstName", "lastName"], args.search));
   }
 
   query = setGenericQueryFilters(query, args, [

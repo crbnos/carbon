@@ -562,9 +562,12 @@ export const insertUploadedDocument = defineServiceFn({
 });
 
 /**
- * Update document favorite
+ * Mark or unmark a document as one of the caller's favorites.
  *
- * @mcp destructive
+ * @remarks
+ * Changes only the caller's own favorites list; the record is unchanged.
+ *
+ * @mcp
  */
 export const updateDocumentFavorite = defineServiceFn({
   input: z.looseObject({ id: z.string(), favorite: z.boolean() }),

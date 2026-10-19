@@ -32,13 +32,14 @@ confirm the endpoint and the server's capabilities without authenticating by
 fetching its manifest at `{{ORIGIN}}/.well-known/mcp.json`.
 
 The server does **not** register hundreds of individual tools. It registers
-three meta-tools, and every ERP operation is reached through them:
+four meta-tools, and every ERP operation is reached through them:
 
 | Tool | What it does |
 | --- | --- |
 | `search_tools` | Find operations by name, module, or classification (`READ` / `WRITE` / `DESTRUCTIVE`) and make the matches callable. |
 | `describe_tool` | Return the full input schema and description for one operation, so you can build its arguments correctly. |
-| `call_tool` | Execute an operation by name with its arguments. |
+| `call_tool` | Execute a `READ` or `WRITE` operation by name with its arguments. |
+| `call_destructive_tool` | Execute a `DESTRUCTIVE` operation (one that deletes or removes); `call_tool` refuses those. |
 
 So the working loop is always **search → describe → call**. Do not expect a flat
 tool list; discover what you need with `search_tools` first.
@@ -154,11 +155,11 @@ client's MCP docs for the exact field name, then plug in the values above.
 ## Verify the connection
 
 Do not report success until you've actually reached the server. Confirm it by
-listing the three meta-tools and running one read:
+listing the four meta-tools and running one read:
 
-1. The client should now expose `search_tools`, `describe_tool`, and
-   `call_tool`. If it doesn't, the server isn't connected — recheck the URL and
-   header.
+1. The client should now expose `search_tools`, `describe_tool`, `call_tool`
+   and `call_destructive_tool`. If it doesn't, the server isn't connected —
+   recheck the URL and header.
 2. Call `search_tools` with a query like `"customers"` to confirm auth works and
    you get operations back.
 3. Optionally `describe_tool` one of them and `call_tool` a `READ` operation to
@@ -192,7 +193,7 @@ with the user — the classification is right there in `search_tools` and
 
 ## ✅ Done
 
-When the three meta-tools are present and `search_tools` returns operations, the
+When the four meta-tools are present and `search_tools` returns operations, the
 Carbon MCP server is connected. Tell the user it's ready, which mode you used
 (OAuth or API key), and — if a key — remind them it's scoped and revocable in
 Settings → API Keys.

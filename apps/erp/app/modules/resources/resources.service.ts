@@ -27,7 +27,8 @@ import {
   EPSILON,
   indexBy,
   resolveBatchRules,
-  round
+  round,
+  searchFilter
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -345,9 +346,7 @@ export async function getContractors(
     .eq("active", true);
 
   if (args?.search) {
-    query = query.or(
-      `fullName.ilike.%${args.search}%,email.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["fullName", "email"], args.search));
   }
 
   if (args) {

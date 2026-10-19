@@ -49,7 +49,7 @@ describe("traceability search loader", () => {
     expect(body.entities[0]).not.toHaveProperty("jobReadableId");
     expect(from).not.toHaveBeenCalledWith("job");
     expect(entityQuery.or).toHaveBeenCalledWith(
-      "id.ilike.%TRK%,sourceDocumentReadableId.ilike.%TRK%,readableId.ilike.%TRK%"
+      'id.ilike."%TRK%",sourceDocumentReadableId.ilike."%TRK%",readableId.ilike."%TRK%"'
     );
   });
 });

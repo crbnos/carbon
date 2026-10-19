@@ -188,6 +188,26 @@ export function formatSearchResults(
 }
 
 /**
+ * The top-level arguments a strict input would drop: its schema lists its
+ * fields and keeps no others (a loose input publishes `additionalProperties`).
+ * A dropped field still reports success, so a write that saved nothing looks
+ * like one that did.
+ */
+export function unknownArguments(schema: unknown, args: unknown): string[] {
+  if (!schema || typeof schema !== "object") return [];
+  if (!args || typeof args !== "object" || Array.isArray(args)) return [];
+  const { properties, additionalProperties } = schema as {
+    properties?: Record<string, unknown>;
+    additionalProperties?: unknown;
+  };
+  if (!properties) return [];
+  if (additionalProperties !== undefined && additionalProperties !== false) {
+    return [];
+  }
+  return Object.keys(args).filter((key) => !Object.hasOwn(properties, key));
+}
+
+/**
  * One-line argument summary for search results: required params spelled out,
  * optionals as a count — enough to call a simple tool without a describe round
  * trip. "(id)" / "(jobId, itemId, +12 optional)" / "()".

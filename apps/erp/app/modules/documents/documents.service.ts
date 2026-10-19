@@ -12,7 +12,7 @@ import {
 } from "@carbon/files";
 import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
-import { datetime } from "@carbon/utils";
+import { datetime, searchFilter } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -63,9 +63,7 @@ export async function getDocuments(
     .eq("active", args.active);
 
   if (args?.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["name", "description"], args.search));
   }
 
   if (args?.favorite) {

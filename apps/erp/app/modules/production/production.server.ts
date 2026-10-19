@@ -44,7 +44,11 @@ import {
   getCompanyTimeZone,
   isActiveCompanyEmployee
 } from "~/modules/shared/shared.service";
-import { invokeCreate, invokePosting } from "../shared/shared.service";
+import {
+  invokeCreate,
+  invokePosting,
+  setOperationWorkInstruction
+} from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import {
   type AssemblyModelState,
@@ -2558,6 +2562,45 @@ export const updateJobOperation = defineServiceFn({
       );
     }
     return { id: update.data.id };
+  }
+});
+
+/**
+ * Set the work instruction of a job operation.
+ *
+ * @remarks
+ * Replaces the operation's work instruction; the rest of the operation is
+ * unchanged. Refused while the job is locked (completed or cancelled), as
+ * the job's editor is.
+ *
+ * @param id - The job operation's id.
+ * @param text - The work instruction as plain text: each line is a paragraph,
+ *   `**text**` is bold. Empty text clears it.
+ *
+ * @mcp
+ */
+export const setJobOperationWorkInstruction = defineServiceFn({
+  input: z.object({ id: z.string().min(1), text: z.string() }),
+  permission: { update: "production" },
+
+  async run(ctx, { id, text }) {
+    const operation = await ctx.asCaller.supabase
+      .from("jobOperation")
+      .select("jobId")
+      .eq("id", id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (operation.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the job operation",
+        operation.error
+      );
+    }
+    if (!operation.data) return ctx.error("notFound", "Operation not found");
+    const job = await service.requireJob(ctx, operation.data.jobId);
+    if (job instanceof CarbonError) return job;
+    return setOperationWorkInstruction(ctx, "jobOperation", id, text);
   }
 });
 

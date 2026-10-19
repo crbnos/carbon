@@ -49,6 +49,7 @@ import { noNoopOpenChange } from "./conformance/no-noop-open-change";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noPostgresChanges } from "./conformance/no-postgres-changes";
 import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
+import { noRawOrSearch } from "./conformance/no-raw-or-search";
 import { noRawRedirect } from "./conformance/no-raw-redirect";
 import { noRawRevalidator } from "./conformance/no-raw-revalidator";
 import { noRawRounding } from "./conformance/no-raw-rounding";
@@ -200,6 +201,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noRawRedirect
     ]),
     ...scanAll(loadTypescriptFiles(root), [
+      noRawOrSearch,
       noRawRevalidator,
       noInlineSensorOptions,
       noBareOutlet,

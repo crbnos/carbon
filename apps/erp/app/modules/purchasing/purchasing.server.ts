@@ -86,6 +86,7 @@ import {
   plannedOrderValidator,
   planningPurchaseOrderWeek,
   purchaseOrderDeleteRefusal,
+  purchaseOrderStatusType,
   purchaseReturnOrderLineValidator,
   purchasingRfqFinalizeValidator,
   purchasingRfqValidator,
@@ -4120,7 +4121,7 @@ export const getPurchaseOrders = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0),
     search: z.string().nullable().optional(),
-    status: z.string().nullable().optional(),
+    status: z.enum(purchaseOrderStatusType).nullable().optional(),
     supplierId: z.string().nullable().optional()
   }),
   permission: { view: "purchasing" },
@@ -4847,9 +4848,12 @@ export const updatePurchaseOrderExchangeRate = defineServiceFn({
 });
 
 /**
- * Update purchase order favorite
+ * Mark or unmark a purchase order as one of the caller's favorites.
  *
- * @mcp destructive
+ * @remarks
+ * Changes only the caller's own favorites list; the record is unchanged.
+ *
+ * @mcp
  */
 export const updatePurchaseOrderFavorite = defineServiceFn({
   input: z.looseObject({ id: z.string(), favorite: z.boolean() }),
