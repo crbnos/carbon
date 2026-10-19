@@ -26,7 +26,11 @@ export function sanitize<T extends Record<string, any>>(
  * the filter early and the request failed.
  */
 export function searchFilter(columns: string[], term: string): string {
-  const literal = term.replace(/[\\%_]/g, (char) => `\\${char}`);
-  const quoted = `"%${literal.replace(/["\\]/g, (char) => `\\${char}`)}%"`;
+  const quoted = `"%${escapeLike(term).replace(/["\\]/g, (char) => `\\${char}`)}%"`;
   return columns.map((column) => `${column}.ilike.${quoted}`).join(",");
+}
+
+/** `term` for a LIKE / ILIKE pattern: `\\`, `%` and `_` match themselves. */
+export function escapeLike(term: string): string {
+  return term.replace(/[\\%_]/g, (char) => `\\${char}`);
 }

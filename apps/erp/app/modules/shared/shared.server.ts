@@ -114,6 +114,7 @@ export const assignRecord = defineServiceFn({
         .from("jobOperation")
         .select("*, job(id, assignee), jobMakeMethod(id, parentMaterialId)")
         .eq("id", id)
+        .eq("companyId", ctx.company.id)
         .single();
       const jobId = operation.data?.job?.id;
       const makeMethodId = operation.data?.jobMakeMethod?.id;
@@ -128,6 +129,7 @@ export const assignRecord = defineServiceFn({
         .from(table)
         .select("nonConformanceId")
         .eq("id", id)
+        .eq("companyId", ctx.company.id)
         .single();
       documentId = task.data?.nonConformanceId;
     }

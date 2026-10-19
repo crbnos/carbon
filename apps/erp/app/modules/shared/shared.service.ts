@@ -128,6 +128,7 @@ import {
   debit,
   deriveRate,
   EPSILON,
+  escapeLike,
   generateLeasePayments,
   getReadableIdWithRevision,
   getRemainingQuantityToInvoice,
@@ -461,7 +462,7 @@ export async function getCustomerPortals(
     .eq("documentType", "Customer");
 
   if (args?.search) {
-    query = query.ilike("customer.name", `%${args.search}%`);
+    query = query.ilike("customer.name", `%${escapeLike(args.search)}%`);
   }
 
   if (args) {

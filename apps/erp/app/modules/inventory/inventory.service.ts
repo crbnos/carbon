@@ -202,7 +202,8 @@ import {
   isStockTransferLocked,
   isWarehouseTransferLocked,
   type receiptFixedAssetLineUpdateValidator,
-  reconcileReceiptLineSerials
+  reconcileReceiptLineSerials,
+  shippingCarrierType
 } from "./inventory.models";
 import { clampDepth } from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
@@ -1587,7 +1588,18 @@ export async function getShippingMethods(
     .eq("active", true);
 
   if (args.search) {
-    query = query.or(searchFilter(["name"], args.search));
+    // `carrier` is an enum, which ILIKE cannot search, so the term is matched
+    // against the carrier names here.
+    const term = args.search.toLowerCase();
+    const carriers = shippingCarrierType.filter((carrier) =>
+      carrier.toLowerCase().includes(term)
+    );
+    query = query.or(
+      [
+        searchFilter(["name"], args.search),
+        ...(carriers.length > 0 ? [`carrier.in.(${carriers.join(",")})`] : [])
+      ].join(",")
+    );
   }
 
   query = setGenericQueryFilters(query, args, [
