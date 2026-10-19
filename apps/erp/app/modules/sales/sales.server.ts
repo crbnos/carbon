@@ -5527,13 +5527,7 @@ export const getConfigurationParametersByQuoteLineId = defineServiceFn({
  */
 export const getCustomer = defineServiceFn({
   input: z.looseObject({ customerId: z.string() }),
-  permission: {
-    anyOf: [
-      { "sales.customers": "View" },
-      { "sales.quotes": "View" },
-      { "sales.salesOrders": "View" }
-    ]
-  },
+  permission: { "sales.customers": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5986,9 +5980,7 @@ export const getNoQuoteReasons = defineServiceFn({
  */
 export const getOpportunity = defineServiceFn({
   input: z.looseObject({ opportunityId: z.string().nullable() }),
-  permission: {
-    anyOf: [{ "sales.quotes": "View" }, { "sales.salesOrders": "View" }]
-  },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6007,13 +5999,9 @@ export const getOpportunity = defineServiceFn({
  */
 export const getOpportunityDocuments = defineServiceFn({
   input: z.looseObject({ opportunityId: z.string() }),
+  // Read for an invoice too: a cross-module reader.
   permission: {
-    anyOf: [
-      { "sales.rfqs": "View" },
-      { "sales.quotes": "View" },
-      { "sales.salesOrders": "View" },
-      { "invoicing.salesInvoices": "View" }
-    ]
+    anyOf: [{ "sales.quotes": "View" }, { "invoicing.salesInvoices": "View" }]
   },
   async run(ctx, input) {
     return await service.getOpportunityDocuments(
@@ -6096,9 +6084,7 @@ export const getPricingRules = defineServiceFn({
  */
 export const getQuote = defineServiceFn({
   input: z.looseObject({ quoteId: z.string() }),
-  permission: {
-    anyOf: [{ "sales.quotes": "View" }, { "sales.salesOrders": "View" }]
-  },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6457,13 +6443,7 @@ export const getRelatedPricesForQuoteLine = defineServiceFn({
  */
 export const getSalesDocumentsAssignedToMe = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {
-    anyOf: [
-      { "sales.rfqs": "View" },
-      { "sales.quotes": "View" },
-      { "sales.salesOrders": "View" }
-    ]
-  },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx) {
     return await service.getSalesDocumentsAssignedToMe(
       ctx.asCaller.supabase,

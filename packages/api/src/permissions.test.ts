@@ -12,6 +12,7 @@ import {
   type PermissionRule,
   permissionsFromClaims,
   permissionsFromScopes,
+  readGate,
   requirementOfRows,
   resolvePermissions,
   rowRule
@@ -381,5 +382,60 @@ describe("meetsRequirement", () => {
     expect(meetsRequirement(tools, "co1", { "parts.parts": "View" })).toBe(
       false
     );
+  });
+});
+
+describe("readGate", () => {
+  const claimsFor = (page: string, action: "view" | "create" | "update") => ({
+    [page]: {
+      view: ["c1"],
+      create: action === "view" ? [] : ["c1"],
+      update: action === "update" ? ["c1"] : [],
+      delete: []
+    }
+  });
+
+  it("lets View on any page of the module pass a read on one page", () => {
+    const gate = readGate({ "inventory.receipts": "View" } as const);
+    expect(
+      meetsRequirement(
+        claimsFor("inventory.shipments", "view"),
+        "c1",
+        gate as never
+      )
+    ).toBe(true);
+    expect(
+      meetsRequirement(claimsFor("sales.quotes", "view"), "c1", gate as never)
+    ).toBe(false);
+  });
+
+  it("leaves a write on one page as written", () => {
+    const gate = readGate({ "inventory.receipts": "Edit" } as const);
+    expect(gate).toEqual({ "inventory.receipts": "Edit" });
+    expect(
+      hasPermissions(claimsFor("inventory.shipments", "update"), "c1", gate)
+    ).toBe(false);
+  });
+
+  it("widens each value of a keyed rule, and leaves a shared table's list", () => {
+    const keyed = readGate({
+      by: "side",
+      rules: {
+        a: { "users.employeeTypes": "View" },
+        b: { "users.accounts": "Edit" }
+      }
+    });
+    expect(
+      meetsRequirement(
+        claimsFor("users.accounts", "view"),
+        "c1",
+        resolvePermissions(keyed as never, { side: "a" }) as never
+      )
+    ).toBe(true);
+    expect(resolvePermissions(keyed as never, { side: "b" })).toEqual({
+      "users.accounts": "Edit"
+    });
+    const list = anyOfRule("item", "View");
+    expect(readGate(list)).toEqual(list);
   });
 });

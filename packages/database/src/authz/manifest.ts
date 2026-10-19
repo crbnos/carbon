@@ -103,7 +103,19 @@ const grantRows = (apiKeyAction: "view" | "create" | "update" | "delete") =>
     and(isNotNull("userId"), inCompany("companyId", "users.accounts_update")),
     and(
       isNotNull("employeeTypeId"),
-      inCompany("companyId", "users.employeeTypes_update")
+      // A role's grants read like any Users table: View on a Users page (the
+      // person Access tab shows the role's levels). Writing them needs Employee Types.
+      inCompany(
+        "companyId",
+        apiKeyAction === "view"
+          ? anyOf(
+              "users.accounts_view",
+              "users.operators_view",
+              "users.groups_view",
+              "users.employeeTypes_view"
+            )
+          : "users.employeeTypes_update"
+      )
     ),
     and(
       isNotNull("apiKeyId"),
@@ -471,7 +483,7 @@ export const manifest = {
   employeePin: serviceOnly(),
   employeeShift: company("people", { read: "people_view" }),
   employeeType: company("users", {
-    read: "users_update",
+    read: "users_view",
     create: "users_update",
     delete: "users_update"
   }),

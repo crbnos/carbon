@@ -18,6 +18,7 @@ import {
   type RequiredPermissions,
   type Requirement,
   type RowsToRead,
+  readGate,
   requirementOfRows,
   resolvePermissions
 } from "./permissions";
@@ -462,6 +463,8 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
   // Compiled on the first call, not at import: a module of service functions
   // would otherwise pay for every schema at startup, used or not.
   let schema: I | undefined;
+  // A read on one page admits any page of its module (spec, "Reads").
+  const permission = readGate(definition.permission);
 
   const call = async (
     ctx: ServiceContext,
@@ -480,7 +483,7 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
     if (ctx instanceof Context && ctx.nested) {
       let required: Requirement | RowsToRead;
       try {
-        required = resolvePermissions(definition.permission, parsed.data);
+        required = resolvePermissions(permission, parsed.data);
       } catch (err) {
         return failed(
           new CarbonError(
@@ -493,7 +496,7 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
         return failed(forbidden(ctx, required));
       }
     } else {
-      const refusal = await refusalOf(ctx, definition.permission, parsed.data);
+      const refusal = await refusalOf(ctx, permission, parsed.data);
       if (refusal) return failed(refusal);
     }
 
@@ -526,7 +529,7 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
 
   return Object.assign(call, {
     input: definition.input,
-    permission: definition.permission
+    permission
   });
 }
 

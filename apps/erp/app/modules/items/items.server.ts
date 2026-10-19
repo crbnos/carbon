@@ -3124,9 +3124,7 @@ export const getMaterialForms = defineServiceFn({
  */
 export const getMaterialFormsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {
-    anyOf: [{ "parts.shapes": "View" }, { "parts.materials": "View" }]
-  },
+  permission: { "parts.shapes": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3253,9 +3251,7 @@ export const getMaterialSubstances = defineServiceFn({
  */
 export const getMaterialSubstancesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {
-    anyOf: [{ "parts.substances": "View" }, { "parts.materials": "View" }]
-  },
+  permission: { "parts.substances": "View" },
   async run(ctx) {
     return unwrap(
       ctx,

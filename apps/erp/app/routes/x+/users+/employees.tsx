@@ -51,13 +51,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (employees.error) {
     throw redirect(
-      path.to.users,
+      path.to.authenticatedRoot,
       await flash(request, error(employees.error, "Error loading employees"))
     );
   }
   if (employeeTypes.error) {
     throw redirect(
-      path.to.users,
+      path.to.authenticatedRoot,
       await flash(
         request,
         error(employeeTypes.error, "Error loading employee types")

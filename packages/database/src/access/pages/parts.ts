@@ -84,7 +84,7 @@ export const PARTS_PAGES = [
     tables: ["item", "material"],
     where: { table: "item", column: "type", value: "Material" },
     children: ITEM_CHILDREN,
-    readers: [...ITEM_READERS, "materialForm", "materialSubstance"],
+    readers: ITEM_READERS,
     paths: ["/x/items/materials", "/x/material/"]
   },
   {

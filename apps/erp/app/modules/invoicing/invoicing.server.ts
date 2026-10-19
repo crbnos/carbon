@@ -2945,23 +2945,17 @@ export const getInvoiceSettlements = defineServiceFn({
   }
 });
 
-/** A read for one invoice: the page of the invoice's side. */
-const invoiceSidePages = {
-  sales: { "invoicing.salesInvoices": "View" },
-  purchase: { "invoicing.purchaseInvoices": "View" }
-} as const;
-
 /**
  * Get invoice settlements for invoice
  *
  * @mcp read
  */
 export const getInvoiceSettlementsForInvoice = defineServiceFn({
-  input: z.object({
+  input: z.looseObject({
     side: z.enum(["sales", "purchase"]),
     invoiceId: z.string()
   }),
-  permission: { by: "side", rules: invoiceSidePages },
+  permission: { "invoicing.payments": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3403,8 +3397,8 @@ export const getAvailableCreditsForParty = defineServiceFn({
  * @mcp read
  */
 export const getCompanyHasOpenCredits = defineServiceFn({
-  input: z.object({ side: z.enum(["sales", "purchase"]) }),
-  permission: { by: "side", rules: invoiceSidePages },
+  input: z.looseObject({ side: z.enum(["sales", "purchase"]) }),
+  permission: { "invoicing.payments": "View" },
   async run(ctx, input) {
     return await service.getCompanyHasOpenCredits(
       ctx.asCaller.supabase,

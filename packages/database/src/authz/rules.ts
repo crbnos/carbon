@@ -16,7 +16,9 @@ import {
   sql
 } from "kysely";
 import {
+  moduleOf,
   type PermissionKey,
+  pagesOf,
   placeOf,
   readersOf,
   type TablePlace
@@ -84,6 +86,15 @@ const either = (terms: RawBuilder<unknown>[]) =>
     : sql`(${sql.join(terms, sql` OR `)})`;
 
 /**
+ * The keys that admit `action` on what `page` owns. A read admits View on any
+ * page of the page's module; a write needs the page itself.
+ */
+const pageKeys = (page: string, action: Action): string[] =>
+  action === "view"
+    ? pagesOf(moduleOf(page)).map((id) => `${id}_view`)
+    : [`${page}_${action}`];
+
+/**
  * A shared table's rows, one branch per page: the page's rows and the page's
  * key. A child table reaches its parent row through its path, one `EXISTS`
  * per hop, and checks the parent's branches. Every hop is in the company of
@@ -104,7 +115,9 @@ const branches = (
         branch.value === undefined
           ? sql`${column} IS NOT NULL`
           : sql`${column} = ${sql.lit(branch.value)}`
-      } AND ${holds(subject, `${branch.page}_${action}`)})`;
+      } AND ${either(
+        pageKeys(branch.page, action).map((key) => holds(subject, key))
+      )})`;
     })
   );
   if (place.kind === "shared") return arms;
@@ -125,8 +138,9 @@ const branches = (
 
 /**
  * `subject` is one of the caller's companies (or, for anyOf, satisfies any of
- * them). A module key checks the page that owns the table instead, and a view
- * on it also admits every page that lists the table in `readers`. `company`
+ * them). A module key checks the page that owns the table instead. A view
+ * admits View on any page of that page's module (a child's: its parent's),
+ * and on every page that lists the table in `readers`. Writes stay per page. `company`
  * is the row's own company, qualified, for a child's first hop: the table's
  * `companyId` unless the row has none (a link row, through `exists`).
  */
@@ -155,16 +169,16 @@ const belongsTo = (
       continue;
     }
     if (place.kind === "page") {
-      const key = `${place.page}_${action}`;
-      add(key, () => holds(subject, key));
+      for (const key of pageKeys(place.page, action))
+        add(key, () => holds(subject, key));
     } else if (place.kind === "child" && action === "view") {
       // A child's read never goes through its parent: the parent's SELECT
       // reads its children (item's portal branches read supplierPart), so a
-      // lookup back would make Postgres refuse both tables as recursive.
-      for (const { page } of place.branches) {
-        const key = `${page}_view`;
-        add(key, () => holds(subject, key));
-      }
+      // lookup back would make Postgres refuse both tables as recursive. It
+      // admits View on any page of its parent's module.
+      for (const { page } of place.branches)
+        for (const key of pageKeys(page, "view"))
+          add(key, () => holds(subject, key));
     } else {
       add(`:${action}`, () =>
         branches(

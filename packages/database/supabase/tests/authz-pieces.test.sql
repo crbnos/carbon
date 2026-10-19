@@ -200,6 +200,18 @@ BEGIN
   ASSERT pg_temp.allows('memo', 'SELECT', 'using', jsonb_build_object('supplierId', 'pieces-supplier', 'companyId', company_a)),
     'every employee reads memos';
   RAISE NOTICE 'PASS page keys on a shared table by party (Credit Memos Edit, Supplier Credits View)';
+
+  -- A restricted read admits View on any page of the owner's module; a write needs
+  -- the page itself (materialForm sits on Items → Shapes).
+  PERFORM pg_temp.act_as(t);
+  ASSERT pg_temp.allows('materialForm', 'SELECT', 'using', jsonb_build_object('companyId', company_a)),
+    'Tools at Edit reads Shapes: a page of the same module';
+  ASSERT NOT pg_temp.allows('materialForm', 'UPDATE', 'using', jsonb_build_object('companyId', company_a)),
+    'Tools at Edit does not change a shape';
+  PERFORM pg_temp.act_as(m);
+  ASSERT NOT pg_temp.allows('materialForm', 'SELECT', 'using', jsonb_build_object('companyId', company_a)),
+    'Invoicing pages do not read Shapes';
+  RAISE NOTICE 'PASS a read admits any page of the module; a write needs the page';
   RESET ROLE;
 END
 $proof$;

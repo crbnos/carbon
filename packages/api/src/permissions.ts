@@ -13,7 +13,9 @@ import {
   type Level,
   type PAGES,
   type PageId,
-  placeOf
+  pageById,
+  placeOf,
+  readPages
 } from "@carbon/database/access";
 import { ForbiddenError, InvalidInputError, NotFoundError } from "./errors";
 
@@ -187,6 +189,62 @@ export function anyOfRule<T extends string, L extends GateLevel>(
       (rule) => rule.then as OnePageOf<SharedPageId<T>, L>
     )
   };
+}
+
+/** `{ "<page>": "View" }`: the read `readGate` widens. */
+function onePageRead(rule: unknown): string | null {
+  if (typeof rule !== "object" || rule === null) return null;
+  const entries = Object.entries(rule);
+  if (entries.length !== 1) return null;
+  const [page, level] = entries[0] as [string, unknown];
+  return level === "View" && pageById(page) ? page : null;
+}
+
+/**
+ * A read on one page admits View on any page of its module and on its
+ * cross-module readers (`readPages`), the reads RLS renders. `defineServiceFn`
+ * applies it to every permission; the manifest generator publishes the same.
+ * A write stays as written, and so does a row rule: the row picks the page of
+ * a table several pages share (an item by its type).
+ */
+export function readGate<R>(rule: R): R {
+  const widen = (entry: unknown): unknown => {
+    const page = onePageRead(entry);
+    const pages = page ? readPages(page) : [];
+    return pages.length > 1
+      ? { anyOf: pages.map((id) => ({ [id]: "View" })) }
+      : entry;
+  };
+  if (typeof rule !== "object" || rule === null) return rule;
+  if ("anyOf" in rule) {
+    // A list of a shared table's pages (`anyOfRule`) stays: RLS picks its rows.
+    const entries = (rule as AnyOfRule).anyOf.flatMap((entry) => {
+      const page = onePageRead(entry);
+      if (page && pageById(page)?.where) return [entry];
+      const widened = widen(entry);
+      return typeof widened === "object" && widened && "anyOf" in widened
+        ? (widened as AnyOfRule).anyOf
+        : [entry];
+    });
+    const seen = new Set<string>();
+    return {
+      anyOf: entries.filter((entry) => {
+        const key = JSON.stringify(entry);
+        return seen.has(key) ? false : (seen.add(key), true);
+      })
+    } as R;
+  }
+  if ("by" in rule && "rules" in rule) {
+    const { rules } = rule as { rules: Record<string, unknown> };
+    return {
+      ...rule,
+      rules: Object.fromEntries(
+        Object.entries(rules).map(([value, entry]) => [value, widen(entry)])
+      )
+    } as R;
+  }
+  if ("row" in rule) return rule;
+  return widen(rule) as R;
 }
 
 /**

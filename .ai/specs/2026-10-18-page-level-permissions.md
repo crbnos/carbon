@@ -128,6 +128,19 @@ entries that share a path are filters of one list and form one page.
   Fleet and seven more). Reporting caps at Full, Payables and Receivables at
   Create and Audit Logs at Edit, because their routes have actions.
 
+### Reads and writes
+
+A write needs the page that owns the table. A read of a table that needs a
+permission admits View on any page of the module that owns the table, plus
+the pages listed as its `readers` in other modules. So any Sales page reads
+customers, and Receipts reads suppliers only as a reader. The user chose
+this on 2026-10-19: pages that join a restricted table showed blanks, not
+errors, and reads followed the module before the split.
+
+A role's grants and the employee types read with View on any Users page.
+Writing them needs Employee Types at Edit. Accounts needs both reads to
+assign a role and to show the levels a person inherits.
+
 ### Pages that share a table
 
 Two cases are known: the five item types share `item` (column `type`), and

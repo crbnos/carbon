@@ -4135,13 +4135,7 @@ export const getPurchaseOrderLine = defineServiceFn({
  */
 export const getPurchasingDocumentsAssignedToMe = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {
-    anyOf: [
-      { "purchasing.purchaseOrders": "View" },
-      { "purchasing.supplierQuotes": "View" },
-      { "invoicing.purchaseInvoices": "View" }
-    ]
-  },
+  permission: { "purchasing.purchaseOrders": "View" },
   async run(ctx) {
     return await service.getPurchasingDocumentsAssignedToMe(
       ctx.asCaller.supabase,
@@ -4193,12 +4187,7 @@ export const getPurchasingPlanning = defineServiceFn({
  */
 export const getSupplier = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
-  permission: {
-    anyOf: [
-      { "purchasing.suppliers": "View" },
-      { "purchasing.purchaseOrders": "View" }
-    ]
-  },
+  permission: { "purchasing.suppliers": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4275,11 +4264,10 @@ export const getSupplierInteraction = defineServiceFn({
  */
 export const getSupplierInteractionDocuments = defineServiceFn({
   input: z.looseObject({ interactionId: z.string() }),
+  // Read for an invoice too: a cross-module reader.
   permission: {
     anyOf: [
-      { "purchasing.rfqs": "View" },
       { "purchasing.purchaseOrders": "View" },
-      { "purchasing.supplierQuotes": "View" },
       { "invoicing.purchaseInvoices": "View" }
     ]
   },

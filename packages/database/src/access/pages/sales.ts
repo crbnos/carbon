@@ -62,7 +62,6 @@ export const SALES_PAGES = [
       "opportunity"
     ],
     readers: [
-      "customer",
       "customerPartToItem",
       "itemCost",
       "itemUnitSalePrice",
@@ -86,13 +85,10 @@ export const SALES_PAGES = [
       "fulfillment"
     ],
     readers: [
-      "customer",
       "customerPartToItem",
       "itemCost",
       "itemUnitSalePrice",
-      "opportunity",
       "paymentTerm",
-      "quote",
       "shipment",
       "shipmentLine",
       "terms"

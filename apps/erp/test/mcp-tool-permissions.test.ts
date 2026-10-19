@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { moduleOf, PAGES, readPages } from "@carbon/database/access";
 import { describe, expect, it } from "vitest";
 import metadata from "../app/routes/api+/mcp+/lib/tool-metadata.json";
 
@@ -37,14 +38,39 @@ const byItemType = (level: string) => ({
 
 const allTools = metadata.tools as Tool[];
 
+// A read on one page admits View on any page of its module and on its
+// cross-module readers (`readPages`, the gate `readGate` runs), in registry order.
+const ORDER = PAGES.map((page) => page.id as string);
+const readPagesOf = (page: string) =>
+  [...readPages(page)].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
+const read = (page: string): Tool["permission"] => {
+  const pages = readPagesOf(page);
+  const modules = new Set(pages.map(moduleOf));
+  const [module] = modules;
+  const oneOf = { pages, level: "View", by: [] };
+  return modules.size === 1 && module
+    ? { module, actions: ["view"], oneOf }
+    : { module: null, actions: [], oneOf };
+};
+/** A tool whose gate is a widened read: its pages hold a whole module. */
+const isWidenedRead = (t: Tool) => {
+  const pages = t.permission.oneOf?.pages ?? [];
+  if (t.permission.oneOf?.by.length) return false;
+  return pages.some((page) =>
+    PAGES.every(
+      (p) => moduleOf(p.id) !== moduleOf(page) || pages.includes(p.id)
+    )
+  );
+};
+
 // Operations pinned exactly, and excluded from the general assertions below.
 const OVERRIDES: Record<string, Tool["permission"]> = {
   // The page registry moved these tables to a page of another module, and
   // the gate follows the page. Each is pinned so the move stays visible.
   // Storage types are on Inventory → Storage Types (was parts).
-  inventory_getStorageTypes: { module: "inventory", page: "inventory.storageTypes", actions: ["view"] },
-  inventory_getStorageType: { module: "inventory", page: "inventory.storageTypes", actions: ["view"] },
-  inventory_getStorageTypeUsage: { module: "inventory", page: "inventory.storageTypes", actions: ["view"] },
+  inventory_getStorageTypes: read("inventory.storageTypes"),
+  inventory_getStorageType: read("inventory.storageTypes"),
+  inventory_getStorageTypeUsage: read("inventory.storageTypes"),
   inventory_createStorageType: {
     module: "inventory", page: "inventory.storageTypes",
     actions: ["view", "create"]
@@ -58,10 +84,7 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     actions: ["view", "create", "update", "delete"]
   },
   // Bank details need Accounting → Bank Accounts, not the partner page.
-  purchasing_getSupplierBankAccounts: {
-    module: "accounting", page: "accounting.bankAccounts",
-    actions: ["view"]
-  },
+  purchasing_getSupplierBankAccounts: read("accounting.bankAccounts"),
   purchasing_createSupplierBankAccount: {
     module: "accounting", page: "accounting.bankAccounts",
     actions: ["view", "create"]
@@ -74,10 +97,7 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     module: "accounting", page: "accounting.bankAccounts",
     actions: ["view", "create", "update", "delete"]
   },
-  sales_getCustomerBankAccounts: {
-    module: "accounting", page: "accounting.bankAccounts",
-    actions: ["view"]
-  },
+  sales_getCustomerBankAccounts: read("accounting.bankAccounts"),
   sales_createCustomerBankAccount: {
     module: "accounting", page: "accounting.bankAccounts",
     actions: ["view", "create"]
@@ -109,9 +129,9 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   },
   // Failure modes, dispatches and schedules are Resources pages (was
   // production; the tables' RLS was already resources).
-  production_getFailureMode: { module: "resources", page: "resources.failureModes", actions: ["view"] },
-  production_getFailureModes: { module: "resources", page: "resources.failureModes", actions: ["view"] },
-  production_getFailureModesList: { module: "resources", page: "resources.failureModes", actions: ["view"] },
+  production_getFailureMode: read("resources.failureModes"),
+  production_getFailureModes: read("resources.failureModes"),
+  production_getFailureModesList: read("resources.failureModes"),
   production_createFailureMode: {
     module: "resources", page: "resources.failureModes",
     actions: ["view", "create"]
@@ -124,15 +144,12 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     module: "resources", page: "resources.failureModes",
     actions: ["view", "create", "update", "delete"]
   },
-  production_getMaintenanceDispatch: { module: "resources", page: "resources.dispatches", actions: ["view"] },
+  production_getMaintenanceDispatch: read("resources.dispatches"),
   production_deleteMaintenanceDispatch: {
     module: "resources", page: "resources.dispatches",
     actions: ["view", "create", "update", "delete"]
   },
-  production_getMaintenanceDispatchComments: {
-    module: "resources", page: "resources.dispatches",
-    actions: ["view"]
-  },
+  production_getMaintenanceDispatchComments: read("resources.dispatches"),
   production_createMaintenanceDispatchComment: {
     module: "resources", page: "resources.dispatches",
     actions: ["view", "create"]
@@ -141,10 +158,7 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     module: "resources", page: "resources.dispatches",
     actions: ["view", "create", "update"]
   },
-  production_getMaintenanceDispatchEvents: {
-    module: "resources", page: "resources.dispatches",
-    actions: ["view"]
-  },
+  production_getMaintenanceDispatchEvents: read("resources.dispatches"),
   production_createMaintenanceDispatchEvent: {
     module: "resources", page: "resources.dispatches",
     actions: ["view", "create"]
@@ -157,10 +171,7 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     module: "resources", page: "resources.dispatches",
     actions: ["view", "create", "update", "delete"]
   },
-  production_getMaintenanceDispatchItems: {
-    module: "resources", page: "resources.dispatches",
-    actions: ["view"]
-  },
+  production_getMaintenanceDispatchItems: read("resources.dispatches"),
   production_createMaintenanceDispatchItem: {
     module: "resources", page: "resources.dispatches",
     actions: ["view", "create"]
@@ -169,7 +180,7 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     module: "resources", page: "resources.dispatches",
     actions: ["view", "create", "update"]
   },
-  production_getMaintenanceSchedule: { module: "resources", page: "resources.schedules", actions: ["view"] },
+  production_getMaintenanceSchedule: read("resources.schedules"),
   production_createMaintenanceSchedule: {
     module: "resources", page: "resources.schedules",
     actions: ["view", "create"]
@@ -189,10 +200,7 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   },
   // Supplier processes are on Resources → Processes (was purchasing; the
   // table's RLS was already resources).
-  purchasing_getSupplierProcessesByProcess: {
-    module: "resources", page: "resources.processes",
-    actions: ["view"]
-  },
+  purchasing_getSupplierProcessesByProcess: read("resources.processes"),
   purchasing_createSupplierProcess: {
     module: "resources", page: "resources.processes",
     actions: ["view", "create"]
@@ -221,8 +229,8 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     actions: ["view", "create", "update"]
   },
   // ITAR certifications are on Settings → ITAR Certifications (was users).
-  users_getItarCertificationStatus: { module: "settings", page: "settings.itarCertifications", actions: ["view"] },
-  users_getItarCertificationReport: { module: "settings", page: "settings.itarCertifications", actions: ["view"] },
+  users_getItarCertificationStatus: read("settings.itarCertifications"),
+  users_getItarCertificationReport: read("settings.itarCertifications"),
   // Gated on another module than their own on purpose. Each must match the
   // permission the ERP route that does the same thing requires: an OAuth
   // connector or API key gated more loosely than the screen can do what the
@@ -234,7 +242,7 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     actions: ["view", "create"]
   },
   // A serial unit's carrying cost, and re-booking it, are accounting figures.
-  inventory_getSerialUnitCosts: { module: "accounting", page: "accounting.reporting", actions: ["view"] },
+  inventory_getSerialUnitCosts: read("accounting.reporting"),
   inventory_recostSerialUnit: {
     module: "accounting", page: "accounting.reporting",
     actions: ["view", "create", "update"]
@@ -297,11 +305,8 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   accounting_sellFixedAsset: { module: "sales", page: "sales.salesOrders", actions: ["view", "create"] },
   // Inventory value is an accounting figure: the valuation report requires
   // accounting.
-  inventory_getInventoryValuation: { module: "accounting", page: "accounting.reporting", actions: ["view"] },
-  inventory_getInventoryValuationTieOut: {
-    module: "accounting", page: "accounting.reporting",
-    actions: ["view"]
-  },
+  inventory_getInventoryValuation: read("accounting.reporting"),
+  inventory_getInventoryValuationTieOut: read("accounting.reporting"),
   // A quote's steps need Jobs AND Quotes, which the API cannot name as one
   // module, so the function's own gate checks both.
   production_updateQuoteOperationStepOrder: { module: null, actions: [] },
@@ -480,75 +485,23 @@ describe("gates the row decides", () => {
     });
   });
 
-  // A read several pages need: the owner's page, or any page that shows the
-  // rows (a reader in the registry). RLS filters the rows.
-  const READER_GATES: Record<string, string[]> = {
-    accounting_getFiscalYearSettings: [
-      "accounting.chartOfAccounts",
-      "accounting.fiscalYear"
-    ],
-    accounting_getFixedAssetClassesList: [
-      "accounting.assets",
-      "accounting.assetClasses"
-    ],
-    accounting_getPeriodRunRelatedItems: [
-      "accounting.journalEntries",
-      "accounting.depreciation",
-      "accounting.leases",
-      "accounting.revenueRecognition"
-    ],
-    items_getMaterialFormsList: ["parts.materials", "parts.shapes"],
-    items_getMaterialSubstancesList: ["parts.materials", "parts.substances"],
-    people_getAttributeCategories: ["people.employees", "people.attributes"],
-    purchasing_getPurchasingDocumentsAssignedToMe: [
-      "invoicing.purchaseInvoices",
-      "purchasing.purchaseOrders",
-      "purchasing.supplierQuotes"
-    ],
-    purchasing_getSupplier: [
-      "purchasing.suppliers",
-      "purchasing.purchaseOrders"
-    ],
-    purchasing_getSupplierInteractionDocuments: [
-      "invoicing.purchaseInvoices",
-      "purchasing.purchaseOrders",
-      "purchasing.rfqs",
-      "purchasing.supplierQuotes"
-    ],
-    quality_getInspectionSamplingPlans: [
-      "quality.inspections",
-      "quality.inspectionPlans"
-    ],
-    quality_getRequiredActionsList: [
-      "quality.actions",
-      "quality.issues",
-      "quality.actionTypes",
-      "quality.issueWorkflows"
-    ],
-    sales_getCustomer: ["sales.customers", "sales.quotes", "sales.salesOrders"],
-    sales_getOpportunity: ["sales.quotes", "sales.salesOrders"],
-    sales_getOpportunityDocuments: [
-      "invoicing.salesInvoices",
-      "sales.rfqs",
-      "sales.quotes",
-      "sales.salesOrders"
-    ],
-    sales_getQuote: ["sales.quotes", "sales.salesOrders"],
-    sales_getSalesDocumentsAssignedToMe: [
-      "sales.rfqs",
-      "sales.quotes",
-      "sales.salesOrders"
-    ]
-  };
+  it("widens a one-page read to its module and cross-module readers", () => {
+    expect(named("inventory_getReceipts")).toEqual(read("inventory.receipts"));
+    expect(named("users_getEmployeeTypes")).toEqual(read("users.employeeTypes"));
+    expect(read("users.employeeTypes").oneOf?.pages).toContain("users.accounts");
+    expect(named("purchasing_getSupplier")).toEqual(read("purchasing.suppliers"));
+    // Writes stay per page.
+    expect(named("inventory_createReceipt")).toEqual({
+      module: "inventory",
+      page: "inventory.receipts",
+      actions: ["view", "create"]
+    });
+  });
 
-  it("lets a page read what it shows from a sibling page", () => {
-    expect(
-      Object.fromEntries(
-        oneOf
-          .filter((t) => t.name in READER_GATES)
-          .map((t) => [t.name, t.permission.oneOf?.pages])
-      )
-    ).toEqual(READER_GATES);
+  it("widens each entry of a cross-module read list", () => {
+    const pages = named("sales_getOpportunityDocuments")?.oneOf?.pages ?? [];
+    for (const page of [...readPages("sales.quotes"), ...readPages("invoicing.salesInvoices")])
+      expect(pages, page).toContain(page);
   });
 
   it("names the pages of one shared table, in one module", () => {
@@ -557,7 +510,7 @@ describe("gates the row decides", () => {
       invoicing: ["invoicing.supplierCredits", "invoicing.creditMemos"],
       accounting: ["accounting.leases", "accounting.revenueRecognition"]
     };
-    for (const t of oneOf.filter((t) => !(t.name in READER_GATES))) {
+    for (const t of oneOf.filter((t) => !isWidenedRead(t))) {
       const module = t.permission.module ?? "";
       expect(t.permission.oneOf?.pages, t.name).toEqual(tables[module]);
     }
@@ -565,7 +518,7 @@ describe("gates the row decides", () => {
       Object.keys(tables).map((module) => [
         module,
         oneOf.filter(
-          (t) => t.permission.module === module && !(t.name in READER_GATES)
+          (t) => t.permission.module === module && !isWidenedRead(t)
         ).length
       ])
     );
@@ -588,8 +541,9 @@ describe("gates the row decides", () => {
 
 describe("gates of one page", () => {
   it("publish the page, in the module they publish", () => {
+    // A write names its page; a read admits its module (`readGate`).
     const paged = allTools.filter((t) => t.permission.page);
-    expect(paged.length).toBeGreaterThan(1000);
+    expect(paged.length).toBeGreaterThan(750);
     for (const t of paged) {
       expect(t.permission.page?.split(".")[0], t.name).toBe(
         t.permission.module

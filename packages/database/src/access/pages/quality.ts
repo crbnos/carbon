@@ -10,11 +10,7 @@ export const QUALITY_PAGES = [
     label: "Actions",
     maxLevel: "View",
     tables: [],
-    readers: [
-      "nonConformanceActionTask",
-      "nonConformance",
-      "nonConformanceRequiredAction"
-    ],
+    readers: ["nonConformanceActionTask", "nonConformance"],
     paths: ["/x/quality/actions"]
   },
   {
@@ -41,7 +37,6 @@ export const QUALITY_PAGES = [
       "nonConformanceSupplier",
       "nonConformanceTrackedEntity"
     ],
-    readers: ["nonConformanceRequiredAction"],
     paths: ["/x/quality/issues", "/x/issue/"]
   },
   {
@@ -75,7 +70,6 @@ export const QUALITY_PAGES = [
       "inspectionMeasurement",
       "inspectionSample"
     ],
-    readers: ["inspectionSamplingPlan"],
     paths: ["/x/quality/inspections", "/x/inspection/"]
   },
   {
@@ -124,7 +118,6 @@ export const QUALITY_PAGES = [
     label: "Issue Workflows",
     maxLevel: "Full",
     tables: ["nonConformanceWorkflow"],
-    readers: ["nonConformanceRequiredAction"],
     paths: ["/x/quality/issue-workflows", "/x/issue-workflow/"]
   }
 ] as const satisfies readonly Page[];

@@ -10,7 +10,6 @@ export const PEOPLE_PAGES = [
     label: "Employees",
     maxLevel: "Full",
     tables: ["employeeJob", "employeeShift"],
-    readers: ["userAttribute"],
     paths: ["/x/people/employee", "/x/person/"]
   },
   {

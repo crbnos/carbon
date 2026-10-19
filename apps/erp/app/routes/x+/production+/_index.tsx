@@ -5,7 +5,7 @@
 import { useCarbon } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { activeJobStatuses } from "@carbon/database";
-import { anyOf, holdsGate, pagesOf } from "@carbon/database/access";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import { useChangedRows, useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -109,7 +109,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId, api, permissions } = await authorize(
+  const { client, companyId, userId, api } = await authorize(
     request,
     anyOf(pagesOf("production"), "View")
   );
@@ -135,10 +135,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     assignedJobs: assignedJobs.data?.length ?? 0,
     unbatchedOperations: unbatchedOperations.count ?? 0,
     workCenters: workCenters.data ?? [],
-    // The dashboard opens for any Production page; events need Jobs.
-    events: holdsGate(permissions, { "production.jobs": "View" }, companyId)
-      ? api.production.getActiveProductionEvents({})
-      : Promise.resolve({ data: [], error: null })
+    events: api.production.getActiveProductionEvents({})
   };
 }
 

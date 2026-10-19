@@ -3003,14 +3003,7 @@ export const getQualityFiles = defineServiceFn({
  */
 export const getRequiredActionsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: {
-    anyOf: [
-      { "quality.actionTypes": "View" },
-      { "quality.issues": "View" },
-      { "quality.actions": "View" },
-      { "quality.issueWorkflows": "View" }
-    ]
-  },
+  permission: { "quality.actionTypes": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3848,12 +3841,7 @@ export const getInspectionTrackedEntities = defineServiceFn({
  */
 export const getInspectionSamplingPlans = defineServiceFn({
   input: z.looseObject({ inspectionId: z.string() }),
-  permission: {
-    anyOf: [
-      { "quality.inspectionPlans": "View" },
-      { "quality.inspections": "View" }
-    ]
-  },
+  permission: { "quality.inspectionPlans": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,

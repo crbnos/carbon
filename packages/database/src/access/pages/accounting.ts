@@ -51,7 +51,6 @@ export const ACCOUNTING_PAGES = [
     label: "Depreciation",
     maxLevel: "Full",
     tables: ["depreciationRun", "depreciationRunLine"],
-    readers: ["journal"],
     paths: ["/x/accounting/depreciation-runs", "/x/depreciation-run/"]
   },
   {
@@ -61,7 +60,7 @@ export const ACCOUNTING_PAGES = [
     tables: ["revenueRecognitionRun"],
     where: { table: "revenueRecognitionRun", column: "type", value: "Lease" },
     children: [{ table: "revenueRecognitionRunLine", via: "runId" }],
-    readers: ["revenueRecognitionSchedule", "journal"],
+    readers: ["revenueRecognitionSchedule"],
     paths: ["/x/accounting/lease-runs"]
   },
   {
@@ -75,7 +74,6 @@ export const ACCOUNTING_PAGES = [
       value: "Revenue Recognition"
     },
     children: [{ table: "revenueRecognitionRunLine", via: "runId" }],
-    readers: ["journal"],
     paths: ["/x/accounting/revenue-recognition-runs"]
   },
   {
@@ -89,7 +87,6 @@ export const ACCOUNTING_PAGES = [
       "fixedAssetTransfer",
       "fixedAssetUsageLog"
     ],
-    readers: ["fixedAssetClass"],
     paths: ["/x/accounting/fixed-assets", "/x/fixed-asset/"]
   },
   {
@@ -112,7 +109,6 @@ export const ACCOUNTING_PAGES = [
     label: "Chart of Accounts",
     maxLevel: "Full",
     tables: ["account"],
-    readers: ["fiscalYearSettings"],
     paths: ["/x/accounting/charts", "/x/accounting/chart-import"]
   },
   {

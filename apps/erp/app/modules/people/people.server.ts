@@ -398,9 +398,7 @@ export const getAttributeCategories = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: {
-    anyOf: [{ "people.attributes": "View" }, { "people.employees": "View" }]
-  },
+  permission: { "people.attributes": "View" },
   async run(ctx, input) {
     return paged(
       ctx,

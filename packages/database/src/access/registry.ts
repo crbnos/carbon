@@ -212,6 +212,26 @@ export function readersOf(table: string): readonly string[] {
   return index().readers.get(table) ?? [];
 }
 
+/**
+ * The pages whose View admits a read of what a page owns: every page of its
+ * module, then the pages of other modules that list one of its tables in
+ * `readers`. Writes stay per page. RLS (`render`) and the read gates of
+ * service functions (`readGate`, `@carbon/api/permissions`) both use it.
+ */
+export function readPages(pageId: string): PageId[] {
+  const module = moduleOf(pageId);
+  const others = new Set<string>();
+  for (const table of pageById(pageId)?.tables ?? [])
+    for (const reader of readersOf(table))
+      if (moduleOf(reader) !== module) others.add(reader);
+  return [
+    ...pagesOf(module),
+    ...(PAGES as readonly Page[])
+      .map((page) => page.id as PageId)
+      .filter((id) => others.has(id))
+  ];
+}
+
 /** A level at most the page's `maxLevel`. Grant writers call it; the resolver does not. */
 export function clampLevel(pageId: string, level: Level): Level {
   const page = PAGE_BY_ID.get(pageId);

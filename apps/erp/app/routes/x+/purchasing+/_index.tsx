@@ -5,7 +5,7 @@
 import { dataOrThrow } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { anyOf, holdsGate, pagesOf } from "@carbon/database/access";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import type { ApprovalRequest } from "@carbon/ee/approvals";
 import { getPendingApprovalsForApprover } from "@carbon/ee/approvals.server";
 import { useLoaderQuery } from "@carbon/query";
@@ -111,22 +111,9 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId, api, permissions } = await authorize(
+  const { client, userId, companyId, api } = await authorize(
     request,
     anyOf(pagesOf("purchasing"), "View")
-  );
-  // The dashboard opens for any Purchasing page; a section reads only what the person can view.
-  const listsDocuments = holdsGate(
-    permissions,
-    anyOf(
-      [
-        "purchasing.purchaseOrders",
-        "purchasing.supplierQuotes",
-        "invoicing.purchaseInvoices"
-      ],
-      "View"
-    ),
-    companyId
   );
 
   const serviceRole = getCarbonServiceRole();
@@ -209,9 +196,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : { data: [], error: null }
   ]);
 
-  const assignedToMePromise = listsDocuments
-    ? api.purchasing.getPurchasingDocumentsAssignedToMe({}).then(dataOrThrow)
-    : Promise.resolve([]);
+  const assignedToMePromise = api.purchasing
+    .getPurchasingDocumentsAssignedToMe({})
+    .then(dataOrThrow);
 
   return {
     openPurchaseOrders: openPurchaseOrders,

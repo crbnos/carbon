@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, test } from "vitest";
+import { pagesOf, readersOf } from "../access/registry";
 import { manifest } from "./manifest";
 import {
   type AnyRule,
@@ -149,7 +150,15 @@ describe("render: module keys become page keys", () => {
     );
   });
 
-  test("a restricted read also admits every page that lists the table in readers", () => {
+  // A read admits View on any page of the owner's module, then its readers.
+  const readKeys = (module: string, table: string) =>
+    [...new Set([...pagesOf(module), ...readersOf(table)])]
+      .map(
+        (page) => `"companyId" = ANY ((SELECT ${key(`${page}_view`)})::text[])`
+      )
+      .join(" OR ");
+
+  test("a restricted read admits any page of the owner's module and every reader", () => {
     const select = policy(
       render(
         company("purchasing", { read: "purchasing_view" }),
@@ -158,7 +167,15 @@ describe("render: module keys become page keys", () => {
       "SELECT"
     );
     expect(select).toBe(
-      `CREATE POLICY "SELECT" ON "public"."purchaseOrder" FOR SELECT USING (("companyId" = ANY ((SELECT ${key("purchasing.purchaseOrders_view")})::text[]) OR "companyId" = ANY ((SELECT ${key("inventory.receipts_view")})::text[]) OR "companyId" = ANY ((SELECT ${key("invoicing.purchaseInvoices_view")})::text[])));`
+      `CREATE POLICY "SELECT" ON "public"."purchaseOrder" FOR SELECT USING ((${readKeys("purchasing", "purchaseOrder")}));`
+    );
+    expect(select).toContain(key("purchasing.types_view"));
+    expect(select).toContain(key("inventory.receipts_view"));
+    // Writes stay per page.
+    expect(
+      policy(render(company("purchasing"), "purchaseOrder"), "UPDATE")
+    ).toBe(
+      `CREATE POLICY "UPDATE" ON "public"."purchaseOrder" FOR UPDATE USING ("companyId" = ANY ((SELECT ${key("purchasing.purchaseOrders_update")})::text[]));`
     );
   });
 
@@ -210,7 +227,7 @@ describe("render: module keys become page keys", () => {
     expect(insert).not.toContain(`"methodMaterialStep"."companyId"`);
   });
 
-  test("a child read names no parent table: any page of the shared entry, plus readers", () => {
+  test("a child read names no parent table: any page of its parent's module, plus readers", () => {
     const select = policy(
       render(
         company("parts", { read: anyOf("parts_view", "purchasing_view") }),
@@ -220,19 +237,7 @@ describe("render: module keys become page keys", () => {
     );
     expect(select).not.toContain(`"public"."item"`);
     expect(select).toBe(
-      `CREATE POLICY "SELECT" ON "public"."supplierPart" FOR SELECT USING (${[
-        "parts.parts_view",
-        "parts.materials_view",
-        "parts.tools_view",
-        "parts.consumables_view",
-        "parts.services_view",
-        "purchasing.suppliers_view",
-        "purchasing.purchaseOrders_view"
-      ]
-        .map((k) => `"companyId" = ANY ((SELECT ${key(k)})::text[])`)
-        .join(" OR ")
-        .replace(/^/, "(")
-        .concat(")")});`
+      `CREATE POLICY "SELECT" ON "public"."supplierPart" FOR SELECT USING ((${readKeys("parts", "supplierPart")}));`
     );
   });
 
