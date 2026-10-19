@@ -8168,7 +8168,7 @@ export async function pushOnshapeRelease(
         // Also keeps the BOM-child pass from writing its fields.
         fieldEditsApplied.add(item.partNumber);
         summary.skipped.push(
-          `${item.partNumber} Rev ${item.revision}: ${lock} Its fields and BOM were left as they are.`
+          `${item.partNumber} Rev ${item.revision}: ${lock} Its fields, BOM, model and drawings were left as they are.`
         );
         continue;
       }
@@ -8761,7 +8761,8 @@ export async function pushOnshapeRelease(
   }> = [];
   for (const item of modelItems) {
     const row = revisionItemByPartNumber.get(item.partNumber);
-    if (!row) continue;
+    // A revision a locked notice holds takes no model; its skip is reported.
+    if (!row || lockedByItemId.has(row.id)) continue;
     assetTargets.push({
       item,
       itemId: row.id,
@@ -8786,6 +8787,7 @@ export async function pushOnshapeRelease(
       );
       continue;
     }
+    if (lockedByItemId.has(targetId)) continue;
     assetTargets.push({ item: drawing, itemId: targetId, kind: "drawing" });
   }
   for (const target of assetTargets) {
