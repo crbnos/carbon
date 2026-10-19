@@ -3700,3 +3700,23 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Do not start reading a cookie, local-storage key or column that code has only ever written. Its values were never a user's deliberate choice. Give the new preference a new name, or start every user from the default.
 
 **Applies to:** `SidebarProvider` and any other write-only client state (`document.cookie`, `localStorage`) that a loader or component begins to read.
+
+## A PostgREST filter on an embedded column needs `!inner`, or it filters nothing
+
+**Context:** The Linear and Jira inbound sync matched an issue's assignee to a Carbon employee with `userToCompany.select("userId,user(email)").in("user.email", [email])` (2026-10-19).
+
+**Problem:** Without `!inner`, PostgREST applies the filter to the embed only: every `userToCompany` row comes back, with `user` set to null where the email did not match. The job took `employees[0]`, so every synced issue assigned the task to the company's first employee. Typecheck and a "returns rows" check both pass.
+
+**Rule:** When a filter on an embedded column must restrict the parent rows, embed it as `relation!inner(...)`. Test it with a non-matching value and expect zero rows.
+
+**Applies to:** every `.eq/.in/.ilike("embed.column", …)` on a Supabase select.
+
+## A JSONB column returns object keys in another order than you wrote them
+
+**Context:** The issue sync stores a hash of a record's rich text (Tiptap JSON) to tell its own writes from real changes (2026-10-19).
+
+**Problem:** `projectElement.description` is JSONB, which re-sorts object keys; action-task `notes` is JSON, which keeps them. A hash of `JSON.stringify` of the written object did not match the hash of the row read back, so every inbound description change looked like a new Carbon change and echoed back to the tracker.
+
+**Rule:** Fingerprint JSON with sorted keys (`hashText` in `packages/ee/src/issue-sync/maps.ts`), never with plain `JSON.stringify`, when one side of the comparison may be a JSONB read.
+
+**Applies to:** snapshot, dedupe or change-detection hashes over JSON/JSONB columns.
