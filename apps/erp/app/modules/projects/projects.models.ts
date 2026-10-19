@@ -3874,16 +3874,9 @@ export const projectChangeRequestCommentValidator = z.object({
   field: zfd.text(z.string().optional())
 });
 
-/**
- * True when the project locks its plan layer: it names a lock milestone and
- * that milestone is completed. After that, plan-layer fields change only
- * through a change request.
- */
-export function isProjectPlanLocked(args: {
-  lockMilestone: { completedAt: string | null } | null | undefined;
-}) {
-  return Boolean(args.lockMilestone?.completedAt);
-}
+// isProjectPlanLocked lives in @carbon/database/project-plan so the issue sync
+// can share it.
+export { isProjectPlanLocked } from "@carbon/database/project-plan";
 
 /** The refusal a plan-layer write gets on a locked plan. */
 export function projectPlanLockedMessage(milestoneName: string) {

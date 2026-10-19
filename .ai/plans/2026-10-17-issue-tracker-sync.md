@@ -28,10 +28,10 @@
 - [x] Task 16: Move the link and create routes onto the engine
 - [x] Task 17: Remove the old outbound path
 - [x] Task 18: Show the refusal in the issue dialogs
-- [ ] Task 19: Phase 1 docs, gate and commit
+- [x] Task 19: Phase 1 docs, gate and commit
 
 **Phase 2 — project elements (PR 3)**
-- [ ] Task 20: Add the project-plan helpers to `@carbon/database`
+- [x] Task 20: Add the project-plan helpers to `@carbon/database`
 - [ ] Task 21: Add `projectElement` to the registry, maps and locks
 - [ ] Task 22: Support `projectElement` in the engine, routes and subscriptions
 - [ ] Task 23: Add the dialogs to the element page

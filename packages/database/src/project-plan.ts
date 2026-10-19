@@ -207,3 +207,50 @@ export function parsePlanSnapshot(value: unknown): ProjectPlanSnapshot {
       : {})
   };
 }
+
+/**
+ * True when the project locks its plan layer: it names a lock milestone and
+ * that milestone is completed. After that, plan-layer fields change only
+ * through a change request.
+ */
+export function isProjectPlanLocked(args: {
+  lockMilestone: { completedAt: string | null } | null | undefined;
+}) {
+  return Boolean(args.lockMilestone?.completedAt);
+}
+
+export type ProjectStateGroup =
+  Database["public"]["Enums"]["projectStateGroup"];
+
+/** An element's `completedAt` for a state group: set on Completed, else cleared. */
+export function completedAtForGroup(
+  group: ProjectStateGroup,
+  now: string
+): string | null {
+  return group === "Completed" ? now : null;
+}
+
+/**
+ * The state an element takes for a state group. It keeps its current state
+ * when that is already in the group (a company can have several), else the
+ * group's default, else the group's first state by `sortOrder`.
+ */
+export function pickStateForGroup(
+  states: Array<{
+    id: string;
+    group: ProjectStateGroup;
+    isDefault: boolean;
+    sortOrder: number;
+  }>,
+  group: ProjectStateGroup,
+  currentStateId: string | null | undefined
+): string | null {
+  const inGroup = states.filter((state) => state.group === group);
+  if (inGroup.some((state) => state.id === currentStateId)) {
+    return currentStateId ?? null;
+  }
+  const preferred =
+    inGroup.find((state) => state.isDefault) ??
+    [...inGroup].sort((a, b) => a.sortOrder - b.sortOrder)[0];
+  return preferred?.id ?? null;
+}

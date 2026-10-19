@@ -6,6 +6,7 @@ import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { toJson } from "@carbon/database/json";
+import { completedAtForGroup } from "@carbon/database/project-plan";
 import {
   BILLABLE_REASON_NO_BILL_RATE,
   datetime,
@@ -1509,8 +1510,10 @@ export async function updateProjectElementField(
         .single();
       if (state.error) return { data: null, error: state.error };
       update.stateId = raw;
-      update.completedAt =
-        state.data.group === "Completed" ? datetime.timestamp() : null;
+      update.completedAt = completedAtForGroup(
+        state.data.group,
+        datetime.timestamp()
+      );
       break;
     }
     case "priority":
