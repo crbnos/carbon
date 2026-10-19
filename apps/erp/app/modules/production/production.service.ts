@@ -17939,7 +17939,9 @@ export async function getMethod(
         throw new Error("Failed to get source materials or operations");
       }
 
-      await db.transaction().execute(async (trx) => {
+      // A new version inserts its header in a transaction and copies inside
+      // it, so a failed copy leaves no empty version behind.
+      const copyLines = async (trx: Transaction<KyselyDatabase>) => {
         // The lines about to be replaced, whose configuration rules go with them.
         const [targetMaterialIds, targetOperationIds] = await Promise.all([
           trx
@@ -18150,7 +18152,12 @@ export async function getMethod(
           companyId,
           userId
         });
-      });
+      };
+      if (db.isTransaction) {
+        await copyLines(db as Transaction<KyselyDatabase>);
+      } else {
+        await db.transaction().execute(copyLines);
+      }
       break;
     }
     case "procedureToOperation": {

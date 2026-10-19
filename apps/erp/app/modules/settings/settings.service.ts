@@ -222,7 +222,7 @@ import {
 import { canEditChangeNoticeEngineering } from "~/modules/items/items.models";
 import {
   cascadeItemTrackingType,
-  copyMakeMethod,
+  createMakeMethodVersion,
   createRevision,
   deleteChangeNotice,
   deleteItem,
@@ -233,7 +233,6 @@ import {
   requireChangeNoticeEditable,
   updateDefaultRevision,
   updateItemMethodAndSourcing,
-  upsertMakeMethodVersion,
   upsertPart
 } from "~/modules/items/items.service";
 import { insertEmployeeJob } from "~/modules/people/people.service";
@@ -4177,7 +4176,8 @@ export async function ensureDraftMakeMethod(
   }
   const version = (highest.data?.version ?? 0) + 1;
 
-  const draft = await upsertMakeMethodVersion(client, {
+  // Also copies the BOM and routing; a failed copy leaves no Draft behind.
+  const draft = await createMakeMethodVersion(client, db, {
     copyFromId: activeMethodId,
     // No `activeVersionId`: it sets a version Active, and the push leaves live methods alone.
     version,
@@ -4187,32 +4187,17 @@ export async function ensureDraftMakeMethod(
   if (draft.error || !draft.data?.id) {
     return {
       ok: false,
-      error: draft.error?.message ?? "could not create a draft version"
+      error: draft.error?.message || "could not create a draft version"
     };
   }
   const draftId = draft.data.id;
 
-  // `upsertMakeMethodVersion` copies only the method row; the BOM and routing come here.
-  const copied = await copyMakeMethod(client, db, {
-    sourceId: activeMethodId,
-    targetId: draftId,
+  const failure = await carryLineOwnership(client, serviceRole, {
+    sourceMethodId: activeMethodId,
+    targetMethodId: draftId,
     companyId,
-    userId,
-    billOfMaterial: true,
-    billOfProcess: true,
-    parameters: true,
-    tools: true,
-    steps: true,
-    workInstructions: true
+    userId
   });
-  const failure = copied.error
-    ? `its method could not be copied (${copied.error.message})`
-    : await carryLineOwnership(client, serviceRole, {
-        sourceMethodId: activeMethodId,
-        targetMethodId: draftId,
-        companyId,
-        userId
-      });
   const marked = failure
     ? null
     : await client.from("externalIntegrationMapping").insert({

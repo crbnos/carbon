@@ -3969,3 +3969,13 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Throw an authored refusal from a posting as `InvalidInputError` (or another `ServerFnError` below 500), never a plain `Error`. In the operation, below 500 return the error's own message (`error.message || <fallback>`); keep the generic message for 500, whose detail `toError` already withholds.
 
 **Applies to:** every operation that calls `invokePosting` and every posting body (`voidReceipt` / `postReceipt` in `inventory.server.ts`, `adjustInventory` follows the same shape).
+
+## A header and the get-method copy into it share one transaction
+
+**Context:** New Version on a make method inserted the `makeMethod` header through supabase-js, set the source version Active, then ran get-method's `makeMethodToMakeMethod` copy, which opened its own Kysely transaction. A version change notice and the Onshape panel's Draft did the same in their own code.
+
+**Problem:** When the copy failed it rolled back only its own rows. The empty Draft stayed, numbered above a source that was now Active and read-only. A first fix deleted them again after the failure; that cleanup could fail too, and it needed a delete the caller may not be allowed to make.
+
+**Rule:** Put the header insert, any status change and the copy in ONE Kysely transaction and pass the transaction to `copyMakeMethod` as `db`. A get-method body that opens a transaction must join one it is handed (`db.isTransaction`): Kysely refuses `transaction()` on a `Transaction`. Kysely bypasses RLS, so check the policy's permission through the caller's client first (`requireCompanyPermission`), as `createRevision` does.
+
+**Applies to:** `createMakeMethodVersion` (`items.service.ts`) and its callers (`createMethodVersion`, `createChangeNoticeDraftMethod`, `ensureDraftMakeMethod`); any other header insert followed by a get-method copy (quote and job duplication, revisions).

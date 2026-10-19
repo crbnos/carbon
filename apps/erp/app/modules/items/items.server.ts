@@ -948,8 +948,9 @@ export const copyMethod = defineServiceFn({
  *
  * @remarks
  * The new version takes `copyFromId`'s header and, through get-method, its
- * whole bill of materials and process. `activeVersionId` is made Active first
- * (the item's only version, when its successor is drafted).
+ * whole bill of materials and process. `activeVersionId` must be `copyFromId`:
+ * a Draft source is made Active first (the item's only version, when its
+ * successor is drafted). A failed copy leaves no new version behind.
  *
  * @mcp
  */
@@ -958,45 +959,25 @@ export const createMethodVersion = defineServiceFn({
   permission: { create: "parts" },
 
   async run(ctx, input) {
-    const companyId = ctx.company.id;
-    const userId = ctx.auditUserId;
-    const insert = await service.upsertMakeMethodVersion(
+    // get-method is gated on production update, so the copy runs as the system.
+    const result = await service.createMakeMethodVersion(
       ctx.asCaller.supabase,
-      {
-        ...input,
-        companyId,
-        createdBy: userId
-      }
+      ctx.asSystem.pg,
+      { ...input, companyId: ctx.company.id, createdBy: ctx.auditUserId },
+      ctx.asSystem.supabase
     );
-    const version = insert.data;
-    if (insert.error || !version?.id || !version.type || !version.itemId) {
+    // A failed copy has no code; `unwrap` would answer it generically.
+    if (result.error && !("code" in result.error && result.error.code)) {
       return ctx.error(
         "internal",
-        "Failed to insert new version",
-        insert.error
+        "Failed to create new version",
+        result.error
       );
     }
-
-    const copy = await service.copyMakeMethod(
-      ctx.asSystem.supabase,
-      ctx.asSystem.pg,
-      {
-        sourceId: input.copyFromId,
-        targetId: version.id,
-        billOfMaterial: true,
-        billOfProcess: true,
-        parameters: true,
-        tools: true,
-        steps: true,
-        workInstructions: true,
-        companyId,
-        userId
-      }
-    );
-    if (copy.error) {
-      return ctx.error("internal", "Failed to copy make method", copy.error);
-    }
-    return { id: version.id, itemId: version.itemId, type: version.type };
+    const version = unwrap(ctx, result);
+    if (version instanceof CarbonError) return version;
+    if (!version) return ctx.error("internal", "Failed to create new version");
+    return version;
   }
 });
 
