@@ -59,6 +59,7 @@
     "./dataset-rule-fields": "./src/datasets/rule-fields.ts",
     "./precision": "./src/precision.ts",
     "./project-plan": "./src/project-plan.ts",
+    "./change-notice": "./src/change-notice.ts",
     "./accounting-currency": "./src/accounting-currency.ts",
     "./accounting-posting": "./src/accounting-posting.ts",
     "./journal-posting-status": "./src/journal-posting-status.ts",

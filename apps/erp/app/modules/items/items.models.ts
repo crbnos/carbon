@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { isChangeNoticeLocked } from "@carbon/database/change-notice";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -1191,13 +1192,8 @@ export function isChangeNoticeOpen(status: string | null | undefined): boolean {
   return changeNoticeOpenStatuses.some((s) => s === status);
 }
 
-// Locked once closed — Done (released, part of the audit trail) or Cancelled
-// (abandoned). Reopen a Cancelled CO to Draft to edit it again.
-export function isChangeNoticeLocked(
-  status: string | null | undefined
-): boolean {
-  return status === "Done" || status === "Cancelled";
-}
+// isChangeNoticeLocked lives in @carbon/database so the issue sync can share it.
+export { isChangeNoticeLocked };
 
 // Engineering content — affected items, BOM/BOP drafts, cutover, reason/description.
 // Frozen from Implementation onward: what is being implemented must not shift underneath.
