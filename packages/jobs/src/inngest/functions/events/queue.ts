@@ -72,7 +72,8 @@ export const eventQueueFunction = inngest.createFunction(
             SYNC: [],
             SEARCH: [],
             AUDIT: [],
-            EMBEDDING: []
+            EMBEDDING: [],
+            ISSUE_SYNC: []
           };
 
           // Unknown handler types are poison: pushing into a missing bucket
@@ -225,7 +226,24 @@ export const eventQueueFunction = inngest.createFunction(
         }
       }
 
-      // 9. Delete processed messages from PGMQ (archived poison ids are
+      // 9. Dispatch issue syncs (chunked). The handler fans out per company,
+      // because the Linear and Jira push holds a per-company concurrency key.
+      if (grouped.ISSUE_SYNC.length > 0) {
+        const records = grouped.ISSUE_SYNC.map((job) => ({
+          event: job.message.event,
+          companyId: job.message.companyId
+        }));
+
+        const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_RECORDS);
+        for (let i = 0; i < chunks.length; i++) {
+          await step.sendEvent(`dispatch-issue-syncs-${pass}-${i}`, {
+            name: "carbon/event-issue-sync" as const,
+            data: { records: chunks[i] }
+          });
+        }
+      }
+
+      // 10. Delete processed messages from PGMQ (archived poison ids are
       // excluded — archive already dequeued them)
       if (allIds.length > 0) {
         await step.run(`delete-processed-${pass}`, async () => {

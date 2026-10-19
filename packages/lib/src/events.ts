@@ -542,6 +542,33 @@ export type Events = {
     };
   };
 
+  "carbon/event-issue-sync": {
+    data: {
+      records: Array<{
+        event: {
+          table: string;
+          recordId: string;
+          operation: "INSERT" | "UPDATE" | "DELETE" | "TRUNCATE";
+          [key: string]: unknown;
+        };
+        companyId: string;
+      }>;
+    };
+  };
+
+  // One company's synced-record changes, for the Linear and Jira push
+  "carbon/issue-sync.push": {
+    data: {
+      companyId: string;
+      records: Array<{
+        table: string;
+        recordId: string;
+        operation: "UPDATE" | "DELETE";
+        old: Record<string, unknown> | null;
+      }>;
+    };
+  };
+
   "carbon/event-embedding": {
     data: {
       records: Array<{
