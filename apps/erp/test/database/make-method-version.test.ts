@@ -7,6 +7,7 @@
 
 import { SUPABASE_SERVICE_ROLE_KEY } from "@carbon/env";
 import { createClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import { expect } from "vitest";
 import { createMakeMethodVersion } from "../../app/modules/items/items.service";
 import {
@@ -45,7 +46,11 @@ const PINS = [
 
 const versionTest = (name: string, fn: (f: Fixture) => Promise<void>) =>
   databaseTest(name, async () => {
-    if (!system || !refused) return;
+    if (!system || !refused) {
+      throw new Error(
+        "No local PostgREST client: .env.local needs PORT_API, SUPABASE_SERVICE_ROLE_KEY and SUPABASE_ANON_KEY"
+      );
+    }
     const f = await alwaysPostFixture();
     try {
       await fn(f);
@@ -158,6 +163,25 @@ async function copied(f: Fixture, makeMethodId: string) {
   };
 }
 
+// Every line in the company, on any method: rolled-back copies leave none.
+async function companyLines(f: Fixture) {
+  const count = async (
+    table: "methodMaterial" | "methodOperation" | "methodOperationStep"
+  ) =>
+    (
+      await f.db
+        .selectFrom(table)
+        .select((eb) => eb.fn.countAll<number>().as("count"))
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow()
+    ).count;
+  return {
+    materials: Number(await count("methodMaterial")),
+    operations: Number(await count("methodOperation")),
+    steps: Number(await count("methodOperationStep"))
+  };
+}
+
 const version = (f: Fixture, copyFromId: string, activeVersionId?: string) => ({
   copyFromId,
   activeVersionId,
@@ -251,4 +275,42 @@ versionTest("writes nothing for a caller who cannot read the version", async (f)
   expect(await versions(f)).toEqual([
     { id: source, version: 1, status: "Draft" }
   ]);
+});
+
+versionTest("rolls back the lines already copied when a later insert fails", async (f) => {
+  const source = await sourceMethod(f, "Draft");
+  const before = await companyLines(f);
+  // The operation and its step are copied before the slide, so this insert
+  // fails after the copy has written rows into the new version.
+  const name = `fail_slide_copy_${f.prefix.replace(/[^a-z0-9]/gi, "_")}`;
+  await sql
+    .raw(
+      `CREATE FUNCTION "${name}"() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'slide copy refused'; END $$`
+    )
+    .execute(f.db);
+  await sql
+    .raw(
+      `CREATE TRIGGER "${name}" BEFORE INSERT ON "methodOperationStepSlide" FOR EACH ROW WHEN (NEW."companyId" = '${f.companyId}') EXECUTE FUNCTION "${name}"()`
+    )
+    .execute(f.db);
+
+  try {
+    const result = await createMakeMethodVersion(
+      system!,
+      f.db,
+      version(f, source, source),
+      copyAsSystem
+    );
+    expect(result.error).not.toBeNull();
+  } finally {
+    await sql
+      .raw(`DROP TRIGGER "${name}" ON "methodOperationStepSlide"`)
+      .execute(f.db);
+    await sql.raw(`DROP FUNCTION "${name}"()`).execute(f.db);
+  }
+
+  expect(await versions(f)).toEqual([
+    { id: source, version: 1, status: "Draft" }
+  ]);
+  expect(await companyLines(f)).toEqual(before);
 });

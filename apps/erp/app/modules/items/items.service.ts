@@ -4386,7 +4386,9 @@ export async function createMakeMethodVersion(
           .where("status", "=", "Draft")
           .executeTakeFirst();
         if (Number(activated.numUpdatedRows) === 0) {
-          throw new Error("The version being copied is no longer a Draft");
+          throw new RuleRefusal(
+            "The version being copied is no longer a Draft"
+          );
         }
       }
 
@@ -4403,6 +4405,8 @@ export async function createMakeMethodVersion(
         userId: createdBy
       });
       if (copy.error) {
+        // Below 500 the posting refused with a message written for the person.
+        if (copy.error.status < 500) throw new RuleRefusal(copy.error.message);
         // A database error reaches here with an empty message.
         throw new Error(copy.error.message || "Failed to copy make method", {
           cause: copy.error
@@ -5213,6 +5217,11 @@ async function requireMaterialUpdatable(
 }
 
 class MaterialRuleViolation extends Error {}
+
+// A refusal thrown inside a transaction: `writeError` keeps its rule code.
+class RuleRefusal extends Error {
+  readonly code = SERVICE_RULE_ERROR_CODE;
+}
 
 // A thrown Kysely/Postgres error in the { message, code } shape services
 // return. The code is the SQLSTATE (23505 for a taken revision label).
