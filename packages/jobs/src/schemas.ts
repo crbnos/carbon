@@ -66,7 +66,7 @@ export const syncIssueFromLinearSchema = z.object({
   event: z.discriminatedUnion("type", [
     z.object({
       type: z.literal("Issue"),
-      action: z.literal("update"),
+      action: z.enum(["update", "remove"]),
       data: z.object({
         id: z.string(),
         assigneeId: z.string().optional()
