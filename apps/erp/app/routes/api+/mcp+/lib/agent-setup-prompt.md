@@ -60,8 +60,8 @@ connectors.
 
 ### API key (command & config clients)
 
-Claude Code, Cursor, VS Code, Codex, and any headless / CI use authenticate with
-a bearer API key. The user creates it in **Carbon → Settings → API Keys**; it is
+Claude Code, Cursor, VS Code, Codex, Ollama through ollmcp, and any headless /
+CI use authenticate with a bearer API key. The user creates it in **Carbon → Settings → API Keys**; it is
 scoped to one company and to explicit module permissions (View / Create / Update
 / Delete), rate-limited, and shown only once. Ask the user to create a key and
 paste it, then use it as `Bearer <api-key>` in the `Authorization` header.
@@ -141,6 +141,39 @@ browser (OAuth). No key needed.
 
 **Settings → Connectors → Add** the MCP server URL `{{MCP_URL}}` and authorize in
 the browser (OAuth). Available on the plans that support custom connectors.
+
+### Ollama
+
+Ollama runs a model. It is not an MCP client, so it cannot add this server by
+itself. Use [ollmcp](https://github.com/jonigl/mcp-client-for-ollama). ollmcp
+speaks streamable HTTP and sends each tool result to a model available in
+Ollama.
+
+Install it with `uv tool install ollmcp` (or `pip install ollmcp`). Ask the
+user for a scoped API key. View only, until they want a write. Then run:
+
+```bash
+ollmcp mcp add --transport http carbon \
+  {{MCP_URL}} \
+  --header "Authorization: Bearer <api-key>"
+ollmcp --model <a tool-capable model available in Ollama>
+```
+
+Leave the scope at its default, `local`, so the key stays out of the repository.
+`--scope project` writes `.mcp.json` and would commit the key.
+
+A model running in local Ollama keeps the tool results on that computer. A
+cloud model, including an Ollama Cloud model, sends those results to that
+provider. The computer must already be able to open `{{ORIGIN}}`. Do not
+publish a private or controlled (ITAR) origin to reach it from somewhere else.
+
+ollmcp asks before each tool call. Still use `search_tools`, then
+`describe_tool`, then `call_tool` for a `READ` or `WRITE`, and
+`call_destructive_tool` for a `DESTRUCTIVE` operation. Ask the user before a
+`WRITE` or `DESTRUCTIVE` call. Do not send `companyId` or `userId`.
+
+`AI_MODEL`, `AI_BASE_URL`, and `AI_API_KEY` only point document extraction at
+an OpenAI-compatible server. They do not connect an agent to this MCP server.
 
 ### Any other MCP client
 
