@@ -222,6 +222,7 @@ import {
 import { canEditChangeNoticeEngineering } from "~/modules/items/items.models";
 import {
   cascadeItemTrackingType,
+  createMakeMethodVersion,
   createRevision,
   deleteChangeNotice,
   deleteItem,
@@ -232,7 +233,6 @@ import {
   requireChangeNoticeEditable,
   updateDefaultRevision,
   updateItemMethodAndSourcing,
-  upsertMakeMethodVersion,
   upsertPart
 } from "~/modules/items/items.service";
 import { insertEmployeeJob } from "~/modules/people/people.service";
@@ -4177,7 +4177,7 @@ export async function ensureDraftMakeMethod(
   const version = (highest.data?.version ?? 0) + 1;
 
   // Also copies the BOM and routing, and removes the Draft if that fails.
-  const draft = await upsertMakeMethodVersion(client, db, {
+  const draft = await createMakeMethodVersion(client, db, {
     copyFromId: activeMethodId,
     // No `activeVersionId`: it sets a version Active, and the push leaves live methods alone.
     version,

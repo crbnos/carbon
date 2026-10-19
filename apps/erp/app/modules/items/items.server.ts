@@ -961,7 +961,7 @@ export const createMethodVersion = defineServiceFn({
 
   async run(ctx, input) {
     // get-method is gated on production update, so the copy runs as the system.
-    const result = await service.upsertMakeMethodVersion(
+    const result = await service.createMakeMethodVersion(
       ctx.asCaller.supabase,
       ctx.asSystem.pg,
       { ...input, companyId: ctx.company.id, createdBy: ctx.auditUserId },

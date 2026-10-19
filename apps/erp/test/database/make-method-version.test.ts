@@ -8,7 +8,7 @@
 import { SUPABASE_SERVICE_ROLE_KEY } from "@carbon/env";
 import { createClient } from "@supabase/supabase-js";
 import { expect } from "vitest";
-import { upsertMakeMethodVersion } from "../../app/modules/items/items.service";
+import { createMakeMethodVersion } from "../../app/modules/items/items.service";
 import {
   alwaysPostFixture,
   type Fixture,
@@ -173,7 +173,7 @@ const version = (f: Fixture, copyFromId: string, activeVersionId?: string) => ({
 versionTest("copies the source and its pinned slide, and sets a Draft source Active", async (f) => {
   const source = await sourceMethod(f, "Draft", PINS);
 
-  const result = await upsertMakeMethodVersion(
+  const result = await createMakeMethodVersion(
     system!,
     f.db,
     version(f, source, source),
@@ -195,7 +195,7 @@ versionTest("copies the source and its pinned slide, and sets a Draft source Act
 versionTest("copies a slide stored as {} as one with no pins", async (f) => {
   const source = await sourceMethod(f, "Draft", {});
 
-  const result = await upsertMakeMethodVersion(
+  const result = await createMakeMethodVersion(
     system!,
     f.db,
     version(f, source),
@@ -209,7 +209,7 @@ versionTest("copies a slide stored as {} as one with no pins", async (f) => {
 versionTest("leaves a source that was already Active Active when the copy fails", async (f) => {
   const source = await sourceMethod(f, "Active", PINS);
 
-  const result = await upsertMakeMethodVersion(
+  const result = await createMakeMethodVersion(
     system!,
     f.db,
     version(f, source, source),
@@ -225,7 +225,7 @@ versionTest("leaves a source that was already Active Active when the copy fails"
 versionTest("deletes the new version and sets the Draft source back when the copy fails", async (f) => {
   const source = await sourceMethod(f, "Draft", PINS);
 
-  const result = await upsertMakeMethodVersion(
+  const result = await createMakeMethodVersion(
     system!,
     f.db,
     version(f, source, source),
@@ -241,7 +241,7 @@ versionTest("deletes the new version and sets the Draft source back when the cop
 versionTest("refuses to set Active a version other than the one copied", async (f) => {
   const source = await sourceMethod(f, "Draft", PINS);
 
-  const result = await upsertMakeMethodVersion(
+  const result = await createMakeMethodVersion(
     system!,
     f.db,
     version(f, source, `${f.prefix}-other`),

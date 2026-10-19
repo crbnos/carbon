@@ -4334,7 +4334,7 @@ async function undoMakeMethodVersion(
  * get-method copies in its own transaction, so on a failure this deletes the
  * Draft and sets back to Draft only the source it set Active.
  */
-export async function upsertMakeMethodVersion(
+export async function createMakeMethodVersion(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   makeMethodVersion: z.infer<typeof makeMethodVersionValidator> & {
@@ -6949,14 +6949,14 @@ export async function createChangeNoticeDraftMethod(
     // production on the current method until the CO is released.
     const activeVersionId = base.status === "Draft" ? base.id : undefined;
     // New Draft version on the same item with the BoM/BoP rows copied in (the
-    // canonical new-version flow: upsertMakeMethodVersion). Number it
+    // canonical new-version flow: createMakeMethodVersion). Number it
     // above ALL existing versions (maxVersion + 1), not the Active one, so a
     // second CO on the same part doesn't collide on (itemId, version). Retry on
     // a concurrent unique-violation by recomputing the next free version.
     let draftId: string | null = null;
     let nextVersion = base.maxVersion + 1;
     for (let attempt = 0; attempt < 3; attempt++) {
-      const res = await upsertMakeMethodVersion(client, db, {
+      const res = await createMakeMethodVersion(client, db, {
         copyFromId: base.id,
         activeVersionId,
         version: nextVersion,

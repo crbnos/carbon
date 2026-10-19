@@ -3975,11 +3975,11 @@ version comes through empty". The symptom had already been patched once in the M
 
 **Rule:** When a write and a server-function copy cannot share a transaction, the caller owns
 the undo: on failure, delete what it inserted and restore what it changed, scoped to the rows it
-wrote (`upsertMakeMethodVersion`). Surface the failure as `error` (or a flash), never a bare
+wrote (`createMakeMethodVersion`). Surface the failure as `error` (or a flash), never a bare
 `message`. A `ServerFnError` from a database error has `message: ""` — fall back with `||`, not
 `??`. When a reader has to defend against malformed data, find the writer.
 
-**Applies to:** `upsertMakeMethodVersion`, any header-insert + `get-method` copy pair (quote and
+**Applies to:** `createMakeMethodVersion`, any header-insert + `get-method` copy pair (quote and
 job duplication, revisions), route actions consumed by `useAction`.
 
 ## A posting's refusal only reaches the dialog when it is thrown as a 4xx
