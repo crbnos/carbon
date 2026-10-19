@@ -16,7 +16,10 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
 import { requireChangeNoticeEditable } from "~/modules/items/items.server";
-import { getActionTaskWithParent } from "~/modules/shared/shared.server";
+import {
+  getActionTaskWithParent,
+  projectElementLinkRefusal
+} from "~/modules/shared/shared.server";
 
 const logger = getLogger("erp", "integrations-linear-issue-create");
 
@@ -61,6 +64,17 @@ export const action: ActionFunction = async ({ request }) => {
 
       if (locked) {
         return { success: false, message: locked.error.message };
+      }
+    }
+
+    if (entityType === "projectElement") {
+      const refusal = await projectElementLinkRefusal(
+        client,
+        actionId,
+        companyId
+      );
+      if (refusal) {
+        return { success: false, message: refusal };
       }
     }
 

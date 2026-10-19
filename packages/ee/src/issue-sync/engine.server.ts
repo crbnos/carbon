@@ -4,6 +4,12 @@
 
 import { getAppUrl } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
+import {
+  completedAtForGroup,
+  isProjectPlanLocked,
+  type ProjectStateGroup,
+  pickStateForGroup
+} from "@carbon/database/project-plan";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -27,6 +33,12 @@ import {
 import { changedInbound, changedOutbound, nextSync } from "./diff";
 import { isSyncedEntityType, syncedEntities } from "./entities";
 import { type LockContext, lockedFields } from "./locks";
+import {
+  jiraCategoryToGroup,
+  jiraToPriority,
+  linearToPriority,
+  linearTypeToGroup
+} from "./maps";
 import { ensureIssueSyncSubscriptions } from "./subscriptions";
 import { pushToJira } from "./trackers/jira.server";
 import { pushToLinear } from "./trackers/linear.server";
@@ -221,7 +233,77 @@ async function readLockContexts(
       });
     }
   }
+
+  if (type === "projectElement") {
+    const projectIds = [...new Set(rows.map((row) => String(row.projectId)))];
+    const projects = await client
+      .from("project")
+      .select("id, status, lockPlanAfterMilestoneId")
+      .eq("companyId", companyId)
+      .in("id", projectIds);
+    const milestoneIds = (projects.data ?? [])
+      .map((project) => project.lockPlanAfterMilestoneId)
+      .filter((id): id is string => !!id);
+    const milestones = milestoneIds.length
+      ? await client
+          .from("projectMilestone")
+          .select("id, completedAt")
+          .eq("companyId", companyId)
+          .in("id", milestoneIds)
+      : { data: [] };
+    const milestoneById = new Map(
+      (milestones.data ?? []).map((milestone) => [milestone.id, milestone])
+    );
+    const projectById = new Map(
+      (projects.data ?? []).map((project) => [project.id, project])
+    );
+    for (const row of rows) {
+      const project = projectById.get(String(row.projectId));
+      contexts.set(row.id, {
+        projectStatus: project?.status ?? null,
+        planLocked: isProjectPlanLocked({
+          lockMilestone: project?.lockPlanAfterMilestoneId
+            ? milestoneById.get(project.lockPlanAfterMilestoneId)
+            : null
+        })
+      });
+    }
+  }
+
   return contexts;
+}
+
+type ElementState = {
+  id: string;
+  group: ProjectStateGroup;
+  isDefault: boolean;
+  sortOrder: number;
+};
+
+/**
+ * The company's project states, for an element's status (its state's group).
+ * Other record types need none.
+ */
+async function readStates(
+  client: Client,
+  companyId: string,
+  type: SyncedEntityType
+): Promise<{
+  states: ElementState[];
+  stateGroupById: Map<string, ProjectStateGroup>;
+}> {
+  if (type !== "projectElement") {
+    return { states: [], stateGroupById: new Map() };
+  }
+  const result = await client
+    .from("projectState")
+    .select("id, group, isDefault, sortOrder")
+    .eq("companyId", companyId);
+  const states = (result.data ?? []) as ElementState[];
+  return {
+    states,
+    stateGroupById: new Map(states.map((state) => [state.id, state.group]))
+  };
 }
 
 /** The email of each assigned user, in one query. */
@@ -263,6 +345,7 @@ export async function pushRecords(
   const rowById = await readRows(client, companyId, type, [
     ...new Set(links.map((link) => link.entityId))
   ]);
+  const { stateGroupById } = await readStates(client, companyId, type);
   const emails = await readUserEmails(client, [
     ...new Set(
       [...rowById.values()]
@@ -281,7 +364,7 @@ export async function pushRecords(
     }
 
     const sync = readLinkSync(link.metadata);
-    const carbon = carbonValues(type, row);
+    const carbon = carbonValues(type, row, { stateGroupById });
     const changed = changedOutbound(
       entity.fields,
       carbon,
@@ -307,6 +390,7 @@ export async function pushRecords(
               teamId: await linearTeamId(companyId, link),
               type,
               row,
+              carbon,
               fields: changed,
               assigneeEmail
             })
@@ -315,6 +399,7 @@ export async function pushRecords(
               issueId: link.externalId,
               type,
               row,
+              carbon,
               fields: changed,
               assigneeEmail
             });
@@ -516,6 +601,7 @@ export async function applyIssue(
 
   const lockContext =
     (await readLockContexts(client, companyId, type, [row])).get(row.id) ?? {};
+  const { states, stateGroupById } = await readStates(client, companyId, type);
   const sync = readLinkSync(link.metadata);
 
   let changed = changedInbound(
@@ -536,14 +622,47 @@ export async function applyIssue(
   const patch: Record<string, unknown> = {};
   for (const field of allowed) {
     switch (field) {
-      case "status":
-        patch.status =
+      case "status": {
+        if (type !== "projectElement") {
+          patch.status =
+            fetched.tracker === "linear"
+              ? mapLinearStatusToCarbonStatus(fetched.issue.state.type)
+              : mapJiraStatusToCarbonStatus(
+                  fetched.issue.fields.status.statusCategory.key
+                );
+          break;
+        }
+        // An element takes a state of the matching group: its own state
+        // when that is already in the group, else the group's default.
+        const currentGroup = stateGroupById.get(String(row.stateId)) ?? null;
+        const group =
           fetched.tracker === "linear"
-            ? mapLinearStatusToCarbonStatus(fetched.issue.state.type)
-            : mapJiraStatusToCarbonStatus(
-                fetched.issue.fields.status.statusCategory.key
+            ? linearTypeToGroup(fetched.issue.state.type)
+            : jiraCategoryToGroup(
+                fetched.issue.fields.status.statusCategory.key,
+                currentGroup
               );
+        const stateId = pickStateForGroup(states, group, String(row.stateId));
+        if (stateId && stateId !== row.stateId) {
+          patch.stateId = stateId;
+          patch.completedAt = completedAtForGroup(group, datetime.timestamp());
+        }
         break;
+      }
+      case "title":
+        patch.name =
+          fetched.tracker === "linear"
+            ? fetched.issue.title
+            : fetched.issue.fields.summary;
+        break;
+      case "priority": {
+        const priority =
+          fetched.tracker === "linear"
+            ? linearToPriority(fetched.issue.priority)
+            : jiraToPriority(fetched.issue.fields.priority?.name);
+        if (priority) patch.priority = priority;
+        break;
+      }
       case "assignee": {
         const email =
           fetched.tracker === "linear"
@@ -586,7 +705,7 @@ export async function applyIssue(
     if (update.error) return { failed: update.error.message };
   }
 
-  const after = carbonValues(type, { ...row, ...patch });
+  const after = carbonValues(type, { ...row, ...patch }, { stateGroupById });
   const updates: Partial<Record<SyncedField, SnapshotValue>> = {};
   for (const field of allowed) {
     updates[field] = {

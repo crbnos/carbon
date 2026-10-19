@@ -20,7 +20,10 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
 import { requireChangeNoticeEditable } from "~/modules/items/items.server";
-import { getActionTaskWithParent } from "~/modules/shared/shared.server";
+import {
+  getActionTaskWithParent,
+  projectElementLinkRefusal
+} from "~/modules/shared/shared.server";
 
 const logger = getLogger("erp", "integrations-jira-issue-create");
 
@@ -83,6 +86,17 @@ export const action: ActionFunction = async ({ request }) => {
           { success: false, message: locked.error.message },
           { status: 400 }
         );
+      }
+    }
+
+    if (entityType === "projectElement") {
+      const refusal = await projectElementLinkRefusal(
+        client,
+        actionId,
+        companyId
+      );
+      if (refusal) {
+        return data({ success: false, message: refusal }, { status: 400 });
       }
     }
 

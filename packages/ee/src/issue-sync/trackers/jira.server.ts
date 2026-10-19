@@ -9,7 +9,8 @@ import type { UpdateJiraIssueInput } from "../../jira/lib/types";
 import { mapCarbonStatusToJiraCategory } from "../../jira/lib/utils";
 import type { SyncedRow } from "../canonical";
 import { syncedEntities } from "../entities";
-import type { SyncedEntityType, SyncedField } from "../types";
+import { groupToJiraCategory, priorityToJira } from "../maps";
+import type { FieldValues, SyncedEntityType, SyncedField } from "../types";
 
 /**
  * Push the given fields of a Carbon row to its Jira issue. A status change is
@@ -21,6 +22,8 @@ export async function pushToJira(args: {
   issueId: string;
   type: SyncedEntityType;
   row: SyncedRow;
+  /** The row's snapshot values; an element's `status` is its state group. */
+  carbon: FieldValues;
   fields: SyncedField[];
   assigneeEmail: string | null;
 }): Promise<SyncedField[]> {
@@ -33,14 +36,19 @@ export async function pushToJira(args: {
   for (const field of args.fields) {
     switch (field) {
       case "status": {
+        if (args.type === "projectElement" && !args.carbon.status) break;
         const moved = await jira.transitionIssue(
           args.companyId,
           args.issueId,
-          mapCarbonStatusToJiraCategory(
-            String(args.row.status) as Parameters<
-              typeof mapCarbonStatusToJiraCategory
-            >[0]
-          )
+          args.type === "projectElement"
+            ? groupToJiraCategory(
+                args.carbon.status as Parameters<typeof groupToJiraCategory>[0]
+              )
+            : mapCarbonStatusToJiraCategory(
+                String(args.row.status) as Parameters<
+                  typeof mapCarbonStatusToJiraCategory
+                >[0]
+              )
         );
         if (moved) sent.push(field);
         break;
@@ -58,6 +66,24 @@ export async function pushToJira(args: {
             input.assigneeId = user.accountId;
             pending.push(field);
           }
+        }
+        break;
+      }
+      case "title": {
+        input.summary = String(args.row.name ?? "");
+        pending.push(field);
+        break;
+      }
+      case "priority": {
+        // Jira priorities are per site: push only a name the site has.
+        const name = priorityToJira(
+          (args.row.priority ?? "None") as Parameters<typeof priorityToJira>[0]
+        );
+        if (!name) break;
+        const priorities = await jira.listPriorities(args.companyId);
+        if (priorities.some((priority) => priority.name === name)) {
+          input.priority = name;
+          pending.push(field);
         }
         break;
       }

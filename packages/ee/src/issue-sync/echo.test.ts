@@ -99,4 +99,66 @@ describe("the echo guard", () => {
       )
     ).toEqual(["status"]);
   });
+
+  it("holds for an element, whose status is its state group", () => {
+    const elementFields = syncedEntities.projectElement.fields;
+    const ctx = {
+      stateGroupById: new Map([
+        ["doing", "Started" as const],
+        ["review", "Started" as const],
+        ["done", "Completed" as const]
+      ])
+    };
+    let row: Record<string, unknown> & { id: string } = {
+      id: "e1",
+      name: "Bracket",
+      stateId: "doing",
+      ownerId: null,
+      priority: "High",
+      targetDate: null,
+      description: null
+    };
+    const remote = (type: string) => ({
+      ...linearValues(issue(type)),
+      title: "Bracket",
+      priority: "2"
+    });
+
+    // Push, then the echo of that push.
+    let sync = snapshot(
+      null,
+      elementFields,
+      carbonValues("projectElement", row, ctx),
+      remote("started")
+    );
+    expect(changedInbound(elementFields, remote("started"), sync)).toEqual([]);
+
+    // Moving to another Started state changes nothing the tracker sees.
+    row = { ...row, stateId: "review" };
+    expect(
+      changedOutbound(
+        elementFields,
+        carbonValues("projectElement", row, ctx),
+        sync
+      )
+    ).toEqual([]);
+
+    // Completing it in Linear applies once, and the write does not bounce.
+    const applied = changedInbound(elementFields, remote("completed"), sync);
+    expect(applied).toEqual(["status"]);
+    row = { ...row, stateId: "done" };
+    sync = snapshot(
+      sync,
+      applied,
+      carbonValues("projectElement", row, ctx),
+      remote("completed")
+    );
+    expect(
+      changedOutbound(
+        elementFields,
+        carbonValues("projectElement", row, ctx),
+        sync
+      )
+    ).toEqual([]);
+  });
 });

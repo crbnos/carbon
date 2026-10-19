@@ -17,7 +17,8 @@ import type { IssueTracker, SyncedEntityType } from "./types";
  */
 export const ISSUE_SYNC_TABLES: SyncedEntityType[] = [
   "nonConformanceActionTask",
-  "changeOrderActionTask"
+  "changeOrderActionTask",
+  "projectElement"
 ];
 
 export function issueSyncSubscriptionName(tracker: IssueTracker): string {

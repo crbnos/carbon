@@ -810,6 +810,32 @@ export async function getImplementationSignals(
   return signals;
 }
 
+/**
+ * Why a project element cannot link to an issue, or null. A Closed project
+ * refuses every change, so it refuses a link too.
+ */
+export async function projectElementLinkRefusal(
+  client: SupabaseClient<Database>,
+  elementId: string,
+  companyId: string
+): Promise<string | null> {
+  const element = await client
+    .from("projectElement")
+    .select("projectId")
+    .eq("id", elementId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (!element.data) return "Could not find the element";
+
+  const project = await client
+    .from("project")
+    .select("status")
+    .eq("id", element.data.projectId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  return project.data?.status === "Closed" ? "The project is closed" : null;
+}
+
 export type ActionTaskWithParent = {
   id: string | null;
   notes: unknown;

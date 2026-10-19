@@ -9,7 +9,8 @@ import { tiptapToMarkdown } from "../../linear/lib/richtext";
 import { mapCarbonStatusToLinearStatus } from "../../linear/lib/utils";
 import type { SyncedRow } from "../canonical";
 import { syncedEntities } from "../entities";
-import type { SyncedEntityType, SyncedField } from "../types";
+import { groupToLinearType, priorityToLinear } from "../maps";
+import type { FieldValues, SyncedEntityType, SyncedField } from "../types";
 
 const logger = getLogger("ee", "issue-sync-linear");
 
@@ -24,6 +25,8 @@ export async function pushToLinear(args: {
   teamId: string | null;
   type: SyncedEntityType;
   row: SyncedRow;
+  /** The row's snapshot values; an element's `status` is its state group. */
+  carbon: FieldValues;
   fields: SyncedField[];
   assigneeEmail: string | null;
 }): Promise<SyncedField[]> {
@@ -36,11 +39,16 @@ export async function pushToLinear(args: {
     switch (field) {
       case "status": {
         if (!args.teamId) break;
+        if (args.type === "projectElement" && !args.carbon.status) break;
         try {
           const state = await linear.getWorkflowState(
             args.companyId,
             args.teamId,
-            mapCarbonStatusToLinearStatus(String(args.row.status))
+            args.type === "projectElement"
+              ? groupToLinearType(
+                  args.carbon.status as Parameters<typeof groupToLinearType>[0]
+                )
+              : mapCarbonStatusToLinearStatus(String(args.row.status))
           );
           if (state) {
             input.stateId = state.id;
@@ -64,6 +72,20 @@ export async function pushToLinear(args: {
             sent.push(field);
           }
         }
+        break;
+      }
+      case "title": {
+        input.title = String(args.row.name ?? "");
+        sent.push(field);
+        break;
+      }
+      case "priority": {
+        input.priority = priorityToLinear(
+          (args.row.priority ?? "None") as Parameters<
+            typeof priorityToLinear
+          >[0]
+        );
+        sent.push(field);
         break;
       }
       case "dueDate": {
