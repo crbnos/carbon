@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { resolveDate, weekRangesFrom } from "../dates.ts";
+import { resolveDate, resolveTimestamp, weekRangesFrom } from "../dates.ts";
 import {
   insertId,
   insertMaybe,
@@ -90,6 +90,13 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   // opened. Tier 04 does the same for the orders it writes.
   const opportunityId = await insertId(ctx, "opportunity", { customerId });
 
+  // The order is seeded at rate 1, like every tier 04 order, so it must be in
+  // the datasets' base currency. An order with no rate refuses new lines.
+  if (order.currencyCode !== "USD") {
+    throw new Error(
+      `Seed: the planning demand order must be in USD, not ${order.currencyCode}`
+    );
+  }
   const soId = await nextSequence(ctx, "salesOrder");
   const so = await insertId(ctx, "salesOrder", {
     salesOrderId: soId,
@@ -98,6 +105,8 @@ export async function runTier12(ctx: Ctx): Promise<void> {
     customerLocationId,
     locationId: plantId,
     currencyCode: order.currencyCode,
+    exchangeRate: 1,
+    exchangeRateUpdatedAt: resolveTimestamp(ctx.anchor, 0, "08:00:00"),
     opportunityId,
     orderDate: resolveDate(ctx.anchor, 0)
   });
@@ -123,6 +132,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
       description: item.name,
       saleQuantity: line.saleQuantity,
       unitPrice: item.unitCost * line.unitPriceMultiplier,
+      exchangeRate: 1,
       unitOfMeasureCode: line.unitOfMeasureCode,
       locationId: plantId,
       methodType: line.methodType,

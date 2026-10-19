@@ -93,6 +93,37 @@ export async function findCoverageShortfalls(
 }
 
 /**
+ * Documents whose app inserts always write a rate (1 in the base currency).
+ * The column is nullable, so a seeded row without one inserts fine, and then
+ * every new line on it is refused ("… has no exchange rate").
+ */
+const RATED_DOCUMENT_TABLES = [
+  "quote",
+  "quoteLinePrice",
+  "salesOrder",
+  "salesOrderLine",
+  "purchaseOrder",
+  "supplierQuote",
+  "supplierQuoteLinePrice"
+] as const;
+
+export async function findMissingExchangeRates(
+  client: PoolClient,
+  companyId: string
+): Promise<string[]> {
+  const union = RATED_DOCUMENT_TABLES.map(
+    (t) =>
+      `SELECT '${t}' AS table_name, count(*)::int AS count FROM ${quote(t)} WHERE "companyId" = $1 AND "exchangeRate" IS NULL`
+  ).join(" UNION ALL ");
+  const res = await client.query<{ table_name: string; count: number }>(union, [
+    companyId
+  ]);
+  return res.rows
+    .filter((r) => r.count > 0)
+    .map((r) => `${r.table_name}: ${r.count} row(s) with no exchangeRate`);
+}
+
+/**
  * Apply one dataset to a throwaway company and roll the whole thing back.
  * Returns the failure rather than throwing it, so one broken dataset does not
  * hide the state of the other three.
@@ -136,6 +167,16 @@ export async function verifyDataset(
         key,
         ok: false,
         error: `${shortfalls.length} table(s) below their row-count floor (datasets/coverage.ts):\n      ${shortfalls.join("\n      ")}`,
+        durationMs: performance.now() - startedAt
+      };
+    }
+
+    const missingRates = await findMissingExchangeRates(client, companyId);
+    if (missingRates.length > 0) {
+      return {
+        key,
+        ok: false,
+        error: `seeded documents the app cannot add lines to:\n      ${missingRates.join("\n      ")}`,
         durationMs: performance.now() - startedAt
       };
     }
