@@ -21,7 +21,8 @@ export const LinearIssueSchema = z.object({
     .object({
       email: z.string()
     })
-    .nullish()
+    .nullish(),
+  team: z.object({ id: z.string() }).nullish()
 });
 
 export type LinearIssue = z.infer<typeof LinearIssueSchema>;

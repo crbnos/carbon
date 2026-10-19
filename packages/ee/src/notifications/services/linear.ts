@@ -47,8 +47,17 @@ export class LinearNotificationService implements NotificationService {
 
         if (!issue) return;
 
+        // States belong to a team: links made before the team was stored
+        // fetch the issue once to learn it.
+        const teamId =
+          issue.team?.id ??
+          (await linear.getIssueById(event.companyId, issue.id))?.team?.id;
+
+        if (!teamId) return;
+
         const state = await linear.getWorkflowState(
           event.companyId,
+          teamId,
           mapCarbonStatusToLinearStatus(event.data.status!)
         );
 
