@@ -487,6 +487,7 @@ Questions found while writing the spec:
 
 ## Changelog
 
+- 2026-10-19: Self-review fixes. A first sync never writes an empty value over a real one (`firstSyncOutbound` / `firstSyncInbound`); this also covers links made before snapshots. Link and create routes queue the push (`issue-sync-push`) under the per-company key instead of pushing inline. `hashText` sorts keys (JSONB). Jira skips a same-category transition and retries a refused update field by field. Pushes skip inactive trackers; lock reads fail closed. The element back-link title uses `project.identifier`.
 - 2026-10-19: Phase 2 implemented. The element dialogs sit in the element page header (the loader reads the links). The create form's title stays a required user field; the server sets no default from the element name.
 - 2026-10-19: Phases 0 and 1 implemented. Engine in `packages/ee/src/issue-sync/`; rule `.claude/rules/issue-sync.md`. Link and create go through `linkExistingIssue` / `linkNewIssue`; a linked record's existing description goes to the issue on link.
 - 2026-10-17: Planning corrections. Defects 8 and 9 added. Outbound defects 2, 3 and 5 move to Phase 1. The element dialog triggers move to the header row (the sibling's `headerExtras`). `pickStateForGroup` replaces `defaultStateOfGroup`. Description snapshots are hashes. Link pulls first; create pushes first.

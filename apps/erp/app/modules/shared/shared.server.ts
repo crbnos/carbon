@@ -865,6 +865,10 @@ export async function getActionTaskWithParent(
     .eq("companyId", companyId)
     .maybeSingle();
 
+  if (result.error) {
+    throw new Error(`Failed to read the ${table}: ${result.error.message}`);
+  }
+
   // The select string is built from the entity map, which erases Supabase's row typing
   const row = result.data as Record<string, any> | null;
 

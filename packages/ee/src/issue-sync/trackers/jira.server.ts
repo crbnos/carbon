@@ -20,6 +20,8 @@ import type { FieldValues, SyncedEntityType, SyncedField } from "../types";
 export async function pushToJira(args: {
   companyId: string;
   issueId: string;
+  /** The issue's status category as the link last saw it. */
+  currentCategory: string | null;
   type: SyncedEntityType;
   row: SyncedRow;
   /** The row's snapshot values; an element's `status` is its state group. */
@@ -31,15 +33,20 @@ export async function pushToJira(args: {
   const entity = syncedEntities[args.type];
   const input: UpdateJiraIssueInput = {};
   const pending: SyncedField[] = [];
+  // Each field's own part of the update, for the one-by-one fallback.
+  const parts = new Map<SyncedField, UpdateJiraIssueInput>();
+  const stage = (field: SyncedField, part: UpdateJiraIssueInput) => {
+    Object.assign(input, part);
+    parts.set(field, part);
+    pending.push(field);
+  };
   const sent: SyncedField[] = [];
 
   for (const field of args.fields) {
     switch (field) {
       case "status": {
         if (args.type === "projectElement" && !args.carbon.status) break;
-        const moved = await jira.transitionIssue(
-          args.companyId,
-          args.issueId,
+        const target =
           args.type === "projectElement"
             ? groupToJiraCategory(
                 args.carbon.status as Parameters<typeof groupToJiraCategory>[0]
@@ -48,30 +55,36 @@ export async function pushToJira(args: {
                 String(args.row.status) as Parameters<
                   typeof mapCarbonStatusToJiraCategory
                 >[0]
-              )
+              );
+        // Jira has three categories for more Carbon states. When the issue
+        // is already in the target category, a transition would only move
+        // it to another status of that category: leave it.
+        if (target === args.currentCategory) {
+          sent.push(field);
+          break;
+        }
+        const moved = await jira.transitionIssue(
+          args.companyId,
+          args.issueId,
+          target
         );
         if (moved) sent.push(field);
         break;
       }
       case "assignee": {
         if (!args.row[entity.assigneeColumn]) {
-          input.assigneeId = null;
-          pending.push(field);
+          stage(field, { assigneeId: null });
         } else if (args.assigneeEmail) {
           const user = await jira.findUserByEmail(
             args.companyId,
             args.assigneeEmail
           );
-          if (user) {
-            input.assigneeId = user.accountId;
-            pending.push(field);
-          }
+          if (user) stage(field, { assigneeId: user.accountId });
         }
         break;
       }
       case "title": {
-        input.summary = String(args.row.name ?? "");
-        pending.push(field);
+        stage(field, { summary: String(args.row.name ?? "") });
         break;
       }
       case "priority": {
@@ -82,22 +95,22 @@ export async function pushToJira(args: {
         if (!name) break;
         const priorities = await jira.listPriorities(args.companyId);
         if (priorities.some((priority) => priority.name === name)) {
-          input.priority = name;
-          pending.push(field);
+          stage(field, { priority: name });
         }
         break;
       }
       case "dueDate": {
-        input.duedate =
-          (args.row[entity.dueDateColumn] as string | null) ?? null;
-        pending.push(field);
+        stage(field, {
+          duedate: (args.row[entity.dueDateColumn] as string | null) ?? null
+        });
         break;
       }
       case "description": {
-        input.description = tiptapToAdf(
-          args.row[entity.textColumn] as TiptapDocument | null
-        );
-        pending.push(field);
+        stage(field, {
+          description: tiptapToAdf(
+            args.row[entity.textColumn] as TiptapDocument | null
+          )
+        });
         break;
       }
       default:
@@ -107,7 +120,20 @@ export async function pushToJira(args: {
 
   if (pending.length > 0) {
     const updated = await jira.updateIssue(args.companyId, args.issueId, input);
-    if (updated) sent.push(...pending);
+    if (updated) {
+      sent.push(...pending);
+    } else if (pending.length > 1) {
+      // Jira refuses the whole update when one field is not on the issue's
+      // edit screen. Send each field alone so the others still sync.
+      for (const field of pending) {
+        const ok = await jira.updateIssue(
+          args.companyId,
+          args.issueId,
+          parts.get(field) ?? {}
+        );
+        if (ok) sent.push(field);
+      }
+    }
   }
 
   return sent;

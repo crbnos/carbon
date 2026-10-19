@@ -16,6 +16,7 @@ import {
   getJiraClient,
   tiptapToAdf
 } from "@carbon/ee/jira.server";
+import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
@@ -170,6 +171,20 @@ export const action: ActionFunction = async ({ request }) => {
       url,
       `Linked Carbon Issue: ${carbonIssue.parentReadableId ?? ""}`
     );
+
+    // The first push runs under the per-company sync key.
+    await trigger("issue-sync-push", {
+      companyId,
+      initial: true,
+      records: [
+        {
+          table: entityType,
+          recordId: actionId,
+          operation: "UPDATE",
+          old: null
+        }
+      ]
+    });
 
     return { success: true, message: "Jira issue created" };
   } catch (error) {

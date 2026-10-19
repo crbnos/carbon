@@ -50,3 +50,31 @@ export function nextSync(
     refused: refused === undefined ? (sync?.refused ?? null) : refused
   };
 }
+
+/**
+ * The fields a first outbound sync pushes: only what Carbon has. An empty
+ * Carbon value never overwrites the issue's (a picked assignee, a description).
+ */
+export function firstSyncOutbound(
+  fields: SyncedField[],
+  carbon: FieldValues
+): SyncedField[] {
+  return fields.filter((field) => (carbon[field] ?? null) !== null);
+}
+
+/**
+ * The fields a first inbound sync takes: the issue's values, but never an
+ * empty one, and never over a description Carbon already has (that one goes
+ * to the issue instead).
+ */
+export function firstSyncInbound(
+  fields: SyncedField[],
+  remote: FieldValues,
+  carbon: FieldValues
+): SyncedField[] {
+  return fields.filter(
+    (field) =>
+      (remote[field] ?? null) !== null &&
+      !(field === "description" && (carbon.description ?? null) !== null)
+  );
+}

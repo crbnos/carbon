@@ -79,3 +79,11 @@ describe("priority maps", () => {
     expect(jiraToPriority("Blocker")).toBeNull();
   });
 });
+
+describe("hashText key order", () => {
+  it("hashes an object the same whatever its key order (JSONB re-sorts keys)", () => {
+    expect(hashText({ type: "text", text: "a" })).toBe(
+      hashText({ text: "a", type: "text" })
+    );
+  });
+});

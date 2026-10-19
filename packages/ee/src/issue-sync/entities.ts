@@ -65,7 +65,7 @@ export const syncedEntities: Record<SyncedEntityType, SyncedEntity> = {
     table: "projectElement",
     parentColumn: "projectId",
     parentTable: "project",
-    readableColumn: "readableId",
+    readableColumn: "identifier",
     textColumn: "description",
     assigneeColumn: "ownerId",
     dueDateColumn: "targetDate",

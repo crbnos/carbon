@@ -47,8 +47,15 @@ plus a `sync` key (`LinkSyncSchema`, `types.ts`):
 The two values are the **echo guard**. Outbound pushes a field only when the row
 differs from `carbon` (`changedOutbound`); inbound applies a field only when the issue
 differs from `remote` (`changedInbound`). Each side writes both values after it acts,
-so the event its own write raises finds nothing to do. Pinned by `echo.test.ts`. A
-link with no `sync` (made before the engine) treats every field as changed once.
+so the event its own write raises finds nothing to do. Pinned by `echo.test.ts`.
+`hashText` sorts object keys first (a JSONB column returns them re-ordered), and a
+rich text with no text in it is `null` on both sides.
+
+A **first sync** — a new link, or a link with no `sync` (made before the engine) —
+has nothing to compare with. Outbound it pushes only what Carbon has
+(`firstSyncOutbound`); inbound it takes the issue's values but no empty one, and never
+over a description Carbon has (`firstSyncInbound`). An empty value never overwrites a
+real one.
 
 `writeLinks` upserts on `(entityType, entityId, integration, companyId)` with the
 service role (the table has no UPDATE policy). Never delete-and-reinsert a link: that
@@ -65,7 +72,8 @@ drops the snapshot.
    (`jobs/.../events/issue-sync.ts`) fans the batch out per company.
 3. `issueSyncPushFunction` (`carbon/issue-sync.push`) runs `pushRecords` for UPDATEs
    and `deleteLinks` for DELETEs.
-4. `pushRecords` reads the CURRENT rows (the event is a hint), pushes the changed
+4. `pushRecords` skips links of a tracker that is not active, reads the CURRENT
+   rows (the event is a hint), pushes the changed
    fields (`trackers/linear.server.ts`, `trackers/jira.server.ts`), reads the issue
    back, and stores what the tracker really holds as `remote`.
 
@@ -109,8 +117,12 @@ issue.
 ## Linking
 
 - **Link existing** → `linkExistingIssue`: pull first (`applyIssue` with `initial`),
-  except a description the record already has, which is then pushed.
-- **Create new** → `linkNewIssue`: push every field (`pushRecords` with `initial`).
+  except a description the record already has. The route then sends
+  `carbon/issue-sync.push` (trigger `issue-sync-push`), which pushes that description.
+- **Create new** → `linkNewIssue` writes the link; the route sends
+  `carbon/issue-sync.push` with `initial: true`.
+- The routes never push inline: the push runs under the per-company key, so the
+  webhook it raises cannot overtake the snapshot it writes.
 - Both refuse an issue already linked to another record: the inbound job finds a
   link by the issue id, so one issue drives one record.
 
@@ -127,6 +139,9 @@ issue.
 - Priority: `priorityToLinear` / `linearToPriority` (0 None … 4 Low);
   `priorityToJira` / `jiraToPriority` by name (Lowest → Low), and the push sends a
   Jira name only when `listPriorities` has it.
+- Jira: a status push to the category the issue is already in sends no transition
+  (Backlog → Unstarted, Completed → Cancelled). When Jira refuses a combined update (a
+  field not on the edit screen), the push retries each field alone.
 - The element page header renders the Linear and Jira dialogs (`ElementView.tsx`);
   the route loader reads the element's links. `projectElementLinkRefusal`
   (`shared.server.ts`) refuses a link on a Closed project.

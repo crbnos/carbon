@@ -3,7 +3,13 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it } from "vitest";
-import { changedInbound, changedOutbound, nextSync } from "./diff";
+import {
+  changedInbound,
+  changedOutbound,
+  firstSyncInbound,
+  firstSyncOutbound,
+  nextSync
+} from "./diff";
 import type { LinkSync, SyncedField } from "./types";
 
 const fields: SyncedField[] = ["status", "assignee", "dueDate", "description"];
@@ -84,5 +90,40 @@ describe("nextSync", () => {
     expect(withRefusal.refused).toEqual(refused);
     expect(nextSync(withRefusal, {}).refused).toEqual(refused);
     expect(nextSync(withRefusal, {}, null).refused).toBeNull();
+  });
+});
+
+describe("the first sync", () => {
+  it("pushes only the fields Carbon has a value for", () => {
+    expect(
+      firstSyncOutbound(fields, {
+        status: "Pending",
+        assignee: null,
+        dueDate: null,
+        description: null
+      })
+    ).toEqual(["status"]);
+  });
+
+  it("takes the issue's values, but no empty one and not over Carbon's description", () => {
+    expect(
+      firstSyncInbound(
+        fields,
+        {
+          status: "started",
+          assignee: null,
+          dueDate: "2026-11-01",
+          description: "m"
+        },
+        { description: "h" }
+      )
+    ).toEqual(["status", "dueDate"]);
+    expect(
+      firstSyncInbound(
+        fields,
+        { status: "started", description: "m" },
+        { description: null }
+      )
+    ).toEqual(["status", "description"]);
   });
 });

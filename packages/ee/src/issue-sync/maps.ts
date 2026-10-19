@@ -27,13 +27,31 @@ export function fnv1a(text: string): string {
   return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
+/** JSON with object keys sorted, so a JSONB round trip hashes the same. */
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return `{${entries
+      .map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
 /**
  * A short, stable fingerprint of a rich-text value (Tiptap JSON, Markdown,
  * ADF), so the sync snapshot can compare descriptions without storing them.
+ * Keys are sorted first: a JSONB column (an element's description) returns
+ * its keys in another order than the object that was written.
  */
 export function hashText(value: unknown): string | null {
   if (value === null || value === undefined) return null;
-  return fnv1a(typeof value === "string" ? value : JSON.stringify(value));
+  return fnv1a(typeof value === "string" ? value : stableStringify(value));
 }
 
 type ElementPriority = Database["public"]["Enums"]["projectElementPriority"];

@@ -47,6 +47,7 @@ const taskToEvent = {
   "slack-document-status-update": "carbon/slack-document-status-update",
   "slack-document-task-update": "carbon/slack-document-task-update",
   "sync-external-accounting": "carbon/sync-external-accounting",
+  "issue-sync-push": "carbon/issue-sync.push",
   "sync-issue-from-jira": "carbon/jira-sync",
   "sync-issue-from-linear": "carbon/linear-sync",
   "update-permissions": "carbon/update-permissions",

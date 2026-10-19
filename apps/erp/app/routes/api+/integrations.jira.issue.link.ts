@@ -16,6 +16,7 @@ import {
   getJiraIssueFromExternalId,
   unlinkActionFromJiraIssue
 } from "@carbon/ee/jira.server";
+import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
@@ -124,6 +125,20 @@ export const action: ActionFunction = async ({ request }) => {
           url,
           `Linked Carbon Issue: ${carbonIssue.parentReadableId ?? ""}`
         );
+
+        // Push the record's description (if it has one) under the
+        // per-company sync key.
+        await trigger("issue-sync-push", {
+          companyId,
+          records: [
+            {
+              table: entityType,
+              recordId: actionId,
+              operation: "UPDATE",
+              old: null
+            }
+          ]
+        });
 
         return { success: true, message: "Linked successfully" };
       }

@@ -560,6 +560,8 @@ export type Events = {
   "carbon/issue-sync.push": {
     data: {
       companyId: string;
+      /** A newly created issue: push every field Carbon has. */
+      initial?: boolean;
       records: Array<{
         table: string;
         recordId: string;

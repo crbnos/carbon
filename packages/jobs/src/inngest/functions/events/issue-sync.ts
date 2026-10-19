@@ -38,6 +38,7 @@ const IssueSyncPayloadSchema = z.object({
 
 const IssueSyncPushSchema = z.object({
   companyId: z.string(),
+  initial: z.boolean().optional(),
   records: z.array(
     z.object({
       table: z.string(),
@@ -99,7 +100,9 @@ export const issueSyncPushFunction = inngest.createFunction(
   },
   { event: "carbon/issue-sync.push" },
   async ({ event, step }) => {
-    const { companyId, records } = IssueSyncPushSchema.parse(event.data);
+    const { companyId, records, initial } = IssueSyncPushSchema.parse(
+      event.data
+    );
     const client = getCarbonServiceRole();
     const results: Record<string, unknown> = {};
 
@@ -123,7 +126,7 @@ export const issueSyncPushFunction = inngest.createFunction(
 
       if (updatedIds.length > 0) {
         results[`push-${table}`] = await step.run(`push-${table}`, () =>
-          pushRecords(client, companyId, table, updatedIds)
+          pushRecords(client, companyId, table, updatedIds, { initial })
         );
       }
 

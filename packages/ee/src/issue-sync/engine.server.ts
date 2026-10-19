@@ -30,7 +30,13 @@ import {
   linearValues,
   type SyncedRow
 } from "./canonical";
-import { changedInbound, changedOutbound, nextSync } from "./diff";
+import {
+  changedInbound,
+  changedOutbound,
+  firstSyncInbound,
+  firstSyncOutbound,
+  nextSync
+} from "./diff";
 import { isSyncedEntityType, syncedEntities } from "./entities";
 import { type LockContext, lockedFields } from "./locks";
 import {
@@ -224,6 +230,12 @@ async function readLockContexts(
       .select("id, status")
       .eq("companyId", companyId)
       .in("id", ids);
+    // A lock that cannot be read must not open: fail the sync instead.
+    if (notices.error) {
+      throw new Error(
+        `Failed to read change notices: ${notices.error.message}`
+      );
+    }
     const statusById = new Map(
       (notices.data ?? []).map((notice) => [notice.id, notice.status])
     );
@@ -241,19 +253,28 @@ async function readLockContexts(
       .select("id, status, lockPlanAfterMilestoneId")
       .eq("companyId", companyId)
       .in("id", projectIds);
+    if (projects.error) {
+      throw new Error(`Failed to read projects: ${projects.error.message}`);
+    }
     const milestoneIds = (projects.data ?? [])
       .map((project) => project.lockPlanAfterMilestoneId)
       .filter((id): id is string => !!id);
-    const milestones = milestoneIds.length
-      ? await client
-          .from("projectMilestone")
-          .select("id, completedAt")
-          .eq("companyId", companyId)
-          .in("id", milestoneIds)
-      : { data: [] };
-    const milestoneById = new Map(
-      (milestones.data ?? []).map((milestone) => [milestone.id, milestone])
-    );
+    const milestoneById = new Map<string, { completedAt: string | null }>();
+    if (milestoneIds.length > 0) {
+      const milestones = await client
+        .from("projectMilestone")
+        .select("id, completedAt")
+        .eq("companyId", companyId)
+        .in("id", milestoneIds);
+      if (milestones.error) {
+        throw new Error(
+          `Failed to read milestones: ${milestones.error.message}`
+        );
+      }
+      for (const milestone of milestones.data ?? []) {
+        milestoneById.set(milestone.id, milestone);
+      }
+    }
     const projectById = new Map(
       (projects.data ?? []).map((project) => [project.id, project])
     );
@@ -316,6 +337,20 @@ async function readUserEmails(
   return new Map((users.data ?? []).map((user) => [user.id, user.email]));
 }
 
+/** The trackers the company has installed and active. */
+async function readActiveTrackers(
+  client: Client,
+  companyId: string
+): Promise<Set<IssueTracker>> {
+  const result = await client
+    .from("companyIntegration")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .in("id", ["linear", "jira"]);
+  return new Set((result.data ?? []).map((row) => row.id).filter(isTracker));
+}
+
 export type PushSummary = {
   pushed: string[];
   skipped: Array<{ id: string; reason: string }>;
@@ -338,7 +373,10 @@ export async function pushRecords(
   opts: { initial?: boolean } = {}
 ): Promise<PushSummary> {
   const summary: PushSummary = { pushed: [], skipped: [], failed: [] };
-  const links = await readLinks(client, companyId, type, ids);
+  const active = await readActiveTrackers(client, companyId);
+  const links = (await readLinks(client, companyId, type, ids)).filter(
+    (link) => isTracker(link.integration) && active.has(link.integration)
+  );
   if (links.length === 0) return summary;
 
   const entity = syncedEntities[type];
@@ -365,11 +403,13 @@ export async function pushRecords(
 
     const sync = readLinkSync(link.metadata);
     const carbon = carbonValues(type, row, { stateGroupById });
-    const changed = changedOutbound(
-      entity.fields,
-      carbon,
-      opts.initial ? null : sync
-    );
+    // A first sync (a new issue, or a link made before snapshots) has nothing
+    // to compare with. It pushes only what Carbon has: an empty Carbon value
+    // never overwrites the issue's (a picked assignee, a description).
+    const firstSync = opts.initial || !sync;
+    const changed = firstSync
+      ? firstSyncOutbound(entity.fields, carbon)
+      : changedOutbound(entity.fields, carbon, sync);
     if (changed.length === 0) {
       summary.skipped.push({ id: row.id, reason: "unchanged" });
       continue;
@@ -397,6 +437,12 @@ export async function pushRecords(
           : await pushToJira({
               companyId,
               issueId: link.externalId,
+              currentCategory:
+                (
+                  link.metadata as {
+                    status?: { category?: string };
+                  } | null
+                )?.status?.category ?? null,
               type,
               row,
               carbon,
@@ -604,14 +650,14 @@ export async function applyIssue(
   const { states, stateGroupById } = await readStates(client, companyId, type);
   const sync = readLinkSync(link.metadata);
 
-  let changed = changedInbound(
-    entity.fields,
-    fetched.remote,
-    args.initial ? null : sync
-  );
-  if (args.initial && row[entity.textColumn]) {
-    changed = changed.filter((field) => field !== "description");
-  }
+  // A first sync (linking an existing issue, or a link made before
+  // snapshots) takes the issue's values, but never an empty one, and never
+  // over a description Carbon already has: that one goes to the issue.
+  const firstSync = args.initial || !sync;
+  const carbonBefore = carbonValues(type, row, { stateGroupById });
+  const changed = firstSync
+    ? firstSyncInbound(entity.fields, fetched.remote, carbonBefore)
+    : changedInbound(entity.fields, fetched.remote, sync);
 
   const lock = lockedFields(type, lockContext);
   const refusedFields = lock
@@ -796,9 +842,11 @@ export async function linkExistingIssue(
   });
   if ("failed" in applied) return { error: applied.failed };
 
-  await pushRecords(client, args.companyId, args.entityType, [args.entityId]);
   await ensureIssueSyncSubscriptions(client, args.companyId, args.tracker);
 
+  // The caller sends `carbon/issue-sync.push` for the record: the push runs
+  // under the per-company concurrency key, so the webhook it raises cannot
+  // overtake the snapshot it writes.
   return { issue: fetched.metadata };
 }
 
@@ -823,10 +871,9 @@ export async function linkNewIssue(
     sync: null
   });
 
-  await pushRecords(client, args.companyId, args.entityType, [args.entityId], {
-    initial: true
-  });
   await ensureIssueSyncSubscriptions(client, args.companyId, args.tracker);
 
+  // The caller sends `carbon/issue-sync.push` with `initial`, so the first
+  // push runs under the per-company concurrency key.
   return { issue: fetched.metadata };
 }

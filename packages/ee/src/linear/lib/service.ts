@@ -31,7 +31,10 @@ export const getCompanyEmployees = async (
     .select("userId,user!inner(email)")
     .eq("companyId", companyId)
     .eq("role", "employee")
-    .in("user.email", emails);
+    // Trackers keep the case a user typed; match it and its lower case.
+    .in("user.email", [
+      ...new Set(emails.flatMap((email) => [email, email.toLowerCase()]))
+    ]);
 
   return users.data ?? [];
 };

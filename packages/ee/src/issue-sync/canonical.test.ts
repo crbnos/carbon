@@ -3,7 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it } from "vitest";
-import { carbonValues, linearValues } from "./canonical";
+import { carbonValues, jiraValues, linearValues } from "./canonical";
 
 const row = {
   id: "t1",
@@ -84,5 +84,30 @@ describe("carbonValues for a project element", () => {
       dueDate: "2026-12-01",
       description: null
     });
+  });
+});
+
+describe("an empty description", () => {
+  it("counts as no description on both sides", () => {
+    expect(
+      carbonValues("nonConformanceActionTask", { ...row, notes: {} })
+        .description
+    ).toBeNull();
+    expect(
+      jiraValues({
+        id: "j1",
+        key: "J-1",
+        fields: {
+          summary: "S",
+          description: { version: 1, type: "doc", content: [] },
+          status: {
+            id: "1",
+            name: "To Do",
+            statusCategory: { id: 2, key: "new", name: "To Do" }
+          },
+          assignee: null
+        }
+      }).description
+    ).toBeNull();
   });
 });
