@@ -26,6 +26,7 @@ names each table that can link to an issue, and the columns the sync reads:
 |---|---|---|---|---|
 | `nonConformanceActionTask` | `nonConformanceId` | `notes` | status, assignee, dueDate, description | `update: quality` |
 | `changeOrderActionTask` | `changeOrderId` | `notes` | status, assignee, dueDate, description | `update: parts` |
+| `projectElement` (every type) | `projectId` | `description` | title (`name`), description, status (state group), assignee (`ownerId`), priority, dueDate (`targetDate`) | `update: projects` |
 
 It replaced `@carbon/ee/action-task-entity` (`actionTaskEntities`); the routes and
 `getActionTaskWithParent` (`shared.server.ts`) read it. `detailPath(parentId, id)`
@@ -89,7 +90,10 @@ The webhook jobs call `applyIssue(client, { companyId, tracker, issueId })`
    tracker.
 2. `changedInbound` picks the fields that moved.
 3. `lockedFields(type, ctx)` (`locks.ts`) removes the fields a lock protects: every
-   field of a task on a Done or Cancelled change notice.
+   field of a task on a Done or Cancelled change notice; every field of an element on
+   a Closed project; an element's title and description while the plan is locked
+   (`isProjectPlanLocked`, `@carbon/database/project-plan` — they are plan-layer
+   fields). Progress fields of a locked plan still sync.
 4. Write the allowed fields; store the snapshot and the refusal.
 
 An assignee goes through `resolveInboundAssignee`: an unassigned issue clears the
@@ -109,3 +113,22 @@ issue.
 - **Create new** → `linkNewIssue`: push every field (`pushRecords` with `initial`).
 - Both refuse an issue already linked to another record: the inbound job finds a
   link by the issue id, so one issue drives one record.
+
+## Project elements
+
+- An element's `status` value is its state's **group**
+  (`carbonValues(..., { stateGroupById })`); the tracker knows no company-specific
+  state. Outbound: `groupToLinearType` → the team's first state of that type, or
+  `groupToJiraCategory` → a transition. Inbound: `linearTypeToGroup` /
+  `jiraCategoryToGroup` (`new` keeps Backlog, `done` keeps Cancelled), then
+  `pickStateForGroup` keeps the element's own state when it is in the group, else the
+  group's default; `completedAtForGroup` sets `completedAt` as
+  `updateProjectElementField` does. Both helpers are in `@carbon/database/project-plan`.
+- Priority: `priorityToLinear` / `linearToPriority` (0 None … 4 Low);
+  `priorityToJira` / `jiraToPriority` by name (Lowest → Low), and the push sends a
+  Jira name only when `listPriorities` has it.
+- The element page header renders the Linear and Jira dialogs (`ElementView.tsx`);
+  the route loader reads the element's links. `projectElementLinkRefusal`
+  (`shared.server.ts`) refuses a link on a Closed project.
+- Start date, labels, milestone and the parent link do not sync.
+

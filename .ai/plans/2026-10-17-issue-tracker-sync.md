@@ -35,7 +35,7 @@
 - [x] Task 21: Add `projectElement` to the registry, maps and locks
 - [x] Task 22: Support `projectElement` in the engine, routes and subscriptions
 - [x] Task 23: Add the dialogs to the element page
-- [ ] Task 24: Phase 2 docs, gate and commit
+- [x] Task 24: Phase 2 docs, gate and commit
 - [ ] Task 25: Browser verification (`/test`)
 
 ## Dependencies

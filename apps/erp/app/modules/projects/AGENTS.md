@@ -301,6 +301,9 @@ plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
   `getMethodMaterialsByMakeMethod` for the Issue Material BOM picks; project stock stripes
   (`inventory-system.md` → *Project stock*), the quantities page's owner filter and the
   count lines' Stock Owner column.
+- **integrations (ee issue-sync)** — any element links to one Linear or Jira issue from
+  the element page header (`ElementView`, the shared `components/ActionTasks` dialogs);
+  the engine is `@carbon/ee/issue-sync` (`.claude/rules/issue-sync.md`).
 - **MES** — saves and submits time through the same `save-timesheet-entry` and
   `submit-timesheet-week` server functions (`serverFns.system`).
 
@@ -318,3 +321,4 @@ plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
   timekeeping, dilution, labor transfers, payroll totals, CLIN funding and the reports.
 - `.claude/rules/accounting-sync-handlers.md` — how the new journal sources sync.
 - `.claude/rules/database-patterns.md` — Kysely transactions and server functions.
+- `.claude/rules/issue-sync.md` — the Linear and Jira sync of elements.

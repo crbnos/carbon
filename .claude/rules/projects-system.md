@@ -781,6 +781,13 @@ line, an element's asset, `isFinalAsset`, the cost treatment) stay out.
   target a field (`targetTable`, `targetId`, `field`); Resolve writes over Kysely
   because RLS lets only the author update a comment.
 
+## Linear and Jira
+
+Any element (every type) links to one Linear or Jira issue from the element page
+header. Name, description, state (by state group), owner, priority and target date
+sync both ways through the issue-sync engine (`issue-sync.md`). A locked plan refuses
+an inbound name or description; a Closed project refuses every field.
+
 ## Known gaps
 
 - A receipt still creates a Receipt-usage inspection lot for a line the project

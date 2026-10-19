@@ -487,6 +487,7 @@ Questions found while writing the spec:
 
 ## Changelog
 
+- 2026-10-19: Phase 2 implemented. The element dialogs sit in the element page header (the loader reads the links). The create form's title stays a required user field; the server sets no default from the element name.
 - 2026-10-19: Phases 0 and 1 implemented. Engine in `packages/ee/src/issue-sync/`; rule `.claude/rules/issue-sync.md`. Link and create go through `linkExistingIssue` / `linkNewIssue`; a linked record's existing description goes to the issue on link.
 - 2026-10-17: Planning corrections. Defects 8 and 9 added. Outbound defects 2, 3 and 5 move to Phase 1. The element dialog triggers move to the header row (the sibling's `headerExtras`). `pickStateForGroup` replaces `defaultStateOfGroup`. Description snapshots are hashes. Link pulls first; create pushes first.
 - 2026-10-17: Created. Research in `.ai/research/issue-tracker-sync.md`. The user resolved Q1–Q10. Q9 and Q10 came up while writing the spec.
