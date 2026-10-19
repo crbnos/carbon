@@ -227,7 +227,7 @@ export const getCompanyEmployees = async (
 ) => {
   const users = await client
     .from("userToCompany")
-    .select("userId,user(email)")
+    .select("userId,user!inner(email)")
     .eq("companyId", companyId)
     .eq("role", "employee")
     .in("user.email", emails);
