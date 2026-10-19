@@ -3,11 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { isChangeNoticeLocked } from "@carbon/database/change-notice";
 import { isActionTaskEntityType } from "@carbon/ee/action-task-entity";
 import {
   getCompanyEmployees,
   getLinearClient,
-  linkActionToLinearIssue
+  linkActionToLinearIssue,
+  resolveInboundAssignee
 } from "@carbon/ee/linear.server";
 import { syncIssueFromLinearSchema } from "../../../schemas.js";
 import { inngest } from "../../client";
@@ -76,6 +78,22 @@ export const linearSyncFunction = inngest.createFunction(
       };
     }
 
+    if (mappedEntityType === "changeOrderActionTask") {
+      const task = await carbon
+        .from("changeOrderActionTask")
+        .select("changeOrder(status)")
+        .eq("id", action.data.id)
+        .eq("companyId", payload.companyId)
+        .maybeSingle();
+
+      if (isChangeNoticeLocked(task.data?.changeOrder?.status)) {
+        return {
+          success: true,
+          message: "Skipped: the change notice is closed"
+        };
+      }
+    }
+
     const fullIssue = await linear.getIssueById(
       payload.companyId,
       payload.event.data.id
@@ -88,20 +106,14 @@ export const linearSyncFunction = inngest.createFunction(
       };
     }
 
-    let assignee: string | null = null;
-
-    if (payload.event.data.assigneeId) {
-      const [linearUser] = await linear.getUsers(payload.companyId, {
-        id: payload.event.data.assigneeId
-      });
-
-      const employees = linearUser?.email
-        ? await getCompanyEmployees(carbon, payload.companyId, [
-            linearUser.email
-          ])
-        : [];
-      assignee = employees.length > 0 ? employees[0]!.userId : null;
-    }
+    const email = fullIssue.assignee?.email ?? null;
+    const employees = email
+      ? await getCompanyEmployees(carbon, payload.companyId, [email])
+      : [];
+    const assignee = resolveInboundAssignee({
+      issueHasAssignee: !!fullIssue.assignee,
+      matchedUserId: employees[0]?.userId
+    });
 
     const updated = await linkActionToLinearIssue(carbon, payload.companyId, {
       actionId: action.data.id,

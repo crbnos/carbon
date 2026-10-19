@@ -57,12 +57,16 @@ export async function linkActionToLinearIssue(
   }
 
   const updateData: Record<string, any> = {
-    assignee: input.assignee,
     status: mapLinearStatusToCarbonStatus(data.state.type!),
     dueDate: data.dueDate
   };
 
   // Only update notes if we successfully converted the description
+  // undefined leaves the Carbon assignee as it is (resolveInboundAssignee)
+  if (input.assignee !== undefined) {
+    updateData.assignee = input.assignee;
+  }
+
   if (notes !== undefined) {
     updateData.notes = notes;
   }

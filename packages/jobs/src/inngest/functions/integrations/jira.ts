@@ -3,11 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { isChangeNoticeLocked } from "@carbon/database/change-notice";
 import { isActionTaskEntityType } from "@carbon/ee/action-task-entity";
 import {
   getCompanyEmployees,
   getJiraClient,
-  linkActionToJiraIssue
+  linkActionToJiraIssue,
+  resolveInboundAssignee
 } from "@carbon/ee/jira.server";
 import { syncIssueFromJiraSchema } from "../../../schemas.js";
 import { inngest } from "../../client";
@@ -95,6 +97,22 @@ export const jiraSyncFunction = inngest.createFunction(
       };
     }
 
+    if (entityType === "changeOrderActionTask") {
+      const task = await carbon
+        .from("changeOrderActionTask")
+        .select("changeOrder(status)")
+        .eq("id", actionId)
+        .eq("companyId", payload.companyId)
+        .maybeSingle();
+
+      if (isChangeNoticeLocked(task.data?.changeOrder?.status)) {
+        return {
+          success: true,
+          message: "Skipped: the change notice is closed"
+        };
+      }
+    }
+
     // Fetch the full issue from Jira
     const fullIssue = await jira.getIssue(payload.companyId, issueId);
 
@@ -108,15 +126,16 @@ export const jiraSyncFunction = inngest.createFunction(
     // Get the site URL for the mapping
     const siteUrl = await jira.getSiteUrl(payload.companyId);
 
-    // Resolve assignee if present
-    let assignee: string | null = null;
-
-    if (fullIssue.fields.assignee?.emailAddress) {
-      const employees = await getCompanyEmployees(carbon, payload.companyId, [
-        fullIssue.fields.assignee.emailAddress
-      ]);
-      assignee = employees.length > 0 ? employees[0]!.userId : null;
-    }
+    // Jira can hide an assignee's email; an unmatched assignee leaves
+    // the Carbon assignee as it is.
+    const email = fullIssue.fields.assignee?.emailAddress ?? null;
+    const employees = email
+      ? await getCompanyEmployees(carbon, payload.companyId, [email])
+      : [];
+    const assignee = resolveInboundAssignee({
+      issueHasAssignee: !!fullIssue.fields.assignee,
+      matchedUserId: employees[0]?.userId
+    });
 
     // Update the linked action task
     const updated = await linkActionToJiraIssue(carbon, payload.companyId, {
