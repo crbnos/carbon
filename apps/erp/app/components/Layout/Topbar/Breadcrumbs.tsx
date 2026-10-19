@@ -13,6 +13,8 @@ import {
   BreadcrumbLink,
   Breadcrumbs as BreadcrumbsBase
 } from "~/components";
+import { PumpkinHomeIcon } from "~/components/Halloween/PumpkinHomeIcon";
+import { useUser } from "~/hooks";
 import type { BreadcrumbSegment } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -74,6 +76,7 @@ export function useBreadcrumbs() {
 const Breadcrumbs = () => {
   const { t } = useLingui();
   const breadcrumbs = useBreadcrumbs();
+  const user = useUser();
 
   return (
     <HStack className="items-center h-full hidden md:flex -ml-2" spacing={0}>
@@ -85,7 +88,12 @@ const Breadcrumbs = () => {
             to={path.to.authenticatedRoot}
             aria-label={t`Home`}
           >
-            <LuHouse className="size-4" />
+            {/* Seasonal: remove after Halloween with components/Halloween/. */}
+            <PumpkinHomeIcon
+              userId={user?.id ?? ""}
+              className="size-6"
+              fallback={<LuHouse className="size-4" />}
+            />
           </BreadcrumbLink>
         </BreadcrumbItem>
         {breadcrumbs.map((breadcrumb, i) => (

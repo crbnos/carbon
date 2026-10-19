@@ -63,6 +63,7 @@ import type {
 import { Await, data, Outlet, useLoaderData, useNavigate } from "react-router";
 import { RealtimeDataProvider } from "~/components";
 import ChangelogPanel from "~/components/ChangelogPanel";
+import { HalloweenLayer } from "~/components/Halloween/HalloweenLayer";
 import {
   ModuleSidebarLayout,
   PrimaryNavigation,
@@ -592,6 +593,8 @@ export default function AuthenticatedRoute() {
                         />
                       )}
                     </main>
+                    {/* Seasonal: remove after Halloween with components/Halloween/. */}
+                    <HalloweenLayer userId={user?.id ?? ""} />
                     {isPhone && (
                       <MobileBottomChrome>
                         <MobileDock />

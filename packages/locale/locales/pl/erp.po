@@ -10953,6 +10953,9 @@ msgstr "Wspomagane"
 msgid "Guided implementation"
 msgstr "Wdrożenie z przewodnikiem"
 
+msgid "Halloween surprise"
+msgstr "Halloweenowa niespodzianka"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Obsługuj powtarzające się i odwracające dowody księgowe"
 
@@ -10964,6 +10967,9 @@ msgstr "Praktyczne"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Wsparcie praktyczne i szybko reagujące przez pierwsze 3–4 tygodnie"
+
+msgid "Happy Halloween"
+msgstr "Wesołego Halloween"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Trudno zobaczyć rzeczywisty koszt lub marżę na zleceniu"
@@ -11003,6 +11009,9 @@ msgstr "Ukryj ponownie"
 
 msgid "Hide calculation"
 msgstr "Ukryj obliczenie"
+
+msgid "Hide decorations"
+msgstr "Ukryj dekoracje"
 
 msgid "Hide documents and activity"
 msgstr "Ukryj dokumenty i aktywność"
@@ -17061,6 +17070,9 @@ msgstr "Numer PZ"
 msgid "PO PDF"
 msgstr "PDF PO"
 
+msgid "Poke the spider… if you dare"
+msgstr "Szturchnij pająka… jeśli się odważysz"
+
 msgid "Policy"
 msgstr "Polityka"
 
@@ -21423,6 +21435,9 @@ msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Coś poszło nie tak. Spróbuj ponownie."
+
+msgid "Something wicked this way ships."
+msgstr "Coś złowrogiego właśnie wysyłamy."
 
 msgid "Soon"
 msgstr "Wkrótce"

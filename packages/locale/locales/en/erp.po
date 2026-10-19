@@ -10953,6 +10953,9 @@ msgstr "Guided"
 msgid "Guided implementation"
 msgstr "Guided implementation"
 
+msgid "Halloween surprise"
+msgstr "Halloween surprise"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Handle recurring and reversing journal entries"
 
@@ -10964,6 +10967,9 @@ msgstr "Hands-on"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Hands-on, fast-response support for the first 3–4 weeks"
+
+msgid "Happy Halloween"
+msgstr "Happy Halloween"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Hard to see true cost or margin on a job"
@@ -11003,6 +11009,9 @@ msgstr "Hide Again"
 
 msgid "Hide calculation"
 msgstr "Hide calculation"
+
+msgid "Hide decorations"
+msgstr "Hide decorations"
 
 msgid "Hide documents and activity"
 msgstr "Hide documents and activity"
@@ -17061,6 +17070,9 @@ msgstr "PO Number"
 msgid "PO PDF"
 msgstr "PO PDF"
 
+msgid "Poke the spider… if you dare"
+msgstr "Poke the spider… if you dare"
+
 msgid "Policy"
 msgstr "Policy"
 
@@ -21423,6 +21435,9 @@ msgstr "Something went wrong"
 
 msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."
+
+msgid "Something wicked this way ships."
+msgstr "Something wicked this way ships."
 
 msgid "Soon"
 msgstr "Soon"

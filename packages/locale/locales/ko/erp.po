@@ -10953,6 +10953,9 @@ msgstr "가이드형"
 msgid "Guided implementation"
 msgstr "안내된 실행"
 
+msgid "Halloween surprise"
+msgstr "할로윈 깜짝 선물"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "반복 및 역분개 전표 처리"
 
@@ -10964,6 +10967,9 @@ msgstr "밀착형"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "첫 3–4주간 밀착형으로 신속하게 대응하는 지원"
+
+msgid "Happy Halloween"
+msgstr "해피 할로윈"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "작업의 실제 원가나 마진을 파악하기 어려움"
@@ -11003,6 +11009,9 @@ msgstr "다시 숨기기"
 
 msgid "Hide calculation"
 msgstr "계산 숨기기"
+
+msgid "Hide decorations"
+msgstr "장식 숨기기"
 
 msgid "Hide documents and activity"
 msgstr "문서 및 활동 숨기기"
@@ -17061,6 +17070,9 @@ msgstr "PO 번호"
 msgid "PO PDF"
 msgstr "PO PDF"
 
+msgid "Poke the spider… if you dare"
+msgstr "거미를 찔러 보세요… 용기가 있다면"
+
 msgid "Policy"
 msgstr "정책"
 
@@ -21423,6 +21435,9 @@ msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "문제가 발생했습니다. 다시 시도해 주세요."
+
+msgid "Something wicked this way ships."
+msgstr "무언가 사악한 것이 출하되고 있습니다."
 
 msgid "Soon"
 msgstr "곧"

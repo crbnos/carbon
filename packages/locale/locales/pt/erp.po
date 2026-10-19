@@ -10953,6 +10953,9 @@ msgstr "Orientado"
 msgid "Guided implementation"
 msgstr "Implementação guiada"
 
+msgid "Halloween surprise"
+msgstr "Surpresa de Halloween"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Gerenciar lançamentos diários recorrentes e de reversão"
 
@@ -10964,6 +10967,9 @@ msgstr "Prático"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Suporte prático e de resposta rápida nas primeiras 3–4 semanas"
+
+msgid "Happy Halloween"
+msgstr "Feliz Halloween"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Difícil ver o custo real ou margem em um trabalho"
@@ -11003,6 +11009,9 @@ msgstr "Ocultar Novamente"
 
 msgid "Hide calculation"
 msgstr "Ocultar cálculo"
+
+msgid "Hide decorations"
+msgstr "Ocultar decorações"
 
 msgid "Hide documents and activity"
 msgstr "Ocultar documentos e atividade"
@@ -17061,6 +17070,9 @@ msgstr "Número da PO"
 msgid "PO PDF"
 msgstr "PDF da PO"
 
+msgid "Poke the spider… if you dare"
+msgstr "Cutuque a aranha… se tiver coragem"
+
 msgid "Policy"
 msgstr "Política"
 
@@ -21423,6 +21435,9 @@ msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Algo deu errado. Tente novamente."
+
+msgid "Something wicked this way ships."
+msgstr "Algo maligno está sendo enviado."
 
 msgid "Soon"
 msgstr "Em breve"

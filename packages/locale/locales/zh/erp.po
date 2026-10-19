@@ -10953,6 +10953,9 @@ msgstr "引导式"
 msgid "Guided implementation"
 msgstr "引导式实施"
 
+msgid "Halloween surprise"
+msgstr "万圣节惊喜"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "处理循环和冲销凭证"
 
@@ -10964,6 +10967,9 @@ msgstr "动手实践"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "动手操作、快速响应的支持，为期前3-4周"
+
+msgid "Happy Halloween"
+msgstr "万圣节快乐"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "难以看清工作的真实成本或利润"
@@ -11003,6 +11009,9 @@ msgstr "再次隐藏"
 
 msgid "Hide calculation"
 msgstr "隐藏计算"
+
+msgid "Hide decorations"
+msgstr "隐藏装饰"
 
 msgid "Hide documents and activity"
 msgstr "隐藏文档和活动"
@@ -17061,6 +17070,9 @@ msgstr "采购订单号"
 msgid "PO PDF"
 msgstr "采购订单 PDF"
 
+msgid "Poke the spider… if you dare"
+msgstr "戳一下蜘蛛……如果你敢的话"
+
 msgid "Policy"
 msgstr "政策"
 
@@ -21423,6 +21435,9 @@ msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "出现问题。请重试。"
+
+msgid "Something wicked this way ships."
+msgstr "有邪恶之物正在发货。"
 
 msgid "Soon"
 msgstr "即将推出"
