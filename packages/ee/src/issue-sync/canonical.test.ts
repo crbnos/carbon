@@ -50,9 +50,38 @@ describe("linearValues", () => {
         assignee: { email: "A@X.com" }
       })
     ).toEqual({
+      title: "T",
       status: "unstarted",
       assignee: "a@x.com",
+      priority: "0",
       dueDate: null,
+      description: null
+    });
+  });
+});
+
+describe("carbonValues for a project element", () => {
+  it("uses the state's group, the name, the owner and the target date", () => {
+    expect(
+      carbonValues(
+        "projectElement",
+        {
+          id: "e1",
+          name: "Bracket",
+          stateId: "s1",
+          ownerId: "u1",
+          priority: "High",
+          targetDate: "2026-12-01",
+          description: null
+        },
+        { stateGroupById: new Map([["s1", "Started" as const]]) }
+      )
+    ).toEqual({
+      title: "Bracket",
+      status: "Started",
+      assignee: "u1",
+      priority: "High",
+      dueDate: "2026-12-01",
       description: null
     });
   });

@@ -810,22 +810,6 @@ export async function getImplementationSignals(
   return signals;
 }
 
-// The readable identifier on each action task's parent, used for the Linear
-// attachment / Jira remote-link title.
-const actionTaskParents: Record<
-  SyncedEntityType,
-  { parentTable: string; readableColumn: string }
-> = {
-  nonConformanceActionTask: {
-    parentTable: "nonConformance",
-    readableColumn: "nonConformanceId"
-  },
-  changeOrderActionTask: {
-    parentTable: "changeOrder",
-    readableColumn: "changeOrderId"
-  }
-};
-
 export type ActionTaskWithParent = {
   id: string | null;
   notes: unknown;
@@ -841,12 +825,16 @@ export async function getActionTaskWithParent(
   taskId: string,
   companyId: string
 ): Promise<ActionTaskWithParent> {
-  const { table, parentColumn } = syncedEntities[entityType];
-  const { parentTable, readableColumn } = actionTaskParents[entityType];
+  // The registry names the parent and its readable id (the Linear attachment /
+  // Jira remote-link title) and the rich-text column, read here as `notes`.
+  const { table, parentColumn, parentTable, readableColumn, textColumn } =
+    syncedEntities[entityType];
 
   const result = await client
     .from(table)
-    .select(`id, notes, ${parentColumn}, ${parentTable}(${readableColumn})`)
+    .select(
+      `id, notes:${textColumn}, ${parentColumn}, ${parentTable}(${readableColumn})`
+    )
     .eq("id", taskId)
     .eq("companyId", companyId)
     .maybeSingle();

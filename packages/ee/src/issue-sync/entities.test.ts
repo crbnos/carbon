@@ -13,6 +13,7 @@ describe("syncedEntities", () => {
   it("knows the two action task tables", () => {
     expect(isSyncedEntityType("nonConformanceActionTask")).toBe(true);
     expect(isSyncedEntityType("changeOrderActionTask")).toBe(true);
+    expect(isSyncedEntityType("projectElement")).toBe(true);
     expect(isSyncedEntityType("job")).toBe(false);
     expect(isSyncedEntityType(null)).toBe(false);
   });
@@ -23,6 +24,12 @@ describe("syncedEntities", () => {
     ).toBe("/x/issue/ncr1/details");
     expect(syncedEntities.changeOrderActionTask.detailPath("co1", "t1")).toBe(
       "/x/items/change-notice/co1/details"
+    );
+  });
+
+  it("links an element to its own page", () => {
+    expect(syncedEntities.projectElement.detailPath("p1", "e1")).toBe(
+      "/x/project/p1/element/e1"
     );
   });
 

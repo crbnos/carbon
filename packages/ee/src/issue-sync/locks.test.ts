@@ -29,3 +29,37 @@ describe("lockedFields", () => {
     expect(lockedFields("nonConformanceActionTask", {})).toBeNull();
   });
 });
+
+describe("lockedFields for a project element", () => {
+  it("refuses only the name and description while the plan is locked", () => {
+    expect(lockedFields("projectElement", { planLocked: true })).toEqual({
+      fields: ["title", "description"],
+      reason: "the project plan is locked"
+    });
+  });
+
+  it("refuses every field of a Closed project, even with a locked plan", () => {
+    expect(
+      lockedFields("projectElement", {
+        projectStatus: "Closed",
+        planLocked: true
+      })
+    ).toEqual({
+      fields: [
+        "title",
+        "description",
+        "status",
+        "assignee",
+        "priority",
+        "dueDate"
+      ],
+      reason: "the project is closed"
+    });
+  });
+
+  it("refuses nothing on an open project with an open plan", () => {
+    expect(
+      lockedFields("projectElement", { projectStatus: "Released" })
+    ).toBeNull();
+  });
+});

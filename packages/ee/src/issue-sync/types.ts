@@ -10,7 +10,8 @@ export type IssueTracker = "linear" | "jira";
 /** The Carbon tables whose rows can link to an issue. */
 export type SyncedEntityType =
   | "nonConformanceActionTask"
-  | "changeOrderActionTask";
+  | "changeOrderActionTask"
+  | "projectElement";
 
 /** The tracker-neutral fields the sync compares and copies. */
 export type SyncedField =

@@ -9,6 +9,8 @@ import type { SyncedEntityType, SyncedField } from "./types";
 /** What the inbound sync knows about a record's locks. */
 export type LockContext = {
   changeNoticeStatus?: string | null;
+  projectStatus?: string | null;
+  planLocked?: boolean;
 };
 
 /**
@@ -27,6 +29,21 @@ export function lockedFields(
       fields: [...syncedEntities[type].fields],
       reason: "the change notice is closed"
     };
+  }
+  if (type === "projectElement") {
+    if (ctx.projectStatus === "Closed") {
+      return {
+        fields: [...syncedEntities[type].fields],
+        reason: "the project is closed"
+      };
+    }
+    // Name and description are plan-layer fields (PLAN_LAYER_FIELDS).
+    if (ctx.planLocked) {
+      return {
+        fields: ["title", "description"],
+        reason: "the project plan is locked"
+      };
+    }
   }
   return null;
 }

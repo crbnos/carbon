@@ -32,7 +32,7 @@
 
 **Phase 2 — project elements (PR 3)**
 - [x] Task 20: Add the project-plan helpers to `@carbon/database`
-- [ ] Task 21: Add `projectElement` to the registry, maps and locks
+- [x] Task 21: Add `projectElement` to the registry, maps and locks
 - [ ] Task 22: Support `projectElement` in the engine, routes and subscriptions
 - [ ] Task 23: Add the dialogs to the element page
 - [ ] Task 24: Phase 2 docs, gate and commit

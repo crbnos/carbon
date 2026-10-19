@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { ProjectStateGroup } from "@carbon/database/project-plan";
 import type { JiraIssue } from "../jira/lib/types";
 import type { LinearIssue } from "../linear/lib/types";
 import { syncedEntities } from "./entities";
@@ -17,22 +18,35 @@ const text = (value: unknown): string | null =>
 /** The synced fields of a Carbon row, as the snapshot's `carbon` values. */
 export function carbonValues(
   type: SyncedEntityType,
-  row: SyncedRow
+  row: SyncedRow,
+  ctx: { stateGroupById?: Map<string, ProjectStateGroup> } = {}
 ): FieldValues {
   const entity = syncedEntities[type];
-  return {
+  const values: FieldValues = {
     status: text(row.status),
     assignee: text(row[entity.assigneeColumn]),
     dueDate: text(row[entity.dueDateColumn]),
     description: hashText(row[entity.textColumn] ?? null)
   };
+
+  if (type === "projectElement") {
+    // An element's status is its state's group: the tracker knows no
+    // company-specific state.
+    values.status = ctx.stateGroupById?.get(String(row.stateId)) ?? null;
+    values.title = text(row.name);
+    values.priority = text(row.priority);
+  }
+
+  return values;
 }
 
 /** The synced fields of a Linear issue, as the snapshot's `remote` values. */
 export function linearValues(issue: LinearIssue): FieldValues {
   return {
+    title: issue.title,
     status: issue.state.type,
     assignee: issue.assignee?.email?.toLowerCase() ?? null,
+    priority: String(issue.priority ?? 0),
     dueDate: text(issue.dueDate),
     description: hashText(issue.description || null)
   };
@@ -44,8 +58,10 @@ export function linearValues(issue: LinearIssue): FieldValues {
  */
 export function jiraValues(issue: JiraIssue): FieldValues {
   return {
+    title: issue.fields.summary,
     status: issue.fields.status.statusCategory.key,
     assignee: issue.fields.assignee?.accountId ?? null,
+    priority: issue.fields.priority?.name ?? null,
     dueDate: text(issue.fields.duedate),
     description: hashText(issue.fields.description ?? null)
   };
