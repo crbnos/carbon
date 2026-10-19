@@ -255,6 +255,7 @@ describe("serveMcpRequest", () => {
     ]);
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name).sort()).toEqual([
+      "call_destructive_tool",
       "call_tool",
       "describe_tool",
       "search_tools"
@@ -288,13 +289,96 @@ describe("serveMcpRequest", () => {
     );
     expect(response.headers.get("content-type")).toContain("application/json");
     const body = await response.json();
-    expect(body.result.tools).toHaveLength(3);
+    expect(body.result.tools).toHaveLength(4);
   });
 
   it("refuses a subscription instead of holding the request open", async () => {
     const client = await connect(undefined, false, "modern");
     await expect(client.listen({ toolsListChanged: true })).rejects.toThrow(
       "Subscription limit reached"
+    );
+  });
+
+  it("refuses an argument a strict input would drop, and passes a loose input's", async () => {
+    const strict = await connect({
+      name: "production_setJobOperationWorkInstruction",
+      module: "production",
+      schema: {
+        type: "object",
+        properties: { id: { type: "string" }, text: { type: "string" } }
+      }
+    });
+    const refused = await strict.callTool({
+      name: "call_tool",
+      arguments: {
+        name: "production_setJobOperationWorkInstruction",
+        arguments: { id: "op_1", text: "Tap", assignee: "u2" }
+      }
+    });
+    expect(refused.isError).toBe(true);
+    expect(JSON.stringify(refused.content)).toContain(
+      "does not take assignee, so nothing was called. Its arguments: id, text."
+    );
+    expect(callOperation).not.toHaveBeenCalled();
+
+    const loose = await connect({
+      name: "purchasing_getPurchaseOrders",
+      module: "purchasing",
+      schema: {
+        type: "object",
+        properties: { search: { type: "string" } },
+        additionalProperties: {}
+      }
+    });
+    await loose.callTool({
+      name: "call_tool",
+      arguments: {
+        name: "purchasing_getPurchaseOrders",
+        arguments: { filters: [] }
+      }
+    });
+    expect(callOperation).toHaveBeenCalledWith(
+      "purchasing_getPurchaseOrders",
+      expect.anything(),
+      expect.objectContaining({ filters: [] })
+    );
+  });
+
+  it("runs a DESTRUCTIVE tool only through call_destructive_tool", async () => {
+    const client = await connect({
+      name: "inventory_deleteReceipt",
+      module: "inventory",
+      classification: "DESTRUCTIVE"
+    });
+    const viaCallTool = await client.callTool({
+      name: "call_tool",
+      arguments: {
+        name: "inventory_deleteReceipt",
+        arguments: { receiptId: "r" }
+      }
+    });
+    expect(viaCallTool.isError).toBe(true);
+    expect(JSON.stringify(viaCallTool.content)).toContain(
+      "call it with call_destructive_tool"
+    );
+    expect(callOperation).not.toHaveBeenCalled();
+
+    const { tools } = await client.listTools();
+    expect(
+      tools.find((tool) => tool.name === "call_destructive_tool")?.annotations
+        ?.destructiveHint
+    ).toBe(true);
+    await client.callTool({
+      name: "call_destructive_tool",
+      arguments: {
+        name: "inventory_deleteReceipt",
+        arguments: { receiptId: "r" }
+      }
+    });
+    expect(callOperation).toHaveBeenCalledWith(
+      "inventory_deleteReceipt",
+      expect.anything(),
+      { receiptId: "r" }
     );
   });
 

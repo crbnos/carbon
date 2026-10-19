@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { searchFilter } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -24,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const wantActivities = kind === "all" || kind === "activity";
 
   const escaped = q.replace(/[%_]/g, (m) => `\\${m}`);
-  const pattern = q.length >= 2 ? `%${escaped}%` : null;
+  const searchable = q.length >= 2;
 
   const [entities, activities] = await Promise.all([
     wantEntities
@@ -37,9 +38,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
             .eq("companyId", companyId)
             .order("createdAt", { ascending: false })
             .limit(50);
-          if (pattern) {
+          if (searchable) {
             return query.or(
-              `id.ilike.${pattern},sourceDocumentReadableId.ilike.${pattern},readableId.ilike.${pattern}`
+              searchFilter(
+                ["id", "sourceDocumentReadableId", "readableId"],
+                escaped
+              )
             );
           }
           return query;
@@ -55,9 +59,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
             .eq("companyId", companyId)
             .order("createdAt", { ascending: false })
             .limit(50);
-          if (pattern) {
+          if (searchable) {
             return query.or(
-              `id.ilike.${pattern},type.ilike.${pattern},sourceDocumentReadableId.ilike.${pattern}`
+              searchFilter(["id", "type", "sourceDocumentReadableId"], escaped)
             );
           }
           return query;

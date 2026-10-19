@@ -53,7 +53,7 @@ export const MARKETING_URL = "https://carbon.ms";
 export const REPOSITORY_URL = "https://github.com/crbnos/carbon";
 
 /**
- * The three tools the server registers. Carbon publishes meta-tools rather than
+ * The four tools the server registers. Carbon publishes meta-tools rather than
  * ~1,400 flat ones: a client that loaded every ERP operation as a tool would
  * spend its whole context on definitions before doing any work.
  */
@@ -73,7 +73,13 @@ const TOOLS = [
   {
     name: "call_tool",
     description:
-      "Call an operation by name with its arguments, optionally returning only the named fields of each row. Lists come back as CSV. The company and user are taken from the credential, never from the arguments.",
+      "Call a READ or WRITE operation by name with its arguments, optionally returning only the named fields of each row. Lists come back as CSV. The company and user are taken from the credential, never from the arguments.",
+    readOnly: false
+  },
+  {
+    name: "call_destructive_tool",
+    description:
+      "Call a DESTRUCTIVE operation (one that deletes or removes) by name with its arguments, exactly as call_tool does. call_tool refuses these, so a client can ask before one runs.",
     readOnly: false
   }
 ] as const;
@@ -139,7 +145,7 @@ export function buildMcpManifest(origin: string) {
         tools: TOOLS,
         operations: {
           description:
-            "search_tools, describe_tool and call_tool reach every ERP operation Carbon exposes, each classified READ, WRITE or DESTRUCTIVE.",
+            "search_tools, describe_tool, call_tool and call_destructive_tool reach every ERP operation Carbon exposes, each classified READ, WRITE or DESTRUCTIVE.",
           total: toolMetadata.totalTools,
           modules: MODULES,
           classifications: CLASSIFICATIONS

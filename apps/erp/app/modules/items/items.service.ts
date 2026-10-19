@@ -42,6 +42,8 @@ import {
   isUniqueViolation,
   pick,
   pluckUnique,
+  searchFilter,
+  textToTiptap,
   withPathIds
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -2393,7 +2395,7 @@ export async function getUnitOfMeasures(
     .eq("companyId", companyId);
 
   if (args.search) {
-    query = query.or(`name.ilike.%${args.search}%,code.ilike.%${args.search}%`);
+    query = query.or(searchFilter(["name", "code"], args.search));
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -6322,9 +6324,7 @@ export async function getChangeNotices(
     .eq("companyId", companyId);
 
   if (args?.search) {
-    query = query.or(
-      `changeOrderId.ilike.%${args.search}%,name.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["changeOrderId", "name"], args.search));
   }
 
   if (args) {
@@ -10154,13 +10154,10 @@ export const isMakeMethodId = (id: string) => id.startsWith("make_");
 // ── Change notices ──────────────────────────────────────────────────────────
 
 // Reason and description arrive as plain text; the columns are tiptap JSON, so
-// non-empty text becomes a one-paragraph doc the detail page's editor can edit.
+// non-empty text becomes a doc the detail page's editor can edit.
 export function toRichText(value: string | undefined): Json | undefined {
   if (!value) return undefined;
-  return {
-    type: "doc",
-    content: [{ type: "paragraph", content: [{ type: "text", text: value }] }]
-  } as unknown as Json;
+  return textToTiptap(value) as unknown as Json;
 }
 
 const onShapeDataValidator = z.object({

@@ -80,7 +80,12 @@ any other value export in a server file fails generation.
 - **Input schema**: the TYPE of `run`'s input parameter, through
   `typeToJsonSchema` (`scripts/lib/response-schema.ts`). A field whose type
   admits `undefined` is optional. Enum members are sorted, so the hash does not
-  move with the checker's type ids.
+  move with the checker's type ids. The type carries no descriptions, so
+  `inputFieldDescriptions` (`scripts/lib/input-docs.ts`) reads each top-level
+  field's `.describe("…")` from the source, following the validator an input
+  extends; `@param` overrides it. A loose input whose `run` calls a building
+  block of its module that runs `setGenericQueryFilters`
+  (`appliesGenericFilters`) also publishes `filters` and `sorts`.
 - **Response schema**: `run`'s return type, with `Promise` and `{ data, error }`
   peeled off. A `paged` result (`{ rows, count }`, `@carbon/api/service-tools.server`)
   is published as its rows with `paginates: true`; rows that are not a list
@@ -118,7 +123,11 @@ The procedure (`api+/v1+/lib/router.server.ts`) is the same one HTTP serves:
 4. A refusal (`CarbonError`) becomes an `ORPCError` with the category's code and
    status, and `data.category`. The message is the function's own; a throw
    inside `run` arrives as `internal` with the cause logged, not returned.
-5. `shapeHttpBody`: a list (`isListOperation`, an array response schema) goes
+5. The spec (`openapi[.]json.ts`) adds every refusal beside the 200 body
+   (`withErrorResponses`, `spec-options.server.ts`): a JSON `Error`
+   (`{ code, status, message, data: { category } }`) from the operation, plain
+   text for the API key's own 401 / 403 / 429.
+6. `shapeHttpBody`: a list (`isListOperation`, an array response schema) goes
    out as `{ results, count }`, anything else as the bare value.
    `callOperation` reverses it with `unshapeHttpBody`.
 
@@ -172,20 +181,31 @@ engine: `serveMcpRequest` throws `EntitlementError`, which the route turns into
 a 402 (`makeMcpDisabledResponse`). One check covers both auth paths, the
 Community edition and Cloud Starter. The discovery endpoints are not gated.
 
-## The 3 meta-tools
+## The 4 meta-tools
 
-Only three tools are registered (`packages/ee/src/mcp/server.ts`); every ERP
+Only four tools are registered (`packages/ee/src/mcp/server.ts`); every ERP
 operation is reached through them.
 
 | Tool | Purpose |
 |------|---------|
 | `search_tools` | Ranked discovery. Filters: `query`, `module` (substring), `classification`, `limit` (default 10) / `offset`. |
 | `describe_tool` | The contract for one `name` or up to 10 `names`: description, permission, list marker, input and response schema. |
-| `call_tool` | Run a tool: `{ name, arguments, fields? }`. `arguments` may arrive as a JSON string. Parameters go flat, exactly as `describe_tool` lists them. |
+| `call_tool` | Run a READ or WRITE tool: `{ name, arguments, fields? }`. `arguments` may arrive as a JSON string. Parameters go flat, exactly as `describe_tool` lists them. |
+| `call_destructive_tool` | The same, for a DESTRUCTIVE tool, with `destructiveHint: true`. Each refuses the other's tools, so a client can ask before a delete runs; one handler (`runCall`) serves both. |
 
 An unknown name in `call_tool` or `describe_tool` is answered with the three
 closest tools from catalog search ("Did you mean: …"); `call_tool` does not
 dispatch it.
+
+`call_tool` also refuses, without dispatching, a top-level argument a STRICT
+input would drop (`unknownArguments`, `describe-format.ts`): one whose schema
+lists `properties` and publishes no `additionalProperties` (a `z.object`; a
+`z.looseObject` publishes `additionalProperties` and is left alone). The HTTP
+API keeps accepting and dropping such a field; an agent reads that success as
+"saved". The call is logged with its argument KEYS only (values are customer
+data). It was found when the refactor's strict inputs silently dropped the
+`workInstruction` and `assignee` that the old pass-through tools wrote
+(`.ai/runs/2026-10-19-api-refactor-lost-mcp-writes.md`).
 
 ### Catalog search (`packages/ee/src/mcp/catalog-search.ts`)
 
@@ -213,6 +233,9 @@ the manifest.
   measured 22/34 at best against 33/34. Pinning cannot hold the exact-name rule
   because it matches the expanded term, not the query. `stemInflection` leaves
   "materials" unstemmed, so `sameWord` also accepts a plain -s/-es plural.
+- `DOCUMENT_VERBS` (receive → receipt, ship → shipment) ranks tools named for
+  that document first, before name coverage: "receive a purchase order" asks
+  for a receipt, and the order's two words otherwise outranked it.
 - `module` keeps substring semantics; filter-only calls bypass the index.
 - `search_tools` output (`formatSearchResults`, `describe-format.ts`): one
   line per tool in rank order, `name [READ] (requiredParams, +N optional)`
@@ -290,7 +313,7 @@ knowingly accepted. Seed first (`pnpm db:seed:dev`). Not part of `pnpm test`.
 ## The agent evaluation
 
 `apps/erp/test/mcp-eval/satellite.xml`: ten read-only, multi-hop questions in
-the mcp-builder skill's format, answered only through the three meta-tools,
+the mcp-builder skill's format, answered only through the meta-tools,
 each with one answer checked by string comparison. The answers come from the
 satellite demo dataset (no dates or sequence ids), so they hold for any company
 seeded with it; the file's header names the traps it sets on purpose. Run it

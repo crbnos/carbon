@@ -127,6 +127,7 @@ import {
   resolveBatchRules,
   round,
   scrapAllowance,
+  searchFilter,
   textToTiptap,
   tiptapToText,
   unchecked
@@ -1445,7 +1446,7 @@ export async function getJobMaterialsWithQuantityOnHand(
 
   if (args?.search) {
     query = query.or(
-      `itemReadableId.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      searchFilter(["itemReadableId", "name", "description"], args.search)
     );
   }
 
@@ -2087,7 +2088,7 @@ export async function getJobOperationStepRecords(
 
   if (args.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,operationDescription.ilike.%${args.search}%`
+      searchFilter(["name", "operationDescription"], args.search)
     );
   }
 
@@ -2227,7 +2228,7 @@ export async function getProductionEvents(
     .order("startTime", { ascending: true });
 
   if (args?.search) {
-    query = query.or(`jobOperation.description.ilike.%${args.search}%`);
+    query = query.or(searchFilter(["jobOperation.description"], args.search));
   }
 
   if (args) {
@@ -2292,7 +2293,7 @@ export async function getProductionPlanning(
 
   if (args?.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
+      searchFilter(["name", "readableIdWithRevision"], args.search)
     );
   }
 
@@ -2330,7 +2331,7 @@ export async function getProductionProjections(
 
   if (args?.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
+      searchFilter(["name", "readableIdWithRevision"], args.search)
     );
   }
 
@@ -2368,7 +2369,7 @@ export async function getProductionQuantities(
     .in("jobOperationId", jobOperationIds);
 
   if (args?.search) {
-    query = query.or(`jobOperation.description.ilike.%${args.search}%`);
+    query = query.or(searchFilter(["jobOperation.description"], args.search));
   }
 
   if (args) {

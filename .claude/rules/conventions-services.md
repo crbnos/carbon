@@ -143,6 +143,11 @@ export async function getCustomers(
 }
 ```
 
+Searching several columns at once is `query.or(searchFilter(["name", "readableId"], args.search))`
+(`@carbon/utils`), never a template literal: `.or()` parses the text as filter
+syntax, so a comma in a search ended the filter and the request failed. The
+`no-raw-or-search` check (`@carbon/checks`) fails the template form.
+
 For an unpaginated full list (e.g. a select dropdown), use
 `fetchAllFromTable(client, table, columns, qb)` from `@carbon/database`, which pages
 through large result sets (`getCustomersList` in `sales.service.ts`).

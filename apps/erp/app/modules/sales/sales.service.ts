@@ -109,6 +109,7 @@ import {
   type RentalBillingCycle,
   round,
   salesTypeRequirementError,
+  searchFilter,
   suggestContractType,
   wholeRateUnits
 } from "@carbon/utils";
@@ -1186,7 +1187,10 @@ export async function getExternalSalesOrderLines(
 
   if (args.search) {
     query = query.or(
-      `readableId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%,salesOrderId.ilike.%${args.search}%`
+      searchFilter(
+        ["readableId", "customerReference", "salesOrderId"],
+        args.search
+      )
     );
   }
 
@@ -1416,7 +1420,7 @@ export async function getQuotes(
 
   if (args.search) {
     query = query.or(
-      `quoteId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
+      searchFilter(["quoteId", "customerReference"], args.search)
     );
   }
 
@@ -1858,12 +1862,16 @@ export async function getSalesOrders(
 
   if (args.search) {
     query = query.or(
-      `salesOrderId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
+      searchFilter(["salesOrderId", "customerReference"], args.search)
     );
   }
 
   if (args.customerId) {
     query = query.eq("customerId", args.customerId);
+  }
+
+  if (args.status) {
+    query = query.eq("status", args.status as never);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -2062,9 +2070,7 @@ export async function getSalesRFQs(
     .eq("companyId", companyId);
 
   if (args.search) {
-    query = query.or(
-      `rfqId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["rfqId", "customerReference"], args.search));
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -2509,9 +2515,7 @@ export async function resolvePriceList(
     .in("id", overriddenItemIds);
 
   if (args.search) {
-    itemQuery = itemQuery.or(
-      `name.ilike.%${args.search}%,readableId.ilike.%${args.search}%`
-    );
+    itemQuery = itemQuery.or(searchFilter(["name", "readableId"], args.search));
   }
 
   const { itemIds: postingGroupItemIds, filters: filtersWithoutPostingGroup } =
@@ -2795,9 +2799,7 @@ export async function getBaseCatalog(
     .eq("active", true);
 
   if (args.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,readableId.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["name", "readableId"], args.search));
   }
 
   const { itemIds: postingGroupItemIds, filters: filtersWithoutPostingGroup } =
@@ -3165,7 +3167,7 @@ export async function getCustomerItemPriceOverridesList(
 
   if (args.search) {
     query = query.or(
-      `item.name.ilike.%${args.search}%,customer.name.ilike.%${args.search}%,notes.ilike.%${args.search}%`
+      searchFilter(["item.name", "customer.name", "notes"], args.search)
     );
   }
 
@@ -6675,7 +6677,7 @@ export async function getSalesReturnOrders(
 
   if (args.search) {
     query = query.or(
-      `salesReturnOrderId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
+      searchFilter(["salesReturnOrderId", "customerReference"], args.search)
     );
   }
 
@@ -8133,7 +8135,7 @@ export async function getRentalAgreements(
 
   if (args.search) {
     query = query.or(
-      `rentalAgreementId.ilike.%${args.search}%,customerName.ilike.%${args.search}%`
+      searchFilter(["rentalAgreementId", "customerName"], args.search)
     );
   }
 
@@ -9039,7 +9041,7 @@ export async function getContracts(
 
   if (args.search) {
     query = query.or(
-      `customerContractId.ilike.%${args.search}%,name.ilike.%${args.search}%,customerName.ilike.%${args.search}%`
+      searchFilter(["customerContractId", "name", "customerName"], args.search)
     );
   }
 

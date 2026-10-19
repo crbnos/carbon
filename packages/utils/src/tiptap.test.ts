@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { documentHasImages } from "./tiptap";
+import { documentHasImages, textToTiptap } from "./tiptap";
 
 describe("documentHasImages", () => {
   it("returns false for empty / textless documents", () => {
@@ -55,5 +55,27 @@ describe("documentHasImages", () => {
         ]
       })
     ).toBe(true);
+  });
+});
+
+describe("textToTiptap", () => {
+  it("makes each line a paragraph and **text** bold", () => {
+    expect(
+      textToTiptap("Tap with **TiN-coated** tap.\n\nChase a ** b")
+    ).toEqual({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "Tap with " },
+            { type: "text", text: "TiN-coated", marks: [{ type: "bold" }] },
+            { type: "text", text: " tap." }
+          ]
+        },
+        { type: "paragraph" },
+        { type: "paragraph", content: [{ type: "text", text: "Chase a ** b" }] }
+      ]
+    });
   });
 });

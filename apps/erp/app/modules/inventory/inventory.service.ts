@@ -104,6 +104,7 @@ import {
   resolveReturnUnitCost,
   resolveTrackedEntityBin,
   round,
+  searchFilter,
   settleQuantity,
   splitPickAcrossMembers,
   statusAfterQuantityChange,
@@ -640,7 +641,7 @@ export async function getKanbans(
 
   if (args.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
+      searchFilter(["name", "readableIdWithRevision"], args.search)
     );
   }
 
@@ -823,7 +824,7 @@ export async function getReceipts(
 
   if (args.search) {
     query = query.or(
-      `receiptId.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%`
+      searchFilter(["receiptId", "sourceDocumentReadableId"], args.search)
     );
   }
 
@@ -1364,7 +1365,16 @@ export async function getStockMovements(
     // alter the filter shape.
     const search = args.search.replace(/[,()\\]/g, " ");
     query = query.or(
-      `itemReadableId.ilike.%${search}%,itemDescription.ilike.%${search}%,locationName.ilike.%${search}%,storageUnitName.ilike.%${search}%,trackedEntityReadableId.ilike.%${search}%`
+      searchFilter(
+        [
+          "itemReadableId",
+          "itemDescription",
+          "locationName",
+          "storageUnitName",
+          "trackedEntityReadableId"
+        ],
+        search
+      )
     );
   }
 
@@ -1392,7 +1402,7 @@ export async function getShipments(
 
   if (args.search) {
     query = query.or(
-      `shipmentId.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%`
+      searchFilter(["shipmentId", "sourceDocumentReadableId"], args.search)
     );
   }
 
@@ -1581,9 +1591,7 @@ export async function getShippingMethods(
     .eq("active", true);
 
   if (args.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,carrier.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["name", "carrier"], args.search));
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -1659,7 +1667,10 @@ export async function getTrackedEntities(
 
   if (args.search) {
     query = query.or(
-      `id.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%,readableId.ilike.%${args.search}%`
+      searchFilter(
+        ["id", "sourceDocumentReadableId", "readableId"],
+        args.search
+      )
     );
   }
 
@@ -1816,9 +1827,7 @@ export async function getWarehouseTransfers(
     .eq("companyId", companyId);
 
   if (args.search) {
-    query = query.or(
-      `transferId.ilike.%${args.search}%,reference.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["transferId", "reference"], args.search));
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -2079,7 +2088,7 @@ export async function getInventoryCountLines(
     // Search the item's identity (part number / name); the line's own readableId
     // is only the batch/serial and is null for most rows.
     query = query.or(
-      `itemName.ilike.%${search}%,itemReadableIdWithRevision.ilike.%${search}%`
+      searchFilter(["itemName", "itemReadableIdWithRevision"], search)
     );
   }
 

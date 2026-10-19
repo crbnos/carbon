@@ -4847,9 +4847,12 @@ export const updatePurchaseOrderExchangeRate = defineServiceFn({
 });
 
 /**
- * Update purchase order favorite
+ * Mark or unmark a purchase order as one of the caller's favorites.
  *
- * @mcp destructive
+ * @remarks
+ * Changes only the caller's own favorites list; the record is unchanged.
+ *
+ * @mcp
  */
 export const updatePurchaseOrderFavorite = defineServiceFn({
   input: z.looseObject({ id: z.string(), favorite: z.boolean() }),

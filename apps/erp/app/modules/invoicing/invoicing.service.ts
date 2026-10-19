@@ -147,6 +147,7 @@ import {
   type SalesPostingMetadata,
   type ScheduleRow,
   type SettlementBalanceRow,
+  searchFilter,
   spreadStraightLine,
   toBaseAmount,
   toDocumentAmount,
@@ -1599,9 +1600,7 @@ export async function getCharges(
     .eq("companyId", companyId);
 
   if (args.search) {
-    query = query.or(
-      `chargeId.ilike.%${args.search}%,merchantName.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["chargeId", "merchantName"], args.search));
   }
   if (args.type) {
     query = query.eq("type", args.type);
@@ -1649,7 +1648,7 @@ export async function getReimbursements(
 
   if (args.search) {
     query = query.or(
-      `reimbursementId.ilike.%${args.search}%,reference.ilike.%${args.search}%`
+      searchFilter(["reimbursementId", "reference"], args.search)
     );
   }
   if (args.status) {

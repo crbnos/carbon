@@ -13,7 +13,8 @@ import {
   EPSILON,
   pick,
   resolveTrackedEntityBin,
-  round
+  round,
+  searchFilter
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -317,7 +318,10 @@ export async function getGauges(
 
   if (args?.search) {
     query = query.or(
-      `gaugeId.ilike.%${args.search}%,description.ilike.%${args.search}%,modelNumber.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%`
+      searchFilter(
+        ["gaugeId", "description", "modelNumber", "serialNumber"],
+        args.search
+      )
     );
   }
 
@@ -367,7 +371,10 @@ export async function getGaugeCalibrationRecords(
 
   if (args?.search) {
     query = query.or(
-      `gaugeId.ilike.%${args.search}%,description.ilike.%${args.search}%,modelNumber.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%`
+      searchFilter(
+        ["gaugeId", "description", "modelNumber", "serialNumber"],
+        args.search
+      )
     );
   }
 
@@ -455,9 +462,7 @@ export async function getIssues(
     .eq("companyId", companyId);
 
   if (args?.search) {
-    query = query.or(
-      `nonConformanceId.ilike.%${args.search}%,name.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["nonConformanceId", "name"], args.search));
   }
 
   if (args) {
@@ -1077,7 +1082,15 @@ export async function getQualityActions(
 
   if (args?.search) {
     query = query.or(
-      `readableNonConformanceId.ilike.%${args.search}%,nonConformanceName.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      searchFilter(
+        [
+          "readableNonConformanceId",
+          "nonConformanceName",
+          "name",
+          "description"
+        ],
+        args.search
+      )
     );
   }
 
@@ -1233,9 +1246,7 @@ export async function getRisks(
     .eq("companyId", companyId);
 
   if (args?.search) {
-    query = query.or(
-      `title.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["title", "description"], args.search));
   }
 
   if (args?.status && args.status.length > 0) {
@@ -2146,7 +2157,10 @@ export async function getInspections(
 
   if (args?.search) {
     query = query.or(
-      `itemReadableId.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%,notes.ilike.%${args.search}%`
+      searchFilter(
+        ["itemReadableId", "sourceDocumentReadableId", "notes"],
+        args.search
+      )
     );
   }
 
@@ -2401,7 +2415,7 @@ export async function getInspectionDocuments(
 
   if (args?.search) {
     query = query.or(
-      `drawingNumber.ilike.%${args.search}%,fileName.ilike.%${args.search}%,partReadableId.ilike.%${args.search}%`
+      searchFilter(["drawingNumber", "fileName", "partReadableId"], args.search)
     );
   }
 

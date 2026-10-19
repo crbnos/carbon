@@ -31,7 +31,10 @@ import {
   type WorkCenterRate
 } from "~/utils/bom";
 import { isAssemblerServiceHealthy } from "../production/production.service";
-import { invokePosting } from "../shared/shared.service";
+import {
+  invokePosting,
+  setOperationWorkInstruction
+} from "../shared/shared.service";
 import {
   applyStorageAndShelfLifeRefines,
   changeNoticeChangeTypes,
@@ -4819,6 +4822,44 @@ export const updateMethodOperation = defineServiceFn({
           payload(ctx, input).forUpdate() as never
         )
       )
+    );
+  }
+});
+
+/**
+ * Set the work instruction of a method operation.
+ *
+ * @remarks
+ * Replaces the operation's work instruction; the rest of the operation is
+ * unchanged. Only a Draft method version can change, and the revision's
+ * release lock applies, as in the bill of process editor.
+ *
+ * @param id - The method operation's id.
+ * @param text - The work instruction as plain text: each line is a paragraph,
+ *   `**text**` is bold. Empty text clears it.
+ *
+ * @mcp
+ */
+export const setMethodOperationWorkInstruction = defineServiceFn({
+  input: z.object({ id: z.string().min(1), text: z.string() }),
+  permission: { update: "parts" },
+
+  async run(ctx, { id, text }) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [{ kind: "operation", id }]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
+    const notDraft = await service.methodStepRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      { operationId: id }
+    );
+    if (notDraft) return ctx.error("rule", notDraft);
+    return service.withLockNotice(
+      lock,
+      await setOperationWorkInstruction(ctx, "methodOperation", id, text)
     );
   }
 });

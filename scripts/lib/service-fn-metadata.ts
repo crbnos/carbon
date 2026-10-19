@@ -31,6 +31,7 @@ import {
   typeToJsonSchema,
   unwrapResponseType
 } from "./response-schema";
+import { appliesGenericFilters, inputFieldDescriptions } from "./input-docs";
 
 const ROUTER_FILE = path.resolve(
   __dirname,
@@ -38,6 +39,50 @@ const ROUTER_FILE = path.resolve(
 );
 
 const ACTIONS: PermissionAction[] = ["view", "create", "update", "delete"];
+
+/** `GenericQueryFilters.filters` (`apps/erp/app/utils/query.ts`). */
+const GENERIC_FILTERS_SCHEMA: JsonSchema = {
+  type: "array",
+  description:
+    "Narrows the list: each filter compares one returned field. `in` and `contains` take a comma-separated list, `between` takes `from,to`.",
+  items: {
+    type: "object",
+    properties: {
+      column: { type: "string" },
+      operator: {
+        type: "string",
+        enum: [
+          "between",
+          "contains",
+          "eq",
+          "gt",
+          "gte",
+          "in",
+          "lt",
+          "lte",
+          "neq",
+          "startsWith"
+        ]
+      },
+      value: { type: "string" }
+    },
+    required: ["column", "operator", "value"]
+  }
+};
+
+/** `GenericQueryFilters.sorts`. */
+const GENERIC_SORTS_SCHEMA: JsonSchema = {
+  type: "array",
+  description: "Orders the list by returned fields, first to last.",
+  items: {
+    type: "object",
+    properties: {
+      sortBy: { type: "string" },
+      sortAsc: { type: "boolean" }
+    },
+    required: ["sortBy", "sortAsc"]
+  }
+};
 
 export interface ServiceFnLeaf {
   path: string[];
@@ -420,6 +465,21 @@ export function buildServiceFnTools(
     const response = rows ?? returned;
     const properties = (input as { properties?: Record<string, JsonSchema> })
       .properties;
+    for (const [name, text] of inputFieldDescriptions(leaf.call)) {
+      const property = properties?.[name];
+      if (property && !property.description) property.description = text;
+    }
+    // A loose input that reaches `setGenericQueryFilters` takes the list
+    // filters too; they were accepted but published nowhere.
+    if (
+      properties &&
+      (input as { additionalProperties?: unknown }).additionalProperties !==
+        undefined &&
+      appliesGenericFilters(leaf.call)
+    ) {
+      properties.filters ??= GENERIC_FILTERS_SCHEMA;
+      properties.sorts ??= GENERIC_SORTS_SCHEMA;
+    }
     for (const [name, text] of Object.entries(docs.params)) {
       const property = properties?.[name];
       if (!property) {

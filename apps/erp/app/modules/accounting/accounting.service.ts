@@ -179,6 +179,7 @@ import {
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
   round,
   type SalesPostingAccount,
+  searchFilter,
   toBaseAmount,
   toDisplayCredit,
   toDisplayDebit,
@@ -4833,9 +4834,7 @@ export async function getProjects(
     .eq("active", true);
 
   if (args.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["name", "description"], args.search));
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -5902,7 +5901,7 @@ export async function getJournalEntries(
 
   if (args.search) {
     query = query.or(
-      `journalEntryId.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      searchFilter(["journalEntryId", "description"], args.search)
     );
   }
 
@@ -6957,7 +6956,7 @@ export async function getFixedAssets(
 
   if (args.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,fixedAssetId.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%`
+      searchFilter(["name", "fixedAssetId", "serialNumber"], args.search)
     );
   }
 
@@ -8577,7 +8576,10 @@ export async function getFleetAssets(
 
   if (args.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,fixedAssetId.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%,itemReadableId.ilike.%${args.search}%`
+      searchFilter(
+        ["name", "fixedAssetId", "serialNumber", "itemReadableId"],
+        args.search
+      )
     );
   }
 

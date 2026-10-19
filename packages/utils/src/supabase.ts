@@ -17,3 +17,14 @@ export function sanitize<T extends Record<string, any>>(
   });
   return output;
 }
+
+/**
+ * A PostgREST `.or()` filter matching `term` anywhere in any of `columns`.
+ * The term is quoted, so a comma, dot or parenthesis in it is text, not
+ * filter syntax: interpolated bare, "a,b" ended the filter early and the
+ * request failed.
+ */
+export function searchFilter(columns: string[], term: string): string {
+  const quoted = `"%${term.replace(/["\\]/g, (char) => `\\${char}`)}%"`;
+  return columns.map((column) => `${column}.ilike.${quoted}`).join(",");
+}

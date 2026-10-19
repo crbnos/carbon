@@ -17,7 +17,7 @@ import { call } from "@orpc/server";
 import { describe, expect, it } from "vitest";
 import { type AuthedContext, base, scopesFromPermissions } from "./base.server";
 import { outputSchema, shapeHttpBody } from "./operations.server";
-import { specOptions } from "./spec-options.server";
+import { specOptions, withErrorResponses } from "./spec-options.server";
 
 const PREFIX = "/api/v1";
 
@@ -160,6 +160,39 @@ describe("oRPC mechanics for the Carbon API v1 surface", () => {
     });
     expect(body.properties.count.type).toEqual(["number", "null"]);
     expect(body.required).toContain("results");
+  });
+
+  it("documents every refusal beside the 200 body", async () => {
+    const generator = new OpenAPIGenerator({
+      schemaConverters: [new CarbonJsonSchemaConverter()]
+    });
+    const spec = withErrorResponses(
+      (await generator.generate(router, {
+        info: { title: "Carbon API", version: "1.0.0" }
+      })) as any
+    ) as any;
+    const responses = spec.paths["/demo/ping"].post.responses;
+    expect(Object.keys(responses)).toEqual(
+      expect.arrayContaining([
+        "200",
+        "400",
+        "401",
+        "403",
+        "404",
+        "422",
+        "429",
+        "500"
+      ])
+    );
+    expect(responses["404"].content["application/json"].schema).toEqual({
+      $ref: "#/components/schemas/Error"
+    });
+    expect(responses["401"].content["text/plain"]).toBeDefined();
+    expect(spec.components.schemas.Error.required).toEqual([
+      "code",
+      "status",
+      "message"
+    ]);
   });
 
   it("returns single results bare and lists in the { results, count } envelope", () => {

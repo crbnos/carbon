@@ -138,7 +138,7 @@ import {
   round,
   settleQuantity,
   type TrackedEntityBin,
-  unchecked
+  textToTiptap
 } from "@carbon/utils";
 import {
   type CalendarDate,
@@ -183,6 +183,7 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
+import type { assignableTables } from "./shared.models";
 import type { ItemModelUpload } from "./types";
 
 const logger = getLogger("erp", "shared");
@@ -793,19 +794,50 @@ export async function assign(
   client: SupabaseClient<Database>,
   args: {
     id: string;
-    table: string;
+    table: (typeof assignableTables)[number];
     assignee: string;
   }
 ) {
   const { id, table, assignee } = args;
+  // Every assignable table has `id` and `assignee`; one stands in for the union.
+  return client
+    .from(table as "job")
+    .update({ assignee: assignee || null })
+    .eq("id", id)
+    .select("id");
+}
 
-  return (
-    client
-      // @ts-expect-error
-      .from(table)
-      .update(unchecked({ assignee: assignee ? assignee : null }))
-      .eq(unchecked("id"), id)
-  );
+/**
+ * Replaces one operation's work instruction, as the caller. The text becomes
+ * the editor's document (`textToTiptap`); empty text clears it. An id the
+ * caller cannot see, or of another company, is `notFound`.
+ */
+export async function setOperationWorkInstruction(
+  ctx: ServiceContext,
+  table: "jobOperation" | "methodOperation" | "quoteOperation",
+  id: string,
+  text: string
+) {
+  const updated = await ctx.asCaller.supabase
+    .from(table as "jobOperation")
+    .update({
+      workInstruction: text.trim() ? textToTiptap(text) : null,
+      updatedBy: ctx.auditUserId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", id)
+    .eq("companyId", ctx.company.id)
+    .select("id")
+    .maybeSingle();
+  if (updated.error) {
+    return ctx.error(
+      "internal",
+      "Failed to save the work instruction",
+      updated.error
+    );
+  }
+  if (!updated.data) return ctx.error("notFound", "Operation not found");
+  return { id: updated.data.id };
 }
 
 export async function getCustomFieldsCacheKey(args?: {

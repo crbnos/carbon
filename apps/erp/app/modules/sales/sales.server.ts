@@ -58,7 +58,11 @@ import { resolveBuyUnitCost } from "~/modules/shared/shared.utils";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
-import { invokeCreate, invokePosting } from "../shared/shared.service";
+import {
+  invokeCreate,
+  invokePosting,
+  setOperationWorkInstruction
+} from "../shared/shared.service";
 import {
   contractAmendmentChangeValidator,
   contractDurationOf,
@@ -3349,6 +3353,28 @@ export const updateQuoteOperation = defineServiceFn({
     }
     await service.repriceQuoteLine(ctx, { quoteId, quoteLineId });
     return { id: updated.data.id };
+  }
+});
+
+/**
+ * Set the work instruction of a quote operation.
+ *
+ * @remarks
+ * Replaces the operation's work instruction; the rest of the operation and
+ * the line's price are unchanged.
+ *
+ * @param id - The quote operation's id.
+ * @param text - The work instruction as plain text: each line is a paragraph,
+ *   `**text**` is bold. Empty text clears it.
+ *
+ * @mcp
+ */
+export const setQuoteOperationWorkInstruction = defineServiceFn({
+  input: z.object({ id: z.string().min(1), text: z.string() }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, text }) {
+    return setOperationWorkInstruction(ctx, "quoteOperation", id, text);
   }
 });
 
