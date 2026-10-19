@@ -4,9 +4,9 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
-  actionTaskPermissions,
-  isActionTaskEntityType
-} from "@carbon/ee/action-task-entity";
+  isSyncedEntityType,
+  syncedEntityPermissions
+} from "@carbon/ee/issue-sync";
 import type { TiptapDocument } from "@carbon/ee/jira.server";
 import {
   getJiraClient,
@@ -37,13 +37,13 @@ export const action: ActionFunction = async ({ request }) => {
     return data({ success: false, message: "Missing actionId" }, 400);
   }
 
-  if (!isActionTaskEntityType(entityType)) {
+  if (!isSyncedEntityType(entityType)) {
     return data({ success: false, message: "Invalid entityType" }, 400);
   }
 
   const { companyId, client } = await requirePermissions(
     request,
-    actionTaskPermissions(entityType)
+    syncedEntityPermissions(entityType)
   );
 
   if (entityType === "changeOrderActionTask") {

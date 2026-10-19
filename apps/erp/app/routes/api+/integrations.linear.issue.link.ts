@@ -4,15 +4,16 @@
 
 import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
-  actionTaskEntities,
-  actionTaskParentId,
-  actionTaskPermissions,
-  isActionTaskEntityType
-} from "@carbon/ee/action-task-entity";
+  isSyncedEntityType,
+  syncedEntities,
+  syncedEntityParentId,
+  syncedEntityPermissions
+} from "@carbon/ee/issue-sync";
+import { linkExistingIssue } from "@carbon/ee/issue-sync.server";
 import {
   getLinearClient,
-  linkActionToLinearIssue,
   unlinkActionFromLinearIssue
 } from "@carbon/ee/linear.server";
 import { getLogger } from "@carbon/logger";
@@ -36,13 +37,13 @@ export const action: ActionFunction = async ({ request }) => {
       return { success: false, message: "Missing required fields: actionId" };
     }
 
-    if (!isActionTaskEntityType(entityType)) {
+    if (!isSyncedEntityType(entityType)) {
       return { success: false, message: "Invalid entityType" };
     }
 
     const { companyId, client } = await requirePermissions(
       request,
-      actionTaskPermissions(entityType)
+      syncedEntityPermissions(entityType)
     );
 
     if (entityType === "changeOrderActionTask") {
@@ -77,42 +78,34 @@ export const action: ActionFunction = async ({ request }) => {
           };
         }
 
-        const [carbonIssue, issue] = await Promise.all([
-          getActionTaskWithParent(client, entityType, actionId, companyId),
-          linear.getIssueById(companyId, issueId)
-        ]);
-
-        if (!issue) {
-          return { success: false, message: "Issue not found" };
-        }
-
-        const email = issue.assignee?.email ?? "";
-
-        const assignee = await client
-          .from("user")
-          .select("id")
-          .eq("email", email)
-          .single();
-
-        const linked = await linkActionToLinearIssue(client, companyId, {
+        const linked = await linkExistingIssue(getCarbonServiceRole(), {
+          companyId,
+          tracker: "linear",
           entityType,
-          actionId,
-          issue,
-          assignee: assignee.data ? assignee.data.id : null
+          entityId: actionId,
+          issueId
         });
 
-        if (!linked || linked.data?.length === 0) {
-          return { success: false, message: "Failed to link issue" };
+        if ("error" in linked) {
+          return { success: false, message: linked.error };
         }
 
-        const parentId = actionTaskParentId(linked.data, entityType) ?? "";
+        const carbonIssue = await getActionTaskWithParent(
+          client,
+          entityType,
+          actionId,
+          companyId
+        );
 
         const url =
           getAppUrl() +
-          `${actionTaskEntities[entityType].detailPath(parentId)}/details`;
+          syncedEntities[entityType].detailPath(
+            carbonIssue.parentId ?? "",
+            actionId
+          );
 
         await linear.createAttachmentLink(companyId, {
-          issueId: issue.id as string,
+          issueId: String(linked.issue.id),
           url,
           title: `Linked Carbon Issue: ${carbonIssue.parentReadableId ?? ""}`
         });
@@ -133,7 +126,7 @@ export const action: ActionFunction = async ({ request }) => {
 
         // Best-effort: clean up attachment in Linear
         try {
-          const parentId = actionTaskParentId(unlinked.data, entityType);
+          const parentId = syncedEntityParentId(unlinked.data, entityType);
 
           if (parentId) {
             const [found] = await linear.listAttachments(companyId, parentId);
@@ -163,13 +156,13 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const entityType = url.searchParams.get("entityType");
 
-  if (!isActionTaskEntityType(entityType)) {
+  if (!isSyncedEntityType(entityType)) {
     return { issues: [] };
   }
 
   const { companyId } = await requirePermissions(
     request,
-    actionTaskPermissions(entityType)
+    syncedEntityPermissions(entityType)
   );
 
   const query = url.searchParams.get("search") as string;

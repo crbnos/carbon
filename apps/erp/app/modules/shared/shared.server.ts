@@ -4,8 +4,8 @@
 
 import type { Database } from "@carbon/database";
 import { SalesOrderEmail } from "@carbon/documents/email";
-import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
-import { actionTaskEntities } from "@carbon/ee/action-task-entity";
+import type { SyncedEntityType } from "@carbon/ee/issue-sync";
+import { syncedEntities } from "@carbon/ee/issue-sync";
 import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
@@ -813,7 +813,7 @@ export async function getImplementationSignals(
 // The readable identifier on each action task's parent, used for the Linear
 // attachment / Jira remote-link title.
 const actionTaskParents: Record<
-  ActionTaskEntityType,
+  SyncedEntityType,
   { parentTable: string; readableColumn: string }
 > = {
   nonConformanceActionTask: {
@@ -837,11 +837,11 @@ export type ActionTaskWithParent = {
 // task and its parent's readable id from whichever table the entity type names.
 export async function getActionTaskWithParent(
   client: SupabaseClient<Database>,
-  entityType: ActionTaskEntityType,
+  entityType: SyncedEntityType,
   taskId: string,
   companyId: string
 ): Promise<ActionTaskWithParent> {
-  const { table, parentColumn } = actionTaskEntities[entityType];
+  const { table, parentColumn } = syncedEntities[entityType];
   const { parentTable, readableColumn } = actionTaskParents[entityType];
 
   const result = await client

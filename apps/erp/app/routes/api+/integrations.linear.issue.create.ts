@@ -4,17 +4,14 @@
 
 import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
-  actionTaskEntities,
-  actionTaskParentId,
-  actionTaskPermissions,
-  isActionTaskEntityType
-} from "@carbon/ee/action-task-entity";
-import {
-  getCompanyEmployees,
-  getLinearClient,
-  linkActionToLinearIssue
-} from "@carbon/ee/linear.server";
+  isSyncedEntityType,
+  syncedEntities,
+  syncedEntityPermissions
+} from "@carbon/ee/issue-sync";
+import { linkNewIssue } from "@carbon/ee/issue-sync.server";
+import { getCompanyEmployees, getLinearClient } from "@carbon/ee/linear.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
@@ -32,13 +29,13 @@ export const action: ActionFunction = async ({ request }) => {
     const actionId = data.get("actionId") as string;
     const entityType = data.get("entityType") as string | null;
 
-    if (!isActionTaskEntityType(entityType)) {
+    if (!isSyncedEntityType(entityType)) {
       return { success: false, message: "Invalid entityType" };
     }
 
     const { companyId, client } = await requirePermissions(
       request,
-      actionTaskPermissions(entityType)
+      syncedEntityPermissions(entityType)
     );
 
     const teamId = data.get("teamId") as string;
@@ -78,21 +75,24 @@ export const action: ActionFunction = async ({ request }) => {
       return { success: false, message: "Issue not found" };
     }
 
-    const linked = await linkActionToLinearIssue(client, companyId, {
+    const linked = await linkNewIssue(getCarbonServiceRole(), {
+      companyId,
+      tracker: "linear",
       entityType,
-      actionId,
-      issue: issue
+      entityId: actionId,
+      issueId: issue.id
     });
 
-    if (!linked || linked.data?.length === 0) {
-      return { success: false, message: "Failed to link issue" };
+    if ("error" in linked) {
+      return { success: false, message: linked.error };
     }
-
-    const parentId = actionTaskParentId(linked.data, entityType) ?? "";
 
     const url =
       getAppUrl() +
-      `${actionTaskEntities[entityType].detailPath(parentId)}/details`;
+      syncedEntities[entityType].detailPath(
+        carbonIssue.parentId ?? "",
+        actionId
+      );
 
     await linear.createAttachmentLink(companyId, {
       issueId: issue.id,

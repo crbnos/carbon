@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
+import type { SyncedEntityType } from "@carbon/ee/issue-sync";
 import { JiraIssueMappingSchema } from "@carbon/ee/jira";
 import { Hidden, Submit, ValidatedForm } from "@carbon/form";
 import {
@@ -25,7 +25,7 @@ import { useAsyncFetcher } from "~/hooks/useAsyncFetcher";
 import { path } from "~/utils/path";
 
 type Props = {
-  entityType: ActionTaskEntityType;
+  entityType: SyncedEntityType;
   taskId: string;
   linkedIssue: unknown;
   onClose: () => void;

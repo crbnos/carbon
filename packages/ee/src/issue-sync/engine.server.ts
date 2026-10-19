@@ -27,6 +27,7 @@ import {
 import { changedInbound, changedOutbound, nextSync } from "./diff";
 import { isSyncedEntityType, syncedEntities } from "./entities";
 import { type LockContext, lockedFields } from "./locks";
+import { ensureIssueSyncSubscriptions } from "./subscriptions";
 import { pushToJira } from "./trackers/jira.server";
 import { pushToLinear } from "./trackers/linear.server";
 import {
@@ -610,4 +611,103 @@ export async function applyIssue(
   });
 
   return { applied: allowed, refused: refusedFields };
+}
+
+type LinkArgs = {
+  companyId: string;
+  tracker: IssueTracker;
+  entityType: SyncedEntityType;
+  entityId: string;
+  /** The issue id or key the user picked. */
+  issueId: string;
+};
+
+/**
+ * Refuse an issue that already links to another record: the inbound sync
+ * finds a link by the issue id, so one issue can drive only one record.
+ */
+async function issueLinkedElsewhere(
+  client: Client,
+  args: LinkArgs & { externalId: string }
+): Promise<boolean> {
+  const existing = await client
+    .from("externalIntegrationMapping")
+    .select("entityType, entityId")
+    .eq("companyId", args.companyId)
+    .eq("integration", args.tracker)
+    .eq("externalId", args.externalId);
+  return (existing.data ?? []).some(
+    (row) =>
+      row.entityType !== args.entityType || row.entityId !== args.entityId
+  );
+}
+
+/**
+ * Link an existing issue to a record. The record takes the issue's fields
+ * first (a pull), except a description it already has; then that
+ * description goes to the issue (a push). `client` must be the service role.
+ */
+export async function linkExistingIssue(
+  client: Client,
+  args: LinkArgs
+): Promise<{ error: string } | { issue: Record<string, unknown> }> {
+  const fetched = await fetchIssue(args.companyId, args.tracker, args.issueId);
+  if (!fetched) return { error: "Issue not found" };
+
+  const externalId = fetched.issue.id;
+  if (await issueLinkedElsewhere(client, { ...args, externalId })) {
+    return { error: "This issue is already linked to another record" };
+  }
+
+  await writeLink(client, {
+    companyId: args.companyId,
+    entityType: args.entityType,
+    entityId: args.entityId,
+    integration: args.tracker,
+    externalId,
+    issue: fetched.metadata,
+    sync: null
+  });
+
+  const applied = await applyIssue(client, {
+    companyId: args.companyId,
+    tracker: args.tracker,
+    issueId: externalId,
+    initial: true
+  });
+  if ("failed" in applied) return { error: applied.failed };
+
+  await pushRecords(client, args.companyId, args.entityType, [args.entityId]);
+  await ensureIssueSyncSubscriptions(client, args.companyId, args.tracker);
+
+  return { issue: fetched.metadata };
+}
+
+/**
+ * Link a newly created issue to the record it was created from. The issue
+ * takes every field of the record (a push). `client` must be the service role.
+ */
+export async function linkNewIssue(
+  client: Client,
+  args: LinkArgs
+): Promise<{ error: string } | { issue: Record<string, unknown> }> {
+  const fetched = await fetchIssue(args.companyId, args.tracker, args.issueId);
+  if (!fetched) return { error: "Issue not found" };
+
+  await writeLink(client, {
+    companyId: args.companyId,
+    entityType: args.entityType,
+    entityId: args.entityId,
+    integration: args.tracker,
+    externalId: fetched.issue.id,
+    issue: fetched.metadata,
+    sync: null
+  });
+
+  await pushRecords(client, args.companyId, args.entityType, [args.entityId], {
+    initial: true
+  });
+  await ensureIssueSyncSubscriptions(client, args.companyId, args.tracker);
+
+  return { issue: fetched.metadata };
 }

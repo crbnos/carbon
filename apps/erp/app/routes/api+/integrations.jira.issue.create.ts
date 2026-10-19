@@ -4,16 +4,16 @@
 
 import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
-  actionTaskEntities,
-  actionTaskParentId,
-  actionTaskPermissions,
-  isActionTaskEntityType
-} from "@carbon/ee/action-task-entity";
+  isSyncedEntityType,
+  syncedEntities,
+  syncedEntityPermissions
+} from "@carbon/ee/issue-sync";
+import { linkNewIssue } from "@carbon/ee/issue-sync.server";
 import {
   getCompanyEmployees,
   getJiraClient,
-  linkActionToJiraIssue,
   tiptapToAdf
 } from "@carbon/ee/jira.server";
 import { getLogger } from "@carbon/logger";
@@ -33,7 +33,7 @@ export const action: ActionFunction = async ({ request }) => {
     const actionId = formData.get("actionId") as string;
     const entityType = formData.get("entityType") as string | null;
 
-    if (!isActionTaskEntityType(entityType)) {
+    if (!isSyncedEntityType(entityType)) {
       return data(
         { success: false, message: "Invalid entityType" },
         { status: 400 }
@@ -42,7 +42,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     const { companyId, client } = await requirePermissions(
       request,
-      actionTaskPermissions(entityType)
+      syncedEntityPermissions(entityType)
     );
 
     const projectKey = formData.get("projectKey") as string;
@@ -62,10 +62,12 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
-    const [carbonIssue, siteUrl] = await Promise.all([
-      getActionTaskWithParent(client, entityType, actionId, companyId),
-      jira.getSiteUrl(companyId)
-    ]);
+    const carbonIssue = await getActionTaskWithParent(
+      client,
+      entityType,
+      actionId,
+      companyId
+    );
 
     if (entityType === "changeOrderActionTask") {
       const locked = carbonIssue.parentId
@@ -128,25 +130,24 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
-    const linked = await linkActionToJiraIssue(client, companyId, {
+    const linked = await linkNewIssue(getCarbonServiceRole(), {
+      companyId,
+      tracker: "jira",
       entityType,
-      actionId,
-      issue,
-      siteUrl
+      entityId: actionId,
+      issueId: issue.id
     });
 
-    if (!linked || linked.data?.length === 0) {
-      return data(
-        { success: false, message: "Failed to link issue" },
-        { status: 500 }
-      );
+    if ("error" in linked) {
+      return data({ success: false, message: linked.error }, { status: 500 });
     }
-
-    const parentId = actionTaskParentId(linked.data, entityType) ?? "";
 
     const url =
       getAppUrl() +
-      `${actionTaskEntities[entityType].detailPath(parentId)}/details`;
+      syncedEntities[entityType].detailPath(
+        carbonIssue.parentId ?? "",
+        actionId
+      );
 
     // Create a remote link in Jira pointing back to Carbon
     await jira.createRemoteLink(

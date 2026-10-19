@@ -4,17 +4,16 @@
 
 import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
-  actionTaskEntities,
-  actionTaskParentId,
-  actionTaskPermissions,
-  isActionTaskEntityType
-} from "@carbon/ee/action-task-entity";
+  isSyncedEntityType,
+  syncedEntities,
+  syncedEntityPermissions
+} from "@carbon/ee/issue-sync";
+import { linkExistingIssue } from "@carbon/ee/issue-sync.server";
 import {
   getJiraClient,
   getJiraIssueFromExternalId,
-  linkActionToJiraIssue,
-  tiptapToAdf,
   unlinkActionFromJiraIssue
 } from "@carbon/ee/jira.server";
 import { getLogger } from "@carbon/logger";
@@ -37,13 +36,13 @@ export const action: ActionFunction = async ({ request }) => {
       return { success: false, message: "Missing required fields: actionId" };
     }
 
-    if (!isActionTaskEntityType(entityType)) {
+    if (!isSyncedEntityType(entityType)) {
       return { success: false, message: "Invalid entityType" };
     }
 
     const { companyId, client } = await requirePermissions(
       request,
-      actionTaskPermissions(entityType)
+      syncedEntityPermissions(entityType)
     );
 
     if (entityType === "changeOrderActionTask") {
@@ -78,65 +77,36 @@ export const action: ActionFunction = async ({ request }) => {
           };
         }
 
-        const [carbonIssue, issue, siteUrl] = await Promise.all([
-          getActionTaskWithParent(client, entityType, actionId, companyId),
-          jira.getIssue(companyId, issueId),
-          jira.getSiteUrl(companyId)
-        ]);
-
-        if (!issue) {
-          return { success: false, message: "Issue not found" };
-        }
-
-        const email = issue.fields.assignee?.emailAddress ?? "";
-
-        let assigneeId: string | null = null;
-        if (email) {
-          const assignee = await client
-            .from("user")
-            .select("id")
-            .eq("email", email)
-            .single();
-          assigneeId = assignee.data?.id ?? null;
-        }
-
-        const linked = await linkActionToJiraIssue(client, companyId, {
+        const linked = await linkExistingIssue(getCarbonServiceRole(), {
+          companyId,
+          tracker: "jira",
           entityType,
-          actionId,
-          issue,
-          siteUrl,
-          assignee: assigneeId
+          entityId: actionId,
+          issueId
         });
 
-        if (!linked || linked.data?.length === 0) {
-          return { success: false, message: "Failed to link issue" };
+        if ("error" in linked) {
+          return { success: false, message: linked.error };
         }
 
-        const parentId = actionTaskParentId(linked.data, entityType) ?? "";
+        const carbonIssue = await getActionTaskWithParent(
+          client,
+          entityType,
+          actionId,
+          companyId
+        );
 
         const url =
           getAppUrl() +
-          `${actionTaskEntities[entityType].detailPath(parentId)}/details`;
-
-        // Update the Jira issue description with the task's notes
-        const notes = carbonIssue.notes;
-        if (notes && typeof notes === "object") {
-          try {
-            const adfDescription = tiptapToAdf(notes as any);
-            await jira.updateIssue(companyId, issue.id, {
-              description: adfDescription
-            });
-          } catch (e) {
-            logger.error("Failed to update Jira issue description", {
-              error: e
-            });
-          }
-        }
+          syncedEntities[entityType].detailPath(
+            carbonIssue.parentId ?? "",
+            actionId
+          );
 
         // Create a remote link in Jira pointing back to Carbon
         await jira.createRemoteLink(
           companyId,
-          issue.id,
+          String(linked.issue.id),
           url,
           `Linked Carbon Issue: ${carbonIssue.parentReadableId ?? ""}`
         );
@@ -203,13 +173,13 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const entityType = url.searchParams.get("entityType");
 
-  if (!isActionTaskEntityType(entityType)) {
+  if (!isSyncedEntityType(entityType)) {
     return { issues: [] };
   }
 
   const { companyId } = await requirePermissions(
     request,
-    actionTaskPermissions(entityType)
+    syncedEntityPermissions(entityType)
   );
 
   const query = url.searchParams.get("search") as string;

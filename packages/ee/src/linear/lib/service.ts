@@ -4,17 +4,10 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { getLogger } from "@carbon/logger";
-import { unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type z from "zod";
-import type { ActionTaskEntityType } from "../../lib/actionTaskEntity";
-import { actionTaskEntities } from "../../lib/actionTaskEntity";
-import { markdownToTiptap } from "./richtext";
+import { syncedEntities } from "../../issue-sync/entities";
+import type { SyncedEntityType } from "../../issue-sync/types";
 import { LinearIssueSchema } from "./types";
-import { mapLinearStatusToCarbonStatus } from "./utils";
-
-const logger = getLogger("ee", "linear");
 
 export async function getLinearIntegration(
   client: SupabaseClient<Database>,
@@ -26,80 +19,6 @@ export async function getLinearIntegration(
     .eq("companyId", companyId)
     .eq("id", "linear")
     .limit(1);
-}
-
-export async function linkActionToLinearIssue(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  input: {
-    entityType: ActionTaskEntityType;
-    actionId: string;
-    issue: z.infer<typeof LinearIssueSchema>;
-    assignee?: string | null;
-    syncNotes?: boolean;
-  }
-) {
-  const entity = actionTaskEntities[input.entityType];
-  const { data, success } = LinearIssueSchema.safeParse(input.issue);
-
-  if (!success) return null;
-
-  // Convert Linear description (markdown) to Tiptap format for notes
-  let notes: any = undefined;
-  if (input.syncNotes && data.description) {
-    try {
-      notes = markdownToTiptap(data.description);
-    } catch (e) {
-      logger.error("Failed to convert Linear description to Tiptap", {
-        error: e
-      });
-    }
-  }
-
-  const updateData: Record<string, any> = {
-    status: mapLinearStatusToCarbonStatus(data.state.type!),
-    dueDate: data.dueDate
-  };
-
-  // Only update notes if we successfully converted the description
-  // undefined leaves the Carbon assignee as it is (resolveInboundAssignee)
-  if (input.assignee !== undefined) {
-    updateData.assignee = input.assignee;
-  }
-
-  if (notes !== undefined) {
-    updateData.notes = notes;
-  }
-
-  // Update the task fields
-  const result = await client
-    .from(entity.table)
-    .update(unchecked(updateData))
-    .eq("companyId", companyId)
-    .eq("id", input.actionId)
-    .select(entity.parentColumn);
-
-  // Upsert the Linear mapping in externalIntegrationMapping
-  // Use service role to bypass RLS (no DELETE policy for authenticated users)
-  const serviceRoleForLink = getCarbonServiceRole();
-  await serviceRoleForLink
-    .from("externalIntegrationMapping")
-    .delete()
-    .eq("companyId", companyId)
-    .eq("entityType", input.entityType)
-    .eq("entityId", input.actionId)
-    .eq("integration", "linear");
-
-  await client.from("externalIntegrationMapping").insert({
-    entityType: input.entityType,
-    entityId: input.actionId,
-    integration: "linear",
-    externalId: data.id,
-    metadata: data as any,
-    companyId
-  });
-
-  return result;
 }
 
 export const getCompanyEmployees = async (
@@ -121,12 +40,12 @@ export async function unlinkActionFromLinearIssue(
   client: SupabaseClient<Database>,
   companyId: string,
   input: {
-    entityType: ActionTaskEntityType;
+    entityType: SyncedEntityType;
     actionId: string;
     assignee?: string | null;
   }
 ) {
-  const entity = actionTaskEntities[input.entityType];
+  const entity = syncedEntities[input.entityType];
 
   // Delete the Linear mapping using service role to bypass RLS
   const serviceRole = getCarbonServiceRole();
@@ -150,7 +69,7 @@ export const getLinearIssueFromExternalId = async (
   client: SupabaseClient<Database>,
   companyId: string,
   actionId: string,
-  entityType: ActionTaskEntityType
+  entityType: SyncedEntityType
 ) => {
   const { data: mapping } = await client
     .from("externalIntegrationMapping")
