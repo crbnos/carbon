@@ -4968,6 +4968,9 @@ msgstr "Escolha as unidades da frota que este contrato aluga. Cada uma começa e
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Escolha os serviços que este contrato fatura. Cada um é adicionado como uma linha recorrente que você pode precificar na grade."
 
+msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
+msgstr "Escolha o que um novo recebimento preenche como quantidade recebida de cada linha: o que ainda precisa ser recebido, ou zero para o recebedor digitar o que realmente chegou."
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "Escolha o que aparece na ficha de acompanhamento impressa."
 
@@ -8975,6 +8978,9 @@ msgstr "Ativar para configurar métodos de depreciação específicos de imposto
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Ativar para gerar IDs e descrições para matérias-primas."
 
+msgid "Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive."
+msgstr "Ativar para que os receptores insiram a quantidade em cada linha em vez de confirmar a quantidade ainda a receber."
+
 msgid "Enable to require an authenticator app before anyone can open this company."
 msgstr "Ativar para exigir um aplicativo autenticador antes que alguém possa abrir esta empresa."
 
@@ -9105,6 +9111,9 @@ msgstr "Digite uma quantidade entre 1 e {0}."
 msgid "Enter a reason to take the unit out of service"
 msgstr "Digite um motivo para remover a unidade do serviço"
 
+msgid "Enter a received quantity, or tick a unit, on at least one line."
+msgstr "Insira uma quantidade recebida ou marque uma unidade em pelo menos uma linha."
+
 msgid "Enter a web address, such as https://example.com"
 msgstr "Insira um endereço web, por exemplo https://example.com"
 
@@ -9143,6 +9152,9 @@ msgstr "Insira a URL do Onshape, o ID do cliente e o segredo do cliente de seu a
 
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Insira o balancete do sistema anterior de um dia antes da transição, para cada conta."
+
+msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
+msgstr "Digite a quantidade em cada linha que chegou. Uma linha deixada em zero não é recebida quando o recebimento é contabilizado."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Insira a quantidade que esse movimento deveria ter sido. Um movimento oposto para a diferença é lançado ao lado do original, no período de tempo do original."
@@ -15681,6 +15693,9 @@ msgstr "Único"
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Apenas os procedimentos em Rascunho são editáveis. Crie uma nova versão para alterar um procedimento Ativo ou Arquivado."
 
+msgid "Only employees can post receipts."
+msgstr "Apenas funcionários podem contabilizar recebimentos."
+
 msgid "Only empty, open periods can be deleted."
 msgstr "Apenas períodos vazios e abertos podem ser deletados."
 
@@ -18205,6 +18220,12 @@ msgstr "Linhas de Recebimento"
 msgid "Receipt Promised Date"
 msgstr "Data de Entrega Prometida"
 
+msgid "Receipt quantities now start at the quantity to receive"
+msgstr "As quantidades do recebimento agora começam na quantidade a receber"
+
+msgid "Receipt quantities now start at zero"
+msgstr "As quantidades do recebimento agora começam em zero"
+
 msgid "Receipt Requested Date"
 msgstr "Data de Recebimento Solicitada"
 
@@ -18278,11 +18299,20 @@ msgstr "Linhas recebidas deste fornecedor com quantidade restante para devolver"
 msgid "Received Qty"
 msgstr "Qtd. Recebida"
 
+msgid "Received quantities start at the quantity to receive"
+msgstr "Quantidades recebidas começam na quantidade a receber"
+
+msgid "Received quantities start at zero"
+msgstr "Quantidades recebidas começam em zero"
+
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "Quantidade recebida ainda não creditada. A nota de crédito é criada como rascunho."
 
 msgid "Receives the invoice email"
 msgstr "Recebe o email da fatura"
+
+msgid "Receiving"
+msgstr "Recebimento"
 
 msgid "Receiving Location"
 msgstr "Local de Recebimento"
@@ -21527,6 +21557,9 @@ msgstr "Início do Ano Fiscal"
 msgid "Start of Tax Year"
 msgstr "Início do ano fiscal"
 
+msgid "Start Receipt Quantities at Zero"
+msgstr "Iniciar Quantidades de Recebimento em Zero"
+
 msgid "Start Time"
 msgstr "Hora de Início"
 
@@ -23992,6 +24025,9 @@ msgstr "este pedido de compra"
 
 msgid "This Quarter"
 msgstr "Este Trimestre"
+
+msgid "This receipt has no lines. Choose a source document to add them."
+msgstr "Este recebimento não possui linhas. Escolha um documento de origem para adicioná-las."
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "Isso remove o PDF. Os funcionários verão o conteúdo escrito em vez disso."

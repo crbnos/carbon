@@ -4968,6 +4968,9 @@ msgstr "उन फ्लीट इकाइयों को चुनें ज�
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "उन सेवाओं को चुनें जिनका यह अनुबंध बिल करता है। प्रत्येक को एक आवर्ती पंक्ति के रूप में जोड़ा जाता है जिसे आप ग्रिड में मूल्य निर्धारित कर सकते हैं।"
 
+msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
+msgstr "चुनें कि एक नई प्राप्ति प्रत्येक पंक्ति की प्राप्त मात्रा को क्या भरता है: जो अभी भी प्राप्त करने के लिए है, या शून्य ताकि प्राप्तकर्ता दर्ज करे कि वास्तव में क्या आया।"
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "मुद्रित जॉब ट्रैवलर पर क्या दिखाई दे, इसे चुनें।"
 
@@ -8975,6 +8978,9 @@ msgstr "परिसंपत्ति वर्गों पर कर-वि�
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "कच्चे माल के लिए ID और विवरण उत्पन्न करने के लिए सक्षम करें।"
 
+msgid "Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive."
+msgstr "प्राप्तकर्ताओं को अभी प्राप्त करने के लिए मात्रा की पुष्टि करने के बजाय, प्रत्येक पंक्ति पर मात्रा दर्ज करने में सक्षम करें।"
+
 msgid "Enable to require an authenticator app before anyone can open this company."
 msgstr "कोई भी इस कंपनी को खोलने से पहले प्रमाणकर्ता ऐप की आवश्यकता होने के लिए सक्षम करें।"
 
@@ -9105,6 +9111,9 @@ msgstr "1 और {0} के बीच मात्रा दर्ज करे�
 msgid "Enter a reason to take the unit out of service"
 msgstr "इकाई को सेवा से बाहर निकालने का कारण दर्ज करें"
 
+msgid "Enter a received quantity, or tick a unit, on at least one line."
+msgstr "कम से कम एक पंक्ति पर एक प्राप्त मात्रा दर्ज करें, या एक इकाई को चिह्नित करें।"
+
 msgid "Enter a web address, such as https://example.com"
 msgstr "वेब पता दर्ज करें, जैसे https://example.com"
 
@@ -9143,6 +9152,9 @@ msgstr "अपने निजी OAuth एप्लिकेशन का Onsha
 
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "कटओवर से पहले के दिन की तरह पूर्व प्रणाली के परीक्षण शेष को हर खाते के लिए दर्ज करें।"
+
+msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
+msgstr "प्रत्येक पंक्ति पर जो मात्रा आई है दर्ज करें। शून्य पर छोड़ी गई कोई भी पंक्ति प्राप्ति पोस्ट होने पर प्राप्त नहीं होती है।"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "वह मात्रा दर्ज करें जो यह आंदोलन होना चाहिए था। अंतर के लिए एक विपरीत आंदोलन मूल के बगल में, मूल की समय अवधि में पोस्ट किया जाता है।"
@@ -15681,6 +15693,9 @@ msgstr "एक बार"
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "केवल ड्राफ्ट कार्यविधियाँ संपादन योग्य हैं। सक्रिय या संग्रहीत कार्यविधि को बदलने के लिए एक नया संस्करण बनाएँ।"
 
+msgid "Only employees can post receipts."
+msgstr "केवल कर्मचारी प्राप्ति पोस्ट कर सकते हैं।"
+
 msgid "Only empty, open periods can be deleted."
 msgstr "केवल खाली, खुली अवधियों को हटाया जा सकता है।"
 
@@ -18205,6 +18220,12 @@ msgstr "रसीद लाइनें"
 msgid "Receipt Promised Date"
 msgstr "प्राप्ति वादा की गई तिथि"
 
+msgid "Receipt quantities now start at the quantity to receive"
+msgstr "प्राप्ति की मात्रा अब प्राप्त करने के लिए की मात्रा से शुरू होती है"
+
+msgid "Receipt quantities now start at zero"
+msgstr "प्राप्ति की मात्रा अब शून्य से शुरू होती है"
+
 msgid "Receipt Requested Date"
 msgstr "प्राप्ति अनुरोधित तिथि"
 
@@ -18278,11 +18299,20 @@ msgstr "इस आपूर्तिकर्ता से प्राप्त
 msgid "Received Qty"
 msgstr "प्राप्त मात्रा"
 
+msgid "Received quantities start at the quantity to receive"
+msgstr "प्राप्त मात्रा प्राप्त करने के लिए मात्रा से शुरू होती है"
+
+msgid "Received quantities start at zero"
+msgstr "प्राप्त मात्रा शून्य से शुरू होती है"
+
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "प्राप्त मात्रा अभी तक जमा नहीं की गई। क्रेडिट नोट को ड्राफ्ट के रूप में बनाया गया है।"
 
 msgid "Receives the invoice email"
 msgstr "चालान ईमेल प्राप्त करता है"
+
+msgid "Receiving"
+msgstr "प्राप्ति"
 
 msgid "Receiving Location"
 msgstr "प्राप्ति स्थान"
@@ -21527,6 +21557,9 @@ msgstr "वित्तीय वर्ष की शुरुआत"
 msgid "Start of Tax Year"
 msgstr "कर वर्ष की शुरुआत"
 
+msgid "Start Receipt Quantities at Zero"
+msgstr "प्राप्ति मात्रा को शून्य से शुरू करें"
+
 msgid "Start Time"
 msgstr "शुरुआत का समय"
 
@@ -23992,6 +24025,9 @@ msgstr "यह क्रय आदेश"
 
 msgid "This Quarter"
 msgstr "इस त्रैमासिक"
+
+msgid "This receipt has no lines. Choose a source document to add them."
+msgstr "इस प्राप्ति में कोई पंक्तियाँ नहीं हैं। स्रोत दस्तावेज़ चुनकर पंक्तियाँ जोड़ें।"
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "यह PDF को हटाता है। कर्मचारी इसके बजाय लिखित सामग्री देखेंगे।"

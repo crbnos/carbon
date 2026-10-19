@@ -4968,6 +4968,9 @@ msgstr "Bu anlaşmanın kiraladığı filo adetlerini seçin. Her biri dosyadaki
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Bu sözleşmenin faturaladığı hizmetleri seçin. Her biri, ızgarada fiyatlandırabileceğiniz yinelenen bir satır olarak eklenir."
 
+msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
+msgstr "Yeni bir mal kabul oluştururken her satırda alınan miktar için ne önceden doldurulacağını seçin: alınması bekleyen miktar mı, yoksa alıcının gerçekte gelen miktarı girmesi için sıfır mı?"
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "Yazdırılan İş takip kartında neyin görüneceğini seçin."
 
@@ -8975,6 +8978,9 @@ msgstr "Varlık sınıfları için vergiye özgü amortisman yöntemlerini yapı
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Hammaddeler için ID'ler ve açıklamalar oluşturmayı etkinleştir."
 
+msgid "Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive."
+msgstr "Alıcıların her satırda miktarı girmelerini, Mal kabul bekleyen miktarını onaylamak yerine etkinleştirin."
+
 msgid "Enable to require an authenticator app before anyone can open this company."
 msgstr "Herhangi birinin bu şirketi açabilmesi için kimlik doğrulaması uygulaması gerektirmek için etkinleştirin."
 
@@ -9105,6 +9111,9 @@ msgstr "1 ile {0} arasında bir miktar girin."
 msgid "Enter a reason to take the unit out of service"
 msgstr "Üniteyi hizmet dışı bırakmak için bir neden girin"
 
+msgid "Enter a received quantity, or tick a unit, on at least one line."
+msgstr "En az bir satırda miktarı girin veya bir Adet'i işaretleyin."
+
 msgid "Enter a web address, such as https://example.com"
 msgstr "Bir web adresi girin, örneğin https://example.com"
 
@@ -9143,6 +9152,9 @@ msgstr "Özel OAuth uygulamanızın Onshape URL'sini, istemci ID'sini ve istemci
 
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Her hesap için devir tarihinden önceki günü itibarıyla önceki sistemin mizan sütununu girin."
+
+msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
+msgstr "Gelen her satırdaki miktarı girin. Sıfırda bırakılan bir satır, mal kabul muhasebeleştirildiğinde alınmış sayılmaz."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Bu hareketin olması gereken miktarı girin. Farktaki ters hareket, orijinalin zaman döneminde orijinalin yanında deftere kaydedilir."
@@ -15681,6 +15693,9 @@ msgstr "Tek Seferlik"
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Yalnızca Taslak prosedürler düzenlenebilir. Aktif veya Arşivlenmiş bir prosedürü değiştirmek için yeni bir sürüm oluşturun."
 
+msgid "Only employees can post receipts."
+msgstr "Yalnızca çalışanlar mal kabul muhasebeleştirebilir."
+
 msgid "Only empty, open periods can be deleted."
 msgstr "Yalnızca boş, açık dönemler silinebilir."
 
@@ -18205,6 +18220,12 @@ msgstr "Mal Kabul Edilen Satırlar"
 msgid "Receipt Promised Date"
 msgstr "Mal kabul taahhüt tarihi"
 
+msgid "Receipt quantities now start at the quantity to receive"
+msgstr "Mal kabul miktarları artık alınacak miktarla başlıyor"
+
+msgid "Receipt quantities now start at zero"
+msgstr "Mal kabul miktarları artık sıfırdan başlıyor"
+
 msgid "Receipt Requested Date"
 msgstr "Talep Edilen Teslim Tarihi"
 
@@ -18278,11 +18299,20 @@ msgstr "Bu tedarikçiden alınan ve iade edilmek üzere kalan miktar içeren sat
 msgid "Received Qty"
 msgstr "Alınan Miktar"
 
+msgid "Received quantities start at the quantity to receive"
+msgstr "Alınan miktarlar alınması bekleyen miktar ile başlar"
+
+msgid "Received quantities start at zero"
+msgstr "Alınan miktarlar sıfır ile başlar"
+
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "Alınan Miktar henüz Alacak dekontusunda muhasebeleştirilmedi. Alacak dekontu Taslak olarak oluşturuldu."
 
 msgid "Receives the invoice email"
 msgstr "Fatura e-postasını alır"
+
+msgid "Receiving"
+msgstr "Mal Kabulü"
 
 msgid "Receiving Location"
 msgstr "Mal kabul lokasyonu"
@@ -21527,6 +21557,9 @@ msgstr "Mali Yıl Başlangıcı"
 msgid "Start of Tax Year"
 msgstr "Vergi Yılı Başlangıcı"
 
+msgid "Start Receipt Quantities at Zero"
+msgstr "Mal Kabul Miktarlarını Sıfırdan Başlat"
+
 msgid "Start Time"
 msgstr "Başlangıç Saati"
 
@@ -23992,6 +24025,9 @@ msgstr "bu satın alma siparişi"
 
 msgid "This Quarter"
 msgstr "Bu Çeyrek"
+
+msgid "This receipt has no lines. Choose a source document to add them."
+msgstr "Bu girişte satır yok. Bunları eklemek için bir kaynak belge seçin."
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "Bu, PDF'yi kaldırır. Çalışanlar yerine yazılı içeriği görecekler."

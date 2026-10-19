@@ -10031,6 +10031,18 @@ async function getFallbackLocationId(
   return location.data?.id ?? null;
 }
 
+async function receiptQuantitiesStartAtZero(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<boolean> {
+  const row = await db
+    .selectFrom("companySettings")
+    .select("receiptQuantitiesStartAtZero")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  return row?.receiptQuantitiesStartAtZero === true;
+}
+
 export const createDocumentPermission = {
   by: "type",
   rules: {
@@ -10865,6 +10877,8 @@ export async function createDocument(
         return acc;
       }, {});
 
+      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+
       const receiptLineItems = purchaseOrderLines.data.reduce<
         ReceiptLineItem[]
       >((acc, d) => {
@@ -10892,7 +10906,9 @@ export async function createDocument(
           itemId: d.itemId,
           orderQuantity: d.purchaseQuantity * (d.conversionFactor ?? 1),
           outstandingQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
-          receivedQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
+          receivedQuantity: startAtZero
+            ? 0
+            : outstandingQuantity * (d.conversionFactor ?? 1),
           conversionFactor: d.conversionFactor ?? 1,
           requiresSerialTracking:
             serializedItems.has(d.itemId) && !isOutsideOperation,
@@ -10996,7 +11012,7 @@ export async function createDocument(
               unreceivedFaLines.map((line) => ({
                 receiptId: receiptId,
                 purchaseOrderLineId: line.id,
-                received: true,
+                received: !startAtZero,
                 companyId,
                 createdBy: userId
               }))
@@ -11076,6 +11092,8 @@ export async function createDocument(
         return acc;
       }, {});
 
+      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
       >((acc, d) => {
@@ -11099,7 +11117,7 @@ export async function createDocument(
           storageUnitId: d.toStorageUnitId,
           requiresSerialTracking: serialTracking,
           requiresBatchTracking: batchTracking,
-          receivedQuantity: quantityToReceive,
+          receivedQuantity: startAtZero ? 0 : quantityToReceive,
           outstandingQuantity: quantityToReceive,
           unitPrice: 0, // Transfers don't have a unit price
           conversionFactor: 1,
@@ -11263,6 +11281,8 @@ export async function createDocument(
       if (hasReceipt && receipt.data!.status !== "Draft")
         throw new Error(`Cannot re-source a ${receipt.data!.status} receipt`);
 
+      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+
       const receiptLineItems = salesReturnOrderLines.data.reduce<
         ReceiptLineItem[]
       >((acc, d) => {
@@ -11281,7 +11301,7 @@ export async function createDocument(
           storageUnitId: defaultStorageUnitByItem.get(d.itemId) ?? null,
           requiresSerialTracking: serializedItems.has(d.itemId),
           requiresBatchTracking: batchItems.has(d.itemId),
-          receivedQuantity: outstanding,
+          receivedQuantity: startAtZero ? 0 : outstanding,
           outstandingQuantity: outstanding,
           // Cost is resolved at posting (original outbound cost / current /
           // zero-value reason) — never the line's credit-basis unitPrice.
@@ -11429,6 +11449,8 @@ export async function createDocument(
         return acc;
       }, {});
 
+      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
       >((acc, d) => {
@@ -11451,7 +11473,7 @@ export async function createDocument(
           storageUnitId: d.toStorageUnitId,
           requiresSerialTracking: serialTracking,
           requiresBatchTracking: batchTracking,
-          receivedQuantity: quantityToReceive,
+          receivedQuantity: startAtZero ? 0 : quantityToReceive,
           outstandingQuantity: quantityToReceive,
           unitPrice: 0, // Transfers don't have a unit price
           conversionFactor: 1,

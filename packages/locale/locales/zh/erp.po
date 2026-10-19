@@ -4968,6 +4968,9 @@ msgstr "选择本协议租赁的设备。每件在频率的文件费率开始；
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "选择此合同开票的服务。每个作为循环行添加，您可以在网格中定价"
 
+msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
+msgstr "选择新的收货单如何为每一行填充已收数量：是填充待收货数量，还是填充零以便接收人输入实际到货的数量。"
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印工单流转卡上显示的内容。"
 
@@ -8975,6 +8978,9 @@ msgstr "启用以在资产类别上配置特定于税收的折旧方法（例如
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "启用以为原材料生成ID和描述。"
 
+msgid "Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive."
+msgstr "启用收货员在每一行输入实际收货数量，而不是仅确认待收货数量。"
+
 msgid "Enable to require an authenticator app before anyone can open this company."
 msgstr "启用以要求在任何人打开此公司之前使用身份验证器应用程序。"
 
@@ -9105,6 +9111,9 @@ msgstr "请输入 1 至 {0} 之间的数量。"
 msgid "Enter a reason to take the unit out of service"
 msgstr "输入停用该设备的原因"
 
+msgid "Enter a received quantity, or tick a unit, on at least one line."
+msgstr "请在至少一行上输入收货数量或勾选一个件。"
+
 msgid "Enter a web address, such as https://example.com"
 msgstr "请输入网址，例如 https://example.com"
 
@@ -9143,6 +9152,9 @@ msgstr "输入您的私有 OAuth 应用程序的 Onshape URL、客户端 ID 和�
 
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "输入前系统在过账前一天的试算平衡余额，用于每个账户。"
+
+msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
+msgstr "输入每一行到货的数量。当收货单已过账时，数量为零的行将不被记为已收货。"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "输入此移动应该的数量。差异的相反移动在原始时期内的原始旁边过账。"
@@ -15681,6 +15693,9 @@ msgstr "一次性"
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "仅草稿程序文件可编辑。创建新版本以更改启用或已归档程序文件。"
 
+msgid "Only employees can post receipts."
+msgstr "只有员工才能过账收货。"
+
 msgid "Only empty, open periods can be deleted."
 msgstr "仅可删除空的、未结会计期间。"
 
@@ -18205,6 +18220,12 @@ msgstr "收据行"
 msgid "Receipt Promised Date"
 msgstr "收货承诺日期"
 
+msgid "Receipt quantities now start at the quantity to receive"
+msgstr "收货数量现在从待收货数量开始"
+
+msgid "Receipt quantities now start at zero"
+msgstr "收货数量现在从零开始"
+
 msgid "Receipt Requested Date"
 msgstr "收货要求日期"
 
@@ -18278,11 +18299,20 @@ msgstr "来自此供应商且还有数量待退货的已收行"
 msgid "Received Qty"
 msgstr "已收货数量"
 
+msgid "Received quantities start at the quantity to receive"
+msgstr "收货数量从待收货数量开始"
+
+msgid "Received quantities start at zero"
+msgstr "收货数量从零开始"
+
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "已收到的数量尚未进行贷项。贷项通知单已创建为草稿。"
 
 msgid "Receives the invoice email"
 msgstr "接收发票邮件"
+
+msgid "Receiving"
+msgstr "收货"
 
 msgid "Receiving Location"
 msgstr "收货地点"
@@ -21527,6 +21557,9 @@ msgstr "会计年度开始"
 msgid "Start of Tax Year"
 msgstr "税年开始"
 
+msgid "Start Receipt Quantities at Zero"
+msgstr "收货数量从零开始"
+
 msgid "Start Time"
 msgstr "开始时间"
 
@@ -23992,6 +24025,9 @@ msgstr "此采购订单"
 
 msgid "This Quarter"
 msgstr "本季度"
+
+msgid "This receipt has no lines. Choose a source document to add them."
+msgstr "此收货单没有行。请选择源单据以添加行。"
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "这将移除 PDF。员工将改为查看书面内容。"

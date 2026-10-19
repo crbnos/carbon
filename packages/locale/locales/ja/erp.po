@@ -4968,6 +4968,9 @@ msgstr "このアグリーメントでレンタルするフリート個を選択
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "このコントラクトが請求する外注サービスを選択してください。各サービスは、グリッドで価格設定できる繰り返し明細として追加されます。"
 
+msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
+msgstr "新規入荷における各明細の受け取り数量の初期値を選択してください：入荷待ち数量を使用するか、受け取り者が実績値を入力できるようゼロから開始するか。"
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "印刷された製造指図現品票に表示される内容を選択します。"
 
@@ -8975,6 +8978,9 @@ msgstr "税固有の減価償却方法を資産クラスで設定するために
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "有効にして、原材料のIDと説明を生成します。"
 
+msgid "Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive."
+msgstr "受け取り担当者が入荷待ち数量を確認する代わりに、各明細の数量を入力できるようにする。"
+
 msgid "Enable to require an authenticator app before anyone can open this company."
 msgstr "この会社を開く前に誰でも認証器アプリが必須となるように有効にします。"
 
@@ -9105,6 +9111,9 @@ msgstr "1～{0}の数量を入力してください。"
 msgid "Enter a reason to take the unit out of service"
 msgstr "ユニットを使用停止にする理由を入力"
 
+msgid "Enter a received quantity, or tick a unit, on at least one line."
+msgstr "少なくとも1つの明細で、受取数量を入力するか個をチェックしてください。"
+
 msgid "Enter a web address, such as https://example.com"
 msgstr "Webアドレスを入力してください（例: https://example.com）"
 
@@ -9143,6 +9152,9 @@ msgstr "プライベートOAuthアプリケーションのOnshape URL、クラ�
 
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "各アカウントについて、カットオーバーの前日現在の前システムの試算表を入力してください。"
+
+msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
+msgstr "到着した各明細の数量を入力してください。ゼロのままの明細は、入荷が転記済になったときに受け取られません。"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
@@ -15681,6 +15693,9 @@ msgstr "1回限り"
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "下書きの手順書のみが編集可能です。有効またはアーカイブ済の手順書を変更するには、新しいバージョンを作成してください。"
 
+msgid "Only employees can post receipts."
+msgstr "従業員のみが入荷を転記することができます。"
+
 msgid "Only empty, open periods can be deleted."
 msgstr "空のオープン期間のみ削除できます。"
 
@@ -18205,6 +18220,12 @@ msgstr "領収書行"
 msgid "Receipt Promised Date"
 msgstr "入荷回答納期"
 
+msgid "Receipt quantities now start at the quantity to receive"
+msgstr "入荷数量が入荷待ち数量から開始されるようになりました"
+
+msgid "Receipt quantities now start at zero"
+msgstr "入荷数量がゼロから開始されるようになりました"
+
 msgid "Receipt Requested Date"
 msgstr "入荷希望納期"
 
@@ -18278,11 +18299,20 @@ msgstr "この仕入先から入荷した明細で返却数量が残っている
 msgid "Received Qty"
 msgstr "受け取り数量"
 
+msgid "Received quantities start at the quantity to receive"
+msgstr "受け取り数量は入荷待ち数量から開始します"
+
+msgid "Received quantities start at zero"
+msgstr "受け取り数量はゼロから開始します"
+
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "入荷数量がまだクレジットされていません。クレジットメモは下書きとして作成されます"
 
 msgid "Receives the invoice email"
 msgstr "請求書メールを受け取ります"
+
+msgid "Receiving"
+msgstr "受け取り"
 
 msgid "Receiving Location"
 msgstr "入荷拠点"
@@ -21527,6 +21557,9 @@ msgstr "会計年度の開始"
 msgid "Start of Tax Year"
 msgstr "税年度の開始"
 
+msgid "Start Receipt Quantities at Zero"
+msgstr "入荷数量をゼロから開始"
+
 msgid "Start Time"
 msgstr "開始時刻"
 
@@ -23992,6 +24025,9 @@ msgstr "この発注書"
 
 msgid "This Quarter"
 msgstr "今四半期"
+
+msgid "This receipt has no lines. Choose a source document to add them."
+msgstr "この入荷には明細がありません。参照伝票を選択して追加してください。"
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "これはPDFを除去します。従業員は代わりに記述内容を表示します。"

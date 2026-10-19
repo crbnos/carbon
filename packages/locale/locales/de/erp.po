@@ -4968,6 +4968,9 @@ msgstr "Wählen Sie die Flotteneinheiten, die diese Vereinbarung mietet. Jede be
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Wählen Sie die Dienstleistungen, die dieser Vertrag fakturiert. Jede wird als wiederkehrende Position hinzugefügt, die Sie im Raster preisen können."
 
+msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
+msgstr "Wählen Sie, womit ein neuer Wareneingang die empfangene Menge jeder Position vorfüllt: mit der noch zu empfangenden Menge oder mit null, damit der Empfänger eingibt, was tatsächlich angekommen ist."
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "Wählen Sie, was auf der gedruckten Laufkarte erscheint."
 
@@ -8975,6 +8978,9 @@ msgstr "Ermöglichen Sie die Konfiguration steuerlicher Abschreibungsmethoden f�
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Aktivieren Sie diese Option, um IDs und Beschreibungen für Rohstoffe zu generieren."
 
+msgid "Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive."
+msgstr "Ermöglichen Sie Empfängern, die Menge in jeder Position einzugeben, anstatt die noch zu empfangende Menge zu bestätigen."
+
 msgid "Enable to require an authenticator app before anyone can open this company."
 msgstr "Aktivieren, um eine Authentifizierungs-App zu erfordern, bevor jemand dieses Unternehmen öffnen kann."
 
@@ -9105,6 +9111,9 @@ msgstr "Geben Sie eine Menge zwischen 1 und {0} ein."
 msgid "Enter a reason to take the unit out of service"
 msgstr "Geben Sie einen Grund an, um die Einheit außer Betrieb zu nehmen"
 
+msgid "Enter a received quantity, or tick a unit, on at least one line."
+msgstr "Geben Sie auf mindestens einer Position eine empfangene Menge ein oder wählen Sie eine Einheit."
+
 msgid "Enter a web address, such as https://example.com"
 msgstr "Geben Sie eine Webadresse ein, z. B. https://example.com"
 
@@ -9143,6 +9152,9 @@ msgstr "Geben Sie die Onshape URL, Client-ID und Client Secret Ihrer privaten OA
 
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Geben Sie die Rohbilanz des vorherigen Systems vom Tag vor der Migration für jedes Konto ein."
+
+msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
+msgstr "Geben Sie auf jeder Position die empfangene Menge ein. Eine auf null gelassene Position wird nicht empfangen, wenn der Wareneingang gebucht wird."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Geben Sie die Menge ein, die diese Bewegung hätte sein sollen. Eine Gegenbewegung für die Differenz wird neben dem Original in dessen Zeitraum verbucht."
@@ -15681,6 +15693,9 @@ msgstr "Einmalig"
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Nur Verfahrensanweisungen im Entwurf sind bearbeitbar. Erstellen Sie eine neue Version, um eine aktive oder archivierte Verfahrensanweisung zu ändern."
 
+msgid "Only employees can post receipts."
+msgstr "Nur Mitarbeiter können Wareneingänge buchen."
+
 msgid "Only empty, open periods can be deleted."
 msgstr "Nur leere, offene Perioden können gelöscht werden."
 
@@ -18205,6 +18220,12 @@ msgstr "Empfangszeilen"
 msgid "Receipt Promised Date"
 msgstr "Zugesagter Termin Wareneingang"
 
+msgid "Receipt quantities now start at the quantity to receive"
+msgstr "Wareneingangsmengen starten jetzt bei der zu empfangenden Menge"
+
+msgid "Receipt quantities now start at zero"
+msgstr "Wareneingangsmengen starten jetzt bei null"
+
 msgid "Receipt Requested Date"
 msgstr "Wunschtermin Wareneingang"
 
@@ -18278,11 +18299,20 @@ msgstr "Von diesem Lieferanten eingegangene Zeilen mit verbleibender Menge zur R
 msgid "Received Qty"
 msgstr "Empfangene Menge"
 
+msgid "Received quantities start at the quantity to receive"
+msgstr "Wareneingangsmengen beginnen mit der zu empfangenden Menge"
+
+msgid "Received quantities start at zero"
+msgstr "Wareneingangsmengen beginnen bei null"
+
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "Empfangene Menge noch nicht kreditiert. Das Gutschriftenmemo wird als Entwurf erstellt."
 
 msgid "Receives the invoice email"
 msgstr "Erhält die Rechnungs-E-Mail"
+
+msgid "Receiving"
+msgstr "Warenempfang"
 
 msgid "Receiving Location"
 msgstr "Empfangsort"
@@ -21527,6 +21557,9 @@ msgstr "Beginn des Geschäftsjahres"
 msgid "Start of Tax Year"
 msgstr "Beginn des Steuerjahres"
 
+msgid "Start Receipt Quantities at Zero"
+msgstr "Wareneingangsmengen bei null starten"
+
 msgid "Start Time"
 msgstr "Startzeit"
 
@@ -23992,6 +24025,9 @@ msgstr "diese Bestellung"
 
 msgid "This Quarter"
 msgstr "Dieses Quartal"
+
+msgid "This receipt has no lines. Choose a source document to add them."
+msgstr "Dieser Wareneingang hat keine Positionen. Wählen Sie zum Hinzufügen einen Ursprungsbeleg."
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "Dies entfernt das PDF. Mitarbeiter sehen stattdessen den schriftlichen Inhalt."

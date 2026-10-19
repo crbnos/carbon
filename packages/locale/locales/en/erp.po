@@ -4968,6 +4968,9 @@ msgstr "Choose the fleet units this agreement rents. Each starts at its rate on 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 
+msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
+msgstr "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "Choose what appears on the printed job traveler."
 
@@ -8975,6 +8978,9 @@ msgstr "Enable to configure tax-specific depreciation methods on asset classes (
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Enable to generate IDs and descriptions for raw materials."
 
+msgid "Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive."
+msgstr "Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive."
+
 msgid "Enable to require an authenticator app before anyone can open this company."
 msgstr "Enable to require an authenticator app before anyone can open this company."
 
@@ -9105,6 +9111,9 @@ msgstr "Enter a quantity between 1 and {0}."
 msgid "Enter a reason to take the unit out of service"
 msgstr "Enter a reason to take the unit out of service"
 
+msgid "Enter a received quantity, or tick a unit, on at least one line."
+msgstr "Enter a received quantity, or tick a unit, on at least one line."
+
 msgid "Enter a web address, such as https://example.com"
 msgstr "Enter a web address, such as https://example.com"
 
@@ -9143,6 +9152,9 @@ msgstr "Enter the Onshape URL, client ID and client secret of your private OAuth
 
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Enter the prior system's trial balance as of the day before the cutover, for every account."
+
+msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
+msgstr "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
@@ -15681,6 +15693,9 @@ msgstr "One-time"
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 
+msgid "Only employees can post receipts."
+msgstr "Only employees can post receipts."
+
 msgid "Only empty, open periods can be deleted."
 msgstr "Only empty, open periods can be deleted."
 
@@ -18205,6 +18220,12 @@ msgstr "Receipt Lines"
 msgid "Receipt Promised Date"
 msgstr "Receipt Promised Date"
 
+msgid "Receipt quantities now start at the quantity to receive"
+msgstr "Receipt quantities now start at the quantity to receive"
+
+msgid "Receipt quantities now start at zero"
+msgstr "Receipt quantities now start at zero"
+
 msgid "Receipt Requested Date"
 msgstr "Receipt Requested Date"
 
@@ -18278,11 +18299,20 @@ msgstr "Received lines from this supplier with quantity remaining to return"
 msgid "Received Qty"
 msgstr "Received Qty"
 
+msgid "Received quantities start at the quantity to receive"
+msgstr "Received quantities start at the quantity to receive"
+
+msgid "Received quantities start at zero"
+msgstr "Received quantities start at zero"
+
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "Received quantity not yet credited. The credit memo is created as a draft."
 
 msgid "Receives the invoice email"
 msgstr "Receives the invoice email"
+
+msgid "Receiving"
+msgstr "Receiving"
 
 msgid "Receiving Location"
 msgstr "Receiving Location"
@@ -21527,6 +21557,9 @@ msgstr "Start of Fiscal Year"
 msgid "Start of Tax Year"
 msgstr "Start of Tax Year"
 
+msgid "Start Receipt Quantities at Zero"
+msgstr "Start Receipt Quantities at Zero"
+
 msgid "Start Time"
 msgstr "Start Time"
 
@@ -23992,6 +24025,9 @@ msgstr "this purchase order"
 
 msgid "This Quarter"
 msgstr "This Quarter"
+
+msgid "This receipt has no lines. Choose a source document to add them."
+msgstr "This receipt has no lines. Choose a source document to add them."
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "This removes the PDF. Employees will see the written content instead."

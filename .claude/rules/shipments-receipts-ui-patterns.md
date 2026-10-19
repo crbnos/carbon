@@ -30,6 +30,10 @@ run the same checks. The route only parses the form, and takes the document id f
   rental shipment and one Draft rental receipt per agreement, enforced by the partial unique
   indexes `shipment_oneOpenDraftPerRentalAgreement_idx` / `receipt_oneOpenDraftPerRentalAgreement_idx`),
   else invokes `create` with `shipmentFromRentalAgreement` / `receiptFromRentalAgreement`.
+  A receipt's lines start at the quantity still to receive, or at 0 when
+  `companySettings.receiptQuantitiesStartAtZero` is on (Settings → Inventory → Receiving —
+  every source `create` builds lines for: Purchase Order, Inbound Transfer, Sales Return Order;
+  a PO's fixed-asset lines then start unticked). Shipments are not affected.
 - `$id.tsx` — layout loader: parallel `getShipment` / `getShipmentLines` / `getShipmentTracking`,
   plus fixed-asset lines (`shipmentFixedAssetLine`) and related items. Receipt also loads
   `getReceiptFiles`, `getBatchProperties`, `getShelfLifeForItems`, `companySettings`. Renders `<Outlet/>`.
@@ -178,7 +182,11 @@ the service-role client + Kysely `db.transaction()`, and branch on `sourceDocume
 - **post-receipt** handles `Purchase Order`, `Inbound Transfer`, `Rental Agreement` (returns each
   ticked unit through `returnRentalUnit` and moves its `fixedAsset.locationId` to the receipt's
   location; `returnRentalUnit` in `sales.service.ts`), and `Sales Return Order`
-  (customer RMA re-entry at original outbound cost, entities to On Hold). PO path: inserts `itemLedger`
+  (customer RMA re-entry at original outbound cost, entities to On Hold). The PO, transfer and RMA branches skip a
+  line received at 0 — it books no `itemLedger`, cost layer or journal line. In the PO path a line
+  received at 0 is also left out of `receiptLinesByPurchaseOrderLineId` (its PO line keeps its
+  `receivedDate`, an outside-processing operation its status) and out of `trackedEntityUpdates` (a
+  batch or serial still on it is not set Available and gets no Receive activity). PO path: inserts `itemLedger`
   (entry types `Positive/Negative Adjmt.` by sign), GR/IR + inventory `journalLine`s for every
   company (the journal is Provisional before the accounting cutover, Posted after it), advances PO line `quantityReceived`/`receivedComplete` and PO `status`,
   flips tracked entities to `Available` (**`On Hold` if the item has a Receipt-usage inspection
