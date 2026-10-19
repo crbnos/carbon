@@ -12741,7 +12741,9 @@ async function copyStepSlides(
         caption: sl.caption,
         sortOrder: sl.sortOrder,
         size: sl.size,
-        annotations: sl.annotations,
+        // A raw array reaches Postgres as an array literal: `[]` was stored as
+        // the jsonb object `{}`, and a slide with pins failed the insert.
+        annotations: toJson(sl.annotations ?? []),
         companyId,
         createdBy: userId
       }
