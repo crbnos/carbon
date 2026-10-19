@@ -370,12 +370,7 @@ export async function getGaugeCalibrationRecords(
     .eq("companyId", companyId);
 
   if (args?.search) {
-    query = query.or(
-      searchFilter(
-        ["gaugeId", "description", "modelNumber", "serialNumber"],
-        args.search
-      )
-    );
+    query = query.or(searchFilter(["gaugeId", "description"], args.search));
   }
 
   if (args) {
@@ -1083,12 +1078,7 @@ export async function getQualityActions(
   if (args?.search) {
     query = query.or(
       searchFilter(
-        [
-          "readableNonConformanceId",
-          "nonConformanceName",
-          "name",
-          "description"
-        ],
+        ["readableNonConformanceId", "nonConformanceName"],
         args.search
       )
     );

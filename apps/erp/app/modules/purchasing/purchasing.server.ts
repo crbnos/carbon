@@ -86,6 +86,7 @@ import {
   plannedOrderValidator,
   planningPurchaseOrderWeek,
   purchaseOrderDeleteRefusal,
+  purchaseOrderStatusType,
   purchaseReturnOrderLineValidator,
   purchasingRfqFinalizeValidator,
   purchasingRfqValidator,
@@ -4120,7 +4121,7 @@ export const getPurchaseOrders = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0),
     search: z.string().nullable().optional(),
-    status: z.string().nullable().optional(),
+    status: z.enum(purchaseOrderStatusType).nullable().optional(),
     supplierId: z.string().nullable().optional()
   }),
   permission: { view: "purchasing" },

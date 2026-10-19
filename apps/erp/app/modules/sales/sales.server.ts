@@ -6505,7 +6505,7 @@ export const getSalesOrders = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0),
     search: z.string().nullable().optional(),
-    status: z.string().nullable().optional(),
+    status: z.enum(salesOrderStatusType).nullable().optional(),
     customerId: z.string().nullable().optional()
   }),
   permission: { view: "sales" },

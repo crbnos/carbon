@@ -1019,10 +1019,7 @@ export async function getSupplierQuotes(
 
   if (args.search) {
     query = query.or(
-      searchFilter(
-        ["supplierQuoteId", "name", "supplierReference"],
-        args.search
-      )
+      searchFilter(["supplierQuoteId", "supplierReference"], args.search)
     );
   }
 

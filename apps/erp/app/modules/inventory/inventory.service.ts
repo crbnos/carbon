@@ -1591,7 +1591,7 @@ export async function getShippingMethods(
     .eq("active", true);
 
   if (args.search) {
-    query = query.or(searchFilter(["name", "carrier"], args.search));
+    query = query.or(searchFilter(["name"], args.search));
   }
 
   query = setGenericQueryFilters(query, args, [

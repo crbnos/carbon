@@ -452,9 +452,11 @@ export async function getCustomerPortals(
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
 ) {
+  // Joined for the search, which matches the customer's name. Every portal
+  // has its customer (the form requires one), so the inner join drops none.
   let query = client
     .from("externalLink")
-    .select("*", { count: LIST_COUNT })
+    .select("*, customer!inner(id)", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .eq("documentType", "Customer");
 
