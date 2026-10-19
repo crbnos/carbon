@@ -8,9 +8,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getStorageUnitsListForLocation } from "~/modules/inventory/inventory.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    "inventory.storageUnits": "View"
-  });
+  const { client, companyId } = await authorize(request);
   const url = new URL(request.url);
   const locationId = url.searchParams.get("locationId");
   if (!locationId) {

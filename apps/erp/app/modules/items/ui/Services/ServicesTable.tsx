@@ -574,16 +574,18 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
         primaryAction={
           permissions.has({ "parts.services": "Create" }) && (
             <div className="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                leftIcon={<LuGroup />}
-                className="max-md:hidden"
-                asChild
-              >
-                <Link to={path.to.itemPostingGroups}>
-                  <Trans>Item Groups</Trans>
-                </Link>
-              </Button>
+              {permissions.has({ "parts.itemGroups": "View" }) && (
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuGroup />}
+                  className="max-md:hidden"
+                  asChild
+                >
+                  <Link to={path.to.itemPostingGroups}>
+                    <Trans>Item Groups</Trans>
+                  </Link>
+                </Button>
+              )}
               <New label={t`Service`} to={path.to.newService} />
             </div>
           )

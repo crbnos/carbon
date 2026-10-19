@@ -4135,7 +4135,13 @@ export const getPurchaseOrderLine = defineServiceFn({
  */
 export const getPurchasingDocumentsAssignedToMe = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "purchasing.purchaseOrders": "View" },
+  permission: {
+    anyOf: [
+      { "purchasing.purchaseOrders": "View" },
+      { "purchasing.supplierQuotes": "View" },
+      { "invoicing.purchaseInvoices": "View" }
+    ]
+  },
   async run(ctx) {
     return await service.getPurchasingDocumentsAssignedToMe(
       ctx.asCaller.supabase,
@@ -4187,7 +4193,12 @@ export const getPurchasingPlanning = defineServiceFn({
  */
 export const getSupplier = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
-  permission: { "purchasing.suppliers": "View" },
+  permission: {
+    anyOf: [
+      { "purchasing.suppliers": "View" },
+      { "purchasing.purchaseOrders": "View" }
+    ]
+  },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4264,7 +4275,14 @@ export const getSupplierInteraction = defineServiceFn({
  */
 export const getSupplierInteractionDocuments = defineServiceFn({
   input: z.looseObject({ interactionId: z.string() }),
-  permission: { "purchasing.purchaseOrders": "View" },
+  permission: {
+    anyOf: [
+      { "purchasing.rfqs": "View" },
+      { "purchasing.purchaseOrders": "View" },
+      { "purchasing.supplierQuotes": "View" },
+      { "invoicing.purchaseInvoices": "View" }
+    ]
+  },
   async run(ctx, input) {
     return await service.getSupplierInteractionDocuments(
       ctx.asCaller.supabase,

@@ -36,7 +36,13 @@ export const PURCHASING_PAGES = [
       "purchaseOrderTransaction",
       "supplierInteraction"
     ],
-    readers: ["paymentTerm", "supplierPart", "supplierPartPrice", "terms"],
+    readers: [
+      "paymentTerm",
+      "supplier",
+      "supplierPart",
+      "supplierPartPrice",
+      "terms"
+    ],
     paths: ["/x/purchasing/orders", "/x/purchase-order/"]
   },
   {

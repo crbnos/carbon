@@ -4504,7 +4504,7 @@ export const getBatchNumbersForItem = defineServiceFn({
  */
 export const getStorageUnitsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "inventory.storageUnits": "View" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -4520,7 +4520,7 @@ export const getStorageUnitsList = defineServiceFn({
  */
 export const getStorageUnitsListForLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { "inventory.storageUnits": "View" },
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5947,7 +5947,7 @@ export const getStorageUnitDescendants = defineServiceFn({
  */
 export const expandStorageUnitIdsWithDescendants = defineServiceFn({
   input: z.looseObject({ storageUnitIds: z.array(z.string()) }),
-  permission: { "inventory.storageUnits": "View" },
+  permission: "employee",
   async run(ctx, input) {
     return await service.expandStorageUnitIdsWithDescendants(
       ctx.asCaller.supabase,
@@ -6077,7 +6077,7 @@ export const getStorageType = defineServiceFn({
  */
 export const getStorageTypesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "inventory.storageTypes": "View" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,

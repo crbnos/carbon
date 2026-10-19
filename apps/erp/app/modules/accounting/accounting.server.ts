@@ -2672,7 +2672,7 @@ export const getGroupAccounts = defineServiceFn({
  */
 export const getBaseCurrency = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "accounting.exchangeRates": "View" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2973,7 +2973,12 @@ export const getScrapAccountIds = defineServiceFn({
  */
 export const getFiscalYearSettings = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "accounting.fiscalYear": "View" },
+  permission: {
+    anyOf: [
+      { "accounting.fiscalYear": "View" },
+      { "accounting.chartOfAccounts": "View" }
+    ]
+  },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -4176,7 +4181,12 @@ export const getFixedAssetClass = defineServiceFn({
  */
 export const getFixedAssetClassesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "accounting.assetClasses": "View" },
+  permission: {
+    anyOf: [
+      { "accounting.assetClasses": "View" },
+      { "accounting.assets": "View" }
+    ]
+  },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -4544,7 +4554,14 @@ export const getPeriodRunRelatedItems = defineServiceFn({
     periodEnd: z.string(),
     journalIds: z.array(z.string())
   }),
-  permission: { "accounting.journalEntries": "View" },
+  permission: {
+    anyOf: [
+      { "accounting.journalEntries": "View" },
+      { "accounting.depreciation": "View" },
+      { "accounting.leases": "View" },
+      { "accounting.revenueRecognition": "View" }
+    ]
+  },
   async run(ctx, input) {
     return await service.getPeriodRunRelatedItems(
       ctx.asCaller.supabase,

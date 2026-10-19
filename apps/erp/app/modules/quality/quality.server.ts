@@ -2519,7 +2519,7 @@ export const getGaugeCalibrationRecordsByGaugeId = defineServiceFn({
  */
 export const getGaugeTypesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "quality.gaugeTypes": "View" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -2878,7 +2878,7 @@ export const getIssueWorkflowsList = defineServiceFn({
  */
 export const getIssueTypesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "quality.issueTypes": "View" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3003,7 +3003,14 @@ export const getQualityFiles = defineServiceFn({
  */
 export const getRequiredActionsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "quality.actionTypes": "View" },
+  permission: {
+    anyOf: [
+      { "quality.actionTypes": "View" },
+      { "quality.issues": "View" },
+      { "quality.actions": "View" },
+      { "quality.issueWorkflows": "View" }
+    ]
+  },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3841,7 +3848,12 @@ export const getInspectionTrackedEntities = defineServiceFn({
  */
 export const getInspectionSamplingPlans = defineServiceFn({
   input: z.looseObject({ inspectionId: z.string() }),
-  permission: { "quality.inspectionPlans": "View" },
+  permission: {
+    anyOf: [
+      { "quality.inspectionPlans": "View" },
+      { "quality.inspections": "View" }
+    ]
+  },
   async run(ctx, input) {
     return unwrap(
       ctx,

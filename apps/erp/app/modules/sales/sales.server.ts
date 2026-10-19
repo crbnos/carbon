@@ -5527,7 +5527,13 @@ export const getConfigurationParametersByQuoteLineId = defineServiceFn({
  */
 export const getCustomer = defineServiceFn({
   input: z.looseObject({ customerId: z.string() }),
-  permission: { "sales.customers": "View" },
+  permission: {
+    anyOf: [
+      { "sales.customers": "View" },
+      { "sales.quotes": "View" },
+      { "sales.salesOrders": "View" }
+    ]
+  },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5786,7 +5792,7 @@ export const getCustomerStatuses = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { "sales.statuses": "View" },
+  permission: "employee",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -5980,7 +5986,9 @@ export const getNoQuoteReasons = defineServiceFn({
  */
 export const getOpportunity = defineServiceFn({
   input: z.looseObject({ opportunityId: z.string().nullable() }),
-  permission: { "sales.quotes": "View" },
+  permission: {
+    anyOf: [{ "sales.quotes": "View" }, { "sales.salesOrders": "View" }]
+  },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5999,7 +6007,14 @@ export const getOpportunity = defineServiceFn({
  */
 export const getOpportunityDocuments = defineServiceFn({
   input: z.looseObject({ opportunityId: z.string() }),
-  permission: { "sales.quotes": "View" },
+  permission: {
+    anyOf: [
+      { "sales.rfqs": "View" },
+      { "sales.quotes": "View" },
+      { "sales.salesOrders": "View" },
+      { "invoicing.salesInvoices": "View" }
+    ]
+  },
   async run(ctx, input) {
     return await service.getOpportunityDocuments(
       ctx.asCaller.supabase,
@@ -6081,7 +6096,9 @@ export const getPricingRules = defineServiceFn({
  */
 export const getQuote = defineServiceFn({
   input: z.looseObject({ quoteId: z.string() }),
-  permission: { "sales.quotes": "View" },
+  permission: {
+    anyOf: [{ "sales.quotes": "View" }, { "sales.salesOrders": "View" }]
+  },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6440,7 +6457,13 @@ export const getRelatedPricesForQuoteLine = defineServiceFn({
  */
 export const getSalesDocumentsAssignedToMe = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "sales.salesOrders": "View" },
+  permission: {
+    anyOf: [
+      { "sales.rfqs": "View" },
+      { "sales.quotes": "View" },
+      { "sales.salesOrders": "View" }
+    ]
+  },
   async run(ctx) {
     return await service.getSalesDocumentsAssignedToMe(
       ctx.asCaller.supabase,

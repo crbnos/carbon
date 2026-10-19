@@ -1,6 +1,6 @@
 # Page-level permissions (levels, overrides, API keys)
 
-Last tested: 2026-10-19 (the editor is a module accordion since 2026-10-19)
+Last tested: 2026-10-19 (the editor is a module accordion since 2026-10-19; one-page roles over single fetch)
 Routes: /x/users/employee-types, /x/users/employees/<userId>, /x/settings/api-keys
 
 ## Prerequisites
@@ -44,7 +44,39 @@ Routes: /x/users/employee-types, /x/users/employees/<userId>, /x/settings/api-ke
   Inventory View: `inventory/getReceipts` 200, `inventory/createReceipt` 403 (body
   `{}` parses; the gate runs after input parsing), `sales/getCustomers` 403.
 
-### 4. Restore
+### 4. One-page roles (every page, over HTTP)
+Use this to test all 159 pages in minutes. A browser loop takes hours, and headless
+Chrome crashes its page after about 80 navigations here.
+1. Make one employee type per page from `PAGES`, named `Only <page id>`, with one `permission`
+   row: Edit on that page (its `maxLevel` when lower). A throwaway script in `scripts/.tmp/`
+   that writes the SQL and pipes it to `psql` is enough; delete the types at the end.
+2. Copy the `carbon` cookie from the logged-in browser: `agent-browser cookies get --json`.
+3. For each page, put the user on its role in SQL and clear the claims cache in one call:
+   `redis-cli -n 12 EVAL "for _,k in ipairs(redis.call('keys', ARGV[1])) do redis.call('del', k) end" 0 'permissions:*:<userId>'`.
+4. Request `<path>.data` with the cookie and `redirect: "manual"`: the page's first path, one
+   record (take its path from a list as Admin), and the module's nav link, in parallel.
+5. Read the result:
+   - `202` with `["SingleFetchRedirect"…,"redirect","/x"` is Access Denied (the flash rides the cookie).
+   - `500`, or `["SanitizedError"` / `["ErrorResponse"` in a `200` body, is a loader error or a
+     failed deferred promise (an error boundary in the browser).
+   - Follow a redirect to any other path once: some detail routes redirect to themselves.
+6. Run the pass as Admin first. A difference from that baseline is a finding.
+7. To name the gate behind a silent failure, log `forbidden()` (`packages/api/src/service-fn.server.ts`)
+   and the denial branch of `requirePermissions` to a scratch file with the request URL and
+   `new Error().stack`. The stack's first `routes/` frame is the loader; its line number is the
+   transformed module's, so match the refused page against the `api.*` calls of that file.
+   Remove the logging before you commit.
+8. Use the browser only for the sidebar and nav (client-side) and for writes.
+
+Common causes found on 2026-10-19:
+- A module dashboard (`/x/sales`, `/x/purchasing`, `/x/invoicing`, `/x/production`) calls a
+  function gated on one page. The loader checks `holdsGate(permissions, …)` and skips the section.
+- A lookup on a table every employee reads is gated on its owner page. It gates on `"employee"`.
+- A page reads a restricted table of a sibling page. The page lists the table in `readers`, the
+  function gates on `{ anyOf: [owner, reader…] }`, and `authz migration` ships the rule.
+- A module's nav link opens one fixed page. `useModules` opens the first page the person can view.
+
+### 5. Restore
 - Set the user's type back (UI or SQL), delete their `permission` rows, and if done in SQL
   clear the claims cache: `docker exec carbon-redis redis-cli -n 12 del permissions:<hash>:<userId>`.
 - Delete test types through /x/users/employee-types/delete/<id> (requestSubmit the Delete form)
@@ -56,6 +88,9 @@ Routes: /x/users/employee-types, /x/users/employees/<userId>, /x/settings/api-ke
 - The Access tab needs ~7 s after `open` before the type select is clickable.
 
 ## Common Failures
+- An SQL loop in zsh that assigns `path=` replaces `PATH`: use another variable name.
+- Five quick edits to ERP files can leave the dev server answering nothing after its SSR
+  "program reload" (2026-10-19). Make edits in one batch while a pass runs.
 - Two "New API Key" dialogs: `ApiKeysTable` rendered its own `<Outlet />` beside the route's
   `<RecordOutlet />` (fixed 2026-10-18).
 - Demoting the dev user removes Users access: revert by SQL, then clear the Redis claims key.

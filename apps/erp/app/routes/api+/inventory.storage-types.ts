@@ -7,8 +7,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getStorageTypesList } from "~/modules/inventory/inventory.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    "inventory.storageTypes": "View"
-  });
+  const { client, companyId } = await authorize(request);
   return await getStorageTypesList(client, companyId);
 }

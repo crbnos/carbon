@@ -4,7 +4,7 @@
 
 import { dataOrThrow } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
-import { anyOf, pagesOf } from "@carbon/database/access";
+import { anyOf, holdsGate, pagesOf } from "@carbon/database/access";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -98,9 +98,15 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(
+  const { client, companyId, api, permissions } = await authorize(
     request,
     anyOf(pagesOf("sales"), "View")
+  );
+  // The dashboard opens for any Sales page; a section reads only what the person can view.
+  const listsDocuments = holdsGate(
+    permissions,
+    anyOf(["sales.rfqs", "sales.quotes", "sales.salesOrders"], "View"),
+    companyId
   );
 
   const [openSalesOrders, openQuotes, openRFQs] = await Promise.all([
@@ -134,7 +140,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     openSalesOrders: openSalesOrders,
     openQuotes: openQuotes,
     openRFQs: openRFQs,
-    assignedToMe: api.sales.getSalesDocumentsAssignedToMe({}).then(dataOrThrow)
+    assignedToMe: listsDocuments
+      ? api.sales.getSalesDocumentsAssignedToMe({}).then(dataOrThrow)
+      : Promise.resolve([])
   };
 }
 

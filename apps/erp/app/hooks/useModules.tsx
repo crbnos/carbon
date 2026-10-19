@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { type PageId, pageById, pagesOf } from "@carbon/database/access";
 import { useRouteData } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import {
@@ -25,11 +26,31 @@ import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
 import { usePermissions } from "./usePermissions";
 
-/** A nav module: it shows with View on any of its pages (`module`). */
+/**
+ * A nav module: it shows with View on any of its pages (`module`). A module
+ * whose link opens one page names it (`page`); without View there, the link
+ * opens the first page of the module the person can view.
+ */
 type ModuleDefinition = Authenticated<NavItem> & {
   key: string;
   module?: string;
+  page?: PageId;
 };
+
+function withLanding(
+  item: ModuleDefinition,
+  permissions: ReturnType<typeof usePermissions>
+): ModuleDefinition {
+  if (!item.module || !item.page || permissions.has({ [item.page]: "View" }))
+    return item;
+  const first = pagesOf(item.module)
+    .map((id) => ({ id, to: pageById(id)?.paths[0] }))
+    .find(
+      ({ id, to }) =>
+        to && !to.includes("$") && permissions.has({ [id]: "View" })
+    );
+  return first?.to ? { ...item, to: first.to } : item;
+}
 
 type ModulePreference = {
   module: string;
@@ -41,15 +62,17 @@ function filterByPermissions(
   modules: ModuleDefinition[],
   permissions: ReturnType<typeof usePermissions>
 ) {
-  return modules.filter((item) => {
-    if (item.module) {
-      return permissions.hasAny(item.module, "View");
-    } else if (item.role) {
-      return permissions.is(item.role);
-    } else {
-      return true;
-    }
-  });
+  return modules
+    .filter((item) => {
+      if (item.module) {
+        return permissions.hasAny(item.module, "View");
+      } else if (item.role) {
+        return permissions.is(item.role);
+      } else {
+        return true;
+      }
+    })
+    .map((item) => withLanding(item, permissions));
 }
 
 function useModuleDefinitions(): ModuleDefinition[] {
@@ -58,6 +81,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
     {
       key: "accounting",
       module: "accounting",
+      page: "accounting.reporting",
       name: t`Accounting`,
       to: path.to.accounting,
       icon: LuLandmark
@@ -72,6 +96,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
     {
       key: "inventory",
       module: "inventory",
+      page: "inventory.quantities",
       name: t`Inventory`,
       to: path.to.inventory,
       icon: LuBox
@@ -86,6 +111,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
     {
       key: "parts",
       module: "parts",
+      page: "parts.parts",
       name: t`Items`,
       to: path.to.parts,
       icon: LuBlocks
@@ -93,6 +119,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
     {
       key: "people",
       module: "people",
+      page: "people.employees",
       name: t`People`,
       to: path.to.people,
       icon: LuUsers
@@ -135,6 +162,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
     {
       key: "settings",
       module: "settings",
+      page: "settings.company",
       name: t`Settings`,
       to: path.to.company,
       icon: LuSettings
@@ -150,6 +178,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
     {
       key: "users",
       module: "users",
+      page: "users.accounts",
       name: t`Users`,
       to: path.to.employeeAccounts,
       icon: LuShield
@@ -157,6 +186,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
     {
       key: "workflows",
       module: "workflows",
+      page: "workflows.workflows",
       name: t`Workflows`,
       to: path.to.workflows,
       icon: LuWorkflow
@@ -207,7 +237,7 @@ export function useSettingsModule() {
   if (settings.module && !permissions.hasAny(settings.module, "View")) {
     return null;
   }
-  return settings;
+  return withLanding(settings, permissions);
 }
 
 export function useAllModules() {

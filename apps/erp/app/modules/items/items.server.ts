@@ -2699,7 +2699,7 @@ export const getItemQuantities = defineServiceFn({
  */
 export const getItemStockQuantitiesByLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: anyOfRule("item", "View"),
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3124,7 +3124,9 @@ export const getMaterialForms = defineServiceFn({
  */
 export const getMaterialFormsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "parts.shapes": "View" },
+  permission: {
+    anyOf: [{ "parts.shapes": "View" }, { "parts.materials": "View" }]
+  },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3251,7 +3253,9 @@ export const getMaterialSubstances = defineServiceFn({
  */
 export const getMaterialSubstancesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "parts.substances": "View" },
+  permission: {
+    anyOf: [{ "parts.substances": "View" }, { "parts.materials": "View" }]
+  },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3569,7 +3573,7 @@ export const getPartsList = defineServiceFn({
  */
 export const getPartUsedIn = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return await service.getPartUsedIn(
       ctx.asCaller.supabase,

@@ -480,20 +480,93 @@ describe("gates the row decides", () => {
     });
   });
 
+  // A read several pages need: the owner's page, or any page that shows the
+  // rows (a reader in the registry). RLS filters the rows.
+  const READER_GATES: Record<string, string[]> = {
+    accounting_getFiscalYearSettings: [
+      "accounting.chartOfAccounts",
+      "accounting.fiscalYear"
+    ],
+    accounting_getFixedAssetClassesList: [
+      "accounting.assets",
+      "accounting.assetClasses"
+    ],
+    accounting_getPeriodRunRelatedItems: [
+      "accounting.journalEntries",
+      "accounting.depreciation",
+      "accounting.leases",
+      "accounting.revenueRecognition"
+    ],
+    items_getMaterialFormsList: ["parts.materials", "parts.shapes"],
+    items_getMaterialSubstancesList: ["parts.materials", "parts.substances"],
+    people_getAttributeCategories: ["people.employees", "people.attributes"],
+    purchasing_getPurchasingDocumentsAssignedToMe: [
+      "invoicing.purchaseInvoices",
+      "purchasing.purchaseOrders",
+      "purchasing.supplierQuotes"
+    ],
+    purchasing_getSupplier: [
+      "purchasing.suppliers",
+      "purchasing.purchaseOrders"
+    ],
+    purchasing_getSupplierInteractionDocuments: [
+      "invoicing.purchaseInvoices",
+      "purchasing.purchaseOrders",
+      "purchasing.rfqs",
+      "purchasing.supplierQuotes"
+    ],
+    quality_getInspectionSamplingPlans: [
+      "quality.inspections",
+      "quality.inspectionPlans"
+    ],
+    quality_getRequiredActionsList: [
+      "quality.actions",
+      "quality.issues",
+      "quality.actionTypes",
+      "quality.issueWorkflows"
+    ],
+    sales_getCustomer: ["sales.customers", "sales.quotes", "sales.salesOrders"],
+    sales_getOpportunity: ["sales.quotes", "sales.salesOrders"],
+    sales_getOpportunityDocuments: [
+      "invoicing.salesInvoices",
+      "sales.rfqs",
+      "sales.quotes",
+      "sales.salesOrders"
+    ],
+    sales_getQuote: ["sales.quotes", "sales.salesOrders"],
+    sales_getSalesDocumentsAssignedToMe: [
+      "sales.rfqs",
+      "sales.quotes",
+      "sales.salesOrders"
+    ]
+  };
+
+  it("lets a page read what it shows from a sibling page", () => {
+    expect(
+      Object.fromEntries(
+        oneOf
+          .filter((t) => t.name in READER_GATES)
+          .map((t) => [t.name, t.permission.oneOf?.pages])
+      )
+    ).toEqual(READER_GATES);
+  });
+
   it("names the pages of one shared table, in one module", () => {
     const tables: Record<string, string[]> = {
       parts: ITEM_PAGES,
       invoicing: ["invoicing.supplierCredits", "invoicing.creditMemos"],
       accounting: ["accounting.leases", "accounting.revenueRecognition"]
     };
-    for (const t of oneOf) {
+    for (const t of oneOf.filter((t) => !(t.name in READER_GATES))) {
       const module = t.permission.module ?? "";
       expect(t.permission.oneOf?.pages, t.name).toEqual(tables[module]);
     }
     const counts = Object.fromEntries(
       Object.keys(tables).map((module) => [
         module,
-        oneOf.filter((t) => t.permission.module === module).length
+        oneOf.filter(
+          (t) => t.permission.module === module && !(t.name in READER_GATES)
+        ).length
       ])
     );
     expect(counts).toEqual({ parts: 115, invoicing: 8, accounting: 7 });

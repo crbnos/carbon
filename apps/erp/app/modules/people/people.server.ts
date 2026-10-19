@@ -398,7 +398,9 @@ export const getAttributeCategories = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: { "people.attributes": "View" },
+  permission: {
+    anyOf: [{ "people.attributes": "View" }, { "people.employees": "View" }]
+  },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -676,7 +678,7 @@ export const getShifts = defineServiceFn({
  */
 export const getShiftsList = defineServiceFn({
   input: z.looseObject({ locationId: z.string().nullable() }),
-  permission: { "people.shifts": "View" },
+  permission: "employee",
   async run(ctx, input) {
     return unwrap(
       ctx,
