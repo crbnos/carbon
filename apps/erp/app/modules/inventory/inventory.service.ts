@@ -51,6 +51,11 @@ import {
   splitTakeByBin
 } from "@carbon/database/picked-consumption";
 import {
+  idsWithLiveStockHistory,
+  releaseReceiptSerialEntities,
+  voidedReceiptIds
+} from "@carbon/database/receipt-serials";
+import {
   contains,
   deleteRows,
   inOrder,
@@ -201,6 +206,7 @@ import {
   isPickingListLocked,
   isStockTransferLocked,
   isWarehouseTransferLocked,
+  planSerialBoxWrite,
   type receiptFixedAssetLineUpdateValidator,
   reconcileReceiptLineSerials,
   shippingCarrierType
@@ -913,63 +919,234 @@ export async function getReceiptLineTracking(
     .eq("companyId", companyId);
 }
 
-/**
- * Deletes stale serial tracked entities for a receipt's serial-tracked lines
- * before posting. Post-receipt flips one serial per index in
- * [0, receivedQuantity) to Available; orphaned (reduced quantity) or duplicate
- * (edited serial) entities would otherwise become phantom Available serials.
- * The keep/delete decision is owned by `reconcileReceiptLineSerials` so it
- * stays in lockstep with the post-time validation in ReceiptPostModal.
- */
-export async function reconcileReceiptSerialEntities(
-  client: SupabaseClient<Database>,
-  args: {
-    receiptId: string;
-    companyId: string;
-    lines: {
-      id: string;
-      receivedQuantity: number | null;
-      requiresSerialTracking?: boolean | null;
-    }[];
-  }
+function selectReceiptSerialBox(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; receiptLineId: string; index: number }
 ) {
+  return db
+    .selectFrom("trackedEntity")
+    .select("id")
+    .where("companyId", "=", args.companyId)
+    .where(sql<string>`attributes->>'Receipt Line'`, "=", args.receiptLineId)
+    .where(
+      sql<string>`attributes->>'Receipt Line Index'`,
+      "=",
+      String(args.index)
+    )
+    .execute();
+}
+
+/** One serial save of a line at a time: two saves into an empty box would each insert a record. */
+async function lockReceiptLine(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  receiptLineId: string
+) {
+  await trx
+    .selectFrom("receiptLine")
+    .select("id")
+    .where("id", "=", receiptLineId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .execute();
+}
+
+export type ReceiptSerialBoxResult =
+  | { ok: true }
+  | { ok: false; reason: "notFound" | "locked" | "box" | "unit" };
+
+/**
+ * Saves one serial box of a receipt line (`planSerialBoxWrite`) in one
+ * transaction: an empty serial clears it, a refused one empties it.
+ */
+export async function saveReceiptSerialBox(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    receiptId: string;
+    receiptLineId: string;
+    itemId: string;
+    index: number;
+    serialNumber: string;
+    expiryDate?: string | null;
+  }
+): Promise<ReceiptSerialBoxResult> {
+  const { companyId, receiptId, receiptLineId, itemId, index, serialNumber } =
+    args;
+  return db.transaction().execute(async (trx) => {
+    await lockReceiptLine(trx, companyId, receiptLineId);
+    const receipt = await trx
+      .selectFrom("receipt")
+      .select("status")
+      .where("id", "=", receiptId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!receipt) return { ok: false, reason: "notFound" };
+    if (receipt.status !== "Draft") return { ok: false, reason: "locked" };
+
+    const box = await selectReceiptSerialBox(trx, {
+      companyId,
+      receiptLineId,
+      index
+    });
+
+    const withSerial = serialNumber
+      ? await trx
+          .selectFrom("trackedEntity")
+          .select(["id", "attributes"])
+          .where("sourceDocumentId", "=", itemId)
+          .where("readableId", "=", serialNumber)
+          .where("companyId", "=", companyId)
+          .execute()
+      : [];
+
+    // A serial from a voided receipt was never received: its movements are
+    // the receipt and its void, and the box it names is gone. The new box
+    // takes the same entity, so one unit keeps one history.
+    const history = await idsWithLiveStockHistory(trx, companyId, [
+      ...box.map((entity) => entity.id),
+      ...withSerial.map((entity) => entity.id)
+    ]);
+    const voided = await voidedReceiptIds(
+      trx,
+      companyId,
+      withSerial.flatMap((entity) => {
+        const receiptOfEntity = (entity.attributes as Record<string, unknown>)
+          ?.Receipt;
+        return typeof receiptOfEntity === "string" ? [receiptOfEntity] : [];
+      })
+    );
+
+    const candidates = withSerial.map((entity) => {
+      const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
+      return {
+        id: entity.id,
+        hasHistory: history.has(entity.id),
+        attributes,
+        onVoidedReceipt:
+          typeof attributes.Receipt === "string" &&
+          voided.has(attributes.Receipt)
+      };
+    });
+    const plan = planSerialBoxWrite({
+      receiptLineId,
+      index,
+      serialNumber,
+      box: box.map((entity) => ({
+        id: entity.id,
+        hasHistory: history.has(entity.id)
+      })),
+      withSerial: candidates
+    });
+
+    if (plan.kind === "write") {
+      await sql`SELECT update_receipt_line_serial_tracking(
+        p_receipt_line_id => ${receiptLineId},
+        p_receipt_id => ${receiptId},
+        p_serial_number => ${serialNumber},
+        p_index => ${index}::int,
+        p_tracked_entity_id => ${plan.targetId ?? null}::text,
+        p_expiry_date => ${args.expiryDate || null}::text
+      )`.execute(trx);
+
+      // The void drained the record to 0 / Consumed, and the function's
+      // update keeps both: start it again as a new draft serial starts.
+      const reusedFromVoid = candidates.some(
+        (entity) => entity.id === plan.targetId && entity.onVoidedReceipt
+      );
+      if (reusedFromVoid && plan.targetId) {
+        await trx
+          .updateTable("trackedEntity")
+          .set({ quantity: 1, status: "On Hold" })
+          .where("id", "=", plan.targetId)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+    }
+
+    await releaseReceiptSerialEntities(trx, companyId, plan.releaseIds);
+
+    return plan.kind === "taken"
+      ? { ok: false, reason: plan.reason }
+      : { ok: true };
+  });
+}
+
+/** Empties one serial box of a receipt line. */
+export async function clearReceiptSerialBox(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; receiptLineId: string; index: number }
+): Promise<void> {
+  await db.transaction().execute(async (trx) => {
+    await lockReceiptLine(trx, args.companyId, args.receiptLineId);
+    const box = await selectReceiptSerialBox(trx, args);
+    await releaseReceiptSerialEntities(
+      trx,
+      args.companyId,
+      box.map((entity) => entity.id)
+    );
+  });
+}
+
+export async function reconcileReceiptSerialEntities(
+  db: Kysely<KyselyDatabase>,
+  args: ReconcileReceiptSerialsArgs
+): Promise<{ linesMissingSerials: string[] }> {
+  return db
+    .transaction()
+    .execute((trx) => reconcileReceiptSerialsInTransaction(trx, args));
+}
+
+type ReconcileReceiptSerialsArgs = {
+  receiptId: string;
+  companyId: string;
+  isSalesReturn: boolean;
+  lines: {
+    id: string;
+    receivedQuantity: number | null;
+    requiresSerialTracking?: boolean | null;
+  }[];
+};
+
+export async function reconcileReceiptSerialsInTransaction(
+  trx: Kysely<KyselyDatabase>,
+  args: ReconcileReceiptSerialsArgs
+): Promise<{ linesMissingSerials: string[] }> {
   const serialLines = args.lines.filter((line) => line.requiresSerialTracking);
-  if (serialLines.length === 0) return;
+  if (serialLines.length === 0) return { linesMissingSerials: [] };
 
-  const { data: serialEntities } = await client
-    .from("trackedEntity")
-    .select("id, attributes, createdAt, readableId")
-    .eq("attributes ->> Receipt", args.receiptId)
-    .eq("companyId", args.companyId);
+  const entities = await trx
+    .selectFrom("trackedEntity")
+    .select([
+      "id",
+      "readableId",
+      sql<string | null>`attributes->>'Receipt Line'`.as("receiptLineId"),
+      sql<number | null>`(attributes->>'Receipt Line Index')::int`.as("index"),
+      sql<string>`"createdAt"::text`.as("createdAt")
+    ])
+    .where("companyId", "=", args.companyId)
+    .where(sql<string>`attributes->>'Receipt'`, "=", args.receiptId)
+    .execute();
 
-  const idsToDelete = serialLines.flatMap((line) => {
-    const entities = (serialEntities ?? [])
-      .filter(
-        (e) =>
-          (e.attributes as TrackedEntityAttributes)?.["Receipt Line"] ===
-          line.id
-      )
-      .map((e) => ({
-        id: e.id,
-        index: (e.attributes as TrackedEntityAttributes)?.[
-          "Receipt Line Index"
-        ],
-        hasSerial: !!e.readableId,
-        createdAt: e.createdAt
-      }));
-    return reconcileReceiptLineSerials(
-      entities,
+  const linesMissingSerials: string[] = [];
+  const surplusIds = serialLines.flatMap((line) => {
+    const { missingIndexes, surplusEntityIds } = reconcileReceiptLineSerials(
+      entities
+        .filter((e) => e.receiptLineId === line.id)
+        .map((e) => ({
+          id: e.id,
+          index: e.index ?? undefined,
+          hasSerial: args.isSalesReturn || !!e.readableId,
+          createdAt: e.createdAt
+        })),
       Number(line.receivedQuantity ?? 0)
-    ).surplusEntityIds;
+    );
+    if (missingIndexes.length > 0) linesMissingSerials.push(line.id);
+    return surplusEntityIds;
   });
 
-  if (idsToDelete.length > 0) {
-    await client
-      .from("trackedEntity")
-      .delete()
-      .in("id", idsToDelete)
-      .eq("companyId", args.companyId);
-  }
+  await releaseReceiptSerialEntities(trx, args.companyId, surplusIds);
+  return { linesMissingSerials };
 }
 
 export async function getReceiptFiles(
@@ -9093,6 +9270,181 @@ export function planReceiptVoidCostLedger(
   };
 }
 
+type VoidGuardDb = Kysely<KyselyDatabase> | Transaction<KyselyDatabase>;
+
+export type StockPosition = {
+  itemId: string;
+  locationId: string | null;
+  storageUnitId: string | null;
+  trackedEntityId: string | null;
+};
+
+export type ReversingRow = StockPosition & { quantity: number };
+
+const positionKey = (row: StockPosition) =>
+  [
+    row.itemId,
+    row.locationId ?? "",
+    row.storageUnitId ?? "",
+    row.trackedEntityId ?? ""
+  ].join("|");
+
+/**
+ * The positions the reversal would drive below zero. A tracked row is checked
+ * per serial or batch, so a unit that left its bin is caught even when the bin
+ * holds other stock of the item. Reversal rows that add stock (a negative
+ * receipt line) need nothing.
+ */
+export function findVoidShortfalls(
+  reversingRows: ReversingRow[],
+  onHand: ReadonlyMap<string, number>
+): (StockPosition & { required: number; onHand: number })[] {
+  const required = new Map<string, StockPosition & { required: number }>();
+  for (const row of reversingRows) {
+    if (row.quantity >= 0) continue;
+    const key = positionKey(row);
+    const entry = required.get(key) ?? { ...row, required: 0 };
+    entry.required += -row.quantity;
+    required.set(key, entry);
+  }
+
+  return [...required.entries()].flatMap(([key, entry]) => {
+    const available = onHand.get(key) ?? 0;
+    return available + EPSILON < entry.required
+      ? [
+          {
+            itemId: entry.itemId,
+            locationId: entry.locationId,
+            storageUnitId: entry.storageUnitId,
+            trackedEntityId: entry.trackedEntityId,
+            required: entry.required,
+            onHand: available
+          }
+        ]
+      : [];
+  });
+}
+
+/** Refuses the void when the received stock is no longer where it was received. */
+export async function assertReceivedStockOnHand(
+  trx: VoidGuardDb,
+  companyId: string,
+  reversingRows: ReversingRow[]
+): Promise<void> {
+  const removing = reversingRows.filter((row) => row.quantity < 0);
+  if (removing.length === 0) return;
+
+  const itemIds = [...new Set(removing.map((row) => row.itemId))];
+  const locationIds = [
+    ...new Set(removing.flatMap((row) => row.locationId ?? []))
+  ];
+  const withoutLocation = removing.some((row) => row.locationId === null);
+  const rows = await trx
+    .selectFrom("itemLedger")
+    .select([
+      "itemId",
+      "locationId",
+      "storageUnitId",
+      "trackedEntityId",
+      (eb) => eb.fn.sum<number>("quantity").as("quantity")
+    ])
+    .where("companyId", "=", companyId)
+    .where("itemId", "in", itemIds)
+    .where((eb) =>
+      eb.or([
+        ...(locationIds.length > 0
+          ? [eb("locationId", "in", locationIds)]
+          : []),
+        ...(withoutLocation ? [eb("locationId", "is", null)] : [])
+      ])
+    )
+    .groupBy(["itemId", "locationId", "storageUnitId", "trackedEntityId"])
+    .execute();
+
+  // Untracked rows are compared with the bin's untracked stock; tracked rows
+  // with that serial or batch alone.
+  const onHand = new Map<string, number>();
+  for (const row of rows) {
+    onHand.set(positionKey(row), Number(row.quantity ?? 0));
+  }
+
+  if (findVoidShortfalls(removing, onHand).length > 0) {
+    throw new InvalidInputError(
+      "Cannot void: stock received on this receipt was moved, picked or shipped since it was received. Correct the remainder with an inventory adjustment instead."
+    );
+  }
+}
+
+/**
+ * Locks the receipt and re-reads its status inside the void's transaction, so
+ * two voids sent at once cannot both reverse it. Inspection writes read the
+ * receipt FOR SHARE, so they also wait for the void to commit.
+ */
+export async function lockPostedReceipt(
+  trx: VoidGuardDb,
+  companyId: string,
+  receiptId: string
+): Promise<void> {
+  const receipt = await trx
+    .selectFrom("receipt")
+    .select("status")
+    .where("id", "=", receiptId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (receipt?.status !== "Posted") {
+    throw new InvalidInputError("Can only void posted receipts");
+  }
+}
+
+/**
+ * Refuses the void when an inspection of the receipt rejected an untracked
+ * lot. The reject route writes that lot off; the void would then take the same
+ * stock out a second time.
+ */
+export async function assertNoRejectedUntrackedLot(
+  trx: VoidGuardDb,
+  companyId: string,
+  receiptId: string
+): Promise<void> {
+  const rejected = await trx
+    .selectFrom("inspection")
+    .innerJoin("item", (join) =>
+      join
+        .onRef("item.id", "=", "inspection.itemId")
+        .onRef("item.companyId", "=", "inspection.companyId")
+    )
+    .select("inspection.inspectionId")
+    .where("inspection.companyId", "=", companyId)
+    .where("inspection.sourceDocument", "=", "Receipt")
+    .where("inspection.sourceDocumentId", "=", receiptId)
+    .where("inspection.status", "=", "Failed")
+    .where("item.itemTrackingType", "=", "Inventory")
+    .executeTakeFirst();
+  if (rejected) {
+    throw new InvalidInputError(
+      `Cannot void: inspection ${rejected.inspectionId} rejected this stock and wrote it off. Correct the remainder with an inventory adjustment instead.`
+    );
+  }
+}
+
+/** An item ledger row the void is about to insert, as a stock position. */
+export function toReversingRow(row: {
+  itemId: string;
+  locationId?: string | null;
+  storageUnitId?: string | null;
+  trackedEntityId?: string | null;
+  quantity: number | string;
+}): ReversingRow {
+  return {
+    itemId: row.itemId,
+    locationId: row.locationId ?? null,
+    storageUnitId: row.storageUnitId ?? null,
+    trackedEntityId: row.trackedEntityId ?? null,
+    quantity: Number(row.quantity)
+  };
+}
+
 export const postReceiptInput = z.object({
   type: z.enum(["post", "void"]).default("post"),
   receiptId: z.string(),
@@ -9312,7 +9664,7 @@ export async function postReceipt(
 
     if (type === "void") {
       if (receiptHeader.status !== "Posted") {
-        throw new Error("Can only void posted receipts");
+        throw new InvalidInputError("Can only void posted receipts");
       }
 
       // The enable reset the cost layers this receipt created.
@@ -9324,7 +9676,7 @@ export async function postReceipt(
       );
 
       if (receiptHeader.invoiced) {
-        throw new Error(
+        throw new InvalidInputError(
           "Cannot void a receipt created by a purchase invoice. Void the invoice instead."
         );
       }
@@ -9339,7 +9691,7 @@ export async function postReceipt(
         receiptHeader.sourceDocument !== "Purchase Order" &&
         receiptHeader.sourceDocument !== "Sales Return Order"
       ) {
-        throw new Error(
+        throw new InvalidInputError(
           `Void is only supported for receipts with source document "Purchase Order" or "Sales Return Order"`
         );
       }
@@ -9368,7 +9720,7 @@ export async function postReceipt(
         if (creditMemos.error)
           throw new Error("Failed to check for credit memos");
         if ((creditMemos.data ?? []).length > 0) {
-          throw new Error(
+          throw new InvalidInputError(
             "Cannot void: a credit memo exists for this return order. Void it first."
           );
         }
@@ -9447,7 +9799,13 @@ export async function postReceipt(
             : null;
 
         await db.transaction().execute(async (trx) => {
+          await lockPostedReceipt(trx, companyId, receiptId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await assertReceivedStockOnHand(
+            trx,
+            companyId,
+            reversingItemLedger.map(toReversingRow)
+          );
           // Refuse to void when this receipt's cost layers were already
           // (partially) consumed — the returned stock moved on (dispositioned,
           // sold, scrapped), so reversing the full receipt would drive stock
@@ -9467,7 +9825,7 @@ export async function postReceipt(
               Number(layer.remainingQuantity) < Number(layer.quantity)
           );
           if (consumed) {
-            throw new Error(
+            throw new InvalidInputError(
               "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
             );
           }
@@ -9834,7 +10192,7 @@ export async function postReceipt(
               Boolean(asset.fixedAssetClass?.isConstructionInProgress);
             if (isConstructionInProgress) {
               if (asset.status !== "Under Construction") {
-                throw new Error(
+                throw new InvalidInputError(
                   "Asset was capitalized; reverse the capitalization first"
                 );
               }
@@ -9917,28 +10275,29 @@ export async function postReceipt(
         purchaseOrderStatusVoid = "To Invoice";
       }
 
-      const trackedEntityUpdatesVoid =
-        receiptLineTracking.data?.reduce<
-          Record<
-            string,
-            Database["public"]["Tables"]["trackedEntity"]["Update"]
-          >
-        >((acc, trackedEntity) => {
-          // Voiding restores the lot, but a lot with nothing in it must not
-          // come back Available — that is the zero-quantity husk the drain
-          // rule forbids. Scrapped/Rejected are terminal quality states and
-          // must survive a void, so keep them; everything else returns to
-          // Available (the helper then drains a zero-quantity lot to Consumed).
-          acc[trackedEntity.id] = settleQuantity({
-            quantity: Number(trackedEntity.quantity ?? 0),
+      // The receipt's serials and batches were never received, so the void
+      // drains them to zero: they leave every on-hand list and no picker
+      // offers them. Leaving them at their received quantity made them
+      // Available again (even one On Hold for inspection), pickable on a
+      // shipment or job with no stock behind them. Scrapped/Rejected are
+      // quality markers, already off on-hand, and survive the void at zero
+      // (as update_receipt_line_batch_tracking keeps them); everything else
+      // is Consumed. Not settleQuantity: its drain turns Rejected into
+      // Consumed.
+      const trackedEntitiesVoid = (receiptLineTracking.data ?? []).map(
+        (trackedEntity) => ({
+          id: trackedEntity.id,
+          voidedQuantity: Number(trackedEntity.quantity ?? 0),
+          update: {
+            quantity: 0,
             status:
               trackedEntity.status === "Scrapped" ||
               trackedEntity.status === "Rejected"
                 ? trackedEntity.status
-                : ("Available" as const)
-          });
-          return acc;
-        }, {}) ?? {};
+                : ("Consumed" as const)
+          }
+        })
+      );
 
       // A Provisional journal has no accounting period.
       const accountingPeriodId =
@@ -9947,7 +10306,14 @@ export async function postReceipt(
           : null;
 
       await db.transaction().execute(async (trx) => {
+        await lockPostedReceipt(trx, companyId, receiptId);
         await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+        await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
+        await assertReceivedStockOnHand(
+          trx,
+          companyId,
+          reversingItemLedger.map(toReversingRow)
+        );
         // The cost layers this receipt wrote. Without this, a voided
         // receipt's layer stayed open and later issues consumed stock that
         // was never there.
@@ -9977,7 +10343,7 @@ export async function postReceipt(
           }))
         );
         if (costLedgerPlan.consumed) {
-          throw new Error(
+          throw new InvalidInputError(
             "Cannot void: stock received on this receipt was already consumed. Correct the remainder with an inventory adjustment instead."
           );
         }
@@ -10093,7 +10459,7 @@ export async function postReceipt(
             .execute();
         }
 
-        if (Object.keys(trackedEntityUpdatesVoid).length > 0) {
+        if (trackedEntitiesVoid.length > 0) {
           const voidActivity = await trx
             .insertInto("trackedActivity")
             .values({
@@ -10115,9 +10481,11 @@ export async function postReceipt(
 
           const voidActivityId = voidActivity[0]!.id;
 
-          for await (const [id, update] of Object.entries(
-            trackedEntityUpdatesVoid
-          )) {
+          for await (const {
+            id,
+            voidedQuantity,
+            update
+          } of trackedEntitiesVoid) {
             await trx
               .updateTable("trackedEntity")
               .set(update)
@@ -10131,7 +10499,7 @@ export async function postReceipt(
                 .values({
                   trackedActivityId: voidActivityId,
                   trackedEntityId: id,
-                  quantity: update.quantity ?? 0,
+                  quantity: voidedQuantity,
                   companyId,
                   createdBy: userId,
                   createdAt: today
@@ -10157,7 +10525,7 @@ export async function postReceipt(
     }
 
     if (receiptHeader.status === "Voided") {
-      throw new Error("Cannot post a voided receipt");
+      throw new InvalidInputError("Cannot post a voided receipt");
     }
 
     switch (receiptHeader.sourceDocument) {
@@ -11482,7 +11850,7 @@ export async function postReceipt(
         // its caps validated, so it must be confirmed (To Receive) before
         // receiving.
         if (salesReturnOrder.data.status !== "To Receive") {
-          throw new Error(
+          throw new InvalidInputError(
             `Cannot post a receipt against a return order in ${salesReturnOrder.data.status} status`
           );
         }
@@ -11813,7 +12181,9 @@ export async function postReceipt(
             lockedReceipt.status === "Posted" ||
             lockedReceipt.status === "Voided"
           ) {
-            throw new Error(`Receipt is already ${lockedReceipt.status}`);
+            throw new InvalidInputError(
+              `Receipt is already ${lockedReceipt.status}`
+            );
           }
 
           // cancelSalesReturnOrder locks this same order row — re-check the
@@ -11827,7 +12197,7 @@ export async function postReceipt(
             .forUpdate()
             .executeTakeFirstOrThrow();
           if (lockedOrder.status !== "To Receive") {
-            throw new Error(
+            throw new InvalidInputError(
               `Cannot post a receipt against a return order in ${lockedOrder.status} status`
             );
           }

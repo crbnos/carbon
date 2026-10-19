@@ -18717,6 +18717,9 @@ msgstr "Rimuovi ordinamento per colonna"
 msgid "Remove station"
 msgstr "Rimuovi stazione"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "Rimuovi i numeri di serie e di lotto di produzione ricevuti dalla giacenza"
+
 msgid "Remove this item"
 msgstr "Rimuovi questo articolo"
 
@@ -19146,9 +19149,6 @@ msgstr "Ripristina questa azienda da un backup"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Ripristina questa entità alle giacenze disponibili nel contenitore e al costo da cui è stata scartata."
-
-msgid "Restore tracked entities to available"
-msgstr "Ripristina le entità tracciate come disponibili"
 
 msgid "Restore…"
 msgstr "Ripristina…"
@@ -23375,6 +23375,9 @@ msgstr "I motivi che registri quando i componenti vengono scartati"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "I motivi che registri quando rifiuti una richiesta di offerta"
 
+msgid "The receipt was not voided"
+msgstr "L'entrata merci non è stata stornata"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "Il record a cui una notifica del flusso di lavoro punta, denominato come un ID più il suo tipo; lasciarlo vuoto e la notifica si collega all'esecuzione del flusso di lavoro stesso."
 
@@ -25126,6 +25129,9 @@ msgstr "Aggiorna le informazioni del kanban per il rifornimento basato su scansi
 
 msgid "Update the purchase order quantities"
 msgstr "Aggiorna le quantità dell'ordine di acquisto"
+
+msgid "Update the return order quantities"
+msgstr "Aggiorna le quantità dell'ordine di reso"
 
 msgid "Updated"
 msgstr "Aggiornato"

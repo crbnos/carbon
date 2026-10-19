@@ -18717,6 +18717,9 @@ msgstr "Sortierung nach Spalte entfernen"
 msgid "Remove station"
 msgstr "Station entfernen"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "Entfernen Sie die empfangenen Seriennummern und Chargennummern aus dem Bestand"
+
 msgid "Remove this item"
 msgstr "Diesen Artikel entfernen"
 
@@ -19146,9 +19149,6 @@ msgstr "Stellen Sie dieses Unternehmen aus einer Sicherung wieder her"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Stellen Sie diese Entität als verfügbaren Bestand zum Lagerplatz und zu den Kosten wieder her, von denen sie verschrottet wurde."
-
-msgid "Restore tracked entities to available"
-msgstr "Nachverfolgter Entitäten als verfügbar wiederherstellen"
 
 msgid "Restore…"
 msgstr "Wiederherstellen…"
@@ -23375,6 +23375,9 @@ msgstr "Die Gründe, die Sie aufzeichnen, wenn Teile verschrottet werden"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "Die Gründe, die Sie aufzeichnen, wenn Sie eine Anfrage ablehnen"
 
+msgid "The receipt was not voided"
+msgstr "Der Wareneingang wurde nicht storniert"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "Der Datensatz, auf den eine Workflow-Benachrichtigung verweist, benannt als eine ID plus seine Art; lassen Sie sie leer und die Benachrichtigung verweist auf den Workflow-Ausführungsdatensatz selbst."
 
@@ -25126,6 +25129,9 @@ msgstr "Aktualisieren Sie die Kanban-Informationen für die scanbasierte Auffül
 
 msgid "Update the purchase order quantities"
 msgstr "Bestellmengen aktualisieren"
+
+msgid "Update the return order quantities"
+msgstr "Aktualisieren Sie die Mengen der Rückgabebestellung"
 
 msgid "Updated"
 msgstr "Aktualisiert"

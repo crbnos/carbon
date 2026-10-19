@@ -129,7 +129,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     isReceiptSource
       ? client
           .from("receipt")
-          .select("createdBy")
+          .select("createdBy, status")
           .eq("id", insp.sourceDocumentId)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null })
@@ -144,6 +144,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     inspection: insp,
     sourceDocumentReadableId: insp.sourceDocumentReadableId ?? null,
     receiverId: receipt.data?.createdBy ?? null,
+    receiptVoided: receipt.data?.status === "Voided",
     itemName: insp.item?.name ?? "",
     itemTrackingType: insp.item?.itemTrackingType ?? null,
     supplierName: insp.supplier?.name ?? null,
@@ -181,6 +182,7 @@ export default function InspectionExecutionRoute() {
       inspection={loaderData.inspection as InspectionRow}
       sourceDocumentReadableId={loaderData.sourceDocumentReadableId}
       receiverId={loaderData.receiverId}
+      receiptVoided={loaderData.receiptVoided}
       itemName={loaderData.itemName}
       itemTrackingType={loaderData.itemTrackingType}
       supplierName={loaderData.supplierName}

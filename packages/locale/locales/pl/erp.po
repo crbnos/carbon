@@ -18717,6 +18717,9 @@ msgstr "Usuń z listy sortowanie po kolumnie"
 msgid "Remove station"
 msgstr "Usuń stanowisko"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "Usuń z listy otrzymane numery seryjne i partie produktów ze zapasu"
+
 msgid "Remove this item"
 msgstr "Usuń ten artykuł"
 
@@ -19146,9 +19149,6 @@ msgstr "Przywróć tę firmę z kopii zapasowej"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Przywróć tę jednostkę do dostępnych zapasów w pojemniku i po koszcie, z których została złomowana."
-
-msgid "Restore tracked entities to available"
-msgstr "Przywróć śledzone jednostki do dostępnych"
 
 msgid "Restore…"
 msgstr "Przywróć…"
@@ -23375,6 +23375,9 @@ msgstr "Powody, które rejestrujesz, gdy części są złomowane"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "Powody, które rejestrujesz, gdy odrzucisz zapytanie ofertowe"
 
+msgid "The receipt was not voided"
+msgstr "Przyjęcie nie zostało unieważnione"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "Rekord wskazywany przez powiadomienie przepływu pracy, nazwany jako identyfikator plus jego rodzaj; pozostaw puste, a powiadomienie będzie odsyłać do samego uruchomienia przepływu pracy."
 
@@ -25126,6 +25129,9 @@ msgstr "Zaktualizuj informacje kanban dla uzupełniania opartego na skanowaniu."
 
 msgid "Update the purchase order quantities"
 msgstr "Zaktualizuj ilości zamówienia zakupu"
+
+msgid "Update the return order quantities"
+msgstr "Aktualizuj ilości zamówienia zwrotnego"
 
 msgid "Updated"
 msgstr "Zaktualizowano"

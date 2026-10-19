@@ -18717,6 +18717,9 @@ msgstr "Retirer le tri par colonne"
 msgid "Remove station"
 msgstr "Supprimer la station"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "Retirer les numéros de série et de lot reçus du stock"
+
 msgid "Remove this item"
 msgstr "Retirer cet article"
 
@@ -19146,9 +19149,6 @@ msgstr "Restaurer cette société à partir d'une sauvegarde"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Restaurer cette entité au stock disponible au casier et au coût à partir duquel elle a été mise au rebut."
-
-msgid "Restore tracked entities to available"
-msgstr "Restaurer les entités suivies en disponibles"
 
 msgid "Restore…"
 msgstr "Restaurer…"
@@ -23375,6 +23375,9 @@ msgstr "Les raisons que vous enregistrez lorsque des pièces sont mises au rebut
 msgid "The reasons you record when you decline an RFQ"
 msgstr "Les raisons que vous enregistrez lorsque vous refusez une demande de devis"
 
+msgid "The receipt was not voided"
+msgstr "La réception n'a pas été invalidée"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "L'enregistrement vers lequel une notification de flux de travail pointe, nommé comme un id plus son type ; laissez-le vide et la notification lien vers l'exécution du flux de travail elle-même."
 
@@ -25126,6 +25129,9 @@ msgstr "Mettez à jour les informations du kanban pour le réapprovisionnement b
 
 msgid "Update the purchase order quantities"
 msgstr "Mettre à jour les quantités du bon de commande"
+
+msgid "Update the return order quantities"
+msgstr "Mettre à jour les quantités du bon de retour"
 
 msgid "Updated"
 msgstr "Mis à jour"

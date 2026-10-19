@@ -18717,6 +18717,9 @@ msgstr "कॉलम के अनुसार क्रमबद्धता �
 msgid "Remove station"
 msgstr "स्टेशन हटाएं"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "प्राप्त सीरियल और बैच नंबर को स्टॉक से निकालें"
+
 msgid "Remove this item"
 msgstr "इस आइटम को निकालें"
 
@@ -19146,9 +19149,6 @@ msgstr "बैकअप से इस कंपनी को पुनः स्
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "इस इकाई को उसी बिन और लागत पर उपलब्ध स्टॉक में पुनः स्थापित करें जहां से इसे स्क्रैप किया गया था।"
-
-msgid "Restore tracked entities to available"
-msgstr "ट्रैक किए गए इकाइयों को उपलब्ध में पुनः स्थापित करें"
 
 msgid "Restore…"
 msgstr "पुनः स्थापित करें…"
@@ -23375,6 +23375,9 @@ msgstr "वह कारण जो आप रिकॉर्ड करते ह
 msgid "The reasons you record when you decline an RFQ"
 msgstr "वह कारण जो आप RFQ को अस्वीकार करते समय दर्ज करते हैं"
 
+msgid "The receipt was not voided"
+msgstr "प्राप्ति अमान्य नहीं की गई"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "रिकॉर्ड जिस पर एक वर्कफ़्लो सूचना इंगित करती है, एक आईडी प्लस इसकी तरह के रूप में नामित; इसे खाली छोड़ दें और सूचना वर्कफ़्लो रन को स्वयं जोड़ती है।"
 
@@ -25126,6 +25129,9 @@ msgstr "स्कैन-आधारित पुनः भरण के लि�
 
 msgid "Update the purchase order quantities"
 msgstr "क्रय आदेश मात्रा अपडेट करें"
+
+msgid "Update the return order quantities"
+msgstr "रिटर्न ऑर्डर की मात्रा अपडेट करें"
 
 msgid "Updated"
 msgstr "अपडेट किया गया"

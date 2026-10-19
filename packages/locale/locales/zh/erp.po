@@ -18717,6 +18717,9 @@ msgstr "移除按列排序"
 msgid "Remove station"
 msgstr "删除工位"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "从库存中移除已收货的序列号和批次号"
+
 msgid "Remove this item"
 msgstr "移除此物料"
 
@@ -19146,9 +19149,6 @@ msgstr "从备份中恢复此公司"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "将此实体恢复到来自其被报废的料箱和成本的可用库存。"
-
-msgid "Restore tracked entities to available"
-msgstr "将跟踪的实体恢复为可用"
 
 msgid "Restore…"
 msgstr "恢复…"
@@ -23375,6 +23375,9 @@ msgstr "零件报废时记录的原因"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "您拒绝询价单时记录的原因"
 
+msgid "The receipt was not voided"
+msgstr "该收货单未被作废"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "工作流通知指向的记录，命名为 id 及其类型；将其留空，通知链接到工作流运行本身。"
 
@@ -25126,6 +25129,9 @@ msgstr "更新看板信息以进行扫描式补货。"
 
 msgid "Update the purchase order quantities"
 msgstr "更新采购订单数量"
+
+msgid "Update the return order quantities"
+msgstr "更新退货单数量"
 
 msgid "Updated"
 msgstr "已更新"

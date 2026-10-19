@@ -18717,6 +18717,9 @@ msgstr "Sıralamayı kaldır"
 msgid "Remove station"
 msgstr "İstasyonu kaldır"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "Alınan seri numaraları ve parti numaralarını stoktan kaldır"
+
 msgid "Remove this item"
 msgstr "Bu stok kartını kaldır"
 
@@ -19146,9 +19149,6 @@ msgstr "Bu şirketi bir yedekten geri yükle"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Bu varlığı, hurdaya çıkarıldığı gözde ve maliyette kullanılabilir stoka geri yükle."
-
-msgid "Restore tracked entities to available"
-msgstr "Takip edilen varlıkları kullanılabilir hale getir"
 
 msgid "Restore…"
 msgstr "Geri yükle…"
@@ -23375,6 +23375,9 @@ msgstr "Parçalar hurdaya çıkarıldığında kaydettiğiniz nedenler"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "Bir RFQ'yu reddettiğinizde kaydettiğiniz nedenler"
 
+msgid "The receipt was not voided"
+msgstr "Mal kabul hükümsüz kılınmadı"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "İş akışı bildiriminin işaret ettiği kayıt, bir kimlik ve türü olarak adlandırılır; boş bırakırsanız bildirim iş akışı çalıştırmasının kendisine bağlanır."
 
@@ -25126,6 +25129,9 @@ msgstr "Tarama tabanlı ikmal için kanban bilgilerini güncelleyin."
 
 msgid "Update the purchase order quantities"
 msgstr "Satın alma siparişi miktarlarını güncelle"
+
+msgid "Update the return order quantities"
+msgstr "İade siparişi miktarlarını güncelle"
 
 msgid "Updated"
 msgstr "Güncellendi"

@@ -18717,6 +18717,9 @@ msgstr "Remove sort by column"
 msgid "Remove station"
 msgstr "Remove station"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "Remove the received serial and batch numbers from stock"
+
 msgid "Remove this item"
 msgstr "Remove this item"
 
@@ -19146,9 +19149,6 @@ msgstr "Restore this company from a backup"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Restore this entity to available stock at the bin and cost it was scrapped from."
-
-msgid "Restore tracked entities to available"
-msgstr "Restore tracked entities to available"
 
 msgid "Restore…"
 msgstr "Restore…"
@@ -23375,6 +23375,9 @@ msgstr "The reasons you record when parts get scrapped"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "The reasons you record when you decline an RFQ"
 
+msgid "The receipt was not voided"
+msgstr "The receipt was not voided"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 
@@ -25126,6 +25129,9 @@ msgstr "Update the kanban information for scan-based replenishment."
 
 msgid "Update the purchase order quantities"
 msgstr "Update the purchase order quantities"
+
+msgid "Update the return order quantities"
+msgstr "Update the return order quantities"
 
 msgid "Updated"
 msgstr "Updated"

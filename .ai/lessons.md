@@ -3703,6 +3703,36 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** `membership` and its interceptors in `packages/database/src/event-system/handlers/`, and any unique key with a nullable column.
 
+## A flash on a fetcher's redirect back to the same page is never shown
+
+**Context:** Refusing a receipt post that still misses serial numbers (2026-10-16). The Post dialog submits through `useRuleViolations`, a fetcher.
+
+**Problem:** The action threw `redirect(path.to.receipt(id), await flash(...))`. The redirect lands on the pathname already on screen, so the root's `shouldRevalidate` (`isSearchParamOnlyNavigation`) skips the root loader, and the root is what reads the flash and shows the toast. The post was refused correctly, but the user saw nothing happen. The route's older flash errors ("Failed to post receipt") have the same gap.
+
+**Rule:** An action submitted through a fetcher returns its error as data (`{ error: { message } }`, which `useRuleViolations` toasts), not as a flash on a redirect to the current page. A flash is for a redirect that navigates somewhere else.
+
+**Applies to:** Post / void / approve actions behind a modal or `useRuleViolations` (`receipt+/$receiptId.post.tsx` and its siblings).
+
+## What a document posts must be what its form shows
+
+**Context:** Receipt serial entry (2026-10-16). Each serial box saved on blur, keyed on the serial number.
+
+**Problem:** A box emptied, refused (a duplicate) or pushed out of range by a lower received quantity kept its saved serial. The post check reads what is saved, so the receipt posted a serial the user could no longer see.
+
+**Rule:** Key a per-field save on the field's position (here the box: receipt line + index), not on its value. An empty value, a refused value and a removed field each clear what is saved for it. And a removal never deletes a record with stock history: a sales return re-tags real shipped units, so those only lose their receipt link (`planReceiptSerialRelease`).
+
+**Applies to:** `setReceiptLineSerial` / `saveReceiptSerialBox`, `updateReceiptLines`, `ReceiptLines` `SerialForm`, the receipt line split (`receiptLineSplit` in `shared.service.ts`), and any autosaved list of tracked values (shipment serials, batch numbers).
+
+## A void reverses only what is still where the posting put it
+
+**Context:** Voiding a posted purchase receipt with serials and batches (2026-10-16).
+
+**Problem:** The void set every tracked entity back to Available at its received quantity, so a lot that was never received stayed pickable. It also reversed each ledger row at the receipt's bin with only a cost-layer check. A serial moved to another bin, picked to lineside or shipped (Standard and Average cost never draw a layer down) passed that check, so the receipt bin went negative while the unit stayed counted where it went. And the receipt's inspection lot stayed open: Accept made the voided batch Available again, and Reject wrote the reversed stock off a second time.
+
+**Rule:** A reversal checks, inside its transaction, that the stock it removes is still at the position the posting wrote: per serial or batch for tracked rows. It closes every record that hangs off the document (here the inspection lot) or refuses while one has acted. It drains the document's tracked entities to quantity 0. To keep `Rejected` at zero, write the status directly: `settleQuantity` only preserves `Scrapped` and turns `Rejected` into `Consumed`.
+
+**Applies to:** the `postReceipt` void (`lockPostedReceipt`, `assertReceivedStockOnHand`, `assertNoRejectedUntrackedLot` in `inventory.service.ts`), and any other void that reverses item ledger rows (shipments, stock transfers, adjustments).
+
 ## A text replace on a function name also renames its prefix siblings
 
 **Context:** The service-function migration (2026-10-16) renamed thousands of call sites with scripts.
@@ -3951,3 +3981,13 @@ wrote (`upsertMakeMethodVersion`). Surface the failure as `error` (or a flash), 
 
 **Applies to:** `upsertMakeMethodVersion`, any header-insert + `get-method` copy pair (quote and
 job duplication, revisions), route actions consumed by `useAction`.
+
+## A posting's refusal only reaches the dialog when it is thrown as a 4xx
+
+**Context:** A refused receipt void showed "Failed to void receipt" with no reason. The guards inside the `post-receipt` posting said exactly why ("stock received on this receipt was moved, picked or shipped since it was received").
+
+**Problem:** `invokePosting` reads a plain `Error` as status 500 (the posting's default), and the operation passed every failure to `serverFnFailure` with a fixed message. So every refusal, and every new guard, was reported with the same generic text.
+
+**Rule:** Throw an authored refusal from a posting as `InvalidInputError` (or another `ServerFnError` below 500), never a plain `Error`. In the operation, below 500 return the error's own message (`error.message || <fallback>`); keep the generic message for 500, whose detail `toError` already withholds.
+
+**Applies to:** every operation that calls `invokePosting` and every posting body (`voidReceipt` / `postReceipt` in `inventory.server.ts`, `adjustInventory` follows the same shape).

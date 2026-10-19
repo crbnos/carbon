@@ -192,7 +192,12 @@ const ReceiptHeader = () => {
       />
 
       {postModal.isOpen && <ReceiptPostModal onClose={postModal.onClose} />}
-      {voidModal.isOpen && <ReceiptVoidModal onClose={voidModal.onClose} />}
+      {voidModal.isOpen && (
+        <ReceiptVoidModal
+          isSalesReturn={receipt.sourceDocument === "Sales Return Order"}
+          onClose={voidModal.onClose}
+        />
+      )}
       {deleteDisclosure.isOpen && (
         <ConfirmDelete
           action={path.to.deleteReceipt(receiptId)}

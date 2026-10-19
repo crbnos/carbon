@@ -461,11 +461,17 @@ export const postReceipt = defineServiceFn({
 
     let failure: CarbonError | null = null;
     try {
-      await service.reconcileReceiptSerialEntities(serviceRole, {
-        receiptId,
-        companyId,
-        lines: lines.data ?? []
-      });
+      const { linesMissingSerials } =
+        await service.reconcileReceiptSerialEntities(ctx.asSystem.pg, {
+          receiptId,
+          companyId,
+          isSalesReturn: receipt.data.sourceDocument === "Sales Return Order",
+          lines: lines.data ?? []
+        });
+      if (linesMissingSerials.length > 0) {
+        await backToDraft();
+        return ctx.error("rule", "Serial numbers are missing");
+      }
       const posted = await invokePosting(
         ctx,
         "post-receipt",
@@ -477,11 +483,14 @@ export const postReceipt = defineServiceFn({
       );
       if (posted.error) {
         await backToDraft();
-        return service.serverFnFailure(
-          ctx,
-          posted.error,
-          "Failed to post receipt"
-        );
+        // Below 500 the posting refused the receipt, in words for the person.
+        return posted.error.status < 500
+          ? service.serverFnFailure(
+              ctx,
+              posted.error,
+              posted.error.message || "Failed to post receipt"
+            )
+          : ctx.error("internal", "Failed to post receipt", posted.error);
       }
     } catch (thrown) {
       await backToDraft();
@@ -591,11 +600,14 @@ export const voidReceipt = defineServiceFn({
       service.postReceipt
     );
     if (voided.error) {
-      return service.serverFnFailure(
-        ctx,
-        voided.error,
-        "Failed to void receipt"
-      );
+      // Below 500 the posting refused the void, in words for the person.
+      return voided.error.status < 500
+        ? service.serverFnFailure(
+            ctx,
+            voided.error,
+            voided.error.message || "Failed to void receipt"
+          )
+        : ctx.error("internal", "Failed to void receipt", voided.error);
     }
     return { receiptId };
   }
@@ -685,12 +697,58 @@ export const updateReceiptLines = defineServiceFn({
       return ctx.error("rule", RECEIPT_LOCKED);
     }
 
+    if (field === "receivedQuantity") {
+      const receivedQuantity = Number(value || 0);
+      if (!Number.isFinite(receivedQuantity)) {
+        return ctx.error("validation", "Received quantity must be a number");
+      }
+      // Drop serials beyond the new quantity in the same transaction.
+      try {
+        await ctx.asSystem.pg.transaction().execute(async (trx) => {
+          const updated = await trx
+            .updateTable("receiptLine")
+            .set({
+              receivedQuantity,
+              updatedBy: ctx.auditUserId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("id", "in", ids)
+            .where("companyId", "=", ctx.company.id)
+            .returning([
+              "id",
+              "receiptId",
+              "receivedQuantity",
+              "requiresSerialTracking"
+            ])
+            .execute();
+          if (updated.length === 0) return;
+
+          const receipts = await trx
+            .selectFrom("receipt")
+            .select(["id", "sourceDocument"])
+            .where("id", "in", [...new Set(updated.map((l) => l.receiptId))])
+            .where("companyId", "=", ctx.company.id)
+            .where("status", "=", "Draft")
+            .execute();
+          for (const receipt of receipts) {
+            await service.reconcileReceiptSerialsInTransaction(trx, {
+              receiptId: receipt.id,
+              companyId: ctx.company.id,
+              isSalesReturn: receipt.sourceDocument === "Sales Return Order",
+              lines: updated.filter((l) => l.receiptId === receipt.id)
+            });
+          }
+        });
+      } catch (error) {
+        return ctx.error("internal", "Failed to update receipt lines", error);
+      }
+      return { ids };
+    }
+
     const update = await ctx.asCaller.supabase
       .from("receiptLine")
       .update({
-        ...(field === "storageUnitId"
-          ? { storageUnitId: value || null }
-          : { receivedQuantity: Number(value || 0) }),
+        storageUnitId: value || null,
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })
@@ -855,8 +913,10 @@ export const setReceiptLineBatch = defineServiceFn({
  * Set one serial number of a serial-tracked receipt line.
  *
  * @remarks
- * `index` is the unit's position on the line, from 0. A serial number the
- * line's item already uses at another receipt line or position is refused.
+ * `index` is the unit's position on the line, from 0. An empty serial number
+ * clears the position. A serial number the line's item already uses at another
+ * position, or that belongs to an existing unit with stock movements, is
+ * refused and the position is cleared.
  *
  * @mcp
  */
@@ -871,76 +931,60 @@ export const setReceiptLineSerial = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, input) {
-    const [line, receipt] = await Promise.all([
-      service.receiptLineOf(ctx, input),
-      ctx.asSystem.supabase
-        .from("receipt")
-        .select("status")
-        .eq("id", input.receiptId)
-        .eq("companyId", ctx.company.id)
-        .maybeSingle()
-    ]);
+    const line = await service.receiptLineOf(ctx, input);
     if (line instanceof Error) return line;
-    if (receipt.error) {
-      return ctx.error("internal", "Failed to load receipt", receipt.error);
-    }
-    if (receipt.data?.status !== "Draft") {
-      return ctx.error("rule", RECEIPT_LOCKED);
-    }
 
-    const existing = await ctx.asCaller.supabase
-      .from("trackedEntity")
-      .select("id, attributes")
-      .eq("sourceDocumentId", line.itemId ?? "")
-      .eq("readableId", input.serialNumber)
-      .eq("companyId", ctx.company.id)
-      .maybeSingle();
-    if (existing.error) {
-      return ctx.error(
-        "internal",
-        "Failed to check serial number index",
-        existing.error
-      );
-    }
-
-    // Only a serial entity (one with a receipt line index) at a different
-    // line or position conflicts.
-    if (existing.data) {
-      const attributes = (existing.data.attributes ?? {}) as Record<
-        string,
-        unknown
-      >;
-      if (
-        "Receipt Line Index" in attributes &&
-        (attributes["Receipt Line"] !== input.receiptLineId ||
-          attributes["Receipt Line Index"] !== input.index)
-      ) {
-        return ctx.error(
-          "conflict",
-          "Serial number is already used for a different item or position"
+    const box = {
+      companyId: ctx.company.id,
+      receiptLineId: input.receiptLineId,
+      index: input.index
+    };
+    let saved: service.ReceiptSerialBoxResult;
+    try {
+      saved = await service.saveReceiptSerialBox(ctx.asSystem.pg, {
+        ...box,
+        receiptId: input.receiptId,
+        itemId: line.itemId ?? "",
+        serialNumber: input.serialNumber.trim(),
+        expiryDate: input.expiryDate
+      });
+    } catch (error) {
+      // The position shows a value that did not save; empty it so its
+      // previous serial cannot post in its place.
+      await service
+        .clearReceiptSerialBox(ctx.asSystem.pg, box)
+        .catch((clearError) =>
+          logger.error("Failed to clear the serial box", {
+            ...box,
+            error: clearError
+          })
         );
-      }
-    }
-
-    const updated = await ctx.asSystem.supabase.rpc(
-      "update_receipt_line_serial_tracking",
-      {
-        p_tracked_entity_id: existing.data?.id,
-        p_receipt_line_id: input.receiptLineId,
-        p_receipt_id: input.receiptId,
-        p_serial_number: input.serialNumber,
-        p_index: input.index,
-        p_expiry_date: input.expiryDate || undefined
-      }
-    );
-    if (updated.error) {
-      if (isUniqueViolation(updated.error)) {
+      if (isUniqueViolation(error)) {
         return ctx.error(
           "conflict",
           "Serial number already exists for this item"
         );
       }
-      return ctx.error("internal", "Failed to update tracking", updated.error);
+      return ctx.error("internal", "Failed to update tracking", error);
+    }
+
+    if (!saved.ok) {
+      switch (saved.reason) {
+        case "notFound":
+          return ctx.error("notFound", RECEIPT_NOT_FOUND);
+        case "locked":
+          return ctx.error("rule", RECEIPT_LOCKED);
+        case "unit":
+          return ctx.error(
+            "conflict",
+            "Serial number already belongs to an existing unit"
+          );
+        case "box":
+          return ctx.error(
+            "conflict",
+            "Serial number is already used for a different item or position"
+          );
+      }
     }
     return { receiptLineId: input.receiptLineId, index: input.index };
   }

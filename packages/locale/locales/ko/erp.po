@@ -18717,6 +18717,9 @@ msgstr "열 정렬 제거"
 msgid "Remove station"
 msgstr "스테이션 제거"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "수령한 일련번호 및 배치 번호를 재고에서 제거"
+
 msgid "Remove this item"
 msgstr "이 항목 제거"
 
@@ -19146,9 +19149,6 @@ msgstr "백업에서 이 회사 복원"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "이 엔티티를 스크랩 전의 빈과 원가로 가용 재고에 복원합니다."
-
-msgid "Restore tracked entities to available"
-msgstr "추적된 엔티티를 가용으로 복원"
 
 msgid "Restore…"
 msgstr "복원…"
@@ -23375,6 +23375,9 @@ msgstr "부품이 스크랩될 때 기록하는 사유"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "RFQ를 거절할 때 기록하는 사유"
 
+msgid "The receipt was not voided"
+msgstr "입고가 무효 처리되지 않았습니다"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "워크플로우 알림이 가리키는 기록이며, id와 종류로 이름이 지어집니다. 비워두면 알림이 워크플로우 실행 자체에 연결됩니다."
 
@@ -25126,6 +25129,9 @@ msgstr "스캔 기반 보충을 위한 칸반 정보를 업데이트합니다."
 
 msgid "Update the purchase order quantities"
 msgstr "발주서 수량 업데이트"
+
+msgid "Update the return order quantities"
+msgstr "반품 주문 수량 업데이트"
 
 msgid "Updated"
 msgstr "업데이트됨"

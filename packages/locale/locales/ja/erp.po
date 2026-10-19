@@ -18717,6 +18717,9 @@ msgstr "列でのソートを除去"
 msgid "Remove station"
 msgstr "ステーションを削除"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "受け入れたシリアル番号とバッチ番号を在庫から除去する"
+
 msgid "Remove this item"
 msgstr "このアイテムを除去"
 
@@ -19146,9 +19149,6 @@ msgstr "バックアップからこの会社を復元する"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "このエンティティを、スクラップされた元のビンと原価で利用可能な在庫に復元します。"
-
-msgid "Restore tracked entities to available"
-msgstr "追跡対象エンティティを利用可能に復元"
 
 msgid "Restore…"
 msgstr "復元…"
@@ -23375,6 +23375,9 @@ msgstr "部品がスクラップされたときに記録する理由"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "RFQを辞退した理由を記録する"
 
+msgid "The receipt was not voided"
+msgstr "入荷が取消されませんでした"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "ワークフロー通知が指す レコード。ID とそのタイプで名前が付けられます。空のままにすると、通知はワークフロー実行そのものにリンクします。"
 
@@ -25126,6 +25129,9 @@ msgstr "スキャンベースの補充用かんばん情報を更新します。
 
 msgid "Update the purchase order quantities"
 msgstr "発注書の数量を更新"
+
+msgid "Update the return order quantities"
+msgstr "返品注文の数量を更新する"
 
 msgid "Updated"
 msgstr "更新済み"

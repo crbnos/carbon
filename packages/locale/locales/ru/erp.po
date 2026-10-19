@@ -18717,6 +18717,9 @@ msgstr "Убрать сортировку по столбцу"
 msgid "Remove station"
 msgstr "Удалить рабочее место"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "Убрать полученные серийные номера и номера серий из запаса"
+
 msgid "Remove this item"
 msgstr "Убрать этот элемент"
 
@@ -19146,9 +19149,6 @@ msgstr "Восстановить эту организацию из резерв
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Восстановить эту сущность в доступный запас по ячейке и себестоимости, откуда она была выбракована."
-
-msgid "Restore tracked entities to available"
-msgstr "Восстановить отслеживаемые объекты в доступные"
 
 msgid "Restore…"
 msgstr "Восстановить…"
@@ -23375,6 +23375,9 @@ msgstr "Причины, которые вы записываете, когда �
 msgid "The reasons you record when you decline an RFQ"
 msgstr "Причины, которые вы записываете, когда отклоняете РФП"
 
+msgid "The receipt was not voided"
+msgstr "Поступление не было аннулировано"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "Запись, на которую указывает уведомление рабочего процесса, названная как id и её тип; оставьте пустым, и уведомление будет указывать на сам прогон рабочего процесса."
 
@@ -25126,6 +25129,9 @@ msgstr "Обновите информацию канбана для пополн
 
 msgid "Update the purchase order quantities"
 msgstr "Обновить количества Заказа поставщику"
+
+msgid "Update the return order quantities"
+msgstr "Обновить количества возвратного заказа"
 
 msgid "Updated"
 msgstr "Обновлено"

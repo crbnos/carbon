@@ -72,6 +72,7 @@ import type { AccountType } from "@carbon/database/ledger";
 import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
 import { equals } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
+import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
 import type * as rows from "@carbon/database/rows";
 import type * as rowsModule from "@carbon/database/rows";
 import {
@@ -11565,11 +11566,11 @@ export async function createDocument(
           trackedEntities.data?.length
         ) {
           // TODO: update the Receipt Line and Index attributes to point to the new line
-          await trx
-            .deleteFrom("trackedEntity")
-            .where("id", "in", trackedEntities.data?.map((d) => d.id) ?? [])
-            .where("companyId", "=", companyId)
-            .execute();
+          await releaseReceiptSerialEntities(
+            trx,
+            companyId,
+            trackedEntities.data.map((d) => d.id)
+          );
         }
 
         const newReceiptLineRows = await trx
