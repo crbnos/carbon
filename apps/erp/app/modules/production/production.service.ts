@@ -14419,10 +14419,20 @@ export async function getMethod(
                 // material at the successor and explode the SUCCESSOR's method
                 // (not the old part's). A Make -> Buy successor is a structural
                 // flip we leave on the old part (handled/flagged elsewhere).
-                const madeSwapHandled = await swapMadeSubAssembly({
+                // A configuration rule may have moved this line onto another
+                // made item; the sub-assembly under it is then that item's.
+                const made = await configuredMadeChild(
                   trx,
                   companyId,
                   child,
+                  material?.itemId
+                );
+                if (!made) continue;
+
+                const madeSwapHandled = await swapMadeSubAssembly({
+                  trx,
+                  companyId,
+                  child: made,
                   material,
                   materialId,
                   locationId: job.locationId ?? "",
@@ -14432,9 +14442,9 @@ export async function getMethod(
                 });
 
                 // prevent an infinite loop
-                if (!madeSwapHandled && child!.data.itemId !== itemId) {
+                if (!madeSwapHandled && made.data.itemId !== itemId) {
                   await traverseMethod(
-                    child,
+                    made,
                     newMakeMethodId,
                     childTotalForCascade || 1
                   );
@@ -15175,10 +15185,20 @@ export async function getMethod(
                 // if a made component has an effective successor that is itself
                 // made, point the job material at the successor and explode the
                 // SUCCESSOR's method instead of the old part's.
-                const madeSwapHandled = await swapMadeSubAssembly({
+                // A configuration rule may have moved this line onto another
+                // made item; the sub-assembly under it is then that item's.
+                const made = await configuredMadeChild(
                   trx,
                   companyId,
                   child,
+                  material?.itemId
+                );
+                if (!made) continue;
+
+                const madeSwapHandled = await swapMadeSubAssembly({
+                  trx,
+                  companyId,
+                  child: made,
                   material,
                   materialId,
                   locationId: job.data?.locationId ?? "",
@@ -15188,9 +15208,9 @@ export async function getMethod(
                 });
 
                 // prevent an infinite loop
-                if (!madeSwapHandled && child.data.itemId !== itemId) {
+                if (!madeSwapHandled && made.data.itemId !== itemId) {
                   await traverseMethod(
-                    child,
+                    made,
                     newMakeMethodId,
                     childTotalForCascade || 1
                   );
@@ -16010,9 +16030,26 @@ export async function getMethod(
                     }
                   );
 
+                  // A configuration rule may have moved this line onto another
+                  // made item; the sub-assembly under it is then that item's.
+                  const made = await configuredMadeChild(
+                    trx,
+                    companyId,
+                    child!,
+                    madeMaterialsWithIds[index]!.itemId
+                  );
+                  if (!made) continue;
+                  if (made !== child) {
+                    for (const [id, ops] of await readOperationsForTree(
+                      trx,
+                      made
+                    ))
+                      treeOperations.set(id, ops);
+                  }
+
                   // prevent an infinite loop
-                  if (child!.data.itemId !== itemId) {
-                    await traverseMethod(child, newMakeMethodId);
+                  if (made.data.itemId !== itemId) {
+                    await traverseMethod(made, newMakeMethodId);
                   }
                 }
               }
@@ -16425,9 +16462,26 @@ export async function getMethod(
               for (const [index, child] of madeChildren.entries()) {
                 const newMakeMethodId = newMakeMethodIds[index]!;
 
+                // A configuration rule may have moved this line onto another
+                // made item; the sub-assembly under it is then that item's.
+                const made = await configuredMadeChild(
+                  trx,
+                  companyId,
+                  child,
+                  madeMaterialsWithIds[index]!.itemId
+                );
+                if (!made) continue;
+                if (made !== child) {
+                  for (const [id, ops] of await readOperationsForTree(
+                    trx,
+                    made
+                  ))
+                    treeOperations.set(id, ops);
+                }
+
                 // prevent an infinite loop
-                if (child.data.itemId !== itemId) {
-                  await traverseMethod(child, newMakeMethodId);
+                if (made.data.itemId !== itemId) {
+                  await traverseMethod(made, newMakeMethodId);
                 }
               }
             }
@@ -20646,6 +20700,50 @@ async function itemDerivedJobMaterialFields(opts: {
 // scaling the cascade by the conversion factor. A Make -> Buy successor is a
 // structural flip we leave on the old part (handled elsewhere). Returns true when
 // the swap was applied, so the caller can skip the default traversal.
+/**
+ * The tree a made line explodes into. A configuration rule can move a Make to
+ * Order line onto another item (a 14 ft body where the BOM names the 12 ft
+ * one); the line is then that item's, and so is the sub-assembly under it.
+ * Exploding `child` as it stood built the BOM item's sub-assembly under the
+ * configured item. The line's own fields (quantity, operation, order, the
+ * row's ids) stay the BOM line's; the item and its method become the
+ * configured item's. Undefined when the configured item has no make method:
+ * there is nothing of its own to explode, and the BOM item's would be wrong.
+ */
+async function configuredMadeChild(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  child: MethodTreeItem,
+  itemId: string | null | undefined
+): Promise<MethodTreeItem | undefined> {
+  if (!itemId || itemId === child.data.itemId) return child;
+  const method = await trx
+    .selectFrom("activeMakeMethods")
+    .select(["id"])
+    .where("itemId", "=", itemId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!method?.id) return undefined;
+  const root = (await getMethodTree(trx, method.id)).data?.[0];
+  if (!root) return undefined;
+  return {
+    id: child.id,
+    data: {
+      ...child.data,
+      itemId: root.data.itemId,
+      itemReadableId: root.data.itemReadableId,
+      itemTrackingType: root.data.itemTrackingType,
+      itemType: root.data.itemType,
+      materialMakeMethodId: root.data.materialMakeMethodId,
+      replenishmentSystem: root.data.replenishmentSystem,
+      revision: root.data.revision,
+      unitCost: root.data.unitCost,
+      version: root.data.version
+    },
+    children: root.children
+  };
+}
+
 async function swapMadeSubAssembly(opts: {
   trx: Transaction<KyselyDatabase>;
   companyId: string;
