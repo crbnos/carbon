@@ -146,7 +146,7 @@ databaseTest(
         customerLocationId: r.siteId,
         locationId: r.locationId,
         projectType: "Service",
-        projectStatus: "Released"
+        projectStatus: "Draft"
       });
 
       const lines = await f.db

@@ -417,11 +417,17 @@ export async function createServiceTemplate(
   });
 }
 
-/** The project status an order's status gives its work tree. */
+/**
+ * The project status an order's status gives its work tree. A Draft order's
+ * tree is Draft: its parts are not MRP demand (`openProjectMaterialLines`)
+ * and it takes no charge.
+ */
 export function projectStatusOfOrder(
   status: ServiceOrderStatus
 ): ProjectStatus {
   switch (status) {
+    case "Draft":
+      return "Draft";
     case "On Hold":
       return "On Hold";
     case "Completed":
@@ -437,8 +443,8 @@ export function projectStatusOfOrder(
 /**
  * Rolls an order's status up from its visits (`rollUpOrderStatus`) and
  * saves it, then sets its project's status to match. `status` starts the
- * roll-up from a status the user chose (Put on hold, Complete, Close; a
- * Resume passes Draft so the visits decide again); `workComplete` is the
+ * roll-up from a status the user chose (Mark as Planned, Put on hold,
+ * Complete, Close; a Resume passes Planned so the visits decide again); `workComplete` is the
  * **Work complete?** answer of a completing visit. Call it after every visit
  * change and every order status change. Runs in `trx` when given.
  */
@@ -864,6 +870,13 @@ export async function requireServiceOrderNode(
   if (order.status === "Closed" || order.status === "Cancelled") {
     throw new ServiceOrderError(
       `A ${order.status.toLowerCase()} service order takes no charges`
+    );
+  }
+  // Its Service project is Draft, so post-* would refuse with a project
+  // message the Service user never sees the word for.
+  if (order.status === "Draft") {
+    throw new ServiceOrderError(
+      "Mark the service order as Planned before you charge it"
     );
   }
   if (args.projectElementId) {

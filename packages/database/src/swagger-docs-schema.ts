@@ -116767,6 +116767,113 @@ export default {
         tags: ["(rpc) sync_create_location_related_records"]
       }
     },
+    "/rpc/purchase_order_line_consumed_by_project": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_project_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_project_element_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: '"purchaseOrderType"',
+            in: "query",
+            name: "p_purchase_order_type",
+            required: true,
+            type: "string"
+          },
+          {
+            format: '"itemTrackingType"',
+            in: "query",
+            name: "p_item_tracking_type",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) purchase_order_line_consumed_by_project"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_item_tracking_type: {
+                  format: '"itemTrackingType"',
+                  type: "string"
+                },
+                p_project_element_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_project_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_purchase_order_type: {
+                  format: '"purchaseOrderType"',
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_id",
+                "p_project_id",
+                "p_project_element_id",
+                "p_purchase_order_type",
+                "p_item_tracking_type"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) purchase_order_line_consumed_by_project"]
+      }
+    },
     "/rpc/get_direct_ancestors_of_tracked_entities_strict": {
       post: {
         parameters: [
@@ -170067,6 +170174,7 @@ export default {
           default: "Draft",
           enum: [
             "Draft",
+            "Planned",
             "Scheduled",
             "In Progress",
             "On Hold",

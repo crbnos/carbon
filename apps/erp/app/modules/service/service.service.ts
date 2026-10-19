@@ -458,7 +458,7 @@ export async function getServiceOrderCosts(
   return { data: costs, error: null };
 }
 
-/** The fields of an order that change only while it is Draft. */
+/** The fields of an order that change only while it is Draft or Planned. */
 const DRAFT_ONLY_FIELDS = ["customerContactId", "customerLocationId"] as const;
 
 /** The fields only a Refurbishment has; they decide its completion. */
@@ -504,7 +504,7 @@ export async function updateServiceOrder(
   if (abnormalRework !== undefined) {
     changes.abnormalRework = abnormalRework === "true";
   }
-  if (current.data.status !== "Draft") {
+  if (current.data.status !== "Draft" && current.data.status !== "Planned") {
     for (const field of DRAFT_ONLY_FIELDS) delete changes[field];
   }
   if (REFURBISHMENT_FIELDS.some((field) => field in changes)) {

@@ -65,7 +65,7 @@ export type CompleteServiceOrderResult = {
 type Enums = Database["public"]["Enums"];
 
 /** The open statuses an order completes from (`canMoveServiceOrder`). */
-const COMPLETABLE = new Set(["Draft", "Scheduled", "In Progress"]);
+const COMPLETABLE = new Set(["Draft", "Planned", "Scheduled", "In Progress"]);
 
 /**
  * Completes one service order, in one transaction.

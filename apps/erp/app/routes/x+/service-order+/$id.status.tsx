@@ -25,12 +25,19 @@ import { path, requestReferrer } from "~/utils/path";
 const logger = getLogger("erp", "service-order-status");
 
 const MESSAGES: Record<ServiceOrderStatusAction, string> = {
+  Planned: "Planned the service order",
   "On Hold": "Put the service order on hold",
   Completed: "Completed the service order",
   Closed: "Closed the service order",
-  Cancelled: "Cancelled the service order",
-  Draft: "Reopened the service order"
+  Cancelled: "Cancelled the service order"
 };
+
+/** The message of a move to Planned names what it did from `from`. */
+function plannedMessage(from: string) {
+  if (from === "On Hold") return "Resumed the service order";
+  if (from === "Completed") return "Reopened the service order";
+  return MESSAGES.Planned;
+}
 
 /**
  * Moves an order to the status the user chose, then rolls its status up
@@ -143,5 +150,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(back, await flash(request, success(MESSAGES[to])));
+  throw redirect(
+    back,
+    await flash(
+      request,
+      success(
+        to === "Planned" ? plannedMessage(current.data.status) : MESSAGES[to]
+      )
+    )
+  );
 }

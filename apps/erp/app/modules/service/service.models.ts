@@ -30,6 +30,7 @@ export const customerAssetStatuses = [
 
 export const serviceOrderStatuses = [
   "Draft",
+  "Planned",
   "Scheduled",
   "In Progress",
   "On Hold",
@@ -98,6 +99,7 @@ export const listedServiceOrderTypes = [
 const serviceOrderStatusUrgency = [
   "On Hold",
   "Draft",
+  "Planned",
   "Scheduled",
   "In Progress",
   "Completed",
@@ -188,8 +190,9 @@ export function mapUrl(address: string) {
  * status the user set (On Hold, Completed, Closed, Cancelled) stays. Work
  * marked complete gives Completed. A visit on its way or on site, or a
  * completed visit with the work not complete, gives In Progress. A
- * scheduled visit with none started gives Scheduled. No live visit gives
- * Draft. Cancelled visits do not count.
+ * scheduled visit with none started gives Scheduled. With no live visit, a
+ * Draft order stays Draft and any other order is Planned: once released, an
+ * order never returns to Draft. Cancelled visits do not count.
  */
 export function rollUpOrderStatus(
   order: { status: ServiceOrderStatus; workComplete?: boolean },
@@ -211,26 +214,28 @@ export function rollUpOrderStatus(
     return "In Progress";
   }
   if (live.some((visit) => visit.status === "Scheduled")) return "Scheduled";
-  return "Draft";
+  return order.status === "Draft" ? "Draft" : "Planned";
 }
 
 /** The statuses a user moves an order to from the order page. */
 export const serviceOrderStatusActions = [
+  "Planned",
   "On Hold",
   "Completed",
   "Closed",
-  "Cancelled",
-  "Draft"
+  "Cancelled"
 ] as const satisfies readonly ServiceOrderStatus[];
 export type ServiceOrderStatusAction =
   (typeof serviceOrderStatusActions)[number];
 
 /**
  * Whether a user may move an order from `from` to `to` (spec, *Lifecycle*).
- * An open order (Draft, Scheduled, In Progress) can be put on hold,
- * completed or cancelled. An order on hold resumes (Draft, so its visits
- * decide again) or is cancelled. A completed order closes or reopens
- * (Draft). Closed and Cancelled are final.
+ * A Draft order is planned: its Service project is released, so its parts
+ * become MRP demand and it takes charges. An open order (Draft, Planned,
+ * Scheduled, In Progress) can be put on hold, completed or cancelled. An
+ * order on hold resumes (Planned, so its visits decide again) or is
+ * cancelled. A completed order closes or reopens (Planned). Closed and
+ * Cancelled are final.
  */
 export function canMoveServiceOrder(
   from: ServiceOrderStatus,
@@ -238,13 +243,20 @@ export function canMoveServiceOrder(
 ): boolean {
   switch (from) {
     case "Draft":
+      return (
+        to === "Planned" ||
+        to === "On Hold" ||
+        to === "Completed" ||
+        to === "Cancelled"
+      );
+    case "Planned":
     case "Scheduled":
     case "In Progress":
       return to === "On Hold" || to === "Completed" || to === "Cancelled";
     case "On Hold":
-      return to === "Draft" || to === "Cancelled";
+      return to === "Planned" || to === "Cancelled";
     case "Completed":
-      return to === "Closed" || to === "Draft";
+      return to === "Closed" || to === "Planned";
     default:
       return false;
   }

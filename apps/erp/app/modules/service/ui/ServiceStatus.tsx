@@ -24,6 +24,7 @@ function useServiceOrderStatusLabels(): Record<ServiceOrderStatusType, string> {
   const { t } = useLingui();
   return {
     Draft: t`Draft`,
+    Planned: t`Planned`,
     Scheduled: t`Scheduled`,
     "In Progress": t`In Progress`,
     "On Hold": t`On Hold`,

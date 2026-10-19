@@ -1098,6 +1098,15 @@ export const SERVICE_ORDERS: ServiceOrderSpec[] = [
     status: "Draft",
     priority: "Medium",
     problem: "Motor trips on overtemperature after an hour at rated load."
+  },
+  {
+    key: "planned",
+    asset: "expired",
+    status: "Planned",
+    template: "standard",
+    priority: "Medium",
+    problem:
+      "Out-of-warranty motor due for a bearing and seal overhaul; the parts are planned ahead of the visit."
   }
 ];
 

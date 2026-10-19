@@ -2518,7 +2518,9 @@ export function fieldService(ctx: ValidationCtx): void {
       fail(`${where}: unknown template "${order.template}"`);
     }
     if ((order.status === "Scheduled") !== Boolean(order.visit)) {
-      fail(`${where}: a Scheduled order needs a visit and a Draft order none`);
+      fail(
+        `${where}: a Scheduled order needs a visit and a Draft or Planned order none`
+      );
     }
   }
 

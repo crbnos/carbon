@@ -1098,6 +1098,15 @@ export const SERVICE_ORDERS: ServiceOrderSpec[] = [
     status: "Draft",
     priority: "Medium",
     problem: "Pressure drops overnight; customer suspects a check valve."
+  },
+  {
+    key: "planned",
+    asset: "expired",
+    status: "Planned",
+    template: "standard",
+    priority: "Medium",
+    problem:
+      "Out-of-warranty manifold due for a seal and valve overhaul; the parts are planned ahead of the visit."
   }
 ];
 

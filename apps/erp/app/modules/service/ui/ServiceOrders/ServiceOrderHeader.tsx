@@ -10,6 +10,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
+  LuCheckCheck,
   LuCircleCheck,
   LuCircleStop,
   LuFileText,
@@ -86,7 +87,10 @@ const ServiceOrderHeader = () => {
   const invoiceDisclosure = useDisclosure();
 
   const isOpen =
-    status === "Draft" || status === "Scheduled" || status === "In Progress";
+    status === "Draft" ||
+    status === "Planned" ||
+    status === "Scheduled" ||
+    status === "In Progress";
 
   // A Depot Repair order is worked in the shop: it needs no visit to
   // complete, and its unit ships back from the RMA it came in on.
@@ -97,10 +101,20 @@ const ServiceOrderHeader = () => {
   const returnOrder = order.salesReturnOrderLine?.salesReturnOrder ?? null;
   const canShipBack = isDepotRepair && isReadyToShipBack(order);
 
-  // The next step first: Complete on an open order, Resume on hold, then
-  // Create Invoice or Close on a completed one.
+  // The next step first: Mark as Planned on a Draft order (its parts become
+  // MRP demand and it takes charges), Complete on an open order, Resume on
+  // hold, then Create Invoice or Close on a completed one.
   const transitions = (
     <>
+      {status === "Draft" && (
+        <DropdownMenuItem
+          disabled={!can("Planned")}
+          onClick={() => move("Planned")}
+        >
+          <DropdownMenuIcon icon={<LuCheckCheck />} />
+          <Trans>Mark as Planned</Trans>
+        </DropdownMenuItem>
+      )}
       {isOpen && (
         <DropdownMenuItem
           disabled={!can("Completed")}
@@ -112,8 +126,8 @@ const ServiceOrderHeader = () => {
       )}
       {status === "On Hold" && (
         <DropdownMenuItem
-          disabled={!can("Draft")}
-          onClick={() => move("Draft")}
+          disabled={!can("Planned")}
+          onClick={() => move("Planned")}
         >
           <DropdownMenuIcon icon={<LuPlay />} />
           <Trans>Resume</Trans>
@@ -156,8 +170,8 @@ const ServiceOrderHeader = () => {
       )}
       {status === "Completed" && !isRefurbishment && (
         <DropdownMenuItem
-          disabled={!can("Draft")}
-          onClick={() => move("Draft")}
+          disabled={!can("Planned")}
+          onClick={() => move("Planned")}
         >
           <DropdownMenuIcon icon={<LuRotateCcw />} />
           <Trans>Reopen</Trans>

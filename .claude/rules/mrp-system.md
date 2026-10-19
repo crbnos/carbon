@@ -270,8 +270,24 @@ project stock gets output identical to before, row for row.
   (`20261010133214`). `openPurchaseOrderLines` leaves out a line the receipt
   consumes to its project; `openProductionOrders` leaves out a
   `consumeToProject` job and segments a `receiveToProjectStock` job. New views:
-  `openProjectMaterialLines` (Pull from Inventory plan-line materials of
-  Unstarted / Started elements on a Released project) and `openProjectBorrows`.
+  `openProjectMaterialLines` (plan-line materials of every method but Make to
+  Order, of Unstarted / Started elements on a Released project) and
+  `openProjectBorrows`.
+- **Plan-line demand** (`openProjectMaterialLines`, last defined in
+  `20261015150413`). The quantity is `quantity − quantityIssued − covered`.
+  `covered` is what the line's own PO line (`purchaseOrderLineId`, from
+  **Create PO line**) brings when the project consumes that line at receipt —
+  such a line is not supply in `openPurchaseOrderLines`, so without it MRP would
+  buy a Purchase to Order line twice. It is the ordered quantity while more can
+  arrive and the received quantity once the line is received complete or the
+  order is Closed or Rejected, × `conversionFactor`. A PO line that is supply
+  (project stock, Statistical) covers nothing and nets as supply. Both views
+  read one predicate, `purchase_order_line_consumed_by_project` (SQL twin of
+  post-receipt `consumedByProject`). The required date is the line's
+  `requiredDate`, else the element's start, else the Service project's next
+  unfinished visit (`plannedStart` as a date in the company's time zone), else
+  the project's start; with none, `planCompany` uses today. A Draft service
+  order's project is Draft, so its lines are not demand (`field-service.md`).
   An open borrow is firm `Project Borrow` demand on the borrower's segment and
   firm `Project Borrow` supply on the lender's, both on the payback date.
 - **The netting sequence** (`explodeBom`, the pure helpers in

@@ -96,7 +96,7 @@ describe.skipIf(!hasLocalDatabase)("insertServiceOrder", () => {
       expect(project).toEqual({
         identifier: created.serviceOrderId,
         projectType: "Service",
-        status: "Released",
+        status: "Draft",
         costTreatment: "By Coverage"
       });
 

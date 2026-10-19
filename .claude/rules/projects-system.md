@@ -369,7 +369,9 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   Payback in its menu) that opens a prefilled Draft (`?type`, `?to`, `?borrow`).
 - **Planning (Phase 2b).** MRP nets the project in its own netting segment
   (`planningSegmentId` = the project id; `project_planning_segment`). Plan-line
-  materials of Unstarted / Started elements are `Project Material` demand; an
+  materials of Unstarted / Started elements, every method but Make to Order, are
+  `Project Material` demand, less what the line's own consumed-at-receipt PO line
+  brings (`mrp-system.md` → *Plan-line demand*); an
   Open borrow is firm demand on the borrower and firm supply on the lender. The
   segment draws unassigned stock only from the unassigned segment's true surplus, and
   only through a **Transfer** planning action. Applying it creates a Draft

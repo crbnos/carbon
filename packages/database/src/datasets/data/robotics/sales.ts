@@ -1097,6 +1097,15 @@ export const SERVICE_ORDERS: ServiceOrderSpec[] = [
     status: "Draft",
     priority: "Medium",
     problem: "Customer reports a grinding noise from the wrist at full speed."
+  },
+  {
+    key: "planned",
+    asset: "expired",
+    status: "Planned",
+    template: "standard",
+    priority: "Medium",
+    problem:
+      "Out-of-warranty arm due for drive and gearbox overhaul; the parts are planned ahead of the visit."
   }
 ];
 

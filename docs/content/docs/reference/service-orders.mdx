@@ -24,22 +24,23 @@ Click **Add Service Order** on the list, **Service Order** in the Create menu, o
   <Field name="Start Work From" type="enum">Where the first work tree comes from: **Empty**, **Service template**, **The unit's build history** or **The item's bill of materials**. See [the work tree](#the-work-tree).</Field>
 </FieldTable>
 
-A Field Visit also takes a **Contact**, and every order takes the **Problem**. **Coverage Contract**, **Priority** and **Start Work From** are under **More** in the drawer. The order has the tabs **Details**, **Work**, **Visits** and **Billing**. Its contact and site can change only while it is "Draft". Its coverage contract can change while the order is open, until a Contract charge has posted (see [Contract project](#contract-project)).
+A Field Visit also takes a **Contact**, and every order takes the **Problem**. **Coverage Contract**, **Priority** and **Start Work From** are under **More** in the drawer. The order has the tabs **Details**, **Work**, **Visits** and **Billing**. Its contact and site can change only while it is "Draft" or "Planned". Its coverage contract can change while the order is open, until a Contract charge has posted (see [Contract project](#contract-project)).
 
 ## Status lifecycle
 
 <StatusFlow entity="serviceOrder">
-  <Status name="Draft">No live visit.</Status>
+  <Status name="Draft">Not released yet. Its materials are not planning demand, and it takes no time, parts or expenses.</Status>
+  <Status name="Planned">Set with **Mark as Planned**. Its materials are [planning](/docs/reference/planning) demand and it takes charges. No visit is live.</Status>
   <Status name="Scheduled">A visit is scheduled and none has started.</Status>
   <Status name="In Progress">A visit is traveling or on site, or completed with work left.</Status>
-  <Status name="On Hold" branch>Set with **Put on Hold**. **Resume** returns the order to its visits' status.</Status>
+  <Status name="On Hold" branch>Set with **Put on Hold**. While on hold, its materials are not planning demand. **Resume** returns the order to its visits' status, or Planned.</Status>
   <Status name="Completed" accent>The technician answered **Work complete?** with yes, or you clicked **Complete**. The order is ready to invoice.</Status>
   <Status name="Closed">**Create Invoice** closes the order. With nothing left to bill, **Close** closes it.</Status>
   <Status name="Cancelled" terminal>Set with **Cancel**. It also cancels the order's open visits.</Status>
 </StatusFlow>
 
 <Callout type="info" title="Visits drive the status.">
-You set On Hold, Completed, Closed and Cancelled. Carbon sets the rest from the visits, and cancelled visits do not count. **Reopen**, in the order's menu, returns a Completed order to its visits' status.
+You set Planned, On Hold, Completed, Closed and Cancelled. Carbon sets the rest from the visits, and cancelled visits do not count. Scheduling a visit on a Draft order makes it Scheduled. An order that has left Draft never goes back to it: with no live visit, it is Planned. **Reopen**, in the order's menu, returns a Completed order to its visits' status, or Planned.
 </Callout>
 
 You can cancel an order only when every charge on it is reversed. Deleting the Draft invoice of an order moves the order from Closed back to Completed, and its billable items back to Unbilled.
@@ -149,7 +150,7 @@ On **Work complete?**, **Yes, Work Complete** completes the order. **No, More Wo
 
 ## Depot Repair
 
-A **Depot Repair** order repairs a unit in your shop. You do not create it by hand: posting the receipt of an RMA line with the **Repair** disposition opens one Draft Depot Repair order per received serial. The order takes the RMA's customer, site and contact, and your receiving location. If the customer has exactly one Active contract, the order uses it as its coverage contract. See [Repair](/docs/reference/rmas#repair) for the RMA side.
+A **Depot Repair** order repairs a unit in your shop. You do not create it by hand: posting the receipt of an RMA line with the **Repair** disposition opens one Draft Depot Repair order per received serial. Click **Mark as Planned** when you start the repair, so its parts are planned and it takes charges. The order takes the RMA's customer, site and contact, and your receiving location. If the customer has exactly one Active contract, the order uses it as its coverage contract. See [Repair](/docs/reference/rmas#repair) for the RMA side.
 
 - The header shows the RMA, linked, and **At Depot** while the unit is in your shop. **View Return Order** is in the order's menu.
 - Charge the work tree as on a field visit. The order needs no visit, so **Complete** is the next step.
@@ -315,7 +316,7 @@ The user lacks inventory_update.
 - Each service order owns a Service project (projectType Service, costTreatment By Coverage, identifier = the order's readable id). Its elements are the work tree's elements (the UI said "nodes" before; the invoice detail enum value `By Node` shows as "By Element"). Service projects are hidden from the Projects module, charge number pickers and dimension pickers.
 - Readable id: sequence serviceOrder, prefix SVC, size 6 (SVC000001). Order types in the enum: Field Visit, Depot Repair, Refurbishment. The New form creates Field Visit and Refurbishment; the receipt of an RMA Repair line creates Depot Repair orders (`serviceOrder.salesReturnOrderLineId`, CHECK `serviceOrder_depot_check`; `post-receipt/repair.ts`). A Refurbishment has no customer (CHECK `serviceOrder_customer_check`).
 - Refurbishment completion: server function complete-service-order (load.ts reads, plan.ts plans). FIFO/LIFO split one unit from the layer calculateCOGS takes next and add a 'Revaluation' child of the WIP; Average adds the child and re-averages itemCost.unitCost; Standard and Abnormal Rework post Dr Material Variance / Cr WIP; a write-down over the cap posts Dr Inventory Adjustment Variance / Cr inventory. The journal's source type is Service Order. The order stores capitalizedAmount, writeDownAmount, completionJournalId and completionCostingMethod. The preview route is `/x/service-order/<id>/complete` (loader only).
-- Status roll-up: rollUpOrderStatus (service.models.ts); allowed moves canMoveServiceOrder and canMoveVisit; saved by syncServiceOrderStatus (service.server.ts), which also sets the project status (On Hold → On Hold, Completed → Technically Complete, Closed/Cancelled → Closed, else Released).
+- Status roll-up: rollUpOrderStatus (service.models.ts); allowed moves canMoveServiceOrder and canMoveVisit; saved by syncServiceOrderStatus (service.server.ts), which also sets the project status (Draft → Draft, On Hold → On Hold, Completed → Technically Complete, Closed/Cancelled → Closed, else Released). A Released Service project's plan-line materials are MRP demand (openProjectMaterialLines), due at the next unfinished visit when the line has no date.
 - Coverage: resolveCoverage (packages/utils/src/service-coverage.ts). Capitalized charges post to Work in Progress and create no billable item.
 - Charges: route service-order+/$id.charge.tsx with intent time / part / expense / reclass / reverse (reverseServiceCharge: a timesheet correction to 0 hours, or a projectExpenseEntry with reversalOfId and reversalReason); server functions post-timesheet, post-project-issue, post-project-expense, reclass-project-coverage. Time posts Dr coverage account / Cr Labor Absorption ("Service Labor"); expenses Dr coverage account / Cr GR/IR ("Service Expense"); parts "Service Material". All carry the Customer dimension.
 - Invoice: create-service-order-invoice (layout in plan.ts). post-sales-invoice skips stock and COGS on lines stamped by billable items. Deleting the Draft invoice runs releaseServiceOrderStamps.

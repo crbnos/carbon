@@ -375,7 +375,7 @@ databaseTest(
             id: projectId,
             name: "Refurbish SN-0001",
             identifier: "SVC-R1",
-            status: "Released",
+            status: "Draft",
             projectType: "Service",
             costTreatment: "By Coverage",
             companyId: f.companyId,

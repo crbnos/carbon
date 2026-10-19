@@ -86,7 +86,9 @@ const ServiceOrderProperties = () => {
   const canUpdate = permissions.can("update", "service");
   const isFinal = order.status === "Closed" || order.status === "Cancelled";
   const isDisabled = !canUpdate || isFinal;
-  const isDraftOnlyDisabled = isDisabled || order.status !== "Draft";
+  // The site and contact change until a visit is scheduled.
+  const isDraftOnlyDisabled =
+    isDisabled || (order.status !== "Draft" && order.status !== "Planned");
   const isRefurbishment = order.type === "Refurbishment";
   // A completed refurbishment's cost is already in the serial.
   const isCompletionDisabled = isDisabled || order.status === "Completed";

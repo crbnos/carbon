@@ -104405,6 +104405,16 @@ export type Database = {
         }
         Returns: string
       }
+      purchase_order_line_consumed_by_project: {
+        Args: {
+          p_company_id: string
+          p_item_tracking_type: Database["public"]["Enums"]["itemTrackingType"]
+          p_project_element_id: string
+          p_project_id: string
+          p_purchase_order_type: Database["public"]["Enums"]["purchaseOrderType"]
+        }
+        Returns: boolean
+      }
       purchaseLineDimensionPivot: {
         Args: {
           p_column_field?: string
@@ -105903,6 +105913,7 @@ export type Database = {
       serviceInvoiceDetail: "Itemized" | "By Node"
       serviceOrderStatus:
         | "Draft"
+        | "Planned"
         | "Scheduled"
         | "In Progress"
         | "On Hold"
@@ -107699,6 +107710,7 @@ export const Constants = {
       serviceInvoiceDetail: ["Itemized", "By Node"],
       serviceOrderStatus: [
         "Draft",
+        "Planned",
         "Scheduled",
         "In Progress",
         "On Hold",

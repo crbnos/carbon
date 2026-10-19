@@ -994,12 +994,12 @@ export type ServiceOrderSpec = (
     }
 ) & {
   key: string;
-  status: "Draft" | "Scheduled";
+  status: "Draft" | "Planned" | "Scheduled";
   /** A `ServiceTemplateSpec` key the work tree is copied from. */
   template?: string;
   priority?: "None" | "Low" | "Medium" | "High" | "Urgent";
   problem: string;
-  /** The visit window; a Scheduled order needs one, a Draft order none. */
+  /** The visit window; a Scheduled order needs one, a Draft or Planned order none. */
   visit?: {
     startOffset: DayOffset;
     /** "HH:MM:SS", UTC. */

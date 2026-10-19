@@ -19,8 +19,9 @@ type ServiceOrderPriority =
 type Json = Database["public"]["Tables"]["serviceOrder"]["Insert"]["problem"];
 
 /**
- * Inserts a service order's Service project and its default states: Released,
- * By Coverage, named "<order id> — <serial> — <customer>" ("<order id> —
+ * Inserts a service order's Service project and its default states: Draft,
+ * as its order is (so its parts are not MRP demand until the order is
+ * planned), By Coverage, named "<order id> — <serial> — <customer>" ("<order id> —
  * <serial>" for a refurbishment, which has no customer), identified by the
  * order's readable id, under the coverage
  * contract's project when the order names one. Returns the project's id.
@@ -55,7 +56,7 @@ export async function insertServiceProject(
         .join(" — "),
       identifier: serviceOrder.serviceOrderId,
       projectType: "Service",
-      status: "Released",
+      status: "Draft",
       costTreatment: "By Coverage",
       customerId: serviceOrder.customerId,
       locationId: serviceOrder.locationId,

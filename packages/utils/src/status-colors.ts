@@ -235,11 +235,13 @@ export const PROJECT_PEG_STATE_COLOR_MAP = {
   Manual: "blue"
 } as const satisfies Record<string, StatusColor>;
 
-// A service order (serviceOrderStatus). Scheduled waits on a visit like a
-// released project, In Progress is work under way, On Hold pauses, Completed
+// A service order (serviceOrderStatus). Planned is released with no visit yet
+// (purple: In Progress already holds the yellow a planned job uses), Scheduled
+// waits on a visit like a released project, In Progress is work under way, On Hold pauses, Completed
 // is done and waits on its invoice, Closed is gray like a closed project.
 export const SERVICE_ORDER_STATUS_COLOR_MAP = {
   Draft: "gray",
+  Planned: "purple",
   Scheduled: "blue",
   "In Progress": "yellow",
   "On Hold": "orange",

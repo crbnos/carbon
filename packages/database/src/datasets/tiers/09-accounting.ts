@@ -1085,7 +1085,9 @@ async function seedServiceWork(ctx: Ctx): Promise<void> {
       name: subject.projectName,
       identifier: serviceOrderId,
       projectType: "Service",
-      status: "Released",
+      // As projectStatusOfOrder: a Draft order's tree is Draft, so its parts
+      // are not MRP demand.
+      status: spec.status === "Draft" ? "Draft" : "Released",
       costTreatment: "By Coverage",
       customerId: subject.customerId,
       parentProjectId: subject.parentProjectId,

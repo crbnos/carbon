@@ -1122,7 +1122,7 @@ export const SERVICE_ORDERS: ServiceOrderSpec[] = [
     key: "refurbishment",
     type: "Refurbishment",
     serial: "RW010-SN-0054",
-    status: "Draft",
+    status: "Planned",
     priority: "Low",
     expectedSellingPrice: 15500,
     problem:

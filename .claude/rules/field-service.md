@@ -102,12 +102,24 @@ list table) and the template element page `service-orders+/templates_.$id_.$elem
 1. A status the user set stays: On Hold, Completed, Closed, Cancelled.
 2. **Work complete? Yes** on a completing visit gives Completed.
 3. A visit Traveling, On Site, or Completed with work left gives In Progress.
-4. A Scheduled visit gives Scheduled. No live visit gives Draft. Cancelled visits do
-   not count.
+4. A Scheduled visit gives Scheduled. Cancelled visits do not count.
+5. No live visit: a Draft order stays Draft, and any other order gives Planned. A
+   released order never returns to Draft.
+
+Every order starts Draft. **Mark as Planned** (Draft → Planned) releases it: its Service
+project goes from Draft to Released, so its plan-line materials become MRP demand
+(`openProjectMaterialLines`) and it takes charges. A Draft order takes no charge:
+`requireServiceOrderNode` refuses with "Mark the service order as Planned before you
+charge it" (the project is Draft, so `assertChargeable` would refuse anyway). Scheduling
+a visit on a Draft order rolls it to Scheduled, which releases it too. Resume and Reopen
+move to Planned.
 
 `syncServiceOrderStatus` (`service.server.ts`) saves the roll-up and the project status
-(`projectStatusOfOrder`: On Hold → On Hold, Completed → Technically Complete, Closed /
-Cancelled → Closed, else Released). Call it after every visit change and every order
+(`projectStatusOfOrder`: Draft → Draft, On Hold → On Hold, Completed → Technically
+Complete, Closed / Cancelled → Closed, else Released). `insertServiceProject` inserts
+the project Draft, as its order. Migration `20261015150413` moved each existing Draft
+order with a `projectLedger` row to Planned and set the other Draft orders' projects to
+Draft. Call it after every visit change and every order
 status change, in the same transaction. `canMoveServiceOrder` and `canMoveVisit` are
 the allowed moves. `cancelServiceOrder` refuses an order while a ledger row stands (`openChargeIds`, `@carbon/utils`: not a reversal, and no row reverses it); an order whose every charge is reversed can be cancelled.
 
@@ -268,8 +280,8 @@ The company refurbishes a serial it owns. Labor, parts and expenses collect in W
   from part shows the new parts). A return deletes the activity.
 - **Guard** (`assertNoOpenRefurbishment`, `lib/service-orders.ts`): `post-shipment` (Sales
   Order) and `post-picking` (serial case) refuse a serial with an open Refurbishment order.
-- **Complete** (`complete-service-order`, one transaction, from Draft, Scheduled or In
-  Progress): `loadRefurbishmentCompletion` (`load.ts`) reads the WIP by element, the item cost,
+- **Complete** (`complete-service-order`, one transaction, from Draft, Planned, Scheduled
+  or In Progress): `loadRefurbishmentCompletion` (`load.ts`) reads the WIP by element, the item cost,
   the open layers and children as `calculateCOGS` selects them, the on-hand (Average) and
   the cap; `planRefurbishmentCompletion` (`plan.ts`, pure, tested) decides:
 
@@ -375,10 +387,13 @@ employee), a Service project `service_<action>`. See `authz-manifest.md`.
 Each dataset registers 3 customer assets (tier 04: In warranty, Labor ended, Expired on
 the anchor day), one service template with plan lines, a Scheduled order with the
 template's tree and a visit tomorrow, and a Draft order (tier 09, `seedServiceWork`).
+Robotics, motor and precision add a Planned order with the template's tree on the
+Expired asset; its plan lines are MRP demand. Tier 09 inserts a Draft order's project
+Draft and every other order's Released.
 No charges are seeded. Satellite also has a To Receive RMA (`bus-repair`) whose one line
 returns SAT-1000-S013 with disposition Repair (`SalesReturnLineSpec.disposition`); the
 validator keeps a Repair line out of on-hand and refuses one on a Completed return.
-Satellite also seeds a Draft Refurbishment on stock serial RW010-SN-0054
+Satellite also seeds a Planned Refurbishment on stock serial RW010-SN-0054
 (`ServiceOrderSpec` with `type: "Refurbishment"` and `serial`), which the seed puts On
 Hold. Satellite gives contract `novasat-ops` a project (`ContractSpec.project`,
 identifier `NSOPS`, Expense, Released, seeded in tier 09 before the orders) and makes it

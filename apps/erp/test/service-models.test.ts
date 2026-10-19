@@ -61,11 +61,22 @@ describe("rollUpOrderStatus", () => {
     ).toBe("Scheduled");
   });
 
-  it("gives Draft with no live visit", () => {
-    expect(rollUpOrderStatus({ status: "Scheduled" }, [])).toBe("Draft");
+  it("keeps a Draft order Draft with no live visit", () => {
+    expect(rollUpOrderStatus({ status: "Draft" }, [])).toBe("Draft");
+    expect(
+      rollUpOrderStatus({ status: "Draft" }, [{ status: "Cancelled" }])
+    ).toBe("Draft");
+  });
+
+  it("never returns a released order to Draft", () => {
+    expect(rollUpOrderStatus({ status: "Planned" }, [])).toBe("Planned");
+    expect(rollUpOrderStatus({ status: "Scheduled" }, [])).toBe("Planned");
     expect(
       rollUpOrderStatus({ status: "Scheduled" }, [{ status: "Cancelled" }])
-    ).toBe("Draft");
+    ).toBe("Planned");
+    expect(
+      rollUpOrderStatus({ status: "Planned" }, [{ status: "Scheduled" }])
+    ).toBe("Scheduled");
   });
 });
 
@@ -88,8 +99,20 @@ describe("warrantyStatus", () => {
 });
 
 describe("canMoveServiceOrder", () => {
+  it("plans a Draft order, and only a Draft order", () => {
+    expect(canMoveServiceOrder("Draft", "Planned")).toBe(true);
+    for (const from of ["Planned", "Scheduled", "In Progress"] as const) {
+      expect(canMoveServiceOrder(from, "Planned")).toBe(false);
+    }
+  });
+
   it("lets an open order go on hold, complete or cancel", () => {
-    for (const from of ["Draft", "Scheduled", "In Progress"] as const) {
+    for (const from of [
+      "Draft",
+      "Planned",
+      "Scheduled",
+      "In Progress"
+    ] as const) {
       expect(canMoveServiceOrder(from, "On Hold")).toBe(true);
       expect(canMoveServiceOrder(from, "Completed")).toBe(true);
       expect(canMoveServiceOrder(from, "Cancelled")).toBe(true);
@@ -98,20 +121,20 @@ describe("canMoveServiceOrder", () => {
   });
 
   it("resumes an order on hold, and closes or reopens a completed one", () => {
-    expect(canMoveServiceOrder("On Hold", "Draft")).toBe(true);
+    expect(canMoveServiceOrder("On Hold", "Planned")).toBe(true);
     expect(canMoveServiceOrder("On Hold", "Completed")).toBe(false);
     expect(canMoveServiceOrder("Completed", "Closed")).toBe(true);
-    expect(canMoveServiceOrder("Completed", "Draft")).toBe(true);
+    expect(canMoveServiceOrder("Completed", "Planned")).toBe(true);
     expect(canMoveServiceOrder("Completed", "Cancelled")).toBe(false);
   });
 
   it("never moves a closed or cancelled order", () => {
     for (const to of [
+      "Planned",
       "On Hold",
       "Completed",
       "Closed",
-      "Cancelled",
-      "Draft"
+      "Cancelled"
     ] as const) {
       expect(canMoveServiceOrder("Closed", to)).toBe(false);
       expect(canMoveServiceOrder("Cancelled", to)).toBe(false);
@@ -463,6 +486,9 @@ describe("worstServiceOrderStatus", () => {
     expect(worstServiceOrderStatus(["Completed", "In Progress", "Draft"])).toBe(
       "Draft"
     );
+    expect(
+      worstServiceOrderStatus(["Scheduled", "Planned", "In Progress"])
+    ).toBe("Planned");
     expect(worstServiceOrderStatus(["Closed", "Completed"])).toBe("Completed");
     expect(worstServiceOrderStatus(["Cancelled", "Closed"])).toBe("Closed");
     expect(worstServiceOrderStatus([])).toBeNull();
