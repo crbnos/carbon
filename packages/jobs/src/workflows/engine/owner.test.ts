@@ -39,41 +39,57 @@ describe("hasPermission", () => {
   it("no longer grants on the retired all-companies wildcard (NIST 3.1.5)", () => {
     // "0" was the global-company wildcard; it was removed. It is now just a
     // literal company id that never matches a real one.
-    const perms = permissions({ purchasing: { view: ["0"] } });
-    expect(hasPermission(perms, "purchasing", "view", "cmp_1")).toBe(false);
+    const perms = permissions({ "purchasing.purchaseOrders": { view: ["0"] } });
+    expect(
+      hasPermission(perms, "purchasing.purchaseOrders", "view", "cmp_1")
+    ).toBe(false);
   });
 
   it("grants when the action names the company exactly", () => {
-    const perms = permissions({ purchasing: { view: ["cmp_1", "cmp_2"] } });
-    expect(hasPermission(perms, "purchasing", "view", "cmp_1")).toBe(true);
+    const perms = permissions({
+      "purchasing.purchaseOrders": { view: ["cmp_1", "cmp_2"] }
+    });
+    expect(
+      hasPermission(perms, "purchasing.purchaseOrders", "view", "cmp_1")
+    ).toBe(true);
   });
 
   it("denies a company the action does not name", () => {
-    const perms = permissions({ purchasing: { view: ["cmp_2"] } });
-    expect(hasPermission(perms, "purchasing", "view", "cmp_1")).toBe(false);
+    const perms = permissions({
+      "purchasing.purchaseOrders": { view: ["cmp_2"] }
+    });
+    expect(
+      hasPermission(perms, "purchasing.purchaseOrders", "view", "cmp_1")
+    ).toBe(false);
   });
 
-  it("denies a module the owner does not hold at all", () => {
-    const perms = permissions({ purchasing: { view: ["0"] } });
-    expect(hasPermission(perms, "sales", "view", "cmp_1")).toBe(false);
+  it("denies a page the owner does not hold at all", () => {
+    const perms = permissions({ "purchasing.purchaseOrders": { view: ["0"] } });
+    expect(hasPermission(perms, "sales.salesOrders", "view", "cmp_1")).toBe(
+      false
+    );
   });
 
   it("denies an action whose array is empty", () => {
-    const perms = permissions({ purchasing: { view: ["0"] } });
-    expect(hasPermission(perms, "purchasing", "update", "cmp_1")).toBe(false);
+    const perms = permissions({ "purchasing.purchaseOrders": { view: ["0"] } });
+    expect(
+      hasPermission(perms, "purchasing.purchaseOrders", "update", "cmp_1")
+    ).toBe(false);
   });
 
   it("denies when the action array is missing entirely", () => {
     const perms = {
-      purchasing: { view: ["0"] }
+      "purchasing.purchaseOrders": { view: ["0"] }
     } as unknown as OwnerPermissions;
-    expect(hasPermission(perms, "purchasing", "delete", "cmp_1")).toBe(false);
+    expect(
+      hasPermission(perms, "purchasing.purchaseOrders", "delete", "cmp_1")
+    ).toBe(false);
   });
 });
 
 describe("readOwnerPermissions", () => {
   const client = {} as Parameters<typeof readOwnerPermissions>[0];
-  const owned = permissions({ parts: { view: ["c1"] } });
+  const owned = permissions({ "parts.parts": { view: ["c1"] } });
 
   function ownerWithRole(role: string) {
     vi.mocked(getClaims).mockResolvedValueOnce({

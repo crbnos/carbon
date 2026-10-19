@@ -87,7 +87,7 @@ describe("computeExecutor", () => {
 
   it("reports the operation's declared permission", () => {
     expect(computeExecutor.permission(node(), catalog)).toEqual({
-      module: "production",
+      page: "production.jobs",
       action: "view"
     });
     expect(

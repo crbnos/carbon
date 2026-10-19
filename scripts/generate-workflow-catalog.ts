@@ -47,6 +47,7 @@ const built = buildCatalog(
 const events = [
   HEADER,
   `import type { BuiltEvent } from "./build";`,
+  `import type { EventPermission } from "../definition/catalog";`,
   `import type { ValueType } from "../definition/types";`,
   ``,
   `export type { BuiltEvent as GeneratedEvent };`,
@@ -54,6 +55,8 @@ const events = [
   `export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = ${JSON.stringify(sorted(built.events))};`,
   ``,
   `export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = ${JSON.stringify(sorted(built.entities))};`,
+  ``,
+  `export const WORKFLOW_ENTITY_PAGES: Record<string, EventPermission> = ${JSON.stringify(sorted(built.entityPages))};`,
   ``,
   `export const WORKFLOW_ENTITY_ENUMS: Record<string, Record<string, readonly string[]>> = ${JSON.stringify(sorted(built.enums))};`,
   ``

@@ -105,7 +105,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let rentalLines: RentalShipmentLine[] = [];
 
   if (shipment.data.sourceDocument === "Rental Agreement") {
-    // Service role: rentalAgreementLine needs sales_view, which an inventory
+    // Service role: rentalAgreementLine needs View on Rental Agreements, which an inventory
     // user may not hold.
     const rentalLineRecords = await getRentalShipmentLines(
       getCarbonServiceRole(),

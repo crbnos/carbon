@@ -5,7 +5,13 @@
 import { describe, expect, it } from "vitest";
 import cases from "./cases.json";
 import { actionsGained, roundUp } from "./levels";
-import { clampLevel, ITEM_TYPE_PAGES, PAGES, REGISTRY_HASH } from "./registry";
+import {
+  clampLevel,
+  ITEM_TYPE_PAGES,
+  PAGES,
+  pagesOf,
+  REGISTRY_HASH
+} from "./registry";
 import {
   accessHolders,
   anyOf,
@@ -42,8 +48,8 @@ describe("roundUp", () => {
 
 describe("clampLevel", () => {
   it("keeps a level at or below the page's maxLevel", () => {
-    expect(clampLevel("inventory", "Edit")).toBe("Edit");
-    expect(clampLevel("inventory", "Full")).toBe("Full");
+    expect(clampLevel("inventory.receipts", "Edit")).toBe("Edit");
+    expect(clampLevel("inventory.traceability", "Full")).toBe("View");
   });
 
   it("leaves an unknown page alone", () => {
@@ -74,19 +80,28 @@ describe("expandClaims", () => {
     for (const page of PAGES) expect(expanded[page.id]).toBeDefined();
   });
 
-  it("holds the actions of the resolved level", () => {
-    expect(expanded.inventory).toEqual({
+  it("gives every page of the module the module grant's actions", () => {
+    for (const page of pagesOf("inventory")) {
+      expect(holds(expanded, `${page}_update`, "c1")).toBe(true);
+      expect(holds(expanded, `${page}_delete`, "c1")).toBe(false);
+    }
+    expect(expanded["inventory.receipts"]).toEqual({
       view: ["c1"],
       create: ["c1"],
       update: ["c1"],
       delete: []
     });
-    expect(holds(expanded, "inventory_update", "c1")).toBe(true);
-    expect(holds(expanded, "inventory_delete", "c1")).toBe(false);
+  });
+
+  it("expands no module key", () => {
+    expect(expanded.inventory).toBeUndefined();
+    expect(holds(expanded, "inventory_view", "c1")).toBe(false);
   });
 
   it("lets a person None remove the role's grant", () => {
-    expect(holds(expanded, "sales_view", "c1")).toBe(false);
+    for (const page of pagesOf("sales")) {
+      expect(holds(expanded, `${page}_view`, "c1")).toBe(false);
+    }
   });
 
   it("merges portal keys", () => {

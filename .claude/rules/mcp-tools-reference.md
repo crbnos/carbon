@@ -341,7 +341,7 @@ bytes never pass through the model or the dispatch.
 signed into the `temp-staging` bucket, 2.5 GB) and `items_insertModelUpload`
 (`{ modelId, path, name, size, itemId?, jobId?, salesRfqLineId?, quoteLineId?,
 salesOrderLineId?, convert? }`). The `temp-staging` storage policies read the key's
-scopes (`parts_create` / `parts_update`), so an API key with those scopes can mint
+scopes (Create / Edit on any item page, `parts.parts_create` … `parts.services_update`), so an API key with those scopes can mint
 the URL and upload — unlike the document pair above, which signs into a company bucket.
 
 ## Gotchas

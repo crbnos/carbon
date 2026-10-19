@@ -49,6 +49,10 @@ import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log"
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
+import {
+  MODULE_KEY_ROOTS,
+  noModulePermissionKey
+} from "./conformance/no-module-permission-key";
 import { noNoopOpenChange } from "./conformance/no-noop-open-change";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noPostgresChanges } from "./conformance/no-postgres-changes";
@@ -182,6 +186,16 @@ export function loadManagedFunctions(root: string): ManagedFunction[] {
   );
 }
 
+/** The managed function files, read with their repo paths. */
+function loadManagedFunctionFiles(root: string): SourceFile[] {
+  return MANAGED_FUNCTION_SETS.flatMap(({ dir }) =>
+    loadSqlFiles(join(root, dir)).map(({ file, contents }) => ({
+      file: `${dir}/${file}`,
+      contents
+    }))
+  );
+}
+
 /** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions + license headers under `root`. */
 export function collectFindings(root: string = repoRoot()): Finding[] {
   return [
@@ -215,6 +229,14 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
         wrappedBuildingBlocks(loadModuleServerFiles(root).map((f) => f.server))
       )
     ]),
+    ...scanAll(
+      [
+        ...loadSqlFiles(migrationsDir(root)),
+        ...loadManagedFunctionFiles(root),
+        ...loadTypescriptFiles(root, MODULE_KEY_ROOTS)
+      ],
+      [noModulePermissionKey]
+    ),
     ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
     ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader]),
     ...findDuplicatedAppFiles(loadTypescriptFiles(root, SHARED_APP_DIRS)).map(

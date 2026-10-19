@@ -36,7 +36,7 @@ Phase 3 — every module to page keys (one deploy)
 - [x] Task 21: Move client permission checks to pages and levels
 - [x] Task 22: Drive the sidebar and the nav from page views
 - [x] Task 23: Move workflow event permissions and the MCP manifest to page keys
-- [ ] Task 24: Add the module-key conformance check
+- [x] Task 24: Add the module-key conformance check
 - [ ] Task 25: Verify every page in the browser
 
 Phase 4 — cleanup
@@ -903,6 +903,20 @@ pnpm --filter @carbon/checks test
 ```
 
 **Out of scope:** portal keys in `userPermission`.
+
+**As built (2026-10-19):**
+1. The workflow catalog names pages. `RequiredPermission` is `{ page, action }`; `page` is a page or a list, and any one passes.
+2. The five create actions take the page of the record they create. Notify takes Accounts or Groups. Webhook takes Workflows.
+3. The generator gives each `<entity>.update` action, each operation and each lookup the page of the entity's table (`tablePages`). Entity pages ship as `WORKFLOW_ENTITY_PAGES`, and `check-workflow-catalog.ts` compares them.
+4. `RegistryEntry.permission` and the module argument of `operation()` are gone. The engine (`execute.ts`) checks a node as it checks an event.
+5. The managed functions name pages: `get_claims` (Accounts), the five audit log functions (Audit Logs) and `util.can_manage_event_subscription` (Webhooks). They ship in `20261019053151_page-keys-in-functions.sql`, which `authz migration` wrote.
+6. `20261019053223_module-keys-to-pages.sql` redefines `is_claims_admin` (Accounts) and the two storage requirement functions (Stock Transfers) from their live definitions. It also moves six storage policies to pages, and writes the read policy of every audit log table again.
+7. The storage policies are new scope: the public bucket now needs Logos, and staged models need any item page. Their old names held a module key, so they are renamed.
+8. `hasPermission` (`@carbon/auth`) takes a page gate. Its five callers name Service Contracts, Rental Agreements, Leases, Accounts with Employees, and Integrations.
+9. `expandClaims` emits page keys only; `MODULE_KEYS` is gone. Three tests changed: `resolve.test.ts`, `api-key-cache.test.ts` and `users.server.test.ts`.
+10. The check is `no-module-permission-key`, with an empty baseline. It reads TS under `MODULE_KEY_ROOTS`, the managed function files, and migrations after `20261019053223`.
+11. The check skips `manifest.ts`, portal keys, `hasAny`, `holdsAny`, `pagesOf("<module>")` and `documents`, whose one page has the module's id.
+12. About 128 lines in `AGENTS.md` files and rules still name module keys in prose. Code comments were fixed; the prose is a follow-up. The portal keys in `makeCustomerPermissions` stay (out of scope).
 
 ## Task 25: Verify every page in the browser
 

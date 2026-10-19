@@ -54,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // enforce the same permission the ERP action does.
     await authorize(request, { "users.accounts": "Edit" });
 
-    // Carbon staff hold users_update in every tenant they provisioned, so the
+    // Carbon staff hold Edit on Accounts in every tenant they provisioned, so the
     // permission check alone would let us bind a customer to a document only
     // the customer can sign; an API key carries no signer identity at all
     // (empty email on that path). Mirrors the ERP action.

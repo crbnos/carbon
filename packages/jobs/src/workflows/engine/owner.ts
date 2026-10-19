@@ -86,11 +86,12 @@ export async function readOwnerPermissions(
   return claims.permissions;
 }
 
+/** Whether the owner holds the action on the page (`<page>_<action>`) in the company. */
 export function hasPermission(
   permissions: OwnerPermissions,
-  module: string,
+  page: string,
   action: PermissionAction,
   companyId: string
 ): boolean {
-  return holds(permissions, `${module}_${action}`, companyId);
+  return holds(permissions, `${page}_${action}`, companyId);
 }

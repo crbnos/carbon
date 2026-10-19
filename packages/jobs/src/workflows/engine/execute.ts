@@ -180,17 +180,22 @@ async function runExecutor(args: NodeArgs): Promise<NodeResult> {
   const executor = executorFor(node);
   if (executor === undefined) return { status: "Failed", error: NOT_AVAILABLE };
 
+  // The page of what the node acts on; of a shared table, any one of its pages.
   const required = executor.permission(node, catalog);
   if (
     required !== undefined &&
-    !hasPermission(
-      args.permissions,
-      required.module,
-      required.action,
-      payload.companyId
-    )
+    ![required.page]
+      .flat()
+      .some((page) =>
+        hasPermission(
+          args.permissions,
+          page,
+          required.action,
+          payload.companyId
+        )
+      )
   ) {
-    return { status: "Failed", error: noAccess(required.module) };
+    return { status: "Failed", error: noAccess(required.page) };
   }
 
   return executor.execute(node, await contextFor(args));

@@ -123,7 +123,7 @@ service function pays nothing for it.
 
 ```ts
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, { view: "sales" });
+  const { api } = await authorize(request, { "sales.customers": "View" });
   const [customer, locations] = await Promise.all([
     api.sales.getCustomer({ customerId: params.customerId! }),
     api.resources.getLocationsList({})

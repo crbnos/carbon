@@ -1304,16 +1304,16 @@ export async function createEmployeeAccount(
   } satisfies InviteInsert;
 
   if (isReactivation) {
-    // Reusing surviving rows is an UPDATE, which RLS would gate behind
-    // users_update / people_update, so this path writes outside RLS, scoped by
+    // Reusing surviving rows is an UPDATE, which RLS would gate behind Edit
+    // on Accounts and Employees, so this path writes outside RLS, scoped by
     // id + companyId. It is one transaction because the three writes are only
     // correct together (see the helper), and it needs no compensation: the
     // auth user already existed, so a rollback leaves nothing behind.
     //
     // Writing outside RLS must not grant more than a first-time add, which
     // inserts under the caller's client: the INSERT policies on "employee" and
-    // "employeeJob" require users_update and people_create. The route only
-    // requires users_create, so the same two are checked here.
+    // "employeeJob" require Accounts Edit and Employees Create. The operation
+    // only requires Accounts Create, so the same two are checked here.
     const claims = await getUserClaims(createdBy, companyId).catch(
       (err: unknown) => {
         logger.error("Failed to read the inviter's permissions", {
@@ -1325,8 +1325,11 @@ export async function createEmployeeAccount(
       }
     );
     if (
-      !hasPermission(claims?.permissions, "users", "update", companyId) ||
-      !hasPermission(claims?.permissions, "people", "create", companyId)
+      !hasPermission(
+        claims?.permissions,
+        { "users.accounts": "Edit", "people.employees": "Create" },
+        companyId
+      )
     ) {
       logger.error("Re-adding a deactivated employee was refused", {
         companyId,
@@ -1336,7 +1339,7 @@ export async function createEmployeeAccount(
       return {
         success: false,
         message:
-          "Re-adding a deactivated employee requires the Users update and People create permissions"
+          "Re-adding a deactivated employee requires Edit on Accounts and Create on Employees"
       };
     }
 

@@ -576,7 +576,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     /**
      * Tie-out summary: latest computedAt + how many (period × account)
      * cells carry a nonzero internal or external delta. Null when no
-     * tie-out rows exist (or the viewer lacks accounting_view — the
+     * tie-out rows exist (or the viewer lacks View on Sync Tie-Out — the
      * table's RLS SELECT — in which case the rows read back empty).
      */
     tieOut: {

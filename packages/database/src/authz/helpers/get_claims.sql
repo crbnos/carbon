@@ -11,15 +11,15 @@ AS $function$
   DECLARE portal_keys jsonb := '{}'::jsonb;
   BEGIN
     -- Your own claims, or those of someone in a company where you may view or
-    -- update users (the permission editor reads them with users_update alone).
+    -- edit Accounts (the permission editor reads them with Accounts Edit).
     IF current_setting('role', true) IN ('anon', 'authenticated')
        AND uid IS DISTINCT FROM auth.uid()::text
        AND NOT EXISTS (
          SELECT 1 FROM "userToCompany" utc
          WHERE utc."userId" = uid
            AND utc."companyId" = ANY (
-             get_companies_with_employee_permission('users_view')
-             || get_companies_with_employee_permission('users_update')
+             get_companies_with_employee_permission('users.accounts_view')
+             || get_companies_with_employee_permission('users.accounts_update')
            )
        ) THEN
       RAISE EXCEPTION 'Not authorized to read claims for this user'

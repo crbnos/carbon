@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // by default and cannot be turned off. Enable it on demand for any controlled
   // company that isn't already capturing. This is mandatory, not the viewer's
   // choice, so it runs as the service role: create_audit_log_table requires
-  // settings_update, and this loader only requires settings_view.
+  // Edit on Audit Logs, and this loader only requires View.
   if (CONTROLLED_ENVIRONMENT && !enabled) {
     try {
       await enableAuditLog(serviceRole, companyId);

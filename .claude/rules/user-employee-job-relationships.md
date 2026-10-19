@@ -56,8 +56,8 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 4. Claims: SQL `get_claims(uid, company)` (`authz/helpers/get_claims.sql`) returns
    `{ role, admin, grants, portal }` for that company; `portal` holds the `userPermission` keys
    naming the company, for a portal account only. Called through the API it answers only for
-   the caller's own `uid`, or for someone in a company where the caller holds `users_view` or
-   `users_update`; service role and direct connections are unrestricted. RLS helpers like
+   the caller's own `uid`, or for someone in a company where the caller holds View or Edit on
+   Accounts (`users.accounts_view` / `users.accounts_update`); service role and direct connections are unrestricted. RLS helpers like
    `get_companies_with_employee_role()`, and `get_companies_with_employee_permission('<page>_<action>')`
    enforce this in policies (helpers re-defined in later migrations — read the newest).
 5. App layer (`packages/auth/src/services/`): `getUserClaims()` caches claims in a Redis hash at
@@ -132,10 +132,10 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   row's employee type cannot diverge, and a failed write leaves no redeemable invite. It never
   inserts a first-time `employee` row; that stays under the caller's RLS client.
 - **The re-add writes outside RLS, so it checks what RLS would have.** The route requires only
-  `users_create`, but a first-time add inserts `employee` and `employeeJob` under the caller's
-  client, whose INSERT policies require `users_update` and `people_create`. Before the reuse
+  Create on Accounts, but a first-time add inserts `employee` and `employeeJob` under the caller's
+  client, whose INSERT policies require Edit on Accounts and Create on Employees. Before the reuse
   transaction, `createEmployeeAccount` reads the inviter's claims (`getUserClaims`) and refuses
-  unless both are held — otherwise a `users_create`-only admin could re-add someone they could
+  unless both are held — otherwise an admin with Create on Accounts alone could re-add someone they could
   never have added. The writes stamp the inviter in `updatedBy` (`employeeJob`, `invite`) because
   the Kysely connection has no `auth.uid()` for the audit log; `employee` has no audit columns.
 - **A re-used invite row restarts `createdAt`** (`insertInvite` and the reuse path both set it). The

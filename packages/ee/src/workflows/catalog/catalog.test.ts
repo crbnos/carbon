@@ -115,7 +115,7 @@ describe("createWorkflowCatalog — WorkflowCatalog conformance", () => {
     expect(action.inputs.purchaseOrder?.required).toBe(true);
     expect(action.inputs.orderDate?.required).toBe(false);
     expect(action.permission).toEqual({
-      module: "purchasing",
+      page: "purchasing.purchaseOrders",
       action: "update"
     });
   });
@@ -140,7 +140,7 @@ describe("createWorkflowCatalog — WorkflowCatalog conformance", () => {
     );
     expect(operation.entity).toBe("job");
     expect(operation.permission).toEqual({
-      module: "production",
+      page: "production.jobs",
       action: "view"
     });
   });
@@ -150,11 +150,18 @@ describe("createWorkflowCatalog — WorkflowCatalog conformance", () => {
     expect(catalog.getOperation("job.vibes")).toBeUndefined();
   });
 
-  it("carries the registry permission on every entity", () => {
+  it("gives every entity View on the page of its table", () => {
     expect(need(catalog.getEntity("job"), "job").permission).toEqual({
-      module: "production",
+      page: "production.jobs",
       action: "view"
     });
+    expect(need(catalog.getEntity("item"), "item").permission?.page).toEqual([
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ]);
   });
 });
 

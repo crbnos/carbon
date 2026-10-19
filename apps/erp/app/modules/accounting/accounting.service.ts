@@ -8274,7 +8274,7 @@ export type LeaseLiabilities = LeaseLiabilitySummary & {
  * lines of posted purchase invoices (posting date in the range). Schedule
  * lines, payments and events are read for the Operating and Finance assets
  * of leases past Draft only, every read paged. Reads the lease tables, whose
- * RLS is `purchasing_view` — a caller without purchasing view gets an empty
+ * RLS is View on Leases (Purchasing) — a caller without it gets an empty
  * report, so the report route requires it.
  */
 export async function getLeaseLiabilities(
@@ -11763,8 +11763,8 @@ export async function outOfServiceRefusal(
 
   // A unit on rent goes to maintenance through the agreement's Return (with
   // "Take out of service"), never around it. Read with the service role,
-  // scoped to the company and the asset: agreement lines need sales_view,
-  // which an accountant may not hold, and under RLS that reads as "not on
+  // scoped to the company and the asset: agreement lines need View on Rental
+  // Agreements, which an accountant may not hold, and under RLS that reads as "not on
   // rent". A failed read refuses rather than passes.
   const onRent = await getOnRentLineForAsset(system, fixedAssetId, companyId);
   if (onRent.error) {

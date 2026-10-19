@@ -10724,7 +10724,7 @@ export async function saveQuoteLineWithPrices(
  * `sales-rule-violation` notification. Both writes are best-effort: evidence
  * or notification failures are logged and must never break the submission
  * they describe. Callers pass the SERVICE-ROLE client — the acknowledgment
- * table's INSERT policy requires `sales_create`, but the documents these
+ * table's INSERT policy requires Create on Sales Rules, but the documents these
  * gates protect (invoices, shipments) are legitimately posted by users
  * without it.
  *
@@ -11684,8 +11684,8 @@ export async function deleteContractLineReleasingSalesOrderLine(
 }
 
 /** Where a Draft contract opens: its setup wizard, for anyone who can edit
- *  it (the wizard needs `update: sales`). Null for a confirmed contract, or
- *  for a viewer who cannot edit — they get the contract page. */
+ *  it (the wizard needs Edit on Service Contracts). Null for a confirmed
+ *  contract, or for a viewer who cannot edit — they get the contract page. */
 export async function draftContractSetupPath(
   client: SupabaseClient<Database>,
   args: { companyId: string; userId: string; id: string }
@@ -11701,15 +11701,22 @@ export async function draftContractSetupPath(
     getUserClaims(userId, companyId)
   ]);
   if (contract.data?.status !== "Draft") return null;
-  if (!hasPermission(claims?.permissions, "sales", "update", companyId)) {
+  if (
+    !hasPermission(
+      claims?.permissions,
+      { "sales.serviceContracts": "Edit" },
+      companyId
+    )
+  ) {
     return null;
   }
   return path.to.contractSetup(id, "products");
 }
 
 /** Where a Draft rental agreement opens: its setup wizard, for anyone who
- *  can edit it (the wizard needs `update: sales`). Null for an activated
- *  agreement, or for a viewer who cannot edit — they get the agreement page. */
+ *  can edit it (the wizard needs Edit on Rental Agreements). Null for an
+ *  activated agreement, or for a viewer who cannot edit — they get the
+ *  agreement page. */
 export async function draftRentalAgreementSetupPath(
   client: SupabaseClient<Database>,
   args: { companyId: string; userId: string; id: string }
@@ -11725,7 +11732,13 @@ export async function draftRentalAgreementSetupPath(
     getUserClaims(userId, companyId)
   ]);
   if (agreement.data?.status !== "Draft") return null;
-  if (!hasPermission(claims?.permissions, "sales", "update", companyId)) {
+  if (
+    !hasPermission(
+      claims?.permissions,
+      { "sales.rentalAgreements": "Edit" },
+      companyId
+    )
+  ) {
     return null;
   }
   return path.to.rentalAgreementSetup(id, "units");
@@ -12090,8 +12103,8 @@ export function parseConfiguration(
 export async function unlockedQuote(ctx: ServiceContext, quoteId: string) {
   const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
   if (refused) return refused;
-  // The caller may hold the write permission without sales_view, which RLS
-  // needs to read the quote; an unread status would pass as unlocked.
+  // The caller may hold the write permission without View on Quotes, which
+  // RLS needs to read the quote; an unread status would pass as unlocked.
   const quote = await getQuote(ctx.asSystem.supabase, quoteId);
   if (quote.error || !quote.data) {
     return ctx.error("internal", "Failed to load quote", quote.error);

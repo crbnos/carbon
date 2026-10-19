@@ -52,9 +52,6 @@ export interface RegistryEntry {
   label: string;
   /** Glossary term for the entity itself. Reused for every field that IS this record. */
   help?: TermId;
-  /** Lowercase permission module of a lookup and the generated update action;
-   * an event checks the page of `table` instead. */
-  permission: string;
   /** Overrides the derived "A"/"An" where the vowel test gets it wrong. */
   article?: "A" | "An";
   /** Present => triggerable; absent => reference-only, no events generated. */
@@ -142,6 +139,8 @@ export interface BuiltCatalog {
   /** Glossary term id per input key, for the builder's ⓘ hover. Same key shape as `labels`. */
   help: Record<string, string>;
   entities: Record<string, Record<string, ValueType>>;
+  /** The page of each entity's table: a lookup, an operation and the update action check it. */
+  entityPages: Record<string, EventPermission>;
   /** Allowed values per entity + property, only for enum columns. */
   enums: Record<string, Record<string, readonly string[]>>;
   actions: Record<string, BuiltAction>;
@@ -534,6 +533,7 @@ export function buildCatalog(
   const labels: Record<string, string> = {};
   const help: Record<string, string> = {};
   const entities: Record<string, Record<string, ValueType>> = {};
+  const entityPages: Record<string, EventPermission> = {};
   const enums: Record<string, Record<string, readonly string[]>> = {};
   const actions: Record<string, BuiltAction> = {};
   const operations: Record<string, BuiltOperation> = {};
@@ -543,6 +543,7 @@ export function buildCatalog(
     if (definition === undefined) continue;
 
     entities[name] = entityProperties(entry, definition, byTable);
+    entityPages[name] = pagesOf(entry.table);
 
     // Collect enum values for any column that declares them.
     const entityEnumMap: Record<string, readonly string[]> = {};
@@ -601,7 +602,7 @@ export function buildCatalog(
         inputs,
         outputs: { record: t.entity(name) },
         batchable: true,
-        permission: { module: entry.permission, action: "update" },
+        permission: { page: pagesOf(entry.table), action: "update" },
         update: { entity: name }
       };
       labels[id] =
@@ -719,7 +720,10 @@ export function buildCatalog(
       entity: declaration.entity,
       inputs,
       output: declaration.output,
-      permission: declaration.permission
+      permission: {
+        page: pagesOf(registry[declaration.entity]?.table ?? ""),
+        action: "view"
+      }
     };
     labels[id] = declaration.label;
     for (const [input, spec] of Object.entries(declaration.inputs)) {
@@ -738,5 +742,14 @@ export function buildCatalog(
     }
   }
 
-  return { events, labels, help, entities, enums, actions, operations };
+  return {
+    events,
+    labels,
+    help,
+    entities,
+    entityPages,
+    enums,
+    actions,
+    operations
+  };
 }

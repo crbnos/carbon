@@ -21,6 +21,7 @@ import { buildCatalog, validateCatalogInputs } from "../packages/ee/src/workflow
 import { WORKFLOW_ENTITY_REGISTRY } from "../packages/ee/src/workflows/catalog/entities";
 import {
   WORKFLOW_ENTITIES,
+  WORKFLOW_ENTITY_PAGES,
   WORKFLOW_EVENTS
 } from "../packages/ee/src/workflows/catalog/events.generated";
 // Direct import, unlike labels: this file has no `msg` macro, so plain Node can read it.
@@ -218,6 +219,12 @@ if (failures.length === 0) {
   }
 
   try {
+    assert.deepStrictEqual(WORKFLOW_ENTITY_PAGES, rebuilt.entityPages);
+  } catch {
+    fail(`${stale} The page of an entity's table changed.`);
+  }
+
+  try {
     assert.deepStrictEqual(WORKFLOW_ACTION_CATALOG, rebuilt.actions);
   } catch {
     const committed = new Set(Object.keys(WORKFLOW_ACTION_CATALOG));
@@ -234,7 +241,7 @@ if (failures.length === 0) {
   try {
     assert.deepStrictEqual(WORKFLOW_OPERATION_CATALOG, rebuilt.operations);
   } catch {
-    fail(`${stale} An operation's entity, inputs or output changed.`);
+    fail(`${stale} An operation's entity, inputs, output or permission changed.`);
   }
 
   try {

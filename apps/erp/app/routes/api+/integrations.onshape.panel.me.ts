@@ -33,8 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : null,
     canEditFields: hasPermission(
       claims?.permissions,
-      "settings",
-      "update",
+      { "settings.integrations": "Edit" },
       companyId
     )
   };

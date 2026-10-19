@@ -5871,7 +5871,13 @@ export async function draftLeaseSetupPath(
     getUserClaims(userId, companyId)
   ]);
   if (lease.data?.status !== "Draft") return null;
-  if (!hasPermission(claims?.permissions, "purchasing", "update", companyId)) {
+  if (
+    !hasPermission(
+      claims?.permissions,
+      { "purchasing.leases": "Edit" },
+      companyId
+    )
+  ) {
     return null;
   }
   return path.to.leaseSetup(id, "assets");

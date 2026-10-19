@@ -142,7 +142,7 @@ describe("lookupExecutor", () => {
 
   it("reports the target entity's permission", () => {
     expect(lookupExecutor.permission(node(), catalog)).toEqual({
-      module: "purchasing",
+      page: "purchasing.purchaseOrders",
       action: "view"
     });
   });

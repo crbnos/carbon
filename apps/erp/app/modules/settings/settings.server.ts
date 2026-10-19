@@ -854,7 +854,7 @@ export const updatePlanningSettings = defineServiceFn({
         );
       }
       // No row back: the location is not this company's, or the caller lacks
-      // resources_update and row-level security matched nothing.
+      // Edit on Locations and row-level security matched nothing.
       if ((result.data?.length ?? 0) === 0) {
         return ctx.error(
           "forbidden",

@@ -12,15 +12,14 @@ export type EventMatch =
 
 export type PermissionAction = "view" | "create" | "update" | "delete";
 
-/** What the owner must hold for a node to run. */
+/** A page, or the pages of which any one is enough (an item: one page per item type). */
+export type EventPermission = PageId | readonly PageId[];
+
+/** What the owner must hold for a node to run: the action on the page of what it acts on. */
 export interface RequiredPermission {
-  /** Lowercase permission module, e.g. "purchasing". */
-  module: string;
+  page: EventPermission;
   action: PermissionAction;
 }
-
-/** The page an event's owner must hold View on, or the pages of which any one is enough. */
-export type EventPermission = PageId | readonly PageId[];
 
 export interface CatalogEvent {
   id: string;
@@ -154,28 +153,28 @@ const FIXTURE_ENTITIES: CatalogEntity[] = [
       status: t.string,
       assignee: t.entity("user")
     },
-    permission: { module: "purchasing", action: "view" },
+    permission: { page: "purchasing.purchaseOrders", action: "view" },
     display: ["purchaseOrderId"]
   },
   {
     name: "user",
     properties: { email: t.string, manager: t.entity("user") },
-    permission: { module: "users", action: "view" }
+    permission: { page: "users.accounts", action: "view" }
   },
   {
     name: "part",
     properties: { name: t.string, unitPrice: t.number },
-    permission: { module: "parts", action: "view" }
+    permission: { page: "parts.parts", action: "view" }
   },
   {
     name: "job",
     properties: { name: t.string, dueDate: t.date },
-    permission: { module: "production", action: "view" }
+    permission: { page: "production.jobs", action: "view" }
   },
   {
     name: "issue",
     properties: { title: t.string },
-    permission: { module: "quality", action: "view" }
+    permission: { page: "quality.issues", action: "view" }
   }
 ];
 
@@ -188,7 +187,7 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     },
     outputs: {},
     batchable: true,
-    permission: { module: "users", action: "view" }
+    permission: { page: "users.accounts", action: "view" }
   },
   {
     id: "updatePart",
@@ -198,7 +197,7 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     },
     outputs: { part: t.entity("part") },
     batchable: true,
-    permission: { module: "parts", action: "update" }
+    permission: { page: "parts.parts", action: "update" }
   },
   {
     // Two entity inputs, so a list can be wired to each — the shape that makes
@@ -210,14 +209,14 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     },
     outputs: { part: t.entity("part") },
     batchable: true,
-    permission: { module: "parts", action: "update" }
+    permission: { page: "parts.parts", action: "update" }
   },
   {
     id: "createIssue",
     inputs: { title: { type: t.string, required: true } },
     outputs: { issue: t.entity("issue") },
     batchable: false,
-    permission: { module: "quality", action: "create" }
+    permission: { page: "quality.issues", action: "create" }
   },
   {
     id: "alertSomeone",
@@ -237,7 +236,7 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     },
     outputs: {},
     batchable: false,
-    permission: { module: "users", action: "view" },
+    permission: { page: "users.accounts", action: "view" },
     requireOneOf: [["user", "role"]]
   },
   {
@@ -260,7 +259,7 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
     },
     outputs: { status: t.number },
     batchable: true,
-    permission: { module: "workflows", action: "update" }
+    permission: { page: "workflows.workflows", action: "update" }
   }
 ];
 
@@ -270,7 +269,7 @@ const FIXTURE_OPERATIONS: CatalogOperation[] = [
     entity: "job",
     inputs: { job: { type: t.entity("job"), required: true } },
     output: t.number,
-    permission: { module: "production", action: "view" }
+    permission: { page: "production.jobs", action: "view" }
   }
 ];
 

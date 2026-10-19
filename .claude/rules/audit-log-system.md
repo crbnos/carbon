@@ -50,7 +50,7 @@ forked to attach the trigger to every new (and pre-existing) table via the idemp
 ## Access (migration `20260924171942_audit-log-company-scope.sql`)
 
 Each `auditLog_{companyId}` table has ONE policy, `"SELECT"`, true only for callers holding
-`settings_view` in that company. INSERT/UPDATE/DELETE/TRUNCATE are revoked from `anon`/`authenticated`.
+View on Audit Logs (`settings.auditLogs_view`) in that company. INSERT/UPDATE/DELETE/TRUNCATE are revoked from `anon`/`authenticated`.
 `secure_audit_log_table(companyId)` applies both, and `create_audit_log_table` calls it on every table it
 creates or touches, because the default privileges on `public` re-grant ALL to the API roles on each new
 table. (Before this, the policy was `audit_log_access` FOR ALL USING (true), and any holder of the anon
@@ -61,15 +61,18 @@ The RPCs are all SECURITY DEFINER, so each one begins with
 
 | Permission | Functions |
 |---|---|
-| `settings_view` | `get_entity_audit_log`, `get_audit_log`, `get_audit_log_count` |
-| `settings_update` | `create_audit_log_table` |
+| `settings.auditLogs_view` | `get_entity_audit_log`, `get_audit_log`, `get_audit_log_count` |
+| `settings.auditLogs_update` | `create_audit_log_table` |
 | `NULL` (service role only) | `insert_audit_log_batch`, `get_audit_logs_for_archive`, `delete_old_audit_logs`, `drop_audit_log_table` |
 
 The guard only applies when `current_setting('role')` is `anon` or `authenticated`, so the service role
 and direct Postgres connections pass. **Never swap it for `REVOKE EXECUTE`**: on supabase/postgres
 15.14.1.112, calling any function the caller lacks EXECUTE on, as `anon`/`authenticated`, segfaults the
 backend (see `.ai/lessons.md`). The controlled-environment auto-enable in the `settings+/audit-logs.tsx`
-loader therefore runs as the service role, because that loader only requires `settings_view`.
+loader therefore runs as the service role, because that loader only requires View on Audit Logs.
+`20261019053223_module-keys-to-pages.sql` rewrote every existing table's policy from the module
+key to the page key; `create_audit_log_table` re-secures a table whose policy does not name
+`settings.auditLogs_view`.
 
 ## On-by-default in controlled environments (3.3.1)
 

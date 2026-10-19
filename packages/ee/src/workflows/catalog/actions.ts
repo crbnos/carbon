@@ -48,7 +48,7 @@ const action = (entry: ActionDeclarationLike) => entry;
 export const WORKFLOW_ACTIONS = {
   "job.create": action({
     label: "Create a job",
-    permission: { module: "production", action: "create" },
+    permission: { page: "production.jobs", action: "create" },
     inputs: {
       itemId: {
         type: t.entity("item"),
@@ -76,7 +76,7 @@ export const WORKFLOW_ACTIONS = {
   }),
   "nonConformance.create": action({
     label: "Create an issue",
-    permission: { module: "quality", action: "create" },
+    permission: { page: "quality.issues", action: "create" },
     // `locationId`, `nonConformanceTypeId` and `source` are NOT NULL on the table with no
     // default, so they are required here however optional they look on the issue form.
     inputs: {
@@ -104,7 +104,7 @@ export const WORKFLOW_ACTIONS = {
   }),
   "purchaseOrder.create": action({
     label: "Create a purchase order",
-    permission: { module: "purchasing", action: "create" },
+    permission: { page: "purchasing.purchaseOrders", action: "create" },
     inputs: {
       supplierId: {
         type: t.entity("supplier"),
@@ -125,7 +125,7 @@ export const WORKFLOW_ACTIONS = {
   }),
   "salesOrder.create": action({
     label: "Create a sales order",
-    permission: { module: "sales", action: "create" },
+    permission: { page: "sales.salesOrders", action: "create" },
     inputs: {
       customerId: {
         type: t.entity("customer"),
@@ -146,7 +146,8 @@ export const WORKFLOW_ACTIONS = {
   }),
   notify: action({
     label: "Notify someone",
-    permission: { module: "users", action: "view" },
+    // The person or the group it notifies.
+    permission: { page: ["users.accounts", "users.groups"], action: "view" },
     inputs: {
       user: { type: t.entity("user"), required: false, label: "person" },
       // The stored key stays `role`; renaming it would need a v4 format migration for a
@@ -199,7 +200,7 @@ export const WORKFLOW_ACTIONS = {
   }),
   webhook: action({
     label: "Call an outside URL",
-    permission: { module: "workflows", action: "update" },
+    permission: { page: "workflows.workflows", action: "update" },
     inputs: {
       url: {
         type: t.string,

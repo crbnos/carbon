@@ -76,11 +76,13 @@ const DB_ROW = {
   ]
 };
 
+// A module grant reaches every page of the module, and no module key.
 const ROW = {
   ...KEY_ROW,
   permissions: expect.objectContaining({
-    sales: { view: ["c1"], create: [], update: [], delete: [] },
-    parts: { view: [], create: [], update: [], delete: [] }
+    "sales.quotes": { view: ["c1"], create: [], update: [], delete: [] },
+    "sales.customers": { view: ["c1"], create: [], update: [], delete: [] },
+    "parts.parts": { view: [], create: [], update: [], delete: [] }
   })
 } as unknown as ApiKeyRecord;
 

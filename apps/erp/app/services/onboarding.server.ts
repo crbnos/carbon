@@ -221,7 +221,7 @@ export async function provisionOnboardingCompany(
     // writes below run with the service role: they overwrite the company
     // profile and, for a template, wipe its business data. So the caller must
     // hold the authority that editing company settings needs — an employee
-    // with settings_update — or any portal user / regular employee could
+    // with Edit on Settings → Company — or any portal user / regular employee could
     // rewrite the company by POSTing this step.
     await assertCanUpdateCompany(serviceRole, userId, company.id!);
 

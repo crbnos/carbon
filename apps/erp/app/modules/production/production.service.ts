@@ -10457,9 +10457,9 @@ export async function generateAssemblyStepsFromPlan(
   //
   // This is a SYSTEM/derived-data write (reflecting the plan), not a user
   // creating a unit — so the generate route passes a bypassRls (service-role)
-  // `client`. The assemblyUnit INSERT/DELETE RLS policies require
-  // `production_create`/`production_delete`, but generate only authorizes
-  // `production_update`; through a plain RLS client the write silently no-ops
+  // `client`. The assemblyUnit INSERT/DELETE RLS policies require Create and
+  // Full on Assemblies, but generate only authorizes Edit there; through a
+  // plain RLS client the write silently no-ops
   // (steps get built, units never do). Scoped to companyId, so it's tenant-safe.
   const detectedUnits = Object.entries(plan.groups ?? {})
     .filter(([groupId]) => groupId.startsWith("swarm:"))
@@ -12223,8 +12223,8 @@ export async function startAssemblyPlan(
   modelUploadId: string,
   options: { reMotionFor?: string; reDetectUnits?: boolean } = {}
 ) {
-  // The service role: the INSERT needs production_create, and the operations
-  // that start a plan require only update. Every caller read the model under
+  // The service role: the INSERT needs Create on Assemblies, and the
+  // operations that start a plan require only Edit. Every caller read the model under
   // the company, and the row is written to it.
   const created = await createAssemblyPlanJob(ctx.asSystem.supabase, {
     modelUploadId,

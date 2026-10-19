@@ -57,7 +57,7 @@ export type BuilderState = {
   saveState: SaveState;
   /** This version is the promoted one. Behaviour edits are refused; positions are not. */
   isVersionLocked: boolean;
-  /** The viewer holds workflows_update. */
+  /** The viewer holds Edit on Workflows. */
   canEdit: boolean;
   /** Config, nodes, edges and expand state — everything that changes what it does. */
   canChangeDefinition: boolean;

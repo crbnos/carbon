@@ -38,7 +38,7 @@ pnpm run check:workflow-catalog
 entity's `write` map into one `<entity>.update` action: an input keyed by the
 entity name (the record, `required: true`), plus one optional input per writable
 column typed from the swagger schema. It sets `update: { entity }` and
-`permission: { module: entry.permission, action: "update" }`, and labels it
+`permission: { page: <the page of the entity's table>, action: "update" }`, and labels it
 `Update a/an <entity>`. A hand-written id that collides with a generated one is a
 **build error**, not a silent overwrite.
 

@@ -123,25 +123,6 @@ export type ExpandedPermission = Record<Action, string[]>;
 /** `{ [pageId]: { view, create, update, delete } }`, each a list of company ids. */
 export type ExpandedClaims = Record<string, ExpandedPermission>;
 
-/** The module keys that checks name until they move to page keys. */
-const MODULE_KEYS = [
-  "accounting",
-  "documents",
-  "inventory",
-  "invoicing",
-  "parts",
-  "people",
-  "printing",
-  "production",
-  "purchasing",
-  "quality",
-  "resources",
-  "sales",
-  "settings",
-  "users",
-  "workflows"
-] as const;
-
 const empty = (): ExpandedPermission => ({
   view: [],
   create: [],
@@ -166,17 +147,6 @@ export function expandClaims(
       if (levelHolds(level, action)) permission[action].push(companyId);
     }
     out[page.id] = permission;
-  }
-  // ponytail: module keys resolve from module grants until every check names
-  // a page (plan Task 24 deletes this loop with MODULE_KEYS).
-  for (const module of MODULE_KEYS) {
-    if (out[module]) continue;
-    const level = resolveLevel(raw.grants, module, { admin: raw.admin });
-    const permission = empty();
-    for (const action of ACTIONS) {
-      if (levelHolds(level, action)) permission[action].push(companyId);
-    }
-    out[module] = permission;
   }
   for (const [key, companies] of Object.entries(raw.portal)) {
     const match = key.match(/^(.+)_(view|create|update|delete)$/);

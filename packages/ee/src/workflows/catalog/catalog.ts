@@ -22,6 +22,7 @@ import { REGISTRY_ENTRIES } from "./entities";
 import {
   WORKFLOW_ENTITIES,
   WORKFLOW_ENTITY_ENUMS,
+  WORKFLOW_ENTITY_PAGES,
   WORKFLOW_EVENTS
 } from "./events.generated";
 
@@ -34,8 +35,8 @@ const ENTITIES: Map<string, CatalogEntity> = new Map(
   Object.entries(WORKFLOW_ENTITIES).map(([name, properties]) => {
     const entry = REGISTRY_ENTRIES[name];
     const base: CatalogEntity = { name, properties };
-    if (entry?.permission !== undefined)
-      base.permission = { module: entry.permission, action: "view" };
+    const page = WORKFLOW_ENTITY_PAGES[name];
+    if (page !== undefined) base.permission = { page, action: "view" };
     if (entry?.describe !== undefined) base.descriptions = entry.describe;
     if (entry?.display !== undefined) base.display = entry.display;
     return [name, base];

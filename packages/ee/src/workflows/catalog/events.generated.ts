@@ -1,5 +1,6 @@
 // GENERATED FILE — do not edit. Run `pnpm run generate:workflow-catalog`.
 
+import type { EventPermission } from "../definition/catalog";
 import type { ValueType } from "../definition/types";
 import type { BuiltEvent } from "./build";
 
@@ -1386,6 +1387,32 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     isConsoleOperator: { kind: "primitive", of: "boolean" },
     phone: { kind: "primitive", of: "string" }
   }
+};
+
+export const WORKFLOW_ENTITY_PAGES: Record<string, EventPermission> = {
+  customer: "sales.customers",
+  group: "users.groups",
+  item: [
+    "parts.parts",
+    "parts.materials",
+    "parts.tools",
+    "parts.consumables",
+    "parts.services"
+  ],
+  job: "production.jobs",
+  jobOperation: "production.jobs",
+  location: "resources.locations",
+  nonConformance: "quality.issues",
+  nonConformanceType: "quality.issueTypes",
+  purchaseInvoice: "invoicing.purchaseInvoices",
+  purchaseOrder: "purchasing.purchaseOrders",
+  quote: "sales.quotes",
+  receipt: "inventory.receipts",
+  salesInvoice: "invoicing.salesInvoices",
+  salesOrder: "sales.salesOrders",
+  shipment: "inventory.shipments",
+  supplier: "purchasing.suppliers",
+  user: "users.accounts"
 };
 
 export const WORKFLOW_ENTITY_ENUMS: Record<

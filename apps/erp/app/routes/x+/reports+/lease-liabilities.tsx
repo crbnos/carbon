@@ -66,7 +66,7 @@ function parseDateParam(raw: string | null): string | null {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  // The lease tables' RLS is purchasing_view: without it every lease reads
+  // The lease tables' RLS is View on Leases (Purchasing): without it every lease reads
   // as absent and the report would show no liability at all.
   const { client, companyId, api } = await authorize(
     request,

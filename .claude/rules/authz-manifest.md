@@ -90,7 +90,10 @@ page that owns the table in the access registry (`placeOf`, `@carbon/database/ac
 
 `util.access_level` resolves a page key: a page grant wins, else the module grant
 (the text before the first dot), so a module grant covers every page. `registry.test.ts`
-fails when a policy checks a key that is not a page id.
+fails when a policy checks a key that is not a page id. A managed function file or a hand-written
+migration names page keys too: `no-module-permission-key` (`@carbon/checks`) fails a
+`<module>_<action>` token there (migrations after `20261019053223`); portal keys
+(`get_customer_ids_with_customer_permission('parts_view')`) are exempt.
 
 ## Shipping a change
 

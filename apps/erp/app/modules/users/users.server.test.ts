@@ -272,10 +272,10 @@ beforeEach(() => {
   // The inviter may do everything a first-time add needs.
   mocks.getUserClaims.mockResolvedValue({
     role: "employee",
-    permissions: {
+    permissions: pageClaims({
       users: { view: [], create: [COMPANY], update: [COMPANY], delete: [] },
       people: { view: [], create: [COMPANY], update: [], delete: [] }
-    }
+    })
   });
 });
 
@@ -410,14 +410,14 @@ describe("createEmployeeAccount — re-add guards", () => {
   });
 
   it("refuses an inviter who could not add the person the first time", async () => {
-    // users_create only: a first-time add's RLS inserts need users_update and
-    // people_create, so the RLS-bypassing re-add must not succeed either.
+    // Accounts Create only: a first-time add's RLS inserts need Accounts Edit
+    // and Employees Create, so the RLS-bypassing re-add must not succeed either.
     mocks.getUserClaims.mockResolvedValue({
       role: "employee",
-      permissions: {
+      permissions: pageClaims({
         users: { view: [], create: [COMPANY], update: [], delete: [] },
         people: { view: [], create: [COMPANY], update: [], delete: [] }
-      }
+      })
     });
     const { db, transactions } = makeDb(answer(deactivated));
     const { client, writes } = makeClient(deactivated);
@@ -427,7 +427,7 @@ describe("createEmployeeAccount — re-add guards", () => {
     expect(result).toEqual({
       success: false,
       message:
-        "Re-adding a deactivated employee requires the Users update and People create permissions"
+        "Re-adding a deactivated employee requires Edit on Accounts and Create on Employees"
     });
     expect(mocks.getUserClaims).toHaveBeenCalledWith(
       ACCOUNT.createdBy,

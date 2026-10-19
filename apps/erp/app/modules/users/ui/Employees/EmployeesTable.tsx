@@ -386,10 +386,10 @@ const EmployeesTable = memo(
                   <Trans>Edit Permissions</Trans>
                 </MenuItem>
                 {/* Resetting a PIN hands over that person's console identity:
-                    console operators need users_update, anyone else also
-                    settings_update (enforced again by the route). */}
+                    console operators need Edit on Operators, anyone else also
+                    Edit on Settings → People (enforced again by the route). */}
                 {settings.consoleEnabled &&
-                  permissions.has({ "users.accounts": "Edit" }) &&
+                  permissions.has({ "users.operators": "Edit" }) &&
                   (permissions.has({ "settings.people": "Edit" }) ||
                     row.email?.endsWith("@console.internal")) && (
                     <MenuItem

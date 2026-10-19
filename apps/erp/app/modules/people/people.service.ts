@@ -609,8 +609,8 @@ export async function updateEmployeeJob(
 ) {
   // One Kysely transaction: the employeeJob update and the employeeShift
   // sync commit or roll back together. Kysely also bypasses RLS, so the
-  // sync no longer silently no-ops for users without people_create/
-  // people_delete — `updatePersonJob`'s people update gate is the auth gate.
+  // sync no longer silently no-ops for users without Create or Full on
+  // Employees — `updatePersonJob`'s Employees Edit gate is the auth gate.
   try {
     // sanitize() turns any absent field into null, and locationId is NOT NULL,
     // so a caller that omits it (the API/MCP tool leaves it optional) would

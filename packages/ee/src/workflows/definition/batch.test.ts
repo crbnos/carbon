@@ -19,7 +19,7 @@ const action = (overrides: Partial<CatalogAction> = {}): CatalogAction => ({
   },
   outputs: {},
   batchable: true,
-  permission: { module: "parts", action: "update" },
+  permission: { page: "parts.parts", action: "update" },
   ...overrides
 });
 

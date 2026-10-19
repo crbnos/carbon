@@ -1220,8 +1220,8 @@ export async function setLocationResponsibleEmployee(
     userId: string;
   }
 ) {
-  // `location` is a resources table: without resources_update, row-level
-  // security matches no row and the update succeeds having changed nothing.
+  // `location` belongs to Resources → Locations: without Edit there,
+  // row-level security matches no row and the update succeeds having changed nothing.
   // Returning the row lets the caller tell the two apart.
   return client
     .from("location")
@@ -2032,9 +2032,8 @@ const INTEGRATION_CACHE_TTL = 3600;
  * callers that delete the row should bust AGAIN after the delete commits, using
  * the returned keyHash (unreadable from the DB once the row is gone).
  *
- * Service-role on purpose: apiKey's RLS SELECT requires `settings_view`, but the
- * routes that revoke or rescope a key gate on `users_update`, so the caller's own
- * client cannot see the row and the bust would silently do nothing.
+ * Service-role on purpose: the bust must read the row whoever calls it, so it
+ * never silently does nothing.
  */
 export async function invalidateApiKeyCache(
   id: string,
@@ -7275,7 +7274,7 @@ export async function pushOnshapeRelease(
   }
   // An item the notice could not take is removed: left in place it is outside
   // change control, and a re-push would reuse it instead of staging it. The
-  // service role removes it because the pusher may lack parts_delete.
+  // service role removes it because the pusher may lack Full on its page.
   const stageInNotice = async (
     label: string,
     itemId: string,

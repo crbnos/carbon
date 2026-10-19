@@ -80,7 +80,7 @@ type UserAnswer = {
 };
 
 // The training-completion page is opened by the assigned employee themselves.
-// A normal employee lacks the `people_view` permission that RLS on
+// A normal employee lacks View on Assignments (Resources), which RLS on
 // `trainingAssignment` requires, so a user-scoped read 404s for exactly the
 // people the assignment (and its reminder notification) targets. Read with the
 // service role instead, and authorize by confirming the signed-in user is a

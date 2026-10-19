@@ -38,7 +38,7 @@ packages/jobs/src/workflows/actions/  the WorkflowServices implementation
 ```
 
 A node kind runs only if `EXECUTORS` in `runtime/executors.ts` has an entry for
-it, and `execute.ts` takes the permission module and the work from that **same**
+it, and `execute.ts` takes the permission and the work from that **same**
 entry. Two lookups could drift, and the one that drifts silently is the
 permission check — so a new kind is one registry line, never an extended
 `node.type` chain.
@@ -66,12 +66,13 @@ A workflow must never be able to do something its owner could not do by hand.
 - `workflowRunId` is **not optional**. `dispatch_event_batch()` reads that claim
   to tag the write. An untagged write looks like a person's, so the origin filter
   and both loop guards go blind. See `workflow-matcher.md`.
-- The declared permission is checked **explicitly** as well as by RLS — the
-  trigger event's module at run start, and each node's `{module, action}` before
-  it executes. RLS alone returns zero rows, which reads as "no data"; a customer
-  needs `"The owner of this workflow no longer has access to Purchasing."` The
-  action is part of the gate: an owner who may view Purchasing but not update it
-  fails at the update node, not at the trigger.
+- The declared permission is checked **explicitly** as well as by RLS — View on
+  the trigger event's page at run start, and each node's `{ page, action }` before
+  it executes (a list of pages passes on any one). RLS alone returns zero rows,
+  which reads as "no data"; a customer needs `"The owner of this workflow no
+  longer has access to Purchase Orders."` The action is part of the gate: an
+  owner who may view Purchase Orders but not edit them fails at the update node,
+  not at the trigger.
 - **The only privileged access is the two run-log tables.** `getJobDatabaseClient`
   appears in `execute.ts` for `claimStep`/`settleStep`/`loadRunContext`/`claimRun`/
   `finishRun` and nowhere else. RLS on those tables is SELECT-only by design. A

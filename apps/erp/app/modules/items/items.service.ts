@@ -5159,7 +5159,8 @@ async function materialIdIsTaken(
 }
 
 // Kysely bypasses RLS, so the caller's client must be able to update the
-// material row first. Its policy (parts_update) also covers item and itemCost.
+// material row first. Its policy (Materials Edit) also covers the material's
+// item and itemCost rows.
 async function requireMaterialUpdatable(
   client: SupabaseClient<Database>,
   args: { readableId: string; companyId: string; updatedBy: string }
@@ -10019,8 +10020,8 @@ function normalizeSupersessionMode(
 // Release IS the Implementation -> Done transition, so every other status means
 // the item is still a draft.
 //
-// Pass a service-role client: reading `changeOrder` requires `parts_view`, which
-// the caller need not have.
+// Pass a service-role client: reading `changeOrder` requires View on Change
+// Notices, which the caller need not have.
 // -----------------------------------------------------------------------------
 const RELEASED_CHANGE_ORDER_STATUS = "Done";
 

@@ -60,10 +60,14 @@ Specs: `.ai/specs/2026-07-30-workflows-foundation.md` (schema, validator, runtim
 - Add an entity, a moment, an action or an operation by editing **one hand-written file** in
   `src/catalog/` — `entities.ts`, `moments.ts`, `actions.ts`, `operations.ts` — then run
   `pnpm run generate:workflow-catalog`. Nothing else in `src/catalog/` is authored by hand.
-- Declare a `permission: { module, action }` on every action and operation. It is **required** on
-  `CatalogAction` and `CatalogOperation` (optional on `CatalogEntity`), and it is what the engine
-  checks before the node runs — `NodeExecutor.permission` returns it, so the gate and the work come
-  from the same catalog entry and cannot drift.
+- Declare a `permission: { page, action }` on every hand-written action: the page of the record
+  it creates or acts on (`{ page: "production.jobs", action: "create" }`), never a module. The
+  generator gives each `<entity>.update` action, each operation and each entity lookup the page
+  of the entity's table through the access registry (`tablePages`; an `item` lists its five pages,
+  any one passes). The permission is **required** on `CatalogAction` and `CatalogOperation`
+  (optional on `CatalogEntity`), and it is what the engine checks before the node runs —
+  `NodeExecutor.permission` returns it, so the gate and the work come from the same catalog entry
+  and cannot drift.
 - Reach the world from `src/runtime/` only through `ctx.services` — the `WorkflowServices` port
   (`runAction` / `runOperation` / `search`) declared in `src/runtime/types.ts` and **required** on
   `RuntimeContext`, so a missing implementation is a compile error rather than a run-time surprise.

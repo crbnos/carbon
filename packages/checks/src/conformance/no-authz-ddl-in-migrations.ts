@@ -80,8 +80,8 @@ const FUNCTION_DDL = new RegExp(
   "gi"
 );
 
-/** Blank out comments, keeping newlines so line numbers stay right. */
-const stripComments = (sql: string) =>
+/** Blank out SQL comments, keeping newlines so line numbers stay right. */
+export const stripComments = (sql: string) =>
   sql
     .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
     .replace(/--[^\n]*/g, (m) => " ".repeat(m.length));

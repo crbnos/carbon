@@ -32,9 +32,10 @@ BEGIN
   INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
     (company_a, user_a, 'Sales', 'Create', 'system'),
     (company_a, user_a, 'Inventory', 'View', 'system'),
-    (company_a, user_a, 'Users', 'View', 'system'),
-    -- user_c edits users: the permission editor's level.
-    (company_a, user_c, 'Users', 'Edit', 'system');
+    (company_a, user_a, 'Users', 'View', 'system');
+  -- user_c edits Accounts only: the permission editor's level, as a page grant.
+  INSERT INTO permission ("companyId", "userId", module, page, level, "createdBy") VALUES
+    (company_a, user_c, 'Users', 'users.accounts', 'Edit', 'system');
   INSERT INTO "group" (id, name, "companyId") VALUES (group_b, 'RPC privileges B', company_b);
   INSERT INTO "membership" ("groupId", "memberUserId") VALUES (group_b, user_b);
   INSERT INTO "apiKey" (name, "companyId", "createdBy", "keyHash")
@@ -195,13 +196,13 @@ END;
 $$;
 RESET ROLE;
 
--- The permission editor reads a colleague's claims holding users_update alone.
+-- The permission editor reads a colleague's claims holding Accounts Edit alone.
 SELECT set_config('request.jwt.claims', jsonb_build_object('sub', current_setting('test.user_c'), 'role', 'authenticated')::text, true);
 SET LOCAL ROLE authenticated;
 DO $$
 BEGIN
   IF get_claims(current_setting('test.user_a'), current_setting('test.company_a'))->>'role' IS DISTINCT FROM 'employee' THEN
-    RAISE EXCEPTION 'FAIL: a users_update holder cannot read a colleague''s claims';
+    RAISE EXCEPTION 'FAIL: an Accounts Edit holder cannot read a colleague''s claims';
   END IF;
 END;
 $$;

@@ -152,18 +152,19 @@ beforeEach(() => {
 });
 
 describe("the owner's permissions", () => {
-  it("fails the action step by name when the owner has lost the module", async () => {
+  it("fails the action step by name when the owner has lost the page", async () => {
     const { step } = harness();
     // The trigger's own view check still passes; only the action's update is gone.
     vi.mocked(hasPermission).mockImplementation(
-      (_permissions, _module, action) => action !== "update"
+      (_permissions, _page, action) => action !== "update"
     );
 
     const result = await executeWorkflowRun({ payload, step, logger });
 
     expect(vi.mocked(settleStep).mock.calls.at(-1)?.[1]).toMatchObject({
       status: "Failed",
-      error: "The owner of this workflow no longer has access to Purchasing."
+      error:
+        "The owner of this workflow no longer has access to Purchase Orders."
     });
     expect(runAction).not.toHaveBeenCalled();
     expect(result.status).toBe("Failed");

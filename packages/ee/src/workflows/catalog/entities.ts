@@ -35,7 +35,6 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     label: "Purchase order",
     display: ["purchaseOrderId"],
     help: "purchase-order",
-    permission: "purchasing",
     watch: {
       status: { label: "status" },
       supplierId: { label: "supplier", ref: "supplier" },
@@ -71,7 +70,6 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     label: "Sales order",
     display: ["salesOrderId"],
     help: "sales-order",
-    permission: "sales",
     watch: {
       status: { label: "status" },
       customerId: { label: "customer", ref: "customer" },
@@ -107,7 +105,6 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     label: "Job",
     display: ["jobId"],
     help: "job",
-    permission: "production",
     watch: {
       status: { label: "status" },
       assignee: { label: "assignee", ref: "user" },
@@ -141,7 +138,6 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     label: "Item",
     display: ["readableId", "name"],
     help: "item",
-    permission: "parts",
     watch: {
       active: { label: "active" },
       revisionStatus: { label: "revision status" },
@@ -173,7 +169,6 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     label: "Receipt",
     display: ["receiptId"],
     help: "receipt",
-    permission: "inventory",
     watch: {
       status: { label: "status" },
       supplierId: { label: "supplier", ref: "supplier" },
@@ -200,7 +195,6 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     label: "Shipment",
     display: ["shipmentId"],
     help: "shipment",
-    permission: "inventory",
     watch: {
       status: { label: "status" },
       customerId: { label: "customer", ref: "customer" },
@@ -230,7 +224,6 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     label: "Quote",
     display: ["quoteId"],
     help: "quote",
-    permission: "sales",
     watch: {
       status: { label: "status" },
       customerId: { label: "customer", ref: "customer" },
@@ -270,7 +263,6 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     table: "supplier",
     label: "Supplier",
     display: ["name"],
-    permission: "purchasing",
     watch: {
       supplierStatus: { label: "status" },
       supplierTypeId: { label: "type" },
@@ -303,7 +295,6 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     table: "customer",
     label: "Customer",
     display: ["name"],
-    permission: "sales",
     watch: {
       customerStatusId: { label: "status" },
       customerTypeId: { label: "type" },
@@ -337,7 +328,6 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     label: "Issue",
     display: ["nonConformanceId"],
     help: "nonconformance",
-    permission: "quality",
     watch: {
       status: { label: "status" },
       priority: { label: "priority" },
@@ -374,43 +364,36 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     table: "user",
     label: "User",
     article: "A",
-    permission: "users",
     display: ["fullName"]
   }),
   group: entity({
     table: "group",
     label: "Group",
-    permission: "users",
     display: ["name"]
   }),
   jobOperation: entity({
     table: "jobOperation",
     label: "Job operation",
-    permission: "production",
     display: ["description"]
   }),
   nonConformanceType: entity({
     table: "nonConformanceType",
     label: "Issue type",
-    permission: "quality",
     display: ["name"]
   }),
   salesInvoice: entity({
     table: "salesInvoice",
     label: "Sales invoice",
-    permission: "invoicing",
     display: ["invoiceId"]
   }),
   purchaseInvoice: entity({
     table: "purchaseInvoice",
     label: "Purchase invoice",
-    permission: "invoicing",
     display: ["invoiceId"]
   }),
   location: entity({
     table: "location",
     label: "Location",
-    permission: "resources",
     display: ["name"]
   })
 } as const;

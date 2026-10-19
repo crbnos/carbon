@@ -93,8 +93,8 @@ export default function SalesRuleAssignmentsList({
   const permissions = usePermissions();
   const fetcher = useFetcher();
   const { isGated } = usePlanGate({ feature: "SALES_RULES" });
-  // Assignment mutations are gated on `update: "sales"` (the assign/unassign
-  // routes), so the UI mirrors that single permission.
+  // Assignment mutations are gated on Edit on Sales Rules (the assign and
+  // unassign routes), so the UI mirrors that single permission.
   const canUpdate = permissions.has({ "sales.salesRules": "Edit" });
   const description = t`Enforce checks on quote, sales order, and sales invoice lines for this item.`;
 

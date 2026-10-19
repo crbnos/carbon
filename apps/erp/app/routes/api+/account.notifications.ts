@@ -21,7 +21,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [preferences, slackIntegration, emailPlanEnabled] = await Promise.all([
     api.users.getNotificationPreferences({}),
-    // Service role: companyIntegration SELECT requires settings_view, which
+    // Service role: companyIntegration SELECT requires View on Integrations, which
     // regular employees don't have.
     getCarbonServiceRole()
       .from("companyIntegration")

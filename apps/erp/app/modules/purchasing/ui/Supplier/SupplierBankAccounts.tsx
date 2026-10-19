@@ -57,7 +57,7 @@ const SupplierBankAccounts = ({ bankAccounts }: SupplierBankAccountsProps) => {
 
   // Presentation only. The loader returns the full account number, so this
   // deters shoulder-surfing and screenshots — it is not an access control.
-  // Access is enforced by the accounting_view RLS policy on the table.
+  // Access is enforced by the Bank Accounts RLS policy on the table.
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const toggleReveal = useCallback((id: string) => {
     setRevealed((prev) => {

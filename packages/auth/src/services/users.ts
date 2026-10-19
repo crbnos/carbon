@@ -6,7 +6,8 @@ import type { Database, Json } from "@carbon/database";
 import {
   claimsFromJson,
   expandClaims,
-  holds,
+  type Gate,
+  holdsGate,
   REGISTRY_HASH
 } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
@@ -33,19 +34,16 @@ export function getPermissionCacheKey(userId: string) {
 }
 
 /**
- * Does a resolved claims permission set grant `<module>_<action>` for the company?
- * `permissions` is the `permissions` field from `makePermissionsFromClaims` /
- * `getUserClaims`.
+ * Do resolved claims pass a page gate (`{ "sales.quotes": "Edit" }`) in the
+ * company? `permissions` is the `permissions` field from
+ * `makePermissionsFromClaims` / `getUserClaims`.
  */
 export function hasPermission(
   permissions: Record<string, Permission> | null | undefined,
-  module: string,
-  action: keyof Permission,
+  gate: Gate,
   companyId: string
 ): boolean {
-  return permissions
-    ? holds(permissions, `${module}_${action}`, companyId)
-    : false;
+  return permissions ? holdsGate(permissions, gate, companyId) : false;
 }
 
 export async function getCompanies(

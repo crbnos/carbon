@@ -21,7 +21,7 @@ export function isInternalEmail(email: string | null | undefined): boolean {
  *
  * Carbon staff provision customer tenants, which makes them an admin there
  * (`seed-company` gives the creating user the Admin employee type, so they hold
- * `users_update`). That permission is what the entity screen keys on, so without
+ * Edit on Accounts). That permission is what the entity screen keys on, so without
  * this exemption the staff member who created the company is the one put in
  * front of "accept on behalf of <customer>" — a document only the customer can
  * sign. Staff are never a representative of the customer entity, so the screen

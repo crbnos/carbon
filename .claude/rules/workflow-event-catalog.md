@@ -27,7 +27,7 @@ packages/ee/src/workflows/catalog/actions.ts    HAND-WRITTEN  the actions with n
 packages/ee/src/workflows/catalog/operations.ts HAND-WRITTEN  read-only computations
                     │
                     ▼  scripts/generate-workflow-catalog.ts  (buildCatalog, pure)
-packages/ee/src/workflows/catalog/events.generated.ts   COMMITTED  ids, outputs, permission, match
+packages/ee/src/workflows/catalog/events.generated.ts   COMMITTED  ids, outputs, permission, match; entity pages
 packages/ee/src/workflows/catalog/actions.generated.ts  COMMITTED  action + operation catalogs
 packages/ee/src/workflows/catalog/labels.generated.ts   COMMITTED  one msg`` per event, action and operation id
 ```
@@ -218,8 +218,9 @@ tenancy checks, webhook signing and the SSRF guard — is in
    script repeats it in plain English and catches skew between the two generated schema
    artifacts. A writable column that is identity or audit (`id`, `companyId`, `createdBy`,
    `createdAt`, `updatedBy`, `updatedAt`) is refused outright.
-4. **The committed catalog equals a fresh build** — events, entities, actions and operations
-   each compared separately so the failure names which one drifted. Compares data, not file
+4. **The committed catalog equals a fresh build** — events, entities, entity pages
+   (`WORKFLOW_ENTITY_PAGES`, the page of each entity's table: a lookup, an operation and the
+   `<entity>.update` action check it), actions and operations each compared separately so the failure names which one drifted. Compares data, not file
    text, so formatting can never make it flap.
 5. **Every moment, action and operation has a label**, and names only registry entities for
    its outputs, inputs and output.

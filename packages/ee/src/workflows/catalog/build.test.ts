@@ -65,14 +65,13 @@ const registry: Record<string, RegistryEntry> = {
   order: {
     table: "order",
     label: "Order",
-    permission: "purchasing",
     watch: {
       status: { label: "status" },
       supplierId: { label: "supplier", ref: "person" },
       buyerId: { label: "buyer" }
     }
   },
-  person: { table: "person", label: "Person", permission: "users" }
+  person: { table: "person", label: "Person" }
 };
 
 /** The fake tables are on no page of the access registry: each event checks this one. */
@@ -193,7 +192,6 @@ describe("buildCatalog — labels", () => {
           table: "person",
           label: "User",
           article: "A",
-          permission: "users",
           watch: { email: { label: "email" } }
         }
       },
@@ -212,7 +210,6 @@ describe("buildCatalog — labels", () => {
         quote: {
           table: "order",
           label: "Quote",
-          permission: "sales",
           watch: { status: { label: "status" } }
         }
       },
@@ -266,7 +263,6 @@ describe("buildCatalog — labels", () => {
           order: {
             table: "order",
             label: "Order",
-            permission: "purchasing",
             watch: { status: { label: "`template`" } }
           }
         },
@@ -393,7 +389,6 @@ describe("buildCatalog — entity properties", () => {
           order: {
             table: "order",
             label: "Order",
-            permission: "purchasing",
             watch: { buyerId: { label: "buyer", ref: "order" } }
           }
         },
@@ -414,7 +409,6 @@ describe("buildCatalog — entity properties", () => {
           order: {
             table: "order",
             label: "Order",
-            permission: "purchasing",
             watch: { status: { label: "status", ref: "ghost" } }
           }
         },
@@ -434,7 +428,6 @@ describe("buildCatalog — entity properties", () => {
           order: {
             table: "order",
             label: "Order",
-            permission: "purchasing",
             watch: { ghostColumn: { label: "ghost" } }
           }
         },
@@ -450,7 +443,7 @@ describe("buildCatalog — entity properties", () => {
   it("throws when an entity names a table outside the schema", () => {
     expect(() =>
       buildCatalog(
-        { ghost: { table: "ghostTable", label: "Ghost", permission: "sales" } },
+        { ghost: { table: "ghostTable", label: "Ghost" } },
         {},
         {},
         {},
@@ -477,7 +470,6 @@ describe("validateCatalogInputs", () => {
         order: {
           table: "order",
           label: "Order",
-          permission: "purchasing",
           watch: {
             ghostOne: { label: "one" },
             ghostTwo: { label: "two" },
@@ -521,7 +513,6 @@ describe("validateCatalogInputs", () => {
         order: {
           table: "order",
           label: "Order",
-          permission: "purchasing",
           write: { ghostWrite: { label: "ghost" } }
         }
       },
@@ -542,7 +533,6 @@ describe("validateCatalogInputs", () => {
         order: {
           table: "order",
           label: "Order",
-          permission: "purchasing",
           write: { companyId: { label: "company" } }
         }
       },
@@ -561,10 +551,9 @@ describe("validateCatalogInputs", () => {
         order: {
           table: "order",
           label: "Order",
-          permission: "purchasing",
           write: { buyerId: { label: "buyer", ref: "order" } }
         },
-        person: { table: "person", label: "Person", permission: "users" }
+        person: { table: "person", label: "Person" }
       },
       {},
       {},
@@ -582,7 +571,6 @@ describe("validateCatalogInputs", () => {
           order: {
             table: "order",
             label: "Order",
-            permission: "purchasing",
             watch: { updatedBy: { label: "updated by" } }
           }
         },
@@ -602,7 +590,7 @@ describe("validateCatalogInputs", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { module: "purchasing", action: "update" },
+          permission: { page: "purchasing.purchaseOrders", action: "update" },
           call: "purchasing_archiveOrder",
           inputs: {
             score: {
@@ -631,7 +619,7 @@ describe("validateCatalogInputs", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { module: "purchasing", action: "update" },
+          permission: { page: "purchasing.purchaseOrders", action: "update" },
           call: "purchasing_archiveOrder",
           inputs: {
             channels: input as unknown as ActionInputLike
@@ -720,7 +708,7 @@ describe("validateCatalogInputs", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { module: "purchasing", action: "update" },
+          permission: { page: "purchasing.purchaseOrders", action: "update" },
           call: "purchasing_archiveOrder",
           inputs: {
             method: {
@@ -890,7 +878,7 @@ describe("buildCatalog — actions and operations", () => {
     });
     expect(action.update).toEqual({ entity: "order" });
     expect(action.permission).toEqual({
-      module: "purchasing",
+      page: "purchasing.purchaseOrders",
       action: "update"
     });
     expect(built.labels["order.update"]).toBe("Update an order");
@@ -908,7 +896,7 @@ describe("buildCatalog — actions and operations", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { module: "purchasing", action: "update" },
+          permission: { page: "purchasing.purchaseOrders", action: "update" },
           call: "purchasing_archiveOrder",
           inputs: {
             method: {
@@ -955,7 +943,7 @@ describe("buildCatalog — actions and operations", () => {
         {
           "order.update": {
             label: "Update an order by hand",
-            permission: { module: "purchasing", action: "update" },
+            permission: { page: "purchasing.purchaseOrders", action: "update" },
             inputs: {},
             outputs: {},
             batchable: false,
@@ -976,7 +964,7 @@ describe("buildCatalog — actions and operations", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { module: "purchasing", action: "update" },
+          permission: { page: "purchasing.purchaseOrders", action: "update" },
           inputs: {},
           outputs: {},
           batchable: false
@@ -999,7 +987,6 @@ describe("buildCatalog — actions and operations", () => {
         "carrier.total": {
           label: "Total",
           entity: "carrier",
-          permission: { module: "sales", action: "view" },
           inputs: {},
           output: { kind: "primitive", of: "number" }
         }
