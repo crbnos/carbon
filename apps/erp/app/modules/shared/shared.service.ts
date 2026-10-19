@@ -796,16 +796,19 @@ export async function assign(
   client: SupabaseClient<Database>,
   args: {
     id: string;
+    companyId: string;
     table: (typeof assignableTables)[number];
     assignee: string;
   }
 ) {
-  const { id, table, assignee } = args;
-  // Every assignable table has `id` and `assignee`; one stands in for the union.
+  const { id, companyId, table, assignee } = args;
+  // Every assignable table has `id`, `companyId` and `assignee`; one stands in
+  // for the union.
   return client
     .from(table as "job")
     .update({ assignee: assignee || null })
     .eq("id", id)
+    .eq("companyId", companyId)
     .select("id");
 }
 

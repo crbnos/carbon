@@ -90,6 +90,7 @@ export const PHRASE_ALIASES: Record<string, string[]> = {
 export const DOCUMENT_VERBS: Record<string, string> = {
   receive: "receipt",
   received: "receipt",
+  receiving: "receipt",
   ship: "shipment",
   shipped: "shipment"
 };

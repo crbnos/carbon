@@ -281,7 +281,7 @@ function buildMcpServer<Ctx extends McpContext>(
             content: [
               {
                 type: "text" as const,
-                text: "Invalid JSON in call_tool.arguments"
+                text: `Invalid JSON in ${tool}.arguments`
               }
             ],
             isError: true

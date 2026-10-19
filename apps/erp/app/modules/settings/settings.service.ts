@@ -672,10 +672,7 @@ export async function getItemSerialSequences(
     .eq("companyId", companyId);
 
   if (args.search) {
-    // Strip PostgREST filter-grammar characters so a search term can't alter the
-    // `or` expression or filter unintended columns (mirrors inventory.service.ts).
-    const search = args.search.replace(/[,()\\]/g, " ");
-    query = query.or(searchFilter(["itemReadableId", "itemName"], search));
+    query = query.or(searchFilter(["itemReadableId", "itemName"], args.search));
   }
 
   query = setGenericQueryFilters(query, args, [

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { badRequest } from "@carbon/auth";
+import { searchFilter } from "@carbon/utils";
 import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 import { getPageOffset, getPageSize } from "./pagination";
 
@@ -203,9 +204,7 @@ export function setGenericQueryFilters<
 }
 
 export function getSearchTokens(search: string): string[] {
-  // Strip characters that are structural in a PostgREST `.or(...)` filter
-  // (comma separates conditions, parens group them) so the search value can't
-  // alter the filter shape.
+  // Commas and parentheses separate words, as spaces do ("Washer, Flat").
   return search
     .replace(/[,()\\]/g, " ")
     .split(/\s+/)
@@ -228,9 +227,7 @@ export function setSearchFilter<
   // Each token must match at least one column, and all tokens must match, so
   // "M8 washer" finds "Washer, Flat, M8". Chained `.or(...)` calls are ANDed.
   for (const token of getSearchTokens(search)) {
-    query = query.or(
-      columns.map((column) => `${column}.ilike.%${token}%`).join(",")
-    );
+    query = query.or(searchFilter(columns, token));
   }
 
   return query;

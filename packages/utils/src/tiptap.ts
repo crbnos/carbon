@@ -64,7 +64,7 @@ export function documentHasImages(
 
 /** Plain text as a Tiptap document: one paragraph per line, `**text**` bold. */
 export const textToTiptap = (text: string) => {
-  const lines = text.split(/\r?\n/);
+  const lines = text.split(/\r\n|\r|\n/);
   const content = lines.map((line) =>
     // ProseMirror text nodes cannot be empty, so blank lines become a bare paragraph
     line === ""
@@ -76,7 +76,7 @@ export const textToTiptap = (text: string) => {
 
 function boldRuns(line: string) {
   return line
-    .split(/(\*\*[^*]+\*\*)/)
+    .split(/(\*\*.+?\*\*)/)
     .filter(Boolean)
     .map((part) =>
       part.length > 4 && part.startsWith("**") && part.endsWith("**")

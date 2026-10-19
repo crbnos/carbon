@@ -78,4 +78,22 @@ describe("textToTiptap", () => {
       ]
     });
   });
+
+  it("splits on CRLF, LF and CR alike, and keeps asterisks inside bold", () => {
+    for (const text of [
+      "a\r\n**M6*1 tap**",
+      "a\n**M6*1 tap**",
+      "a\r**M6*1 tap**"
+    ]) {
+      expect(textToTiptap(text).content).toEqual([
+        { type: "paragraph", content: [{ type: "text", text: "a" }] },
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "M6*1 tap", marks: [{ type: "bold" }] }
+          ]
+        }
+      ]);
+    }
+  });
 });

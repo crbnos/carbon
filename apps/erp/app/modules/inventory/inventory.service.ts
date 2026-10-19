@@ -1360,10 +1360,6 @@ export async function getStockMovements(
     .eq("companyId", companyId);
 
   if (args.search) {
-    // Strip characters that are structural in a PostgREST `.or(...)` filter
-    // (comma separates conditions, parens group them) so the search value can't
-    // alter the filter shape.
-    const search = args.search.replace(/[,()\\]/g, " ");
     query = query.or(
       searchFilter(
         [
@@ -1373,7 +1369,7 @@ export async function getStockMovements(
           "storageUnitName",
           "trackedEntityReadableId"
         ],
-        search
+        args.search
       )
     );
   }
@@ -2082,13 +2078,10 @@ export async function getInventoryCountLines(
     .eq("companyId", companyId);
 
   if (args.search) {
-    // Strip characters that are structural in a PostgREST `.or(...)` filter so
-    // the search value can't alter the filter shape.
-    const search = args.search.replace(/[,()\\]/g, " ");
     // Search the item's identity (part number / name); the line's own readableId
     // is only the batch/serial and is null for most rows.
     query = query.or(
-      searchFilter(["itemName", "itemReadableIdWithRevision"], search)
+      searchFilter(["itemName", "itemReadableIdWithRevision"], args.search)
     );
   }
 

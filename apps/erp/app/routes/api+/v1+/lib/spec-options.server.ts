@@ -119,7 +119,10 @@ const ERROR_RESPONSES = {
   }
 } as const;
 
-/** Adds the shared `Error` schema and every error response to each operation. */
+/**
+ * Adds the shared `Error` schema and every error response to each operation;
+ * a response the operation already defines is kept.
+ */
 export function withErrorResponses<
   T extends {
     paths?: Record<string, Record<string, { responses?: object }>>;
@@ -132,7 +135,7 @@ export function withErrorResponses<
   };
   for (const item of Object.values(spec.paths ?? {})) {
     for (const operation of Object.values(item)) {
-      operation.responses = { ...operation.responses, ...ERROR_RESPONSES };
+      operation.responses = { ...ERROR_RESPONSES, ...operation.responses };
     }
   }
   return spec;

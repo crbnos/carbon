@@ -157,9 +157,9 @@ client's MCP docs for the exact field name, then plug in the values above.
 Do not report success until you've actually reached the server. Confirm it by
 listing the four meta-tools and running one read:
 
-1. The client should now expose `search_tools`, `describe_tool`, and
-   `call_tool`. If it doesn't, the server isn't connected — recheck the URL and
-   header.
+1. The client should now expose `search_tools`, `describe_tool`, `call_tool`
+   and `call_destructive_tool`. If it doesn't, the server isn't connected —
+   recheck the URL and header.
 2. Call `search_tools` with a query like `"customers"` to confirm auth works and
    you get operations back.
 3. Optionally `describe_tool` one of them and `call_tool` a `READ` operation to

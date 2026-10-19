@@ -36,17 +36,24 @@ function baseValidator(expression: Node): Node | undefined {
     : undefined;
 }
 
-/** The text of a `.describe("…")` in a field's schema expression. */
+/**
+ * The text of a `.describe("…")` on a field's own schema: its method chain
+ * (`z.string().min(1).describe("…").optional()`), never a call inside an
+ * argument, so a nested field's description stays on the nested field.
+ */
 function describeText(initializer: Node | undefined): string | undefined {
-  if (!initializer) return undefined;
-  for (const node of [initializer, ...initializer.getDescendantsOfKind(SyntaxKind.CallExpression)]) {
-    if (!Node.isCallExpression(node)) continue;
+  let node = initializer;
+  while (node && Node.isCallExpression(node)) {
     const callee = node.getExpression();
-    if (!Node.isPropertyAccessExpression(callee) || callee.getName() !== "describe") continue;
-    const text = node.getArguments()[0];
-    if (Node.isStringLiteral(text) || Node.isNoSubstitutionTemplateLiteral(text)) {
-      return text.getLiteralValue();
+    if (!Node.isPropertyAccessExpression(callee)) return undefined;
+    if (callee.getName() === "describe") {
+      const text = node.getArguments()[0];
+      return Node.isStringLiteral(text) ||
+        Node.isNoSubstitutionTemplateLiteral(text)
+        ? text.getLiteralValue()
+        : undefined;
     }
+    node = callee.getExpression();
   }
   return undefined;
 }

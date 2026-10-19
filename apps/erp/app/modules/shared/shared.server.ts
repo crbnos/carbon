@@ -92,7 +92,12 @@ export const assignRecord = defineServiceFn({
 
   async run(ctx, { table, id, assignee }) {
     const client = ctx.asCaller.supabase;
-    const assigned = await service.assign(client, { table, id, assignee });
+    const assigned = await service.assign(client, {
+      table,
+      id,
+      companyId: ctx.company.id,
+      assignee
+    });
     if (assigned.error) {
       return ctx.error("internal", "Failed to assign", assigned.error);
     }

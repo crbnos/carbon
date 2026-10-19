@@ -24,7 +24,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const wantEntities = kind === "all" || kind === "entity";
   const wantActivities = kind === "all" || kind === "activity";
 
-  const escaped = q.replace(/[%_]/g, (m) => `\\${m}`);
   const searchable = q.length >= 2;
 
   const [entities, activities] = await Promise.all([
@@ -40,10 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             .limit(50);
           if (searchable) {
             return query.or(
-              searchFilter(
-                ["id", "sourceDocumentReadableId", "readableId"],
-                escaped
-              )
+              searchFilter(["id", "sourceDocumentReadableId", "readableId"], q)
             );
           }
           return query;
@@ -61,7 +57,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             .limit(50);
           if (searchable) {
             return query.or(
-              searchFilter(["id", "type", "sourceDocumentReadableId"], escaped)
+              searchFilter(["id", "type", "sourceDocumentReadableId"], q)
             );
           }
           return query;

@@ -188,11 +188,6 @@ export function formatSearchResults(
 }
 
 /**
- * One-line argument summary for search results: required params spelled out,
- * optionals as a count — enough to call a simple tool without a describe round
- * trip. "(id)" / "(jobId, itemId, +12 optional)" / "()".
- */
-/**
  * The top-level arguments a strict input would drop: its schema lists its
  * fields and keeps no others (a loose input publishes `additionalProperties`).
  * A dropped field still reports success, so a write that saved nothing looks
@@ -212,6 +207,11 @@ export function unknownArguments(schema: unknown, args: unknown): string[] {
   return Object.keys(args).filter((key) => !Object.hasOwn(properties, key));
 }
 
+/**
+ * One-line argument summary for search results: required params spelled out,
+ * optionals as a count — enough to call a simple tool without a describe round
+ * trip. "(id)" / "(jobId, itemId, +12 optional)" / "()".
+ */
 export function formatParamSummary(tool: ManifestEntry): string {
   const schema = tool.schema as {
     properties?: Record<string, unknown>;
