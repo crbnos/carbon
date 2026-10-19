@@ -160,14 +160,20 @@ ollmcp --model <a tool-capable model available in Ollama>
 ```
 
 Leave the scope at its default, `local`, so the key stays out of the repository.
-`--scope project` writes `.mcp.json` and would commit the key.
+`local` is stored for the current project only, so run `ollmcp mcp add` and
+`ollmcp` in the same directory. Use `--scope user` when this server should
+load in every project. `--scope project` writes `.mcp.json` and would commit
+the key.
 
 A model running in local Ollama keeps the tool results on that computer. A
 cloud model, including an Ollama Cloud model, sends those results to that
 provider. The computer must already be able to open `{{ORIGIN}}`. Do not
 publish a private or controlled (ITAR) origin to reach it from somewhere else.
 
-ollmcp asks before each tool call. Still use `search_tools`, then
+ollmcp asks before each tool call when human-in-the-loop is enabled. That is
+the default. A saved setting can turn it off, and a session-wide yes skips
+later prompts in that query. Check that confirmations are on before relying
+on them. Still use `search_tools`, then
 `describe_tool`, then `call_tool` for a `READ` or `WRITE`, and
 `call_destructive_tool` for a `DESTRUCTIVE` operation. Ask the user before a
 `WRITE` or `DESTRUCTIVE` call. Do not send `companyId` or `userId`.

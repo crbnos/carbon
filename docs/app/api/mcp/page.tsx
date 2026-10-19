@@ -151,6 +151,9 @@ export default async function ConnectOverMcpPage() {
         to that provider. The computer still has to reach this Carbon origin.
         Use a scoped API key, View only until you intend a write, and leave
         ollmcp's scope at its default so the key stays out of the repository.
+        That default applies to the current project, so add the server and
+        start ollmcp in the same directory. Use the user scope when Carbon
+        should load in every project.
         Do not publish a private or controlled (ITAR) origin so another
         machine can reach it. <Code>AI_MODEL</Code>, <Code>AI_BASE_URL</Code>,
         and <Code>AI_API_KEY</Code> configure document extraction only. They do

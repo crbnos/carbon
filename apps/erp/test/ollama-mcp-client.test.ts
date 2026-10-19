@@ -33,6 +33,10 @@ describe("Ollama MCP client", () => {
     expect(section).toContain("userId");
     expect(section).toContain("ITAR");
     expect(section).toContain("so the key stays out of the repository");
+    expect(section).toContain("same directory");
+    expect(section).toContain("--scope user");
+    expect(section).toContain("when human-in-the-loop is enabled");
+    expect(section).toContain("session-wide yes");
     expect(section).toContain("Ollama Cloud model");
     expect(section).toContain("AI_BASE_URL");
     expect(section).toContain("document extraction");
@@ -63,6 +67,8 @@ describe("Ollama MCP client", () => {
     expect(page).toContain("A cloud model sends those results");
     expect(page).toContain("A cloud model sends them to that provider.");
     expect(page).toContain("so the key stays out of the repository");
+    expect(page).toContain("same directory");
+    expect(page).toContain("user scope");
     expect(page).toContain("document extraction only");
     expect(page).toContain("Do not publish a private or controlled (ITAR) origin");
   });
