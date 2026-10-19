@@ -2,116 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { serverFns } from "@carbon/server-functions";
-import { datetime, redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  getDefaultAccounts,
-  saveJournalEntryWithLines
-} from "~/modules/accounting";
-import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
-import { getArTieOut } from "~/modules/invoicing";
-import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { path } from "~/utils/path";
 
-// Turns a non-zero AR tie-out variance into a balanced Draft journal entry — the
-// receivables control account against the rounding account — then drops the user
-// on the journal-entry editor to review and post. The variance is recomputed
-// server-side (not trusted from the form) so the seeded lines always match the
-// current books.
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, { create: "accounting" });
+const adjustForm = z.object({ asOfDate: zfd.text(z.string().optional()) });
 
-  // Adjusting entries only make sense once journals count (after the cutover).
-  const companySettings = await getCompanySettings(client, companyId);
-  if (!hasAccountingCutover(companySettings.data)) {
-    throw redirect(
-      path.to.receivables,
-      await flash(request, error(null, "Accounting is not set up"))
-    );
+// The new Draft journal entry opens in the editor, to review and post.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(adjustForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.invoicing.adjustReceivables(input.data);
+  if (!result.data) {
+    return respond(args.request, result).redirect(path.to.receivables);
   }
-
-  const formData = await request.formData();
-  const asOfDate =
-    (formData.get("asOfDate") as string | null) ??
-    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
-
-  const [tieOut, defaults] = await Promise.all([
-    getArTieOut(client, companyId, asOfDate),
-    getDefaultAccounts(client, companyId)
-  ]);
-
-  const variance = Number(tieOut.data?.variance ?? 0);
-  const receivablesAccount = defaults.data?.receivablesAccount;
-  const offsetAccount = defaults.data?.roundingAccount;
-
-  if (!receivablesAccount || !offsetAccount || variance === 0) {
-    throw redirect(
-      path.to.receivables,
-      await flash(request, error(null, "No receivables variance to adjust"))
-    );
-  }
-  const journalEntry = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("create", { type: "journalEntry" });
-
-  if (!journalEntry.data || journalEntry.error) {
-    throw redirect(
-      path.to.receivables,
-      await flash(
-        request,
-        error(journalEntry.error, "Failed to create adjusting entry")
-      )
-    );
-  }
-
-  const journalId = String(journalEntry.data.id);
-  const description = `AR tie-out adjustment as of ${asOfDate}`;
-
-  // Receivables is an asset: subledger > GL (variance > 0) means the asset is
-  // understated in the GL — debit receivables to raise it; otherwise credit.
-  // The offsetting half lands in the rounding account so the entry is balanced.
-  const saved = await saveJournalEntryWithLines(client, {
-    journalEntryId: journalId,
-    postingDate: asOfDate,
-    description,
-    updatedBy: userId,
-    companyId,
-    companyGroupId,
-    lines: [
-      {
-        accountId: receivablesAccount,
-        description,
-        debit: variance > 0 ? variance : 0,
-        credit: variance < 0 ? -variance : 0
-      },
-      {
-        accountId: offsetAccount,
-        description,
-        debit: variance < 0 ? -variance : 0,
-        credit: variance > 0 ? variance : 0
-      }
-    ]
-  });
-
-  if (saved.error) {
-    // The Draft journal exists; send the user to it to finish by hand rather
-    // than reporting a clean success.
-    throw redirect(
-      path.to.journalEntryDetails(journalId),
-      await flash(
-        request,
-        error(saved.error, "Entry created, but seeding the lines failed")
-      )
-    );
-  }
-
-  throw redirect(path.to.journalEntryDetails(journalId));
+  // A warning: the Draft entry exists but its lines are missing.
+  const { journalId, warning } = result.data;
+  return respond(args.request, {
+    error: warning ? { message: warning } : null
+  }).redirect(path.to.journalEntryDetails(journalId));
 }

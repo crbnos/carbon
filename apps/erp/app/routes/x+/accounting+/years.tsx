@@ -12,12 +12,12 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SettingsPage } from "~/components/SettingsPage";
+import { fiscalYearSettingsValidator } from "~/modules/accounting/accounting.models";
 import {
-  fiscalYearSettingsValidator,
   getFiscalCalendarCommitted,
   getFiscalYearSettings,
   updateFiscalYearSettings
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { FiscalYearSettingsForm } from "~/modules/accounting/ui/FiscalYear";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

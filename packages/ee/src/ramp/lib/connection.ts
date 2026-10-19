@@ -6,7 +6,6 @@ import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveIntegrationSecrets } from "../../integrations/secrets";
-import { RAMP_ENVIRONMENT } from "../environment";
 import { buildRampIdempotencyKey, RampClient } from "./client";
 import {
   CARBON_PROVIDER_NAME,
@@ -191,12 +190,9 @@ export async function getRampIntegration(
 
 /**
  * Exchange an OAuth authorization code (the Connect-flow callback) for oauth2
- * credentials, using Carbon's registered Ramp OAuth app. The returned
- * credentials are stamped with `RAMP_ENVIRONMENT` (the TEMPORARY sandbox/
- * production switch in `../environment`) so every subsequent Ramp API call and
- * token refresh hits the matching host. The caller stores these via the atomic
- * Ramp OAuth patch (which vaults the access + refresh tokens) and then runs
- * `rampOnInstall`.
+ * credentials, using Carbon's registered Ramp OAuth app. The caller stores
+ * these via the atomic Ramp OAuth patch (which vaults the access + refresh
+ * tokens) and then runs `rampOnInstall`.
  */
 export async function exchangeRampOAuthCode(
   code: string,
@@ -221,11 +217,10 @@ export async function exchangeRampOAuthCode(
       "Ramp OAuth is not configured (set RAMP_CLIENT_ID / RAMP_CLIENT_SECRET)"
     );
   }
-  // A placeholder access token just to construct the client; the exchange uses
-  // the OAuth app credentials + the environment's host (the token POST goes to
-  // `${host}/developer/v1/token`, so the environment must be set here too).
+  // A placeholder access token just to construct the client; the exchange only
+  // uses the OAuth app credentials.
   const client = new RampClient(
-    { type: "oauth2", accessToken: "", environment: RAMP_ENVIRONMENT },
+    { type: "oauth2", accessToken: "" },
     { oauthApp: { clientId, clientSecret } }
   );
   const tokens = await client.exchangeAuthorizationCode(code, redirectUri);
@@ -234,8 +229,7 @@ export async function exchangeRampOAuthCode(
       type: "oauth2",
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      expiresAt: tokens.expiresAt,
-      environment: RAMP_ENVIRONMENT
+      expiresAt: tokens.expiresAt
     },
     grantedScopes: tokens.scope?.split(" ").filter(Boolean)
   };

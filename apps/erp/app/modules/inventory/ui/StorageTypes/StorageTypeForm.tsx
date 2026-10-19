@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -17,9 +18,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
-import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -41,25 +39,19 @@ const StorageTypeForm = ({
 }: StorageTypeFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher<PostgrestResponse<{ id: string; name: string }>>();
+  // A modal closes on the new record; an error is toasted and the form stays.
+  const fetcher = useAction({
+    onSuccess: () => {
+      if (type !== "modal") return;
+      onClose?.();
+      toast.success(t`Created storage type`);
+    }
+  });
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
     ? !permissions.can("update", "parts")
     : !permissions.can("create", "parts");
-
-  useEffect(() => {
-    if (type !== "modal") return;
-
-    if (fetcher.state === "loading" && fetcher.data?.data) {
-      onClose?.();
-      toast.success(t`Created storage type`);
-    } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(
-        t`Failed to create storage type: ${fetcher.data.error.message}`
-      );
-    }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
 
   return (
     <ModalDrawerProvider type={type}>

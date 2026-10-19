@@ -47,12 +47,12 @@ import type {
 } from "react-router";
 import { data, useFetcher, useLoaderData } from "react-router";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { reportPinValidator } from "~/modules/accounting/accounting.models";
 import {
   getReportPins,
   getReportViews,
-  reportPinValidator,
   upsertReportPin
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -205,6 +205,15 @@ export default function ReportsIndexRoute() {
         name: t`Net Investment in Leases`,
         description: t`Sales-type lease balances, the next interest and payments due by fiscal year`,
         to: path.to.leaseNetInvestment,
+        icon: LuScale,
+        category: t`Close Reports`,
+        defaultPinned: false
+      },
+      {
+        key: "lease-liabilities",
+        name: t`Lease Liabilities`,
+        description: t`Lessee lease balances, maturity analysis and lease cost`,
+        to: path.to.leaseLiabilities,
         icon: LuScale,
         category: t`Close Reports`,
         defaultPinned: false

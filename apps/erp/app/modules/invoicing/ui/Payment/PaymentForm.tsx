@@ -29,7 +29,7 @@ import {
   type DepositDocument,
   isPaymentLocked,
   paymentValidator
-} from "~/modules/invoicing";
+} from "~/modules/invoicing/invoicing.models";
 import { path } from "~/utils/path";
 
 // Builds the "new payment" URL pre-filled from an invoice. side "ar" seeds the

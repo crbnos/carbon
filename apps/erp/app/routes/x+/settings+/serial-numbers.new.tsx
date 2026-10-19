@@ -9,12 +9,12 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { itemSerialSequenceValidator } from "~/modules/settings/settings.models";
 import {
   getItemSerialSequences,
-  ItemSerialSequenceForm,
-  itemSerialSequenceValidator,
   upsertItemSerialSequence
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service";
+import { ItemSerialSequenceForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

@@ -64,7 +64,7 @@ import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { methodType } from "~/modules/shared";
+import { methodType } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/items+/update";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";

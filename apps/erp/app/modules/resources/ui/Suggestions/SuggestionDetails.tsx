@@ -26,7 +26,7 @@ import z from "zod";
 import { DateTime } from "~/components";
 import { Tags } from "~/components/Form";
 import { useTags } from "~/hooks/useTags";
-import type { Suggestion } from "~/modules/resources";
+import type { Suggestion } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 
 // Lazy, not a static import: @emoji-mart/react is CommonJS, so under SSR its

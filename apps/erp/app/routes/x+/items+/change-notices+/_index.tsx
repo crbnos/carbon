@@ -9,7 +9,10 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getChangeNotices, getChangeNoticeTypesList } from "~/modules/items";
+import {
+  getChangeNotices,
+  getChangeNoticeTypesList
+} from "~/modules/items/items.service";
 import { ChangeNoticesTable } from "~/modules/items/ui/ChangeNotice";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

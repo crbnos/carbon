@@ -12,9 +12,9 @@ import type { ConditionAst } from "@carbon/utils";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useNavigate } from "react-router";
-import { storageRuleValidator } from "~/modules/inventory";
+import { storageRuleValidator } from "~/modules/inventory/inventory.models";
 import StorageRuleForm from "~/modules/inventory/ui/StorageRules/StorageRuleForm";
-import { getEnforcementRule } from "~/modules/shared";
+import { getEnforcementRule } from "~/modules/shared/shared.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

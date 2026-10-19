@@ -401,12 +401,13 @@ const Kanban = ({
       }
       if (pendingBatchIntent.current.get(f.key) !== "update") continue;
       const result = f.data as
-        | { success?: boolean; message?: string }
+        | { error?: { message?: string } | null; fieldErrors?: unknown }
         | undefined;
       if (result === undefined) continue;
-      if (result.success === false && !toastedBatchUpdates.current.has(f.key)) {
+      const failed = !!result.error || !!result.fieldErrors;
+      if (failed && !toastedBatchUpdates.current.has(f.key)) {
         toastedBatchUpdates.current.add(f.key);
-        toast.error(result.message ?? "Failed to move batch");
+        toast.error(result.error?.message ?? "Failed to move batch");
       }
       pendingBatchIntent.current.delete(f.key);
     }

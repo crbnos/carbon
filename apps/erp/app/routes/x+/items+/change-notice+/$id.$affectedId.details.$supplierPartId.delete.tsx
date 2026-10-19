@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteSupplierPart } from "~/modules/items";
+import { deleteSupplierPart } from "~/modules/items/items.service";
 import { path } from "~/utils/path";
 
 // Delete action for a supplier part managed on a CO line. Action-only: the

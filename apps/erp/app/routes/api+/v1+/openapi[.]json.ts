@@ -9,7 +9,7 @@
 import { CarbonJsonSchemaConverter } from "@carbon/api/schema";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { router } from "./lib/router.server";
-import { specOptions } from "./lib/spec-options.server";
+import { specOptions, withErrorResponses } from "./lib/spec-options.server";
 
 // The promise, not the string: concurrent cold-start requests on this public
 // route must share ONE generation of the 1,495-operation spec.
@@ -20,7 +20,7 @@ async function generateSpec(): Promise<string> {
     schemaConverters: [new CarbonJsonSchemaConverter()]
   });
   const spec = await generator.generate(router, specOptions());
-  return JSON.stringify(spec);
+  return JSON.stringify(withErrorResponses(spec as never));
 }
 
 export async function loader() {

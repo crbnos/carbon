@@ -7,7 +7,7 @@ import { Combobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
-import type { getLocationEmployees } from "~/modules/production";
+import type { getLocationEmployees } from "~/modules/production/production.service";
 import { path } from "~/utils/path";
 import Avatar from "../Avatar";
 import { useEmptyState } from "./emptyStates";

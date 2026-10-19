@@ -14,11 +14,13 @@ import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
 import {
-  getSupplierQuote,
   isSupplierQuoteLocked,
-  supplierQuoteValidator,
+  supplierQuoteValidator
+} from "~/modules/purchasing/purchasing.models";
+import {
+  getSupplierQuote,
   updateSupplierQuote
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import type {
   SupplierInteraction,
   SupplierQuote

@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getChangeNoticeTypes } from "~/modules/items";
+import { getChangeNoticeTypes } from "~/modules/items/items.service";
 import { ChangeNoticeTypesTable } from "~/modules/items/ui/ChangeNoticeTypes";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

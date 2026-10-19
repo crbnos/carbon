@@ -27,24 +27,21 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
-import type { ItemFile, PartSummary } from "~/modules/items";
+import { isChangeNoticeOpen } from "~/modules/items/items.models";
 import {
+  findChangeNoticesForItemOnce,
   getItemFiles,
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce,
   getMethodTree,
   getPart,
   getPartUsedIn,
   getPickMethods,
   getSupplierParts,
-  isChangeNoticeOpen
-} from "~/modules/items";
-import {
-  findChangeNoticesForItemOnce,
-  getMakeMethodByIdOnce,
-  getMakeMethodsOnce,
   getUnreleasedChangeOrderForItem,
   streamItemSupersession
-} from "~/modules/items/items.server";
-import type { Method } from "~/modules/items/types";
+} from "~/modules/items/items.service";
+import type { ItemFile, Method, PartSummary } from "~/modules/items/types";
 import {
   BoMActions,
   BoMExplorer,
@@ -57,7 +54,7 @@ import {
   UsedInTree
 } from "~/modules/items/ui/Item/UsedIn";
 import { PartHeader, PartProperties } from "~/modules/items/ui/Parts";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

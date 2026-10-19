@@ -1324,7 +1324,7 @@ msgid "Comments"
 msgstr ""
 
 msgid "Companies"
-msgstr ""
+msgstr "Bedrijven"
 
 msgid "Company"
 msgstr ""
@@ -5255,10 +5255,10 @@ msgstr ""
 msgid "Order Date"
 msgstr ""
 
-msgid "Order Multiple"
+msgid "Order Items"
 msgstr ""
 
-msgid "Order Parts"
+msgid "Order Multiple"
 msgstr ""
 
 msgid "Order Qty"

@@ -2,141 +2,39 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { validationError, validator } from "@carbon/form";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import {
-  getJobMethodValidator,
-  recalculateJobOperationDependencies,
-  recalculateJobRequirements,
-  upsertJobMaterialMakeMethod,
-  upsertJobMethod
-} from "~/modules/production";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
+import { getJobMethodValidator } from "~/modules/production/production.models";
 import { path, requestReferrer } from "~/utils/path";
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "production"
-  });
+// Get Method: onto the job from an item, quote line or job, or onto a made
+// sub-assembly's method ("method") from an item.
+const getMethodForm = getJobMethodValidator.extend({
+  type: z.enum(["item", "quoteLine", "job", "method"]),
+  configuration: z.string().optional()
+});
 
-  const formData = await request.formData();
-  const type = formData.get("type") as string;
-  const configurationStr = formData.get("configuration") as string | null;
-  const configuration = configurationStr
-    ? JSON.parse(configurationStr)
-    : undefined;
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(getMethodForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { type, configuration, sourceId, targetId, versionId, ...parts } =
+    input.data;
+  const method = {
+    sourceId,
+    targetId,
+    versionId,
+    parts,
+    configuration: configuration ? JSON.parse(configuration) : undefined
+  };
+  const api = await carbon(args.request);
 
-  const serviceRole = getCarbonServiceRole();
-
-  const validation = await validator(getJobMethodValidator).validate(formData);
-  if (validation.error) {
-    return validationError(validation.error);
+  if (type !== "method") {
+    return api.production.copyMethodToJob({ ...method, type });
   }
-
-  if (["item", "quoteLine", "job"].includes(type)) {
-    const jobMethodPayload: any = {
-      ...validation.data,
-      companyId,
-      userId,
-      parts: {
-        billOfMaterial: validation.data.billOfMaterial,
-        billOfProcess: validation.data.billOfProcess,
-        parameters: validation.data.parameters,
-        tools: validation.data.tools,
-        steps: validation.data.steps,
-        workInstructions: validation.data.workInstructions
-      }
-    };
-
-    // Only add configuration if it exists
-    if (configuration !== undefined && type === "item") {
-      jobMethodPayload.configuration = configuration;
-    }
-
-    const jobMethod = await upsertJobMethod(
-      serviceRole,
-      getDatabaseClient(),
-      type === "item"
-        ? "itemToJob"
-        : type === "job"
-          ? "jobToJob"
-          : "quoteLineToJob",
-      jobMethodPayload
-    );
-
-    const [calculateQuantities, calculateDependencies] = await Promise.all([
-      recalculateJobRequirements(serviceRole, getDatabaseClient(), {
-        id: validation.data.targetId,
-        companyId: companyId,
-        userId: userId
-      }),
-      recalculateJobOperationDependencies(serviceRole, getDatabaseClient(), {
-        jobId: validation.data.targetId,
-        companyId: companyId,
-        userId: userId
-      })
-    ]);
-
-    if (calculateQuantities.error) {
-      return {
-        error: "Failed to calculate job quantities"
-      };
-    }
-
-    if (calculateDependencies.error) {
-      return {
-        error: "Failed to calculate job dependencies"
-      };
-    }
-
-    return {
-      error: jobMethod.error
-        ? (jobMethod.error.message ?? "Failed to get job method")
-        : null
-    };
-  }
-
-  if (type === "method") {
-    const makeMethodPayload: any = {
-      ...validation.data,
-      companyId,
-      userId,
-      parts: {
-        billOfMaterial: validation.data.billOfMaterial,
-        billOfProcess: validation.data.billOfProcess,
-        parameters: validation.data.parameters,
-        tools: validation.data.tools,
-        steps: validation.data.steps,
-        workInstructions: validation.data.workInstructions
-      }
-    };
-
-    // Only add configuration if it exists
-    if (configuration !== undefined) {
-      makeMethodPayload.configuration = configuration;
-    }
-
-    const makeMethod = await upsertJobMaterialMakeMethod(
-      serviceRole,
-      getDatabaseClient(),
-      makeMethodPayload
-    );
-
-    if (makeMethod.error) {
-      return {
-        error: makeMethod.error
-          ? (makeMethod.error.message ??
-            "Failed to update method from job method")
-          : null
-      };
-    }
-
-    throw redirect(requestReferrer(request) ?? path.to.jobs);
-  }
-
-  return data({ error: "Invalid type" }, { status: 400 });
+  const result = await api.production.copyMethodToMaterial(method);
+  if (result.error) return result;
+  throw redirect(requestReferrer(args.request) ?? path.to.jobs);
 }

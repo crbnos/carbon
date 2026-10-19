@@ -9,11 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
-import {
-  customerPartValidator,
-  getItem,
-  upsertItemCustomerPart
-} from "~/modules/items";
+import { customerPartValidator } from "~/modules/items/items.models";
+import { getItem, upsertItemCustomerPart } from "~/modules/items/items.service";
 import CustomerPartForm from "~/modules/items/ui/Item/CustomerPartForm";
 import { path } from "~/utils/path";
 

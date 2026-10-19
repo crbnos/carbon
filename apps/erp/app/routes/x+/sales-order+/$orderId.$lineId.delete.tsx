@@ -11,12 +11,12 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
+import { isSalesOrderLocked } from "~/modules/sales/sales.models";
 import {
   deleteSalesOrderLine,
   getSalesOrder,
-  getSalesOrderLine,
-  isSalesOrderLocked
-} from "~/modules/sales";
+  getSalesOrderLine
+} from "~/modules/sales/sales.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 

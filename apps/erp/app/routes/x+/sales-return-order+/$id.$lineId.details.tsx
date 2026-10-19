@@ -2,26 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { salesReturnOrderLineValidator } from "~/modules/sales/sales.models";
 import {
   getReturnReasonsList,
-  getSalesReturnOrder,
-  getSalesReturnOrderLine,
-  isSalesReturnOrderLocked,
-  salesReturnOrderLineValidator,
-  upsertSalesReturnOrderLine
-} from "~/modules/sales";
+  getSalesReturnOrderLine
+} from "~/modules/sales/sales.service";
 import { SalesReturnOrderLineForm } from "~/modules/sales/ui/SalesReturnOrders";
 import type { SalesReturnOrderLine } from "~/modules/sales/ui/SalesReturnOrders/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -126,132 +123,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { id: orderId, lineId } = params;
-  if (!orderId) throw new Error("Could not find orderId");
-  if (!lineId) throw new Error("Could not find lineId");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(salesReturnOrderLineValidator).request(args, {
+    params: ["id", "lineId"]
   });
-
-  const salesReturnOrder = await getSalesReturnOrder(viewClient, orderId);
-  await requireUnlocked({
-    request,
-    isLocked: isSalesReturnOrderLocked(salesReturnOrder.data?.status),
-    redirectTo: path.to.salesReturnOrderLine(orderId, lineId),
-    message: "Cannot modify a completed or cancelled return order."
-  });
-
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(salesReturnOrderLineValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id: _id, ...d } = validation.data;
-
-  // The lock guard above checked the URL's order — verify the line actually
-  // belongs to it, and never re-parent it to the form's copy of the id.
-  const existingLine = await client
-    .from("salesReturnOrderLine")
-    .select(
-      "salesReturnOrderId, quantity, itemId, unitPrice, restockFeePercent, unitOfMeasureCode, salesOrderLineId, shipmentLineId, salesInvoiceLineId"
-    )
-    .eq("id", lineId)
-    .eq("companyId", companyId)
-    .single();
-  if (existingLine.error || existingLine.data.salesReturnOrderId !== orderId) {
-    throw redirect(
-      path.to.salesReturnOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(null, "This line does not belong to this return order")
-      )
-    );
-  }
-  d.salesReturnOrderId = orderId;
-
-  // Quantities, item, pricing, and source-document links are validated
-  // against source-line caps at Confirm; once the order is confirmed, editing
-  // any of them would bypass that validation (re-pointing a link frees the
-  // original source line's cap) or change the credit basis after the fact.
-  // A field only counts as changed when it was provided AND differs —
-  // upsertSalesReturnOrderLine sanitize()s the update, so omitted optionals
-  // never overwrite.
-  if (salesReturnOrder.data?.status !== "Draft") {
-    const lockedFields: [string, unknown, unknown][] = [
-      ["Quantity", Number(d.quantity), Number(existingLine.data.quantity)],
-      ["Item", d.itemId, existingLine.data.itemId],
-      ["Unit price", Number(d.unitPrice), Number(existingLine.data.unitPrice)],
-      [
-        "Restocking fee",
-        d.restockFeePercent === undefined
-          ? undefined
-          : Number(d.restockFeePercent),
-        Number(existingLine.data.restockFeePercent)
-      ],
-      [
-        "Unit of measure",
-        d.unitOfMeasureCode,
-        existingLine.data.unitOfMeasureCode ?? undefined
-      ],
-      [
-        "Sales order line link",
-        d.salesOrderLineId,
-        existingLine.data.salesOrderLineId ?? undefined
-      ],
-      [
-        "Shipment line link",
-        d.shipmentLineId,
-        existingLine.data.shipmentLineId ?? undefined
-      ],
-      [
-        "Invoice line link",
-        d.salesInvoiceLineId,
-        existingLine.data.salesInvoiceLineId ?? undefined
-      ]
-    ];
-    const changed = lockedFields.find(
-      ([, next, current]) => next !== undefined && next !== current
-    );
-    if (changed) {
-      throw redirect(
-        path.to.salesReturnOrderLine(orderId, lineId),
-        await flash(
-          request,
-          error(null, `${changed[0]} is locked after confirmation`)
-        )
-      );
-    }
-  }
-
-  const updateLine = await upsertSalesReturnOrderLine(client, {
-    ...d,
+  if ("invalid" in input) return input.invalid;
+  const { id: orderId, lineId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.sales.updateReturnOrderLine({
+    ...input.data,
     id: lineId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+    // The URL order: a line is never re-parented.
+    salesReturnOrderId: orderId,
+    customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-
-  if (updateLine.error) {
-    throw redirect(
-      path.to.salesReturnOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(updateLine.error, "Failed to update return order line")
-      )
-    );
+  const to = path.to.salesReturnOrderLine(orderId, lineId);
+  if (!result.data) {
+    return respond(args.request, result).redirect(to, { message: "" });
   }
-
-  throw redirect(path.to.salesReturnOrderLine(orderId, lineId));
+  throw redirect(to);
 }
 
 export default function SalesReturnOrderLineDetailsRoute() {

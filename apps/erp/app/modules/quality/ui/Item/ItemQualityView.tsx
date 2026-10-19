@@ -24,7 +24,7 @@ import { usePermissions } from "~/hooks";
 import {
   inspectionDocumentUsages,
   itemInspectionDocumentAssignmentValidator
-} from "~/modules/quality";
+} from "~/modules/quality/quality.models";
 import type { ItemInspectionDocumentAssignment } from "~/modules/quality/types";
 import InspectionDocumentForm from "~/modules/quality/ui/InspectionDocument/InspectionDocumentForm";
 import { path } from "~/utils/path";

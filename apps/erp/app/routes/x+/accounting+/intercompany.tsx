@@ -10,7 +10,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { New } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { getIntercompanyTransactions } from "~/modules/accounting";
+import { getIntercompanyTransactions } from "~/modules/accounting/accounting.service";
 import { IntercompanyTransactionTable } from "~/modules/accounting/ui/Intercompany";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

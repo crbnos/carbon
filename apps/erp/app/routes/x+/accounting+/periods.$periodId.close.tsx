@@ -2,10 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -28,9 +30,9 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
-import { serverFns } from "@carbon/server-functions";
 import { formatDate, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -46,33 +48,19 @@ import {
   LuX
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  Link,
-  useFetcher,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { Link, useLoaderData, useNavigate } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { EmployeeAvatar } from "~/components";
 import { useCurrencyFormatter } from "~/hooks";
-import type {
-  PeriodCloseStatus,
-  PeriodCloseTaskView
-} from "~/modules/accounting";
+import type { PeriodCloseTaskView } from "~/modules/accounting/accounting.service";
 import {
-  closePeriodWithChecklist,
-  closeTaskCompleteValidator,
-  closeTaskSkipValidator,
-  completeCloseTask,
-  createDepreciationRun,
+  existingDraftRunId,
   getAccountingPeriods,
-  getPeriodCloseChecklist,
-  LOCK_PERIOD_TASK_NAME,
-  lockAccountingPeriod,
-  skipCloseTask,
-  unlockAccountingPeriod
-} from "~/modules/accounting";
-import { futureRunPeriodError } from "~/modules/accounting/accounting.server";
+  getPeriodCloseChecklist
+} from "~/modules/accounting/accounting.service";
+import { LOCK_PERIOD_TASK_NAME } from "~/modules/accounting/accounting.utils";
+import type { PeriodCloseStatus } from "~/modules/accounting/types";
 import { PeriodCloseUnpostedDocumentsPopover } from "~/modules/accounting/ui/Periods";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
@@ -118,230 +106,68 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { checklist: checklist.data, period };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      update: "accounting"
-    });
+const closeForm = z.object({
+  intent: z.enum([
+    "completeTask",
+    "skipTask",
+    "lock",
+    "unlock",
+    "create-revenue-run",
+    "create-lease-run",
+    "create-depreciation-run",
+    "close"
+  ]),
+  taskId: z.string().optional(),
+  notes: zfd.text(z.string().optional()),
+  skippedReason: z.string().optional()
+});
 
-  const { periodId } = params;
-  if (!periodId) throw notFound("periodId not found");
+const RUN_OF_INTENT = {
+  "create-revenue-run": "Revenue Recognition",
+  "create-lease-run": "Lease",
+  "create-depreciation-run": "Depreciation"
+} as const;
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(closeForm).request(args, {
+    params: ["periodId"]
+  });
+  if ("invalid" in input) return input.invalid;
+  const { periodId } = input.params;
+  const { intent, taskId = "", notes, skippedReason = "" } = input.data;
+  const api = await carbon(args.request);
 
-  if (intent === "completeTask") {
-    const validation = await validator(closeTaskCompleteValidator).validate(
-      formData
-    );
-    if (validation.error) return validationError(validation.error);
-
-    const result = await completeCloseTask(client, {
-      taskId: validation.data.taskId,
-      notes: validation.data.notes,
-      companyId,
-      userId
-    });
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to complete task"))
+  switch (intent) {
+    case "completeTask":
+      return api.accounting.closeTaskComplete({ taskId, notes });
+    case "skipTask":
+      return api.accounting.closeTaskSkip({ taskId, skippedReason });
+    case "lock":
+      return api.accounting.lockPeriod({ periodId });
+    case "unlock":
+      return api.accounting.unlockPeriod({ periodId });
+    case "close": {
+      const result = await api.accounting.closePeriod({ periodId });
+      if (result.error) return result;
+      return respond(args.request, result).redirect(path.to.accountingPeriods, {
+        message: "Period closed"
+      });
+    }
+    default: {
+      const run = RUN_OF_INTENT[intent];
+      const result = await api.accounting.createRunForPeriod({ periodId, run });
+      // A Draft already holding the period opens instead, with the refusal.
+      const runId = result.data?.id ?? existingDraftRunId(result.error);
+      if (!runId) return result;
+      const isDepreciation = run === "Depreciation";
+      return respond(args.request, result).redirect(
+        isDepreciation
+          ? path.to.depreciationRun(runId)
+          : path.to.revenueRecognitionRun(runId),
+        { message: isDepreciation ? "Depreciation run created" : "Run created" }
       );
     }
-    return data({}, await flash(request, success("Task marked done")));
   }
-
-  if (intent === "skipTask") {
-    const validation = await validator(closeTaskSkipValidator).validate(
-      formData
-    );
-    if (validation.error) return validationError(validation.error);
-
-    const result = await skipCloseTask(client, {
-      taskId: validation.data.taskId,
-      skippedReason: validation.data.skippedReason,
-      companyId,
-      userId
-    });
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to skip task"))
-      );
-    }
-    return data({}, await flash(request, success("Task skipped")));
-  }
-
-  if (intent === "lock") {
-    const result = await lockAccountingPeriod(client, {
-      periodId,
-      companyId,
-      userId
-    });
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to lock period"))
-      );
-    }
-    return data({}, await flash(request, success("Period locked")));
-  }
-
-  if (intent === "unlock") {
-    const result = await unlockAccountingPeriod(client, {
-      periodId,
-      companyId,
-      userId
-    });
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to unlock period"))
-      );
-    }
-    return data({}, await flash(request, success("Period unlocked")));
-  }
-
-  if (intent === "create-revenue-run" || intent === "create-depreciation-run") {
-    await requirePermissions(request, { create: "accounting" });
-    const period = await client
-      .from("accountingPeriod")
-      .select("endDate")
-      .eq("id", periodId)
-      .eq("companyId", companyId)
-      .single();
-    if (period.error) {
-      return data(
-        {},
-        await flash(request, error(period.error, "Failed to load the period"))
-      );
-    }
-    const periodEnd = period.data.endDate;
-    const futureError = await futureRunPeriodError(
-      client,
-      companyId,
-      periodEnd
-    );
-    if (futureError) {
-      return data({}, await flash(request, error(null, futureError)));
-    }
-
-    if (intent === "create-revenue-run") {
-      // One Draft per period: send the user to it rather than make another.
-      const existingDraft = await client
-        .from("revenueRecognitionRun")
-        .select("id, runId")
-        .eq("periodEnd", periodEnd)
-        .eq("companyId", companyId)
-        .eq("status", "Draft")
-        .maybeSingle();
-      if (existingDraft.data) {
-        throw redirect(
-          path.to.revenueRecognitionRun(existingDraft.data.id),
-          await flash(
-            request,
-            error(
-              null,
-              `${existingDraft.data.runId} is already a draft for this period. Recalculate it instead.`
-            )
-          )
-        );
-      }
-
-      let proposal: { id: string } | null;
-      try {
-        // The proposal creates nothing when nothing is due.
-        proposal = await serverFns
-          .system({ db: getDatabaseClient(), companyId, userId })
-          .invokeOrThrow("propose-revenue-recognition-run", { periodEnd });
-      } catch (e) {
-        return data(
-          {},
-          await flash(
-            request,
-            error(e, "Failed to create revenue recognition run")
-          )
-        );
-      }
-      if (!proposal) {
-        return data(
-          {},
-          await flash(
-            request,
-            error(null, "Nothing to recognize for this period")
-          )
-        );
-      }
-      throw redirect(
-        path.to.revenueRecognitionRun(proposal.id),
-        await flash(request, success("Revenue recognition run created"))
-      );
-    }
-
-    const existingDraft = await client
-      .from("depreciationRun")
-      .select("id, depreciationRunId")
-      .eq("periodEnd", periodEnd)
-      .eq("companyId", companyId)
-      .eq("status", "Draft")
-      .limit(1)
-      .maybeSingle();
-    if (existingDraft.data) {
-      throw redirect(
-        path.to.depreciationRun(existingDraft.data.id),
-        await flash(
-          request,
-          error(
-            null,
-            `${existingDraft.data.depreciationRunId} is already a draft for this period. Recalculate it instead.`
-          )
-        )
-      );
-    }
-
-    // Never an empty run: with nothing to depreciate this refuses.
-    const result = await createDepreciationRun(client, {
-      companyId,
-      companyGroupId,
-      periodEnd,
-      userId
-    });
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, result.error.message))
-      );
-    }
-    throw redirect(
-      path.to.depreciationRun(result.data.id),
-      await flash(request, success("Depreciation run created"))
-    );
-  }
-
-  if (intent === "close") {
-    const result = await closePeriodWithChecklist(client, getDatabaseClient(), {
-      companyId,
-      companyGroupId,
-      periodId,
-      userId
-    });
-    if (result.error) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(result.error, result.error.message ?? "Failed to close period")
-        )
-      );
-    }
-    throw redirect(
-      path.to.accountingPeriods,
-      await flash(request, success("Period closed"))
-    );
-  }
-
-  throw redirect(path.to.accountingPeriodClose(periodId));
 }
 
 const SEVERITY_COLOR = {
@@ -358,7 +184,7 @@ const STATUS_COLOR = {
 export default function AccountingPeriodCloseRoute() {
   const { checklist, period } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const closeFetcher = useFetcher<typeof action>();
+  const closeFetcher = useAction<typeof action>();
 
   const periodLabel =
     period && period.fiscalYear && period.periodNumber
@@ -456,7 +282,20 @@ function PeriodCloseTaskRow({
   periodEnd?: string;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if ("closeStatus" in data) {
+        toast.success(
+          data.closeStatus === "Locked" ? t`Period locked` : t`Period unlocked`
+        );
+      } else if ("status" in data) {
+        toast.success(
+          data.status === "Done" ? t`Task marked done` : t`Task skipped`
+        );
+      }
+    }
+  });
   const [skipping, setSkipping] = useState(false);
   const isBusy = fetcher.state !== "idle";
 
@@ -471,7 +310,9 @@ function PeriodCloseTaskRow({
       case "unmatched-ic":
         return t`Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities.`;
       case "unposted-revenue-schedules":
-        return t`Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized.`;
+        return t`Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized.`;
+      case "unposted-lease-schedules":
+        return t`Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted.`;
       case "tb-balanced":
         return t`Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close.`;
     }
@@ -504,9 +345,11 @@ function PeriodCloseTaskRow({
   const createRunIntent =
     task.autoCheckKey === "unposted-revenue-schedules"
       ? "create-revenue-run"
-      : task.autoCheckKey === "draft-depreciation"
-        ? "create-depreciation-run"
-        : null;
+      : task.autoCheckKey === "unposted-lease-schedules"
+        ? "create-lease-run"
+        : task.autoCheckKey === "draft-depreciation"
+          ? "create-depreciation-run"
+          : null;
   const due = task.autoCheck?.due;
   const canCreateRun =
     createRunIntent !== null &&
@@ -598,7 +441,9 @@ function PeriodCloseTaskRow({
                     runType={
                       task.autoCheckKey === "draft-depreciation"
                         ? "depreciation"
-                        : "revenue"
+                        : task.autoCheckKey === "unposted-lease-schedules"
+                          ? "lease"
+                          : "revenue"
                     }
                   />
                 )}
@@ -608,6 +453,14 @@ function PeriodCloseTaskRow({
                     className="w-fit text-xs font-normal text-primary hover:underline"
                   >
                     <Trans>Go to depreciation runs</Trans>
+                  </Link>
+                )}
+                {task.autoCheckKey === "unposted-lease-schedules" && (
+                  <Link
+                    to={path.to.leaseRuns}
+                    className="w-fit text-xs font-normal text-primary hover:underline"
+                  >
+                    <Trans>Go to lease runs</Trans>
                   </Link>
                 )}
                 {task.autoCheckKey === "unposted-revenue-schedules" && (
@@ -764,7 +617,7 @@ function PeriodRunDue({
 }: {
   due: { count: number; amount: number; error: string | null };
   draftRuns: { id: string; readableId: string; periodEnd: string }[];
-  runType: "revenue" | "depreciation";
+  runType: "revenue" | "lease" | "depreciation";
 }) {
   const { t } = useLingui();
   const currencyFormatter = useCurrencyFormatter();
@@ -779,9 +632,13 @@ function PeriodRunDue({
             ? due.count === 1
               ? t`1 asset to depreciate · ${amount}`
               : t`${due.count} assets to depreciate · ${amount}`
-            : due.count === 1
-              ? t`1 entry to recognize · ${amount}`
-              : t`${due.count} entries to recognize · ${amount}`}
+            : runType === "lease"
+              ? due.count === 1
+                ? t`1 entry to post · ${amount}`
+                : t`${due.count} entries to post · ${amount}`
+              : due.count === 1
+                ? t`1 entry to recognize · ${amount}`
+                : t`${due.count} entries to recognize · ${amount}`}
         </span>
       )}
       {draftRuns.map((run) => (

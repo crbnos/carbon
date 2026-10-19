@@ -78,16 +78,15 @@ import {
 import { CSVLink } from "~/components/CSVLink";
 import { usePercentFormatter } from "~/hooks";
 import { useUser } from "~/hooks/useUser";
-import type { ActiveProductionEvent } from "~/modules/production";
+import { KPIs } from "~/modules/production/production.models";
 import {
   getActiveProductionEvents,
-  getUnbatchedBatchableOperationCount,
-  KPIs
-} from "~/modules/production";
+  getUnbatchedBatchableOperationCount
+} from "~/modules/production/production.service";
+import type { ActiveProductionEvent } from "~/modules/production/types";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs";
-import type { WorkCenter } from "~/modules/resources";
-import { getWorkCentersListWithBlockingStatus } from "~/modules/resources";
-
+import { getWorkCentersListWithBlockingStatus } from "~/modules/resources/resources.service";
+import type { WorkCenter } from "~/modules/resources/types";
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -2,23 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useCloseRoute, useRouteData } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useParams } from "react-router";
-import {
-  getStockTransfer,
-  isStockTransferLocked,
-  stockTransferLineValidator,
-  upsertStockTransferLine
-} from "~/modules/inventory";
+import { useParams } from "react-router";
+import { stockTransferLineValidator } from "~/modules/inventory/inventory.models";
 import type { StockTransfer } from "~/modules/inventory/types";
 import StockTransferLineForm from "~/modules/inventory/ui/StockTransfers/StockTransferLineForm";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -29,58 +21,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return null;
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(stockTransferLineValidator).request(args, {
+    params: ["id"]
   });
-
-  const { id } = params;
-  if (!id) throw notFound("id not found");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "inventory"
+  if ("invalid" in input) return input.invalid;
+  const {
+    id: _,
+    requiresBatchTracking,
+    requiresSerialTracking,
+    ...line
+  } = input.data;
+  const { id } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.inventory.createStockTransferLine({
+    ...line,
+    // The line goes on the transfer in the URL, the one whose lock is checked.
+    stockTransferId: id,
+    requiresBatchTracking: requiresBatchTracking ? "true" : "false",
+    requiresSerialTracking: requiresSerialTracking ? "true" : "false"
   });
-  const transfer = await getStockTransfer(viewClient, id);
-  await requireUnlocked({
-    request,
-    isLocked: isStockTransferLocked(transfer.data?.status),
-    redirectTo: path.to.stockTransfer(id),
-    message: "Cannot modify a locked stock transfer. Reopen it first."
+  // An error is toasted and the drawer stays open.
+  if (result.error) return result;
+  return respond(args.request, result).redirect(path.to.stockTransfer(id), {
+    message: "Line created"
   });
-
-  const formData = await request.formData();
-
-  const validation = await validator(stockTransferLineValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id: lineId, ...d } = validation.data;
-
-  const insertStockTransferLine = await upsertStockTransferLine(client, {
-    ...d,
-    companyId,
-    createdBy: userId
-  });
-  if (insertStockTransferLine.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(insertStockTransferLine.error, "Failed to insert line")
-      )
-    );
-  }
-
-  return redirect(
-    path.to.stockTransfer(id),
-    await flash(request, success("Line created"))
-  );
 }
 
 export default function NewStockTransferLinesRoute() {

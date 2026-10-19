@@ -5,6 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../config/env", () => ({
+  AUTH_COOKIE_SUFFIX: undefined,
   CarbonEdition: "Community",
   DOMAIN: "localhost",
   SESSION_SECRET: "test-session-secret"

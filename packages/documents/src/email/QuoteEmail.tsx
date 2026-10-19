@@ -39,7 +39,7 @@ const QuoteEmail = ({
   sender
 }: QuoteEmailProps) => {
   const digitalQuoteUrl =
-    companySettings.digitalQuoteEnabled && !!quote.externalLinkId
+    companySettings.digitalQuoteEnabled && quote.externalLinkId
       ? `${getAppUrl()}/share/quote/${quote.externalLinkId}` // the VERCEL_URL variable was giving us a preview branch
       : undefined;
 

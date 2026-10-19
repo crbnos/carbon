@@ -2,79 +2,32 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { riskRegisterValidator } from "~/modules/quality/quality.models";
-import { upsertRisk } from "~/modules/quality/quality.service";
 import RiskRegisterForm from "~/modules/quality/ui/RiskRegister/RiskRegisterForm";
 import { getParams, path } from "~/utils/path";
 
-const logger = getLogger("erp", "risks-new");
-
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { client, userId, companyId } = await requirePermissions(request, {
-    role: "employee"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(riskRegisterValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id: _, severity, likelihood, ...risk } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.quality.createRisk({
+    ...risk,
+    severity: Number.parseInt(severity ?? "1", 10),
+    likelihood: Number.parseInt(likelihood ?? "1", 10)
   });
-
-  const formData = await request.formData();
-  const validation = await validator(riskRegisterValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id: _, ...d } = validation.data;
-
-  const severity = parseInt(d.severity ?? "1", 10);
-  const likelihood = parseInt(d.likelihood ?? "1", 10);
-
-  const result = await upsertRisk(client, {
-    ...d,
-    assignee: d.assignee ?? userId,
-    severity,
-    likelihood,
-    companyId,
-    createdBy: userId
-  });
-
   if (result.error) {
-    throw redirect(
-      path.to.risks,
-      await flash(request, error(result.error, "Failed to create risk"))
-    );
+    return respond(args.request, result).redirect(path.to.risks);
   }
-
-  // Notify the assignee if one was set
-  if (d.assignee && result.data?.id) {
-    try {
-      await trigger("notify", {
-        companyId,
-        documentId: result.data.id,
-        event: NotificationEvent.RiskAssignment,
-        recipient: {
-          type: "user",
-          userId: d.assignee
-        },
-        from: userId
-      });
-    } catch (err) {
-      logger.error("Failed to notify assignee", { error: err });
-    }
-  }
-
-  throw redirect(
-    `${path.to.risks}?${getParams(request)}`,
-    await flash(request, success("Risk created successfully"))
+  return respond(args.request, result).redirect(
+    `${path.to.risks}?${getParams(args.request)}`,
+    { message: "Risk created successfully" }
   );
-};
+}
 
 export default function NewRiskRoute() {
   const formDisclosure = useDisclosure({

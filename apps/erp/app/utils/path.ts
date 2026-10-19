@@ -49,6 +49,7 @@ export const path = {
     accountingActivation: `${x}/accounting/activation`,
     accountingActivationStep: (
       step:
+        | "chart"
         | "readiness"
         | "inventory"
         | "fixed-assets"
@@ -128,6 +129,7 @@ export const path = {
         generatePath(
           `${api}/items/methods/${methodId}/bom.csv?withOperations=${withOperations}`
         ),
+      chartOfAccountsCsv: `${api}/accounting/chart-of-accounts.csv`,
       chat: `${api}/ai/chat`,
       costCenters: `${api}/accounting/cost-centers`,
       countries: `${api}/countries?${build}`,
@@ -141,6 +143,7 @@ export const path = {
       customerTypes: `${api}/sales/customer-types`,
       customFieldOptions: (table: string, fieldId: string) =>
         generatePath(`${api}/settings/custom-fields/${table}/${fieldId}`),
+      defaultAccountsCsv: `${api}/accounting/default-accounts.csv`,
       departments: `${api}/people/departments`,
       digitalQuote: (id: string) =>
         generatePath(`${api}/sales/digital-quote/${id}`),
@@ -249,11 +252,23 @@ export const path = {
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`
         ),
+      onShapeDetach: `${api}/integrations/onshape/detach`,
       onShapeDocuments: `${api}/integrations/onshape/documents`,
       onShapeElements: (documentId: string, versionId: string) =>
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
         ),
+      onShapePanelFields: `${api}/integrations/onshape/panel/fields`,
+      onShapePanelMe: `${api}/integrations/onshape/panel/me`,
+      onShapePanelPlanAssembly: `${api}/integrations/onshape/panel/plan-assembly`,
+      onShapePanelPlanPart: `${api}/integrations/onshape/panel/plan-part`,
+      onShapePanelPlanRelease: `${api}/integrations/onshape/panel/plan-release`,
+      onShapePanelPushAssembly: `${api}/integrations/onshape/panel/push-assembly`,
+      onShapePanelPushPart: `${api}/integrations/onshape/panel/push-part`,
+      onShapePanelPushRelease: `${api}/integrations/onshape/panel/push-release`,
+      onShapePanelReleases: `${api}/integrations/onshape/panel/releases`,
+      onShapePanelSession: `${api}/integrations/onshape/panel/session`,
+      onShapePanelStatus: `${api}/integrations/onshape/panel/status`,
       onShapeSync: `${api}/integrations/onshape/sync`,
       onShapeVersions: (documentId: string) =>
         generatePath(`${api}/integrations/onshape/d/${documentId}/versions`),
@@ -371,6 +386,7 @@ export const path = {
       supplierProcesses: (id: string) =>
         generatePath(`${api}/purchasing/supplier-processes/${id}`),
       supplierTypes: `${api}/purchasing/supplier-types`,
+      systemStatus: `${api}/system-status`,
       tags: (table?: string) =>
         generatePath(`${api}/shared/tags?table=${table}`),
       timecard: `${api}/people/timecard`,
@@ -403,7 +419,7 @@ export const path = {
     // The docs render every endpoint against a host. Hand them this deployment's
     // REST origin so a self-hosted or non-default-region reader sees their own
     // host instead of rest.carbon.ms; with none set the docs show `<your-host>`.
-    apiDocs: withDocsHost("https://docs.carbon.ms/api-reference"),
+    apiDocs: withDocsHost("https://docs.carbon.ms/api"),
     apiKey: (id: string) => generatePath(`${x}/settings/api-keys/${id}`),
     apiKeys: `${x}/settings/api-keys`,
     approvalRule: (id: string) =>
@@ -533,6 +549,8 @@ export const path = {
     // drives selection — refresh + back/forward reselect it.
     changeNoticeAffectedItem: (id: string, affectedId: string) =>
       generatePath(`${x}/items/change-notice/${id}/${affectedId}/details`),
+    changeNoticeApproval: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/approval`),
     changeNoticeContent: (id: string) =>
       generatePath(`${x}/items/change-notice/${id}/content`),
     // Delete action for a supplier part managed on a CO line (Buy Revision/New
@@ -569,6 +587,7 @@ export const path = {
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
     chartOfAccounts: `${x}/accounting/charts`,
+    chartOfAccountsImport: `${x}/accounting/chart-import`,
     chartOfAccountsLedger: (id: string) =>
       generatePath(`${x}/accounting/charts/ledger/${id}`),
     closeIssue: (id: string) => generatePath(`${x}/issue/${id}/close`),
@@ -845,8 +864,8 @@ export const path = {
     deleteItemPostingGroup: (id: string) =>
       generatePath(`${x}/items/groups/delete/${id}`),
     deleteJob: (id: string) => generatePath(`${x}/job/${id}/delete`),
-    deleteJobMaterial: (jobId: string, id: string) =>
-      generatePath(`${x}/job/methods/${jobId}/material/delete/${id}`),
+    deleteJobMaterials: (jobId: string) =>
+      generatePath(`${x}/job/methods/${jobId}/material/delete`),
     deleteJobOperationParameter: (id: string) =>
       generatePath(`${x}/job/methods/operation/parameter/delete/${id}`),
     deleteJobOperationStep: (id: string) =>
@@ -859,6 +878,7 @@ export const path = {
       generatePath(`${x}/journal-entry/${id}/delete`),
     deleteKanban: (id: string) =>
       generatePath(`${x}/inventory/kanbans/delete/${id}`),
+    deleteLease: (id: string) => generatePath(`${x}/lease/${id}/delete`),
     deleteLocation: (id: string) =>
       generatePath(`${x}/resources/locations/delete/${id}`),
     deleteMaintenanceDispatch: (id: string) =>
@@ -883,8 +903,7 @@ export const path = {
       generatePath(`${x}/material/${itemId}/purchasing/${id}/delete`),
     deleteMaterialType: (id: string) =>
       generatePath(`${x}/items/types/delete/${id}`),
-    deleteMethodMaterial: (id: string) =>
-      generatePath(`${x}/items/methods/material/delete/${id}`),
+    deleteMethodMaterials: `${x}/items/methods/material/delete`,
     deleteMethodOperationParameter: (id: string) =>
       generatePath(`${x}/items/methods/operation/parameter/delete/${id}`),
     deleteMethodOperationStep: (id: string) =>
@@ -947,10 +966,8 @@ export const path = {
       generatePath(`${x}/quote/${id}/${lineId}/delete`),
     deleteQuoteLineCost: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/cost/delete`),
-    deleteQuoteMaterial: (quoteId: string, lineId: string, id: string) =>
-      generatePath(
-        `${x}/quote/methods/${quoteId}/${lineId}/material/delete/${id}`
-      ),
+    deleteQuoteMaterials: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/delete`),
     deleteQuoteOperationParameter: (id: string) =>
       generatePath(`${x}/quote/methods/operation/parameter/delete/${id}`),
     deleteQuoteOperationStep: (id: string) =>
@@ -1460,6 +1477,7 @@ export const path = {
     itemsSettings: `${x}/settings/items`,
     job: (id: string) => generatePath(`${x}/job/${id}`),
     jobBatchNumber: (id: string) => generatePath(`${x}/job/${id}/batch`),
+    jobCancel: (id: string) => generatePath(`${x}/job/${id}/cancel`),
     jobComplete: (id: string) => generatePath(`${x}/job/${id}/complete`),
     jobConfigure: (id: string) => generatePath(`${x}/job/${id}/configure`),
     jobDag: (id: string) => generatePath(`${x}/job/${id}/dag`),
@@ -1515,7 +1533,42 @@ export const path = {
       `/api/accounting/journal-line-dimensions/${lineId}`,
     kanban: (id: string) => generatePath(`${x}/inventory/kanbans/${id}`),
     kanbans: `${x}/inventory/kanbans`,
+    lease: (id: string) => generatePath(`${x}/lease/${id}`),
+    leaseActivate: (id: string) => generatePath(`${x}/lease/${id}/activate`),
+    leaseDetails: (id: string) => generatePath(`${x}/lease/${id}/details`),
+    leaseInvoice: (id: string) => generatePath(`${x}/lease/${id}/invoice`),
+    leaseLiabilities: `${x}/reports/lease-liabilities`,
+    leaseLine: (id: string, lineId: string) =>
+      generatePath(`${x}/lease/${id}/${lineId}/details`),
+    leaseLineClassification: (id: string, lineId: string) =>
+      generatePath(`${x}/lease/${id}/${lineId}/classification`),
+    leaseLineDelete: (id: string, lineId: string) =>
+      generatePath(`${x}/lease/${id}/${lineId}/delete`),
+    leaseLinePurchase: (id: string, lineId: string) =>
+      generatePath(`${x}/lease/${id}/${lineId}/purchase`),
+    leaseLinesNew: (id: string) => generatePath(`${x}/lease/${id}/lines/new`),
+    leaseLineTerminate: (id: string, lineId: string) =>
+      generatePath(`${x}/lease/${id}/${lineId}/terminate`),
+    leaseLineUpdate: (id: string, lineId: string) =>
+      generatePath(`${x}/lease/${id}/${lineId}/update`),
+    leaseModify: (id: string) => generatePath(`${x}/lease/${id}/modify`),
     leaseNetInvestment: `${x}/reports/lease-net-investment`,
+    leasePaymentDelete: (id: string, paymentId: string) =>
+      generatePath(`${x}/lease/${id}/payments/${paymentId}/delete`),
+    leasePaymentNew: (id: string) =>
+      generatePath(`${x}/lease/${id}/payments/new`),
+    leasePaymentsRegenerate: (id: string) =>
+      generatePath(`${x}/lease/${id}/payments/regenerate`),
+    leasePaymentUpdate: (id: string, paymentId: string) =>
+      generatePath(`${x}/lease/${id}/payments/${paymentId}/update`),
+    leaseRuns: `${x}/accounting/lease-runs`,
+    leaseSetup: (
+      id: string,
+      step: "details" | "assets" | "payments" | "accounting" | "review"
+    ) => generatePath(`${x}/lease/${id}/setup/${step}`),
+    leaseStatus: (id: string) => generatePath(`${x}/lease/${id}/status`),
+    leases: `${x}/purchasing/leases`,
+    leaseUpdate: `${x}/lease/update`,
     legal: {
       privacyPolicy: "https://carbon.ms/privacy",
       termsAndConditions: "https://carbon.ms/terms"
@@ -1545,6 +1598,7 @@ export const path = {
     makeMethodSave: `${x}/items/methods/save`,
     manualPrint: `${x}/print`,
     markTrainingComplete: `${x}/resources/assignments/complete`,
+    markTrainingIncomplete: `${x}/resources/assignments/uncomplete`,
     material: (id: string) => generatePath(`${x}/material/${id}`),
     materialCosting: (id: string) =>
       generatePath(`${x}/material/${id}/costing`),
@@ -1698,9 +1752,6 @@ export const path = {
     newExchangeRate: `${x}/accounting/exchange-rates/new`,
     newFailureMode: `${x}/resources/failure-modes/new`,
     newFixedAsset: `${x}/accounting/fixed-assets/new`,
-    newFixture: `${x}/fixture/new`,
-    newFixtureSupplier: (id: string) =>
-      generatePath(`${x}/fixture/${id}/purchasing/new`),
     newGauge: `${x}/quality/gauges/new`,
     newGaugeCalibrationRecord: `${x}/quality/calibrations/new`,
     newGaugeType: `${x}/quality/gauge-types/new`,
@@ -1727,6 +1778,8 @@ export const path = {
     newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newJournalEntry: `${x}/accounting/journals/new`,
     newKanban: `${x}/inventory/kanbans/new`,
+    newLease: `${x}/lease/new`,
+    newLeaseRun: `${x}/accounting/lease-runs/new`,
     newLocation: `${x}/resources/locations/new`,
     newMaintenanceDispatch: `${x}/maintenance/new`,
     newMaintenanceDispatchEvent: (dispatchId: string) =>
@@ -1879,6 +1932,8 @@ export const path = {
       theme: `${onboarding}/theme`,
       user: `${onboarding}/user`
     },
+    onshapePanel: "/onshape/panel",
+    onshapePanelAuth: "/onshape/auth",
     operationBatch: (id: string) =>
       generatePath(`${x}/production/batches/${id}`),
     operationBatches: `${x}/production/batches`,
@@ -2527,8 +2582,8 @@ export const path = {
 
     trainingAssignment: (assignmentId: string) =>
       generatePath(`${x}/resources/assignments/assignment/${assignmentId}`),
-    trainingAssignmentDetail: (trainingId: string) =>
-      generatePath(`${x}/resources/assignments/${trainingId}`),
+    trainingAssignmentDetail: (assignmentId: string) =>
+      generatePath(`${x}/resources/assignments/${assignmentId}`),
     trainingAssignments: `${x}/resources/assignments`,
     trainingQuestion: (id: string, questionId: string) =>
       generatePath(`${x}/training/${id}/questions/${questionId}`),
@@ -2538,6 +2593,9 @@ export const path = {
     trialBalance: `${x}/reports/trial-balance`,
     trialBalanceLedger: (id: string) =>
       generatePath(`${x}/reports/trial-balance/${id}`),
+    unattributedMachineTime: (id: string) =>
+      generatePath(`${x}/production/machine-time/${id}`),
+    unattributedMachineTimes: `${x}/production/machine-time`,
     uom: (id: string) => generatePath(`${x}/items/uom/${id}`),
     uoms: `${x}/items/uom`,
     updateAssemblyUnit: (id: string, unitId: string) =>
@@ -2564,6 +2622,8 @@ export const path = {
       generatePath(`${x}/warehouse-transfer/${id}/status`),
     warehouseTransfers: `${x}/inventory/warehouse-transfers`,
     webhook: (id: string) => generatePath(`${x}/settings/webhooks/${id}`),
+    webhookSigningSecret: (id: string) =>
+      generatePath(`${x}/settings/webhooks/secret/${id}`),
     webhooks: `${x}/settings/webhooks`,
     workCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/${id}`),

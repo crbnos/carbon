@@ -12,7 +12,7 @@ import {
   getIssueTypesList,
   getQualityActions,
   getRequiredActionsList
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import ActionsTable from "~/modules/quality/ui/Actions/ActionsTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

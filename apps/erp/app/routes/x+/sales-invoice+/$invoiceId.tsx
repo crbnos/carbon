@@ -8,19 +8,19 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { createMappingService } from "@carbon/ee/accounting";
 import { RecordOutlet, VStack } from "@carbon/react";
+import { STRIPE_CONNECT_INTEGRATION } from "@carbon/stripe/send-sales-invoice.server";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
 import {
   getCompanyHasOpenCredits,
   getSalesInvoice,
   getSalesInvoiceLines,
   getSalesInvoiceShipment
-} from "~/modules/invoicing";
-import { STRIPE_CONNECT_INTEGRATION } from "~/modules/invoicing/stripe-customer.server";
+} from "~/modules/invoicing/invoicing.service";
 import SalesInvoiceExplorer from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceExplorer";
 import SalesInvoiceHeader from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceHeader";
 import SalesInvoiceProperties from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties";
@@ -29,7 +29,7 @@ import {
   getOpportunity,
   getOpportunityDocuments
 } from "~/modules/sales/sales.service";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path, requestReferrer } from "~/utils/path";

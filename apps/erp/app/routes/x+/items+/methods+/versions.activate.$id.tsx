@@ -9,8 +9,10 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { getRequestOrigin, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { checkRevisionLock } from "~/modules/items/items.server";
-import { activateMethodVersion } from "~/modules/items/items.service";
+import {
+  activateMethodVersion,
+  checkRevisionLock
+} from "~/modules/items/items.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { requestReferrer } from "~/utils/path";
 

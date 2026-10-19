@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getHolidays, getHolidayYears } from "~/modules/people";
+import { getHolidays, getHolidayYears } from "~/modules/people/people.service";
 import { HolidaysTable } from "~/modules/people/ui/Holidays";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

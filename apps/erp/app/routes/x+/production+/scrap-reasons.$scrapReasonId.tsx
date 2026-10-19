@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { scrapReasonValidator } from "~/modules/production/production.models";
 import {
   getScrapReason,
-  scrapReasonValidator,
   upsertScrapReason
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import ScrapReasonForm from "~/modules/production/ui/ScrapReasons/ScrapReasonForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

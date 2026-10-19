@@ -8,7 +8,8 @@ import { describe, expect, it, vi } from "vitest";
 // macros that vitest does not transform. accounting.service only needs
 // getNextSequence from it, which these tests never exercise — stub it to keep
 // the import graph light and macro-free.
-vi.mock("~/modules/settings", () => ({
+vi.mock("~/modules/settings/settings.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getNextSequence: vi.fn()
 }));
 
@@ -202,6 +203,7 @@ const args = {
 // tests need no server function or depreciation reads.
 const nothingDue: PeriodRunPreview = {
   revenue: { count: 0, amount: 0, error: null },
+  lease: { count: 0, amount: 0, error: null },
   depreciation: { count: 0, amount: 0, error: null }
 };
 const noRunsDue = async () => nothingDue;
@@ -1095,11 +1097,21 @@ describe("computePeriodReadiness — run checks", () => {
           heldRevenueRows: [
             {
               amount: 40,
-              run: { id: "R1", runId: "RR-000001", periodEnd: "2026-09-30" }
+              run: {
+                id: "R1",
+                runId: "RR-000001",
+                periodEnd: "2026-09-30",
+                type: "Revenue Recognition"
+              }
             },
             {
               amount: 10,
-              run: { id: "R1", runId: "RR-000001", periodEnd: "2026-09-30" }
+              run: {
+                id: "R1",
+                runId: "RR-000001",
+                periodEnd: "2026-09-30",
+                type: "Revenue Recognition"
+              }
             }
           ]
         })
@@ -1114,6 +1126,41 @@ describe("computePeriodReadiness — run checks", () => {
       draftRuns: [
         { id: "R1", readableId: "RR-000001", periodEnd: "2026-09-30" }
       ]
+    });
+  });
+
+  it("fails the lease check on its own preview and Draft runs, never the revenue check", async () => {
+    const result = await readiness(
+      makeClient(
+        script({
+          heldRevenueRows: [
+            {
+              amount: 30,
+              run: {
+                id: "L1",
+                runId: "LR-000001",
+                periodEnd: "2026-09-30",
+                type: "Lease"
+              }
+            }
+          ]
+        })
+      ),
+      preview({ lease: { count: 2, amount: 120, error: null } })
+    );
+
+    expect(check(result, "unposted-lease-schedules")).toMatchObject({
+      failing: true,
+      count: 3,
+      amount: 150,
+      due: { count: 2, amount: 120 },
+      draftRuns: [
+        { id: "L1", readableId: "LR-000001", periodEnd: "2026-09-30" }
+      ]
+    });
+    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
+      failing: false,
+      count: 0
     });
   });
 

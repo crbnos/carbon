@@ -160,36 +160,38 @@ function fixture(
 }
 
 describe("inbound payment draft currency boundaries", () => {
-  it.each([
-    "ar",
-    "ap"
-  ] as const)("stores exact cash principal and target carrying amount for %s", async (family) => {
-    const f = fixture({ family });
-    await f.run();
-    expect(f.records.find((r) => r.table === "payment")?.value).toMatchObject({
-      totalAmount: 110,
-      exchangeRate: 1.1,
-      currencyCode: "EUR"
-    });
-    expect(
-      f.records.find(
-        (r) => r.table === "invoiceSettlement" && Array.isArray(r.value)
-      )?.value[0]
-    ).toMatchObject({
-      sourceAmount: 110,
-      sourcePaymentId: null,
-      appliedAmount: 88,
-      sourceExchangeRate: 1.1,
-      targetExchangeRate: 1.25,
-      fxGainLossAmount: family === "ar" ? 12 : -12
-    });
-    expect(
-      f.reads.find(
-        (r) =>
-          r.table === (family === "ar" ? "salesInvoices" : "purchaseInvoices")
-      )?.filters
-    ).toContainEqual(["companyId", "=", "company-1"]);
-  });
+  it.each(["ar", "ap"] as const)(
+    "stores exact cash principal and target carrying amount for %s",
+    async (family) => {
+      const f = fixture({ family });
+      await f.run();
+      expect(f.records.find((r) => r.table === "payment")?.value).toMatchObject(
+        {
+          totalAmount: 110,
+          exchangeRate: 1.1,
+          currencyCode: "EUR"
+        }
+      );
+      expect(
+        f.records.find(
+          (r) => r.table === "invoiceSettlement" && Array.isArray(r.value)
+        )?.value[0]
+      ).toMatchObject({
+        sourceAmount: 110,
+        sourcePaymentId: null,
+        appliedAmount: 88,
+        sourceExchangeRate: 1.1,
+        targetExchangeRate: 1.25,
+        fxGainLossAmount: family === "ar" ? 12 : -12
+      });
+      expect(
+        f.reads.find(
+          (r) =>
+            r.table === (family === "ar" ? "salesInvoices" : "purchaseInvoices")
+        )?.filters
+      ).toContainEqual(["companyId", "=", "company-1"]);
+    }
+  );
   it("keeps document principal beyond a tiny base carrying amount", async () => {
     const f = fixture({ sourceAmount: 160.01, rate: 16000, sourceRate: 16000 });
     await f.run();
@@ -210,11 +212,14 @@ describe("inbound payment draft currency boundaries", () => {
     { balance: 0 },
     { ambiguous: true },
     { foreignCurrencyOnly: true }
-  ])("rejects invalid authoritative snapshots without draft mutations: %j", async (options) => {
-    const f = fixture(options);
-    await expect(f.run()).rejects.toThrow();
-    expect(f.records).toEqual([]);
-  });
+  ])(
+    "rejects invalid authoritative snapshots without draft mutations: %j",
+    async (options) => {
+      const f = fixture(options);
+      await expect(f.run()).rejects.toThrow();
+      expect(f.records).toEqual([]);
+    }
+  );
   it("resolves omitted rates only for an authoritative base-currency document", async () => {
     const f = fixture({ baseCurrency: "EUR", rate: 1, sourceRate: null });
     await f.run();

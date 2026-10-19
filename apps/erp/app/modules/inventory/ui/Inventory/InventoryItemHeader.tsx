@@ -20,7 +20,7 @@ import { AppBarActions } from "~/components/Layout/Mobile/ChromeSlots";
 import { useHideListAppBarMenu } from "~/components/Table/components/Compact/CompactToolbar";
 import { useUrlParams } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { useInventoryNavigation } from "./useInventoryNavigation";
 

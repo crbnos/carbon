@@ -99,7 +99,7 @@ const FAQ: FaqEntry[] = [
   },
   {
     q: "Is there a rate limit?",
-    a: "Each key has its own limit and window — 60 requests per minute by default. It's platform-controlled: the Rate Limit column in Settings → API Keys shows the limit in force, but there's no field to change it. Go over it and calls return 429 with X-RateLimit-* and Retry-After headers telling the client when to retry."
+    a: "Each key has its own limit — 20 requests per minute for a new key, shown in the Rate Limit column in Settings → API Keys — and all of a company's keys share 60 requests per minute. Both are platform-controlled, with no field to change them; contact Carbon support to raise them for your company. Go over either and calls return 429 with X-RateLimit-* and Retry-After headers telling the client when to retry."
   },
   {
     q: "I'm getting 401 Unauthorized",
@@ -133,10 +133,13 @@ export default async function ConnectOverMcpPage() {
         Cursor run on a computer that can already open this origin.
       </Lead>
       <P>
-        The server lives at <McpEndpoint />. It exposes three tools,{" "}
-        <Code>search_tools</Code>, <Code>describe_tool</Code>, and{" "}
-        <Code>call_tool</Code>. The agent finds an operation, reads its schema,
-        then calls it.
+        The server lives at <McpEndpoint />. It exposes four tools,{" "}
+        <Code>search_tools</Code>, <Code>describe_tool</Code>,{" "}
+        <Code>call_tool</Code>, and <Code>call_destructive_tool</Code>. The
+        agent finds an operation, reads its schema, then calls it. A{" "}
+        <Code>DESTRUCTIVE</Code> operation goes through{" "}
+        <Code>call_destructive_tool</Code>. <Code>call_tool</Code> refuses
+        those.
       </P>
 
       <H2 id="private-network">Private network and local compute</H2>
@@ -170,10 +173,12 @@ export default async function ConnectOverMcpPage() {
         When this origin is not Carbon Cloud in the US, Cursor uses the user
         file <Code>~/.cursor/mcp.json</Code>, not a file committed with the
         project. In <strong>Settings → MCP</strong> the server should list the
-        three tools. Add a user rule: discover with <Code>search_tools</Code>,
-        read the schema with <Code>describe_tool</Code>, call with{" "}
-        <Code>call_tool</Code>, and ask before any <Code>WRITE</Code> or{" "}
-        <Code>DESTRUCTIVE</Code> operation. Stop on <Code>401</Code> (new key),{" "}
+        four tools. Add a user rule: discover with <Code>search_tools</Code>,
+        read the schema with <Code>describe_tool</Code>, call a{" "}
+        <Code>READ</Code> or <Code>WRITE</Code> with <Code>call_tool</Code>,
+        and call a <Code>DESTRUCTIVE</Code> operation with{" "}
+        <Code>call_destructive_tool</Code>. Ask before any <Code>WRITE</Code>{" "}
+        or <Code>DESTRUCTIVE</Code> operation. Stop on <Code>401</Code> (new key),{" "}
         <Code>403</Code> (Starter plan, during sign-in), and <Code>429</Code>{" "}
         (wait for <Code>Retry-After</Code>). A missing module scope is an MCP
         tool error, not HTTP 403. A Cursor Cloud Agent stays unused for a
@@ -263,7 +268,7 @@ export default async function ConnectOverMcpPage() {
       <P>
         The server does not register all{" "}
         {toolCounts().total.toLocaleString()} operations as tools — that
-        would flood a model's context. It exposes three meta-tools instead, and
+        would flood a model's context. It exposes four meta-tools instead, and
         the model loads only what a task needs:
       </P>
       <Table>
@@ -286,13 +291,21 @@ export default async function ConnectOverMcpPage() {
           cols="150px 1fr"
           cells={[
             <Code key="c">call_tool</Code>,
-            "Invoke an operation by name with its arguments."
+            "Invoke a READ or WRITE operation by name with its arguments."
+          ]}
+        />
+        <Row
+          cols="150px 1fr"
+          cells={[
+            <Code key="x">call_destructive_tool</Code>,
+            "Invoke a DESTRUCTIVE operation. call_tool refuses those."
           ]}
         />
       </Table>
       <P>
         A typical flow is <Code>search_tools</Code> → <Code>describe_tool</Code>{" "}
-        → <Code>call_tool</Code>, which keeps the model's context lean no matter
+        → <Code>call_tool</Code>. A delete uses <Code>call_destructive_tool</Code>{" "}
+        instead. That keeps the model's context lean no matter
         how large the catalog grows. The same operations are also plain HTTP
         endpoints — every one has a page of its own, listed by module in the
         sidebar.

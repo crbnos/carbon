@@ -32,13 +32,14 @@ confirm the endpoint and the server's capabilities without authenticating by
 fetching its manifest at `{{ORIGIN}}/.well-known/mcp.json`.
 
 The server does **not** register hundreds of individual tools. It registers
-three meta-tools, and every ERP operation is reached through them:
+four meta-tools, and every ERP operation is reached through them:
 
 | Tool | What it does |
 | --- | --- |
 | `search_tools` | Find operations by name, module, or classification (`READ` / `WRITE` / `DESTRUCTIVE`) and make the matches callable. |
 | `describe_tool` | Return the full input schema and description for one operation, so you can build its arguments correctly. |
-| `call_tool` | Execute an operation by name with its arguments. |
+| `call_tool` | Execute a `READ` or `WRITE` operation by name with its arguments. |
+| `call_destructive_tool` | Execute a `DESTRUCTIVE` operation (one that deletes or removes); `call_tool` refuses those. |
 
 So the working loop is always **search → describe → call**. Do not expect a flat
 tool list; discover what you need with `search_tools` first.
@@ -111,7 +112,7 @@ The Grok Bot marketplace plugin uses OAuth on purpose. It ships no key.
 - `companyId` and `userId` come from the credential. Tool arguments cannot switch company.
 - Row-level security is the same boundary as the app.
 - The catalog excludes, and the server rejects, tenant create/delete (`settings_insertCompany`, `settings_deleteSubsidiary`, `settings_seedCompany`), the service-role supplier-approval helper, the ungated `production_triggerJobSchedule` (use `production_scheduleJob`), and the user-scoped note, favorite, and training-completion mutations that cannot succeed under an API key.
-- `search_tools` returns `READ`, `WRITE`, or `DESTRUCTIVE`. Show that classification. Wait for a yes before `call_tool` on the last two.
+- `search_tools` returns `READ`, `WRITE`, or `DESTRUCTIVE`. Show that classification. Wait for a yes before `call_tool` on a `WRITE`. Wait for a yes before `call_destructive_tool` on a `DESTRUCTIVE` operation. `call_tool` refuses a `DESTRUCTIVE` operation.
 
 ### Rate and plan
 
@@ -191,7 +192,8 @@ headers = { "Authorization" = "Bearer ${CARBON_API_KEY}" }
 
 Omit `--header` only for the OAuth flow described above. Then run
 `grok mcp doctor carbon`. In a session the tools are `carbon__search_tools`,
-`carbon__describe_tool`, and `carbon__call_tool`.
+`carbon__describe_tool`, `carbon__call_tool`, and
+`carbon__call_destructive_tool`.
 
 ### Cursor and Grok Bot (one marketplace plugin)
 
@@ -263,13 +265,13 @@ When this Cursor build expands `${env:CARBON_API_KEY}` in headers, keep the
 key in the environment. When it does not, put the key only in that user file,
 still never commit it.
 
-In **Settings → MCP**, confirm the server lists the three tools. Add this user
+In **Settings → MCP**, confirm the server lists the four tools. Add this user
 rule under Cursor **Settings → Rules**, because the marketplace rule is not
 installed for this origin:
 
 ```
-The Carbon MCP server is already configured. Its tools are search_tools, describe_tool, and call_tool.
-Discover an operation with search_tools, read its schema with describe_tool, then run it with call_tool.
+The Carbon MCP server is already configured. Its tools are search_tools, describe_tool, call_tool, and call_destructive_tool.
+Discover an operation with search_tools, read its schema with describe_tool, then run a READ or WRITE with call_tool. Run a DESTRUCTIVE operation with call_destructive_tool. call_tool refuses those.
 Show the classification. Ask before any WRITE or DESTRUCTIVE call.
 On 401, stop and ask for a new key. On 403, stop: on Carbon Cloud the company is on the Starter plan. A missing module scope is a tool error, not HTTP 403. On 429, wait for Retry-After.
 ```
@@ -339,11 +341,12 @@ as Grok Bot.
 ## Verify the connection
 
 Do not report success until you've actually reached the server. Confirm it by
-listing the three meta-tools and running one read:
+listing the four meta-tools and running one read:
 
-1. The client should now expose `search_tools`, `describe_tool`, and
-   `call_tool` (Grok Build namespaces them as `carbon__search_tools` and so on).
-   If it doesn't, the server isn't connected — recheck the URL and header.
+1. The client should now expose `search_tools`, `describe_tool`, `call_tool`,
+   and `call_destructive_tool` (Grok Build namespaces them as
+   `carbon__search_tools` and so on). If it doesn't, the server isn't
+   connected — recheck the URL and header.
 2. Call `search_tools` with a query like `"customers"` to confirm auth works and
    you get operations back.
 3. Optionally `describe_tool` one of them and `call_tool` a `READ` operation to
@@ -382,7 +385,7 @@ code changes. This MCP server is how you read and write ERP data.
 
 ## ✅ Done
 
-When the three meta-tools are present and `search_tools` returns operations, the
+When the four meta-tools are present and `search_tools` returns operations, the
 Carbon MCP server is connected. Tell the user it's ready, which mode you used
 (OAuth or API key), which client, and — if a key — remind them it's scoped and
 revocable in Settings → API Keys.

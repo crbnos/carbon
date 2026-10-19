@@ -8,6 +8,7 @@ import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { SupplierForm } from "~/modules/purchasing/ui/Supplier";
 import { useSuppliers } from "~/stores";
+import SupplierAvatar from "../SupplierAvatar";
 import { useEmptyState } from "./emptyStates";
 
 type SupplierSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
@@ -25,7 +26,8 @@ const Suppliers = (props: SupplierSelectProps) => {
     return (
       suppliers.map((c) => ({
         value: c.id,
-        label: c.name
+        label: <SupplierAvatar supplierId={c.id} />,
+        keywords: c.name
       })) ?? []
     );
   }, [suppliers]);

@@ -6,6 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { serviceErrorMessage } from "@carbon/query";
 import {
   Button,
   cn,
@@ -21,7 +22,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { useEffect, useMemo, useState } from "react";
 import { LuBox, LuCirclePlus, LuMapPin, LuX } from "react-icons/lu";
-import type { SlideAnnotation, SlideSize } from "~/modules/shared";
+import type {
+  SlideAnnotation,
+  SlideSize
+} from "~/modules/shared/shared.models";
 import { getPrivateUrl, path } from "~/utils/path";
 import { SlideAnnotator } from "./SlideAnnotator";
 
@@ -65,7 +69,7 @@ export async function uploadStepSlideModel(
     method: "POST",
     body: formData
   });
-  if (!response.ok) return null;
+  if (!response.ok || serviceErrorMessage(await response.json())) return null;
   return modelUploadId;
 }
 

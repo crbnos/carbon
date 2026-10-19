@@ -2,12 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { linguiWithoutIdQuery } from "@carbon/dev/vite";
+import { carbon } from "@carbon/dev/vite";
 import { reactRouter } from "@react-router/dev/vite";
-import { lingui } from "@lingui/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
-import { defineConfig, PluginOption } from "vite";
+import { defineConfig } from "vite";
 
 export default defineConfig(({ isSsrBuild }) => ({
   build: {
@@ -43,11 +42,7 @@ export default defineConfig(({ isSsrBuild }) => ({
     port: 4111,
     strictPort: true,
   },
-  plugins: [
-    tailwindcss(),
-    linguiWithoutIdQuery(lingui({ macroTransform: true })),
-    reactRouter(),
-  ] as PluginOption[],
+  plugins: [tailwindcss(), reactRouter(), carbon()],
   resolve: {
     tsconfigPaths: true,
     alias: {

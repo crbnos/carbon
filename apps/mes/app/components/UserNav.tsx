@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useAccountSettings } from "@carbon/account";
-import type { Company } from "@carbon/auth";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import {
   Avatar,
@@ -19,7 +18,6 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-  HStack,
   ItarDisclosure,
   NavRailItem,
   Switch,
@@ -32,7 +30,6 @@ import {
 import { modeValidator } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import {
-  LuBuilding,
   LuChevronDown,
   LuLaptop,
   LuLogOut,
@@ -44,7 +41,7 @@ import {
   LuUser,
   LuUsers
 } from "react-icons/lu";
-import { Form, useFetcher } from "react-router";
+import { Form, useFetcher, useSubmit } from "react-router";
 import { useUser } from "~/hooks";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
@@ -52,14 +49,30 @@ import type { PinnedInUser } from "~/types";
 import { path } from "~/utils/path";
 
 type UserNavProps = {
-  company: Company;
-  companies: Company[];
   consoleEnabled?: boolean;
   consoleMode: boolean;
   location: string;
   locations: Location[];
   pinnedInUser: PinnedInUser | null;
 };
+
+/**
+ * Switches the session to another of the user's companies. A navigation, not
+ * a fetcher: the shell's `shouldRevalidate` re-runs only after a mutation, and
+ * a fetcher's redirect reaches it as a plain GET, so the page kept showing the
+ * old company until a reload.
+ */
+export function useSwitchCompany() {
+  const submit = useSubmit();
+  return (companyId: string) => {
+    const form = new FormData();
+    form.append("companyId", companyId);
+    submit(form, {
+      method: "post",
+      action: path.to.switchCompany(companyId)
+    });
+  };
+}
 
 /** The user menu's state and actions, shared by the rail menu and the phone More sheet. */
 export function useUserNav({
@@ -90,14 +103,7 @@ export function useUserNav({
     fetcher.submit(formData, { method: "POST", action: path.to.location });
   };
 
-  const switchCompany = (companyId: string) => {
-    const form = new FormData();
-    form.append("companyId", companyId);
-    fetcher.submit(form, {
-      method: "post",
-      action: path.to.switchCompany(companyId)
-    });
-  };
+  const switchCompany = useSwitchCompany();
 
   const switchOperator = () => {
     fetcher.submit(null, { method: "POST", action: path.to.consolePinOut });
@@ -150,8 +156,6 @@ export function useUserNav({
 }
 
 export function UserNav({
-  company,
-  companies,
   consoleEnabled,
   consoleMode,
   location,
@@ -166,7 +170,6 @@ export function UserNav({
     modePreference,
     onModeChange,
     updateLocation,
-    switchCompany,
     switchOperator,
     toggleConsoleMode,
     optimisticLocation,
@@ -225,37 +228,6 @@ export function UserNav({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
 
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <DropdownMenuIcon icon={<LuBuilding />} />
-                  <Trans>Company</Trans>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuRadioGroup value={company.companyId!}>
-                    {companies.map((c) => {
-                      const logo =
-                        mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
-                      return (
-                        <DropdownMenuRadioItem
-                          key={c.companyId}
-                          value={c.companyId!}
-                          onSelect={() => switchCompany(c.companyId!)}
-                        >
-                          <HStack>
-                            <Avatar
-                              size="xs"
-                              name={c.name ?? undefined}
-                              src={logo ?? undefined}
-                            />
-                            <span>{c.name}</span>
-                          </HStack>
-                        </DropdownMenuRadioItem>
-                      );
-                    })}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              <DropdownMenuSeparator />
               {locations.length > 1 ? (
                 <>
                   <DropdownMenuSub>

@@ -14,7 +14,7 @@ import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
-import { reactNodeToString } from "./utils/react";
+import { optionLabelText } from "./utils/react";
 import { usePhoneOpenAutoFocus } from "./Viewport";
 
 export type CreatableMultiSelectProps = Omit<
@@ -24,9 +24,11 @@ export type CreatableMultiSelectProps = Omit<
   size?: "sm" | "md" | "lg";
   value: string[];
   options: {
-    label: string;
+    label: string | JSX.Element;
     value: string;
     helper?: string;
+    /** Extra search text, matched but never rendered. */
+    keywords?: string;
   }[];
   selected?: string[];
   isReadOnly?: boolean;
@@ -39,7 +41,7 @@ export type CreatableMultiSelectProps = Omit<
   showCreateOptionOnEmpty?: boolean;
   inline?: (
     value: string[],
-    options: { value: string; label: string; helper?: string }[],
+    options: { value: string; label: string | JSX.Element; helper?: string }[],
     maxPreview?: number
   ) => React.ReactNode;
   inlineIcon?: React.ReactElement;
@@ -89,13 +91,15 @@ const CreatableMultiSelect = forwardRef<
     const isInlinePreview = !!inline;
 
     const selectedLabels = value
-      .map((item) => options.find((option) => option.value === item)?.label)
-      .filter((label): label is string => Boolean(label));
+      .map((item) => options.find((option) => option.value === item))
+      .filter((option) => option !== undefined)
+      .map(optionLabelText)
+      .filter(Boolean);
     const selectedLabelText = selectedLabels.join(", ");
     // Real-text sizer instead of a ch estimate — see Combobox.tsx.
     const longestOptionText = useMemo(() => {
       return options.reduce((longest, option) => {
-        const combined = [option.label, option.helper]
+        const combined = [optionLabelText(option), option.helper]
           .filter(Boolean)
           .join(" ");
 
@@ -235,10 +239,9 @@ const filterCreatableMultiSelectOptions = (
 ) =>
   search
     ? options.filter((option) => {
-        const value =
-          typeof option.label === "string"
-            ? `${option.label} ${option.helper ?? ""}`
-            : reactNodeToString(option.label);
+        const value = [optionLabelText(option), option.helper, option.keywords]
+          .filter(Boolean)
+          .join(" ");
 
         return value.toLowerCase().includes(search.toLowerCase());
       })

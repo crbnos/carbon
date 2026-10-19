@@ -13,14 +13,14 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import type { PurchasingRFQLine } from "~/modules/purchasing";
 import {
   getLinkedSupplierQuotes,
   getPurchasingRFQ,
   getPurchasingRFQLines,
   getPurchasingRFQSuppliersWithLinks,
   getSupplierInteractionDocuments
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
+import type { PurchasingRFQLine } from "~/modules/purchasing/types";
 import {
   PurchasingRFQExplorer,
   PurchasingRFQHeader,

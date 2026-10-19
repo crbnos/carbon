@@ -25,6 +25,7 @@ import { useNProgress } from "./useNProgress";
 import { useOptimisticLocation } from "./useOptimisticLocation";
 import useOutsideClick from "./useOutsideClick";
 import { usePlan } from "./usePlan";
+import { useRevalidator } from "./useRevalidator";
 import { useRouteData } from "./useRouteData";
 import type { Shortcut, ShortcutDefinition } from "./useShortcutKeys";
 import { useShortcutKeyMap, useShortcutKeys } from "./useShortcutKeys";
@@ -32,21 +33,22 @@ import { useShortcutSequence } from "./useShortcutSequence";
 import useThrottle from "./useThrottle";
 import { useUrlParams } from "./useUrlParams";
 
+export type { Shortcut, ShortcutDefinition };
 export {
   getSystemMode,
+  useCloseRoute,
   useDebounce,
   useDisclosure,
   useEdition,
   useEscape,
   useHydrated,
+  useIdle,
   useInitialDimensions,
   useInterval,
   useIsomorphicLayoutEffect,
   useKeyboardWedge,
   useLocalStorage,
   useMode,
-  useCloseRoute,
-  useIdle,
   useModePreference,
   useMount,
   useNProgress,
@@ -54,6 +56,7 @@ export {
   useOptimisticMode,
   useOutsideClick,
   usePlan,
+  useRevalidator,
   useRouteData,
   useShortcutKeyMap,
   useShortcutKeys,
@@ -61,5 +64,3 @@ export {
   useThrottle,
   useUrlParams
 };
-
-export type { Shortcut, ShortcutDefinition };

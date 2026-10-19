@@ -2,15 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
+import { validator } from "@carbon/form";
 import {
-  createPrintJob,
-  getPrintJob,
-  getPrintJobContent,
   getPrintJobs,
   type PrintJob,
   reprintValidator
@@ -24,13 +19,12 @@ import {
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
+import { z } from "zod";
 import { useRealtime } from "~/hooks";
-import { PrintJobsTable } from "~/modules/settings";
+import { PrintJobsTable } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
-
-const logger = getLogger("erp", "printing-jobs");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -65,137 +59,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// The table's row menu posts one intent per action.
+const printJobForm = z.discriminatedUnion("intent", [
+  reprintValidator.extend({ intent: z.literal("reprint") }),
+  z.object({
+    intent: z.literal("delete"),
+    printJobId: z.string().min(1, { message: "Print job ID required" })
+  }),
+  z.object({
+    intent: z.literal("viewContent"),
+    printJobId: z.string().min(1, { message: "Print job ID required" })
+  })
+]);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  switch (intent) {
-    case "reprint": {
-      const validation = reprintValidator.safeParse(
-        Object.fromEntries(formData)
-      );
-      if (!validation.success)
-        return data(
-          { success: false, message: "Invalid reprint request" },
-          await flash(request, error(null, "Invalid reprint request"))
-        );
-
-      const { printJobId, printerUrl: overrideUrl } = validation.data;
-
-      const original = await getPrintJobContent(client, printJobId, companyId);
-      const originalMeta = await getPrintJob(client, printJobId, companyId);
-      if (
-        original.error ||
-        !original.data ||
-        originalMeta.error ||
-        !originalMeta.data
-      )
-        return data(
-          { success: false, message: "Failed to load print job" },
-          await flash(
-            request,
-            error(
-              original.error ?? originalMeta.error,
-              "Failed to load print job"
-            )
-          )
-        );
-
-      if (!original.data.content || !original.data.contentType)
-        return data(
-          { success: false, message: "Cannot reprint a job with no content" },
-          await flash(
-            request,
-            error(null, "Cannot reprint a job that is still generating")
-          )
-        );
-
-      const newJob = await createPrintJob(client, {
-        companyId,
-        contentType: original.data.contentType as "zpl" | "pdf",
-        content: original.data.content,
-        printerUrl: overrideUrl || originalMeta.data.printerUrl,
-        sourceDocument: originalMeta.data.sourceDocument,
-        sourceDocumentId: originalMeta.data.sourceDocumentId,
-        sourceDocumentReadableId:
-          originalMeta.data.sourceDocumentReadableId ?? undefined,
-        description: originalMeta.data.description,
-        status: "queued",
-        origin: "reprint",
-        createdBy: userId
-      });
-
-      if (newJob.error || !newJob.data)
-        return data(
-          { success: false, message: "Failed to create reprint job" },
-          await flash(request, error(newJob.error, "Failed to create reprint"))
-        );
-
-      try {
-        await trigger("print-job-deliver", {
-          printJobId: newJob.data.id,
-          companyId
-        });
-      } catch (e) {
-        logger.error("Failed to trigger delivery", { error: e });
-      }
-
-      return data(
-        { success: true, message: "Reprint job created" },
-        await flash(request, success("Reprint job created"))
-      );
-    }
-
-    case "delete": {
-      const printJobId = formData.get("printJobId") as string;
-      if (!printJobId)
-        return data(
-          { success: false, message: "Print job ID required" },
-          await flash(request, error(null, "Print job ID required"))
-        );
-
-      const result = await client
-        .from("printJob")
-        .delete()
-        .eq("id", printJobId)
-        .eq("companyId", companyId);
-
-      if (result.error)
-        return data(
-          { success: false, message: result.error.message },
-          await flash(request, error(result.error, "Failed to delete job"))
-        );
-
-      return data(
-        { success: true, message: "Print job deleted" },
-        await flash(request, success("Print job deleted"))
-      );
-    }
-
-    case "viewContent": {
-      const printJobId = formData.get("printJobId") as string;
-      if (!printJobId)
-        return { success: false, message: "Print job ID required" };
-
-      const content = await getPrintJobContent(client, printJobId, companyId);
-      if (content.error || !content.data)
-        return { success: false, message: "Failed to load content" };
-
-      return {
-        success: true,
-        content: content.data.content,
-        contentType: content.data.contentType,
-        printJobId: content.data.id
-      };
-    }
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(printJobForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  switch (input.data.intent) {
+    case "reprint":
+      return api.settings.reprintPrintJob(input.data);
+    case "delete":
+      return api.settings.deletePrintJob(input.data);
+    case "viewContent":
+      return api.settings.viewPrintJobContent(input.data);
   }
-
-  return { success: false, message: "Unknown intent" };
 }
 
 export default function PrintJobsRoute() {

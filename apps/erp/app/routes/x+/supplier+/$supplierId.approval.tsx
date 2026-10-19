@@ -2,254 +2,48 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import {
-  approveRequest,
-  canApproveRequest,
-  createApprovalRequest,
-  getApprovalRuleByAmount,
-  getApproverUserIdsForRule,
-  getLatestApprovalRequestForDocument,
-  hasPendingApproval,
-  rejectRequest
-} from "@carbon/ee/approvals.server";
-import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
-import { datetime, redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { approvalDecisionValidator } from "@carbon/ee/approvals";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { supplierApprovalDecisionValidator } from "~/modules/purchasing";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "supplierid-approval");
+// The supplier header posts an intent, or the approval dialog's decision.
+const form = z.union([
+  z.object({ intent: z.enum(["request-approval", "make-inactive"]) }),
+  approvalDecisionValidator
+]);
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "purchasing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(form).request(args, {
+    params: ["supplierId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { supplierId } = input.params;
+  const to = path.to.supplier(supplierId);
+  const api = await carbon(args.request);
 
-  const { supplierId } = params;
-  if (!supplierId) throw new Error("Could not find supplierId");
-
-  // Approval requests, their lookups and the approve/reject status writes all
-  // go through the service role (or Kysely) keyed on the URL's supplierId.
-  await requireCompanyRecord(getCarbonServiceRole(), "supplier", companyId, {
-    id: supplierId
-  });
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === "request-approval") {
-    const serviceRole = getCarbonServiceRole();
-
-    const pending = await hasPendingApproval(
-      serviceRole,
-      "supplier",
-      supplierId
-    );
-
-    if (pending) {
-      throw redirect(
-        path.to.supplier(supplierId),
-        await flash(
-          request,
-          error(null, "An approval request already exists for this supplier")
-        )
-      );
+  if ("intent" in input.data) {
+    if (input.data.intent === "request-approval") {
+      const result = await api.purchasing.requestSupplierApproval({
+        supplierId
+      });
+      return respond(args.request, result).redirect(to, {
+        message: "Approval request submitted"
+      });
     }
-
-    await createApprovalRequest(serviceRole, {
-      documentType: "supplier",
-      documentId: supplierId,
-      companyId,
-      requestedBy: userId,
-      createdBy: userId,
-      amount: undefined
+    const result = await api.purchasing.deactivateSupplier({ supplierId });
+    return respond(args.request, result).redirect(to, {
+      message: "Supplier deactivated"
     });
-
-    // Update supplier status to Pending
-    await client
-      .from("supplier")
-      .update({
-        supplierStatus: "Pending",
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", supplierId);
-
-    const rule = await getApprovalRuleByAmount(
-      serviceRole,
-      "supplier",
-      companyId,
-      undefined
-    );
-    const approverIds = rule.data
-      ? await getApproverUserIdsForRule(serviceRole, rule.data)
-      : [];
-
-    if (approverIds.length > 0) {
-      try {
-        await trigger("notify", {
-          event: NotificationEvent.ApprovalRequested,
-          companyId,
-          documentId: supplierId,
-          documentType: "supplier",
-          recipient: { type: "users", userIds: approverIds },
-          from: userId
-        });
-      } catch (e) {
-        logger.error("Failed to trigger approval notification", { error: e });
-      }
-    }
-
-    throw redirect(
-      path.to.supplier(supplierId),
-      await flash(request, success("Approval request submitted"))
-    );
   }
 
-  if (intent === "make-inactive") {
-    const serviceRole = getCarbonServiceRole();
-
-    const canApprove = await canApproveRequest(
-      serviceRole,
-      {
-        amount: null,
-        documentType: "supplier",
-        companyId
-      },
-      userId
-    );
-
-    if (!canApprove) {
-      throw redirect(
-        path.to.supplier(supplierId),
-        await flash(
-          request,
-          error(null, "You do not have permission to deactivate this supplier")
-        )
-      );
-    }
-
-    await client
-      .from("supplier")
-      .update({
-        supplierStatus: "Inactive",
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", supplierId);
-
-    throw redirect(
-      path.to.supplier(supplierId),
-      await flash(request, success("Supplier deactivated"))
-    );
-  }
-
-  // Handle approve/reject intents
-  const validation = await validator(
-    supplierApprovalDecisionValidator
-  ).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { approvalRequestId, decision, notes } = validation.data;
-
-  const serviceRole = getCarbonServiceRole();
-
-  const approvalRequest = await getLatestApprovalRequestForDocument(
-    serviceRole,
-    "supplier",
+  const result = await api.purchasing.decideSupplierApproval({
+    ...input.data,
     supplierId
-  );
-
-  if (
-    !approvalRequest.data ||
-    approvalRequest.data.id !== approvalRequestId ||
-    approvalRequest.data.companyId !== companyId
-  ) {
-    throw redirect(
-      path.to.supplier(supplierId),
-      await flash(request, error(null, "Approval request not found"))
-    );
-  }
-
-  const canApprove = await canApproveRequest(
-    serviceRole,
-    {
-      amount: approvalRequest.data.amount,
-      documentType: approvalRequest.data.documentType,
-      companyId: approvalRequest.data.companyId
-    },
-    userId
-  );
-
-  if (!canApprove) {
-    throw redirect(
-      path.to.supplier(supplierId),
-      await flash(
-        request,
-        error(null, "You do not have permission to approve this request")
-      )
-    );
-  }
-
-  const db = getDatabaseClient();
-  const result =
-    decision === "Approved"
-      ? await approveRequest(db, approvalRequestId, userId, notes || undefined)
-      : await rejectRequest(db, approvalRequestId, userId, notes || undefined);
-
-  if (result.error) {
-    throw redirect(
-      path.to.supplier(supplierId),
-      await flash(
-        request,
-        error(
-          result.error,
-          result.error?.message ?? "Failed to process approval decision"
-        )
-      )
-    );
-  }
-
-  const requestedBy = approvalRequest.data?.requestedBy;
-  const requestCompanyId = approvalRequest.data?.companyId;
-  if (requestedBy && requestCompanyId && requestedBy !== userId) {
-    try {
-      await trigger("notify", {
-        event:
-          decision === "Approved"
-            ? NotificationEvent.ApprovalApproved
-            : NotificationEvent.ApprovalRejected,
-        companyId: requestCompanyId,
-        documentId: supplierId,
-        documentType: "supplier",
-        recipient: { type: "user", userId: requestedBy },
-        from: userId
-      });
-    } catch (e) {
-      logger.error("Failed to trigger approval decision notification", {
-        error: e
-      });
-    }
-  }
-
-  throw redirect(
-    path.to.supplier(supplierId),
-    await flash(
-      request,
-      success(`Approval request ${decision.toLowerCase()} successfully`)
-    )
-  );
+  });
+  return respond(args.request, result).redirect(to, {
+    message: `Approval request ${input.data.decision.toLowerCase()} successfully`
+  });
 }

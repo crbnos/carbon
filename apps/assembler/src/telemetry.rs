@@ -14,7 +14,7 @@
 //! `job <action>` span → `download source` / `compute` / `upload artifact` /
 //! `callback`. The job runs detached from the request (and, on Lambda, in
 //! another invocation), so its parent travels explicitly: through the spawn
-//! (`spawn_job`) in-process, and through the run-job spec (`inject` / `attach`)
+//! (`spawn_job`) in-process, and through the worker spec (`inject` / `attach`)
 //! across the self-invoke.
 
 use std::collections::HashMap;
@@ -38,7 +38,7 @@ use crate::error::ApiError;
 
 static PROVIDER: OnceLock<SdkTracerProvider> = OnceLock::new();
 
-/// The key the parent context travels under in a run-job spec.
+/// The key the parent context travels under in a worker spec.
 const SPEC_KEY: &str = "traceparent";
 
 fn tracer() -> BoxedTracer {
@@ -217,6 +217,7 @@ where
         ])
         .start(&tracer);
     let cx = Context::current_with_span(span);
+    let job = crate::jobs::track(job_id, job);
     tokio::spawn(
         async move {
             job.await;
@@ -291,7 +292,7 @@ pub async fn outbound<T>(
     out
 }
 
-/// Write the current context into a run-job spec, so the worker invocation
+/// Write the current context into a worker spec, so the worker invocation
 /// that runs it continues this trace.
 pub fn inject(spec: &mut Value) {
     let mut carrier = HashMap::new();
@@ -303,7 +304,7 @@ pub fn inject(spec: &mut Value) {
     }
 }
 
-/// Make the context a run-job spec carries current until the guard drops. The
+/// Make the context a worker spec carries current until the guard drops. The
 /// guard is not `Send`: hold it across the spawn only, never across an await.
 pub fn attach(spec: &Value) -> Option<ContextGuard> {
     let traceparent = spec[SPEC_KEY].as_str()?;

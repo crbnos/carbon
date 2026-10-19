@@ -11,13 +11,13 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { EmployeesTable } from "~/modules/users/ui";
 import {
-  EmployeesTable,
   getEmployees,
   getEmployeeTypes,
   getUnrevokedInviteEmails,
   getUsersWithVerifiedMfa
-} from "~/modules/users";
+} from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

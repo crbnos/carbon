@@ -30,6 +30,7 @@ import { SAMPLE_SALES_ORDER } from "./salesOrder.samples";
 import { SAMPLE_SALES_RETURN_ORDER } from "./salesReturnOrder.samples";
 import { SAMPLE_SALES_INVOICE } from "./samples";
 import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
+
 export type { BatchListMember, JobTravelerMaterial };
 export {
   BatchListPDF,
@@ -49,7 +50,6 @@ export {
   PurchaseReturnOrderPDF,
   QuotePDF,
   registerDocumentFonts,
-  SalesInvoicePDF,
   SAMPLE_ISSUE,
   SAMPLE_JOB_TRAVELER,
   SAMPLE_PURCHASE_RETURN_ORDER,
@@ -57,6 +57,7 @@ export {
   SAMPLE_SALES_ORDER,
   SAMPLE_SALES_RETURN_ORDER,
   SAMPLE_TRACKING_LABEL,
+  SalesInvoicePDF,
   SalesOrderPDF,
   SalesReturnOrderPDF,
   StockTransferPDF,

@@ -8,7 +8,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useUser } from "~/hooks/useUser";
-import type { getCostCentersList } from "~/modules/accounting";
+import type { getCostCentersList } from "~/modules/accounting/accounting.service";
 import CostCenterForm from "~/modules/accounting/ui/CostCenters/CostCenterForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

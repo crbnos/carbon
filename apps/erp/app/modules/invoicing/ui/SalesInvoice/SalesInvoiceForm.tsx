@@ -34,7 +34,7 @@ import {
 } from "~/components/Form";
 import PaymentTerm from "~/components/Form/PaymentTerm";
 import { usePermissions, useRouteData } from "~/hooks";
-import { salesInvoiceValidator } from "~/modules/invoicing";
+import { salesInvoiceValidator } from "~/modules/invoicing/invoicing.models";
 import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";
 

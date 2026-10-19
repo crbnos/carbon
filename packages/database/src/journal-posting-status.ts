@@ -70,6 +70,7 @@ export async function assertPostingStatusUnchanged(
 
 /** The nullable account defaults a posting may find empty. */
 export const OPTIONAL_DEFAULT_ROLES = [
+  "accumulatedRightOfUseAmortizationAccount",
   "contractAssetAccount",
   "deferredRevenueAccount",
   "deferredTaxExpenseAccountId",
@@ -78,14 +79,20 @@ export const OPTIONAL_DEFAULT_ROLES = [
   "intercompanyPayablesAccount",
   "intercompanyReceivablesAccount",
   "laborAbsorptionAccount",
+  "leaseInterestExpenseAccount",
   "leaseInterestIncomeAccount",
+  "leaseLiabilityAccount",
   "leaseRevenueAccount",
   "netInvestmentInLeasesAccount",
+  "operatingLeaseExpenseAccount",
   "overheadAbsorptionAccount",
   "rentalIncomeAccount",
+  "rightOfUseAmortizationExpenseAccount",
+  "rightOfUseAssetAccount",
   "salesReturnsAccount",
   "salesShippingRevenueAccount",
   "scrapAccount",
+  "variableLeaseExpenseAccount",
   "migrationClearingAccount"
 ] as const;
 export type OptionalDefaultRole = (typeof OPTIONAL_DEFAULT_ROLES)[number];
@@ -131,6 +138,14 @@ export const OPTIONAL_DEFAULT_LABELS: Record<OptionalDefaultRole, string> = {
   salesReturnsAccount: "Sales Returns",
   salesShippingRevenueAccount: "Shipping Revenue",
   scrapAccount: "Scrap / Cost of Quality",
+  rightOfUseAssetAccount: "Right-of-Use Assets",
+  accumulatedRightOfUseAmortizationAccount:
+    "Accumulated Amortization – Right-of-Use Assets",
+  leaseLiabilityAccount: "Lease Liabilities",
+  operatingLeaseExpenseAccount: "Operating Lease Expense",
+  variableLeaseExpenseAccount: "Variable Lease Expense",
+  rightOfUseAmortizationExpenseAccount: "Amortization – Right-of-Use Assets",
+  leaseInterestExpenseAccount: "Interest Expense – Leases",
   migrationClearingAccount: "Migration Clearing"
 };
 

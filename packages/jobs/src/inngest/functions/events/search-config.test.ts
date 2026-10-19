@@ -2,10 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   planIndexWrites,
   planLookups,
+  SEARCH_ENTITY_CONFIGS,
   type SearchEvent,
   toIndexRow
 } from "./search-config";
@@ -123,4 +125,30 @@ describe("lookups", () => {
     });
     expect(toIndexRow(upserts[1]!, resolved).description).toBe("Bracket ");
   });
+});
+
+describe("search links", () => {
+  // The search box navigates straight to the stored link, so one that names
+  // no route is a 404 (sales RFQs were indexed at /x/rfq/<id>).
+  const routes = new URL(
+    "../../../../../../apps/erp/app/routes/x+/",
+    import.meta.url
+  );
+  const itemTypes = ["Part", "Material", "Tool", "Consumable", "Service"];
+
+  it.each(Object.entries(SEARCH_ENTITY_CONFIGS))(
+    "%s links to an ERP route",
+    (_table, config) => {
+      // An item links by its type.
+      const records =
+        config.entityType === "item"
+          ? itemTypes.map((type) => ({ id: "r1", type }))
+          : [{ id: "r1" }];
+      for (const record of records) {
+        const [, x, segment] = config.getLink(record).split("/");
+        expect(x).toBe("x");
+        expect(existsSync(new URL(`${segment}+`, routes)), segment).toBe(true);
+      }
+    }
+  );
 });

@@ -9,7 +9,10 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteDimension, getDimension } from "~/modules/accounting";
+import {
+  deleteDimension,
+  getDimension
+} from "~/modules/accounting/accounting.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

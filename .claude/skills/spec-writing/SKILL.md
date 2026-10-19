@@ -53,6 +53,12 @@ cat apps/erp/app/modules/{module}/AGENTS.md                 # for every module t
 Then read the `.claude/rules/` files matching the domain (use the Task Router table
 in the root `AGENTS.md` to find them).
 
+Find the **closest sibling**: the existing record type users would call the same
+kind of thing (lease ↔ rental agreement ↔ contract, sales order ↔ purchase
+order, RMA ↔ supplier return). Read its routes and `ui/` components, not only
+its service functions. The spec copies its shape; every deviation is a Design
+Decision that goes to Step 5.
+
 ## Step 3: Research competitors
 
 Invoke `/research {feature}`. This is mandatory for ERP-domain features
@@ -224,6 +230,8 @@ spec? (`/explain`)". Run `/explain` only on a yes.
 - [ ] Spec exists at `.ai/specs/{YYYY-MM-DD}-{slug}.md`, every section real content,
       design reflecting the resolutions (no section contradicts an answer)
 - [ ] Research file exists and is linked from the spec
+- [ ] The Closest Sibling section names the sibling and the files the feature
+      copies (or N/A with the reason), and each deviation is a Design Decision
 - [ ] Every applicable heuristic (1–7) has a row in Design Decisions — no TBDs
 - [ ] The Overview diagram section has one Mermaid diagram, chosen from the
       Step 6 table, that follows the syntax rules — not the template sample

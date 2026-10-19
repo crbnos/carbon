@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -11,12 +12,12 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  ModalTitle
+  ModalTitle,
+  toast
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
-import { useFetcher } from "react-router";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { UserSelect } from "~/components/Selectors";
-import { resendInviteValidator } from "~/modules/users";
+import { resendInviteValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 type ResendInviteModalProps = {
@@ -30,7 +31,18 @@ const ResendInviteModal = ({
   isOpen,
   onClose
 }: ResendInviteModalProps) => {
-  const fetcher = useFetcher<{}>();
+  const { t } = useLingui();
+  // The modal stays open until the action answers: it unmounts when it
+  // closes, and the result is read here.
+  const fetcher = useAction({
+    onSuccess: (data) =>
+      toast.success(
+        data.data?.queued
+          ? t`Successfully added invites to queue`
+          : t`Successfully resent invite`
+      ),
+    onSettled: () => onClose()
+  });
   const isSingleUser = userIds.length === 1;
 
   return (
@@ -74,7 +86,6 @@ const ResendInviteModal = ({
               method="post"
               action={path.to.resendInvite}
               validator={resendInviteValidator}
-              onSubmit={onClose}
               fetcher={fetcher}
             >
               {userIds.map((id, index) => (
@@ -85,7 +96,7 @@ const ResendInviteModal = ({
                   value={id}
                 />
               ))}
-              <Button type="submit">
+              <Button type="submit" isLoading={fetcher.isPending}>
                 <Trans>Send</Trans>
               </Button>
             </ValidatedForm>

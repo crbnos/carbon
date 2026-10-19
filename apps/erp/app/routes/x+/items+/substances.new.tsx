@@ -10,10 +10,8 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  materialSubstanceValidator,
-  upsertMaterialSubstance
-} from "~/modules/items";
+import { materialSubstanceValidator } from "~/modules/items/items.models";
+import { upsertMaterialSubstance } from "~/modules/items/items.service";
 import { MaterialSubstanceForm } from "~/modules/items/ui/MaterialSubstances";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";

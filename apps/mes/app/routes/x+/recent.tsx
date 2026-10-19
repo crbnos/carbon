@@ -45,7 +45,7 @@ export default function ActiveRoute() {
   const { operationId } = useParams();
 
   useEffect(() => {
-    if (isMobile && !!operationId) {
+    if (isMobile && operationId) {
       panelRef.current?.collapse();
     } else {
       panelRef.current?.expand();

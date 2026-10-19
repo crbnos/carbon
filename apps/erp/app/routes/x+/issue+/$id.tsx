@@ -17,14 +17,14 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getChangeNoticesForNonConformance,
   getItemFiles
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import {
   getIssue,
   getIssueAssociations,
   getIssueSuppliers,
   getIssueTypesList,
   getRequiredActionsList
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import type { IssueAssociationNode } from "~/modules/quality/types";
 import {
   IssueAssociationsSkeleton,
@@ -32,7 +32,7 @@ import {
 } from "~/modules/quality/ui/Issue/IssueAssociations";
 import IssueHeader from "~/modules/quality/ui/Issue/IssueHeader";
 import IssueProperties from "~/modules/quality/ui/Issue/IssueProperties";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

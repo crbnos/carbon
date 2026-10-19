@@ -5,9 +5,9 @@
 import { useCloseRoute } from "@carbon/react";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { AttributeDataType } from "~/modules/people";
+import type { AttributeDataType } from "~/modules/people/types";
 import { AttributeForm } from "~/modules/people/ui/Attributes";
-import { DataType } from "~/modules/shared";
+import { DataType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export default function NewAttributeRoute() {

@@ -37,17 +37,23 @@ import {
 } from "~/components/Form";
 import { useCompanyToday } from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
-import type { StripeCustomerResolution } from "~/modules/invoicing/stripe-customer.server";
+import type { StripeCustomerResolution } from "~/modules/invoicing/invoicing.service";
 import { path } from "~/utils/path";
 import { salesInvoicePostValidator } from "../../invoicing.models";
 import StripeCustomerPanel from "./StripeCustomerPanel";
 
+/** What the post action answers: the operation's result, or the violations. */
+export type SalesInvoicePostResult = {
+  data?: {
+    sentVia: "Email" | "Stripe" | null;
+    warning: string | null;
+  } | null;
+  error?: { message: string } | null;
+  violations?: unknown[];
+};
+
 type SalesInvoicePostModalProps = {
-  fetcher: FetcherWithComponents<{
-    success?: boolean;
-    message?: string;
-    violations?: unknown[];
-  }>;
+  fetcher: FetcherWithComponents<SalesInvoicePostResult>;
   isOpen: boolean;
   onClose: () => void;
   invoiceId: string;
@@ -124,19 +130,22 @@ const SalesInvoicePostModal = ({
     );
   }, [isStripe, contactId, invoiceId, committedEmail]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  // Errors are toasted and violations shown by the violation hook.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once per answer
   useEffect(() => {
-    if (fetcher.data?.success) {
-      if (fetcher.data?.message) toast.success(fetcher.data.message);
-      onClose();
-    } else if (
-      fetcher.data?.success === false &&
-      fetcher.data?.message &&
-      // Violations render in the shared ViolationModal; don't also toast them.
-      (fetcher.data?.violations ?? []).length === 0
-    ) {
-      toast.error(fetcher.data.message);
+    const posted = fetcher.data?.data;
+    if (!posted) return;
+    if (posted.warning) {
+      // Posted, but the PDF or the send failed: the header offers a resend.
+      toast.error(posted.warning);
+    } else {
+      toast.success(
+        posted.sentVia === "Stripe"
+          ? t`Invoice posted and sent via Stripe`
+          : t`Sales invoice confirmed`
+      );
     }
+    onClose();
   }, [fetcher.data]);
 
   const resolution = stripeCustomer.data ?? null;

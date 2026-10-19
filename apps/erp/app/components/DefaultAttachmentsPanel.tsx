@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadUrl, storage } from "@carbon/files";
+import {
+  convertKbToString,
+  downloadUrl,
+  getDocumentType,
+  storage
+} from "@carbon/files";
 import { wasConvertedFromHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
 import { useRevalidator } from "@carbon/query";
@@ -39,7 +44,6 @@ import DocumentIcon from "~/components/DocumentIcon";
 import DocumentPreview from "~/components/DocumentPreview";
 import FileDropzone from "~/components/FileDropzone";
 import { useUser } from "~/hooks";
-import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import { DateTime } from "./DateTime";

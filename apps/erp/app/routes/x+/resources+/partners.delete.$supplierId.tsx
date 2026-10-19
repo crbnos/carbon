@@ -10,7 +10,10 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deletePartner, getPartnerBySupplierId } from "~/modules/resources";
+import {
+  deletePartner,
+  getPartnerBySupplierId
+} from "~/modules/resources/resources.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

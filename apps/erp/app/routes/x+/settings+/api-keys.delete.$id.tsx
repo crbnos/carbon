@@ -2,61 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
-import { bustApiKeyCache, requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { deleteApiKey } from "@carbon/ee/api-keys.server";
-import { requireFeature } from "@carbon/ee/plan.server";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
-import type { ApiKey } from "~/modules/settings";
-import { invalidateApiKeyCache } from "~/modules/settings/settings.server";
+import type { ApiKey } from "~/modules/settings/types";
 import { getParams, path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "users"
-  });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "API_KEYS",
-    redirectTo: path.to.apiKeys
-  });
-
-  const { id } = params;
-  if (!id) {
-    throw redirect(
-      path.to.itemPostingGroups,
-      await flash(request, error(params, "Failed to get an id"))
-    );
-  }
-
-  // Bust BEFORE the delete — the keyHash is unreadable once the row is gone.
-  const keyHash = await invalidateApiKeyCache(id, companyId);
-
-  const { error: deleteApiKeyError } = await deleteApiKey(client, id);
-  if (deleteApiKeyError) {
-    throw redirect(
-      `${path.to.apiKeys}?${getParams(request)}`,
-      await flash(request, error(deleteApiKeyError, "Failed to delete API key"))
-    );
-  }
-
-  // Bust again now the row is gone: an auth read racing the first bust could
-  // have re-primed the cache with the still-live row.
-  if (keyHash) await bustApiKeyCache(keyHash);
-
-  throw redirect(
-    `${path.to.apiKeys}?${getParams(request)}`,
-    await flash(request, success("Successfully deleted API key"))
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.settings.revokeApiKey({ id: input.params.id });
+  return respond(args.request, result).redirect(
+    `${path.to.apiKeys}?${getParams(args.request)}`,
+    { message: "Successfully deleted API key" }
   );
 }
 

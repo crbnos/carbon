@@ -12,7 +12,7 @@ import {
   deleteSalesReturnOrder,
   getSalesReturnOrder,
   getSalesReturnOrderLines
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

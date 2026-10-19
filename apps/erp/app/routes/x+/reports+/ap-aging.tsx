@@ -10,13 +10,13 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
-  ARAPWorkbench,
   getApAging,
   getApOpenBySupplier,
   getApTieOut
-} from "~/modules/invoicing";
-import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+} from "~/modules/invoicing/invoicing.service";
+import { ARAPWorkbench } from "~/modules/invoicing/ui";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

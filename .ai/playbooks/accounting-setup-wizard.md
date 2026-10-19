@@ -112,7 +112,7 @@ Keep the `costLedger` rows. If you made payments, memos or charges, set their `j
 - `/x/accounting/journals` lists the rebuilt journals as Posted.
 - `/x/accounting/periods`: the period that holds today shows Status "Active" right after the enable.
   No posting is needed first. The enable runs `getCurrentAccountingPeriod` (step 10a in
-  `packages/server-functions/src/activate-accounting/index.ts`).
+  `apps/erp/app/modules/accounting/accounting.service.ts`).
 
 ### G. Write missing journals (a company that already has a cutover)
 The enable writes the journals of legacy documents (step 1a). So a company that the current
@@ -127,7 +127,7 @@ enable set up has none left. A company enabled before step 1a existed can still 
    settings and accounting.
 5. The toast reads "Wrote the missing journals of N documents" (or "Wrote the missing journal of 1 document").
 
-What the button does: the `journal-legacy-documents` server function runs the enable's step 1a again,
+What the button does: `repairLegacyJournals` (`accounting.service.ts`, ported from the `journal-legacy-documents` server function) runs the enable's step 1a again,
 in one transaction. It writes each missing journal, gives it a period, re-points its stand-in lines
 and promotes it to Posted. If one journal falls in a Closed or Locked period, the whole call fails
 and the error names the period. It writes nothing in that case.

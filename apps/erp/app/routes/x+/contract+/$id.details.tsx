@@ -7,7 +7,7 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { draftContractSetupPath } from "~/modules/sales/sales.server";
+import { draftContractSetupPath } from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
   ContractAmendments,

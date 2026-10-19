@@ -72,12 +72,7 @@ export function PickingListsHeader({
           <Form method="post" action={path.to.newPickingList}>
             <input type="hidden" name="locationId" value={locationId} />
             {selectedJobOperationIds.map((id) => (
-              <input
-                key={id}
-                type="hidden"
-                name="jobOperationIds[]"
-                value={id}
-              />
+              <input key={id} type="hidden" name="jobOperationIds" value={id} />
             ))}
             <Button
               type="submit"

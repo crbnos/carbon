@@ -9,11 +9,10 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  getSalesRFQ,
   isSalesRfqLocked,
-  salesRfqLineValidator,
-  upsertSalesRFQLine
-} from "~/modules/sales";
+  salesRfqLineValidator
+} from "~/modules/sales/sales.models";
+import { getSalesRFQ, upsertSalesRFQLine } from "~/modules/sales/sales.service";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

@@ -23,7 +23,9 @@ const isoWeekFromYmd = (year: number, month: number, day: number): number => {
 // Date tokens derive in the company's business timezone so document prefixes
 // roll over at the company's midnight, not the process's. The ERP's live
 // preview (`interpolateSequenceDate` in apps/erp/app/utils/string.ts) mirrors
-// this — keep the two in sync.
+// this — keep the two in sync, along with get_next_sequence (SQL) and
+// util.document_sequence_pattern (src/event-system/functions), which reads a
+// saved number back to keep the counter ahead of it.
 const interpolateSequenceDate = (value?: string | null, timezone = "UTC") => {
   if (!value) return "";
   let result = value;

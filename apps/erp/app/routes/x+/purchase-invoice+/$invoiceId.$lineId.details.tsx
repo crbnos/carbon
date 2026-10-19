@@ -15,14 +15,16 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import {
+  isPurchaseInvoiceLocked,
+  purchaseInvoiceLineValidator
+} from "~/modules/invoicing/invoicing.models";
+import {
   getPurchaseInvoice,
   getPurchaseInvoiceLine,
-  isPurchaseInvoiceLocked,
-  PurchaseInvoiceLineForm,
-  purchaseInvoiceLineValidator,
   upsertPurchaseInvoiceLine
-} from "~/modules/invoicing";
-import { getSupplierInteractionLineDocuments } from "~/modules/purchasing";
+} from "~/modules/invoicing/invoicing.service";
+import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
+import { getSupplierInteractionLineDocuments } from "~/modules/purchasing/purchasing.service";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
@@ -167,6 +169,9 @@ export default function EditPurchaseInvoiceLineRoute() {
     taxPercent: purchaseInvoiceLine?.taxPercent ?? 0,
     assetReadableId: (purchaseInvoiceLine as any)?.assetReadableId ?? "",
     assetName: (purchaseInvoiceLine as any)?.assetName ?? "",
+    leaseId: purchaseInvoiceLine?.leaseId ?? "",
+    leasePaymentId: purchaseInvoiceLine?.leasePaymentId ?? "",
+    leaseReadableId: purchaseInvoiceLine?.leaseReadableId ?? "",
     ...getCustomFields(purchaseInvoiceLine?.customFields)
   };
 

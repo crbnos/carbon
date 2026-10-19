@@ -15,7 +15,7 @@ import {
   UpgradeOverlayTitle,
   UpgradeOverlayUpgradeButton
 } from "~/components/UpgradeOverlay";
-import type { Webhook } from "~/modules/settings";
+import type { Webhook } from "~/modules/settings/types";
 import WebhooksTable from "./WebhooksTable";
 
 const mockWebhooks: Webhook[] = [

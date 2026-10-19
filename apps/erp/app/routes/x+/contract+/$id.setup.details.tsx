@@ -2,107 +2,44 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import type { Json } from "@carbon/database";
-import { validationError, validator } from "@carbon/form";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { redirect, round, tiptapToText } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { getExchangeRate } from "~/modules/accounting";
 import {
-  customerContractValidator,
-  getContract,
-  updateContract
-} from "~/modules/sales";
-import { contractCustomerChange } from "~/modules/sales/sales.server";
+  contractDurationOf,
+  customerContractValidator
+} from "~/modules/sales/sales.models";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
-import {
-  ContractDetailsForm,
-  contractDurationOf
-} from "~/modules/sales/ui/Contracts";
+import { ContractDetailsForm } from "~/modules/sales/ui/Contracts";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 /** Saves a Draft's details from setup step 1 and moves on to Services. A
  *  different customer brings its own invoicing defaults: the bill-to,
  *  contact, addresses and payment terms of the old one would be wrong. */
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(customerContractValidator).request(args, {
+    params: ["id"]
   });
-
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const current = await getContract(client, id, companyId);
-  if (current.error || current.data?.companyId !== companyId) {
-    throw redirect(
-      path.to.contracts,
-      await flash(request, error(current.error, "Contract not found"))
-    );
-  }
-
-  const formData = await request.formData();
-  const validation = await validator(customerContractValidator).validate(
-    formData
-  );
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const {
-    id: _id,
-    customerContractId: _customerContractId,
-    ...data
-  } = validation.data;
-
-  const invoicing = await contractCustomerChange(client, companyId, {
-    from: current.data.customerId,
-    to: data.customerId
-  });
-
-  let exchangeRate: number | undefined;
-  if (data.currencyCode !== current.data.currencyCode) {
-    const rate = await getExchangeRate(client, companyId, data.currencyCode);
-    if (rate.error || !rate.data) {
-      throw redirect(
-        path.to.contractSetup(id, "details"),
-        await flash(
-          request,
-          error(rate.error, "Failed to get the exchange rate")
-        )
-      );
-    }
-    exchangeRate = Number(rate.data);
-  }
-
-  // Refuses a contract that is no longer a Draft.
-  const update = await updateContract(client, {
-    ...data,
-    ...(invoicing ?? {}),
-    ...(exchangeRate !== undefined ? { exchangeRate } : {}),
+  if ("invalid" in input) return input.invalid;
+  const { id } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.sales.updateContractTerms({
+    ...input.data,
     id,
-    updatedBy: userId,
-    // Merged, so a field the form did not render is kept.
-    customFields: {
-      ...((current.data.customFields ?? {}) as Record<string, unknown>),
-      ...setCustomFields(formData)
-    } as Json
+    customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-  if (update.error) {
-    throw redirect(
-      path.to.contractSetup(id, "details"),
-      await flash(
-        request,
-        error(update.error, update.error.message || "Failed to update contract")
-      )
+  if (!result.data) {
+    return respond(args.request, result).redirect(
+      result.error?.category === "notFound"
+        ? path.to.contracts
+        : path.to.contractSetup(id, "details"),
+      { message: "" }
     );
   }
-
   throw redirect(path.to.contractSetup(id, "products"));
 }
 

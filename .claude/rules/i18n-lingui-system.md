@@ -14,7 +14,7 @@ is the plugin's own native one: `lingui({ macroTransform: true })` from
 `@lingui/vite-plugin` in each app's `vite.config.ts` — no Babel, no
 `vite-plugin-babel-macros`. It only touches files that import a macro.
 
-Every app wraps the plugin in `linguiWithoutIdQuery` (`@carbon/dev/vite`). Lingui
+Every app gets the plugin from `carbon()` (`@carbon/dev/vite`), which wraps it in `linguiWithoutIdQuery`. Lingui
 6.9.0 picks its parser from `path.basename(id)`, so a React Router route module
 (`route.tsx?__react-router-build-client-route`) is parsed as plain JS and the build
 fails on its first `import type`. The wrapper hands the transform the id without

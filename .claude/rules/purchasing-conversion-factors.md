@@ -2,8 +2,8 @@
 paths:
   - "apps/erp/app/modules/purchasing/**"
   - "apps/erp/app/components/Form/ConversionFactor.tsx"
-  - "packages/server-functions/src/{create,convert,update-purchased-prices}/index.ts"
-  - "packages/server-functions/src/finalize-supplier-quote/index.ts"
+  - "apps/erp/app/modules/shared/shared.service.ts"
+  - "apps/erp/app/modules/purchasing/purchasing.service.ts"
   - "packages/database/src/supplier-part-price.ts"
   - "packages/database/supabase/migrations/*conversion*.sql"
 ---
@@ -59,9 +59,9 @@ validators, and `zfd.numeric(z.number().min(0))` on `supplierPartValidator`.
 (`>0` is not enforced in zod; `supplierPart` allows `0`.)
 
 **Receipt / inventory posting — the real conversion happens here.** When a PO is
-received, the `create` server function converts purchase quantities to inventory
+received, the `create` posting converts purchase quantities to inventory
 quantities and unit cost to inventory unit cost
-(`packages/server-functions/src/create/index.ts`):
+(`createDocument`, `apps/erp/app/modules/shared/shared.service.ts`):
 
 ```ts
 orderQuantity:    d.purchaseQuantity * (d.conversionFactor ?? 1),
@@ -91,7 +91,7 @@ divide price by it for inventory unit price (`SupplierQuoteLinePricing.tsx`).
   `purchaseOrderLine` / `supplierQuoteLinePrice` are `GENERATED ALWAYS` and only
   divide by **`exchangeRate`** — they do **NOT** divide by `conversionFactor`
   (`20250807094441_fix-purchasing-conversion-factor.sql`). The conversion-factor
-  division is applied in **app/server-function code**, not in those DB columns.
+  division is applied in **app/posting code**, not in those DB columns.
 - Exchange-rate direction: `supplierUnitPrice / exchangeRate` (supplier→base
   currency), guarded against divide-by-zero.
 - The line tables used to clamp the factor to 2 dp, so `10.764` silently became
@@ -121,7 +121,7 @@ the CURRENT rate through `@carbon/database/supplier-part-price`:
   supplierQuoteToPurchaseOrder, `update-purchased-prices`) record the document's
   `supplierUnitPrice` per purchase unit. A part they create takes the document's
   currency; an existing part keeps its own and the price is converted into it
-  (`getSupplierPartPriceConverter`, `server-functions/src/lib`).
+  (`getSupplierPartPriceConverter`, `shared.service.ts`).
 
 Before this, convert and finalize stored base per INVENTORY unit while every
 reader assumed per purchase unit; the migration repaired those rows.

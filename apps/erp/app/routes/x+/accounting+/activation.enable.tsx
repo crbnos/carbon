@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import {
   dayBeforeCutover,
   isMigrationClearingZero
@@ -16,17 +15,14 @@ import {
   type LegacyDocumentFamily
 } from "@carbon/database/accounting-cutover-reads";
 import { ValidatedForm, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
-import { serverFns } from "@carbon/server-functions";
-import { getErrorMessage, redirect } from "@carbon/utils";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { SetupBody, SetupSection } from "~/components/Setup";
 import {
@@ -35,8 +31,8 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
-import { activateAccountingValidator } from "~/modules/accounting";
-import { getActivationCutover } from "~/modules/accounting/accounting.server";
+import { activateAccountingValidator } from "~/modules/accounting/accounting.models";
+import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   ActivationFooter,
   activationStepPath
@@ -44,8 +40,6 @@ import {
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "accounting/activation/enable");
 
 export const handle: Handle = {
   breadcrumb: msg`Enable`,
@@ -118,57 +112,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 /** Runs the one-way enable through the `activate-accounting` server function. */
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(activateAccountingValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.accounting.enableAccountingCutover(input.data);
+  const { pathname, search } = new URL(args.request.url);
+  return respond(args.request, result).redirect(path.to.accountingPeriods, {
+    message: "Accounting is enabled",
+    onError: `${pathname}${search}`
   });
-
-  const formData = await request.formData();
-  const validation = await validator(activateAccountingValidator).validate(
-    formData
-  );
-  if (validation.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(
-          validation.error,
-          Object.values(validation.error.fieldErrors)[0] ??
-            "Type the company name to confirm"
-        )
-      )
-    );
-  }
-
-  const result = await serverFns
-    .as({ client, db: getDatabaseClient(), companyId, userId })
-    .invoke("activate-accounting", {
-      cutoverDate: validation.data.cutoverDate,
-      confirmation: validation.data.confirmation
-    });
-  if (result.error) {
-    logger.error("Failed to enable accounting", {
-      companyId,
-      error: result.error
-    });
-    return data(
-      {},
-      await flash(
-        request,
-        error(
-          result.error,
-          getErrorMessage(result.error, "Failed to enable accounting")
-        )
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.accountingPeriods,
-    await flash(request, success("Accounting is enabled"))
-  );
 }
 
 /** Step 5: what the enable will do, and the one-way confirmation. */

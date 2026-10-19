@@ -4,7 +4,7 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
-import { supplierStatusType } from "~/modules/purchasing";
+import { supplierStatusType } from "~/modules/purchasing/purchasing.models";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
 
 type SupplierStatusSelectProps = Omit<ComboboxProps, "options">;

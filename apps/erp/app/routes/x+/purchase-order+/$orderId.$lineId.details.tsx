@@ -16,13 +16,15 @@ import { useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
+  isPurchaseOrderLocked,
+  purchaseOrderLineValidator
+} from "~/modules/purchasing/purchasing.models";
+import {
   getPurchaseOrder,
   getPurchaseOrderLine,
   getSupplierInteractionLineDocuments,
-  isPurchaseOrderLocked,
-  purchaseOrderLineValidator,
   upsertPurchaseOrderLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import {
   SupplierInteractionLineDocuments,

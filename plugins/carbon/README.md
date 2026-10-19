@@ -10,7 +10,7 @@ https://app.carbon.ms/api/mcp
 
 Transport is stateless streamable HTTP. There is no API key in this plugin. The first tool call opens Carbon's OAuth consent screen. The user picks a company, and the agent acts as that user.
 
-Carbon registers three tools: `search_tools`, `describe_tool`, `call_tool`. The `carbon-erp` skill is the working loop.
+Carbon registers four tools: `search_tools`, `describe_tool`, `call_tool`, and `call_destructive_tool`. The `carbon-erp` skill is the working loop. `call_tool` refuses a `DESTRUCTIVE` operation.
 
 ## Install
 

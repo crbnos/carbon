@@ -34,7 +34,7 @@ import {
   useUser
 } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { SupplierProcess } from "~/modules/purchasing";
+import type { SupplierProcess } from "~/modules/purchasing/types";
 import { path } from "~/utils/path";
 
 type SupplierProccessesProps = {

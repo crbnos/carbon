@@ -103,6 +103,10 @@ msgstr "{recorded}/{0} производственных заказов"
 msgid "+{overflow} more"
 msgstr "+{overflow} ещё"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 Внимание: {0} ваша учётная запись будет перенесена на erp.try.carbon.ms"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Предыдущее выполнение не завершилось. Повторное выполнение возобновляет оставшиеся шаги — количество не учитывается дважды."
 
@@ -399,6 +403,9 @@ msgstr "Закрыть"
 msgid "Collapse characteristics table"
 msgstr "Свернуть таблицу характеристик"
 
+msgid "Collapse navigation"
+msgstr "Свернуть навигацию"
+
 msgid "Collapse panel"
 msgstr "Свернуть панель"
 
@@ -421,6 +428,9 @@ msgstr "Столбец: {0}"
 
 msgid "Columns"
 msgstr "Столбцы"
+
+msgid "Companies"
+msgstr "Организации"
 
 msgid "Company"
 msgstr "Организация"
@@ -538,6 +548,9 @@ msgstr "Описание"
 
 msgid "Details"
 msgstr "Детали"
+
+msgid "Dismiss"
+msgstr "Отклонить"
 
 msgid "Dispatch not found"
 msgstr "Заявка на техобслуживание не найдена"
@@ -814,6 +827,9 @@ msgstr "Я ещё работаю"
 msgid "Ideas, suggestions or problems?"
 msgstr "Идеи, предложения или проблемы?"
 
+msgid "Idle"
+msgstr "Ожидание"
+
 msgid "Idle for"
 msgstr "Простой в течение"
 
@@ -905,6 +921,9 @@ msgstr "Маршрутный лист"
 msgid "Jobs"
 msgstr "Производственные заказы"
 
+msgid "Keep navigation open"
+msgstr "Не сворачивать навигацию"
+
 msgid "Keep picking"
 msgstr "Продолжить отбор"
 
@@ -955,6 +974,9 @@ msgstr "Вид списка"
 
 msgid "Load list"
 msgstr "Загрузить список"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "Загружена: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Загрузка данных номенклатуры..."
@@ -1277,6 +1299,9 @@ msgstr "Требуется OEM"
 msgid "of {0}"
 msgstr "из {0}"
 
+msgid "Offline"
+msgstr "Отключено"
+
 msgid "Oldest first"
 msgstr "Самые старые первыми"
 
@@ -1307,6 +1332,9 @@ msgstr "Открыть производственный заказ в этой �
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения MRB"
+
+msgid "Open ERP"
+msgstr "Открыть ERP"
 
 msgid "Open Jobs"
 msgstr "Открытые производственные заказы"
@@ -2151,6 +2179,9 @@ msgstr "Обновить"
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"
 msgstr "Обновлено {0}"
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated successfully"
 msgstr "Успешно обновлено"

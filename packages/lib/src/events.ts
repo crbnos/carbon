@@ -5,7 +5,8 @@
 import type { Database } from "@carbon/database";
 import type {
   NotificationDestination,
-  NotificationEvent
+  NotificationEvent,
+  RecurringInvoicingDocumentType
 } from "@carbon/notifications";
 import type { InvoiceAutomation } from "@carbon/utils";
 import type { RunTrigger } from "@carbon/workflows-core";
@@ -32,7 +33,9 @@ export type Events = {
         | { type: "group"; groupIds: string[] }
         | { type: "users"; userIds: string[] };
       from?: string;
-      documentType?: ApprovalDocumentType;
+      /** The approvable document of an Approval* event, or what a Recurring
+       *  invoicing notification lists. */
+      documentType?: ApprovalDocumentType | RecurringInvoicingDocumentType;
       /** Set by a workflow: the message is authored by the customer, not read from a document. */
       title?: string;
       body?: string;
@@ -158,7 +161,9 @@ export type Events = {
     data: {
       modelUploadId: string;
       companyId: string;
-      userId: string;
+      // Absent when the database sends it: the `queue_model_pipeline` handler
+      // on a new modelUpload row, and the stuck-job cleanup's resend.
+      userId?: string;
       // format is derived from the stored file inside the job, not passed here.
       // Force a fresh optimise of an already-Successful model (the badge's
       // refresh action) — bypasses the already-optimized guard and mints a
@@ -169,9 +174,9 @@ export type Events = {
   };
 
   // Compact the retained raw (STEP → BinXCAF `.xbf.zst`, mesh → `.{ext}.zst`)
-  // so it never lingers as the fat upload. Fired after model-optimize settles
-  // (success, already-optimized, or failure) — decoupled so an optimize
-  // failure can't strand a fat raw for the prune to delete.
+  // so it never lingers as the fat upload. A successful optimise compacts
+  // inline; this fires when model-optimize skips (already optimised, a format
+  // it does not read, no assembler) or fails, so the raw still leaves staging.
   "carbon/model-compact": {
     data: {
       modelUploadId: string;
@@ -583,6 +588,12 @@ export type Events = {
   "carbon/workflow-run-retention.process": {
     data: Record<string, never>;
   };
+  // Sent by the database (queue_kanban_level_checks, sync_kanban_level_check,
+  // util.sweep_kanban_levels), never by app code. Every id is a Transfer
+  // kanban whose projected quantity was below its replenishment level.
+  "carbon/kanban.level-check": {
+    data: { companyId: string; kanbanIds: string[] };
+  };
 
   // Weekly tasks
   "carbon/weekly": {
@@ -657,6 +668,77 @@ export type Events = {
     };
   };
 
+  // Panel push: export one element's assets onto the item the push linked.
+  "carbon/onshape-panel-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      itemId: string;
+      documentId: string;
+      wvm: "w" | "v";
+      wvmId: string;
+      elementId: string;
+      elementKind: "partstudio" | "assembly" | "drawing";
+      partId?: string;
+      /** Non-default configuration to export; absent = default. */
+      configuration?: string;
+      assetBaseName?: string;
+      /** Workspace pushes: the part microversion the review saw. */
+      microversionId?: string;
+    };
+  };
+
+  // One Onshape element's export onto an item (step.invoked by the backfill)
+  "carbon/onshape-element-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      integrationId?: string;
+      itemId: string;
+      sourceDocument: "Part";
+      documentId: string;
+      versionId: string;
+      sourceWvm?: "w" | "v";
+      sourceMicroversionId?: string;
+      modelElementId: string;
+      modelElementKind: "partstudio" | "assembly";
+      partId?: string | null;
+      configuration?: string | null;
+      drawingElementIds?: string[];
+      assetBaseName?: string;
+    };
+  };
+
+  // One released Onshape drawing's PDF onto an item (step.invoked by the backfill)
+  "carbon/onshape-drawing-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      integrationId?: string;
+      itemId: string;
+      sourceDocument: "Part";
+      documentId: string;
+      versionId: string;
+      drawingElementId: string;
+      assetBaseName?: string;
+      sourceWvm?: "w" | "v";
+    };
+  };
+
+  // The assembler copies one finished Onshape translation into staging
+  // (step.invoked by the element sync)
+  "carbon/onshape-fetch": {
+    data: {
+      companyId: string;
+      userId: string;
+      integrationId?: string;
+      translationId: string;
+      documentId: string;
+      foreignId: string;
+      stagedPath: string;
+    };
+  };
+
   // Onshape released-asset backfill / reconcile
   "carbon/onshape-backfill": {
     data: {
@@ -708,6 +790,12 @@ export type Events = {
     data: {
       companyId: string;
       reason?: string;
+    };
+  };
+  "carbon/oee-sync": {
+    data: {
+      companyId: string;
+      integrationId: string;
     };
   };
 

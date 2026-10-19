@@ -20,18 +20,21 @@ vi.mock("@carbon/onboarding/server", () => ({
 
 // shared.server.ts also holds the sales-order/return PDF and email helpers;
 // stub their imports so this test loads only what it exercises.
+// Its operations' imports reach the glossary, whose `msg` macro only runs compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
 vi.mock("@carbon/documents/email", () => ({}));
 vi.mock("@carbon/jobs", () => ({}));
-vi.mock("~/modules/accounting", () => ({}));
-vi.mock("~/modules/sales", () => ({}));
-vi.mock("~/modules/users/users.server", () => ({}));
+vi.mock("~/modules/accounting/accounting.service", () => ({}));
+vi.mock("~/modules/sales/sales.service", () => ({}));
+
 vi.mock("~/routes/file+/purchase-return-order+/$id[.]pdf", () => ({}));
 vi.mock("~/routes/file+/sales-return-order+/$id[.]pdf", () => ({}));
 vi.mock("../documents/documents.service", () => ({}));
-vi.mock("~/modules/shared/shared.service", () => ({}));
-vi.mock("~/modules/settings", () => ({}));
+vi.mock("~/modules/settings/settings.service", () => ({}));
 
-const { getImplementationSignals } = await import("./shared.server");
+const { getImplementationSignals } = await import("./shared.service");
 
 const client = {} as Parameters<typeof getImplementationSignals>[0];
 const signals = (overrides: Record<string, boolean>) => ({

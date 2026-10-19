@@ -23,7 +23,7 @@ import {
   LuLink
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
-import type { Activity, TrackedEntity } from "~/modules/inventory";
+import type { Activity, TrackedEntity } from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 import { capitalize, copyToClipboard } from "~/utils/string";
 import { AttributeList, hasRenderedAttributes } from "./attributeRenderers";

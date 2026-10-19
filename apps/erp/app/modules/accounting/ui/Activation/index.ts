@@ -8,24 +8,31 @@ import ActivationSteps, {
   activationStepPath,
   activationSteps
 } from "./ActivationSteps";
+import ApplyCarbonButton from "./ApplyCarbonButton";
 import FixedAssetDepreciationTable from "./FixedAssetDepreciationTable";
 import InventoryCostTable from "./InventoryCostTable";
-import MigrationClearingTable from "./MigrationClearingTable";
+import MigrationClearingTable, {
+  type MigrationClearingItem
+} from "./MigrationClearingTable";
 import ReadinessChecklist from "./ReadinessChecklist";
 import TrialBalanceEditor, {
-  type TrialBalanceImportResult
+  type TrialBalanceImportResult,
+  type TrialBalancePullResult
 } from "./TrialBalanceEditor";
 
 export {
-  type ActivationStep,
-  type TrialBalanceImportResult,
   ActivationFooter,
+  type ActivationStep,
   ActivationSteps,
+  ApplyCarbonButton,
   activationStepPath,
   activationSteps,
   FixedAssetDepreciationTable,
   InventoryCostTable,
+  type MigrationClearingItem,
   MigrationClearingTable,
   ReadinessChecklist,
-  TrialBalanceEditor
+  TrialBalanceEditor,
+  type TrialBalanceImportResult,
+  type TrialBalancePullResult
 };

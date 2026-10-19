@@ -9,10 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import {
-  updateWorkflowNodePositions,
-  workflowNodePositionsValidator
-} from "~/modules/workflows";
+import { workflowNodePositionsValidator } from "~/modules/workflows/workflows.models";
+import { updateWorkflowNodePositions } from "~/modules/workflows/workflows.service";
 import { path } from "~/utils/path";
 
 const positionsSchema = z.record(

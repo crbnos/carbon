@@ -55,29 +55,26 @@ import {
   LuSplit,
   LuTrash
 } from "react-icons/lu";
-import {
-  Outlet,
-  useFetcher,
-  useFetchers,
-  useParams,
-  useSubmit
-} from "react-router";
+import { Outlet, useFetchers, useParams } from "react-router";
 import { Empty, ItemThumbnail, PrintButton } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
+import { splitValidator } from "~/modules/inventory/inventory.models";
 import type {
   getBatchNumbersForItem,
-  getSerialNumbersForItem,
+  getSerialNumbersForItem
+} from "~/modules/inventory/inventory.service";
+import type {
   ItemTracking,
   RentalShipmentLine,
   Shipment,
   ShipmentLine,
   ShipmentLineTracking
-} from "~/modules/inventory";
-import { splitValidator } from "~/modules/inventory";
+} from "~/modules/inventory/types";
+import type { action as shipmentLinesSplitAction } from "~/routes/x+/shipment+/lines.split";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -87,7 +84,7 @@ const ShipmentLines = () => {
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
 
-  const fetcher = useFetcher<typeof shipmentLinesUpdateAction>();
+  const fetcher = useAction<typeof shipmentLinesUpdateAction>();
   const [items] = useItems();
 
   const routeData = useRouteData<{
@@ -382,7 +379,7 @@ function ShipmentFixedAssetLineItem({
   isReadOnly: boolean;
   className?: string;
 }) {
-  const fetcher = useFetcher();
+  const fetcher = useAction();
   const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
 
   const updateField = (field: string, value: string) => {
@@ -446,7 +443,7 @@ function ShipmentRentalLineItem({
   className?: string;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher();
+  const fetcher = useAction();
 
   const updateField = (field: string, value: string) => {
     const formData = new FormData();
@@ -789,7 +786,8 @@ function BatchForm({
   }) => Promise<void>;
 }) {
   const { t } = useLingui();
-  const submit = useSubmit();
+  // A refused assignment (wrong item, not available) is toasted.
+  const assign = useAction();
   const [values, setValues] = useState<{
     number: string;
     properties: any;
@@ -979,10 +977,9 @@ function BatchForm({
     formData.append("properties", JSON.stringify(valuesToSubmit.properties));
     formData.append("quantity", (line.shippedQuantity || 0).toString());
 
-    submit(formData, {
+    assign.submit(formData, {
       method: "post",
-      action: path.to.shipmentLinesTracking(shipment.id),
-      navigate: false
+      action: path.to.shipmentLinesTracking(shipment.id)
     });
   };
 
@@ -1231,7 +1228,12 @@ function SerialForm({
           }
         );
 
-        if (response.ok) {
+        // The operation's result, `{ data, error }`; a refused form is a 422.
+        const result: { error: { message: string } | null } | null = response.ok
+          ? await response.json()
+          : null;
+
+        if (result && !result.error) {
           // Clear error if submission was successful
           setErrors((prev) => {
             const newErrors = { ...prev };
@@ -1239,9 +1241,8 @@ function SerialForm({
             return newErrors;
           });
         } else {
-          const responseData = await response.json();
           const errorMessage =
-            responseData.message || "Failed to track serial number";
+            result?.error?.message || "Failed to track serial number";
 
           setErrors((prev) => ({
             ...prev,
@@ -1463,12 +1464,8 @@ function SplitShipmentLineModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useAction<{ success: boolean }>({
-    onSuccess: (data) => {
-      if (data?.success) {
-        onClose();
-      }
-    }
+  const fetcher = useAction<typeof shipmentLinesSplitAction>({
+    onSuccess: onClose
   });
   return (
     <Modal open onOpenChange={onClose}>

@@ -8,11 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
+import { rentalAgreementLinesAddValidator } from "~/modules/sales/sales.models";
 import {
   getRentalAgreement,
-  insertRentalAgreementLines,
-  rentalAgreementLinesAddValidator
-} from "~/modules/sales";
+  insertRentalAgreementLines
+} from "~/modules/sales/sales.service";
 import { path, requestReferrer } from "~/utils/path";
 
 /** Adds the chosen fleet units to a Draft agreement (the setup wizard's Add

@@ -13,7 +13,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteCustomerItemPriceOverride,
   getCustomerItemPriceOverrideById
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

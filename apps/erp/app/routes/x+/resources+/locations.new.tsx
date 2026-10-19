@@ -2,66 +2,30 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import {
-  LocationForm,
-  locationValidator,
-  upsertLocation
-} from "~/modules/resources";
+import { locationValidator } from "~/modules/resources/resources.models";
+import { LocationForm } from "~/modules/resources/ui";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(locationValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.createLocation({
+    ...input.data,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  const formData = await request.formData();
-  const modal = formData.get("type") === "modal";
-
-  const validation = await validator(locationValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const createLocation = await upsertLocation(client, {
-    ...d,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
+  // The modal form reads the result and closes itself.
+  if (input.formData?.get("type") === "modal") return result;
+  return respond(args.request, result).redirect(path.to.locations, {
+    message: "Location created"
   });
-
-  if (createLocation.error) {
-    return modal
-      ? createLocation
-      : redirect(
-          path.to.locations,
-          await flash(
-            request,
-            error(createLocation.error, "Failed to create location.")
-          )
-        );
-  }
-
-  return modal
-    ? createLocation
-    : redirect(
-        path.to.locations,
-        await flash(request, success("Location created"))
-      );
 }
 
 export default function NewLocationRoute() {

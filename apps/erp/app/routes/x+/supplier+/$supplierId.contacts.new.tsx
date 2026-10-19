@@ -10,12 +10,10 @@ import { validationError, validator } from "@carbon/form";
 import { isUniqueViolation, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useNavigate, useParams } from "react-router";
-import {
-  insertSupplierContact,
-  supplierContactValidator
-} from "~/modules/purchasing";
+import { supplierContactValidator } from "~/modules/purchasing/purchasing.models";
+import { insertSupplierContact } from "~/modules/purchasing/purchasing.service";
 import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

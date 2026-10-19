@@ -21,10 +21,12 @@ import { JournalEntrySourceTypeIcon } from "~/components/Icons";
 import { useRouteData } from "~/hooks";
 import type {
   getJournalEntryRelatedItems,
+  JournalSourceDocument
+} from "~/modules/accounting/accounting.service";
+import type {
   JournalEntry,
-  JournalSourceDocument,
   PeriodCloseStatus
-} from "~/modules/accounting";
+} from "~/modules/accounting/types";
 import { path } from "~/utils/path";
 import JournalEntryStatus from "./JournalEntryStatus";
 
@@ -77,6 +79,11 @@ const JournalEntryDocuments = () => {
       to: path.to.rentalAgreementDetails,
       icon: "Lease"
     },
+    lease: {
+      label: t`Lease`,
+      to: path.to.leaseDetails,
+      icon: "Lease"
+    },
     job: { label: t`Job`, to: path.to.jobDetails, icon: "Job Receipt" },
     fixedAsset: {
       label: t`Fixed Asset`,
@@ -120,6 +127,11 @@ const JournalEntryDocuments = () => {
       label: t`Revenue Recognition Run`,
       to: path.to.revenueRecognitionRun,
       icon: "Revenue Recognition"
+    },
+    leaseRun: {
+      label: t`Lease Run`,
+      to: path.to.revenueRecognitionRun,
+      icon: "Lease Run"
     }
   };
   const closeStatusLabels: Record<PeriodCloseStatus, string> = {

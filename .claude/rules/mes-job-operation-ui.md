@@ -60,12 +60,12 @@ redirects kinds it does not serve (no loops).
 - **`finishJobOperation`** (`operations.service.ts`) flips the op to `Done` (firing
   the `sync_finish_job_operation` trigger that completes the job to inventory when
   it's the last op). It then runs `returnPickedRemainders`: one `post-picking`
-  `returnOperationRemainders` sweep — the server function sweeps the whole job when
+  `returnOperationRemainders` sweep — the posting sweeps the whole job when
   `job.status='Completed'`, else no-ops unless
   `companySettings.returnPickedMaterialTiming = 'operation'`. The sweep
   returns un-consumed lineside remainders (tracked AND untracked) to their
   warehouse source, booking `pickingListLine.quantityReturned`. The SQL trigger
-  can't call server functions, so this is orchestrated in TS. See
+  can't call postings, so this is orchestrated in TS. See
   `.ai/specs/2026-08-04-picked-material-return-timing.md`.
 
 ## Batch mode (operation batching)
@@ -136,7 +136,7 @@ so the loader passes `batch: null` and the page is a plain operation view.
 operation (`path.to.operation`). Legacy links keep working: the ERP board's "Open
 in MES" (`path.to.external.mesBatch`) and the MES kanban batch card
 (`path.to.batch`). Completion still POSTs to `batch.$batchId.complete.tsx`
-(unchanged) → `batch-operations` server function.
+(unchanged) → `batch-operations` posting.
 
 In batch mode `JobOperation` derives `isBatched = !!batch`,
 `isCompleting = batch.status === "Completing"`, and:

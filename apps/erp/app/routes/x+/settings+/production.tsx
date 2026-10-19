@@ -2,11 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { Submit, ValidatedForm, validator } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -25,19 +26,19 @@ import {
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { LuMapPin } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
 import { Users } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import {
-  getCompanySettings,
   jobCompletedValidator,
-  updateAutoSelectMaterialWithoutPickingListSetting,
-  updateIncludeMaterialsOnTravelerSetting,
-  updateIncludeOperationsOnTravelerSetting
-} from "~/modules/settings";
+  settingsToggle
+} from "~/modules/settings/settings.models";
+import type { updateProductionSettings } from "~/modules/settings/settings.server";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -74,149 +75,89 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// One form per card, told apart by its intent: each becomes the fields of
+// `settings.production.update` it saves.
+const productionSettingsForm = z.discriminatedUnion("intent", [
+  jobCompletedValidator
+    .extend({ intent: z.literal("jobCompleted") })
+    .transform((form) => ({
+      inventoryJobCompletedNotificationGroup:
+        form.inventoryJobCompletedNotificationGroup ?? [],
+      salesJobCompletedNotificationGroup:
+        form.salesJobCompletedNotificationGroup ?? []
+    })),
+  settingsToggle("operationTimer", "autoStartOperationTimer"),
+  settingsToggle("jobTravelerMaterials", "includeMaterialsOnTraveler"),
+  settingsToggle("jobTravelerOperations", "includeOperationsOnTraveler"),
+  settingsToggle(
+    "autoSelectMaterialWithoutPickingListToggle",
+    "autoSelectMaterialWithoutPickingList"
+  ),
+  z
+    .object({
+      intent: z.literal("locationRequiresStaffing"),
+      locationId: z.string().min(1, { message: "Missing location" }),
+      enabled: z.string().optional()
+    })
+    .transform(({ locationId, enabled }) => ({
+      locationStaffing: { locationId, requiresStaffing: enabled === "true" }
+    }))
+]);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
+type ProductionSettingsSaved = z.output<typeof updateProductionSettings.input>;
 
-  if (intent === "jobCompleted") {
-    const validation = await validator(jobCompletedValidator).validate(
-      formData
-    );
-
-    if (validation.error) {
-      return { success: false, message: "Invalid form data" };
-    }
-
-    const update = await client
-      .from("companySettings")
-      .update({
-        inventoryJobCompletedNotificationGroup:
-          validation.data.inventoryJobCompletedNotificationGroup ?? [],
-        salesJobCompletedNotificationGroup:
-          validation.data.salesJobCompletedNotificationGroup ?? []
-      })
-      .eq("id", companyId);
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return { success: true, message: "Job notification settings updated" };
-  }
-
-  if (intent === "operationTimer") {
-    const autoStartOperationTimer = formData.get("enabled") === "true";
-
-    const update = await client
-      .from("companySettings")
-      .update({ autoStartOperationTimer })
-      .eq("id", companyId);
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return {
-      success: true,
-      message: `Operation timer auto-start ${
-        autoStartOperationTimer ? "enabled" : "disabled"
-      }`
-    };
-  }
-
-  if (intent === "jobTravelerMaterials") {
-    const includeMaterialsOnTraveler = formData.get("enabled") === "true";
-
-    const update = await updateIncludeMaterialsOnTravelerSetting(
-      client,
-      companyId,
-      includeMaterialsOnTraveler
-    );
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return {
-      success: true,
-      message: `Traveler materials ${
-        includeMaterialsOnTraveler ? "enabled" : "disabled"
-      }`
-    };
-  }
-
-  if (intent === "jobTravelerOperations") {
-    const includeOperationsOnTraveler = formData.get("enabled") === "true";
-
-    const update = await updateIncludeOperationsOnTravelerSetting(
-      client,
-      companyId,
-      includeOperationsOnTraveler
-    );
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return {
-      success: true,
-      message: `Traveler operations ${
-        includeOperationsOnTraveler ? "enabled" : "disabled"
-      }`
-    };
-  }
-
-  if (intent === "autoSelectMaterialWithoutPickingListToggle") {
-    const autoSelectMaterialWithoutPickingList =
-      formData.get("enabled") === "true";
-    const result = await updateAutoSelectMaterialWithoutPickingListSetting(
-      client,
-      companyId,
-      autoSelectMaterialWithoutPickingList
-    );
-
-    if (result.error) return { success: false, message: result.error.message };
-
-    return {
-      success: true,
-      message: `Material pre-selection ${
-        autoSelectMaterialWithoutPickingList ? "enabled" : "disabled"
-      }`
-    };
-  }
-
-  if (intent === "locationRequiresStaffing") {
-    const locationId = String(formData.get("locationId") ?? "");
-    const requiresStaffing = formData.get("enabled") === "true";
-    if (!locationId) {
-      return { success: false, message: "Missing location" };
-    }
-    // "Require staffing to schedule" is a scheduling policy owned by production
-    // settings, but it lives on the `location` row whose UPDATE RLS wants
-    // resources_update. Write it service-role (company-scoped) so a settings
-    // admin without resources_update can still set it.
-    const serviceRole = getCarbonServiceRole();
-    const update = await serviceRole
-      .from("location")
-      .update({ requiresStaffing })
-      .eq("id", locationId)
-      .eq("companyId", companyId);
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return {
-      success: true,
-      message: `Staffing requirement ${
-        requiresStaffing ? "enabled" : "disabled"
-      }`
-    };
-  }
-
-  return { success: false, message: "Unknown intent" };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(productionSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updateProductionSettings(input.data);
 }
 
 export default function ProductionSettingsRoute() {
   const { t } = useLingui();
   const { companySettings, locations } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-  const notificationsFetcher = useFetcher<typeof action>();
-  const staffingFetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (data) toast.success(productionSettingsMessage(data));
+    }
+  });
+  const notificationsFetcher = useAction<typeof action>({
+    onSuccess: () => toast.success(t`Job notification settings updated`)
+  });
+  const staffingFetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (data) toast.success(productionSettingsMessage(data));
+    }
+  });
+
+  function productionSettingsMessage(data: ProductionSettingsSaved) {
+    if (data.autoStartOperationTimer !== undefined) {
+      return data.autoStartOperationTimer
+        ? t`Operation timer auto-start enabled`
+        : t`Operation timer auto-start disabled`;
+    }
+    if (data.includeMaterialsOnTraveler !== undefined) {
+      return data.includeMaterialsOnTraveler
+        ? t`Traveler materials enabled`
+        : t`Traveler materials disabled`;
+    }
+    if (data.includeOperationsOnTraveler !== undefined) {
+      return data.includeOperationsOnTraveler
+        ? t`Traveler operations enabled`
+        : t`Traveler operations disabled`;
+    }
+    if (data.autoSelectMaterialWithoutPickingList !== undefined) {
+      return data.autoSelectMaterialWithoutPickingList
+        ? t`Material pre-selection enabled`
+        : t`Material pre-selection disabled`;
+    }
+    if (data.locationStaffing) {
+      return data.locationStaffing.requiresStaffing
+        ? t`Staffing requirement enabled`
+        : t`Staffing requirement disabled`;
+    }
+    return t`Production settings updated`;
+  }
 
   const isToggling = fetcher.state !== "idle";
 
@@ -287,47 +228,6 @@ export default function ProductionSettingsRoute() {
     },
     [staffingFetcher]
   );
-
-  useEffect(() => {
-    if (
-      staffingFetcher.data?.success === true &&
-      staffingFetcher.data.message
-    ) {
-      toast.success(staffingFetcher.data.message);
-    }
-    if (
-      staffingFetcher.data?.success === false &&
-      staffingFetcher.data.message
-    ) {
-      toast.error(staffingFetcher.data.message);
-    }
-  }, [staffingFetcher.data?.message, staffingFetcher.data?.success]);
-
-  useEffect(() => {
-    if (fetcher.data?.success === true && fetcher?.data?.message) {
-      toast.success(fetcher.data.message);
-    }
-
-    if (fetcher.data?.success === false && fetcher?.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data?.message, fetcher.data?.success]);
-
-  useEffect(() => {
-    if (
-      notificationsFetcher.data?.success === true &&
-      notificationsFetcher?.data?.message
-    ) {
-      toast.success(notificationsFetcher.data.message);
-    }
-
-    if (
-      notificationsFetcher.data?.success === false &&
-      notificationsFetcher?.data?.message
-    ) {
-      toast.error(notificationsFetcher.data.message);
-    }
-  }, [notificationsFetcher.data?.message, notificationsFetcher.data?.success]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">

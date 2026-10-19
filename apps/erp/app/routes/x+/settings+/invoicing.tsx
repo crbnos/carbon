@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -15,6 +16,7 @@ import {
   ValidatedForm,
   validator
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -33,28 +35,27 @@ import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.ser
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
 import { EmailRecipients, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
   accountsReceivableBillingAddressValidator,
   accountsReceivableEmailValidator,
+  billingAddressFields,
   defaultCustomerCcValidator,
-  getAccountsReceivableBillingAddress,
-  getCompanySettings,
   invoiceAutomations,
   invoiceAutomationValidator,
   invoiceNotificationValidator,
-  updateAccountsReceivableAddressSetting,
-  updateAccountsReceivableBillingAddress,
-  updateAccountsReceivableEmail,
-  updateDefaultCustomerCc,
-  updateInvoiceAutomationSetting,
-  updateInvoiceNotificationSetting
-} from "~/modules/settings";
+  settingsToggle
+} from "~/modules/settings/settings.models";
+import {
+  getAccountsReceivableBillingAddress,
+  getCompanySettings
+} from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -89,174 +90,71 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// One form per card, told apart by its intent: each becomes the fields of
+// `settings.invoicing.update` it saves (the operation drops `intent`).
+const invoicingSettingsForm = z.discriminatedUnion("intent", [
+  invoiceAutomationValidator.extend({ intent: z.literal("invoiceAutomation") }),
+  accountsReceivableEmailValidator
+    .extend({ intent: z.literal("receivablesEmail") })
+    .transform(({ accountsReceivableEmail }) => ({
+      accountsReceivableEmail: accountsReceivableEmail ?? null
+    })),
+  invoiceNotificationValidator
+    .extend({ intent: z.literal("invoiceNotifications") })
+    .transform(({ invoiceNotificationGroup }) => ({
+      invoiceNotificationGroup: invoiceNotificationGroup ?? []
+    })),
+  settingsToggle(
+    "accountsReceivableAddressToggle",
+    "accountsReceivableAddress"
+  ),
+  accountsReceivableBillingAddressValidator
+    .extend({ intent: z.literal("accountsReceivableBillingAddress") })
+    .transform((form) => ({
+      accountsReceivableBillingAddress: billingAddressFields(form)
+    })),
+  defaultCustomerCcValidator
+    .extend({ intent: z.literal("emails") })
+    .transform(({ defaultCustomerCc }) => ({
+      defaultCustomerCc: defaultCustomerCc ?? []
+    }))
+]);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  switch (intent) {
-    case "invoiceAutomation": {
-      const validation = await validator(invoiceAutomationValidator).validate(
-        formData
-      );
-
-      if (validation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      // The form only warns (the option's helper text) while Stripe Connect
-      // is not connected; refuse it here, or every recurring invoice would be
-      // held.
-      if (
-        validation.data.invoiceAutomation === "Post and Send via Stripe" &&
-        !(await getStripeConnectAccountId(getCarbonServiceRole(), companyId))
-      ) {
-        return {
-          success: false,
-          message: "Connect Stripe in Integrations first"
-        };
-      }
-
-      const result = await updateInvoiceAutomationSetting(
-        client,
-        companyId,
-        validation.data.invoiceAutomation
-      );
-
-      if (result.error) {
-        return { success: false, message: result.error.message };
-      }
-
-      return { success: true, message: "Recurring invoice setting updated" };
-    }
-
-    case "receivablesEmail": {
-      const validation = await validator(
-        accountsReceivableEmailValidator
-      ).validate(formData);
-
-      if (validation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const result = await updateAccountsReceivableEmail(
-        client,
-        companyId,
-        validation.data.accountsReceivableEmail
-      );
-
-      if (result.error) {
-        return { success: false, message: result.error.message };
-      }
-
-      return { success: true, message: "Receivables email updated" };
-    }
-
-    case "invoiceNotifications": {
-      const validation = await validator(invoiceNotificationValidator).validate(
-        formData
-      );
-
-      if (validation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const result = await updateInvoiceNotificationSetting(
-        client,
-        companyId,
-        validation.data.invoiceNotificationGroup ?? []
-      );
-
-      if (result.error) {
-        return { success: false, message: result.error.message };
-      }
-
-      return {
-        success: true,
-        message: "Invoice notification settings updated"
-      };
-    }
-
-    case "accountsReceivableAddressToggle":
-      const arToggleEnabled = formData.get("enabled") === "true";
-      const arToggleResult = await updateAccountsReceivableAddressSetting(
-        client,
-        companyId,
-        arToggleEnabled
-      );
-      if (arToggleResult.error) {
-        return { success: false, message: arToggleResult.error.message };
-      }
-      return {
-        success: true,
-        message: `Accounts receivable billing address ${arToggleEnabled ? "enabled" : "disabled"}`
-      };
-
-    case "accountsReceivableBillingAddress":
-      const arBillingValidation = await validator(
-        accountsReceivableBillingAddressValidator
-      ).validate(formData);
-
-      if (arBillingValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const arBillingResult = await updateAccountsReceivableBillingAddress(
-        client,
-        companyId,
-        arBillingValidation.data,
-        userId
-      );
-
-      if (arBillingResult.error) {
-        return { success: false, message: arBillingResult.error.message };
-      }
-
-      return {
-        success: true,
-        message: "Accounts receivable billing address updated"
-      };
-
-    case "emails":
-      const defaultCustomerCcValidation = await validator(
-        defaultCustomerCcValidator
-      ).validate(formData);
-
-      if (defaultCustomerCcValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const defaultCustomerCcResult = await updateDefaultCustomerCc(
-        client,
-        companyId,
-        defaultCustomerCcValidation.data.defaultCustomerCc ?? []
-      );
-
-      if (defaultCustomerCcResult.error) {
-        return {
-          success: false,
-          message: defaultCustomerCcResult.error.message
-        };
-      }
-
-      return {
-        success: true,
-        message: "Customer email settings updated"
-      };
-  }
-
-  return { success: false, message: "Unknown intent" };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(invoicingSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updateInvoicingSettings(input.data);
 }
 
 export default function InvoicingSettingsRoute() {
   const { t } = useLingui();
   const { companySettings, arBillingAddress, isStripeConnected } =
     useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-  const toggleFetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.invoiceAutomation)
+        toast.success(t`Recurring invoice setting updated`);
+      else if (data.accountsReceivableEmail !== undefined)
+        toast.success(t`Receivables email updated`);
+      else if (data.invoiceNotificationGroup)
+        toast.success(t`Invoice notification settings updated`);
+      else if (data.accountsReceivableBillingAddress)
+        toast.success(t`Accounts receivable billing address updated`);
+      else toast.success(t`Customer email settings updated`);
+    }
+  });
+  const toggleFetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (data?.accountsReceivableAddress === undefined) return;
+      toast.success(
+        data.accountsReceivableAddress
+          ? t`Accounts receivable billing address enabled`
+          : t`Accounts receivable billing address disabled`
+      );
+    }
+  });
   const arAddressEnabled = useSavedToggle(
     toggleFetcher,
     "accountsReceivableAddressToggle",
@@ -293,25 +191,6 @@ export default function InvoicingSettingsRoute() {
     },
     [toggleFetcher]
   );
-
-  useEffect(() => {
-    if (fetcher.data?.success === true && fetcher?.data?.message) {
-      toast.success(fetcher.data.message);
-    }
-
-    if (fetcher.data?.success === false && fetcher?.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data?.message, fetcher.data?.success]);
-
-  useEffect(() => {
-    if (toggleFetcher.data?.success === true && toggleFetcher?.data?.message) {
-      toast.success(toggleFetcher.data.message);
-    }
-    if (toggleFetcher.data?.success === false && toggleFetcher?.data?.message) {
-      toast.error(toggleFetcher.data.message);
-    }
-  }, [toggleFetcher.data?.message, toggleFetcher.data?.success]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">

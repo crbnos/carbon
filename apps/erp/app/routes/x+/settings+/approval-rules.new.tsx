@@ -16,7 +16,7 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { ApprovalRuleForm } from "~/modules/settings";
+import { ApprovalRuleForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -38,7 +38,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const documentType: ApprovalDocumentType | null =
     typeParam === "purchaseOrder" ||
     typeParam === "qualityDocument" ||
-    typeParam === "supplier"
+    typeParam === "supplier" ||
+    typeParam === "changeOrder"
       ? typeParam
       : null;
 

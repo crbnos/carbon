@@ -7,8 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateChangeNoticeActionOrder } from "~/modules/items";
-import { requireEditableChangeNoticeRoute } from "~/modules/items/items.server";
+import {
+  requireEditableChangeNoticeRoute,
+  updateChangeNoticeActionOrder
+} from "~/modules/items/items.service";
 import { parseSortOrderUpdates } from "~/modules/shared/sort-order";
 import { getDatabaseClient } from "~/services/database.server";
 

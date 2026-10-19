@@ -8,10 +8,8 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
-import type {
-  getMaterialGradeList,
-  MaterialGrade as MaterialGradeType
-} from "~/modules/items";
+import type { getMaterialGradeList } from "~/modules/items/items.service";
+import type { MaterialGrade as MaterialGradeType } from "~/modules/items/types";
 import MaterialGradeForm from "~/modules/items/ui/MaterialGrades/MaterialGradeForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

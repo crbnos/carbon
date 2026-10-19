@@ -9,10 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
-import {
-  attributeCategoryValidator,
-  insertAttributeCategory
-} from "~/modules/people";
+import { attributeCategoryValidator } from "~/modules/people/people.models";
+import { insertAttributeCategory } from "~/modules/people/people.service";
 import { AttributeCategoryForm } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 

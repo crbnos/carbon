@@ -4,9 +4,10 @@
 
 // Validates the oRPC wiring the Carbon API v1 surface depends on, without booting the
 // app: a runtime-built router of procedures, the OpenAPIHandler matching a prefixed
-// POST path, server-side call(), the scope gate, and the custom JSON-Schema converter
-// feeding OpenAPIGenerator. Uses the REAL base/gate/jsonSchema/converter with tiny
-// inline handlers (so it never pulls the full service registry).
+// POST path, server-side call(), and the custom JSON-Schema converter feeding
+// OpenAPIGenerator. Uses the REAL base/jsonSchema/converter with tiny inline
+// handlers (so it never pulls the full service registry). The caller's permission
+// is the service function's gate (`service-fn.server.test.ts`).
 
 import type { ManifestEntry } from "@carbon/api";
 import { CarbonJsonSchemaConverter, jsonSchema } from "@carbon/api/schema";
@@ -14,9 +15,9 @@ import { OpenAPIGenerator } from "@orpc/openapi";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { call } from "@orpc/server";
 import { describe, expect, it } from "vitest";
-import { type AuthedContext, base, gate } from "./base.server";
+import { type AuthedContext, base, scopesFromPermissions } from "./base.server";
 import { outputSchema, shapeHttpBody } from "./operations.server";
-import { specOptions } from "./spec-options.server";
+import { specOptions, withErrorResponses } from "./spec-options.server";
 
 const PREFIX = "/api/v1";
 
@@ -26,20 +27,15 @@ function meta(overrides: Partial<ManifestEntry>): ManifestEntry {
     module: "demo",
     classification: "READ",
     description: "demo ping",
-    paramCount: 1,
-    serviceParams: ["client", "args"],
-    contextParams: { client: "client" },
-    injectAuth: [],
-    resultShape: "plain",
     permission: { module: null, actions: [] },
     paginates: false,
+    serviceFn: { path: ["demo", "ping"] },
     schema: { type: "object", properties: { name: { type: "string" } } },
     ...overrides
   };
 }
 
 const ping = base
-  .use(gate(meta({})))
   .route({
     method: "POST",
     path: "/demo/ping",
@@ -65,18 +61,7 @@ const ping = base
   )
   .handler(({ input }) => ({ data: input }));
 
-const gatedMeta = meta({
-  name: "parts_getParts",
-  module: "parts",
-  permission: { module: "parts", actions: ["view"] }
-});
-const gated = base
-  .use(gate(gatedMeta))
-  .route({ method: "POST", path: "/parts/getParts", summary: "gated" })
-  .input(jsonSchema({ type: "object", properties: {} }))
-  .handler(() => ({ data: "ok" }));
-
-const router = { demo: { ping }, parts: { getParts: gated } };
+const router = { demo: { ping } };
 const handler = new OpenAPIHandler(router);
 
 function ctx(overrides: Partial<AuthedContext> = {}): AuthedContext {
@@ -130,36 +115,17 @@ describe("oRPC mechanics for the Carbon API v1 surface", () => {
     expect(result).toEqual({ data: { name: "y" } });
   });
 
-  it("403s an API-key caller missing the required scope", async () => {
-    const request = new Request(`https://x.test${PREFIX}/parts/getParts`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: "{}"
-    });
-    const { matched, response } = await handler.handle(request, {
-      prefix: PREFIX,
-      context: ctx({ authKind: "api-key", scopes: {} })
-    });
-    expect(matched).toBe(true);
-    expect(response?.status).toBe(403);
-  });
-
-  it("allows an API-key caller holding the scope for the active company", async () => {
-    const result = await call(
-      router.parts.getParts,
-      {},
-      { context: ctx({ authKind: "api-key", scopes: { parts_view: ["c1"] } }) }
-    );
-    expect(result).toEqual({ data: "ok" });
-  });
-
-  it("skips the scope gate for oauth (connector) callers", async () => {
-    const result = await call(
-      router.parts.getParts,
-      {},
-      { context: ctx({ authKind: "oauth" }) }
-    );
-    expect(result).toEqual({ data: "ok" });
+  it("scopes an OAuth caller to the token's company only", () => {
+    const none = { create: [], update: [], delete: [] };
+    expect(
+      scopesFromPermissions(
+        {
+          parts: { view: ["c1", "c2"], ...none },
+          sales: { view: ["c2"], ...none }
+        },
+        "c1"
+      )
+    ).toEqual({ parts_view: ["c1"] });
   });
 
   it("emits the precomputed JSON Schema into the OpenAPI spec via the custom converter", async () => {
@@ -194,6 +160,39 @@ describe("oRPC mechanics for the Carbon API v1 surface", () => {
     });
     expect(body.properties.count.type).toEqual(["number", "null"]);
     expect(body.required).toContain("results");
+  });
+
+  it("documents every refusal beside the 200 body", async () => {
+    const generator = new OpenAPIGenerator({
+      schemaConverters: [new CarbonJsonSchemaConverter()]
+    });
+    const spec = withErrorResponses(
+      (await generator.generate(router, {
+        info: { title: "Carbon API", version: "1.0.0" }
+      })) as any
+    ) as any;
+    const responses = spec.paths["/demo/ping"].post.responses;
+    expect(Object.keys(responses)).toEqual(
+      expect.arrayContaining([
+        "200",
+        "400",
+        "401",
+        "403",
+        "404",
+        "422",
+        "429",
+        "500"
+      ])
+    );
+    expect(responses["404"].content["application/json"].schema).toEqual({
+      $ref: "#/components/schemas/Error"
+    });
+    expect(responses["401"].content["text/plain"]).toBeDefined();
+    expect(spec.components.schemas.Error.required).toEqual([
+      "code",
+      "status",
+      "message"
+    ]);
   });
 
   it("returns single results bare and lists in the { results, count } envelope", () => {

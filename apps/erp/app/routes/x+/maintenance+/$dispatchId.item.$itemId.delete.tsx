@@ -2,61 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  getMaintenanceDispatch,
-  isMaintenanceDispatchLocked
-} from "~/modules/resources";
-import { getDatabaseClient } from "~/services/database.server";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
-const logger = getLogger("erp", "dispatchid-item-itemid-delete");
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { userId, companyId } = await requirePermissions(request, {
-    delete: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["dispatchId", "itemId"]
   });
-
-  const { dispatchId, itemId } = params;
-  if (!dispatchId) throw new Error("Could not find dispatchId");
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "resources"
+  if ("invalid" in input) return input.invalid;
+  const { dispatchId, itemId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.resources.unissueMaintenancePart({
+    dispatchId,
+    maintenanceDispatchItemId: itemId
   });
-  const dispatch = await getMaintenanceDispatch(viewClient, dispatchId);
-  await requireUnlocked({
-    request,
-    isLocked: isMaintenanceDispatchLocked(dispatch.data?.status),
-    redirectTo: path.to.maintenanceDispatch(dispatchId),
-    message: "Cannot modify a locked dispatch. Reopen it first."
-  });
-
-  const result = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("issue", {
-      type: "maintenanceDispatchUnissue",
-      maintenanceDispatchItemId: itemId
-    });
-
-  if (result.error) {
-    logger.error(result.error);
-    throw redirect(
-      requestReferrer(request) ?? path.to.maintenanceDispatch(dispatchId),
-      await flash(request, error(result.error, "Failed to remove item"))
-    );
-  }
-
-  throw redirect(
-    requestReferrer(request) ?? path.to.maintenanceDispatch(dispatchId),
-    await flash(request, success("Item removed and returned to inventory"))
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.maintenanceDispatch(dispatchId),
+    { message: "Item removed and returned to inventory" }
   );
 }

@@ -5,7 +5,8 @@
 import { useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import type { Tree } from "~/components/TreeView";
-import { resolveBuyUnitCost, type SupplierPriceMap } from "~/modules/shared";
+import type { SupplierPriceMap } from "~/modules/shared/shared.models";
+import { resolveBuyUnitCost } from "~/modules/shared/shared.utils";
 import type {
   CostEffects,
   Costs,

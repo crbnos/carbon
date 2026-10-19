@@ -8,7 +8,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { Enumerable } from "~/components/Enumerable";
-import type { getCustomerTypesList } from "~/modules/sales";
+import type { getCustomerTypesList } from "~/modules/sales/sales.service";
 import { CustomerTypeForm } from "~/modules/sales/ui/CustomerTypes";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

@@ -29,6 +29,7 @@ function expectOperatorLoop(text: string) {
   expect(text).toContain("search_tools");
   expect(text).toContain("describe_tool");
   expect(text).toContain("call_tool");
+  expect(text).toContain("call_destructive_tool");
   expect(text).toContain("companyId");
   expect(text).toContain("userId");
   expect(text).toContain("WRITE");
@@ -132,7 +133,7 @@ describe("Carbon marketplace plugin", () => {
       "`companyId` and `userId` come from the sign-in. Do not send them as arguments."
     );
     expect(skill).toContain(
-      "Wait for an explicit yes before `call_tool` on a `WRITE` or `DESTRUCTIVE` operation."
+      "Wait for an explicit yes before `call_tool` on a `WRITE` operation, and before `call_destructive_tool` on a `DESTRUCTIVE` operation."
     );
     expect(skill).toContain("Do not retarget this server");
     expect(skill).toContain(CLOUD_MCP);

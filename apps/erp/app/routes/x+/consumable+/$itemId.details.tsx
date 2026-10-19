@@ -13,8 +13,9 @@ import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ConsumableSummary, ItemFile } from "~/modules/items";
-import { consumableValidator, upsertConsumable } from "~/modules/items";
+import { consumableValidator } from "~/modules/items/items.models";
+import { upsertConsumable } from "~/modules/items/items.service";
+import type { ConsumableSummary, ItemFile } from "~/modules/items/types";
 import {
   ItemDocuments,
   ItemNotes,

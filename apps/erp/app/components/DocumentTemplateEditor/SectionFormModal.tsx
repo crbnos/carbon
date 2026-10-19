@@ -18,6 +18,7 @@ import {
   mergeToken,
   REGISTRATION_LINE_DOCUMENT_TYPES
 } from "@carbon/documents/template";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Button,
@@ -40,11 +41,12 @@ import {
   SelectValue,
   Subheading,
   Switch,
+  toast,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { useEffect, useRef, useState } from "react";
-import { useFetcher } from "react-router";
+import { useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 
 export type SectionFormValue = {
   id: string;
@@ -75,7 +77,13 @@ export function SectionFormModal({
   onClose: () => void;
   action?: string;
 }) {
-  const fetcher = useFetcher<{ success?: boolean }>();
+  const { t } = useLingui();
+  const fetcher = useAction({
+    onSuccess: () => {
+      toast.success(t`Section saved`);
+      onClose();
+    }
+  });
   const [content, setContent] = useState<JSONContent>(
     section?.content ?? { type: "doc", content: [] }
   );
@@ -93,7 +101,6 @@ export function SectionFormModal({
   const isFooter = placement === "footer";
 
   const isSaving = fetcher.state !== "idle";
-  const submittedRef = useRef(false);
 
   const setConfigKey = <K extends keyof (HeaderOptions & FooterOptions)>(
     key: K,
@@ -111,21 +118,8 @@ export function SectionFormModal({
     } else if (isFooter) {
       data.set("config", JSON.stringify(footerOptionsSchema.parse(config)));
     }
-    submittedRef.current = true;
     fetcher.submit(data, { method: "post", ...(action ? { action } : {}) });
   };
-
-  // Close once our save resolves successfully.
-  useEffect(() => {
-    if (
-      submittedRef.current &&
-      fetcher.state === "idle" &&
-      fetcher.data?.success
-    ) {
-      submittedRef.current = false;
-      onClose();
-    }
-  }, [fetcher.state, fetcher.data, onClose]);
 
   return (
     <Modal open onOpenChange={(open) => !open && onClose()}>

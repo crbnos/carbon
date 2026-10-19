@@ -5,6 +5,7 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -32,7 +33,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { motion } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   LuArrowLeft,
   LuChevronDown,
@@ -41,9 +42,10 @@ import {
   LuGitPullRequestCreate,
   LuGitPullRequestCreateArrow,
   LuPackage,
-  LuRedoDot
+  LuRedoDot,
+  LuTrash
 } from "react-icons/lu";
-import { useFetcher, useFetchers, useParams } from "react-router";
+import { useFetchers, useParams } from "react-router";
 import type { z } from "zod";
 import { MethodIcon } from "~/components";
 import {
@@ -77,12 +79,14 @@ import {
   useUrlParams,
   useUser
 } from "~/hooks";
-import { ItemTrackingType } from "~/modules/items";
+import { ItemTrackingType } from "~/modules/items/items.models";
 import {
   MaterialRowDetails,
   MaterialRowTitle
 } from "~/modules/items/ui/Item/MethodRow";
-import type { MethodItemType, MethodType } from "~/modules/shared";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
+import type { action as updateMaterialAction } from "~/routes/x+/job+/methods+/$jobId.material.$id";
+import type { action as createMaterialAction } from "~/routes/x+/job+/methods+/$jobId.material.new";
 import type { Item as ItemType } from "~/stores";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -96,6 +100,7 @@ import type { Job } from "../../types";
 type Material = z.infer<typeof jobMaterialValidator> & {
   requiresBatchTracking: boolean;
   requiresSerialTracking: boolean;
+  quantityIssued?: number | null;
   item?: {
     replenishmentSystem: string | null;
   } | null;
@@ -237,7 +242,7 @@ const JobBillOfMaterial = ({
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
 
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction();
   const permissions = usePermissions();
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
@@ -331,28 +336,41 @@ const JobBillOfMaterial = ({
     }));
   };
 
-  const onRemoveItem = async (id: string) => {
+  // One request for every saved row, so "Delete Selected" removes the checked
+  // rows together rather than racing one fetcher submit per row.
+  const onRemoveItems = (ids: string[]) => {
     if (!permissions.can("update", "production") || isDisabled) return;
 
-    // Check if this is a temporary item (exists in temporaryItems state)
-    if (temporaryItems[id]) {
-      setTemporaryItems((prev) => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      fetcher.submit(new FormData(), {
+    const without = <T,>(state: Record<string, T>) =>
+      Object.fromEntries(
+        Object.entries(state).filter(([id]) => !ids.includes(id))
+      );
+
+    // Temporary rows were never saved: dropping them from state is enough.
+    setTemporaryItems(without);
+    const savedIds = ids.filter((id) => !temporaryItems[id]);
+    if (savedIds.length > 0) {
+      const formData = new FormData();
+      for (const id of savedIds) formData.append("id", id);
+      fetcher.submit(formData, {
         method: "post",
-        action: path.to.deleteJobMaterial(jobId, id)
+        action: path.to.deleteJobMaterials(jobId)
       });
     }
 
     setSelectedItemId(null);
-    setOrderState((prev) => {
-      const { [id]: _, ...rest } = prev;
-      return rest;
-    });
+    setOrderState(without);
+    setCheckedState(without);
   };
+
+  const onRemoveItem = (id: string) => onRemoveItems([id]);
+  const checkedIds = items
+    .filter((item) => item.checked)
+    .map((item) => item.id);
+  // Material already issued to the job has stock movements against it.
+  const hasIssuedChecked = items.some(
+    (item) => item.checked && (item.data.quantityIssued ?? 0) > 0
+  );
 
   const onReorder = (items: ItemWithData[]) => {
     if (!permissions.can("update", "production") || isDisabled) return;
@@ -501,14 +519,28 @@ const JobBillOfMaterial = ({
         </CardHeader>
 
         <CardAction>
-          <Button
-            ref={addItemButtonRef}
-            variant="secondary"
-            isDisabled={isDisabled || !permissions.can("update", "production")}
-            onClick={onAddItem}
-          >
-            <Trans>Add Item</Trans>
-          </Button>
+          <div className="flex items-center gap-2">
+            {checkedIds.length > 1 && (
+              <Button
+                variant="destructive"
+                leftIcon={<LuTrash />}
+                isDisabled={isReadOnly || hasIssuedChecked}
+                onClick={() => onRemoveItems(checkedIds)}
+              >
+                <Trans>Delete Selected</Trans>
+              </Button>
+            )}
+            <Button
+              ref={addItemButtonRef}
+              variant="secondary"
+              isDisabled={
+                isDisabled || !permissions.can("update", "production")
+              }
+              onClick={onAddItem}
+            >
+              <Trans>Add Item</Trans>
+            </Button>
+          </div>
         </CardAction>
       </HStack>
       <CardContent>
@@ -580,32 +612,25 @@ function MaterialForm({
   }>(path.to.job(jobId));
 
   const { carbon } = useCarbon();
-  const methodMaterialFetcher = useFetcher<{
-    id: string;
-    success: boolean;
-    message: string;
-  }>();
+  const isNew = !!temporaryItems[item.id];
+  const methodMaterialFetcher = useAction<
+    typeof createMaterialAction | typeof updateMaterialAction
+  >({
+    onSuccess: () => {
+      // The saved row replaces the temporary one when the page reloads.
+      setTemporaryItems((prev) => {
+        const { [item.id]: _, ...rest } = prev;
+        return rest;
+      });
+      toast.success(isNew ? t`Material created` : t`Material updated`);
+      onSubmit();
+    }
+  });
   const params = useParams();
   const { company } = useUser();
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
-
-  useEffect(() => {
-    // Remove from temporary items after successful submission
-    if (methodMaterialFetcher.data && methodMaterialFetcher.data.id) {
-      // Clear temporary item after successful save
-      setTemporaryItems((prev) => {
-        const { [item.id]: _, ...rest } = prev;
-        return rest;
-      });
-
-      if (methodMaterialFetcher.data?.success) {
-        toast.success(methodMaterialFetcher.data.message);
-      }
-      onSubmit();
-    }
-  }, [item.id, methodMaterialFetcher.data, setTemporaryItems, onSubmit]);
 
   const [itemType, setItemType] = useState<MethodItemType>(item.data.itemType);
   const [itemData, setItemData] = useState<{

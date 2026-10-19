@@ -10,7 +10,10 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { Confirm } from "~/components/Modals";
-import { activateProcess, getProcess } from "~/modules/resources";
+import {
+  activateProcess,
+  getProcess
+} from "~/modules/resources/resources.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

@@ -16,23 +16,25 @@ import { Await, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { ExplorerSkeleton } from "~/components/Skeletons";
 import { flattenTree } from "~/components/TreeView";
-import { getConfigurationParameters } from "~/modules/items";
-import type { JobMethodTreeItem } from "~/modules/production";
+import { getConfigurationParameters } from "~/modules/items/items.utils";
 import {
   getJob,
   getJobMaterialsWithQuantityOnHand,
-  getJobMethodTree,
   getJobOrderStatusMap,
   getTrackedEntitiesByJobId
-} from "~/modules/production";
+} from "~/modules/production/production.service";
+import type { JobMethodTreeItem } from "~/modules/production/production.utils";
+import { getJobMethodTree } from "~/modules/production/production.utils";
 import {
   JobBoMExplorer,
   JobHeader,
   JobProperties
 } from "~/modules/production/ui/Jobs";
 import type { JobOrderStatusData } from "~/modules/production/ui/Jobs/JobBoMExplorer";
-import { getTagsList } from "~/modules/shared";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  getTagsList
+} from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

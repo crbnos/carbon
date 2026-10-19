@@ -9,11 +9,11 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
+import { attributeCategoryValidator } from "~/modules/people/people.models";
 import {
-  attributeCategoryValidator,
   getAttributeCategory,
   updateAttributeCategory
-} from "~/modules/people";
+} from "~/modules/people/people.service";
 import { AttributeCategoryForm } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
