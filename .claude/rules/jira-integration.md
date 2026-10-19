@@ -115,6 +115,11 @@ required without breaking existing installs. The route reads the secret with
 `linkActionToJiraIssue(..., { syncNotes: true })` to update status/assignee/dueDate/notes.
 Schema: `syncIssueFromJiraSchema` in `packages/jobs/src/schemas.ts`.
 
+Assignee: an unassigned issue clears the Carbon assignee. An assignee with a hidden
+email, or one who matches no employee, leaves it unchanged (`resolveInboundAssignee`).
+`getCompanyEmployees` selects `user!inner(email)`. A task on a Done or Cancelled change
+notice is skipped (`isChangeNoticeLocked`).
+
 ## Status mapping
 
 Jira statusCategory → Carbon `nonConformanceTaskStatus`: `new`→Pending,

@@ -30,6 +30,11 @@ type, not just `action`.
   (search by term), `getIssueById`, `createIssue`, `updateIssue`, `getUsers` ({email|id}),
   `listTeamMembers`, `getWorkflowState`, `createAttachmentLink`, `listAttachments`,
   `removeAttachment`.
+- **Client fixes to keep:** `getUsers` sends a `UserFilter` (`email: { eqIgnoreCase }`,
+  `id: { eq }`) and returns `[]` with no filter; an unfiltered call returns every user.
+  `getWorkflowState(companyId, teamId, type)` filters by team AND type and takes the
+  lowest `position`: states belong to a team. Issue queries fetch `team { id }`.
+  `LinearWorkStateType` includes `duplicate` (→ Skipped), or the schema refuses the issue.
 - **Service:** `lib/service.ts` — `linkActionToLinearIssue`, `unlinkActionFromLinearIssue`,
   `getLinearIssueFromExternalId`, `getLinearIntegration`, `getCompanyEmployees`.
 - **Status map:** `lib/utils.ts` — enum `LinearWorkStateType` +
@@ -113,6 +118,14 @@ The dialog reads `task.linearIssue`, hydrated in `quality.service.ts`
 (+ `linearCreateIssue`, `linearLinkExistingIssue`).
 
 ## Gotchas
+
+- `getCompanyEmployees` must select `user!inner(email)`. Without `!inner`, PostgREST
+  filters only the embed and returns every employee.
+- An inbound assignee goes through `resolveInboundAssignee` (`packages/ee/src/issue-sync/assignee.ts`):
+  an unassigned issue clears the Carbon assignee; an assignee who matches no employee
+  leaves it unchanged.
+- The inbound job skips a `changeOrderActionTask` whose change notice is Done or
+  Cancelled (`isChangeNoticeLocked`, `@carbon/database/change-notice`).
 
 - Webhook payload carries only `{id, assigneeId?}` — always re-fetch the issue.
 - Assignee/employee matching is by **email** (Linear user ↔ Carbon employee).

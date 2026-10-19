@@ -8,12 +8,12 @@
 ## Progress
 
 **Phase 0 — inbound fixes (PR 1)**
-- [ ] Task 1: Move `isChangeNoticeLocked` to `@carbon/database/change-notice`
-- [ ] Task 2: Add the pure assignee rule and fix the employee lookup
-- [ ] Task 3: Fix `getUsers`, add `duplicate`, fetch the team, scope `getWorkflowState`
-- [ ] Task 4: Fix the inbound jobs (assignee rule, change notice lock)
-- [ ] Task 5: Scope the quality mapping read by `companyId`
-- [ ] Task 6: Phase 0 gate and commit
+- [x] Task 1: Move `isChangeNoticeLocked` to `@carbon/database/change-notice`
+- [x] Task 2: Add the pure assignee rule and fix the employee lookup
+- [x] Task 3: Fix `getUsers`, add `duplicate`, fetch the team, scope `getWorkflowState`
+- [x] Task 4: Fix the inbound jobs (assignee rule, change notice lock)
+- [x] Task 5: Scope the quality mapping read by `companyId`
+- [x] Task 6: Phase 0 gate and commit
 
 **Phase 1 — sync engine for action tasks (PR 2)**
 - [ ] Task 7: Migration — add `ISSUE_SYNC` to the handler type CHECK

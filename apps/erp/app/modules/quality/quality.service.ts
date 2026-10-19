@@ -500,12 +500,14 @@ export async function getIssueActionTasks(
         .select("entityId, metadata")
         .eq("entityType", "nonConformanceActionTask")
         .eq("integration", "linear")
+        .eq("companyId", companyId)
         .in("entityId", taskIds),
       client
         .from("externalIntegrationMapping")
         .select("entityId, metadata")
         .eq("entityType", "nonConformanceActionTask")
         .eq("integration", "jira")
+        .eq("companyId", companyId)
         .in("entityId", taskIds)
     ]);
 
