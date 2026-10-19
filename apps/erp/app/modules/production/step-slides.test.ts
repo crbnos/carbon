@@ -48,7 +48,6 @@ describe("stepSlideCopies", () => {
     expect(rows.map((row) => asJsonb(row.annotations))).toEqual([[], []]);
   });
 
-  // Copies made before the fix stored `{}` for a slide with no pins.
   it("repairs a source stored as an object instead of passing it on", () => {
     const [row] = stepSlideCopies(
       [slide("old", {})],

@@ -2,16 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Runs against the local database (SUPABASE_DB_URL) and the local stack's
-// PostgREST; skipped without them.
-
-// A new make method version is a header insert plus get-method's copy, and the
-// copy runs in its own transaction. These pin what `upsertMakeMethodVersion`
-// guarantees around it: a step slide's pins are copied as JSON (a raw array
-// was sent as a Postgres array literal, failed the copy and left an empty
-// version), a failed copy leaves no version behind, and only a source this call
-// set Active is set back to Draft. The copy failures are real: the anonymous
-// client is refused by get-method's own permission check.
+// Runs against the local database and PostgREST; skipped without them. The
+// copy failures are real: get-method refuses the anonymous client.
 
 import { SUPABASE_SERVICE_ROLE_KEY } from "@carbon/env";
 import { createClient } from "@supabase/supabase-js";
@@ -29,10 +21,9 @@ import {
   localServiceRoleClient
 } from "./fixtures/local-supabase";
 
-// The header and the source's status go through the local PostgREST.
 const system = hasLocalDatabase ? localServiceRoleClient() : null;
-// The copy as the system: get-method checks its caller by the configured key
-// and copies through the database, so this client never sends a request.
+// get-method recognises the system by the configured key and copies through
+// the database, so this client never sends a request.
 const copyAsSystem = createClient(
   "http://localhost:54321",
   SUPABASE_SERVICE_ROLE_KEY ?? "test-service-role-key",
@@ -45,7 +36,6 @@ const copyAsSystem = createClient(
     }
   }
 );
-// A caller with no permissions: get-method refuses it, a real copy failure.
 const refused = hasLocalDatabase ? localAnonClient() : null;
 
 const PINS = [
@@ -64,8 +54,6 @@ const versionTest = (name: string, fn: (f: Fixture) => Promise<void>) =>
     }
   });
 
-/** The assembly's only make method (made by its item insert), set to
- *  `status`, with one material and one operation whose step has one slide. */
 async function sourceMethod(
   f: Fixture,
   status: "Draft" | "Active",

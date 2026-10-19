@@ -12700,7 +12700,6 @@ const normalizeOperationType = (value: unknown) =>
 // Copy an operation step's reference slides (grandchild) when a method/job/quote is
 // copied. Source slides are queried by their (old) step ids and remapped onto the freshly
 // inserted step ids — a bulk insert preserves order, so insertedStepIds[i] ↔ sourceSteps[i].
-// A no-op when there are no slides.
 // See .ai/specs/2026-07-14-mes-execution-views.md §4.
 async function copyStepSlides(
   trx: Transaction<KyselyDatabase>,

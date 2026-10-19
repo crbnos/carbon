@@ -1160,7 +1160,7 @@ export function AssemblyView({
       ? (stepSlides[selected]?.caption ?? null)
       : null;
   // Annotation pins for the shown slide (empty for the finished-item view).
-  // Array.isArray: slides copied by get-method before the jsonb fix hold `{}`.
+  // Copies made before the jsonb fix stored `{}` for a slide with no pins.
   const selectedAnnotations =
     typeof selected === "number" &&
     Array.isArray(stepSlides[selected]?.annotations)

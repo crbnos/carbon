@@ -15,12 +15,8 @@ type SourceSlide = {
 };
 
 /**
- * The rows that copy a step's slides onto its copied step. Source steps and
- * inserted step ids are paired by index; a slide whose step was not copied is
- * dropped. `annotations` is a jsonb array: written raw through Kysely, the
- * driver sends it as a Postgres array literal and the insert fails. A source
- * holding anything but an array — `{}`, which copies made before that was
- * fixed wrote for a slide with no pins — is copied as no pins.
+ * Source steps and inserted step ids are paired by index. `annotations` goes
+ * through `toJson`: raw, the driver sends an array as a Postgres array literal.
  */
 export function stepSlideCopies(
   slides: SourceSlide[],

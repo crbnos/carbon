@@ -4176,8 +4176,7 @@ export async function ensureDraftMakeMethod(
   }
   const version = (highest.data?.version ?? 0) + 1;
 
-  // Inserts the Draft and copies the BOM and routing into it; a failed copy
-  // removes the Draft again, so only the steps below need `discardDraft`.
+  // Also copies the BOM and routing, and removes the Draft if that fails.
   const draft = await upsertMakeMethodVersion(client, db, {
     copyFromId: activeMethodId,
     // No `activeVersionId`: it sets a version Active, and the push leaves live methods alone.

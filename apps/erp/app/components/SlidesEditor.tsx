@@ -143,8 +143,7 @@ export function useSlideModels(slides: EditorSlide[]) {
   return models;
 }
 
-// A slide's pins as a list. Copies made by get-method before its jsonb fix
-// stored `{}` for a slide with no pins, and `.map` on that throws.
+// Copies made before the jsonb fix stored `{}` for a slide with no pins.
 export function slidePins(annotations: unknown): SlideAnnotation[] {
   return Array.isArray(annotations) ? annotations : [];
 }

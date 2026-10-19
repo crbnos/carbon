@@ -4293,12 +4293,7 @@ export async function upsertItemUnitSalePrice(
     .eq("itemId", itemUnitSalePrice.itemId);
 }
 
-// Undoes a version `upsertMakeMethodVersion` could not finish: deletes its
-// Draft and sets `activeVersionId` — the source it set Active, if any — back
-// to Draft.
-// Through `db`: the caller may hold create but not delete on parts, and this
-// touches only rows that call has just written. Not exported, so it never
-// becomes a tool of its own.
+// Through `db`: the caller may hold parts create but not delete.
 async function undoMakeMethodVersion(
   db: Kysely<KyselyDatabase>,
   args: { companyId: string; draftId: string; activeVersionId?: string }
@@ -4333,17 +4328,9 @@ async function undoMakeMethodVersion(
 }
 
 /**
- * A new Draft version of a make method with `copyFromId`'s bill of materials
- * and process copied in — the building block behind `createMethodVersion` and
- * a Version change notice's draft.
- *
- * `activeVersionId`, when given, must be `copyFromId`; a Draft source is then
- * set Active before the copy, so the new Draft never outranks it. The copy runs
- * in get-method's own transaction, so it cannot share one with the header
- * insert: on any failure this deletes the Draft and sets back to Draft only the
- * source it activated. A refusal is a `ruleError`. `copyClient` runs the copy
- * (get-method is gated on production update); the header and the source go
- * through `client`, so its RLS decides them.
+ * A new Draft version with `copyFromId`'s bill of materials and process.
+ * get-method copies in its own transaction, so on a failure this deletes the
+ * Draft and sets back to Draft only the source it set Active.
  */
 export async function upsertMakeMethodVersion(
   client: SupabaseClient<Database>,
@@ -4356,8 +4343,7 @@ export async function upsertMakeMethodVersion(
 ) {
   const { activeVersionId, companyId, createdBy } = makeMethodVersion;
 
-  // Only the version being copied may be set Active: any other id could be a
-  // version of another item, set Active beside that item's own Active one.
+  // Any other id could be another item's version, set Active beside its own.
   if (activeVersionId && activeVersionId !== makeMethodVersion.copyFromId) {
     return {
       data: null,
@@ -4391,15 +4377,13 @@ export async function upsertMakeMethodVersion(
   if (insert.error) return insert;
   const draftId = insert.data.id;
 
-  // Only a Draft source is set Active. One already Active (or Archived) is left
-  // alone, and so is never set back to Draft below when the copy fails.
+  // Set Active before the copy so the new Draft never outranks the source.
   const activatedSourceId =
     activeVersionId && currentMakeMethod.data.status === "Draft"
       ? activeVersionId
       : undefined;
   if (activatedSourceId) {
-    // `.select` so an update that RLS lets reach no row fails here instead of
-    // leaving the empty Draft to outrank the source.
+    // RLS can let the update reach no row without an error.
     const activate = await client
       .from("makeMethod")
       .update({ status: "Active" })

@@ -946,10 +946,9 @@ export const copyMethod = defineServiceFn({
  *
  * @remarks
  * The new version takes `copyFromId`'s header and, through get-method, its
- * whole bill of materials and process. `activeVersionId`, when given, must be
- * `copyFromId`: a Draft source is made Active first (the item's only version,
- * when its successor is drafted); one already Active stays Active. A failed
- * copy leaves no new version behind and the source as it was.
+ * whole bill of materials and process. `activeVersionId` must be `copyFromId`;
+ * a Draft source is made Active first (the item's only version, when its
+ * successor is drafted). A failed copy leaves no new version behind.
  *
  * @mcp
  */
@@ -958,8 +957,7 @@ export const createMethodVersion = defineServiceFn({
   permission: { create: "parts" },
 
   async run(ctx, input) {
-    // The header and the source's status go through the caller's RLS; the
-    // copy runs as the system, since get-method is gated on production update.
+    // get-method is gated on production update, so the copy runs as the system.
     const result = await service.upsertMakeMethodVersion(
       ctx.asCaller.supabase,
       ctx.asSystem.pg,
