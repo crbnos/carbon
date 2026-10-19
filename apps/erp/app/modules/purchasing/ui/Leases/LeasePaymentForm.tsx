@@ -117,7 +117,9 @@ const LeasePaymentForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={!permissions.can("update", "purchasing")}>
+                <Submit
+                  isDisabled={!permissions.has({ "purchasing.leases": "Edit" })}
+                >
                   <Trans>Save</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={onClose}>

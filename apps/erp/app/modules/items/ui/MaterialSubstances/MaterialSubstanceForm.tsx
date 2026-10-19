@@ -52,8 +52,8 @@ const MaterialSubstanceForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has({ "parts.substances": "Edit" })
+    : !permissions.has({ "parts.substances": "Create" });
 
   useEffect(() => {
     if (type !== "modal") return;

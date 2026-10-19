@@ -8,7 +8,7 @@ import { getStorageUnitsTreeForLocation } from "~/modules/inventory/inventory.se
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "parts"
+    "inventory.storageUnits": "View"
   });
   const url = new URL(request.url);
   const locationId = url.searchParams.get("locationId");

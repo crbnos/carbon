@@ -43,7 +43,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "settings"
+    "settings.planning": "View"
   });
 
   const [companySettings, locations, itemGroups, responsibilities] =

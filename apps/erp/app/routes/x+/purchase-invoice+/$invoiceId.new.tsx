@@ -34,7 +34,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Check if PI is locked
   const { client: viewClient } = await authorize(request, {
-    view: "invoicing"
+    "invoicing.purchaseInvoices": "View"
   });
 
   const purchaseInvoice = await getPurchaseInvoice(viewClient, invoiceId);
@@ -56,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const { client, companyId, userId } = await authorize(request, {
-    create: "invoicing"
+    "invoicing.purchaseInvoices": "Create"
   });
 
   const formData = await request.formData();

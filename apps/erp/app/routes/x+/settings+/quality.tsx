@@ -64,9 +64,7 @@ const samplingStandardValidator = z.object({
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "settings"
-  });
+  const { api } = await authorize(request, { "settings.quality": "View" });
 
   const companySettings = await api.settings.getCompanySettings({});
 

@@ -23,9 +23,7 @@ import SalesReturnOrderSummary from "~/modules/sales/ui/SalesReturnOrders/SalesR
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.returns": "View" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

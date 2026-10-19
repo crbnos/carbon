@@ -39,9 +39,9 @@ const WarehouseTransferForm = ({
   const isEditing = !!initialValues.id;
   const isLocked = isWarehouseTransferLocked(warehouseTransfer?.status);
   const canEdit = isEditing
-    ? permissions.can("update", "inventory") &&
+    ? permissions.has({ "inventory.warehouseTransfers": "Edit" }) &&
       ["Draft"].includes(warehouseTransfer?.status ?? "")
-    : permissions.can("create", "inventory");
+    : permissions.has({ "inventory.warehouseTransfers": "Create" });
 
   return (
     <ValidatedForm

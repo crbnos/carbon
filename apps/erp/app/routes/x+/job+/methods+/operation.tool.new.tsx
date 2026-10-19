@@ -14,7 +14,7 @@ import { operationToolValidator } from "~/modules/shared/shared.models";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "production"
+    "production.jobs": "Create"
   });
 
   const formData = await request.formData();

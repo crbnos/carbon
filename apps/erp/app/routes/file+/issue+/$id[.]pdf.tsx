@@ -20,7 +20,7 @@ const logger = getLogger("erp", "issue", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "quality"
+    "quality.issues": "View"
   });
 
   const { id } = params;

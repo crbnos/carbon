@@ -23,10 +23,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "resources.assignments": "View" },
+    { role: "employee" }
+  );
 
   const { assignmentId } = params;
   if (!assignmentId) {

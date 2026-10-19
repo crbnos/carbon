@@ -32,7 +32,7 @@ export const handle: Handle = {
  *  up it is one-way, so the wizard sends the user to the periods. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "accounting"
+    "settings.accounting": "View"
   });
 
   const settings = await api.settings.getCompanySettings({});

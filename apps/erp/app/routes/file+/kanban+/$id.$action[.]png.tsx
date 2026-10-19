@@ -10,9 +10,7 @@ import { data } from "react-router";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "inventory"
-  });
+  const { api } = await authorize(request, { "inventory.kanbans": "View" });
 
   const { id, action } = params;
   if (!id) throw new Error("Could not find kanban id");

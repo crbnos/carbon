@@ -7,7 +7,7 @@ import {
   NotFoundError,
   ServerFnError
 } from "@carbon/api/errors";
-import type { PermissionRule } from "@carbon/api/permissions";
+import { type PermissionRule, rowRule } from "@carbon/api/permissions";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
 import { SUPABASE_URL } from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -11290,10 +11290,9 @@ export const postMemoInput = z.object({
   memoId: z.string()
 });
 
-export const postMemoPermission = {
-  "invoicing.supplierCredits": "Edit",
-  "invoicing.creditMemos": "Edit"
-} satisfies PermissionRule<z.output<typeof postMemoInput>>;
+export const postMemoPermission = rowRule("memo", "Edit", {
+  id: "memoId"
+}) satisfies PermissionRule<z.output<typeof postMemoInput>>;
 
 /** Posts or voids a credit/debit memo and its journal, atomically. */
 export async function postMemo(

@@ -31,9 +31,7 @@ const sellAssetValidator = z.object({
 });
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting"
-  });
+  const { api } = await authorize(request, { "accounting.assets": "View" });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
@@ -98,7 +96,9 @@ export default function SellFixedAssetRoute() {
           </ModalBody>
           <ModalFooter>
             <HStack>
-              <Submit isDisabled={!permissions.can("create", "sales")}>
+              <Submit
+                isDisabled={!permissions.has({ "sales.salesOrders": "Create" })}
+              >
                 Create Sales Order
               </Submit>
               <Button size="md" variant="solid" onClick={() => closeRoute()}>

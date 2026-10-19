@@ -14,10 +14,11 @@ import { deleteFailureMode } from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "resources.failureModes": "View" },
+    { role: "employee" }
+  );
   const { failureModeId } = params;
   if (!failureModeId) throw notFound("failureModeId not found");
 
@@ -37,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await authorize(request, {
-    delete: "resources"
+    "resources.failureModes": "Full"
   });
 
   const { failureModeId } = params;

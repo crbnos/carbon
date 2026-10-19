@@ -8,9 +8,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "production"
-  });
+  const { api } = await authorize(request, { "production.assemblies": "View" });
 
   const { itemId } = params;
   if (!itemId) {

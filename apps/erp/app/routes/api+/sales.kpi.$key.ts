@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -11,9 +12,10 @@ import { KPIs } from "~/modules/sales/sales.models";
 import { groupDataByDay, groupDataByMonth } from "~/utils/chart";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "sales"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    anyOf(pagesOf("sales"), "View")
+  );
   const { locale } = getPreferenceHeaders(request);
   const monthName = (dateKey: string) =>
     new Intl.DateTimeFormat(locale, { month: "long" }).format(

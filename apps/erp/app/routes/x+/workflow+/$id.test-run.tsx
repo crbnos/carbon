@@ -48,7 +48,7 @@ function refuse(error: string, status = 400, issues: WorkflowIssue[] = []) {
 async function requireOwnedWorkflow(request: Request, id: string | undefined) {
   const { client, companyId, companyGroupId, userId } = await authorize(
     request,
-    { update: "workflows" }
+    { "workflows.workflows": "Edit" }
   );
   await requireFeature({
     request,

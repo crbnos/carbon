@@ -99,10 +99,11 @@ const toAttachments = (docs: FileObject[], folder: string) =>
   }));
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, companyGroupId, userId, api } = await authorize(request, {
-    view: "purchasing",
-    bypassRls: true
-  });
+  const { companyId, companyGroupId, userId, api } = await authorize(
+    request,
+    { "purchasing.purchaseOrders": "View" },
+    { bypassRls: true }
+  );
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");

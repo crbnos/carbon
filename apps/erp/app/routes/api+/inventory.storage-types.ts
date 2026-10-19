@@ -8,7 +8,7 @@ import { getStorageTypesList } from "~/modules/inventory/inventory.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "parts"
+    "inventory.storageTypes": "View"
   });
   return await getStorageTypesList(client, companyId);
 }

@@ -16,7 +16,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Required action ID is required");
 
   const { client } = await authorize(request, {
-    delete: "quality"
+    "quality.actionTypes": "Full"
   });
 
   const deleteResult = await deleteRequiredAction(client, id);

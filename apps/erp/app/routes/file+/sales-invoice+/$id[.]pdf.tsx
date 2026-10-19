@@ -13,7 +13,7 @@ import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await authorize(request, {
-    view: "sales"
+    "invoicing.salesInvoices": "View"
   });
 
   const { id } = params;

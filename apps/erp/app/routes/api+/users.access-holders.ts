@@ -8,10 +8,11 @@ import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "users",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "users.accounts": "View" },
+    { role: "employee" }
+  );
   const params = new URL(request.url).searchParams;
   const result = await api.users.getPageAccessHolders({
     page: params.get("page") ?? "",

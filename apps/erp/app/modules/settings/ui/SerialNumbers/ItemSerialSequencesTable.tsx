@@ -118,7 +118,7 @@ const ItemSerialSequencesTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "settings")}
+              disabled={!permissions.has({ "settings.serialNumbers": "Edit" })}
               onClick={() => {
                 navigate(
                   `${path.to.serialNumberSequence(row.id ?? "")}?${params.toString()}`
@@ -130,7 +130,7 @@ const ItemSerialSequencesTable = memo(
             </MenuItem>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
-              disabled={!permissions.can("delete", "settings")}
+              disabled={!permissions.has({ "settings.serialNumbers": "Full" })}
               onClick={() => {
                 navigate(
                   `${path.to.deleteSerialNumberSequence(row.id ?? "")}?${params.toString()}`
@@ -152,7 +152,7 @@ const ItemSerialSequencesTable = memo(
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "settings") && (
+          permissions.has({ "settings.serialNumbers": "Create" }) && (
             <New
               label={t`Serial Number`}
               to={path.to.newSerialNumberSequence}

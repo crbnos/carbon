@@ -65,9 +65,9 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { formatDate } = useDateFormatter();
-  const canCreate = permissions.can("create", "sales");
-  const canUpdate = permissions.can("update", "sales");
-  const canDelete = permissions.can("delete", "sales");
+  const canCreate = permissions.has({ "sales.pricingRules": "Create" });
+  const canUpdate = permissions.has({ "sales.pricingRules": "Edit" });
+  const canDelete = permissions.has({ "sales.pricingRules": "Full" });
   const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
   const fetcher = useFetcher();

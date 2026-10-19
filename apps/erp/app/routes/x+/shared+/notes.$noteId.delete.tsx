@@ -11,7 +11,7 @@ import { deleteNote } from "~/modules/shared/shared.service";
 import { requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, {});
+  const { client } = await authorize(request);
 
   const { noteId } = params;
   if (!noteId) throw new Error("noteId not found");

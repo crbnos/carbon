@@ -128,7 +128,7 @@ const StockTransferHeader = () => {
                 <DropdownMenuItem
                   disabled={
                     statusFetcher.state !== "idle" ||
-                    !permissions.can("delete", "inventory")
+                    !permissions.has({ "inventory.stockTransfers": "Full" })
                   }
                   onClick={() => {
                     statusFetcher.submit(
@@ -149,7 +149,7 @@ const StockTransferHeader = () => {
             <DropdownMenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
-                !permissions.can("delete", "inventory") ||
+                !permissions.has({ "inventory.stockTransfers": "Full" }) ||
                 !permissions.is("employee") ||
                 !["Released", "Draft"].includes(status) ||
                 hasPickedItems ||
@@ -170,7 +170,9 @@ const StockTransferHeader = () => {
               id={id}
               value={assignee ?? ""}
               table="stockTransfer"
-              isReadOnly={!permissions.can("update", "inventory")}
+              isReadOnly={
+                !permissions.has({ "inventory.stockTransfers": "Edit" })
+              }
             />
             {hasTrackedLines && (
               <PrintButton
@@ -191,7 +193,7 @@ const StockTransferHeader = () => {
                 variant="primary"
                 isDisabled={
                   releaseFetcher.state !== "idle" ||
-                  !permissions.can("update", "inventory")
+                  !permissions.has({ "inventory.stockTransfers": "Edit" })
                 }
                 isLoading={releaseFetcher.state !== "idle"}
                 onClick={() => {

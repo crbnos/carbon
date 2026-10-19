@@ -130,7 +130,7 @@ export function OeeDevices({
             mappings={mappings}
             takenWorkCenters={takenWorkCenters}
             workCenters={workCenters}
-            canUpdate={permissions.can("update", "settings")}
+            canUpdate={permissions.has({ "settings.integrations": "Edit" })}
           />
         </>
       )}

@@ -197,7 +197,7 @@ const ProductionQuantitiesTable = memo(
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "production")}
+            disabled={!permissions.has({ "production.jobs": "Edit" })}
             onClick={() => navigate(row.id)}
           >
             <MenuIcon icon={<LuPencil />} />
@@ -206,7 +206,7 @@ const ProductionQuantitiesTable = memo(
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "production")}
+            disabled={!permissions.has({ "production.jobs": "Full" })}
             onClick={() => onDelete(row)}
           >
             <MenuIcon icon={<LuTrash />} />
@@ -226,7 +226,7 @@ const ProductionQuantitiesTable = memo(
           columns={columns}
           data={data}
           primaryAction={
-            permissions.can("create", "production") && (
+            permissions.has({ "production.jobs": "Create" }) && (
               <New
                 label={t`Production Quantity`}
                 to={`new?${params.toString()}`}

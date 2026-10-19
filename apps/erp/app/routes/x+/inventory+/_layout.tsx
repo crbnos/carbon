@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
@@ -30,9 +31,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "inventory"
-  });
+  const { api } = await authorize(request, anyOf(pagesOf("inventory"), "View"));
 
   const [unitOfMeasures, locations] = await Promise.all([
     api.items.getUnitOfMeasuresList({}),

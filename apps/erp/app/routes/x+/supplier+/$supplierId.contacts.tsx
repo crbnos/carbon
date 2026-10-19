@@ -12,9 +12,7 @@ import SupplierContacts from "~/modules/purchasing/ui/Supplier/SupplierContacts"
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "purchasing"
-  });
+  const { api } = await authorize(request, { "purchasing.suppliers": "View" });
 
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");

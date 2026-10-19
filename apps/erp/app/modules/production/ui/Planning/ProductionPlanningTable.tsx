@@ -134,7 +134,9 @@ const ProductionPlanningTable = ({
 
   // ── Planning actions (the MRP worklist) ──────────────────────────────────
   const user = useUser();
-  const canUpdateActions = permissions.can("update", "production");
+  const canUpdateActions = permissions.has({
+    "production.materialPlanning": "Edit"
+  });
   const actionTypeOptions = usePlanningActionTypeOptions("Make");
   const [people] = usePeople();
   const {
@@ -254,7 +256,7 @@ const ProductionPlanningTable = ({
   }, [pageScope]);
 
   const isDisabled =
-    !permissions.can("create", "production") ||
+    !permissions.has({ "production.materialPlanning": "Create" }) ||
     bulkUpdateFetcher.state !== "idle" ||
     mrpFetcher.state !== "idle";
 

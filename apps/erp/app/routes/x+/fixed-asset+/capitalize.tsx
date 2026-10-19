@@ -28,7 +28,7 @@ const RENTAL_FLEET_CLASS_NAME = "Rental Fleet";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId, api } = await authorize(request, {
-    view: "accounting"
+    "accounting.assets": "View"
   });
 
   const searchParams = new URL(request.url).searchParams;
@@ -138,7 +138,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "accounting"
+    "accounting.assets": "Create"
   });
 
   const formData = await request.formData();

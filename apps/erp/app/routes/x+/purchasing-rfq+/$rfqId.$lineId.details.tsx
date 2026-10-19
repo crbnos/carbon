@@ -40,9 +40,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "purchasing-rfq-line-details");
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await authorize(request, {
-    view: "purchasing"
-  });
+  const { companyId } = await authorize(request, { "purchasing.rfqs": "View" });
 
   const { rfqId, lineId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
@@ -91,10 +89,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client: viewClient } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.rfqs": "View"
   });
   const { client, companyId, userId } = await authorize(request, {
-    update: "purchasing"
+    "purchasing.rfqs": "Edit"
   });
 
   const { rfqId, lineId } = params;
@@ -195,7 +193,9 @@ export default function PurchasingRFQLine() {
         )}
       </DeferredFiles>
       <CadModel
-        isReadOnly={isReadOnly || !permissions.can("update", "purchasing")}
+        isReadOnly={
+          isReadOnly || !permissions.has({ "purchasing.rfqs": "Edit" })
+        }
         metadata={{
           purchasingRfqLineId: line.id ?? undefined,
           itemId: line.itemId ?? undefined

@@ -120,7 +120,7 @@ export function PeopleMatrix({
   defaultShiftEnd
 }: PeopleMatrixProps) {
   const permissions = usePermissions();
-  const canEdit = permissions.can("update", "production");
+  const canEdit = permissions.has({ "production.resourcePlanning": "Edit" });
   const [tab, setTab] = useState<"assignments" | "coverage">("assignments");
 
   const today = calendarToday(getLocalTimeZone()).toString();

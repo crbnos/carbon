@@ -13,7 +13,7 @@ import { getNextSequence } from "~/modules/settings/settings.service";
 export async function loader({ request }: LoaderFunctionArgs) {
   // Writes on GET: a link on another site must not trigger it.
   rejectCrossSiteNavigation(request);
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

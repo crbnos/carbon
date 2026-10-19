@@ -49,7 +49,7 @@ export const handle: Handle = {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "accounting"
+    "accounting.depreciation": "View"
   });
 
   const { depreciationRunId } = params;

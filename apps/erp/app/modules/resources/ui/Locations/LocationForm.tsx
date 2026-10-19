@@ -63,8 +63,8 @@ const LocationForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "resources")
-    : !permissions.can("create", "resources");
+    ? !permissions.has({ "resources.locations": "Edit" })
+    : !permissions.has({ "resources.locations": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

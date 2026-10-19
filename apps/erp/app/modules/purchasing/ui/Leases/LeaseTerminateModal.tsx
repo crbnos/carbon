@@ -176,7 +176,7 @@ const LeaseTerminateModal = ({
             </Button>
             <Submit
               variant="destructive"
-              isDisabled={!permissions.can("update", "purchasing")}
+              isDisabled={!permissions.has({ "purchasing.leases": "Edit" })}
             >
               <Trans>Terminate Asset</Trans>
             </Submit>

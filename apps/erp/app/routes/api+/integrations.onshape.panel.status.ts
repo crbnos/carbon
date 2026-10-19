@@ -34,7 +34,7 @@ export const config = {
 /** Carbon status for the current Onshape element: its parts or its BOM. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorizePanel(request, {
-    view: "parts"
+    "parts.parts": "View"
   });
 
   const url = new URL(request.url);

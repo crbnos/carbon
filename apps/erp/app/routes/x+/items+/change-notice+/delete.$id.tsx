@@ -19,7 +19,7 @@ const logger = getLogger("erp", "change-notice-delete");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {
-    delete: "parts"
+    "parts.changeNotices": "Full"
   });
 
   const { id } = params;

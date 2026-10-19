@@ -258,7 +258,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
-          disabled={!permissions.can("delete", "sales")}
+          disabled={!permissions.has({ "sales.rfqs": "Full" })}
           onClick={() => {
             setSelectedSalesRFQ(row);
             deleteSalesRFQModal.onOpen();
@@ -286,7 +286,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           updatedBy: false
         }}
         primaryAction={
-          permissions.can("create", "sales") && (
+          permissions.has({ "sales.rfqs": "Create" }) && (
             <New label={t`RFQ`} to={path.to.newSalesRFQ} />
           )
         }

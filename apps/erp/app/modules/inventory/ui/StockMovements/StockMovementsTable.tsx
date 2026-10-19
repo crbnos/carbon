@@ -287,7 +287,7 @@ const StockMovementsTable = memo(
     const renderContextMenu = useCallback(
       (row: StockMovement) => (
         <MenuItem
-          disabled={!permissions.can("update", "inventory")}
+          disabled={!permissions.has({ "inventory.movements": "Edit" })}
           onClick={() => setCorrectionTarget(row)}
         >
           <MenuIcon icon={<LuWrench />} />

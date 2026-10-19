@@ -46,7 +46,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "invoicing"
+    "invoicing.purchaseInvoices": "View"
   });
 
   const { invoiceId } = params;
@@ -83,7 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Check if PI is locked
   const { client: viewClient } = await authorize(request, {
-    view: "invoicing"
+    "invoicing.purchaseInvoices": "View"
   });
 
   const purchaseInvoice = await getPurchaseInvoice(viewClient, id);
@@ -105,7 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const { client, userId } = await authorize(request, {
-    update: "invoicing"
+    "invoicing.purchaseInvoices": "Edit"
   });
 
   const formData = await request.formData();

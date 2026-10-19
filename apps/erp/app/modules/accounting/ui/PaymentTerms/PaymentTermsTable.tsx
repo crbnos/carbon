@@ -101,7 +101,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "accounting")}
+            disabled={!permissions.has({ "accounting.paymentTerms": "Edit" })}
             onClick={() => {
               navigate(`${path.to.paymentTerm(row.id)}?${params.toString()}`);
             }}
@@ -111,7 +111,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
-            disabled={!permissions.can("delete", "accounting")}
+            disabled={!permissions.has({ "accounting.paymentTerms": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deletePaymentTerm(row.id)}?${params.toString()}`
@@ -133,7 +133,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "accounting") && (
+        permissions.has({ "accounting.paymentTerms": "Create" }) && (
           <New label={t`Payment Term`} to={`new?${params.toString()}`} />
         )
       }

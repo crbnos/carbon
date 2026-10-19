@@ -56,8 +56,26 @@ exports[`posting permissions > match the reviewed manifest 1`] = `
     "accounting.revenueRecognition": "Create",
   },
   "accounting.recalculateRevenueRecognitionRunPermission": {
-    "accounting.leases": "Edit",
-    "accounting.revenueRecognition": "Edit",
+    "row": {
+      "cases": [
+        {
+          "column": "type",
+          "equals": "Lease",
+          "then": {
+            "accounting.leases": "Edit",
+          },
+        },
+        {
+          "column": "type",
+          "equals": "Revenue Recognition",
+          "then": {
+            "accounting.revenueRecognition": "Edit",
+          },
+        },
+      ],
+      "from": "revenueRecognitionRun",
+      "id": "runId",
+    },
   },
   "inventory.issueMaterialPermission": {
     "by": "type",
@@ -146,8 +164,24 @@ exports[`posting permissions > match the reviewed manifest 1`] = `
     },
   },
   "invoicing.postMemoPermission": {
-    "invoicing.creditMemos": "Edit",
-    "invoicing.supplierCredits": "Edit",
+    "row": {
+      "cases": [
+        {
+          "column": "supplierId",
+          "then": {
+            "invoicing.supplierCredits": "Edit",
+          },
+        },
+        {
+          "column": "customerId",
+          "then": {
+            "invoicing.creditMemos": "Edit",
+          },
+        },
+      ],
+      "from": "memo",
+      "id": "memoId",
+    },
   },
   "invoicing.postPaymentPermission": {
     "invoicing.payments": "Edit",
@@ -159,7 +193,53 @@ exports[`posting permissions > match the reviewed manifest 1`] = `
     "invoicing.salesInvoices": "Edit",
   },
   "items.syncMakeMethodPermission": {
-    "parts.parts": "Edit",
+    "row": {
+      "cases": [
+        {
+          "column": "type",
+          "equals": "Part",
+          "then": {
+            "parts.parts": "Edit",
+          },
+        },
+        {
+          "column": "type",
+          "equals": "Material",
+          "then": {
+            "parts.materials": "Edit",
+          },
+        },
+        {
+          "column": "type",
+          "equals": "Tool",
+          "then": {
+            "parts.tools": "Edit",
+          },
+        },
+        {
+          "column": "type",
+          "equals": "Consumable",
+          "then": {
+            "parts.consumables": "Edit",
+          },
+        },
+        {
+          "column": "type",
+          "equals": "Service",
+          "then": {
+            "parts.services": "Edit",
+          },
+        },
+      ],
+      "from": "makeMethod",
+      "id": "makeMethodId",
+      "path": [
+        [
+          "itemId",
+          "item",
+        ],
+      ],
+    },
   },
   "production.assignSerialNumbersPermission": {
     "production.jobs": "Edit",

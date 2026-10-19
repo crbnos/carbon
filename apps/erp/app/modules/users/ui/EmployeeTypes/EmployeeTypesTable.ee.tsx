@@ -62,7 +62,7 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "users")}
+            disabled={!permissions.has({ "users.employeeTypes": "Edit" })}
             onClick={() => {
               navigate(`${path.to.employeeType(row.id)}?${params.toString()}`);
             }}
@@ -73,7 +73,10 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={row.protected || !permissions.can("delete", "users")}
+            disabled={
+              row.protected ||
+              !permissions.has({ "users.employeeTypes": "Full" })
+            }
             onClick={() => {
               navigate(
                 `${path.to.deleteEmployeeType(row.id)}?${params.toString()}`
@@ -95,7 +98,7 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "users") && (
+        permissions.has({ "users.employeeTypes": "Create" }) && (
           <New label={t`Employee Type`} to={`new?${params.toString()}`} />
         )
       }

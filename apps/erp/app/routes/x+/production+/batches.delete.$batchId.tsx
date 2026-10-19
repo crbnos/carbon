@@ -17,7 +17,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    update: "production"
+    "production.batches": "Edit"
   });
   const { batchId } = params;
   if (!batchId) throw notFound("batchId not found");
@@ -47,7 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "production"
+    "production.batches": "Edit"
   });
   const { batchId } = params;
   if (!batchId) throw notFound("batchId not found");

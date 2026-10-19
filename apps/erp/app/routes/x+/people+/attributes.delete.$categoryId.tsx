@@ -11,9 +11,7 @@ import { deleteAttributeCategory } from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: LoaderFunctionArgs) {
-  const { client } = await authorize(request, {
-    update: "people"
-  });
+  const { client } = await authorize(request, { "people.attributes": "Edit" });
 
   const { categoryId } = params;
   if (!categoryId) {

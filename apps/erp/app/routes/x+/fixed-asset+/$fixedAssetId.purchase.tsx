@@ -36,9 +36,7 @@ const purchaseAssetValidator = z.object({
 const PURCHASABLE_ASSET_STATUSES: string[] = ["Draft", "Under Construction"];
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting"
-  });
+  const { api } = await authorize(request, { "accounting.assets": "View" });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
@@ -106,7 +104,11 @@ export default function PurchaseFixedAssetRoute() {
           </ModalBody>
           <ModalFooter>
             <HStack>
-              <Submit isDisabled={!permissions.can("create", "purchasing")}>
+              <Submit
+                isDisabled={
+                  !permissions.has({ "purchasing.purchaseOrders": "Create" })
+                }
+              >
                 Create Purchase Order
               </Submit>
               <Button size="md" variant="solid" onClick={() => closeRoute()}>

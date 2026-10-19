@@ -24,7 +24,7 @@ const logger = getLogger("erp", "id-convert");
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    create: "purchasing"
+    "purchasing.supplierQuotes": "Create"
   });
 
   const { id } = params;

@@ -106,7 +106,7 @@ export default function AssemblyStepMaterials({
             </p>
           </Empty>
         ) : (
-          permissions.can("create", "production") && (
+          permissions.has({ "production.assemblies": "Create" }) && (
             <ValidatedForm
               key={formKey}
               validator={assemblyStepMaterialValidator}
@@ -185,7 +185,7 @@ function MaterialRow({
       <Badge variant="secondary" className="tabular-nums">
         {material.quantity != null ? `×${material.quantity}` : "as needed"}
       </Badge>
-      {!isDisabled && permissions.can("delete", "production") && (
+      {!isDisabled && permissions.has({ "production.assemblies": "Full" }) && (
         <IconButton
           aria-label={`Delete ${material.item?.name ?? "material"}`}
           icon={<LuTrash />}

@@ -15,9 +15,7 @@ import { CustomerShippingForm } from "~/modules/sales/ui/Customer";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.customers": "View" });
 
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
@@ -42,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "sales"
+    "sales.customers": "Edit"
   });
 
   const { customerId } = params;

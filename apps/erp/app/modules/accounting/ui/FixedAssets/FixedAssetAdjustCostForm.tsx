@@ -122,7 +122,9 @@ const FixedAssetAdjustCostForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={!permissions.can("update", "accounting")}>
+                <Submit
+                  isDisabled={!permissions.has({ "accounting.assets": "Edit" })}
+                >
                   <Trans>Adjust Cost</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={() => onClose?.()}>

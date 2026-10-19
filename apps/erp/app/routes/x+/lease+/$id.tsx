@@ -42,7 +42,7 @@ export async function loader({
   params
 }: LoaderFunctionArgs): Promise<LeaseRouteData> {
   const { client, companyId, api } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.leases": "View"
   });
 
   const { id } = params;

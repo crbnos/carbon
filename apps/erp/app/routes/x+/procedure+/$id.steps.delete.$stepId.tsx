@@ -11,7 +11,7 @@ import { deleteProcedureStep } from "~/modules/production/production.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    delete: "production"
+    "production.procedures": "Full"
   });
 
   const { stepId } = params;

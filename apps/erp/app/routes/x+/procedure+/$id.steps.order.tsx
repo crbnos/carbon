@@ -12,7 +12,7 @@ import { updateProcedureStepOrder } from "~/modules/production/production.servic
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "production"
+    "production.procedures": "Edit"
   });
 
   const updateMap = (await request.formData()).get("updates") as string;

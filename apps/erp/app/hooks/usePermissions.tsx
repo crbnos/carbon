@@ -2,6 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  type Gate,
+  type GateLevel,
+  holdsAny,
+  holdsGate,
+  LEVEL_ACTION
+} from "@carbon/database/access";
 import { useRouteData } from "@carbon/react";
 import { useCallback } from "react";
 import type { Permission } from "~/modules/users/types";
@@ -27,18 +34,17 @@ export function usePermissions() {
     );
   }
 
-  const can = useCallback(
-    (action: "view" | "create" | "update" | "delete", feature: string) => {
-      return data?.permissions[feature]?.[action].includes(companyId);
-    },
+  /** Whether the person passes the gate: `has({ "sales.quotes": "Edit" })`. */
+  const has = useCallback(
+    (gate: Gate) => holdsGate(data?.permissions ?? {}, gate, companyId),
     [companyId, data?.permissions]
   );
 
-  const has = useCallback(
-    (feature: string) => {
-      return !!data?.permissions && feature in data.permissions;
-    },
-    [data?.permissions]
+  /** Whether any page of the module holds the level (navigation, dashboards). */
+  const hasAny = useCallback(
+    (module: string, level: GateLevel) =>
+      holdsAny(data?.permissions ?? {}, module, LEVEL_ACTION[level], companyId),
+    [companyId, data?.permissions]
   );
 
   const is = useCallback(
@@ -53,8 +59,8 @@ export function usePermissions() {
   }, [ownerId, userId]);
 
   return {
-    can,
     has,
+    hasAny,
     is,
     isOwner
   };

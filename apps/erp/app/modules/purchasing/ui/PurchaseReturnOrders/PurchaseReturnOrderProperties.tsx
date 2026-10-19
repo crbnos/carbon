@@ -215,7 +215,7 @@ const PurchaseReturnOrderProperties = () => {
       ? optimisticAssignment
       : routeData?.purchaseReturnOrder?.assignee;
 
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.returns": "Edit" });
   const isLocked = isPurchaseReturnOrderLocked(
     routeData?.purchaseReturnOrder?.status
   );

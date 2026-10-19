@@ -13,7 +13,7 @@ import { upsertPurchasingRFQSuppliers } from "~/modules/purchasing/purchasing.se
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "purchasing"
+    "purchasing.rfqs": "Edit"
   });
 
   const { rfqId: id } = params;

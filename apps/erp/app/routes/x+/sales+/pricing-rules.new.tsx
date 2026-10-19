@@ -15,14 +15,14 @@ import PricingRuleForm from "~/modules/sales/ui/Pricing/PricingRuleForm";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, { create: "sales" });
+  await authorize(request, { "sales.pricingRules": "Create" });
   return null;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "sales"
+    "sales.pricingRules": "Create"
   });
 
   const formData = await request.formData();

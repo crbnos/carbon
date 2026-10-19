@@ -7,6 +7,7 @@
 // pages, so every route and component that sends a user back to "the run's
 // list" reads one map.
 
+import type { PageId } from "@carbon/database/access";
 import type { RunType } from "@carbon/database/run-type";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -14,14 +15,22 @@ import { path } from "~/utils/path";
 
 export const RUN_PAGES: Record<
   RunType,
-  { listPath: string; newPath: string; title: MessageDescriptor }
+  {
+    /** The page whose level gates the run. */
+    page: PageId;
+    listPath: string;
+    newPath: string;
+    title: MessageDescriptor;
+  }
 > = {
   "Revenue Recognition": {
+    page: "accounting.revenueRecognition",
     listPath: path.to.revenueRecognitionRuns,
     newPath: path.to.newRevenueRecognitionRun,
     title: msg`Revenue Recognition`
   },
   Lease: {
+    page: "accounting.leases",
     listPath: path.to.leaseRuns,
     newPath: path.to.newLeaseRun,
     title: msg`Lease Runs`

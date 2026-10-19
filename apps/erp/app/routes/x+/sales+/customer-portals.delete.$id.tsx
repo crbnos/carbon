@@ -15,10 +15,11 @@ import { ConfirmDelete } from "~/components/Modals";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "sales.portals": "View" },
+    { role: "employee" }
+  );
   const { id } = params;
   if (!id) throw notFound("id not found");
 
@@ -38,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    delete: "sales"
+    "sales.portals": "Full"
   });
 
   await requireFeature({

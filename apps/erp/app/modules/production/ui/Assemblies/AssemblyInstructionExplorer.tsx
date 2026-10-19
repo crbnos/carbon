@@ -336,12 +336,16 @@ function AssemblyInstructionExplorer({
       },
       { replace: true }
     );
-    if (steps.length > 0 || !permissions.can("update", "production")) return;
+    if (
+      steps.length > 0 ||
+      !permissions.has({ "production.assemblies": "Edit" })
+    )
+      return;
     submitGenerate("generate");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     searchParams,
-    permissions.can,
+    permissions.has,
     setSearchParams,
     steps.length,
     submitGenerate
@@ -534,7 +538,7 @@ function AssemblyInstructionExplorer({
                 onPreviewStep={onPreviewStep}
                 onDeleteStep={setStepToDelete}
               />
-            ) : permissions.can("update", "production") ? (
+            ) : permissions.has({ "production.assemblies": "Edit" }) ? (
               <div className="flex h-full w-full flex-col items-center justify-center px-6 py-10">
                 <div className="flex w-full max-w-[280px] flex-col items-center text-center">
                   <div
@@ -627,7 +631,7 @@ function AssemblyInstructionExplorer({
                 className="flex-1"
                 isDisabled={
                   isDisabled ||
-                  !permissions.can("update", "production") ||
+                  !permissions.has({ "production.assemblies": "Edit" }) ||
                   newStepFetcher.state !== "idle"
                 }
                 isLoading={newStepFetcher.state !== "idle"}
@@ -637,60 +641,62 @@ function AssemblyInstructionExplorer({
               >
                 Add Step
               </Button>
-              {modelUploadId && permissions.can("update", "production") && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <IconButton
-                      aria-label={
-                        isPlannerBusy
-                          ? "Motion planning in progress"
-                          : "Motion planner actions"
-                      }
-                      icon={
-                        isPlannerBusy ? (
-                          <Spinner className="size-4" />
-                        ) : (
-                          <LuSparkles />
-                        )
-                      }
-                      isDisabled={isDisabled || isPlannerBusy}
-                      variant="secondary"
-                    />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {!assemblerAvailable && (
-                      <p className="px-2 py-1.5 text-xs text-amber-600 dark:text-amber-500">
-                        Geometry service offline — motion planning unavailable.
-                      </p>
-                    )}
-                    <DropdownMenuItem
-                      disabled={!assemblerAvailable}
-                      onClick={() => setShowRerunConfirm(true)}
-                    >
-                      <DropdownMenuIcon icon={<LuWaypoints />} />
-                      <div>
-                        Run Motion Planning
-                        <p className="text-xs text-muted-foreground">
-                          Recompute motions, keep step order
+              {modelUploadId &&
+                permissions.has({ "production.assemblies": "Edit" }) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <IconButton
+                        aria-label={
+                          isPlannerBusy
+                            ? "Motion planning in progress"
+                            : "Motion planner actions"
+                        }
+                        icon={
+                          isPlannerBusy ? (
+                            <Spinner className="size-4" />
+                          ) : (
+                            <LuSparkles />
+                          )
+                        }
+                        isDisabled={isDisabled || isPlannerBusy}
+                        variant="secondary"
+                      />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {!assemblerAvailable && (
+                        <p className="px-2 py-1.5 text-xs text-amber-600 dark:text-amber-500">
+                          Geometry service offline — motion planning
+                          unavailable.
                         </p>
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      destructive
-                      disabled={!assemblerAvailable}
-                      onClick={() => setShowRegenerateConfirm(true)}
-                    >
-                      <DropdownMenuIcon icon={<LuSparkles />} />
-                      <div>
-                        Regenerate Steps
-                        <p className="text-xs text-muted-foreground">
-                          Replace all steps from the latest plan
-                        </p>
-                      </div>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                      )}
+                      <DropdownMenuItem
+                        disabled={!assemblerAvailable}
+                        onClick={() => setShowRerunConfirm(true)}
+                      >
+                        <DropdownMenuIcon icon={<LuWaypoints />} />
+                        <div>
+                          Run Motion Planning
+                          <p className="text-xs text-muted-foreground">
+                            Recompute motions, keep step order
+                          </p>
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        destructive
+                        disabled={!assemblerAvailable}
+                        onClick={() => setShowRegenerateConfirm(true)}
+                      >
+                        <DropdownMenuIcon icon={<LuSparkles />} />
+                        <div>
+                          Regenerate Steps
+                          <p className="text-xs text-muted-foreground">
+                            Replace all steps from the latest plan
+                          </p>
+                        </div>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
             </div>
           )}
         </TabsContent>

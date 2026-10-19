@@ -22,7 +22,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = () => {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {});
+  const { client, companyId, userId } = await authorize(request);
 
   const { did } = params;
   if (!did) {

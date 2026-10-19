@@ -23,9 +23,7 @@ import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "purchasing"
-  });
+  const { api } = await authorize(request, { "purchasing.returns": "View" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

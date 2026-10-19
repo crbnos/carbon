@@ -12,11 +12,7 @@ export const config = {
 
 /** Apply a reviewed assembly plan: items, BOM lines per method, links, model export. */
 export async function action({ request }: ActionFunctionArgs) {
-  const { api } = await authorizePanel(request, {
-    create: "parts",
-    update: "parts",
-    delete: "parts"
-  });
+  const { api } = await authorizePanel(request, { "parts.parts": "Full" });
   return panelResponse(
     await api.settings.pushOnshapeAssembly(
       await request.json().catch(() => null)

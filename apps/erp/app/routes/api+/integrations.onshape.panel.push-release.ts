@@ -12,11 +12,7 @@ export const config = {
 
 /** Apply a reviewed release plan; Carbon's state at apply time outranks the plan. */
 export async function action({ request }: ActionFunctionArgs) {
-  const { api } = await authorizePanel(request, {
-    create: "parts",
-    update: "parts",
-    delete: "parts"
-  });
+  const { api } = await authorizePanel(request, { "parts.parts": "Full" });
   return panelResponse(
     await api.settings.pushOnshapeRelease(
       await request.json().catch(() => null)

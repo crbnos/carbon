@@ -19,14 +19,14 @@ import { path, requestReferrer } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    create: "sales"
+    "sales.quotes": "Create"
   });
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
   const { client: viewClient } = await authorize(request, {
-    view: "sales"
+    "sales.quotes": "View"
   });
   const quote = await getQuote(viewClient, quoteId);
   await requireUnlocked({

@@ -15,7 +15,7 @@ const integrationMetadataParser = z.object({
 });
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
 
   const integration = await getCompanyIntegration(client, companyId, "radan");
   if (!integration) {

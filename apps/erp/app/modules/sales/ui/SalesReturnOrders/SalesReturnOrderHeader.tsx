@@ -93,7 +93,7 @@ const SalesReturnOrderHeader = () => {
   const creditDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
 
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.returns": "Edit" });
 
   const menuItems = (
     <>
@@ -121,7 +121,7 @@ const SalesReturnOrderHeader = () => {
         destructive
         disabled={
           !["Draft", "Cancelled"].includes(status ?? "") ||
-          !permissions.can("delete", "sales") ||
+          !permissions.has({ "sales.returns": "Full" }) ||
           !permissions.is("employee")
         }
         onClick={deleteDisclosure.onOpen}
@@ -191,7 +191,7 @@ const SalesReturnOrderHeader = () => {
                   leftIcon={<LuPackageCheck />}
                   isDisabled={
                     isCreatingDocument ||
-                    !permissions.can("create", "inventory")
+                    !permissions.has({ "inventory.receipts": "Create" })
                   }
                   onClick={receive}
                 >
@@ -209,7 +209,7 @@ const SalesReturnOrderHeader = () => {
                     leftIcon={<LuTruck />}
                     isDisabled={
                       isCreatingDocument ||
-                      !permissions.can("create", "inventory")
+                      !permissions.has({ "inventory.shipments": "Create" })
                     }
                     onClick={shipBack}
                   >
@@ -225,7 +225,9 @@ const SalesReturnOrderHeader = () => {
                     <Button
                       leftIcon={<LuCreditCard />}
                       variant="secondary"
-                      isDisabled={!permissions.can("create", "invoicing")}
+                      isDisabled={
+                        !permissions.has({ "invoicing.creditMemos": "Create" })
+                      }
                       onClick={creditDisclosure.onOpen}
                     >
                       <Trans>Issue Credit</Trans>
@@ -257,7 +259,7 @@ const SalesReturnOrderHeader = () => {
                       isLoading={replacementFetcher.state !== "idle"}
                       isDisabled={
                         replacementFetcher.state !== "idle" ||
-                        !permissions.can("create", "sales")
+                        !permissions.has({ "sales.returns": "Create" })
                       }
                       onClick={() => {
                         replacementFetcher.submit(null, {

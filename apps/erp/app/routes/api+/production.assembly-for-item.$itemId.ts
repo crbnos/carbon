@@ -10,7 +10,7 @@ import type { LoaderFunctionArgs } from "react-router";
 // (it can be opened/finished), else null (one can be created from the item's model).
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "production"
+    "production.assemblies": "View"
   });
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");

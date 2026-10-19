@@ -28,10 +28,11 @@ import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "production",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "production.jobs": "View" },
+    { bypassRls: true }
+  );
 
   const { jobId, methodId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -209,7 +210,7 @@ export default function JobMakeMethodRoute() {
             {(model) => (
               <CadModel
                 key={`cad:${model.itemId}`}
-                isReadOnly={!permissions.can("update", "sales")}
+                isReadOnly={!permissions.has({ "production.jobs": "Edit" })}
                 metadata={{
                   itemId: model?.itemId ?? undefined
                 }}

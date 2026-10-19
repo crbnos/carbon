@@ -19,7 +19,7 @@ const logger = getLogger("erp", "lease-delete");
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    delete: "purchasing"
+    "purchasing.leases": "Full"
   });
 
   const { id } = params;

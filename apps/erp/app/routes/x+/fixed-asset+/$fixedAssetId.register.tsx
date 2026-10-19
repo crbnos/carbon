@@ -15,9 +15,7 @@ import { FixedAssetRegisterForm } from "~/modules/accounting/ui/FixedAssets";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting"
-  });
+  const { api } = await authorize(request, { "accounting.assets": "View" });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");

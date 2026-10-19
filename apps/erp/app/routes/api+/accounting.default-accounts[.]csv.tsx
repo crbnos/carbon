@@ -20,7 +20,7 @@ const logger = getLogger("erp", "api/accounting/default-accounts.csv");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId, companyGroupId } = await authorize(request, {
-    view: "accounting"
+    "accounting.defaultAccounts": "View"
   });
 
   let csv: string;

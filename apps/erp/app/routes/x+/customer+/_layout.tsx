@@ -22,9 +22,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.customers": "View" });
 
   const [
     customerTypes,

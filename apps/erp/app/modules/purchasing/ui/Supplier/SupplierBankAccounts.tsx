@@ -47,7 +47,7 @@ const SupplierBankAccounts = ({ bankAccounts }: SupplierBankAccountsProps) => {
   if (!supplierId) throw new Error("supplierId not found");
 
   const permissions = usePermissions();
-  const canEdit = permissions.can("create", "accounting");
+  const canEdit = permissions.has({ "purchasing.suppliers": "Create" });
   const isEmpty = !bankAccounts || bankAccounts.length === 0;
 
   const countries = useCountries();
@@ -204,7 +204,9 @@ const SupplierBankAccounts = ({ bankAccounts }: SupplierBankAccountsProps) => {
                       <DropdownMenuContent>
                         <DropdownMenuItem
                           shortcut={MENU_ITEM_SHORTCUTS.edit}
-                          disabled={!permissions.can("update", "accounting")}
+                          disabled={
+                            !permissions.has({ "purchasing.suppliers": "Edit" })
+                          }
                           onClick={() => navigate(account.id)}
                         >
                           <LuPencil className="mr-2" />
@@ -213,7 +215,9 @@ const SupplierBankAccounts = ({ bankAccounts }: SupplierBankAccountsProps) => {
                         <DropdownMenuItem
                           shortcut={MENU_ITEM_SHORTCUTS.delete}
                           destructive
-                          disabled={!permissions.can("delete", "accounting")}
+                          disabled={
+                            !permissions.has({ "purchasing.suppliers": "Full" })
+                          }
                           onClick={() => {
                             setSelected(account);
                             deleteModal.onOpen();

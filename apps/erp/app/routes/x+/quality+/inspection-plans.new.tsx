@@ -15,14 +15,14 @@ import { InspectionDocumentForm } from "~/modules/quality/ui/InspectionDocument"
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, { create: "quality" });
+  await authorize(request, { "quality.inspectionPlans": "Create" });
   return null;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "quality"
+    "quality.inspectionPlans": "Create"
   });
 
   const formData = await request.formData();

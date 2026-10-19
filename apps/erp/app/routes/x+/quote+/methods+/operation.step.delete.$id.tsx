@@ -11,9 +11,7 @@ import { deleteQuoteOperationStep } from "~/modules/sales/sales.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, {
-    delete: "parts"
-  });
+  const { client } = await authorize(request, { "sales.quotes": "Full" });
 
   const { id } = params;
   if (!id) {

@@ -75,7 +75,7 @@ const CustomerStatusesTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "sales")}
+              disabled={!permissions.has({ "sales.statuses": "Full" })}
               onClick={() => {
                 navigate(
                   `${path.to.deleteCustomerStatus(row.id)}?${params.toString()}`
@@ -97,7 +97,7 @@ const CustomerStatusesTable = memo(
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "sales") && (
+          permissions.has({ "sales.statuses": "Create" }) && (
             <New
               label={t`Customer Status`}
               to={`${path.to.newCustomerStatus}?${params.toString()}`}

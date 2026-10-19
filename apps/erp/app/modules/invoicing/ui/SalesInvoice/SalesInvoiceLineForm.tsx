@@ -309,8 +309,8 @@ const SalesInvoiceItemLineForm = ({
     : hasInvalidMethodType
       ? true
       : isEditing
-        ? !permissions.can("update", "purchasing")
-        : !permissions.can("create", "purchasing");
+        ? !permissions.has({ "invoicing.salesInvoices": "Edit" })
+        : !permissions.has({ "invoicing.salesInvoices": "Create" });
 
   const onTypeChange = (t: ItemType | "Item") => {
     if (t === itemFilter) return;

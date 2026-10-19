@@ -14,10 +14,11 @@ import { deleteScrapReason } from "~/modules/production/production.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "production",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "production.scrapReasons": "View" },
+    { role: "employee" }
+  );
   const { scrapReasonId } = params;
   if (!scrapReasonId) throw notFound("scrapReasonId not found");
 
@@ -37,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await authorize(request, {
-    delete: "production"
+    "production.scrapReasons": "Full"
   });
 
   const { scrapReasonId } = params;

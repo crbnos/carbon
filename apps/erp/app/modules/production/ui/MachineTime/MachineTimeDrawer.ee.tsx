@@ -90,7 +90,8 @@ const MachineTimeDrawer = ({
 
   const isRunning = !machineTime.endTime;
   const isBusy = fetcher.state !== "idle";
-  const canAnswer = permissions.can("update", "production") && !isRunning;
+  const canAnswer =
+    permissions.has({ "production.unattributedTime": "Edit" }) && !isRunning;
   const pendingOperationId = fetcher.formData?.get("jobOperationId");
   const isDismissing = fetcher.formData?.get("intent") === "dismiss";
   const workCenterName =

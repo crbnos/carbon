@@ -81,7 +81,7 @@ const EmployeePermissionsForm = ({
   const permissions = usePermissions();
   const onClose = () => closeRoute();
 
-  const canEdit = permissions.can("update", "users");
+  const canEdit = permissions.has({ "users.accounts": "Edit" });
 
   // The person's edits; the route remounts the form for another person.
   const [grants, setGrants] = useState(initialValues.grants);

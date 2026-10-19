@@ -46,8 +46,8 @@ const MaterialDimensionForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has({ "parts.dimensions": "Edit" })
+    : !permissions.has({ "parts.dimensions": "Create" });
 
   useEffect(() => {
     if (type !== "modal") return;

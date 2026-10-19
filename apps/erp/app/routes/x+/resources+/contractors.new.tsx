@@ -18,7 +18,7 @@ import { path } from "~/utils/path";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "resources"
+    "resources.abilities": "Create"
   });
 
   const formData = await request.formData();

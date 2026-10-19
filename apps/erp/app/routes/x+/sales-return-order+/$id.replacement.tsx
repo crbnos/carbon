@@ -15,9 +15,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, companyGroupId, userId } = await authorize(
     request,
-    {
-      create: "sales"
-    }
+    { "sales.returns": "Create" }
   );
 
   const { id } = params;

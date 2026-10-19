@@ -9,7 +9,7 @@ import { data } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "quality"
+    "quality.inspectionPlans": "View"
   });
 
   const { itemId } = params;

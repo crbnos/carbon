@@ -74,7 +74,8 @@ export default function SupplierQuoteExplorer() {
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<SupplierQuoteLine | null>(null);
   const isLocked = isSupplierQuoteLocked(routeData?.quote?.status);
-  const isDisabled = !permissions.can("delete", "purchasing") || isLocked;
+  const isDisabled =
+    !permissions.has({ "purchasing.supplierQuotes": "Full" }) || isLocked;
 
   const onDeleteLine = (line: SupplierQuoteLine) => {
     setDeleteLine(line);
@@ -88,7 +89,9 @@ export default function SupplierQuoteExplorer() {
 
   const lines = routeData?.lines ?? [];
   const canReorder =
-    !isDisabled && permissions.can("update", "purchasing") && lines.length > 1;
+    !isDisabled &&
+    permissions.has({ "purchasing.supplierQuotes": "Edit" }) &&
+    lines.length > 1;
 
   const editMode = useLineOrderEditMode<SupplierQuoteLine>({
     actionPath: path.to.supplierQuoteLineOrder(id),
@@ -128,7 +131,7 @@ export default function SupplierQuoteExplorer() {
             )
           ) : (
             <Empty>
-              {permissions.can("update", "sales") && (
+              {permissions.has({ "purchasing.supplierQuotes": "Edit" }) && (
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
@@ -154,7 +157,10 @@ export default function SupplierQuoteExplorer() {
               <Button
                 className="flex-1"
                 shortcut={EXPLORER_SHORTCUTS.addLine}
-                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                isDisabled={
+                  isDisabled ||
+                  !permissions.has({ "purchasing.supplierQuotes": "Edit" })
+                }
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
                 onClick={newSupplierQuoteLineDisclosure.onOpen}
@@ -315,7 +321,10 @@ function SupplierQuoteLineItem({
                 <DropdownMenuItem
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
-                  disabled={isDisabled || !permissions.can("update", "sales")}
+                  disabled={
+                    isDisabled ||
+                    !permissions.has({ "purchasing.supplierQuotes": "Edit" })
+                  }
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(line);

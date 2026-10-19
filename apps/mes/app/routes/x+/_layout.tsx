@@ -10,7 +10,6 @@ import {
   getCarbon,
   getCompanies,
   getUser,
-  hasPermission,
   ITAR_RIDER_PDF_PATH,
   isAuthProviderEnabled,
   SESSION_HEARTBEAT_MS,
@@ -24,6 +23,7 @@ import {
   requireAuthSession
 } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
+import { holdsGate } from "@carbon/database/access";
 import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
@@ -217,15 +217,14 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     : (await isConsoleModeEnabledForCompany(client, companyId, {
         consoleEnabled: companySettings.data?.consoleEnabled ?? false
       })) === true;
-  // Entering console mode needs `settings_update` on the SESSION user (the
+  // Entering console mode needs Settings → People at Edit on the SESSION user (the
   // console.toggle action enforces it); the sidebar only offers the switch to
   // them, or to a terminal already in console mode so it can always leave.
   const canEnterConsoleMode =
     consoleEnabled &&
-    hasPermission(
+    holdsGate(
       (await getUserClaims(userId, companyId)).permissions,
-      "settings",
-      "update",
+      { "settings.people": "Edit" },
       companyId
     );
 

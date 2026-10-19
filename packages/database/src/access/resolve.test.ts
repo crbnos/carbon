@@ -5,14 +5,16 @@
 import { describe, expect, it } from "vitest";
 import cases from "./cases.json";
 import { actionsGained, roundUp } from "./levels";
-import { clampLevel, PAGES, REGISTRY_HASH } from "./registry";
+import { clampLevel, ITEM_TYPE_PAGES, PAGES, REGISTRY_HASH } from "./registry";
 import {
   accessHolders,
+  anyOf,
   claimKeys,
   expandClaims,
   type Grant,
   holds,
   holdsAny,
+  holdsGate,
   type RawClaims,
   resolveLevel,
   winningGrant
@@ -101,6 +103,56 @@ describe("expandClaims", () => {
 
   it("refuses a key that is not <page>_<action>", () => {
     expect(holds(expanded, "inventory", "c1")).toBe(false);
+  });
+});
+
+describe("holdsGate", () => {
+  const none = { view: [], create: [], update: [], delete: [] };
+  const expanded = {
+    "inventory.receipts": { ...none, view: ["c1"], create: ["c1"] },
+    "parts.tools": { view: ["c1"], create: ["c1"], update: ["c1"], delete: [] },
+    "parts.parts": { ...none, view: ["c1"] }
+  };
+
+  it("reads the highest action of each entry's level", () => {
+    expect(holdsGate(expanded, { "inventory.receipts": "Create" }, "c1")).toBe(
+      true
+    );
+    expect(holdsGate(expanded, { "inventory.receipts": "Edit" }, "c1")).toBe(
+      false
+    );
+    expect(holdsGate(expanded, { "inventory.receipts": "View" }, "c2")).toBe(
+      false
+    );
+  });
+
+  it("needs every entry of one gate", () => {
+    expect(
+      holdsGate(
+        expanded,
+        { "inventory.receipts": "View", "parts.parts": "Edit" },
+        "c1"
+      )
+    ).toBe(false);
+  });
+
+  it("passes a list when any one gate passes", () => {
+    const edit = anyOf(Object.values(ITEM_TYPE_PAGES), "Edit");
+    expect(holdsGate(expanded, edit, "c1")).toBe(true);
+    expect(holdsGate(expanded, anyOf(["parts.parts"], "Edit"), "c1")).toBe(
+      false
+    );
+  });
+
+  it("maps each item type to its page", () => {
+    expect(ITEM_TYPE_PAGES.Tool).toBe("parts.tools");
+    expect(Object.keys(ITEM_TYPE_PAGES)).toEqual([
+      "Part",
+      "Material",
+      "Tool",
+      "Consumable",
+      "Service"
+    ]);
   });
 });
 

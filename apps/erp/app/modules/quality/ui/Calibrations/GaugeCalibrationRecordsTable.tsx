@@ -362,7 +362,7 @@ const GaugeCalibrationRecordsTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "quality")}
+              disabled={!permissions.has({ "quality.records": "Edit" })}
               onClick={() => {
                 navigate(
                   `${path.to.gaugeCalibrationRecord(
@@ -377,7 +377,7 @@ const GaugeCalibrationRecordsTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "quality")}
+              disabled={!permissions.has({ "quality.records": "Full" })}
               onClick={() => {
                 flushSync(() => {
                   setSelectedGaugeCalibrationRecord(row);
@@ -402,7 +402,7 @@ const GaugeCalibrationRecordsTable = memo(
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
-            permissions.can("create", "quality") && (
+            permissions.has({ "quality.records": "Create" }) && (
               <New
                 label={t`Record`}
                 to={`${

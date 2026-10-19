@@ -289,7 +289,7 @@ const ChangeNoticesTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "parts")}
+              disabled={!permissions.has({ "parts.changeNotices": "Edit" })}
               onClick={() => {
                 navigate(path.to.changeNotice(row.id!));
               }}
@@ -300,7 +300,7 @@ const ChangeNoticesTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "parts")}
+              disabled={!permissions.has({ "parts.changeNotices": "Full" })}
               onClick={() => {
                 flushSync(() => {
                   setSelectedChangeNotice(row);
@@ -324,7 +324,7 @@ const ChangeNoticesTable = memo(
           columns={columns}
           count={count}
           primaryAction={
-            permissions.can("create", "parts") && (
+            permissions.has({ "parts.changeNotices": "Create" }) && (
               <New label={t`Change Notice`} to={path.to.newChangeNotice} />
             )
           }

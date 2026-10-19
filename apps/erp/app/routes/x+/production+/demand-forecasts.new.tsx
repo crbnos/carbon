@@ -25,7 +25,7 @@ const WEEKS_TO_PROJECT = 52;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    create: "production"
+    "production.demandForecasts": "Create"
   });
 
   // No location yet — it is picked in the form — so the week grid anchors on
@@ -42,7 +42,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "production"
+    "production.demandForecasts": "Create"
   });
 
   await requireFeature({

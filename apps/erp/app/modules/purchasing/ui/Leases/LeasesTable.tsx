@@ -214,7 +214,7 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
     return (row: Lease) => (
       <>
         <MenuItem
-          disabled={!permissions.can("view", "purchasing")}
+          disabled={!permissions.has({ "purchasing.leases": "View" })}
           onClick={() => {
             navigate(path.to.lease(row.id!));
           }}
@@ -224,7 +224,8 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
         </MenuItem>
         <MenuItem
           disabled={
-            !permissions.can("delete", "purchasing") || row.status !== "Draft"
+            !permissions.has({ "purchasing.leases": "Full" }) ||
+            row.status !== "Draft"
           }
           destructive
           onClick={() => {
@@ -249,7 +250,7 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
           left: ["leaseId"]
         }}
         primaryAction={
-          permissions.can("create", "purchasing") && (
+          permissions.has({ "purchasing.leases": "Create" }) && (
             <New label={t`Lease`} to={path.to.newLease} />
           )
         }

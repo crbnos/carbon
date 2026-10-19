@@ -27,10 +27,11 @@ import { getGenericQueryFilters } from "~/utils/query";
 const newRunForm = z.object({ periodEnd: z.string().optional() });
 
 export async function loadPeriodRuns(request: Request, type: RunType) {
-  const { client, companyId } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { [RUN_PAGES[type].page]: "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

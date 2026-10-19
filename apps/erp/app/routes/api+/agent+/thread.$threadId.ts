@@ -10,7 +10,7 @@ import { getDisplayMessages, getThread } from "~/modules/agent/agent.service";
 const logger = getLogger("erp", "agent-thread");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {});
+  const { client, companyId, userId } = await authorize(request);
   const threadId = params.threadId;
   if (!threadId) throw new Response("Conversation not found", { status: 404 });
 

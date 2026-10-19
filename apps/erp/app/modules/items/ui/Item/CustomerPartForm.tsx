@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -38,8 +39,8 @@ const CustomerPartForm = ({ initialValues }: CustomerPartFormProps) => {
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has(anyOf(ITEM_PAGES, "Edit"))
+    : !permissions.has(anyOf(ITEM_PAGES, "Create"));
 
   const onClose = () => closeRoute();
 

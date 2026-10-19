@@ -15,9 +15,7 @@ import { deleteMaterialForm } from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.shapes": "View" });
   const { formId } = params;
   if (!formId) throw notFound("formId not found");
 
@@ -36,9 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, {
-    delete: "parts"
-  });
+  const { client } = await authorize(request, { "parts.shapes": "Full" });
 
   const { formId } = params;
   if (!formId) {

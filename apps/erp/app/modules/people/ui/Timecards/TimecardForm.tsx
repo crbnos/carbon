@@ -42,8 +42,8 @@ const TimecardForm = ({ initialValues }: TimecardFormProps) => {
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "people")
-    : !permissions.can("create", "people");
+    ? !permissions.has({ "people.timecards": "Edit" })
+    : !permissions.has({ "people.timecards": "Create" });
 
   const [clockIn, setClockIn] = useState<CalendarDateTime>(
     initialValues.clockIn

@@ -21,7 +21,7 @@ const logger = getLogger("erp", "lease-line-new");
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    create: "purchasing"
+    "purchasing.leases": "Create"
   });
 
   const { id } = params;

@@ -6,6 +6,7 @@ import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import type { RunType } from "@carbon/database/run-type";
 import {
   Card,
@@ -55,9 +56,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "accounting"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    anyOf(["accounting.revenueRecognition", "accounting.leases"], "View")
+  );
 
   const { runId } = params;
   if (!runId) throw new Error("Could not find runId");
@@ -77,6 +79,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
+  // The run's type picks its page.
+  await authorize(request, { [RUN_PAGES[run.data.type].page]: "View" });
 
   // Name the document behind each row: the invoice for a Deferral, the rental
   // agreement for an Accrual or Interest row (one lookup per source table).

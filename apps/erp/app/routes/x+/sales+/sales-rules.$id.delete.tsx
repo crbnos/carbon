@@ -14,9 +14,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    delete: "sales"
-  });
+  const { api } = await authorize(request, { "sales.salesRules": "Full" });
   const { id } = params;
   if (!id) throw notFound("id required");
   const rule = await api.shared.getEnforcementRule({ family: "sales", id });
@@ -32,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    delete: "sales"
+    "sales.salesRules": "Full"
   });
 
   await requireFeature({

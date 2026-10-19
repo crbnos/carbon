@@ -186,7 +186,7 @@ const QualityDocumentProperties = () => {
         table="qualityDocument"
         value={assignee ?? ""}
         variant="inline"
-        isReadOnly={!permissions.can("update", "quality")}
+        isReadOnly={!permissions.has({ "quality.qualityDocuments": "Edit" })}
       />
 
       <ValidatedForm

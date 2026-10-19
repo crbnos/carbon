@@ -10,7 +10,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, { delete: "inventory" });
+  await authorize(request, { "inventory.inventoryCount": "Full" });
   return redirect(path.to.inventoryCounts);
 }
 

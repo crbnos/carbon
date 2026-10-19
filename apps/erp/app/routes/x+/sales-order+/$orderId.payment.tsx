@@ -26,7 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
 
   const { client: viewClient } = await authorize(request, {
-    view: "sales"
+    "sales.salesOrders": "View"
   });
 
   const salesOrder = await getSalesOrder(viewClient, orderId);
@@ -38,7 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const { client, userId } = await authorize(request, {
-    update: "sales"
+    "sales.salesOrders": "Edit"
   });
 
   const formData = await request.formData();

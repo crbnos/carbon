@@ -236,7 +236,11 @@ export function formatToolDescription(
   output += `${tool.description}\n`;
   // The actions are every one the gate's level holds; it checks the highest.
   const action = tool.permission.actions.at(-1);
-  if (tool.permission.module && action) {
+  const oneOf = tool.permission.oneOf;
+  if (oneOf) {
+    const picked = oneOf.by.length > 0 ? ` (by ${oneOf.by.join(", ")})` : "";
+    output += `Permission: one of ${oneOf.pages.join(", ")} at ${oneOf.level}${picked}\n`;
+  } else if (tool.permission.module && action) {
     output += `Permission: ${tool.permission.module}_${action}\n`;
   }
   if (options.isList) {

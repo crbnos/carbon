@@ -10,7 +10,7 @@ import type { ActionFunctionArgs } from "react-router";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await authorize(request, {});
+  const { companyId, userId } = await authorize(request);
 
   const json = await request.json();
   const validation = manualPrintValidator.safeParse(json);

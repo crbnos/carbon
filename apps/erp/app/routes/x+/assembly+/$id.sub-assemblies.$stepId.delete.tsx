@@ -16,7 +16,7 @@ const logger = getLogger("erp", "assembly-sub-assembly-delete");
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    delete: "production"
+    "production.assemblies": "Full"
   });
 
   const { id, stepId } = params;

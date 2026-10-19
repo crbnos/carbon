@@ -37,7 +37,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyGroupId, email } = await authorize(request, {
-    view: "settings"
+    "settings.companies": "View"
   });
 
   // Multi-company management is gated to internal (Carbon) users for now.

@@ -15,9 +15,7 @@ import { ChangeNoticeTypeForm } from "~/modules/items/ui/ChangeNoticeTypes";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    create: "parts"
-  });
+  await authorize(request, { "parts.changeNoticeTypes": "Create" });
 
   return null;
 }
@@ -25,7 +23,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "parts"
+    "parts.changeNoticeTypes": "Create"
   });
 
   const formData = await request.formData();

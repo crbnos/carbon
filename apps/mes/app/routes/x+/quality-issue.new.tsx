@@ -14,7 +14,7 @@ import { path, requestReferrer } from "~/utils/path";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    create: "quality"
+    "quality.issues": "Create"
   });
   const serviceRole = await getCarbonServiceRole();
 

@@ -23,10 +23,11 @@ export const handle: Handle = {
 const RENTAL_FLEET_CLASS_NAME = "Rental Fleet";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "accounting.fleet": "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -80,7 +81,7 @@ export default function FleetRoute() {
         data={data}
         count={count}
         primaryAction={
-          permissions.can("create", "production") && (
+          permissions.has({ "production.jobs": "Create" }) && (
             <Button
               leftIcon={<LuHammer />}
               variant="primary"

@@ -57,8 +57,8 @@ const ApprovalRuleCard = memo(
     };
     const documentTypeLabel = documentTypeLabels[documentType];
 
-    const canEdit = permissions.can("update", "settings");
-    const canDelete = permissions.can("update", "settings");
+    const canEdit = permissions.has({ "settings.approvalRules": "Edit" });
+    const canDelete = permissions.has({ "settings.approvalRules": "Edit" });
 
     const handleEdit = useCallback(() => {
       if (!rule.id) return;

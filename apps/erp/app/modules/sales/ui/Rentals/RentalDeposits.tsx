@@ -126,7 +126,7 @@ const RentalDeposits = ({ rentalAgreement, deposits }: RentalDepositsProps) => {
           <Button
             variant="secondary"
             leftIcon={<LuPlus />}
-            isDisabled={!permissions.can("create", "invoicing")}
+            isDisabled={!permissions.has({ "invoicing.payments": "Create" })}
             asChild
           >
             <Link to={recordDepositUrl}>

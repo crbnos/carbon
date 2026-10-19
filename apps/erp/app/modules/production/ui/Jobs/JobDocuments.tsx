@@ -79,8 +79,8 @@ const useJobDocuments = ({
   const { company } = useUser();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", "production");
-  const canUpdate = permissions.can("update", "production");
+  const canDelete = permissions.has({ "production.jobs": "Full" });
+  const canUpdate = permissions.has({ "production.jobs": "Edit" });
 
   const getPath = useCallback(
     (file: { name: string }, bucket: "job" | "parts" = "job") => {
@@ -647,7 +647,7 @@ const JobDocumentForm = ({
 
   return (
     <File
-      isDisabled={!permissions.can("update", "production")}
+      isDisabled={!permissions.has({ "production.jobs": "Edit" })}
       leftIcon={<LuUpload />}
       onChange={(e) => uploadFiles(e)}
       multiple

@@ -31,7 +31,7 @@ import {
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "settings"
+    "settings.documentTemplates": "View"
   });
 
   const documentType = documentTemplateTypeSchema.parse(params.type);

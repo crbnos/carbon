@@ -311,7 +311,7 @@ const QuoteMaterialForm = ({
           </VStack>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!permissions.can("update", "sales")}>
+          <Submit isDisabled={!permissions.has({ "sales.quotes": "Edit" })}>
             <Trans>Save</Trans>
           </Submit>
         </CardFooter>

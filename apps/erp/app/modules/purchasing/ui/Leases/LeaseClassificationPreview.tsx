@@ -118,7 +118,8 @@ export function LeaseClassificationPreview({
   );
   const percent = (value: number) => formatPercent(value / 100, locale);
   const canOverride =
-    lease.status === "Draft" && permissions.can("update", "accounting");
+    lease.status === "Draft" &&
+    permissions.has({ "accounting.leases": "Edit" });
   const isSingle = assets.length === 1;
 
   if (!lease.endDate) {

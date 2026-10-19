@@ -17,7 +17,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) {
     throw new Response("Invalid request", { status: 400 });
   }
-  const auth = await authorize(args.request, {});
+  const auth = await authorize(args.request);
   const turn = await startAgentTurn(serviceContext(auth), input.data);
   if (turn.error) {
     throw new Response(turn.error.message, { status: turn.error.status });

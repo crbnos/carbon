@@ -62,8 +62,8 @@ const CustomerRentalRateForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.rentalAgreements": "Edit" })
+    : !permissions.has({ "sales.rentalAgreements": "Create" });
 
   const onClose = () => navigate(path.to.partSales(itemId));
 

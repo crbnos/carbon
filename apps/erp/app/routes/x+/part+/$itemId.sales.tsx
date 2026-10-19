@@ -35,10 +35,11 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "parts",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "parts.parts": "View" },
+    { role: "employee" }
+  );
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -93,7 +94,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "parts"
+    "parts.parts": "Edit"
   });
 
   const { itemId } = params;
@@ -104,7 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (formData.get("intent") === "rentalRate") {
     // itemRentalRate is a sales table (its RLS asks for the sales
     // permissions), and the upsert may insert or update.
-    await authorize(request, { create: "sales", update: "sales" });
+    await authorize(request, { "sales.rentalAgreements": "Edit" });
     const rentalValidation = await validator(itemRentalRateValidator).validate(
       formData
     );

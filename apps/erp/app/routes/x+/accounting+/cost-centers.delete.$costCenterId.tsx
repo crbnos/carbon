@@ -13,10 +13,11 @@ import { deleteCostCenter } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "accounting.costCenters": "View" },
+    { role: "employee" }
+  );
 
   const { costCenterId } = params;
   if (!costCenterId) throw notFound("costCenterId not found");
@@ -36,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await authorize(request, {
-    delete: "accounting"
+    "accounting.costCenters": "Full"
   });
 
   const { costCenterId } = params;

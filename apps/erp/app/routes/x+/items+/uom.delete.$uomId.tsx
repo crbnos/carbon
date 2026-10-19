@@ -28,9 +28,7 @@ function describeUsage(usage: { tableName: string; count: number }[]) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.units": "View" });
 
   const { uomId } = params;
   if (!uomId) throw notFound("uomId not found");
@@ -65,9 +63,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, {
-    delete: "parts"
-  });
+  const { client } = await authorize(request, { "parts.units": "Full" });
 
   const { uomId } = params;
   if (!uomId) {

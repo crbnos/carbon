@@ -32,7 +32,7 @@ const CustomerContacts = ({ contacts }: CustomerContactsProps) => {
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
   const permissions = usePermissions();
-  const canEdit = permissions.can("create", "sales");
+  const canEdit = permissions.has({ "sales.customers": "Create" });
   const isEmpty = contacts === undefined || contacts?.length === 0;
 
   const deleteContactModal = useDisclosure();
@@ -43,7 +43,7 @@ const CustomerContacts = ({ contacts }: CustomerContactsProps) => {
       const actions = [];
 
       actions.push({
-        label: permissions.can("update", "sales")
+        label: permissions.has({ "sales.customers": "Edit" })
           ? "Edit Contact"
           : "View Contact",
         icon: <LuPencil />,
@@ -52,7 +52,7 @@ const CustomerContacts = ({ contacts }: CustomerContactsProps) => {
         }
       });
 
-      if (permissions.can("delete", "sales")) {
+      if (permissions.has({ "sales.customers": "Full" })) {
         actions.push({
           label: "Delete Contact",
           destructive: true,
@@ -65,7 +65,7 @@ const CustomerContacts = ({ contacts }: CustomerContactsProps) => {
       }
 
       if (
-        permissions.can("create", "users") &&
+        permissions.has({ "users.accounts": "Create" }) &&
         contact.user === null &&
         contact.contact.email
       ) {

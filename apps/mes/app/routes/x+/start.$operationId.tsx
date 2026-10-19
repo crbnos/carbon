@@ -250,7 +250,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const machineWorkCenterId =
     type === "Machine" ? jobOperation.data.workCenterId : null;
   if (machineWorkCenterId) {
-    await authorize(request, { create: "production" });
+    await authorize(request, { "production.jobs": "Create" });
   }
 
   const db = getDatabaseClient();

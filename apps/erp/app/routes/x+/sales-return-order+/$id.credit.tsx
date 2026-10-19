@@ -18,9 +18,7 @@ import { path } from "~/utils/path";
 // Feeds the Issue Credit modal: per-line creditable pool (received − already
 // credited over non-voided memos) with the pricing needed for the preview.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.returns": "View" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -39,10 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, companyGroupId, userId } = await authorize(
     request,
-    {
-      create: "invoicing",
-      view: "sales"
-    }
+    { "invoicing.creditMemos": "Create", "sales.returns": "View" }
   );
 
   const { id } = params;

@@ -186,11 +186,13 @@ export default function AssemblyBomTree({
   const { t } = useLingui();
 
   const permissions = usePermissions();
-  const canGroup = !isDisabled && permissions.can("create", "production");
-  const canAddStep = !isDisabled && permissions.can("update", "production");
+  const canGroup =
+    !isDisabled && permissions.has({ "production.assemblies": "Create" });
+  const canAddStep =
+    !isDisabled && permissions.has({ "production.assemblies": "Edit" });
   const canMap =
     !isDisabled &&
-    permissions.can("update", "production") &&
+    permissions.has({ "production.assemblies": "Edit" }) &&
     Boolean(modelUploadId);
 
   const autoMatchFetcher = useAction<typeof matchBomAction>({
@@ -1099,8 +1101,10 @@ function UnitListRow({
   const { t } = useLingui();
   const permissions = usePermissions();
   const deleteFetcher = useFetcher<{ success: boolean }>();
-  const canUpdate = !isDisabled && permissions.can("update", "production");
-  const canDelete = !isDisabled && permissions.can("delete", "production");
+  const canUpdate =
+    !isDisabled && permissions.has({ "production.assemblies": "Edit" });
+  const canDelete =
+    !isDisabled && permissions.has({ "production.assemblies": "Full" });
   const allHidden = hidden === "all";
 
   if (deleteFetcher.state !== "idle") return null;

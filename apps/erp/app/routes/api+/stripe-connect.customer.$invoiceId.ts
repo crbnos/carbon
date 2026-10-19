@@ -23,7 +23,7 @@ export type { StripeCustomerResolution };
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await authorize(request, {
-    create: "invoicing"
+    "invoicing.salesInvoices": "Create"
   });
 
   const { invoiceId } = params;

@@ -10,9 +10,11 @@ import { data } from "react-router";
 import { getUserSelectGroups } from "~/modules/users/users.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    {},
+    { role: "employee" }
+  );
   const url = new URL(request.url);
   const type = url.searchParams.get("type") || undefined;
   const offset = Math.max(0, Number(url.searchParams.get("offset")) || 0);

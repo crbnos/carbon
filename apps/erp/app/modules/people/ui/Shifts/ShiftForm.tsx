@@ -44,8 +44,8 @@ const ShiftForm = ({ initialValues }: ShiftFormProps) => {
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "people")
-    : !permissions.can("create", "people");
+    ? !permissions.has({ "people.shifts": "Edit" })
+    : !permissions.has({ "people.shifts": "Create" });
 
   return (
     <Drawer

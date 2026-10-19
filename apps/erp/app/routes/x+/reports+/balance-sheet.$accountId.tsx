@@ -19,10 +19,11 @@ import { path } from "~/utils/path";
 const LEDGER_PAGE_SIZE = 50;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId, api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, companyGroupId, api } = await authorize(
+    request,
+    { "accounting.reporting": "View" },
+    { role: "employee" }
+  );
 
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");

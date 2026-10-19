@@ -13,7 +13,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, {});
+  const { client } = await authorize(request);
 
   const { id } = params;
   if (!id) {

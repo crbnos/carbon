@@ -8,7 +8,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { keptForADay } from "~/modules/shared/shared.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {});
+  const { api } = await authorize(request);
   return keptForADay(await api.shared.getCountries({}));
 }
 

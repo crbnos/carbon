@@ -34,10 +34,11 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, api } = await authorize(request, {
-    view: "quality",
-    bypassRls: true
-  });
+  const { client, api } = await authorize(
+    request,
+    { "quality.issues": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -62,14 +63,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "quality"
+    "quality.issues": "Edit"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const { client: viewClient } = await authorize(request, {
-    view: "quality"
+    "quality.issues": "View"
   });
   const issue = await getIssue(viewClient, id);
   await requireUnlocked({
@@ -195,7 +196,7 @@ export default function IssueDetailsRoute() {
             sourceDocument="Issue"
             sourceDocumentId={id}
             writeBucket="parts"
-            writeBucketPermission="parts"
+            writePage="quality.issues"
           />
         )}
       </DeferredFiles>

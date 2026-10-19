@@ -74,10 +74,11 @@ function PermissionsUpgradeModal() {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(request, {
-    view: "users",
-    role: "employee"
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "users.accounts": "View" },
+    { role: "employee" }
+  );
 
   const { employeeId } = params;
   if (!employeeId) throw notFound("employeeId not found");

@@ -73,10 +73,8 @@ export const handle: Handle = {
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, userId, api } = await authorize(
     request,
-    {
-      view: "accounting",
-      role: "employee"
-    }
+    { "accounting.accountingPeriods": "View" },
+    { role: "employee" }
   );
 
   const { periodId } = params;

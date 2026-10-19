@@ -16,7 +16,7 @@ import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "inventory"
+    "inventory.shippingMethods": "View"
   });
   const { shippingMethodId } = params;
   if (!shippingMethodId) throw notFound("shippingMethodId not found");

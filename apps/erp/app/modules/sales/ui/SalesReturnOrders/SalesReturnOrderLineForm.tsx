@@ -286,8 +286,8 @@ const SalesReturnOrderLineForm = ({
   };
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.returns": "Edit" })
+    : !permissions.has({ "sales.returns": "Create" });
 
   // Once the return is confirmed, the line's item, quantity, price, and
   // restocking fee are locked on the server (they set the credit basis and are
@@ -452,7 +452,7 @@ const SalesReturnOrderLineForm = ({
                         // Not isLocked: full receipt auto-completes the RMA,
                         // and disposition happens after goods arrive.
                         status === "Cancelled" ||
-                        !permissions.can("update", "sales") ||
+                        !permissions.has({ "sales.returns": "Edit" }) ||
                         dispositionFetcher.state !== "idle"
                       }
                     >
@@ -491,7 +491,7 @@ const SalesReturnOrderLineForm = ({
                       isLoading={receivingFetcher.state !== "idle"}
                       isDisabled={
                         receivingFetcher.state !== "idle" ||
-                        !permissions.can("update", "sales")
+                        !permissions.has({ "sales.returns": "Edit" })
                       }
                       onClick={onToggleReceiving}
                     >

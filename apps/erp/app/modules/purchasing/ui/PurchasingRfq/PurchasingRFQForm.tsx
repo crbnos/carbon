@@ -112,8 +112,8 @@ const PurchasingRFQForm = ({ initialValues }: PurchasingRFQFormProps) => {
             isDisabled={
               isLocked ||
               (isEditing
-                ? !permissions.can("update", "purchasing")
-                : !permissions.can("create", "purchasing"))
+                ? !permissions.has({ "purchasing.rfqs": "Edit" })
+                : !permissions.has({ "purchasing.rfqs": "Create" }))
             }
           >
             <Trans>Save</Trans>

@@ -248,8 +248,8 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
             isDisabled={
               (isEditing && isLocked) ||
               (isEditing
-                ? !permissions.can("update", "purchasing")
-                : !permissions.can("create", "purchasing"))
+                ? !permissions.has({ "purchasing.supplierQuotes": "Edit" })
+                : !permissions.has({ "purchasing.supplierQuotes": "Create" }))
             }
           >
             <Trans>Save</Trans>

@@ -85,8 +85,8 @@ const GaugeForm = ({
   const isEditing = initialValues.id !== undefined;
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "quality")
-    : !permissions.can("create", "quality");
+    ? !permissions.has({ "quality.gauges": "Edit" })
+    : !permissions.has({ "quality.gauges": "Create" });
 
   const [calibrationInterval, setCalibrationInterval] = useState({
     lastCalibrationDate: initialValues.lastCalibrationDate,

@@ -6,6 +6,7 @@ import { assertIsPost, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { getRequestOrigin, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -20,9 +21,10 @@ const logger = getLogger("erp", "items");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await authorize(request, {
-    update: "parts"
-  });
+  const { companyId, userId } = await authorize(
+    request,
+    anyOf(ITEM_PAGES, "Edit")
+  );
 
   const url = new URL(request.url);
   const methodToReplace = url.searchParams.get("methodToReplace");

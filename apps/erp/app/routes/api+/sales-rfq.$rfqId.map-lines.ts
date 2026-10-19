@@ -12,7 +12,7 @@ import { mapSalesRfqLines } from "~/modules/sales/sales.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "sales"
+    "sales.rfqs": "View"
   });
 
   const { rfqId } = params;

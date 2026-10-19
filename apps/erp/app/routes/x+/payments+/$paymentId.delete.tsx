@@ -16,7 +16,7 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    delete: "invoicing"
+    "invoicing.payments": "Full"
   });
 
   const { paymentId } = params;

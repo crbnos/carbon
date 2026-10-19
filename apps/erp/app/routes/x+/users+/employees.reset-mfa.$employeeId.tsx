@@ -30,7 +30,7 @@ import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await authorize(request, { update: "users" });
+  const { client } = await authorize(request, { "users.accounts": "Edit" });
 
   const { employeeId } = params;
   if (!employeeId) throw new Error("Employee ID is required");
@@ -60,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    update: "users"
+    "users.accounts": "Edit"
   });
 
   const { employeeId } = params;

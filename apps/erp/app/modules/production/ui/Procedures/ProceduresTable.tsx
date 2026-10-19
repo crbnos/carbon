@@ -197,7 +197,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "production")}
+            disabled={!permissions.has({ "production.procedures": "Edit" })}
             onClick={() => {
               navigate(`${path.to.procedure(row.id!)}`);
             }}
@@ -208,7 +208,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "production")}
+            disabled={!permissions.has({ "production.procedures": "Full" })}
             onClick={() => {
               flushSync(() => {
                 setSelectedProcedure(row);
@@ -232,7 +232,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "production") && (
+          permissions.has({ "production.procedures": "Create" }) && (
             <New label={t`Procedure`} to={path.to.newProcedure} />
           )
         }

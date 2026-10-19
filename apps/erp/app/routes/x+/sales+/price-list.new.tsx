@@ -26,7 +26,7 @@ import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    create: "sales"
+    "sales.priceLists": "Create"
   });
 
   const url = new URL(request.url);
@@ -53,7 +53,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    create: "sales"
+    "sales.priceLists": "Create"
   });
 
   const formData = await request.formData();

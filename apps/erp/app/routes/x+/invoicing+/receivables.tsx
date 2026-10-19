@@ -30,7 +30,7 @@ function parseBuckets(raw: string | null): [number, number, number] {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "invoicing"
+    "invoicing.receivables": "View"
   });
 
   const url = new URL(request.url);

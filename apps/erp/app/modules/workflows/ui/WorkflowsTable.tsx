@@ -207,7 +207,7 @@ const WorkflowsTable = memo(
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.rename}
-            disabled={!permissions.can("update", "workflows")}
+            disabled={!permissions.has({ "workflows.workflows": "Edit" })}
             onClick={() => {
               flushSync(() => setSelectedWorkflow(row));
               renameDisclosure.onOpen();
@@ -218,7 +218,8 @@ const WorkflowsTable = memo(
           </MenuItem>
           <MenuItem
             disabled={
-              !permissions.can("update", "workflows") || !row.publishedVersionId
+              !permissions.has({ "workflows.workflows": "Edit" }) ||
+              !row.publishedVersionId
             }
             onClick={() => {
               flushSync(() => setSelectedWorkflow(row));
@@ -231,7 +232,7 @@ const WorkflowsTable = memo(
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "workflows")}
+            disabled={!permissions.has({ "workflows.workflows": "Full" })}
             onClick={() => {
               flushSync(() => setSelectedWorkflow(row));
               deleteDisclosure.onOpen();
@@ -259,7 +260,7 @@ const WorkflowsTable = memo(
           columns={columns}
           count={count}
           primaryAction={
-            permissions.can("create", "workflows") && (
+            permissions.has({ "workflows.workflows": "Create" }) && (
               <NewAction label={t`New Workflow`} onClick={newDisclosure.onOpen}>
                 <Button
                   leftIcon={<LuCirclePlus />}

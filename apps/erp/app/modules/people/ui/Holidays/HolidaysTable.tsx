@@ -95,7 +95,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
-            disabled={!permissions.can("delete", "people")}
+            disabled={!permissions.has({ "people.holidays": "Full" })}
             destructive
             onClick={() => {
               navigate(`${path.to.deleteHoliday(row.id)}?${params.toString()}`);
@@ -116,7 +116,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
       count={count}
       columns={columns}
       primaryAction={
-        permissions.can("create", "people") && (
+        permissions.has({ "people.holidays": "Create" }) && (
           <New label={t`Holiday`} to={`new?${params.toString()}`} />
         )
       }

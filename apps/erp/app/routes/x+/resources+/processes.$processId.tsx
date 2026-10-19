@@ -21,9 +21,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources"
-  });
+  const { api } = await authorize(request, { "resources.processes": "View" });
 
   const { processId } = params;
   if (!processId) throw notFound("processId was not found");

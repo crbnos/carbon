@@ -10,6 +10,7 @@ import {
 } from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { holdsGate } from "@carbon/database/access";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { Edition } from "@carbon/utils";
@@ -143,8 +144,8 @@ async function startCompanyTemplate(
 }
 
 /**
- * Refuse unless `userId` is an employee of `companyId` holding settings_update
- * there. Reads claims fresh from the database (not the Redis cache) so a
+ * Refuse unless `userId` is an employee of `companyId` with Settings → Company
+ * at Edit there. Reads claims fresh from the database (not the Redis cache) so a
  * company the caller created moments ago in a failed first attempt counts.
  */
 async function assertCanUpdateCompany(
@@ -159,7 +160,7 @@ async function assertCanUpdateCompany(
 
   const allowed =
     claims?.role === "employee" &&
-    (claims.permissions.settings?.update ?? []).includes(companyId);
+    holdsGate(claims.permissions, { "settings.company": "Edit" }, companyId);
 
   if (!allowed) {
     logger.error("Onboarding re-entry refused: caller cannot update company", {

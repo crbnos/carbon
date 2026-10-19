@@ -18,10 +18,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "sales.types": "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

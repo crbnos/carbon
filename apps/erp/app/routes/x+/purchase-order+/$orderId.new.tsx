@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // First check with view permission to verify PO status
   const { client: viewClient } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.purchaseOrders": "View"
   });
 
   const purchaseOrder = await getPurchaseOrder(viewClient, orderId);
@@ -55,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const { client, companyId, userId } = await authorize(request, {
-    create: "purchasing"
+    "purchasing.purchaseOrders": "Create"
   });
 
   const formData = await request.formData();

@@ -57,7 +57,11 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
   const permissions = usePermissions();
   const isEditing = Boolean(initialValues.id);
   const isLocked = isMemoLocked(initialValues.status);
-  const canMutate = permissions.can("update", "invoicing");
+  const canMutate = permissions.has(
+    type === "supplierCredit"
+      ? { "invoicing.supplierCredits": "Edit" }
+      : { "invoicing.creditMemos": "Edit" }
+  );
 
   const isVendor = type === "supplierCredit";
 
@@ -136,7 +140,11 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
           isDisabled={
             isEditing
               ? isLocked || !canMutate
-              : !permissions.can("create", "invoicing")
+              : !permissions.has(
+                  type === "supplierCredit"
+                    ? { "invoicing.supplierCredits": "Create" }
+                    : { "invoicing.creditMemos": "Create" }
+                )
           }
         >
           <Trans>Save</Trans>

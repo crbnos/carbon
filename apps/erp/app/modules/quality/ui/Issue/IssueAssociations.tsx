@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { anyOf } from "@carbon/database/access";
 import { Combobox, Hidden, Number, Submit, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -187,7 +188,7 @@ export function IssueAssociationItem({
   const { t } = useLingui();
   const permissions = usePermissions();
 
-  if (!permissions.can("view", node.module)) {
+  if (!permissions.has(anyOf(node.pages, "View"))) {
     return null;
   }
 
@@ -217,7 +218,7 @@ export function IssueAssociationItem({
             )}
           </div>
         </button>
-        {!node.readOnly && permissions.can("create", node.module) && (
+        {!node.readOnly && permissions.has(anyOf(node.pages, "Create")) && (
           <IconButton
             aria-label={t`Add`}
             size="sm"
@@ -272,31 +273,32 @@ export function IssueAssociationItem({
                     )}
                   </div>
                 </Link>
-                {!node.readOnly && permissions.can("delete", node.module) && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <IconButton
-                        aria-label={t`Options`}
-                        icon={<LuEllipsisVertical />}
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
-                      />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem
-                        shortcut={MENU_ITEM_SHORTCUTS.delete}
-                        destructive
-                        onSelect={() => {
-                          onDelete(child);
-                        }}
-                      >
-                        <DropdownMenuIcon icon={<LuTrash />} />
-                        <Trans>Delete Association</Trans>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                {!node.readOnly &&
+                  permissions.has(anyOf(node.pages, "Full")) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <IconButton
+                          aria-label={t`Options`}
+                          icon={<LuEllipsisVertical />}
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+                        />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.delete}
+                          destructive
+                          onSelect={() => {
+                            onDelete(child);
+                          }}
+                        >
+                          <DropdownMenuIcon icon={<LuTrash />} />
+                          <Trans>Delete Association</Trans>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
               </div>
             ))
           )}

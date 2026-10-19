@@ -21,10 +21,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "accounting.intercompany": "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -61,7 +62,7 @@ export default function IntercompanyRoute() {
         data={data ?? []}
         count={count ?? 0}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.has({ "accounting.intercompany": "Create" }) && (
             <div className="flex items-center gap-2">
               <matchFetcher.Form method="post" action="match">
                 <Button

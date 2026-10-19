@@ -41,11 +41,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(request, {
-    view: "production",
-    role: "employee",
-    bypassRls: true
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "production.procedures": "View" },
+    { role: "employee", bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -137,7 +137,7 @@ function ProcedureEditor() {
   );
 
   const canEdit =
-    permissions.can("update", "production") &&
+    permissions.has({ "production.procedures": "Edit" }) &&
     loaderData?.procedure?.status === "Draft";
 
   // Mirror the live title only while editing; clear it when editing ends (e.g.

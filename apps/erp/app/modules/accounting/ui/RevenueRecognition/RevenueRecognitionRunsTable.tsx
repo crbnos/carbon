@@ -94,7 +94,7 @@ const RevenueRecognitionRunsTable = memo(
       (row: RevenueRecognitionRunListItem) => (
         <>
           <MenuItem
-            disabled={!permissions.can("view", "accounting")}
+            disabled={!permissions.has({ [RUN_PAGES[type].page]: "View" })}
             onClick={() => navigate(path.to.revenueRecognitionRun(row.id))}
           >
             <MenuIcon icon={<LuEye />} />
@@ -102,7 +102,7 @@ const RevenueRecognitionRunsTable = memo(
           </MenuItem>
           {row.status === "Draft" && (
             <MenuItem
-              disabled={!permissions.can("delete", "accounting")}
+              disabled={!permissions.has({ [RUN_PAGES[type].page]: "Full" })}
               destructive
               onClick={() => {
                 setSelectedRun(row);
@@ -115,7 +115,7 @@ const RevenueRecognitionRunsTable = memo(
           )}
         </>
       ),
-      [deleteModal, navigate, permissions]
+      [deleteModal, navigate, permissions, type]
     );
 
     return (

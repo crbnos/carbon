@@ -8,7 +8,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getOutstandingTrainingsForUser } from "~/modules/resources/resources.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, userId } = await authorize(request, {});
+  const { companyId, userId } = await authorize(request);
 
   return await getOutstandingTrainingsForUser(
     getCarbonServiceRole(),

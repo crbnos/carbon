@@ -23,7 +23,7 @@ import { path } from "~/utils/path";
  *  from the lease page. An asset of another lease goes back to this one. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.leases": "View"
   });
   const { id, lineId } = params;
   if (!id) throw notFound("id not found");

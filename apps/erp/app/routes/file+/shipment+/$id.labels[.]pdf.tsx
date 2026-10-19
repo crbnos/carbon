@@ -20,7 +20,7 @@ const logger = getLogger("erp", "id-labels-pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "inventory"
+    "inventory.shipments": "View"
   });
 
   const { id } = params;

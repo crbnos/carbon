@@ -66,7 +66,7 @@ vi.mock("~/components/Form", () => {
 });
 vi.mock("~/components/Form/PaymentTerm", () => ({ default: () => null }));
 vi.mock("~/hooks", () => ({
-  usePermissions: () => ({ can: () => true }),
+  usePermissions: () => ({ has: () => true }),
   useRouteData: () => undefined
 }));
 

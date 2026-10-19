@@ -16,9 +16,7 @@ import { TrainingForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    create: "resources"
-  });
+  await authorize(request, { "resources.training": "Create" });
 
   return null;
 }
@@ -26,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "resources"
+    "resources.training": "Create"
   });
   const formData = await request.formData();
   const validation = await validator(trainingValidator).validate(formData);

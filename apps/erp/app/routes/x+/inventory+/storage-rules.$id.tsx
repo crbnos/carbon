@@ -18,7 +18,7 @@ import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "inventory"
+    "inventory.storageRules": "View"
   });
   const { id } = params;
   if (!id) throw notFound("id required");
@@ -30,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "inventory"
+    "inventory.storageRules": "Edit"
   });
 
   await requireFeature({

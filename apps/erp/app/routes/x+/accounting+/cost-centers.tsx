@@ -35,10 +35,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "accounting.costCenters": "View" },
+    { role: "employee" }
+  );
 
   const [costCenters, approvalRules] = await Promise.all([
     api.accounting.getCostCentersTree({}),

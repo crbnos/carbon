@@ -24,6 +24,7 @@ import {
   LEVELS,
   levelHolds,
   moduleOf,
+  PAGES,
   pageById
 } from "../../packages/database/src/access";
 import {
@@ -32,6 +33,7 @@ import {
   type ObjectLiteralExpression,
   Project,
   type Symbol as TsSymbol,
+  type Type,
   type VariableDeclaration
 } from "ts-morph";
 import {
@@ -250,13 +252,6 @@ function stringsOf(node: Node | undefined): string[] | null {
 }
 
 /**
- * The API gate's view of the declared permission: the module of its pages and
- * every action its levels hold. Pages of several modules publish module `null`
- * (membership only) and the function's own gate decides, as it does for
- * `"employee"` (any employee of the company). `"system"` and a keyed rule are
- * refused.
- */
-/**
  * The permission's object literal: written in place, or a constant it names
  * (`service.closeJobPermission`, the one a ported posting body shares with
  * its callers), through `satisfies` / `as const`.
@@ -281,6 +276,130 @@ function permissionLiteral(node: Node | undefined): Node | undefined {
   return current;
 }
 
+/** A union's members, or the type itself. */
+function membersOf(type: Type): Type[] {
+  return type.isUnion() ? type.getUnionTypes() : [type];
+}
+
+/** The page gates a type lists: one object per gate, each `{ page: level }`. */
+function gatesOfType(type: Type, at: Node): [string, string][][] {
+  return membersOf(type).map((gate) =>
+    gate.getProperties().flatMap((property) => {
+      const level = property.getTypeAtLocation(at).getNonNullableType();
+      // An array literal's union gives each member the others' keys as `?: undefined`.
+      if (level.isNever() || level.isUndefined()) return [];
+      return [
+        [
+          property.getName(),
+          level.isStringLiteral() ? String(level.getLiteralValue()) : ""
+        ] as [string, string]
+      ];
+    })
+  );
+}
+
+/**
+ * An `anyOf` or row rule, read off its TYPE: a helper call
+ * (`itemRule("Edit", { id: "itemId" })`) and a constant read like a literal.
+ * The gates are each branch's `then` (a row rule) or entry (`anyOf`).
+ */
+function choiceGates(
+  node: Node
+): { kind: "anyOf" | "row"; gates: [string, string][][] } | null {
+  const type = node.getType();
+  const anyOf = type.getProperty("anyOf");
+  if (anyOf) {
+    const entry = anyOf.getTypeAtLocation(node).getNumberIndexType();
+    return { kind: "anyOf", gates: entry ? gatesOfType(entry, node) : [] };
+  }
+  const row = type.getProperty("row");
+  if (!row) return null;
+  const rowCase = row
+    .getTypeAtLocation(node)
+    .getProperty("cases")
+    ?.getTypeAtLocation(node)
+    .getNumberIndexType();
+  const gates = rowCase
+    ? membersOf(rowCase).flatMap((member) => {
+        const then = member.getProperty("then");
+        return then ? gatesOfType(then.getTypeAtLocation(node), node) : [];
+      })
+    : [];
+  return { kind: "row", gates };
+}
+
+/**
+ * A rule that picks one page per call, as the manifest publishes it: every
+ * page its branches name at one level, and what picks (`item.type`).
+ */
+function publishChoice(
+  where: string,
+  { kind, gates }: { kind: "anyOf" | "row"; gates: [string, string][][] }
+): { permission: ToolPermission; actions: PermissionAction[] } {
+  const levels = new Set<string>();
+  const pages: string[] = [];
+  for (const gate of gates) {
+    const [entry, ...more] = gate;
+    if (!entry || more.length > 0) {
+      throw new Error(
+        `${where}: each branch of a published ${kind} rule names one page`
+      );
+    }
+    const [page, level] = entry;
+    if (!pageById(page)) {
+      throw new Error(`${where}: ${kind} rule names ${page}, not a page of the registry`);
+    }
+    if (!GATE_LEVELS.includes(level)) {
+      throw new Error(
+        `${where}: ${kind} rule's ${page} must be one of ${GATE_LEVELS.join(", ")}`
+      );
+    }
+    levels.add(level);
+    if (!pages.includes(page)) pages.push(page);
+  }
+  const [level] = levels;
+  if (!level || levels.size > 1) {
+    throw new Error(
+      `${where}: a published ${kind} rule names its pages at one level`
+    );
+  }
+  // Registry order: a union's member order moves with the checker's type ids.
+  const order = PAGES.map((page) => page.id as string);
+  pages.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  const by =
+    kind === "row"
+      ? [
+          ...new Set(
+            pages.flatMap((page) => {
+              const shared = pageById(page)?.where;
+              return shared ? [`${shared.table}.${shared.column}`] : [];
+            })
+          )
+        ]
+      : [];
+  const actions = ACTIONS.filter((action) =>
+    levelHolds(level as Level, action)
+  );
+  const modules = new Set(pages.map(moduleOf));
+  const [module] = modules;
+  return {
+    permission: {
+      module: modules.size === 1 && module ? module : null,
+      actions: modules.size === 1 ? actions : [],
+      oneOf: { pages, level, by }
+    },
+    actions
+  };
+}
+
+/**
+ * The API gate's view of the declared permission: the module of its pages and
+ * every action its levels hold. Pages of several modules publish module `null`
+ * (membership only) and the function's own gate decides, as it does for
+ * `"employee"` (any employee of the company). A keyed rule publishes every
+ * page its rules name; an `anyOf` or row rule also publishes them as `oneOf`.
+ * `"system"` is refused.
+ */
 export function leafPermission(leaf: ServiceFnLeaf): {
   permission: ToolPermission;
   actions: PermissionAction[];
@@ -303,6 +422,9 @@ export function leafPermission(leaf: ServiceFnLeaf): {
   if (Node.isStringLiteral(value) && value.getLiteralValue() === "employee") {
     return { permission: { module: null, actions: [] }, actions: [] };
   }
+
+  const choice = choiceGates(value);
+  if (choice) return publishChoice(where, choice);
 
   if (!Node.isObjectLiteralExpression(value)) {
     throw new Error(

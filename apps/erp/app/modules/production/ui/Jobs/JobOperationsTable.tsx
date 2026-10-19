@@ -201,7 +201,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
       columns={columns}
       data={optimisticData}
       primaryAction={
-        data.length > 0 && permissions.can("update", "production") ? (
+        data.length > 0 && permissions.has({ "production.jobs": "Edit" }) ? (
           <fetcher.Form action={path.to.jobRecalculate(jobId)} method="post">
             <Button
               leftIcon={<LuRefreshCcwDot />}
@@ -217,7 +217,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
       }
       editableComponents={editableComponents}
       title={t`Operations`}
-      withInlineEditing={permissions.can("update", "production")}
+      withInlineEditing={permissions.has({ "production.jobs": "Edit" })}
     />
   );
 });

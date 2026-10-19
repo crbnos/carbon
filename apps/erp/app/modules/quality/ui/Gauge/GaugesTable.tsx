@@ -329,7 +329,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "quality")}
+            disabled={!permissions.has({ "quality.gauges": "Edit" })}
             onClick={() => {
               navigate(`${path.to.gauge(row.id!)}?${params?.toString()}`);
             }}
@@ -340,7 +340,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           {row.gaugeStatus === "Active" ? (
             <MenuItem
               destructive
-              disabled={!permissions.can("update", "quality")}
+              disabled={!permissions.has({ "quality.gauges": "Edit" })}
               onClick={() => {
                 flushSync(() => {
                   setSelectedGauge(row);
@@ -353,7 +353,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
             </MenuItem>
           ) : (
             <MenuItem
-              disabled={!permissions.can("update", "quality")}
+              disabled={!permissions.has({ "quality.gauges": "Edit" })}
               onClick={() => {
                 flushSync(() => {
                   setSelectedGauge(row);
@@ -368,7 +368,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "quality")}
+            disabled={!permissions.has({ "quality.gauges": "Full" })}
             onClick={() => {
               flushSync(() => {
                 setSelectedGauge(row);
@@ -400,7 +400,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
         count={count}
         defaultColumnVisibility={defaultColumnVisibility}
         primaryAction={
-          permissions.can("create", "quality") && (
+          permissions.has({ "quality.gauges": "Create" }) && (
             <New
               label={t`Gauge`}
               to={`${path.to.newGauge}?${params?.toString()}`}

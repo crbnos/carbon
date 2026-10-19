@@ -46,8 +46,8 @@ const MaterialGradeForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has({ "parts.grades": "Edit" })
+    : !permissions.has({ "parts.grades": "Create" });
 
   useEffect(() => {
     if (type !== "modal") return;

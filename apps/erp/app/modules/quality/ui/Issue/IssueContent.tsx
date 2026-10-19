@@ -61,7 +61,7 @@ export function IssueContent({
         </CardHeader>
 
         <CardContent>
-          {permissions.can("update", "quality") && !isDisabled ? (
+          {permissions.has({ "quality.issues": "Edit" }) && !isDisabled ? (
             <Editor
               initialValue={(content ?? {}) as JSONContent}
               onUpload={onUploadImage}

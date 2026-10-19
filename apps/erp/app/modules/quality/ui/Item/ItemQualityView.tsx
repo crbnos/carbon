@@ -53,7 +53,7 @@ const ItemQualityView = ({
 }: ItemQualityViewProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "quality");
+  const canUpdate = permissions.has({ "quality.inspectionPlans": "Edit" });
   const newDocumentDisclosure = useDisclosure();
 
   return (
@@ -69,7 +69,7 @@ const ItemQualityView = ({
             </CardDescription>
           </CardHeader>
           <CardAction>
-            {permissions.can("create", "quality") && (
+            {permissions.has({ "quality.inspectionPlans": "Create" }) && (
               <Button
                 variant="secondary"
                 leftIcon={<LuPlus />}

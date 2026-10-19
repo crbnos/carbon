@@ -16,7 +16,7 @@ import { getDatabaseClient } from "~/services/database.server";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "production"
+    "production.batches": "Edit"
   });
 
   const { batchIds } = (await request.json()) as { batchIds?: string[] };

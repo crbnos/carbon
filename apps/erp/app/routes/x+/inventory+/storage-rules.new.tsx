@@ -20,7 +20,7 @@ const isTargetType = (value: string | null): value is TargetType =>
   value === "item" || value === "workCenter";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, { create: "inventory" });
+  await authorize(request, { "inventory.storageRules": "Create" });
   const url = new URL(request.url);
   const raw = url.searchParams.get("targetType");
   return { targetType: isTargetType(raw) ? raw : ("item" as TargetType) };
@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "inventory"
+    "inventory.storageRules": "Create"
   });
 
   await requireFeature({

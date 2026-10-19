@@ -18,7 +18,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await authorize(request, {
-    delete: "resources"
+    "resources.suggestions": "Full"
   });
   const { suggestionId } = params;
   if (!suggestionId) throw notFound("suggestionId was not found");
@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client } = await authorize(request, {
-    delete: "resources"
+    "resources.suggestions": "Full"
   });
 
   const { suggestionId } = params;

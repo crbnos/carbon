@@ -11,10 +11,11 @@ import { deleteRisk } from "~/modules/quality/quality.service";
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   assertIsPost(request);
-  const { client } = await authorize(request, {
-    delete: "quality",
-    role: "employee"
-  });
+  const { client } = await authorize(
+    request,
+    { "quality.risks": "Full" },
+    { role: "employee" }
+  );
   const { id } = params;
   invariant(id, "id is required");
 

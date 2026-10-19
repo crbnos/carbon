@@ -18,10 +18,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(request, {
-    view: "production",
-    role: "employee"
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "production.assemblies": "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

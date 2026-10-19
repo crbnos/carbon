@@ -26,7 +26,7 @@ export const config = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, userId, companyId } = await authorize(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
 
   const url = new URL(request.url);

@@ -16,7 +16,7 @@ const logger = getLogger("erp", "assembly-sub-assembly-ungroup");
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    update: "production"
+    "production.assemblies": "Edit"
   });
 
   const { id, stepId } = params;

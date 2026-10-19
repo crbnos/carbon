@@ -50,7 +50,7 @@ const ChangeNoticeTypesTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "parts")}
+              disabled={!permissions.has({ "parts.changeNoticeTypes": "Edit" })}
               onClick={() => {
                 navigate(
                   `${path.to.changeNoticeType(row.id)}?${params.toString()}`
@@ -63,7 +63,7 @@ const ChangeNoticeTypesTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "parts")}
+              disabled={!permissions.has({ "parts.changeNoticeTypes": "Full" })}
               onClick={() => {
                 navigate(
                   `${path.to.deleteChangeNoticeType(
@@ -87,7 +87,7 @@ const ChangeNoticeTypesTable = memo(
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "parts") && (
+          permissions.has({ "parts.changeNoticeTypes": "Create" }) && (
             <New
               label={t`Type`}
               to={`${path.to.newChangeNoticeType}?${params.toString()}`}

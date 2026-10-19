@@ -65,10 +65,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "settings",
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { "settings.security": "View" },
+    { role: "employee" }
+  );
 
   // The SP URLs are un-prefixed on purpose: GoTrue self-declares its SP
   // entityID and ACS from API_EXTERNAL_URL (no /auth/v1) and validates each
@@ -286,7 +287,7 @@ export default function Security() {
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canEdit = permissions.can("update", "settings");
+  const canEdit = permissions.has({ "settings.security": "Edit" });
   const mfaFetcher = useAction<typeof action>({
     onSuccess: ({ data }) => {
       if (!data) return;

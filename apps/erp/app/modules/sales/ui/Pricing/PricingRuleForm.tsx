@@ -97,8 +97,8 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
   });
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.pricingRules": "Edit" })
+    : !permissions.has({ "sales.pricingRules": "Create" });
 
   return (
     <ModalDrawerProvider type="drawer">

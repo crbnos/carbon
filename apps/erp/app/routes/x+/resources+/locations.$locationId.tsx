@@ -18,9 +18,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources"
-  });
+  const { api } = await authorize(request, { "resources.locations": "View" });
 
   const { locationId } = params;
   if (!locationId) throw notFound("Location ID was not found");

@@ -23,7 +23,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId, api } = await authorize(request, {
-    create: "resources"
+    "resources.dispatches": "Create"
   });
 
   const [failureModes, defaults] = await Promise.all([

@@ -15,7 +15,7 @@ import { zfd } from "zod-form-data";
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "inventory"
+    "inventory.pickingLists": "View"
   });
   const { lineId } = params;
   if (!lineId) throw new Response("Not found", { status: 404 });

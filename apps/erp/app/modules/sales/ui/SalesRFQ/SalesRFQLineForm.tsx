@@ -242,7 +242,7 @@ const SalesRFQLineForm = ({
                   </ModalCardDescription>
                 </ModalCardHeader>
                 {isEditing &&
-                  permissions.can("update", "sales") &&
+                  permissions.has({ "sales.rfqs": "Edit" }) &&
                   !isLocked && (
                     <CardAction className="pr-12">
                       <DropdownMenu>
@@ -357,8 +357,8 @@ const SalesRFQLineForm = ({
                   isDisabled={
                     isLocked ||
                     (isEditing
-                      ? !permissions.can("update", "sales")
-                      : !permissions.can("create", "sales"))
+                      ? !permissions.has({ "sales.rfqs": "Edit" })
+                      : !permissions.has({ "sales.rfqs": "Create" }))
                   }
                 >
                   <Trans>Save</Trans>

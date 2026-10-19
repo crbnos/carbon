@@ -18,7 +18,7 @@ import { onboardingSequence, path } from "~/utils/path";
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, userId, api } = await authorize(request, {});
+  const { companyId, userId, api } = await authorize(request);
 
   const [company, stripeCustomer, locations] = await Promise.all([
     api.settings.getCompany({}),

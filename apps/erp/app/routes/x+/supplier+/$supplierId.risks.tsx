@@ -8,9 +8,7 @@ import { data, useParams } from "react-router";
 import SupplierRiskRegister from "~/modules/purchasing/ui/Supplier/SupplierRiskRegister";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    view: "purchasing"
-  });
+  await authorize(request, { "purchasing.suppliers": "View" });
 
   return data({});
 }

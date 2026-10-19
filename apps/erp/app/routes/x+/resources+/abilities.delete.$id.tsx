@@ -15,9 +15,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources"
-  });
+  const { api } = await authorize(request, { "resources.abilities": "View" });
 
   const { id } = params;
   if (!id) throw notFound("Invalid ability id");

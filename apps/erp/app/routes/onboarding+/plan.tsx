@@ -85,7 +85,7 @@ function usePlans() {
 }
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { companyId, api } = await authorize(request, {});
+  const { companyId, api } = await authorize(request);
   if (CarbonEdition !== Edition.Cloud) {
     throw redirect(path.to.authenticatedRoot);
   }
@@ -104,7 +104,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {});
+  const { client, companyId, userId } = await authorize(request);
   const formData = await request.formData();
   const planId = String(formData.get("planId"));
 

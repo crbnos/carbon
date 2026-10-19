@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { Card, CardContent, CardHeader, CardTitle, cn } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -52,8 +53,8 @@ const SupplierParts = ({
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canEdit = permissions.can("update", "parts") && !isReadOnly;
-  const canDelete = permissions.can("delete", "parts") && !isReadOnly;
+  const canEdit = permissions.has(anyOf(ITEM_PAGES, "Edit")) && !isReadOnly;
+  const canDelete = permissions.has(anyOf(ITEM_PAGES, "Full")) && !isReadOnly;
   const customColumns = useCustomColumns<Part>("supplierPart");
   const [suppliers] = useSuppliers();
 

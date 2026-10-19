@@ -47,7 +47,7 @@ const DOWNLOAD_CONCURRENCY = 6;
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, email } = await authorize(request, {
-    view: "settings"
+    "settings.backups": "View"
   });
   if (!(await canManageBackups(client, companyId, email)))
     throw new Response("Not found", { status: 404 });

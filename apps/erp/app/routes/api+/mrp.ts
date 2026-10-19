@@ -5,6 +5,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { anyOf } from "@carbon/database/access";
 import type { ActionFunctionArgs } from "react-router";
 import { runMRP } from "~/modules/production/production.service";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
@@ -16,9 +17,17 @@ export async function action({ request }: ActionFunctionArgs) {
   const url = new URL(request.url);
   const locationId = url.searchParams.get("location");
 
-  const { companyId, userId } = await authorize(request, {
-    update: "inventory"
-  });
+  const { companyId, userId } = await authorize(
+    request,
+    anyOf(
+      [
+        "production.materialPlanning",
+        "purchasing.materialPlanning",
+        "inventory.quantities"
+      ],
+      "Edit"
+    )
+  );
 
   const serviceRole = getCarbonServiceRole();
 

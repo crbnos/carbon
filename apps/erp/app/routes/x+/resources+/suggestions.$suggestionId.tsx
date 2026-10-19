@@ -13,9 +13,7 @@ import { SuggestionDetails } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources"
-  });
+  const { api } = await authorize(request, { "resources.suggestions": "View" });
 
   const { suggestionId } = params;
   if (!suggestionId) throw notFound("suggestionId was not found");
@@ -40,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await authorize(request, {
-    update: "resources"
+    "resources.suggestions": "Edit"
   });
 
   const { suggestionId } = params;

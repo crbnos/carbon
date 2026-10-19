@@ -48,8 +48,8 @@ const ContractorForm = ({ initialValues }: ContractorFormProps) => {
 
   const isEditing = !location.pathname.includes("new");
   const isDisabled = isEditing
-    ? !permissions.can("update", "resources")
-    : !permissions.can("create", "resources");
+    ? !permissions.has({ "resources.abilities": "Edit" })
+    : !permissions.has({ "resources.abilities": "Create" });
 
   return (
     <Drawer

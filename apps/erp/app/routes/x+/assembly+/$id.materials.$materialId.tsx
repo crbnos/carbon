@@ -14,7 +14,7 @@ import { upsertAssemblyInstructionStepMaterial } from "~/modules/production/prod
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "production"
+    "production.assemblies": "Edit"
   });
 
   const { materialId } = params;

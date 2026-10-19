@@ -11,6 +11,7 @@ import {
   LuNetwork,
   LuUsers
 } from "react-icons/lu";
+import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import { useSettings } from "~/hooks/useSettings";
 import type { RouteGroup } from "~/types";
@@ -26,12 +27,14 @@ export default function usePeopleSubmodules() {
         {
           name: t`Employees`,
           to: path.to.people,
+          page: "people.employees",
           icon: <LuUsers />,
           table: "employee"
         },
         {
           name: t`Timecards`,
           to: path.to.peopleTimecard,
+          page: "people.timecards",
           icon: <LuClock />,
           setting: "timeCardEnabled",
           table: "timeCardEntry"
@@ -44,21 +47,25 @@ export default function usePeopleSubmodules() {
         {
           name: t`Attributes`,
           to: path.to.attributes,
+          page: "people.attributes",
           icon: <LuListChecks />
         },
         {
           name: t`Departments`,
           to: path.to.departments,
+          page: "people.departments",
           icon: <LuNetwork />
         },
         {
           name: t`Holidays`,
           to: path.to.holidays,
+          page: "people.holidays",
           icon: <LuCalendarHeart />
         },
         {
           name: t`Shifts`,
           to: path.to.shifts,
+          page: "people.shifts",
           icon: <LuCalendarClock />
         }
       ]
@@ -68,6 +75,7 @@ export default function usePeopleSubmodules() {
   const { addSavedViewsToRoutes } = useSavedViews();
 
   const settings = useSettings();
+  const permissions = usePermissions();
 
   return {
     groups: peopleRoutes.map((group) => ({
@@ -75,8 +83,9 @@ export default function usePeopleSubmodules() {
       routes: group.routes
         .filter(
           (route) =>
-            !route.setting ||
-            settings[route.setting as keyof typeof settings] === true
+            (!route.setting ||
+              settings[route.setting as keyof typeof settings] === true) &&
+            (!route.page || permissions.has({ [route.page]: "View" }))
         )
         .map(addSavedViewsToRoutes)
     }))

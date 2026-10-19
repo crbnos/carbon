@@ -14,7 +14,7 @@ import { path, requestReferrer } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    update: "sales"
+    "sales.salesRules": "Edit"
   });
 
   await requireFeature({

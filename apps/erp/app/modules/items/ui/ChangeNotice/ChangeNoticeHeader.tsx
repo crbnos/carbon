@@ -130,7 +130,7 @@ const ChangeNoticeHeader = () => {
         <DropdownMenuItem
           disabled={
             statusFetcher.state !== "idle" ||
-            !permissions.can("update", "parts")
+            !permissions.has({ "parts.changeNotices": "Edit" })
           }
           onClick={() => {
             statusFetcher.submit(
@@ -152,7 +152,7 @@ const ChangeNoticeHeader = () => {
         <DropdownMenuItem
           disabled={
             statusFetcher.state !== "idle" ||
-            !permissions.can("update", "parts")
+            !permissions.has({ "parts.changeNotices": "Edit" })
           }
           onClick={() => {
             statusFetcher.submit(
@@ -176,7 +176,8 @@ const ChangeNoticeHeader = () => {
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         destructive
         disabled={
-          !permissions.can("delete", "parts") || !permissions.is("employee")
+          !permissions.has({ "parts.changeNotices": "Full" }) ||
+          !permissions.is("employee")
         }
         onClick={deleteModal.onOpen}
       >
@@ -208,7 +209,9 @@ const ChangeNoticeHeader = () => {
                 <Button
                   leftIcon={<LuCircleStop />}
                   variant="secondary"
-                  isDisabled={!permissions.can("update", "parts")}
+                  isDisabled={
+                    !permissions.has({ "parts.changeNotices": "Edit" })
+                  }
                   onClick={cancelModal.onOpen}
                 >
                   {t`Cancel`}
@@ -270,7 +273,7 @@ const ChangeNoticeHeader = () => {
                       variant="primary"
                       isDisabled={
                         statusFetcher.state !== "idle" ||
-                        !permissions.can("update", "parts")
+                        !permissions.has({ "parts.changeNotices": "Edit" })
                       }
                       isLoading={statusFetcher.state !== "idle"}
                     >
@@ -287,7 +290,9 @@ const ChangeNoticeHeader = () => {
                 <Button
                   leftIcon={<LuCircleCheck />}
                   variant="primary"
-                  isDisabled={!permissions.can("update", "parts")}
+                  isDisabled={
+                    !permissions.has({ "parts.changeNotices": "Edit" })
+                  }
                   onClick={() => setReleaseDialogOpen(true)}
                 >
                   {t`Release`}

@@ -14,7 +14,7 @@ import { updateAssemblyInstructionStepStatus } from "~/modules/production/produc
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "production"
+    "production.assemblies": "Edit"
   });
 
   const { stepId } = params;

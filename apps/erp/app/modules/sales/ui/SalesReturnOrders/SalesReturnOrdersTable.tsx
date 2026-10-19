@@ -200,7 +200,7 @@ const SalesReturnOrdersTable = memo(
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("view", "sales")}
+            disabled={!permissions.has({ "sales.returns": "View" })}
             onClick={() => {
               navigate(path.to.salesReturnOrderDetails(row.id!));
             }}
@@ -210,7 +210,7 @@ const SalesReturnOrdersTable = memo(
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
-            disabled={!permissions.can("delete", "sales")}
+            disabled={!permissions.has({ "sales.returns": "Full" })}
             destructive
             onClick={() => {
               setSelectedSalesReturnOrder(row);
@@ -234,7 +234,7 @@ const SalesReturnOrdersTable = memo(
             left: ["salesReturnOrderId"]
           }}
           primaryAction={
-            permissions.can("create", "sales") && (
+            permissions.has({ "sales.returns": "Create" }) && (
               <New label={t`RMA`} to={path.to.newSalesReturnOrder} />
             )
           }

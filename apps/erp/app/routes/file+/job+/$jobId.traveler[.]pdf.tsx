@@ -48,7 +48,7 @@ import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 const logger = getLogger("erp", "job-traveler", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await authorize(request, {});
+  const { companyId } = await authorize(request);
   const { locale } = getPreferenceHeaders(request);
 
   const { jobId } = params;

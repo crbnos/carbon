@@ -641,7 +641,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "parts")}
+            disabled={!permissions.has({ "parts.tools": "Full" })}
             onClick={() => {
               setSelectedItem(row);
               deleteItemModal.onOpen();
@@ -691,7 +691,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           }
         ]}
         primaryAction={
-          permissions.can("create", "parts") && (
+          permissions.has({ "parts.tools": "Create" }) && (
             <div className="flex items-center gap-2">
               <Button
                 variant="secondary"

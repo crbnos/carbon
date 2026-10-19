@@ -649,7 +649,7 @@ export function IntegrationForm({
 }: IntegrationFormProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const isDisabled = !permissions.can("update", "settings");
+  const isDisabled = !permissions.has({ "settings.integrations": "Edit" });
   const {
     company: { id: companyId }
   } = useUser();

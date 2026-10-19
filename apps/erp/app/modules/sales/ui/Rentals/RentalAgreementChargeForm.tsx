@@ -117,7 +117,11 @@ const RentalAgreementChargeForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={!permissions.can("create", "sales")}>
+                <Submit
+                  isDisabled={
+                    !permissions.has({ "sales.rentalAgreements": "Create" })
+                  }
+                >
                   <Trans>Save</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={onClose}>

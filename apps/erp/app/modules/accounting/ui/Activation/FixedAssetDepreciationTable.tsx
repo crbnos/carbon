@@ -161,7 +161,7 @@ function FixedAssetDepreciationRow({
           )}
           // A disposal after the cutover cleared what it found.
           isDisabled={
-            !permissions.can("update", "accounting") ||
+            !permissions.has({ "settings.accounting": "Edit" }) ||
             save.isPending ||
             asset.status === "Disposed"
           }

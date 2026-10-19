@@ -7,6 +7,7 @@ import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
+import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ComponentProps } from "react";
@@ -43,16 +44,17 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 const logger = getLogger("mes", "assembly");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { userId, companyId } = await authorize(request, {});
+  const { userId, companyId } = await authorize(request);
 
-  // Manager-only "complete all steps" override is gated on the Production DELETE permission:
-  // operators hold view/create/update (they record steps) but not delete, so delete cleanly
+  // Manager-only "complete all steps" override is gated on Jobs at Full:
+  // operators hold Edit (they record steps) but not Full, so it cleanly
   // separates managers from operators regardless of how a company names its employee types.
   const claims = await getUserClaims(userId, companyId);
-  const canOverrideComplete =
-    claims?.permissions?.production?.delete?.some(
-      (c) => c === "0" || c === companyId
-    ) ?? false;
+  const canOverrideComplete = holdsGate(
+    claims?.permissions ?? {},
+    { "production.jobs": "Full" },
+    companyId
+  );
 
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");

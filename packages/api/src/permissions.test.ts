@@ -3,14 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { InvalidInputError } from "./errors";
+import { ForbiddenError, InvalidInputError, NotFoundError } from "./errors";
 import {
+  anyOfRule,
   hasPermissions,
   type ModulePermissions,
+  meetsRequirement,
   type PermissionRule,
   permissionsFromClaims,
   permissionsFromScopes,
-  resolvePermissions
+  requirementOfRows,
+  resolvePermissions,
+  rowRule
 } from "./permissions";
 
 describe("resolvePermissions", () => {
@@ -209,5 +213,159 @@ describe("permissionsFromClaims", () => {
   it("reads malformed claims as no access", () => {
     const permissions = permissionsFromClaims({ grants: "nope" }, "co1");
     expect(hasPermissions(permissions, "co1", {})).toBe(false);
+  });
+});
+
+describe("rowRule and anyOfRule", () => {
+  it("take their cases from the pages that share the table", () => {
+    expect(rowRule("item", "Edit", { id: "itemId" })).toEqual({
+      row: {
+        id: "itemId",
+        from: "item",
+        cases: [
+          { column: "type", equals: "Part", then: { "parts.parts": "Edit" } },
+          {
+            column: "type",
+            equals: "Material",
+            then: { "parts.materials": "Edit" }
+          },
+          { column: "type", equals: "Tool", then: { "parts.tools": "Edit" } },
+          {
+            column: "type",
+            equals: "Consumable",
+            then: { "parts.consumables": "Edit" }
+          },
+          {
+            column: "type",
+            equals: "Service",
+            then: { "parts.services": "Edit" }
+          }
+        ]
+      }
+    });
+    // A page whose `where` has no value picks the rows where the column is set.
+    expect(rowRule("memo", "View", { id: "memoId" }).row.cases).toEqual([
+      { column: "supplierId", then: { "invoicing.supplierCredits": "View" } },
+      { column: "customerId", then: { "invoicing.creditMemos": "View" } }
+    ]);
+    expect(anyOfRule("memo", "Create")).toEqual({
+      anyOf: [
+        { "invoicing.supplierCredits": "Create" },
+        { "invoicing.creditMemos": "Create" }
+      ]
+    });
+  });
+
+  it("refuse a path that does not end at the shared table", () => {
+    expect(() =>
+      rowRule("item", "View", {
+        id: "id",
+        from: "supplierPart",
+        path: [["supplierId", "supplier"]]
+      })
+    ).toThrow("The path of a rule on item must end at item, not supplier");
+    expect(() => rowRule("job", "View", { id: "id" })).toThrow(
+      "job is not a table several pages share"
+    );
+  });
+});
+
+describe("a row rule", () => {
+  const rule = rowRule("item", "Edit", { id: "itemId" });
+  const memo = rowRule("memo", "Edit", { id: "memoId" });
+
+  it("names the ids in its field: one, or a list without repeats", () => {
+    expect(resolvePermissions(rule, { itemId: "i1" })).toEqual({
+      row: rule.row,
+      ids: ["i1"]
+    });
+    const list = rowRule("item", "View", { id: "ids" });
+    expect(resolvePermissions(list, { ids: ["i1", "i2", "i1"] })).toEqual({
+      row: list.row,
+      ids: ["i1", "i2"]
+    });
+  });
+
+  it("refuses an empty list, or a field with no id, as invalid input", () => {
+    const list = rowRule("item", "View", { id: "ids" });
+    const invalid = (input: unknown) => () =>
+      resolvePermissions(list, input as { ids: string[] });
+    expect(invalid({ ids: [] })).toThrow(InvalidInputError);
+    expect(invalid({ ids: [] })).toThrow(
+      "Invalid input — ids: expected an id or a list of ids"
+    );
+    expect(invalid({})).toThrow(InvalidInputError);
+    expect(invalid({ ids: [1] })).toThrow(InvalidInputError);
+  });
+
+  it("requires the page of the case a row matches by value", () => {
+    expect(
+      requirementOfRows({ row: rule.row, ids: ["i1"] }, [
+        { id: "i1", type: "Tool" }
+      ])
+    ).toEqual({ "parts.tools": "Edit" });
+  });
+
+  it("requires every row's page for a list", () => {
+    expect(
+      requirementOfRows({ row: rule.row, ids: ["i1", "i2"] }, [
+        { id: "i1", type: "Tool" },
+        { id: "i2", type: "Part" }
+      ])
+    ).toEqual({ "parts.tools": "Edit", "parts.parts": "Edit" });
+  });
+
+  it("matches a case without a value when its column is set", () => {
+    expect(
+      requirementOfRows({ row: memo.row, ids: ["m1"] }, [
+        { id: "m1", supplierId: null, customerId: "c1" }
+      ])
+    ).toEqual({ "invoicing.creditMemos": "Edit" });
+    expect(
+      requirementOfRows({ row: memo.row, ids: ["m2"] }, [
+        { id: "m2", supplierId: "s1", customerId: null }
+      ])
+    ).toEqual({ "invoicing.supplierCredits": "Edit" });
+  });
+
+  it("refuses an id with no row as not found", () => {
+    expect(() =>
+      requirementOfRows({ row: rule.row, ids: ["i1", "i2"] }, [
+        { id: "i1", type: "Part" }
+      ])
+    ).toThrow(new NotFoundError("item i2 was not found"));
+  });
+
+  it("refuses a row no case matches: a Fixture has no page", () => {
+    expect(() =>
+      requirementOfRows({ row: rule.row, ids: ["i1"] }, [
+        { id: "i1", type: "Fixture" }
+      ])
+    ).toThrow(ForbiddenError);
+  });
+});
+
+describe("meetsRequirement", () => {
+  const tools: ModulePermissions = {
+    "parts.tools": { ...none, view: ["co1"], create: ["co1"], update: ["co1"] }
+  };
+
+  it("passes an anyOf rule when one entry holds, and refuses none", () => {
+    const rule = anyOfRule("item", "Edit");
+    expect(meetsRequirement(tools, "co1", rule)).toBe(true);
+    expect(meetsRequirement(tools, "co2", rule)).toBe(false);
+    expect(meetsRequirement(tools, "co1", anyOfRule("item", "Full"))).toBe(
+      false
+    );
+    expect(meetsRequirement(tools, "co1", { anyOf: [] })).toBe(false);
+  });
+
+  it("checks a page gate as hasPermissions does", () => {
+    expect(meetsRequirement(tools, "co1", { "parts.tools": "Edit" })).toBe(
+      true
+    );
+    expect(meetsRequirement(tools, "co1", { "parts.parts": "View" })).toBe(
+      false
+    );
   });
 });

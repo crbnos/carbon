@@ -15,10 +15,11 @@ import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await authorize(request, {
-    update: "quality",
-    role: "employee"
-  });
+  const { companyId, userId } = await authorize(
+    request,
+    { "quality.inspections": "Edit" },
+    { role: "employee" }
+  );
   const { id } = params;
   invariant(id, "id is required");
 

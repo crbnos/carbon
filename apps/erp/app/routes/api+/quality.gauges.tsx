@@ -6,9 +6,7 @@ import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "quality"
-  });
+  const { api } = await authorize(request, { "quality.gauges": "View" });
 
   const [gauges, gaugeTypes] = await Promise.all([
     api.quality.getGaugesList({}),

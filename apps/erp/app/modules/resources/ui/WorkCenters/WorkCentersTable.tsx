@@ -323,7 +323,7 @@ const WorkCentersTable = memo(
           {row.active ? (
             <MenuItem
               destructive
-              disabled={!permissions.can("delete", "resources")}
+              disabled={!permissions.has({ "resources.workCenters": "Full" })}
               onClick={() => onDelete(row)}
             >
               <MenuIcon icon={<LuTrash />} />
@@ -331,7 +331,7 @@ const WorkCentersTable = memo(
             </MenuItem>
           ) : (
             <MenuItem
-              disabled={!permissions.can("delete", "resources")}
+              disabled={!permissions.has({ "resources.workCenters": "Full" })}
               onClick={() => onActivate(row)}
             >
               <MenuIcon icon={<LuCheck />} />
@@ -358,7 +358,7 @@ const WorkCentersTable = memo(
             }
           ]}
           primaryAction={
-            permissions.can("update", "resources") && (
+            permissions.has({ "resources.workCenters": "Edit" }) && (
               <New label={t`Work Center`} to={`new?${params.toString()}`} />
             )
           }

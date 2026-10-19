@@ -19,7 +19,7 @@ const logger = getLogger("erp", "api-purchase-order-finalize");
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, api } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.purchaseOrders": "View"
   });
 
   const { id } = params;

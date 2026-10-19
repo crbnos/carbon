@@ -4,6 +4,7 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { updateItemCost } from "~/modules/items/items.service";
@@ -12,9 +13,10 @@ const logger = getLogger("erp", "cost-itemid");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await authorize(request, {
-    update: "parts"
-  });
+  const { client, userId } = await authorize(
+    request,
+    anyOf(ITEM_PAGES, "Edit")
+  );
 
   const formData = await request.formData();
   const unitCost = parseFloat(formData.get("unitCost") as string);

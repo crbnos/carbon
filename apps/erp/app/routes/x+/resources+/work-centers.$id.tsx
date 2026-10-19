@@ -17,10 +17,11 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "resources.workCenters": "View" },
+    { role: "employee" }
+  );
 
   const { id } = params;
   if (!id) throw notFound("Invalid work center id");

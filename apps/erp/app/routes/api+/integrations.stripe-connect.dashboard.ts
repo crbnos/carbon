@@ -16,7 +16,7 @@ const logger = getLogger("stripe-connect");
 
 async function handle({ request }: { request: Request }) {
   const { client, companyId } = await authorize(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
 
   const existing = await client

@@ -15,9 +15,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "inventory"
-  });
+  const { api } = await authorize(request, { "inventory.kanbans": "View" });
   const { id } = params;
   if (!id) throw notFound("id not found");
 

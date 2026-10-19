@@ -29,7 +29,7 @@ export const handle: Handle = {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "accounting"
+    "accounting.journalEntries": "View"
   });
 
   const { journalEntryId } = params;

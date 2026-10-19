@@ -9,6 +9,8 @@ vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn(), warn: vi.fn() })
 }));
 
+import { getPostgresClient } from "@carbon/database/client";
+import { anyOfRule, rowRule } from "./permissions";
 import {
   type Actor,
   CarbonError,
@@ -17,6 +19,7 @@ import {
   defineServiceFn,
   type Result,
   type RouteResult,
+  refusalOf,
   toResult
 } from "./service-fn.server";
 
@@ -258,6 +261,196 @@ describe("the gate", () => {
       category: "validation",
       message: "Invalid input — kind: expected one of read"
     });
+  });
+});
+
+// The boundary is the Postgres wire: a driver that records what Kysely sends
+// and answers with the rows the database would return. Kysely runs real.
+function rowsDatabase(rows: Record<string, unknown>[]) {
+  const sent: { sql: string; parameters: readonly unknown[] }[] = [];
+  const connection = {
+    executeQuery: async (query: {
+      sql: string;
+      parameters: readonly unknown[];
+    }) => {
+      sent.push({ sql: query.sql, parameters: query.parameters });
+      return { rows };
+    },
+    // biome-ignore lint/correctness/useYield: never streamed
+    streamQuery: async function* () {
+      throw new Error("not streamed");
+    }
+  };
+  const done = async () => undefined;
+  class Driver {
+    init = done;
+    acquireConnection = async () => connection;
+    beginTransaction = done;
+    commitTransaction = done;
+    rollbackTransaction = done;
+    releaseConnection = done;
+    destroy = done;
+  }
+  return { pg: getPostgresClient({} as never, Driver as never), sent };
+}
+
+describe("the gate on a row rule", () => {
+  const tools = {
+    "parts.tools": {
+      view: ["company-1"],
+      create: ["company-1"],
+      update: ["company-1"],
+      delete: []
+    },
+    "parts.parts": { view: ["company-1"], create: [], update: [], delete: [] }
+  };
+  const user: Actor = {
+    type: "user",
+    role: "employee",
+    userId: "user-1",
+    permissions: tools
+  };
+  const setCost = defineServiceFn({
+    input: z.object({ itemId: z.string() }),
+    permission: rowRule("item", "Edit", { id: "itemId" }),
+    async run() {
+      return "ran";
+    }
+  });
+
+  it("checks the page of the row's type, read in one query", async () => {
+    const tool = rowsDatabase([{ id: "i1", type: "Tool" }]);
+    expect(
+      (await setCost(contextWith(tool.pg, user), { itemId: "i1" })).data
+    ).toBe("ran");
+    expect(tool.sent).toEqual([
+      {
+        sql: 'select "t0"."id" as "id", "t0"."type" as "type" from "item" as "t0" where "t0"."id" in ($1) and "t0"."companyId" = $2',
+        parameters: ["i1", "company-1"]
+      }
+    ]);
+    const part = rowsDatabase([{ id: "i1", type: "Part" }]);
+    const { error } = await setCost(contextWith(part.pg, user), {
+      itemId: "i1"
+    });
+    expect(error).toMatchObject({
+      category: "forbidden",
+      message: "You do not have permission to do this"
+    });
+  });
+
+  it("joins hop by hop, every table in the caller's company", async () => {
+    const deleteSupplierPart = defineServiceFn({
+      input: z.object({ ids: z.array(z.string()) }),
+      permission: rowRule("item", "View", {
+        id: "ids",
+        from: "supplierPart",
+        path: [["itemId", "item"]]
+      }),
+      async run() {
+        return "ran";
+      }
+    });
+    const db = rowsDatabase([
+      { id: "sp1", type: "Tool" },
+      { id: "sp2", type: "Part" }
+    ]);
+    const { data } = await deleteSupplierPart(contextWith(db.pg, user), {
+      ids: ["sp1", "sp2"]
+    });
+    expect(data).toBe("ran");
+    expect(db.sent).toEqual([
+      {
+        sql: 'select "t0"."id" as "id", "t1"."type" as "type" from "supplierPart" as "t0" inner join "item" as "t1" on "t1"."id" = "t0"."itemId" and "t1"."companyId" = $1 where "t0"."id" in ($2, $3) and "t0"."companyId" = $4',
+        parameters: ["company-1", "sp1", "sp2", "company-1"]
+      }
+    ]);
+  });
+
+  it("answers not found for an id with no row, and forbidden for a Fixture", async () => {
+    const missing = await setCost(contextWith(rowsDatabase([]).pg, user), {
+      itemId: "i1"
+    });
+    expect(missing.error).toMatchObject({
+      category: "notFound",
+      status: 404,
+      message: "item i1 was not found"
+    });
+    const fixture = await setCost(
+      contextWith(rowsDatabase([{ id: "i1", type: "Fixture" }]).pg, user),
+      { itemId: "i1" }
+    );
+    expect(fixture.error?.category).toBe("forbidden");
+  });
+
+  it("refuses an empty id list as invalid input, before reading", async () => {
+    const setCosts = defineServiceFn({
+      input: z.object({ ids: z.array(z.string()) }),
+      permission: rowRule("item", "Edit", { id: "ids" }),
+      async run() {
+        return "ran";
+      }
+    });
+    const db = rowsDatabase([]);
+    const { error } = await setCosts(contextWith(db.pg, user), { ids: [] });
+    expect(error?.category).toBe("validation");
+    expect(db.sent).toEqual([]);
+  });
+
+  it("reads nothing for the system actor or a nested call", async () => {
+    const db = rowsDatabase([]);
+    const system = contextWith(db.pg, {
+      type: "system",
+      onBehalfOf: "user-1"
+    });
+    expect((await setCost(system, { itemId: "i1" })).data).toBe("ran");
+    const outer = defineServiceFn({
+      input: z.object({}),
+      permission: { "parts.tools": "View" },
+      async run(ctx) {
+        return setCost(ctx, { itemId: "i1" });
+      }
+    });
+    expect((await outer(contextWith(db.pg, user), {})).data).toEqual({
+      data: "ran",
+      error: null
+    });
+    expect(db.sent).toEqual([]);
+  });
+
+  it("passes an anyOf rule on any one page", async () => {
+    const list = defineServiceFn({
+      input: z.object({}),
+      permission: anyOfRule("item", "Edit"),
+      async run() {
+        return "ran";
+      }
+    });
+    expect((await list(contextWith({}, user), {})).data).toBe("ran");
+    const viewer: Actor = { ...user, permissions: productionView };
+    expect((await list(contextWith({}, viewer), {})).error?.category).toBe(
+      "forbidden"
+    );
+  });
+
+  it("lets run check a rule only it can name", async () => {
+    const db = rowsDatabase([{ id: "i1", type: "Part" }]);
+    expect(
+      await refusalOf(
+        contextWith(db.pg, user),
+        rowRule("item", "View", { id: "itemId" }),
+        { itemId: "i1" }
+      )
+    ).toBeNull();
+    expect(
+      (
+        await refusalOf(
+          contextWith(db.pg, user),
+          rowRule("item", "Edit", { id: "itemId" }),
+          { itemId: "i1" }
+        )
+      )?.category
+    ).toBe("forbidden");
   });
 });
 

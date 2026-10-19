@@ -96,7 +96,7 @@ async function readAccountingConnectionProvider(
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { userId, companyId } = await authorize(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
 
   const url = new URL(request.url);

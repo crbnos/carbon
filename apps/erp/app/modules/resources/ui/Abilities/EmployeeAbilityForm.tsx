@@ -53,7 +53,7 @@ const EmployeeAbilityForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
 
-  const isDisabled = !permissions.can("update", "resources");
+  const isDisabled = !permissions.has({ "resources.abilities": "Edit" });
   // A refusal is toasted here; a save redirects back to the list.
   const fetcher = useAction();
 

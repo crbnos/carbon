@@ -34,10 +34,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "accounting.accountingPeriods": "View" },
+    { role: "employee" }
+  );
 
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");
@@ -58,7 +59,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    delete: "accounting"
+    "accounting.accountingPeriods": "Full"
   });
 
   const { periodId } = params;

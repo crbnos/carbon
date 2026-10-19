@@ -4,8 +4,7 @@
 
 import { randomBytes } from "node:crypto";
 import type { AuthSession } from "@carbon/auth";
-import { hasPermission } from "@carbon/auth";
-import { authorize } from "@carbon/auth/auth.server";
+import { authorize, type Gate } from "@carbon/auth/auth.server";
 import { logAuthEvent } from "@carbon/auth/auth-events.server";
 import {
   getCarbonServiceRole,
@@ -14,6 +13,7 @@ import {
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
+import { holdsGate } from "@carbon/database/access";
 import {
   CONTROLLED_ENVIRONMENT,
   SESSION_ABSOLUTE_MAX_MS,
@@ -144,27 +144,23 @@ async function requirePanelSession(token: string): Promise<PanelSession> {
 
 /**
  * `authorize` for the Onshape panel: the caller of the `cps_` bearer session,
- * refused unless they hold `requiredPermissions`, with the operations bound to
+ * refused unless they pass `gate`, with the operations bound to
  * them. Employees only, the acting user is always the session user, and
  * failures are 401 or 403, never redirects, since every caller is an iframe
  * fetch.
  */
 export async function authorizePanel(
   request: Request,
-  requiredPermissions: Parameters<typeof panelCaller>[1] = {}
+  gate: Gate = {},
+  options: { bypassRls?: boolean } = {}
 ) {
-  return authorize(await panelCaller(request, requiredPermissions));
+  return authorize(await panelCaller(request, gate, options));
 }
 
 async function panelCaller(
   request: Request,
-  requiredPermissions: {
-    view?: string | string[];
-    create?: string | string[];
-    update?: string | string[];
-    delete?: string | string[];
-    bypassRls?: boolean;
-  }
+  gate: Gate,
+  options: { bypassRls?: boolean }
 ): Promise<{
   client: SupabaseClient<Database>;
   companyId: string;
@@ -203,29 +199,14 @@ async function panelCaller(
     throw deny(`${myClaims.role ?? "no"} role`);
   }
 
-  const hasRequiredPermissions = Object.entries(requiredPermissions).every(
-    ([action, permission]) => {
-      if (action === "bypassRls") return true;
-      const permissions =
-        typeof permission === "string"
-          ? [permission]
-          : Array.isArray(permission)
-            ? permission
-            : null;
-      if (!permissions) return false;
-      return permissions.every((p) =>
-        hasPermission(
-          myClaims.permissions,
-          p,
-          action as "view" | "create" | "update" | "delete",
-          companyId
-        )
-      );
-    }
+  const hasRequiredPermissions = holdsGate(
+    myClaims.permissions,
+    gate,
+    companyId
   );
 
   if (!hasRequiredPermissions) {
-    throw deny(JSON.stringify(requiredPermissions));
+    throw deny(JSON.stringify(gate));
   }
 
   // Only an authorized request counts as activity.
@@ -233,7 +214,7 @@ async function panelCaller(
     await stampActivity(token, session);
   }
 
-  const client = requiredPermissions.bypassRls
+  const client = options.bypassRls
     ? getCarbonServiceRole()
     : await getUserScopedClient(userId);
 

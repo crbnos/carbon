@@ -22,9 +22,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.services": "View" });
 
   const unitOfMeasures = await api.items.getUnitOfMeasuresList({});
 

@@ -18,7 +18,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "accounting"
+    "accounting.assets": "View"
   });
 
   const { fixedAssetId } = params;
@@ -83,7 +83,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "accounting"
+    "accounting.assets": "Create"
   });
 
   const { fixedAssetId } = params;

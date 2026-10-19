@@ -358,9 +358,9 @@ describe("balance sheet configured CTA", () => {
       })
     } as unknown as SupabaseClient<Database>;
     vi.mocked(authorize).mockImplementation(
-      async (_request, permissions) =>
+      async (_request, _gate, options) =>
         withTestApi({
-          client: permissions?.bypassRls ? client : deniedClient,
+          client: options?.bypassRls ? client : deniedClient,
           companyId: "child",
           companyGroupId: "group",
           userId: "user"

@@ -16,9 +16,7 @@ import MaterialTypeForm from "~/modules/items/ui/MaterialTypes/MaterialTypeForm"
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    create: "parts"
-  });
+  await authorize(request, { "parts.types": "Create" });
 
   return null;
 }
@@ -26,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    create: "parts"
+    "parts.types": "Create"
   });
 
   const formData = await request.formData();

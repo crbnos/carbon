@@ -14,9 +14,7 @@ import { deleteCustomerItemPriceOverride } from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.priceLists": "View" });
 
   const { overrideId } = params;
   if (!overrideId) throw notFound("overrideId not found");
@@ -40,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    delete: "sales"
+    "sales.priceLists": "Full"
   });
 
   const { overrideId } = params;

@@ -46,11 +46,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "people",
-    role: "employee",
-    bypassRls: true
-  });
+  const { api } = await authorize(
+    request,
+    { "people.departments": "View" },
+    { role: "employee", bypassRls: true }
+  );
 
   const departments = await api.people.getDepartmentsTree({});
 

@@ -124,7 +124,7 @@ const AssetClassesTable = memo(
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "accounting")}
+            disabled={!permissions.has({ "accounting.assetClasses": "Edit" })}
             onClick={() => navigate(path.to.assetClass(row.id))}
           >
             <MenuIcon icon={<LuPencil />} />
@@ -132,7 +132,7 @@ const AssetClassesTable = memo(
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
-            disabled={!permissions.can("delete", "accounting")}
+            disabled={!permissions.has({ "accounting.assetClasses": "Full" })}
             destructive
             onClick={() => {
               setSelectedClass(row);

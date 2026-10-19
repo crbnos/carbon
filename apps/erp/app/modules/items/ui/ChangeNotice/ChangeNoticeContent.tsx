@@ -60,7 +60,7 @@ export function ChangeNoticeContentSection({
   );
 
   const body =
-    permissions.can("update", "parts") && !isDisabled ? (
+    permissions.has({ "parts.changeNotices": "Edit" }) && !isDisabled ? (
       <Editor
         className="[&_.ProseMirror]:text-sm"
         initialValue={(content ?? {}) as JSONContent}

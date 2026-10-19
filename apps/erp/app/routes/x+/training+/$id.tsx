@@ -54,10 +54,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(request, {
-    view: "resources",
-    bypassRls: true
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "resources.training": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -159,8 +160,7 @@ function TrainingContent() {
   const onUploadImage = useImageUpload("training");
 
   const canEdit =
-    permissions.can("update", "people") &&
-    permissions.can("update", "resources") &&
+    permissions.has({ "resources.training": "Edit" }) &&
     loaderData?.training?.status === "Draft";
 
   const guidePath = loaderData?.training?.guidePath ?? null;

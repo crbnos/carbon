@@ -102,7 +102,7 @@ const SalesRFQProperties = () => {
       : routeData?.rfqSummary?.assignee;
   const permissions = usePermissions();
 
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.rfqs": "Edit" });
   const isLocked = isSalesRfqLocked(routeData?.rfqSummary?.status);
   const isDisabled = !canUpdate || isLocked;
 

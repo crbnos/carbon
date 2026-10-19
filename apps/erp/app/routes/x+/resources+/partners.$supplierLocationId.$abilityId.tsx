@@ -16,9 +16,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources"
-  });
+  const { api } = await authorize(request, { "resources.abilities": "View" });
 
   const { supplierLocationId, abilityId } = params;
   if (!supplierLocationId) throw notFound("Partner ID was not found");
@@ -44,7 +42,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    create: "resources"
+    "resources.abilities": "Create"
   });
 
   const formData = await request.formData();

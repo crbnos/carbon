@@ -144,7 +144,7 @@ async function clearStaleExportFailure(
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, email } = await authorize(request, {
-    update: "settings"
+    "settings.backups": "Edit"
   });
   // Business/Enterprise feature, plus an internal/local-dev escape hatch.
   if (!(await canManageBackups(client, companyId, email))) {
@@ -169,7 +169,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId, email } = await authorize(request, {
-    update: "settings"
+    "settings.backups": "Edit"
   });
   if (!(await canManageBackups(client, companyId, email))) {
     throw redirect(path.to.settings);

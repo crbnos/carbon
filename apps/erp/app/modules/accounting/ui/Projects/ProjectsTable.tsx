@@ -62,7 +62,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "accounting")}
+            disabled={!permissions.has({ "accounting.projects": "Edit" })}
             onClick={() => {
               navigate(`${path.to.project(row.id)}?${params.toString()}`);
             }}
@@ -72,7 +72,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
-            disabled={!permissions.can("delete", "accounting")}
+            disabled={!permissions.has({ "accounting.projects": "Full" })}
             onClick={() => {
               navigate(`${path.to.deleteProject(row.id)}?${params.toString()}`);
             }}
@@ -92,7 +92,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "accounting") && (
+        permissions.has({ "accounting.projects": "Create" }) && (
           <New label={t`Project`} to={`new?${params.toString()}`} />
         )
       }

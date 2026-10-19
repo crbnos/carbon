@@ -32,7 +32,7 @@ import { path } from "~/utils/path";
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    update: "invoicing"
+    "invoicing.reimbursements": "Edit"
   });
 
   const { reimbursementId } = params;

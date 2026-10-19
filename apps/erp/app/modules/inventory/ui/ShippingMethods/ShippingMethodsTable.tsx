@@ -34,8 +34,9 @@ const ShippingMethodsTable = memo(
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
-    const hasAccounting =
-      permissions.has("accounting") && permissions.can("view", "accounting");
+    const hasAccounting = permissions.has({
+      "accounting.chartOfAccounts": "View"
+    });
 
     const rows = useMemo(() => data, [data]);
 
@@ -109,7 +110,9 @@ const ShippingMethodsTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "inventory")}
+              disabled={
+                !permissions.has({ "inventory.shippingMethods": "Edit" })
+              }
               onClick={() => {
                 navigate(
                   `${path.to.shippingMethod(row.id)}?${params.toString()}`
@@ -121,7 +124,9 @@ const ShippingMethodsTable = memo(
             </MenuItem>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
-              disabled={!permissions.can("delete", "inventory")}
+              disabled={
+                !permissions.has({ "inventory.shippingMethods": "Full" })
+              }
               destructive
               onClick={() => {
                 navigate(
@@ -144,7 +149,7 @@ const ShippingMethodsTable = memo(
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "inventory") && (
+          permissions.has({ "inventory.shippingMethods": "Create" }) && (
             <New
               label={t`Shipping Method`}
               to={`${path.to.newShippingMethod}?${params.toString()}`}

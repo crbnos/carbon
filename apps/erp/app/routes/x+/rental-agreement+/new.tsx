@@ -30,7 +30,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    create: "sales"
+    "sales.rentalAgreements": "Create"
   });
 
   const companySettings = await api.settings.getCompanySettings({});

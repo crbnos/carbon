@@ -26,7 +26,7 @@ export const handle: Handle = {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, userId, api } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.suppliers": "View"
   });
 
   const { supplierId } = params;

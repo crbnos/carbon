@@ -14,7 +14,7 @@ import { requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {});
+  const { client, companyId, userId } = await authorize(request);
 
   const validation = await validator(noteValidator).validate(
     await request.formData()

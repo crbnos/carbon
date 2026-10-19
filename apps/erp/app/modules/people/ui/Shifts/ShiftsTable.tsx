@@ -207,7 +207,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "people")}
+            disabled={!permissions.has({ "people.shifts": "Full" })}
             onClick={() => {
               navigate(`${path.to.deleteShift(row.id!)}?${params.toString()}`);
             }}
@@ -227,7 +227,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
       count={count}
       columns={columns}
       primaryAction={
-        permissions.can("create", "people") && (
+        permissions.has({ "people.shifts": "Create" }) && (
           <New label={t`Shift`} to={`new?${params.toString()}`} />
         )
       }

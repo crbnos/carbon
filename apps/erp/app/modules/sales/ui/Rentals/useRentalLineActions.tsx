@@ -54,14 +54,19 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
   const id = rentalAgreement.id!;
   const isDraft = rentalAgreement.status === "Draft";
   const isActive = rentalAgreement.status === "Active";
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.rentalAgreements": "Edit" });
   // Deliver and Return draft an inventory document.
-  const canMoveUnits = canUpdate && permissions.can("create", "inventory");
+  const canMoveUnits =
+    canUpdate &&
+    permissions.has({
+      "inventory.shipments": "Create",
+      "inventory.receipts": "Create"
+    });
   // Selling bills a charge and drafts its invoice.
   const canSellPermission =
     canUpdate &&
-    permissions.can("create", "sales") &&
-    permissions.can("create", "invoicing");
+    permissions.has({ "sales.rentalAgreements": "Create" }) &&
+    permissions.has({ "invoicing.salesInvoices": "Create" });
   const purchaseOptionAmount = rentalAgreement.purchaseOptionAmount ?? 0;
   const currencyFormatter = useCurrencyFormatter({
     currency: rentalAgreement.currencyCode ?? undefined
@@ -94,7 +99,7 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
       returnDisabled: !canMoveUnits,
       releaseDisabled: !canUpdate,
       sellDisabled: !canSellPermission,
-      deleteDisabled: !permissions.can("delete", "sales")
+      deleteDisabled: !permissions.has({ "sales.rentalAgreements": "Full" })
     };
   };
 

@@ -14,7 +14,7 @@ import { upsertAssemblyInstructionStep } from "~/modules/production/production.s
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "production"
+    "production.assemblies": "Edit"
   });
 
   const { stepId } = params;

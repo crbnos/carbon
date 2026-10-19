@@ -15,10 +15,11 @@ import { AttributeCategoryForm } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "people",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "people.attributes": "View" },
+    { role: "employee" }
+  );
 
   const { categoryId } = params;
   if (!categoryId) throw notFound("Invalid categoryId");
@@ -42,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "people"
+    "people.attributes": "Edit"
   });
 
   const validation = await validator(attributeCategoryValidator).validate(

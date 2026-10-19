@@ -104,8 +104,8 @@ const CustomerForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.customers": "Edit" })
+    : !permissions.has({ "sales.customers": "Create" });
 
   return (
     <div>

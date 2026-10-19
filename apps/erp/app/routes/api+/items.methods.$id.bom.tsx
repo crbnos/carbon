@@ -4,6 +4,7 @@
 
 import { authorize } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { pluckUnique } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import type { FlatTreeItem } from "~/components/TreeView";
@@ -19,9 +20,10 @@ import {
 import { makeDurations } from "~/utils/duration";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "parts"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    anyOf(ITEM_PAGES, "View")
+  );
 
   const { id } = params;
   const withOperations = request.url.includes("withOperations=true");

@@ -27,7 +27,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
   const { client, companyId } = await authorize(request, {
-    update: "workflows"
+    "workflows.workflows": "Edit"
   });
   await requireFeature({
     request,

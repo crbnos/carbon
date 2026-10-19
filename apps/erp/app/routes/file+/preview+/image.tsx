@@ -11,9 +11,7 @@ const escapeAttribute = (value: string) =>
   value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 export let loader = async ({ request }: LoaderFunctionArgs) => {
-  await authorize(request, {
-    view: "documents"
-  });
+  await authorize(request, { documents: "View" });
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const file = decodeURIComponent(searchParams.get("file") ?? "");

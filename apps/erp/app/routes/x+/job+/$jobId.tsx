@@ -95,10 +95,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "production",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "production.jobs": "View" },
+    { bypassRls: true }
+  );
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");

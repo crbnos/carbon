@@ -15,7 +15,7 @@ import { setJobOperationToolStepLink } from "~/modules/production/production.ser
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "production"
+    "production.jobs": "Edit"
   });
 
   const formData = await request.formData();

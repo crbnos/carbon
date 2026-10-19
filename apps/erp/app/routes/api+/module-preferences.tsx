@@ -10,7 +10,7 @@ import { upsertModulePreferences } from "~/modules/users/users.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, companyId } = await authorize(request, {});
+  const { client, userId, companyId } = await authorize(request);
 
   const body = (await request.json()) as {
     preferences: { module: string; position: number; hidden: boolean }[];

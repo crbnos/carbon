@@ -78,7 +78,7 @@ export default function SalesReturnOrderExplorer() {
   const isLocked = isSalesReturnOrderLocked(
     routeData?.salesReturnOrder?.status
   );
-  const isDisabled = isLocked || !permissions.can("update", "sales");
+  const isDisabled = isLocked || !permissions.has({ "sales.returns": "Edit" });
 
   const lineInitialValues = {
     salesReturnOrderId: orderId,
@@ -119,7 +119,7 @@ export default function SalesReturnOrderExplorer() {
             ))
           ) : (
             <Empty>
-              {permissions.can("update", "sales") && (
+              {permissions.has({ "sales.returns": "Edit" }) && (
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
@@ -321,7 +321,9 @@ function SalesReturnOrderLineItem({
                 <DropdownMenuItem
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
-                  disabled={isDisabled || !permissions.can("delete", "sales")}
+                  disabled={
+                    isDisabled || !permissions.has({ "sales.returns": "Full" })
+                  }
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(line);

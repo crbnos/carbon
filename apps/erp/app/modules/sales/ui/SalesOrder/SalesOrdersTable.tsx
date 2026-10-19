@@ -541,7 +541,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
       <>
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.edit}
-          disabled={!permissions.can("view", "sales")}
+          disabled={!permissions.has({ "sales.salesOrders": "View" })}
           onClick={() => edit(row)}
         >
           <MenuIcon icon={<LuPencil />} />
@@ -552,7 +552,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
             disabled={
               !["To Recieve", "To Receive and Invoice"].includes(
                 row.status ?? ""
-              ) || !permissions.can("update", "inventory")
+              ) || !permissions.has({ "inventory.receipts": "Edit" })
             }
             onClick={() => {
               receive(row);
@@ -563,7 +563,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           </MenuItem>*/}
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
-          disabled={!permissions.can("delete", "sales")}
+          disabled={!permissions.has({ "sales.salesOrders": "Full" })}
           destructive
           onClick={() => {
             setSelectedSalesOrder(row);
@@ -595,7 +595,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           updatedAt: false
         }}
         primaryAction={
-          permissions.can("create", "sales") && (
+          permissions.has({ "sales.salesOrders": "Create" }) && (
             <New label={t`Sales Order`} to={path.to.newSalesOrder} />
           )
         }

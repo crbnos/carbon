@@ -15,10 +15,11 @@ import { ConfirmDelete } from "~/components/Modals";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "users",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "users.employeeTypes": "View" },
+    { role: "employee" }
+  );
 
   await requireFeature({
     request,
@@ -49,7 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    delete: "users"
+    "users.employeeTypes": "Full"
   });
 
   await requireFeature({

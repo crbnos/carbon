@@ -90,7 +90,7 @@ const SalesRulesGroups = memo(({ rules }: SalesRulesGroupsProps) => {
   const { t } = useLingui();
   const [params] = useUrlParams();
   const permissions = usePermissions();
-  const canCreate = permissions.can("create", "sales");
+  const canCreate = permissions.has({ "sales.salesRules": "Create" });
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] bg-card">
@@ -164,8 +164,8 @@ const SalesRuleCard = memo(({ rule }: { rule: SalesRuleListItem }) => {
   const permissions = usePermissions();
   const deleteDisclosure = useDisclosure();
 
-  const canEdit = permissions.can("update", "sales");
-  const canDelete = permissions.can("delete", "sales");
+  const canEdit = permissions.has({ "sales.salesRules": "Edit" });
+  const canDelete = permissions.has({ "sales.salesRules": "Full" });
   const { broadcastLabel, showAssignments } = ruleReach(rule, t);
   const surfaces =
     rule.surfaces && rule.surfaces.length > 0

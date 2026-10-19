@@ -213,7 +213,7 @@ const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
     return (row: ContractListItem) => (
       <>
         <MenuItem
-          disabled={!permissions.can("view", "sales")}
+          disabled={!permissions.has({ "sales.serviceContracts": "View" })}
           onClick={() => {
             navigate(path.to.contract(row.id!));
           }}
@@ -223,7 +223,8 @@ const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
         </MenuItem>
         <MenuItem
           disabled={
-            !permissions.can("delete", "sales") || row.status !== "Draft"
+            !permissions.has({ "sales.serviceContracts": "Full" }) ||
+            row.status !== "Draft"
           }
           destructive
           onClick={() => {
@@ -248,7 +249,7 @@ const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
           left: ["customerContractId"]
         }}
         primaryAction={
-          permissions.can("create", "sales") && (
+          permissions.has({ "sales.serviceContracts": "Create" }) && (
             <New label={t`Contract`} to={path.to.newContract} />
           )
         }

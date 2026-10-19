@@ -37,7 +37,7 @@ const CustomerPaymentForm = ({ initialValues }: CustomerPaymentFormProps) => {
     initialValues.invoiceCustomerId
   );
 
-  const isDisabled = !permissions.can("update", "sales");
+  const isDisabled = !permissions.has({ "sales.customers": "Edit" });
 
   return (
     <ValidatedForm

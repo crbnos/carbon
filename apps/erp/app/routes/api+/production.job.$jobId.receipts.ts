@@ -20,9 +20,7 @@ import { getDatabaseClient } from "~/services/database.server";
  * is the harder bug to find.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await authorize(request, {
-    view: "production"
-  });
+  const { companyId } = await authorize(request, { "production.jobs": "View" });
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");

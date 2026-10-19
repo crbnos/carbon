@@ -78,7 +78,8 @@ export default function PurchaseReturnOrderExplorer() {
   const isLocked = isPurchaseReturnOrderLocked(
     routeData?.purchaseReturnOrder?.status
   );
-  const isDisabled = isLocked || !permissions.can("update", "purchasing");
+  const isDisabled =
+    isLocked || !permissions.has({ "purchasing.returns": "Edit" });
 
   const lineInitialValues = {
     purchaseReturnOrderId: orderId,
@@ -119,7 +120,7 @@ export default function PurchaseReturnOrderExplorer() {
             ))
           ) : (
             <Empty>
-              {permissions.can("update", "purchasing") && (
+              {permissions.has({ "purchasing.returns": "Edit" }) && (
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
@@ -325,7 +326,8 @@ function PurchaseReturnOrderLineItem({
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={
-                    isDisabled || !permissions.can("delete", "purchasing")
+                    isDisabled ||
+                    !permissions.has({ "purchasing.returns": "Full" })
                   }
                   onClick={(e) => {
                     e.stopPropagation();

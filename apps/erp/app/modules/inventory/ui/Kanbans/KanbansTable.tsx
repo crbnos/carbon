@@ -620,9 +620,9 @@ const KanbansTable = memo(
 
     const renderContextMenu = useCallback(
       (row: Kanban) => {
-        const canUpdate = permissions.can("update", "inventory");
-        const canDelete = permissions.can("delete", "inventory");
-        const canViewItems = permissions.can("view", "inventory");
+        const canUpdate = permissions.has({ "inventory.kanbans": "Edit" });
+        const canDelete = permissions.has({ "inventory.kanbans": "Full" });
+        const canViewItems = permissions.has({ "inventory.kanbans": "View" });
 
         return (
           <>
@@ -769,7 +769,7 @@ const KanbansTable = memo(
               <Button variant="secondary" asChild leftIcon={<LuSettings />}>
                 <Link to={path.to.inventorySettings}>Settings</Link>
               </Button>
-              {permissions.can("create", "inventory") && (
+              {permissions.has({ "inventory.kanbans": "Create" }) && (
                 <New label={t`Kanban`} to={path.to.newKanban} />
               )}
             </div>

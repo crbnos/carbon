@@ -231,7 +231,7 @@ const JobHeader = () => {
         disabled={
           !["Ready", "In Progress", "Paused"].includes(status ?? "") ||
           expediteFetcher.state !== "idle" ||
-          !permissions.can("view", "production")
+          !permissions.has({ "production.jobs": "View" })
         }
         onClick={() => {
           expediteModal.onOpen();
@@ -249,7 +249,7 @@ const JobHeader = () => {
         disabled={
           !["Cancelled", "Completed"].includes(routeData?.job?.status ?? "") ||
           statusFetcher.state !== "idle" ||
-          !permissions.can("update", "production")
+          !permissions.has({ "production.jobs": "Edit" })
         }
         onClick={() => {
           statusFetcher.submit(
@@ -270,7 +270,7 @@ const JobHeader = () => {
       <DropdownMenuItem
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         disabled={
-          !permissions.can("delete", "production") ||
+          !permissions.has({ "production.jobs": "Full" }) ||
           !permissions.is("employee") ||
           isJobLocked(routeData?.job?.status)
         }
@@ -444,7 +444,7 @@ const JobHeader = () => {
                       isDisabled={
                         !["Ready", "In Progress"].includes(status ?? "") ||
                         statusFetcher.state !== "idle" ||
-                        !permissions.can("update", "production")
+                        !permissions.has({ "production.jobs": "Edit" })
                       }
                       leftIcon={<LuCirclePause />}
                       type="submit"
@@ -469,7 +469,7 @@ const JobHeader = () => {
                     }
                     isDisabled={
                       statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "production")
+                      !permissions.has({ "production.jobs": "Edit" })
                     }
                     leftIcon={<LuCirclePlay />}
                     type="submit"
@@ -488,7 +488,7 @@ const JobHeader = () => {
                   !isReleasable ||
                   statusFetcher.state !== "idle" ||
                   release.isPending ||
-                  !permissions.can("update", "production") ||
+                  !permissions.has({ "production.jobs": "Edit" }) ||
                   (routeData?.job?.quantity === 0 &&
                     routeData?.job?.scrapQuantity === 0)
                 }
@@ -513,7 +513,7 @@ const JobHeader = () => {
                 isDisabled={
                   ["Completed", "Cancelled"].includes(status ?? "") ||
                   statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "production")
+                  !permissions.has({ "production.jobs": "Edit" })
                 }
                 leftIcon={<LuCircleCheck />}
                 variant={status === "Completed" ? "primary" : "secondary"}
@@ -529,7 +529,7 @@ const JobHeader = () => {
                   ["Cancelled", "Completed"].includes(status ?? "") ||
                   statusFetcher.state !== "idle" ||
                   cancel.isPending ||
-                  !permissions.can("update", "production")
+                  !permissions.has({ "production.jobs": "Edit" })
                 }
                 leftIcon={<LuCircleStop />}
                 variant="secondary"

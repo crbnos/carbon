@@ -25,7 +25,7 @@ type EditableField = (typeof EDITABLE_FIELDS)[number];
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {
-    update: "parts"
+    "parts.changeNotices": "Edit"
   });
 
   const formData = await request.formData();

@@ -51,10 +51,8 @@ const payloadSchema = z.object({
 /** Plan a release push without writing; the apply makes no Onshape call. */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await authorizePanel(request, {
-    create: "parts",
-    update: "parts",
-    // Re-pushing replaces the BOM lines an earlier push wrote.
-    delete: "parts"
+    // Full: re-pushing replaces the BOM lines an earlier push wrote.
+    "parts.parts": "Full"
   });
 
   const parsed = payloadSchema.safeParse(

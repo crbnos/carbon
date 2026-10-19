@@ -22,6 +22,12 @@ export type PermissionAction = "view" | "create" | "update" | "delete";
 export interface ToolPermission {
   module: string | null;
   actions: PermissionAction[];
+  /**
+   * A gate that passes on any one of several pages (an `anyOf` or row rule):
+   * the pages, in registry order, and their one level. `by` names the column
+   * of the row that picks the page (`item.type`); empty, any page passes.
+   */
+  oneOf?: { pages: string[]; level: string; by: string[] };
 }
 
 /** One operation in the manifest — the successor of a `tool-metadata.json` entry. */

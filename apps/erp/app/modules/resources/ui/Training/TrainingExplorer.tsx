@@ -230,7 +230,7 @@ export default function TrainingExplorer() {
             </Reorder.Group>
           ) : (
             <Empty>
-              {permissions.can("update", "resources") && (
+              {permissions.has({ "resources.training": "Edit" }) && (
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
@@ -255,7 +255,8 @@ export default function TrainingExplorer() {
                 ref={newQuestionRef}
                 className="w-full"
                 isDisabled={
-                  isDisabled || !permissions.can("update", "resources")
+                  isDisabled ||
+                  !permissions.has({ "resources.training": "Edit" })
                 }
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
@@ -441,7 +442,7 @@ function TrainingQuestionItem({
               <DropdownMenuItem
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
-                disabled={!permissions.can("update", "resources")}
+                disabled={!permissions.has({ "resources.training": "Edit" })}
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(question);

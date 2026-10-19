@@ -19,7 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Permissionless like the job traveler: shop-floor people without ERP
   // permissions still print the load sheet. Tenant safety comes from the
   // explicit companyId on every fetch below (service-role client).
-  const { companyId } = await authorize(request, {});
+  const { companyId } = await authorize(request);
 
   const { id } = params;
   if (!id) throw new Error("Could not find batch id");

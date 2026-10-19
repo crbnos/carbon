@@ -30,6 +30,7 @@ export default function usePurchasingSubmodules() {
         {
           name: t`Suppliers`,
           to: path.to.suppliers,
+          page: "purchasing.suppliers",
           icon: <LuContainer />,
           table: "supplier"
         }
@@ -41,12 +42,14 @@ export default function usePurchasingSubmodules() {
         {
           name: t`Purchase Orders`,
           to: path.to.purchaseOrders,
+          page: "purchasing.purchaseOrders",
           icon: <LuLayoutList />,
           table: "purchaseOrder"
         },
         {
           name: t`Returns`,
           to: path.to.purchaseReturnOrders,
+          page: "purchasing.returns",
           icon: <LuUndo2 />,
           table: "purchaseReturnOrder"
         }
@@ -58,6 +61,7 @@ export default function usePurchasingSubmodules() {
         {
           name: t`Leases`,
           to: path.to.leases,
+          page: "purchasing.leases",
           icon: <LuKeyRound />,
           table: "lease"
         }
@@ -69,6 +73,7 @@ export default function usePurchasingSubmodules() {
         {
           name: t`Material Planning`,
           to: path.to.purchasingPlanning,
+          page: "purchasing.materialPlanning",
           icon: <LuListTodo />,
           table: "planning"
         }
@@ -80,12 +85,14 @@ export default function usePurchasingSubmodules() {
         {
           name: t`RFQs`,
           to: path.to.purchasingRfqs,
+          page: "purchasing.rfqs",
           icon: <LuPackageSearch />,
           table: "purchasingRfq"
         },
         {
           name: t`Supplier Quotes`,
           to: path.to.supplierQuotes,
+          page: "purchasing.supplierQuotes",
           icon: <LuFileText />,
           table: "supplierQuote"
         }
@@ -97,6 +104,7 @@ export default function usePurchasingSubmodules() {
         {
           name: t`Types`,
           to: path.to.supplierTypes,
+          page: "purchasing.types",
           role: "employee",
           icon: <LuStar />
         }
@@ -104,17 +112,15 @@ export default function usePurchasingSubmodules() {
     }
   ];
 
+  const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) =>
+    (!route.role || permissions.is(route.role)) &&
+    (!route.page || permissions.has({ [route.page]: "View" }));
+
   return {
     groups: purchasingRoutes
       .filter((group) => {
         const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else if (route.permission) {
-            return permissions.can("view", route.permission);
-          } else {
-            return true;
-          }
+          return isRouteVisible(route);
         });
 
         return filteredRoutes.length > 0;
@@ -123,13 +129,7 @@ export default function usePurchasingSubmodules() {
         ...group,
         routes: group.routes
           .filter((route) => {
-            if (route.role) {
-              return permissions.is(route.role);
-            } else if (route.permission) {
-              return permissions.can("view", route.permission);
-            } else {
-              return true;
-            }
+            return isRouteVisible(route);
           })
           .map(addSavedViewsToRoutes)
       }))

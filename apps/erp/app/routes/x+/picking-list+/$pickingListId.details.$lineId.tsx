@@ -12,7 +12,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "inventory"
+    "inventory.pickingLists": "View"
   });
 
   const { pickingListId, lineId } = params;

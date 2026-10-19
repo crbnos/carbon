@@ -27,7 +27,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "settings"
+    "settings.printing": "View"
   });
 
   const url = new URL(request.url);

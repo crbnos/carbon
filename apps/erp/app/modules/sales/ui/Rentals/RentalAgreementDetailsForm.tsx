@@ -261,8 +261,8 @@ const RentalAgreementDetailsForm = ({
             isDisabled={
               isMissingEndDate ||
               (isEditing
-                ? !permissions.can("update", "sales")
-                : !permissions.can("create", "sales"))
+                ? !permissions.has({ "sales.rentalAgreements": "Edit" })
+                : !permissions.has({ "sales.rentalAgreements": "Create" }))
             }
           >
             <Trans>Next</Trans>

@@ -37,7 +37,8 @@ const ChartOfAccountsTableFilters = ({
   const settings = useSettings();
   // The chart is imported once, before accounting is activated.
   const canImport =
-    permissions.can("update", "accounting") && !hasAccountingCutover(settings);
+    permissions.has({ "accounting.chartOfAccounts": "Edit" }) &&
+    !hasAccountingCutover(settings);
   const newGroupTo = `new-group?${params.toString()}`;
   const newAccountTo = `new?${params.toString()}`;
 
@@ -83,7 +84,7 @@ const ChartOfAccountsTableFilters = ({
             </Link>
           </Button>
         )}
-        {permissions.can("create", "accounting") && (
+        {permissions.has({ "accounting.chartOfAccounts": "Create" }) && (
           // Phones: one app bar "+" opens both Add actions, instead of
           // two identical "+" icons.
           <AppBarAction

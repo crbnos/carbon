@@ -102,7 +102,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId, client, api } = await authorize(request, {
-    view: "settings"
+    "settings.accounting": "View"
   });
 
   const [companySettings, accountDefaults] = await Promise.all([
@@ -328,8 +328,10 @@ export default function AccountingSettingsRoute() {
                       isLoading={legacyFetcher.state !== "idle"}
                       isDisabled={
                         legacyFetcher.state !== "idle" ||
-                        !permissions.can("update", "settings") ||
-                        !permissions.can("update", "accounting")
+                        !permissions.has({ "settings.accounting": "Edit" }) ||
+                        !permissions.has({
+                          "accounting.journalEntries": "Edit"
+                        })
                       }
                     >
                       <Trans>Write missing journals</Trans>

@@ -58,7 +58,7 @@ export default function PeriodRunsPage({
 
   const { listPath, newPath } = RUN_PAGES[type];
   const canCreate =
-    permissions.can("create", "accounting") && !hasDraftBlocking;
+    permissions.has({ [RUN_PAGES[type].page]: "Create" }) && !hasDraftBlocking;
 
   return (
     <VStack spacing={0} className="h-full">
@@ -67,7 +67,7 @@ export default function PeriodRunsPage({
         data={data}
         count={count}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.has({ [RUN_PAGES[type].page]: "Create" }) && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

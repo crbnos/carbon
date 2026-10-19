@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import {
   convertKbToString,
   downloadUrl,
@@ -326,7 +327,7 @@ const ItemDocumentForm = ({ itemId, type }: ItemDocumentFormProps) => {
 
   return (
     <File
-      isDisabled={!permissions.can("update", "parts")}
+      isDisabled={!permissions.has({ [ITEM_TYPE_PAGES[type]]: "Edit" })}
       leftIcon={<LuUpload />}
       onChange={uploadFiles}
       multiple
@@ -349,7 +350,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
   const { company } = useUser();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", "parts");
+  const canDelete = permissions.has({ [ITEM_TYPE_PAGES[type]]: "Full" });
   const getPath = useCallback(
     (file: { name: string }) => {
       return `${company.id}/parts/${itemId}/${stripSpecialCharacters(

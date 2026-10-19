@@ -17,7 +17,7 @@ const logger = getLogger("erp", "account-profile");
 
 // Data and writes for the Profile pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { userId, api } = await authorize(request, {});
+  const { userId, api } = await authorize(request);
   const user = await api.users.getAccount({ id: userId });
 
   if (user.error) {

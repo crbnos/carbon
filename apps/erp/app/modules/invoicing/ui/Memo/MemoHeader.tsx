@@ -68,8 +68,16 @@ const MemoHeader = () => {
   const status = memo.status;
   const isDraft = status === "Draft";
   const isPosted = status === "Posted";
-  const canMutate = permissions.can("update", "invoicing");
-  const canDelete = permissions.can("delete", "invoicing");
+  const canMutate = permissions.has(
+    memo.supplierId
+      ? { "invoicing.supplierCredits": "Edit" }
+      : { "invoicing.creditMemos": "Edit" }
+  );
+  const canDelete = permissions.has(
+    memo.supplierId
+      ? { "invoicing.supplierCredits": "Full" }
+      : { "invoicing.creditMemos": "Full" }
+  );
   // The party decides which list the memo lives in, and what it is called.
   const typeLabel = memo.supplierId ? t`Supplier Credit` : t`Credit Memo`;
 

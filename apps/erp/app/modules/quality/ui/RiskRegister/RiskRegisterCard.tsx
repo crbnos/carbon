@@ -251,7 +251,7 @@ function RiskRegisterCardItem({
             size="sm"
             onClick={() => handleEdit(risk)}
           />
-          {permissions.can("delete", "quality") && (
+          {permissions.has({ "quality.risks": "Full" }) && (
             <IconButton
               aria-label={t`Delete`}
               icon={<LuTrash2 className="h-4 w-4" />}

@@ -23,7 +23,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "inventory"
+    "inventory.inventoryCount": "View"
   });
 
   const url = new URL(request.url);

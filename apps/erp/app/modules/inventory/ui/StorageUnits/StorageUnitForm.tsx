@@ -69,8 +69,8 @@ const StorageUnitForm = ({
   const permissions = usePermissions();
   const isEditing = !!initialValues?.id;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has({ "inventory.storageUnits": "Edit" })
+    : !permissions.has({ "inventory.storageUnits": "Create" });
 
   // Phones, edit only: a full-height sheet with Save in its header.
   const { isPhone } = useViewport();

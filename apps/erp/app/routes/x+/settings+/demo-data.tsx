@@ -38,7 +38,7 @@ export const handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    update: "settings"
+    "settings.demoData": "Edit"
   });
 
   const run = await getCompanyTemplateRun(client, companyId);
@@ -57,7 +57,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "settings"
+    "settings.demoData": "Edit"
   });
 
   const formData = await request.formData();

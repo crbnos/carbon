@@ -17,7 +17,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const locationId = url.searchParams.get("location");
 
   const { companyId, userId } = await authorize(request, {
-    update: "production"
+    "production.priorities": "Edit"
   });
 
   if (!locationId) {

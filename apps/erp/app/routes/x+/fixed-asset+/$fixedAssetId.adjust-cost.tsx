@@ -18,7 +18,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "accounting"
+    "accounting.assets": "View"
   });
 
   const { fixedAssetId } = params;
@@ -73,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   // Recosting an asset puts a number of the user's own on the books.
   const { client, companyId, userId } = await authorize(request, {
-    update: "accounting"
+    "accounting.assets": "Edit"
   });
 
   const { fixedAssetId } = params;

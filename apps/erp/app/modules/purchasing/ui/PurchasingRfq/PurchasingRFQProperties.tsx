@@ -155,7 +155,7 @@ const PurchasingRFQProperties = () => {
       : routeData?.rfqSummary?.assignee;
   const permissions = usePermissions();
 
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.rfqs": "Edit" });
   const isLocked = isRfqLocked(routeData?.rfqSummary?.status);
   const isDisabled =
     !canUpdate || !isRfqEditable(routeData?.rfqSummary?.status) || isLocked;

@@ -122,7 +122,7 @@ const SalesOrderProperties = () => {
       ? optimisticAssignment
       : routeData?.salesOrder?.assignee;
 
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.salesOrders": "Edit" });
   const isLocked = isSalesOrderLocked(routeData?.salesOrder?.status);
   const isDisabled = !canUpdate || isLocked;
 

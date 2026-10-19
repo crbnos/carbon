@@ -58,7 +58,7 @@ import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId, api } = await authorize(request, {
-    view: "sales"
+    "sales.quotes": "View"
   });
 
   const { quoteId, lineId } = params;
@@ -336,7 +336,7 @@ export default function QuoteLine() {
             {(model) => (
               <CadModel
                 key={`cad:${model?.itemId}`}
-                isReadOnly={!permissions.can("update", "sales")}
+                isReadOnly={!permissions.has({ "sales.quotes": "Edit" })}
                 metadata={{
                   quoteLineId: lineId ?? undefined,
                   itemId: model?.itemId ?? undefined
@@ -351,7 +351,7 @@ export default function QuoteLine() {
         </Suspense>
       ) : (
         <CadModel
-          isReadOnly={!permissions.can("update", "sales")}
+          isReadOnly={!permissions.has({ "sales.quotes": "Edit" })}
           metadata={{
             quoteLineId: line.id ?? undefined,
             itemId: line.itemId ?? undefined

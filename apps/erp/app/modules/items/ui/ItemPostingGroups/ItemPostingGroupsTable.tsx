@@ -65,7 +65,7 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "parts")}
+            disabled={!permissions.has({ "parts.itemGroups": "Edit" })}
             onClick={() => {
               navigate(
                 `${path.to.itemPostingGroup(row.id)}?${params.toString()}`
@@ -78,7 +78,7 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "parts")}
+            disabled={!permissions.has({ "parts.itemGroups": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deleteItemPostingGroup(row.id)}?${params.toString()}`
@@ -106,7 +106,7 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
         }
       ]}
       primaryAction={
-        permissions.can("create", "parts") && (
+        permissions.has({ "parts.itemGroups": "Create" }) && (
           <New
             label={t`Group`}
             to={`${path.to.newItemPostingGroup}?${params.toString()}`}

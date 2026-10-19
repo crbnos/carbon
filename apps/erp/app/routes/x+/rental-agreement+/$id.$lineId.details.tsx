@@ -29,7 +29,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "sales"
+    "sales.rentalAgreements": "View"
   });
 
   const { id, lineId } = params;
@@ -81,7 +81,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "sales"
+    "sales.rentalAgreements": "Edit"
   });
 
   const { id, lineId } = params;

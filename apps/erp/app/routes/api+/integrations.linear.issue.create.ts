@@ -18,7 +18,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const { companyId, client } = await authorize(request, {});
+  const { companyId, client } = await authorize(request);
 
   const url = new URL(request.url);
 

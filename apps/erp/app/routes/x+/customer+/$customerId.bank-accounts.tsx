@@ -12,9 +12,7 @@ import CustomerBankAccounts from "~/modules/sales/ui/Customer/CustomerBankAccoun
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting"
-  });
+  const { api } = await authorize(request, { "sales.customers": "View" });
 
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");

@@ -9,11 +9,14 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { insertDocumentExtraction } from "~/modules/documents/documents.service";
 
-// Each document type must be gated by the permission for the module that owns it,
+// Each document type must be gated by the page that owns it,
 // and paired with the source document the client claims to be extracting.
 const DOCUMENT_TYPES = {
-  salesRfq: { module: "sales", sourceDocument: "Request for Quote" },
-  purchaseInvoice: { module: "purchasing", sourceDocument: "Purchase Invoice" }
+  salesRfq: { page: "sales.rfqs", sourceDocument: "Request for Quote" },
+  purchaseInvoice: {
+    page: "invoicing.purchaseInvoices",
+    sourceDocument: "Purchase Invoice"
+  }
 } as const;
 
 type DocumentType = keyof typeof DOCUMENT_TYPES;
@@ -37,10 +40,10 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid document type" }, { status: 400 });
   }
 
-  // Gate on the module that owns this document type — an RFQ is a sales document,
-  // an invoice is a purchasing document.
+  // Gate on the page that owns this document type: Sales RFQs or Purchase
+  // Invoices.
   const { client, companyId, userId } = await authorize(request, {
-    view: documentConfig.module
+    [documentConfig.page]: "View"
   });
 
   const result = await insertDocumentExtraction(client, {

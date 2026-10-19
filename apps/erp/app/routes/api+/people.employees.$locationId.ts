@@ -10,7 +10,7 @@ import { data } from "react-router";
 import { getLocationEmployees } from "~/modules/production/production.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
   const { locationId } = params;
 
   if (!locationId)

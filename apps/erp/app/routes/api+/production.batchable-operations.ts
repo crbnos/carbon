@@ -44,10 +44,11 @@ export type HiddenOps = {
 // queue" helper on the WC picker) and hidden (a per-reason breakdown of the ops
 // on this process the RPC excluded).
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "production",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "production.batches": "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
   const locationId = url.searchParams.get("location");

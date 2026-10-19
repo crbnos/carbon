@@ -13,9 +13,7 @@ export const meta: MetaFunction = () => {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    view: "people"
-  });
+  await authorize(request, { "people.employees": "View" });
 
   return null;
 }

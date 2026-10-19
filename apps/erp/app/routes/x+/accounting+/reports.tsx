@@ -62,10 +62,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, userId, api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { companyId, userId, api } = await authorize(
+    request,
+    { "accounting.reporting": "View" },
+    { role: "employee" }
+  );
 
   const [pins, savedViews] = await Promise.all([
     api.accounting.getReportPins({}),
@@ -81,10 +82,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    { "accounting.reporting": "View" },
+    { role: "employee" }
+  );
 
   const validation = await validator(reportPinValidator).validate(
     await request.formData()

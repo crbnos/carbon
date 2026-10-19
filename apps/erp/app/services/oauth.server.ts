@@ -5,6 +5,7 @@
 // OAuth 2.0 authorization-server rules shared by `/register` and `/authorize`.
 
 import type { Permission } from "@carbon/auth";
+import { holdsGate } from "@carbon/database/access";
 
 // The only scope the MCP resource advertises (`/.well-known/oauth-protected-resource`).
 // A token carries no permissions of its own: every MCP call is gated on the
@@ -74,7 +75,7 @@ export function supportedScope(scope: string | null | undefined) {
 
 /**
  * Whether a user may authorize a connector for `companyId`: an employee there
- * holding `settings_update` in THAT company. The token acts in the company it
+ * with API Keys at Edit in THAT company. The token acts in the company it
  * names, so the check cannot be the session's active company.
  */
 export function canAuthorizeForCompany(
@@ -83,7 +84,7 @@ export function canAuthorizeForCompany(
 ): boolean {
   return (
     membership.role === "employee" &&
-    (permissions.settings?.update.includes(membership.companyId) ?? false)
+    holdsGate(permissions, { "settings.apiKeys": "Edit" }, membership.companyId)
   );
 }
 

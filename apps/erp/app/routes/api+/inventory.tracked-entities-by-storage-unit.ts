@@ -7,7 +7,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
 
   const url = new URL(request.url);
   const itemId = url.searchParams.get("itemId");

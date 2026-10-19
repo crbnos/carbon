@@ -19,7 +19,7 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client } = await authorize(request, {
-    delete: "sales"
+    "purchasing.supplierQuotes": "Full"
   });
 
   const { id, lineId } = params;
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw new Error("Could not find supplierQuoteLineId");
 
   const { client: viewClient } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.supplierQuotes": "View"
   });
   const quote = await getSupplierQuote(viewClient, id);
   await requireUnlocked({

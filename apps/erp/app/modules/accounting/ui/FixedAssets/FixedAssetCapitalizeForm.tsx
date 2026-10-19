@@ -68,7 +68,7 @@ const FixedAssetCapitalizeForm = ({
   // here instead.
   const hasNoCost = cost !== null && cost <= 0;
   // Entering a cost is recosting, which takes accounting update.
-  const canEnterCost = permissions.can("update", "accounting");
+  const canEnterCost = permissions.has({ "accounting.assets": "Edit" });
 
   return (
     <ModalDrawerProvider type="modal">
@@ -172,7 +172,7 @@ const FixedAssetCapitalizeForm = ({
               <HStack>
                 <Submit
                   isDisabled={
-                    !permissions.can("create", "accounting") ||
+                    !permissions.has({ "accounting.assets": "Create" }) ||
                     (hasNoCost && !canEnterCost)
                   }
                 >

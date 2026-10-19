@@ -14,7 +14,7 @@ import { upsertAssemblyUnit } from "~/modules/production/production.service";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "production"
+    "production.assemblies": "Create"
   });
 
   const validation = await validator(assemblyUnitValidator).validate(

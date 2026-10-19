@@ -22,14 +22,14 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "resources"
+    "resources.dispatches": "Edit"
   });
 
   const { dispatchId } = params;
   if (!dispatchId) throw new Error("dispatchId not found");
 
   const { client: viewClient } = await authorize(request, {
-    view: "resources"
+    "resources.dispatches": "View"
   });
   const dispatch = await viewClient
     .from("maintenanceDispatch")

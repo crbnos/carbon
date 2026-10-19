@@ -27,7 +27,7 @@ export const handle: Handle = {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "parts"
+    "parts.tools": "Create"
   });
 
   const formData = await request.formData();

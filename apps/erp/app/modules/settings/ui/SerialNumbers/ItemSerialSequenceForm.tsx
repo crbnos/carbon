@@ -70,8 +70,8 @@ const ItemSerialSequenceForm = ({
   };
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "settings")
-    : !permissions.can("create", "settings");
+    ? !permissions.has({ "settings.serialNumbers": "Edit" })
+    : !permissions.has({ "settings.serialNumbers": "Create" });
 
   return (
     <Drawer

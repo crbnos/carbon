@@ -37,7 +37,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.supplierQuotes": "View"
   });
 
   const { id } = params;
@@ -60,14 +60,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "purchasing"
+    "purchasing.supplierQuotes": "Edit"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const { client: viewClient } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.supplierQuotes": "View"
   });
   const quote = await getSupplierQuote(viewClient, id);
   await requireUnlocked({

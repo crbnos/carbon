@@ -105,7 +105,9 @@ const InventoryCountForm = ({
             <ModalDrawerFooter>
               <HStack>
                 <Submit
-                  isDisabled={!permissions.can("create", "inventory")}
+                  isDisabled={
+                    !permissions.has({ "inventory.inventoryCount": "Create" })
+                  }
                   isLoading={fetcher.state !== "idle"}
                 >
                   {t`Create & Snapshot`}

@@ -11,7 +11,7 @@ import {
 } from "~/modules/shared/shared.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await authorize(request, {});
+  const { client } = await authorize(request);
   // Only changes with the database's tzdata.
   return keptForADay(await getCachedTimezoneNames(client));
 }

@@ -49,8 +49,7 @@ const ITEM_COLUMNS =
 /** Plan a part push without writing; the apply makes no Onshape call. */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await authorizePanel(request, {
-    create: "parts",
-    update: "parts"
+    "parts.parts": "Edit"
   });
 
   const parsed = payloadSchema.safeParse(

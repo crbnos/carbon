@@ -19,7 +19,7 @@ export const messagingNotifySchema = z.discriminatedUnion("type", [
 ]);
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {});
+  const { client, companyId, userId } = await authorize(request);
 
   const payload = messagingNotifySchema.safeParse(await request.json());
 

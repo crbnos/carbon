@@ -14,7 +14,7 @@ import { operationParameterValidator } from "~/modules/shared/shared.models";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "parts"
+    "sales.quotes": "Create"
   });
 
   const formData = await request.formData();

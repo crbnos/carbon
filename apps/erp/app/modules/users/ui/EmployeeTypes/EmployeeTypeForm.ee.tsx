@@ -53,8 +53,8 @@ const EmployeeTypeForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !userPermissions.can("update", "users")
-    : !userPermissions.can("create", "users");
+    ? !userPermissions.has({ "users.employeeTypes": "Edit" })
+    : !userPermissions.has({ "users.employeeTypes": "Create" });
 
   return (
     <Modal

@@ -15,13 +15,14 @@ export async function action({ request }: ActionFunctionArgs) {
   // generateEliminationEntries writes to the elimination entity's ledger — a
   // synthetic company the user is not an employee of — so it must run with a
   // service-role client that bypasses RLS. Access is verified here first
-  // (create: "accounting"); the RPC re-checks group membership from userId. The
+  // (Intercompany at Create); the RPC re-checks group membership from userId. The
   // RPC stays SECURITY INVOKER so a direct client.rpc call from a normal user
   // runs under their own RLS and cannot post eliminations for a foreign group.
-  const { client, companyGroupId, userId } = await authorize(request, {
-    create: "accounting",
-    bypassRls: true
-  });
+  const { client, companyGroupId, userId } = await authorize(
+    request,
+    { "accounting.intercompany": "Create" },
+    { bypassRls: true }
+  );
 
   // Regenerate reverses the group's existing eliminations (reversing entries,
   // never deletes) and re-derives them from current capture + on-hand, so a

@@ -91,8 +91,8 @@ const GaugeCalibrationRecordForm = ({
   const location = useLocation();
   const isEditing = !location.pathname.includes("new");
   const isDisabled = isEditing
-    ? !permissions.can("update", "quality")
-    : !permissions.can("create", "quality");
+    ? !permissions.has({ "quality.records": "Edit" })
+    : !permissions.has({ "quality.records": "Create" });
 
   const routeData = useRouteData<{
     companySettings: Database["public"]["Tables"]["companySettings"]["Row"];
@@ -376,7 +376,7 @@ const GaugeCalibrationRecordForm = ({
                   sourceDocument="Gauge Calibration Record"
                   sourceDocumentId={initialValues.id}
                   writeBucket="quality"
-                  writeBucketPermission="quality"
+                  writePage="quality.records"
                 />
               </VStack>
             </ModalDrawerBody>

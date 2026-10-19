@@ -62,7 +62,7 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "production")}
+            disabled={!permissions.has({ "production.scrapReasons": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deleteScrapReason(row.id)}?${params.toString()}`
@@ -90,7 +90,7 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
         }
       ]}
       primaryAction={
-        permissions.can("create", "production") && (
+        permissions.has({ "production.scrapReasons": "Create" }) && (
           <New
             label={t`Scrap Reason`}
             to={`${path.to.newScrapReason}?${params.toString()}`}

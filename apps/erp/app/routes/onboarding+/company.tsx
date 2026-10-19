@@ -41,7 +41,7 @@ import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
 
   const company = await getCompany(client, companyId ?? 1);
   const draft = await getOnboardingDraft(request);
@@ -58,7 +58,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  await authorize(request, {});
+  await authorize(request);
 
   const formData = await request.formData();
 

@@ -80,7 +80,7 @@ const ContractInvoiceGrid = ({
   const contractId = contract.id!;
   const { currencyCode } = contract;
   const decimals = useCurrencyDecimals(currencyCode);
-  const canEdit = permissions.can("update", "sales");
+  const canEdit = permissions.has({ "sales.serviceContracts": "Edit" });
   const action = path.to.contractSchedule(contractId);
 
   // Every invoice with its rows, persisted or planned live.

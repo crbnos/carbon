@@ -4,6 +4,7 @@
 
 import { dataOrThrow } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
+import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import type { LoaderFunctionArgs } from "react-router";
 import type { UnreleasedChangeOrderItem } from "~/modules/items/items.service";
 import {
@@ -53,14 +54,6 @@ const typeConfig = {
 } as const;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "parts",
-    bypassRls: true
-  });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
   const url = new URL(request.url);
   const typeParam = url.searchParams.get("type");
   // Own-key check: `in` also accepts inherited keys, so e.g. ?type=toString
@@ -69,6 +62,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     typeParam && Object.prototype.hasOwnProperty.call(typeConfig, typeParam)
       ? (typeParam as keyof typeof typeConfig)
       : "Part";
+
+  // The item's type picks its page.
+  const { client, companyId, api } = await authorize(
+    request,
+    { [ITEM_TYPE_PAGES[type]]: "View" },
+    { bypassRls: true }
+  );
+
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const { tagTable, getSummary } = typeConfig[type];
   const needsMakeMethods = type === "Part" || type === "Tool";

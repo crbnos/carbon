@@ -15,9 +15,7 @@ import ProcedureForm from "~/modules/production/ui/Procedures/ProcedureForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    create: "production"
-  });
+  await authorize(request, { "production.procedures": "Create" });
 
   return null;
 }
@@ -25,7 +23,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "production"
+    "production.procedures": "Create"
   });
   const formData = await request.formData();
   const validation = await validator(procedureValidator).validate(formData);

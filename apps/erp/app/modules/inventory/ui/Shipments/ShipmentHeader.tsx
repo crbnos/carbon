@@ -110,7 +110,7 @@ const ShipmentHeader = () => {
             <DropdownMenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
-                !permissions.can("delete", "inventory") ||
+                !permissions.has({ "inventory.shipments": "Full" }) ||
                 !permissions.is("employee")
               }
               destructive
@@ -136,7 +136,7 @@ const ShipmentHeader = () => {
               />
             )}
             {shipment.sourceDocument === "Sales Order" &&
-              permissions.can("view", "invoicing") && (
+              permissions.has({ "invoicing.salesInvoices": "View" }) && (
                 <InvoiceButton
                   shipment={shipment}
                   relatedItems={routeData?.relatedItems}
@@ -234,7 +234,7 @@ function InvoiceButton({
                 !isPosted ||
                 isVoided ||
                 isInvoicing ||
-                !permissions.can("create", "invoicing")
+                !permissions.has({ "invoicing.salesInvoices": "Create" })
               }
               isLoading={isInvoicing}
               onClick={createInvoice}

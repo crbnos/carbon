@@ -98,8 +98,8 @@ const WarehouseTransferLineForm = ({
   const isDisabled =
     isLocked ||
     (isEditing
-      ? !permissions.can("update", "inventory")
-      : !permissions.can("create", "inventory"));
+      ? !permissions.has({ "inventory.warehouseTransfers": "Edit" })
+      : !permissions.has({ "inventory.warehouseTransfers": "Create" }));
 
   const action = initialValues.id
     ? path.to.warehouseTransferLine(transferId, initialValues.id)

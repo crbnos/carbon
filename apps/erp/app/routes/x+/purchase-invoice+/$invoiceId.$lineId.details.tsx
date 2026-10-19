@@ -34,10 +34,11 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "invoicing",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "invoicing.purchaseInvoices": "View" },
+    { role: "employee" }
+  );
 
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");
@@ -63,7 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Check if PI is locked
   const { client: viewClient } = await authorize(request, {
-    view: "invoicing"
+    "invoicing.purchaseInvoices": "View"
   });
 
   const purchaseInvoice = await getPurchaseInvoice(viewClient, invoiceId);
@@ -85,7 +86,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const { client, userId } = await authorize(request, {
-    create: "invoicing"
+    "invoicing.purchaseInvoices": "Create"
   });
 
   const formData = await request.formData();

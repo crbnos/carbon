@@ -24,10 +24,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { "accounting.accountingPeriods": "View" },
+    { role: "employee" }
+  );
 
   const periods = await getAccountingPeriods(client, companyId);
   if (periods.error) {
@@ -54,7 +55,7 @@ export default function AccountingPeriodsRoute() {
         data={periods}
         count={count}
         primaryAction={
-          permissions.can("create", "accounting") ? (
+          permissions.has({ "accounting.accountingPeriods": "Create" }) ? (
             <Button
               leftIcon={<LuCalendarPlus />}
               variant="primary"

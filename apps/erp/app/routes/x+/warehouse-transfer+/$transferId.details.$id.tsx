@@ -32,7 +32,7 @@ const warehouseTransferLineActionValidator = z.discriminatedUnion("type", [
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await authorize(request, {
-    update: "inventory"
+    "inventory.warehouseTransfers": "Edit"
   });
   const { transferId, id } = params;
   if (!transferId) throw new Error("transferId not found");

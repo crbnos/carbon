@@ -81,8 +81,8 @@ const ProductionEventForm = ({
   );
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "production")
-    : !permissions.can("create", "production");
+    ? !permissions.has({ "production.jobs": "Edit" })
+    : !permissions.has({ "production.jobs": "Create" });
   return (
     <Drawer
       open

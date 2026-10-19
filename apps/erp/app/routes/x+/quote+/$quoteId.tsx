@@ -51,10 +51,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "sales",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "sales.quotes": "View" },
+    { bypassRls: true }
+  );
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");

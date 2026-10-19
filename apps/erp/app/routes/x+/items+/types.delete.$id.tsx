@@ -15,9 +15,7 @@ import { deleteMaterialType } from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.types": "View" });
   const { id } = params;
   if (!id) throw notFound("id not found");
 
@@ -36,9 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, {
-    delete: "parts"
-  });
+  const { client } = await authorize(request, { "parts.types": "Full" });
 
   const { id } = params;
   if (!id) {

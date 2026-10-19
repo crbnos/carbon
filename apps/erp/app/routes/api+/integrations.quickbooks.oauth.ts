@@ -32,9 +32,7 @@ export const config = {
 const logger = getLogger("erp", "quickbooks", "oauth");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const caller = await authorize(request, {
-    update: "settings"
-  });
+  const caller = await authorize(request, { "settings.integrations": "Edit" });
   const { client, userId, companyId } = caller;
 
   const url = new URL(request.url);

@@ -36,14 +36,14 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "resources"
+    "resources.dispatches": "Edit"
   });
 
   const { dispatchId } = params;
   if (!dispatchId) throw new Error("dispatchId not found");
 
   const { client: viewClient } = await authorize(request, {
-    view: "resources"
+    "resources.dispatches": "View"
   });
   const dispatch = await getMaintenanceDispatch(viewClient, dispatchId);
   await requireUnlocked({
@@ -112,7 +112,7 @@ export default function MaintenanceDispatchCommentsRoute() {
         </h2>
       </HStack>
 
-      {permissions.can("update", "resources") && (
+      {permissions.has({ "resources.dispatches": "Edit" }) && (
         <Card>
           <CardContent className="py-4">
             <VStack spacing={2}>

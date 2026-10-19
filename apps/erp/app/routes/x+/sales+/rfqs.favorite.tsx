@@ -12,9 +12,7 @@ import { updateSalesRFQFavorite } from "~/modules/sales/sales.service";
 import { favoriteSchema } from "~/types/validators";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await authorize(request, {
-    view: "sales"
-  });
+  const { client, userId } = await authorize(request, { "sales.rfqs": "View" });
 
   const validation = await validator(favoriteSchema).validate(
     await request.formData()

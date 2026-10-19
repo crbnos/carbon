@@ -16,13 +16,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const enabled = formData.get("consoleMode") === "true";
 
   // Entering console mode turns this terminal into one every pinned operator
-  // acts through, so it takes `settings_update` (checked against the SESSION
+  // acts through, so it takes Settings → People at Edit (checked against the SESSION
   // user, never a pinned operator). Leaving it only drops back to the session
   // user's own identity and stays open to anyone, so a terminal is never stuck
   // in console mode.
   const { client, companyId } = await authorize(
     request,
-    enabled ? { update: "settings" } : {}
+    enabled ? { "settings.people": "Edit" } : {}
   );
 
   // Only allow enabling if the company has console mode turned on AND is

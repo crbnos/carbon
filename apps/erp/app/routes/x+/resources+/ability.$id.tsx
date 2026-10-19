@@ -20,10 +20,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "resources.abilities": "View" },
+    { role: "employee" }
+  );
 
   const { id } = params;
   if (!id) throw notFound("Invalid ability id");

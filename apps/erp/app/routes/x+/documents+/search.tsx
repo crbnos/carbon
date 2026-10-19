@@ -23,7 +23,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId, userId, api } = await authorize(request, {
-    view: "documents"
+    documents: "View"
   });
 
   const url = new URL(request.url);

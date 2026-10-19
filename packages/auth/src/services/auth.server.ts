@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { holds } from "@carbon/database/access";
+import { type Gate, holdsGate } from "@carbon/database/access";
 import {
   ApiKeyNotFoundError,
   checkApiKeyRateLimit
@@ -203,22 +203,24 @@ function companyRole(
     : null;
 }
 
+/** How a gate authenticates, beside the pages it needs. */
+export type GateOptions = {
+  /** The caller's role in the company, matched exactly. */
+  role?: "employee" | "customer" | "supplier";
+  /** A service-role client for an employee, instead of the user's RLS client. */
+  bypassRls?: boolean;
+  /**
+   * Also admit customer and supplier portal accounts. Only for routes that
+   * act on the signed-in user's own identity (onboarding); everything else
+   * holds company data they must not reach.
+   */
+  allowPortalAccounts?: boolean;
+};
+
 async function requirePermissions(
   request: Request,
-  requiredPermissions: {
-    view?: string | string[];
-    create?: string | string[];
-    update?: string | string[];
-    delete?: string | string[];
-    role?: string;
-    bypassRls?: boolean;
-    /**
-     * Also admit customer and supplier portal accounts. Only for routes that
-     * act on the signed-in user's own identity (onboarding); everything else
-     * holds company data they must not reach.
-     */
-    allowPortalAccounts?: boolean;
-  }
+  gate: Gate,
+  options: GateOptions
 ): Promise<{
   client: SupabaseClient<Database>;
   companyId: string;
@@ -289,26 +291,9 @@ async function requirePermissions(
         });
       }
 
-      // Check the key's grants against required permissions
+      // Check the key's grants against the gate. A key has no role.
       const scopes = apiKeyData.permissions ?? {};
-      const scopeCheckPassed = Object.entries(requiredPermissions).every(
-        ([action, permission]) => {
-          if (
-            action === "bypassRls" ||
-            action === "role" ||
-            action === "allowPortalAccounts"
-          )
-            return true;
-          if (typeof permission === "string" || Array.isArray(permission)) {
-            return (
-              Array.isArray(permission) ? permission : [permission]
-            ).every((p) => holds(scopes, `${p}_${action}`, companyId));
-          }
-          return false;
-        }
-      );
-
-      if (!scopeCheckPassed) {
+      if (!holdsGate(scopes, gate, companyId)) {
         throw new Response("API key lacks required permissions", {
           status: 403
         });
@@ -369,7 +354,7 @@ async function requirePermissions(
   // requirePermissions itself, so a redirect to it would loop.
   if (
     (myClaims.role === "customer" || myClaims.role === "supplier") &&
-    !requiredPermissions.allowPortalAccounts
+    !options.allowPortalAccounts
   ) {
     logAuthEvent("permission_denied", {
       userId,
@@ -381,47 +366,9 @@ async function requirePermissions(
     throw new Response("Forbidden", { status: 403 });
   }
 
-  // early exit if no requiredPermissions are required
-  if (Object.keys(requiredPermissions).length === 0) {
-    return {
-      client:
-        requiredPermissions.bypassRls && myClaims.role === "employee"
-          ? serviceRoleForRequest()
-          : carbonForRequest(accessToken, request),
-      companyId,
-      companyGroupId,
-      email,
-      userId: await getEffectiveUser(request, companyId, userId, consoleMode),
-      sessionUserId: userId,
-      consoleMode,
-      caller: "session",
-      permissions: myClaims.permissions,
-      role: companyRole(myClaims.role)
-    };
-  }
-
-  const hasRequiredPermissions = Object.entries(requiredPermissions).every(
-    ([action, permission]) => {
-      if (action === "bypassRls" || action === "allowPortalAccounts")
-        return true;
-      if (typeof permission === "string") {
-        if (action === "role") {
-          return myClaims.role === permission;
-        }
-        return holds(
-          myClaims.permissions,
-          `${permission}_${action}`,
-          companyId
-        );
-      } else if (Array.isArray(permission)) {
-        return permission.every((p) =>
-          holds(myClaims.permissions, `${p}_${action}`, companyId)
-        );
-      } else {
-        return false;
-      }
-    }
-  );
+  const hasRequiredPermissions =
+    (!options.role || myClaims.role === options.role) &&
+    holdsGate(myClaims.permissions, gate, companyId);
 
   if (!hasRequiredPermissions) {
     logAuthEvent("permission_denied", {
@@ -429,7 +376,7 @@ async function requirePermissions(
       actor: email,
       companyId,
       ip: getClientIp(request) ?? undefined,
-      reason: JSON.stringify(requiredPermissions)
+      reason: JSON.stringify({ gate, ...options })
     });
     if (myClaims.role === null) {
       throw redirect("/", await destroyAuthSession(request));
@@ -438,14 +385,14 @@ async function requirePermissions(
       path.to.authenticatedRoot,
       await flash(
         request,
-        error({ myClaims: myClaims, requiredPermissions }, "Access Denied")
+        error({ myClaims: myClaims, gate, role: options.role }, "Access Denied")
       )
     );
   }
 
   return {
     client:
-      requiredPermissions.bypassRls && myClaims.role === "employee"
+      options.bypassRls && myClaims.role === "employee"
         ? serviceRoleForRequest()
         : carbonForRequest(accessToken, request),
     companyId,
@@ -460,8 +407,12 @@ async function requirePermissions(
   };
 }
 
-/** What a gate asks for: `{ view: "sales" }`, plus `role` and `bypassRls`. */
-export type Gate = Parameters<typeof requirePermissions>[1];
+/**
+ * The pages a route needs and the lowest level on each:
+ * `{ "inventory.receipts": "Edit" }`. A list passes when any one gate does
+ * (`anyOf`, `@carbon/database/access`).
+ */
+export type { Gate };
 
 /** The caller `requirePermissions` authenticated. */
 export type Caller = Awaited<ReturnType<typeof requirePermissions>>;
@@ -504,20 +455,26 @@ export function authorize<A extends CallerAuth>(
 ): Promise<Authorized<A>>;
 /**
  * The caller of this request, refused unless they hold `gate`, with the
- * operations bound to them: `const { api, companyId } = await authorize(request, { view: "sales" })`.
+ * operations bound to them:
+ * `const { api, companyId } = await authorize(request, { "sales.customers": "View" })`.
  * With no gate, any employee or API key of the company passes; each call on
- * `api` is still checked against its own permission.
+ * `api` is still checked against its own permission. `options` sets the role,
+ * the service-role client and portal access.
  */
 export function authorize(
   request: Request,
-  gate?: Gate
+  gate?: Gate,
+  options?: GateOptions
 ): Promise<Authorized<Caller>>;
 export async function authorize(
   from: Request | CallerAuth,
-  gate: Gate = {}
+  gate: Gate = {},
+  options: GateOptions = {}
 ): Promise<Authorized<CallerAuth>> {
   const auth =
-    from instanceof Request ? await requirePermissions(from, gate) : from;
+    from instanceof Request
+      ? await requirePermissions(from, gate, options)
+      : from;
   let api: unknown;
   // Bound on first read: most loaders never call a service function.
   return Object.defineProperty({ ...auth }, "api", {

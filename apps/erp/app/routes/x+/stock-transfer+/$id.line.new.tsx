@@ -14,9 +14,7 @@ import StockTransferLineForm from "~/modules/inventory/ui/StockTransfers/StockTr
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    create: "inventory"
-  });
+  await authorize(request, { "inventory.stockTransfers": "Create" });
 
   return null;
 }

@@ -51,7 +51,7 @@ async function getPlannedMergeLots(
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    update: "production"
+    "production.batches": "Edit"
   });
   const { batchId } = params;
   if (!batchId) throw new Error("Batch ID is required");

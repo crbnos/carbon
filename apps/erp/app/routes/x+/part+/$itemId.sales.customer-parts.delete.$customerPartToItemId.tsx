@@ -18,7 +18,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    delete: "parts"
+    "parts.parts": "Full"
   });
   const { itemId, customerPartToItemId } = params;
   if (!itemId) throw notFound("itemId not found");
@@ -44,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    delete: "parts"
+    "parts.parts": "Full"
   });
 
   const { itemId, customerPartToItemId } = params;

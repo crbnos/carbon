@@ -511,7 +511,7 @@ const DocumentsTable = memo(
           data={rows}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
-            permissions.can("create", "documents") &&
+            permissions.has({ documents: "Create" }) &&
             // Phones: uploading neither pins a file nor fills the trash.
             !(isPhone && (filter === "starred" || filter === "trash")) && (
               <DocumentCreateForm />

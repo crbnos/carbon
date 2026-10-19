@@ -28,7 +28,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "parts"
+    "parts.tools": "View"
   });
 
   const { itemId, makeMethodId } = params;
@@ -171,7 +171,7 @@ export default function ToolMakeMethodPage() {
           {(model) => (
             <CadModel
               key={`cad:${model.itemId}`}
-              isReadOnly={!permissions.can("update", "parts")}
+              isReadOnly={!permissions.has({ "parts.tools": "Edit" })}
               metadata={{
                 itemId: model?.itemId ?? undefined
               }}

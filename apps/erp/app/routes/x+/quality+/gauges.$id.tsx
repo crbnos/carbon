@@ -33,9 +33,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await authorize(request, {
-    view: "quality"
-  });
+  const { companyId } = await authorize(request, { "quality.gauges": "View" });
 
   const serviceRole = await getCarbonServiceRole();
 
@@ -64,7 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "quality"
+    "quality.gauges": "Edit"
   });
 
   const { id } = params;

@@ -31,7 +31,7 @@ export const handle: Handle = {
  *  customer's currency and suggested type already filled in. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    create: "sales"
+    "sales.serviceContracts": "Create"
   });
   const customerId = new URL(request.url).searchParams.get("customerId");
   if (!customerId) return { customerId: null, currencyCode: null, type: null };

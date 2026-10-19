@@ -167,7 +167,7 @@ const RentalAgreementsTable = memo(
       return (row: RentalAgreementListItem) => (
         <>
           <MenuItem
-            disabled={!permissions.can("view", "sales")}
+            disabled={!permissions.has({ "sales.rentalAgreements": "View" })}
             onClick={() => {
               navigate(path.to.rentalAgreement(row.id!));
             }}
@@ -177,7 +177,8 @@ const RentalAgreementsTable = memo(
           </MenuItem>
           <MenuItem
             disabled={
-              !permissions.can("delete", "sales") || row.status !== "Draft"
+              !permissions.has({ "sales.rentalAgreements": "Full" }) ||
+              row.status !== "Draft"
             }
             destructive
             onClick={() => {
@@ -202,7 +203,7 @@ const RentalAgreementsTable = memo(
             left: ["rentalAgreementId"]
           }}
           primaryAction={
-            permissions.can("create", "sales") && (
+            permissions.has({ "sales.rentalAgreements": "Create" }) && (
               <New
                 label={t`Rental Agreement`}
                 to={path.to.newRentalAgreement}

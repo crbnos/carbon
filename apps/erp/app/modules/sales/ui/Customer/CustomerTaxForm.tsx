@@ -49,7 +49,7 @@ const CustomerTaxForm = ({ initialValues }: CustomerTaxFormProps) => {
   );
   const [taxExempt, setTaxExempt] = useState(initialValues.taxExempt ?? false);
 
-  const isDisabled = !permissions.can("update", "sales");
+  const isDisabled = !permissions.has({ "sales.customers": "Edit" });
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {

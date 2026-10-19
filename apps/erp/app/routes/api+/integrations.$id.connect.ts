@@ -30,7 +30,7 @@ export const config = {
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId, client } = await authorize(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
 
   const integrationId = params.id;

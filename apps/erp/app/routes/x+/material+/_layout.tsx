@@ -22,9 +22,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.materials": "View" });
 
   const [unitOfMeasures, locations, forms, substances] = await Promise.all([
     api.items.getUnitOfMeasuresList({}),

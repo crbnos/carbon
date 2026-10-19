@@ -22,10 +22,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyGroupId, api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyGroupId, api } = await authorize(
+    request,
+    { "accounting.exchangeRates": "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

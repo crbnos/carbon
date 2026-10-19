@@ -12,10 +12,7 @@ export const config = {
 
 /** Apply a reviewed part plan: create or adopt items, link them, queue model exports. */
 export async function action({ request }: ActionFunctionArgs) {
-  const { api } = await authorizePanel(request, {
-    create: "parts",
-    update: "parts"
-  });
+  const { api } = await authorizePanel(request, { "parts.parts": "Edit" });
   return panelResponse(
     await api.settings.pushOnshapePart(await request.json().catch(() => null))
   );

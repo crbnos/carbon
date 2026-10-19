@@ -55,7 +55,7 @@ const FixedAssetNotes = ({
         <CardTitle>Notes</CardTitle>
       </CardHeader>
       <CardContent>
-        {permissions.can("update", "accounting") ? (
+        {permissions.has({ "accounting.assets": "Edit" }) ? (
           <Editor
             initialValue={(notes ?? {}) as JSONContent}
             onUpload={onUploadImage}

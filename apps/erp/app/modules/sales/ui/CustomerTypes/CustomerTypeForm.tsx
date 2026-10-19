@@ -58,8 +58,8 @@ const CustomerTypeForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.types": "Edit" })
+    : !permissions.has({ "sales.types": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

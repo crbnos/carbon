@@ -75,10 +75,11 @@ export const handle: Handle = {
 type ViewType = "week" | "month";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId, api } = await authorize(request, {
-    view: "production",
-    bypassRls: true
-  });
+  const { client, companyId, userId, api } = await authorize(
+    request,
+    { "production.priorities": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

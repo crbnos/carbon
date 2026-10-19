@@ -101,10 +101,15 @@ describe("supportedScope", () => {
 
 describe("canAuthorizeForCompany", () => {
   const settingsAdminIn = (...companyIds: string[]) => ({
-    settings: { view: companyIds, create: [], update: companyIds, delete: [] }
+    "settings.apiKeys": {
+      view: companyIds,
+      create: [],
+      update: companyIds,
+      delete: []
+    }
   });
 
-  it("allows an employee holding settings_update in the selected company", () => {
+  it("allows an employee with API Keys at Edit in the selected company", () => {
     expect(
       canAuthorizeForCompany(
         { companyId: "c1", role: "employee" },
@@ -115,7 +120,7 @@ describe("canAuthorizeForCompany", () => {
 
   // The session's active company is not the token's company: an admin of one
   // company could otherwise mint a connector for another where they are not.
-  it("refuses when settings_update is held only in another company", () => {
+  it("refuses when API Keys Edit is held only in another company", () => {
     expect(
       canAuthorizeForCompany(
         { companyId: "c2", role: "employee" },

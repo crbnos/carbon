@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
+import { anyOfRule } from "@carbon/api/permissions";
+import {
+  CarbonError,
+  defineServiceFn,
+  refusalOf
+} from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
@@ -82,7 +87,7 @@ export const setItemTrackingType = defineServiceFn({
     ids: itemIdsInput,
     itemTrackingType: z.enum(itemTrackingTypes)
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "ids" }),
 
   async run(ctx, { ids, itemTrackingType }) {
     const companyId = ctx.company.id;
@@ -129,7 +134,7 @@ export const setItemFields = defineServiceFn({
     mpn: z.string().optional(),
     unitOfMeasureCode: z.string().optional()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "ids" }),
 
   async run(ctx, { ids, ...fields }) {
     const update = await ctx.asCaller.supabase
@@ -183,7 +188,7 @@ export const setItemSourcing = defineServiceFn({
           "Set exactly one of replenishmentSystem, defaultMethodType or sourcingType"
       }
     ),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "ids" }),
 
   async run(
     ctx,
@@ -222,7 +227,7 @@ export const setItemSourcing = defineServiceFn({
  */
 export const setItemActive = defineServiceFn({
   input: z.object({ ids: itemIdsInput, active: z.boolean() }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "ids" }),
 
   async run(ctx, { ids, active }) {
     const companyId = ctx.company.id;
@@ -273,7 +278,7 @@ export const setItemPostingGroup = defineServiceFn({
     ids: itemIdsInput,
     itemPostingGroupId: z.string().nullable()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "ids" }),
 
   async run(ctx, { ids, itemPostingGroupId }) {
     const client = ctx.asCaller.supabase;
@@ -349,7 +354,7 @@ export const setItemReadableId = defineServiceFn({
     type: z.enum(["Part", "Consumable", "Material", "Tool"]),
     readableId: z.string().min(1)
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "id" }),
 
   async run(ctx, { id, type, readableId }) {
     const client = ctx.asCaller.supabase;
@@ -604,7 +609,7 @@ export const updateItemManufacturing = defineServiceFn({
   input: itemManufacturingValidator.safeExtend({
     customFields: customFieldsInput
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
 
   async run(ctx, { customFields, ...manufacturing }) {
     const update = await service.upsertItemManufacturing(
@@ -641,7 +646,7 @@ export const updateItemManufacturing = defineServiceFn({
  */
 export const updateItemPlanning = defineServiceFn({
   input: itemPlanningValidator.safeExtend({ customFields: customFieldsInput }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
 
   async run(ctx, { customFields, ...planning }) {
     const client = ctx.asCaller.supabase;
@@ -690,7 +695,7 @@ export const updateItemPlanning = defineServiceFn({
  */
 export const setItemSupersession = defineServiceFn({
   input: itemSupersessionValidator,
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
 
   async run(ctx, supersession) {
     const upsert = await service.upsertItemSupersession(ctx.asCaller.supabase, {
@@ -722,7 +727,7 @@ export const setItemSupersession = defineServiceFn({
  */
 export const addItemPredecessor = defineServiceFn({
   input: predecessorSupersessionValidator.safeExtend({ itemId: z.string() }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "predecessorItemId" }),
 
   async run(ctx, { itemId, predecessorItemId, ...supersession }) {
     const client = ctx.asCaller.supabase;
@@ -800,7 +805,7 @@ const supplierPartTaken =
  */
 export const createSupplierPart = defineServiceFn({
   input: supplierPartInput,
-  permission: { "parts.parts": "Create" },
+  permission: service.itemRule("Create", { id: "itemId" }),
 
   async run(ctx, { priceBreaks, customFields, ...supplierPart }) {
     const client = ctx.asCaller.supabase;
@@ -851,7 +856,11 @@ export const createSupplierPart = defineServiceFn({
  */
 export const updateSupplierPart = defineServiceFn({
   input: supplierPartInput.extend({ id: z.string() }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", {
+    id: "id",
+    from: "supplierPart",
+    path: [["itemId", "item"]]
+  }),
 
   async run(ctx, { id, priceBreaks, customFields, ...supplierPart }) {
     const companyId = ctx.company.id;
@@ -910,9 +919,22 @@ export const updateSupplierPart = defineServiceFn({
  */
 export const copyMethod = defineServiceFn({
   input: getMethodValidator,
-  permission: { "parts.parts": "Edit" },
+  // Each id is an item or a make method: the rows are checked in `run`.
+  permission: anyOfRule("item", "Edit"),
 
   async run(ctx, input) {
+    const refused =
+      (await refusalOf(
+        ctx,
+        service.itemOrMethodRule("Edit", "targetId", input.targetId),
+        input
+      )) ??
+      (await refusalOf(
+        ctx,
+        service.itemOrMethodRule("View", "sourceId", input.sourceId),
+        input
+      ));
+    if (refused) return refused;
     const companyId = ctx.company.id;
     const system = ctx.asSystem.supabase;
     // Copying overwrites the target's materials and operations.
@@ -952,7 +974,11 @@ export const copyMethod = defineServiceFn({
  */
 export const createMethodVersion = defineServiceFn({
   input: makeMethodVersionValidator,
-  permission: { "parts.parts": "Create" },
+  permission: service.itemRule("Create", {
+    id: "copyFromId",
+    from: "makeMethod",
+    path: [["itemId", "item"]]
+  }),
 
   async run(ctx, input) {
     const companyId = ctx.company.id;
@@ -1015,7 +1041,11 @@ export const syncOnshapeMethod = defineServiceFn({
     elementId: z.string(),
     rows: onShapeDataValidator
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", {
+    id: "makeMethodId",
+    from: "makeMethod",
+    path: [["itemId", "item"]]
+  }),
 
   async run(ctx, input) {
     const companyId = ctx.company.id;
@@ -1181,7 +1211,7 @@ export const deleteMethodOperations = defineServiceFn({
  */
 export const recalculateItemCost = defineServiceFn({
   input: z.object({ itemId: z.string() }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
 
   async run(ctx, { itemId }) {
     const client = ctx.asCaller.supabase;
@@ -1700,7 +1730,11 @@ export const decideChangeNoticeApproval = defineServiceFn({
  */
 export const activateMethodVersion = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", {
+    id: "id",
+    from: "makeMethod",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     const lock = await service.checkRevisionLocks(
       ctx.asSystem.supabase,
@@ -1762,8 +1796,15 @@ export const createRevision = defineServiceFn({
     revision: z.string(),
     active: z.boolean().optional()
   }),
-  permission: { "parts.parts": "Create" },
+  permission: anyOfRule("item", "Create"),
   async run(ctx, input) {
+    // The source item sits inside `item`: its type is checked here.
+    const refused = await refusalOf(
+      ctx,
+      service.itemRule("Create", { id: "id" }),
+      { id: input.item.id }
+    );
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.createRevision(
@@ -1782,7 +1823,11 @@ export const createRevision = defineServiceFn({
  */
 export const deleteConfigurationParameter = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", {
+    id: "id",
+    from: "configurationParameter",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1801,7 +1846,7 @@ export const deleteConfigurationParameter = defineServiceFn({
  */
 export const deleteConfigurationRule = defineServiceFn({
   input: z.looseObject({ field: z.string(), itemId: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1821,7 +1866,11 @@ export const deleteConfigurationRule = defineServiceFn({
  */
 export const deleteItemCustomerPart = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", {
+    id: "id",
+    from: "customerPartToItem",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1841,7 +1890,11 @@ export const deleteItemCustomerPart = defineServiceFn({
  */
 export const deleteSupplierPart = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", {
+    id: "id",
+    from: "supplierPart",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1861,7 +1914,11 @@ export const deleteSupplierPart = defineServiceFn({
  */
 export const deleteConfigurationParameterGroup = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", {
+    id: "id",
+    from: "configurationParameterGroup",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -1880,7 +1937,7 @@ export const deleteConfigurationParameterGroup = defineServiceFn({
  */
 export const deleteItem = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: service.itemRule("Full", { id: "id" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2253,7 +2310,7 @@ export const deleteUnitOfMeasure = defineServiceFn({
  */
 export const getConfigurationParameters = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return await utils.getConfigurationParameters(
       ctx.asCaller.supabase,
@@ -2270,7 +2327,7 @@ export const getConfigurationParameters = defineServiceFn({
  */
 export const getConfigurationRules = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return await service.getConfigurationRules(
       ctx.asCaller.supabase,
@@ -2352,7 +2409,7 @@ export const getItem = defineServiceFn({
  */
 export const getItemCost = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2372,7 +2429,7 @@ export const getItemCost = defineServiceFn({
  */
 export const getItemCostHistory = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2392,7 +2449,11 @@ export const getItemCostHistory = defineServiceFn({
  */
 export const getItemCustomerPart = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", {
+    id: "id",
+    from: "customerPartToItem",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2412,7 +2473,7 @@ export const getItemCustomerPart = defineServiceFn({
  */
 export const getItemCustomerParts = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2436,7 +2497,7 @@ export const getItemDemand = defineServiceFn({
     locationId: z.string(),
     periods: z.array(z.string())
   }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2459,7 +2520,7 @@ export const getDemandForecastSources = defineServiceFn({
     locationId: z.string(),
     periods: z.array(z.string())
   }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2478,7 +2539,7 @@ export const getDemandForecastSources = defineServiceFn({
  */
 export const getItemFiles = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return await service.getItemFiles(
       ctx.asCaller.supabase,
@@ -2561,7 +2622,7 @@ export const getItemPostingGroupsList = defineServiceFn({
  */
 export const getItemManufacturing = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "id" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2581,7 +2642,7 @@ export const getItemManufacturing = defineServiceFn({
  */
 export const getItemPlanning = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2602,7 +2663,7 @@ export const getItemPlanning = defineServiceFn({
  */
 export const getItemQuantities = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2623,7 +2684,7 @@ export const getItemQuantities = defineServiceFn({
  */
 export const getItemStockQuantitiesByLocation = defineServiceFn({
   input: z.looseObject({ locationId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: anyOfRule("item", "View"),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2643,7 +2704,7 @@ export const getItemStockQuantitiesByLocation = defineServiceFn({
  */
 export const getItemReplenishment = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2663,7 +2724,7 @@ export const getItemReplenishment = defineServiceFn({
  */
 export const getItemSupersession = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2703,7 +2764,7 @@ export const getItemSupersessionsForItems = defineServiceFn({
  */
 export const getSupersessionChain = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return await service.getSupersessionChain(
       ctx.asCaller.supabase,
@@ -2720,7 +2781,7 @@ export const getSupersessionChain = defineServiceFn({
  */
 export const getItemStorageUnitQuantities = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2741,7 +2802,7 @@ export const getItemStorageUnitQuantities = defineServiceFn({
  */
 export const getItemUnitSalePrice = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "id" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2761,7 +2822,7 @@ export const getItemUnitSalePrice = defineServiceFn({
  */
 export const getMaterialUsedIn = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.materials": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return await service.getMaterialUsedIn(
       ctx.asCaller.supabase,
@@ -2778,7 +2839,7 @@ export const getMaterialUsedIn = defineServiceFn({
  */
 export const getMakeMethods = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -2798,7 +2859,11 @@ export const getMakeMethods = defineServiceFn({
  */
 export const getMakeMethodById = defineServiceFn({
   input: z.looseObject({ makeMethodId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", {
+    id: "makeMethodId",
+    from: "makeMethod",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3303,7 +3368,7 @@ export const getMethodTree = defineServiceFn({
  */
 export const getBomItemAttributes = defineServiceFn({
   input: z.looseObject({ itemIds: z.array(z.string()) }),
-  permission: { "parts.parts": "View" },
+  permission: anyOfRule("item", "View"),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3323,7 +3388,7 @@ export const getBomItemAttributes = defineServiceFn({
  */
 export const getOpenJobMaterials = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3342,7 +3407,7 @@ export const getOpenJobMaterials = defineServiceFn({
  */
 export const getOpenProductionOrders = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3361,7 +3426,7 @@ export const getOpenProductionOrders = defineServiceFn({
  */
 export const getOpenPurchaseOrderLines = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3380,7 +3445,7 @@ export const getOpenPurchaseOrderLines = defineServiceFn({
  */
 export const getOpenSalesOrderLines = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3448,7 +3513,7 @@ export const getParts = defineServiceFn({
  */
 export const getItemMpnsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "parts.parts": "View" },
+  permission: anyOfRule("item", "View"),
   async run(ctx) {
     return unwrap(
       ctx,
@@ -3497,7 +3562,7 @@ export const getPartUsedIn = defineServiceFn({
  */
 export const getPickMethod = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3518,7 +3583,7 @@ export const getPickMethod = defineServiceFn({
  */
 export const getPickMethods = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3604,7 +3669,7 @@ export const getServicesList = defineServiceFn({
  */
 export const getSupplierParts = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "id" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3624,7 +3689,7 @@ export const getSupplierParts = defineServiceFn({
  */
 export const getSupplierPartsBySupplier = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: anyOfRule("item", "View"),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3776,7 +3841,11 @@ export const getUnitOfMeasuresList = defineServiceFn({
  */
 export const updateConfigurationParameterGroupOrder = defineServiceFn({
   input: z.looseObject({ id: z.string().min(1), sortOrder: z.number().min(0) }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", {
+    id: "id",
+    from: "configurationParameterGroup",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3795,7 +3864,7 @@ export const updateConfigurationParameterGroupOrder = defineServiceFn({
  */
 export const updateDefaultRevision = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "id" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3818,7 +3887,11 @@ export const updateConfigurationParameterOrder = defineServiceFn({
     sortOrder: z.number().min(0),
     configurationParameterGroupId: z.string().nullable().optional()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", {
+    id: "id",
+    from: "configurationParameter",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3840,7 +3913,7 @@ export const updateItemCost = defineServiceFn({
     itemId: z.string(),
     cost: z.looseObject({ unitCost: z.number() })
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3862,8 +3935,24 @@ export const updateMaterialOrder = defineServiceFn({
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
   }),
-  permission: { "parts.materials": "Edit" },
+  // The ids sit inside `updates`: the rows are checked in `run`.
+  permission: anyOfRule("item", "Edit"),
   async run(ctx, input) {
+    if (input.updates.length > 0) {
+      const refused = await refusalOf(
+        ctx,
+        service.itemRule("Edit", {
+          id: "ids",
+          from: "methodMaterial",
+          path: [
+            ["makeMethodId", "makeMethod"],
+            ["itemId", "item"]
+          ]
+        }),
+        { ids: input.updates.map((update) => update.id) }
+      );
+      if (refused) return refused;
+    }
     return service.reorderMethodRows(ctx, "methodMaterial", input.updates);
   }
 });
@@ -3877,8 +3966,24 @@ export const updateOperationOrder = defineServiceFn({
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
   }),
-  permission: { "parts.parts": "Edit" },
+  // The ids sit inside `updates`: the rows are checked in `run`.
+  permission: anyOfRule("item", "Edit"),
   async run(ctx, input) {
+    if (input.updates.length > 0) {
+      const refused = await refusalOf(
+        ctx,
+        service.itemRule("Edit", {
+          id: "ids",
+          from: "methodOperation",
+          path: [
+            ["makeMethodId", "makeMethod"],
+            ["itemId", "item"]
+          ]
+        }),
+        { ids: input.updates.map((update) => update.id) }
+      );
+      if (refused) return refused;
+    }
     return service.reorderMethodRows(ctx, "methodOperation", input.updates);
   }
 });
@@ -3890,7 +3995,7 @@ export const updateOperationOrder = defineServiceFn({
  */
 export const updateRevision = defineServiceFn({
   input: z.looseObject({ id: z.string(), revision: z.string() }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "id" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3925,7 +4030,7 @@ export const upsertConfigurationParameter = defineServiceFn({
     configurationParameterGroupId: z.string().optional(),
     materialFormFilterId: z.string().optional()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3944,7 +4049,7 @@ export const upsertConfigurationParameter = defineServiceFn({
  */
 export const upsertConfigurationParameterGroup = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3967,7 +4072,7 @@ export const upsertConfigurationRule = defineServiceFn({
     code: z.string().min(1),
     itemId: z.string()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3986,7 +4091,7 @@ export const upsertConfigurationRule = defineServiceFn({
  */
 export const getRecipeProcessIdsForItem = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4005,7 +4110,7 @@ export const getRecipeProcessIdsForItem = defineServiceFn({
  */
 export const getItemShelfLife = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4024,7 +4129,7 @@ export const getItemShelfLife = defineServiceFn({
  */
 export const getBomHasShelfLifeManagedInput = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { "parts.parts": "View" },
+  permission: service.itemRule("View", { id: "itemId" }),
   async run(ctx, input) {
     return await service.getBomHasShelfLifeManagedInput(
       ctx.asCaller.supabase,
@@ -4056,7 +4161,7 @@ export const upsertPickMethodWithShelfLife = defineServiceFn({
       calculateFromBom: z.boolean().optional()
     })
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     return await service.upsertPickMethodWithShelfLife(
       ctx.asSystem.pg,
@@ -4193,7 +4298,7 @@ export const resolveItemIdFromExtractedText = defineServiceFn({
     ]),
     candidates: z.array(z.string().nullable())
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: anyOfRule("item", "Edit"),
   async run(ctx, input) {
     return await service.resolveItemIdFromExtractedText(
       ctx.asCaller.supabase,
@@ -4243,7 +4348,7 @@ export const updateItem = defineServiceFn({
       "Fixture"
     ])
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "id" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4268,7 +4373,7 @@ export const upsertItemCost = defineServiceFn({
     unitCost: z.number().min(0),
     customFields: z.unknown().optional()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4306,7 +4411,7 @@ export const createPickMethod = defineServiceFn({
     sortMethod: z.enum(["Default", "FEFO", "FIFO", "LIFO"]).optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { "parts.parts": "Create" },
+  permission: service.itemRule("Create", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4346,7 +4451,7 @@ export const updatePickMethod = defineServiceFn({
       customFields: z.unknown().optional()
     })
     .required({ itemId: true, locationId: true }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4371,7 +4476,7 @@ export const upsertItemPurchasing = defineServiceFn({
     leadTime: z.number().min(0),
     purchasingUnitOfMeasureCode: z.string().optional()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4458,7 +4563,7 @@ export const upsertItemCustomerPart = defineServiceFn({
     customerPartRevision: z.string().optional(),
     id: z.string().optional()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4481,7 +4586,7 @@ export const upsertItemUnitSalePrice = defineServiceFn({
     unitSalePrice: z.number().min(0),
     customFields: z.unknown().optional()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6053,7 +6158,7 @@ export const createTool = defineServiceFn({
  */
 export const getSupplierPriceBreaksForItems = defineServiceFn({
   input: z.looseObject({ itemIds: z.array(z.string()) }),
-  permission: { "parts.parts": "View" },
+  permission: anyOfRule("item", "View"),
   async run(ctx, input) {
     return await utils.getSupplierPriceBreaksForItems(
       ctx.asCaller.supabase,
@@ -6800,7 +6905,7 @@ export const getChangeNoticeDiff = defineServiceFn({
  */
 export const createItemDocumentUploadUrl = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), name: z.string() }),
-  permission: { "parts.parts": "Create" },
+  permission: service.itemRule("Create", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6903,7 +7008,7 @@ export const insertModelUpload = defineServiceFn({
  */
 export const createItemThumbnailUploadUrl = defineServiceFn({
   input: z.object({ itemId: z.string().min(1), name: z.string().min(1) }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     const owned = await refuseUnlessOwned(ctx, "item", { id: input.itemId });
     if (owned) return owned;
@@ -6932,7 +7037,7 @@ export const updateItemThumbnail = defineServiceFn({
     itemId: z.string().min(1),
     thumbnailPath: z.string().min(1).nullable()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,

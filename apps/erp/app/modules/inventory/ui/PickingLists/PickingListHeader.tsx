@@ -81,7 +81,7 @@ const PickingListHeader = () => {
 
   const isClosed = isPickingListLocked(status);
   const isSubmitting = statusFetcher.state !== "idle";
-  const canUpdate = permissions.can("update", "inventory");
+  const canUpdate = permissions.has({ "inventory.pickingLists": "Edit" });
   const hasPickedLines = (routeData.pickingListLines ?? []).some(
     (l) => Number(l.quantityPicked ?? 0) > 0
   );
@@ -131,7 +131,8 @@ const PickingListHeader = () => {
             {status !== "Draft" && (
               <DropdownMenuItem
                 disabled={
-                  isSubmitting || !permissions.can("delete", "inventory")
+                  isSubmitting ||
+                  !permissions.has({ "inventory.pickingLists": "Full" })
                 }
                 onClick={() => submitStatus("Draft")}
               >
@@ -155,7 +156,7 @@ const PickingListHeader = () => {
               disabled={
                 status !== "Draft" ||
                 hasPickedLines ||
-                !permissions.can("delete", "inventory") ||
+                !permissions.has({ "inventory.pickingLists": "Full" }) ||
                 !permissions.is("employee")
               }
               destructive

@@ -28,10 +28,14 @@ interface ActionData {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await authorize(request, {
-    // Records the learner's own progress, whatever their role in the company.
-    allowPortalAccounts: true
-  });
+  const { client, userId } = await authorize(
+    request,
+    {},
+    {
+      // Records the learner's own progress, whatever their role in the company.
+      allowPortalAccounts: true
+    }
+  );
   const formData = await request.formData();
   const reset = formData.get("reset");
 

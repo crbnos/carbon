@@ -82,7 +82,7 @@ const RentalUnitsGrid = ({
   const agreementId = rentalAgreement.id!;
   const currencyCode = rentalAgreement.currencyCode ?? "";
   const currencyDecimals = useCurrencyDecimals(currencyCode);
-  const canEdit = permissions.can("update", "sales");
+  const canEdit = permissions.has({ "sales.rentalAgreements": "Edit" });
 
   const addUnits = useDisclosure();
   const [deleting, setDeleting] = useState<RentalAgreementLine | null>(null);
@@ -198,7 +198,7 @@ const RentalUnitsGrid = ({
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
-          disabled={!permissions.can("delete", "sales")}
+          disabled={!permissions.has({ "sales.rentalAgreements": "Full" })}
           onClick={() => setDeleting(line)}
         >
           <MenuIcon icon={<LuTrash />} />
@@ -214,7 +214,7 @@ const RentalUnitsGrid = ({
     [columns, renderRowMenu, t]
   );
 
-  const canAdd = permissions.can("create", "sales");
+  const canAdd = permissions.has({ "sales.rentalAgreements": "Create" });
 
   return (
     <div className="flex w-full flex-col gap-4">

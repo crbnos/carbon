@@ -42,10 +42,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "accounting.accountingPeriods": "View" },
+    { role: "employee" }
+  );
 
   const settings = await api.accounting.getFiscalYearSettings({});
   const startMonth = settings.data?.startMonth
@@ -66,7 +67,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "accounting"
+    "accounting.accountingPeriods": "Create"
   });
 
   const formData = await request.formData();

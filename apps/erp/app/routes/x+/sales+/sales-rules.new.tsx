@@ -16,14 +16,14 @@ import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, { create: "sales" });
+  await authorize(request, { "sales.salesRules": "Create" });
   return {};
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "sales"
+    "sales.salesRules": "Create"
   });
 
   await requireFeature({

@@ -28,7 +28,7 @@ const logger = getLogger("erp", "settings-backup-upload");
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, email } = await authorize(request, {
-    update: "settings"
+    "settings.backups": "Edit"
   });
   if (!(await canManageBackups(client, companyId, email)))
     throw new Response("Not found", { status: 404 });

@@ -133,7 +133,7 @@ const AbilityEmployeesTable = memo(
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "resources")}
+            disabled={!permissions.has({ "resources.abilities": "Edit" })}
             onClick={() => {
               navigate(path.to.employeeAbility(ability.id, row.id));
             }}
@@ -143,7 +143,7 @@ const AbilityEmployeesTable = memo(
           </MenuItem>
           <MenuItem
             destructive
-            disabled={!permissions.can("update", "resources")}
+            disabled={!permissions.has({ "resources.abilities": "Edit" })}
             onClick={() => {
               navigate(path.to.deleteEmployeeAbility(ability.id, row.id));
             }}
@@ -171,7 +171,7 @@ const AbilityEmployeesTable = memo(
             >
               <Trans>Edit Ability</Trans>
             </Button>
-            {permissions.can("update", "resources") && (
+            {permissions.has({ "resources.abilities": "Edit" }) && (
               <New
                 label={t`Employee`}
                 to={path.to.newEmployeeAbility(ability.id)}

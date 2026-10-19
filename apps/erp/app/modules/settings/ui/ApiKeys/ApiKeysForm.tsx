@@ -78,7 +78,7 @@ const ApiKeyForm = ({
   });
 
   const isEditing = initialValues.id !== undefined;
-  const isDisabled = !permissions.can("update", "users");
+  const isDisabled = !permissions.has({ "settings.apiKeys": "Edit" });
 
   const [key, setKey] = useState<string | null>(null);
 

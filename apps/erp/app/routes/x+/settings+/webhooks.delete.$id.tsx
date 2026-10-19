@@ -16,9 +16,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "settings"
-  });
+  const { api } = await authorize(request, { "settings.webhooks": "View" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -38,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    update: "users"
+    "settings.webhooks": "Edit"
   });
 
   await requireFeature({

@@ -22,8 +22,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   // Drafts purchase invoices, so the invoicing permission is required too.
   const { client, companyId, userId } = await authorize(request, {
-    update: "purchasing",
-    create: "invoicing"
+    "purchasing.leases": "Edit",
+    "invoicing.purchaseInvoices": "Create"
   });
 
   const { id } = params;

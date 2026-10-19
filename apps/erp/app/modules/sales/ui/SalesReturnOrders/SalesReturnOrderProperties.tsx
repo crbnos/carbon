@@ -218,7 +218,7 @@ const SalesReturnOrderProperties = () => {
       ? optimisticAssignment
       : routeData?.salesReturnOrder?.assignee;
 
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.returns": "Edit" });
   const isLocked = isSalesReturnOrderLocked(
     routeData?.salesReturnOrder?.status
   );

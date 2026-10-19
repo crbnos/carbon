@@ -15,9 +15,7 @@ import { path, requestReferrer } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "production"
-  });
+  const { api } = await authorize(request, { "production.jobs": "View" });
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");

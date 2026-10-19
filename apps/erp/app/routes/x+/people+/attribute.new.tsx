@@ -16,7 +16,7 @@ import { path } from "~/utils/path";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    create: "people"
+    "people.attributes": "Create"
   });
 
   const validation = await validator(attributeValidator).validate(

@@ -223,8 +223,8 @@ const ConsumableForm = ({
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={
                   isEditing
-                    ? !permissions.can("update", "parts")
-                    : !permissions.can("create", "parts")
+                    ? !permissions.has({ "parts.consumables": "Edit" })
+                    : !permissions.has({ "parts.consumables": "Create" })
                 }
               >
                 <Trans>Save</Trans>

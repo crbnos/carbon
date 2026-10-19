@@ -6,10 +6,11 @@ import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "users",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "users.employeeTypes": "View" },
+    { role: "employee" }
+  );
 
   const page = await api.users.getEmployeeTypes({});
   return {

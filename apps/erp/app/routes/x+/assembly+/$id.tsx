@@ -72,10 +72,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "production",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "production.assemblies": "View" },
+    { role: "employee" }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -173,7 +174,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "production"
+    "production.assemblies": "Edit"
   });
 
   const { id } = params;
@@ -232,7 +233,8 @@ export default function AssemblyInstructionRoute() {
   const mode = useMode();
 
   const isDisabled =
-    instruction.status !== "Draft" || !permissions.can("update", "production");
+    instruction.status !== "Draft" ||
+    !permissions.has({ "production.assemblies": "Edit" });
 
   // Motion planning runs server-side and patches step motions when it lands
   // (the explorer polls while it runs). Until then the stored motions are
@@ -770,7 +772,9 @@ export default function AssemblyInstructionRoute() {
                             isLoading={retryFetcher.state !== "idle"}
                             isDisabled={
                               retryFetcher.state !== "idle" ||
-                              !permissions.can("update", "production")
+                              !permissions.has({
+                                "production.assemblies": "Edit"
+                              })
                             }
                           >
                             Try again

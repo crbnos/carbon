@@ -25,9 +25,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "settings"
-  });
+  const { api } = await authorize(request, { "settings.webhooks": "View" });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

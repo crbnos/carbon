@@ -121,7 +121,9 @@ export default function SalesRFQExplorer() {
   const lines = Array.from(linesByCustomerPartId.values());
 
   const canReorder =
-    !isDisabled && permissions.can("update", "sales") && realLines.length > 1;
+    !isDisabled &&
+    permissions.has({ "sales.rfqs": "Edit" }) &&
+    realLines.length > 1;
 
   const editMode = useLineOrderEditMode<SalesRFQLine>({
     actionPath: path.to.salesRfqLineOrder(rfqId),
@@ -201,7 +203,7 @@ export default function SalesRFQExplorer() {
             )
           ) : (
             <Empty>
-              {permissions.can("update", "sales") && (
+              {permissions.has({ "sales.rfqs": "Edit" }) && (
                 <Button
                   leftIcon={<LuCirclePlus />}
                   isDisabled={isDisabled}
@@ -227,7 +229,9 @@ export default function SalesRFQExplorer() {
               <Button
                 className="flex-1"
                 shortcut={EXPLORER_SHORTCUTS.addLine}
-                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                isDisabled={
+                  isDisabled || !permissions.has({ "sales.rfqs": "Edit" })
+                }
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
                 onClick={newSalesRFQLineDisclosure.onOpen}
@@ -422,7 +426,9 @@ function SalesRFQLineItem({
                 <DropdownMenuItem
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
-                  disabled={isDisabled || !permissions.can("update", "sales")}
+                  disabled={
+                    isDisabled || !permissions.has({ "sales.rfqs": "Edit" })
+                  }
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(line);

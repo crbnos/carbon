@@ -157,7 +157,9 @@ const DemandProjectionsTable = memo(
           id: "actions",
           header: "",
           cell: ({ row }) => {
-            const canDelete = permissions.can("delete", "production");
+            const canDelete = permissions.has({
+              "production.demandForecasts": "Full"
+            });
             if (!canDelete) return null;
 
             return (
@@ -227,7 +229,7 @@ const DemandProjectionsTable = memo(
                   window.location.href = getLocationPath(selected);
                 }}
               />
-              {permissions.can("create", "production") && (
+              {permissions.has({ "production.demandForecasts": "Create" }) && (
                 <New label={t`Part`} to={`new?${params.toString()}`} />
               )}
             </div>

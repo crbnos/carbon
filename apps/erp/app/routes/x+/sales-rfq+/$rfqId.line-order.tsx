@@ -14,7 +14,7 @@ import { getDatabaseClient } from "~/services/database.server";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    update: "sales"
+    "sales.rfqs": "Edit"
   });
 
   if (!params.rfqId) throw new Error("Could not find rfqId");

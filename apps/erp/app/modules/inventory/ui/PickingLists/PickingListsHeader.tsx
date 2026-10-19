@@ -77,7 +77,9 @@ export function PickingListsHeader({
             <Button
               type="submit"
               leftIcon={<LuPackagePlus />}
-              isDisabled={!permissions.can("create", "inventory")}
+              isDisabled={
+                !permissions.has({ "inventory.pickingLists": "Create" })
+              }
               isLoading={navigation.formAction === path.to.newPickingList}
             >
               <Trans>Generate Picking List</Trans>{" "}

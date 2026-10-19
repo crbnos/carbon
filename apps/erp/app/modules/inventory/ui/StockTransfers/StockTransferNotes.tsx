@@ -57,7 +57,7 @@ const ShipmentNotes = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {permissions.can("update", "inventory") ? (
+          {permissions.has({ "inventory.stockTransfers": "Edit" }) ? (
             <Editor
               initialValue={(notes ?? {}) as JSONContent}
               onUpload={onUploadImage}

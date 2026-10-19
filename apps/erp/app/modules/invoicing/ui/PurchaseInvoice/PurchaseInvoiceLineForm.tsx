@@ -357,8 +357,8 @@ const PurchaseInvoiceLineForm = ({
   });
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "purchasing")
-    : !permissions.can("create", "purchasing");
+    ? !permissions.has({ "invoicing.purchaseInvoices": "Edit" })
+    : !permissions.has({ "invoicing.purchaseInvoices": "Create" });
 
   // These badges render DOCUMENT-currency values, so both formatters take the
   // document's currency and decimals. Defaulting to base currency is what

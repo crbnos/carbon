@@ -31,7 +31,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId, api } = await authorize(request, {
-    view: "settings"
+    "settings.printing": "View"
   });
 
   const [companySettings, printerRoutes, workCenters, locations, userDefaults] =

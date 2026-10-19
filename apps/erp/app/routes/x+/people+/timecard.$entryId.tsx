@@ -15,9 +15,7 @@ import { TimecardForm } from "~/modules/people/ui/Timecards";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "people"
-  });
+  const { api } = await authorize(request, { "people.timecards": "View" });
 
   const { entryId } = params;
   if (!entryId) throw notFound("Entry ID was not found");
@@ -39,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "people"
+    "people.timecards": "Edit"
   });
 
   const formData = await request.formData();

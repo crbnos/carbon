@@ -13,7 +13,9 @@ import type { LoaderFunctionArgs } from "react-router";
  * client-side gives a cleaner UX than a round-trip rejection.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, { view: "inventory" });
+  const { api } = await authorize(request, {
+    "inventory.storageUnits": "View"
+  });
 
   const url = new URL(request.url);
   const id = url.searchParams.get("id");

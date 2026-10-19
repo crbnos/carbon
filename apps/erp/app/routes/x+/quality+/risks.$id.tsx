@@ -14,10 +14,11 @@ import RiskRegisterForm from "~/modules/quality/ui/RiskRegister/RiskRegisterForm
 import { getParams, path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { api } = await authorize(request, {
-    view: "quality",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "quality.risks": "View" },
+    { role: "employee" }
+  );
   const { id } = params;
   invariant(id, "id is required");
 

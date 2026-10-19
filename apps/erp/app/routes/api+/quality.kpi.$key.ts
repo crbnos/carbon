@@ -4,6 +4,7 @@
 
 import { authorize } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { QualityKPIs } from "~/modules/quality/quality.models";
@@ -49,9 +50,10 @@ const PRIORITY_ORDER = ["Critical", "High", "Medium", "Low"] as const;
 // --- Loader ---
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "quality"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    anyOf(pagesOf("quality"), "View")
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

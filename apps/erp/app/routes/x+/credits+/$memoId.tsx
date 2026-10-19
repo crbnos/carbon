@@ -5,6 +5,7 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -48,9 +49,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "invoicing"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    anyOf(["invoicing.supplierCredits", "invoicing.creditMemos"], "View")
+  );
   const { memoId } = params;
   if (!memoId) throw notFound("Missing memoId");
 
@@ -61,6 +63,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error(memo.error, "Failed to load memo"))
     );
   }
+  // A supplier memo is a Supplier Credit, a customer memo a Credit Memo.
+  await authorize(
+    request,
+    memo.data.supplierId
+      ? { "invoicing.supplierCredits": "View" }
+      : { "invoicing.creditMemos": "View" }
+  );
 
   const applications = await api.invoicing.getMemoApplications({ memoId });
 
@@ -86,9 +95,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
-    update: "invoicing"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    anyOf(["invoicing.supplierCredits", "invoicing.creditMemos"], "Edit")
+  );
   const { memoId } = params;
   if (!memoId) throw notFound("Missing memoId");
 
@@ -106,6 +116,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(existing.error, "Failed to load memo"))
     );
   }
+  await authorize(
+    request,
+    existing.data.supplierId
+      ? { "invoicing.supplierCredits": "Edit" }
+      : { "invoicing.creditMemos": "Edit" }
+  );
   if (existing.data.status !== "Draft") {
     throw redirect(
       path.to.memo(memoId),

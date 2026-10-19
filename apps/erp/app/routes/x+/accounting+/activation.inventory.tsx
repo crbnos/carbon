@@ -25,7 +25,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "accounting"
+    "settings.accounting": "View"
   });
   const { cutoverDate } = await getActivationCutover(
     client,

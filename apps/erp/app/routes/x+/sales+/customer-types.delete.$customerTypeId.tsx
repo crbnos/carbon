@@ -14,9 +14,7 @@ import { deleteCustomerType } from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.types": "View" });
   const { customerTypeId } = params;
   if (!customerTypeId) throw notFound("customerTypeId not found");
 
@@ -35,9 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, {
-    delete: "sales"
-  });
+  const { client } = await authorize(request, { "sales.types": "Full" });
 
   const { customerTypeId } = params;
   if (!customerTypeId) {

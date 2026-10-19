@@ -96,7 +96,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "settings")}
+            disabled={!permissions.has({ "settings.sequences": "Edit" })}
             onClick={() => {
               navigate(
                 `${path.to.tableSequence(row.table)}?${params.toString()}`

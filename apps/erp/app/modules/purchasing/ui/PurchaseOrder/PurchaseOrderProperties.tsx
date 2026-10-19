@@ -130,7 +130,7 @@ const PurchaseOrderProperties = () => {
       ? optimisticAssignment
       : routeData?.purchaseOrder?.assignee;
 
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.purchaseOrders": "Edit" });
   const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
   const isDisabled = !canUpdate || isLocked;
 

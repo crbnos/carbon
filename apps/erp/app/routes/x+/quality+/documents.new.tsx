@@ -16,9 +16,7 @@ import QualityDocumentForm from "~/modules/quality/ui/Documents/QualityDocumentF
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    create: "quality"
-  });
+  await authorize(request, { "quality.qualityDocuments": "Create" });
 
   return null;
 }
@@ -26,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "quality"
+    "quality.qualityDocuments": "Create"
   });
   const formData = await request.formData();
   const validation = await validator(qualityDocumentValidator).validate(

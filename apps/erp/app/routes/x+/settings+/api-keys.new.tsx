@@ -13,9 +13,7 @@ import {
 import { ApiKeyForm } from "~/modules/settings/ui";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    update: "users"
-  });
+  await authorize(request, { "settings.apiKeys": "Edit" });
 
   return null;
 }

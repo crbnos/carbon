@@ -38,7 +38,7 @@ const TrainingHeader = () => {
 
   const status = routeData?.training?.status;
   const isDraft = status === "Draft";
-  const canUpdate = permissions.can("update", "people");
+  const canUpdate = permissions.has({ "resources.training": "Edit" });
   const [nextStatus, setNextStatus] = useState<
     "Active" | "Archived" | "Draft" | null
   >(null);
@@ -77,7 +77,8 @@ const TrainingHeader = () => {
       <DropdownMenuItem
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         disabled={
-          !permissions.can("delete", "resources") || !permissions.is("employee")
+          !permissions.has({ "resources.training": "Full" }) ||
+          !permissions.is("employee")
         }
         destructive
         onClick={deleteDisclosure.onOpen}

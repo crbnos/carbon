@@ -48,8 +48,8 @@ const WorkflowForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "workflows")
-    : !permissions.can("create", "workflows");
+    ? !permissions.has({ "workflows.workflows": "Edit" })
+    : !permissions.has({ "workflows.workflows": "Create" });
 
   return (
     <ModalDrawerProvider type="modal">

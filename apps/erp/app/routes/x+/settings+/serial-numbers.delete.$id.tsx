@@ -15,10 +15,11 @@ import { deleteItemSerialSequence } from "~/modules/settings/settings.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "settings",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "settings.serialNumbers": "View" },
+    { role: "employee" }
+  );
 
   const { id } = params;
   if (!id) throw notFound("id not found");
@@ -39,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    delete: "settings"
+    "settings.serialNumbers": "Full"
   });
 
   const { id } = params;

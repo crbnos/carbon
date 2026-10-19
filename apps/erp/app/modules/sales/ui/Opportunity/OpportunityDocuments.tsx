@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import type { PageId } from "@carbon/database/access";
 import {
   convertKbToString,
   downloadUrl,
@@ -57,6 +58,17 @@ import type { Opportunity } from "../../types";
 import { useOptimisticDocumentDrag } from "../SalesRFQ/useOptimiticDocumentDrag";
 
 const logger = getLogger("erp", "opportunitydocuments");
+
+/** The page of each opportunity document, whose level gates its files. */
+export const OPPORTUNITY_PAGES: Record<
+  "Sales Order" | "Request for Quote" | "Quote" | "Sales Invoice",
+  PageId
+> = {
+  "Request for Quote": "sales.rfqs",
+  Quote: "sales.quotes",
+  "Sales Order": "sales.salesOrders",
+  "Sales Invoice": "invoicing.salesInvoices"
+};
 
 type OpportunityDocumentsProps = {
   attachments: FileObject[];
@@ -319,7 +331,7 @@ export const useOpportunityDocuments = ({
   const revalidator = useRevalidator();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", "sales"); // TODO: or is document owner
+  const canDelete = permissions.has({ [OPPORTUNITY_PAGES[type]]: "Full" }); // TODO: or is document owner
 
   const getPath = useCallback(
     (attachment: { name: string }) => {
@@ -436,7 +448,7 @@ const OpportunityDocumentForm = (props: OpportunityDocumentFormProps) => {
 
   return (
     <File
-      isDisabled={!permissions.can("update", "sales")}
+      isDisabled={!permissions.has({ [OPPORTUNITY_PAGES[props.type]]: "Edit" })}
       leftIcon={<LuUpload />}
       onChange={uploadFiles}
       multiple

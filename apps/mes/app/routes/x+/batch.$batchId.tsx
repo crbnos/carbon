@@ -16,7 +16,7 @@ import { path } from "~/utils/path";
 // kanban batch card) to a member operation.
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "production"
+    "production.batches": "View"
   });
   const { batchId } = params;
   if (!batchId) throw new Error("Batch ID is required");

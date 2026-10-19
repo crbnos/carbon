@@ -261,7 +261,7 @@ const PurchasingRFQsTable = memo(
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "purchasing")}
+            disabled={!permissions.has({ "purchasing.rfqs": "Full" })}
             onClick={() => {
               setSelectedPurchasingRFQ(row);
               deletePurchasingRFQModal.onOpen();
@@ -289,7 +289,7 @@ const PurchasingRFQsTable = memo(
             updatedBy: false
           }}
           primaryAction={
-            permissions.can("create", "purchasing") && (
+            permissions.has({ "purchasing.rfqs": "Create" }) && (
               <New label={t`RFQ`} to={path.to.newPurchasingRFQ} />
             )
           }

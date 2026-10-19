@@ -35,9 +35,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.rfqs": "View" });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
@@ -63,7 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const { client: viewClient } = await authorize(request, {
-    view: "sales"
+    "sales.rfqs": "View"
   });
 
   const rfq = await getSalesRFQ(viewClient, id);
@@ -74,9 +72,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client, userId } = await authorize(request, {
-    update: "sales"
-  });
+  const { client, userId } = await authorize(request, { "sales.rfqs": "Edit" });
 
   const formData = await request.formData();
   const validation = await validator(salesRfqValidator).validate(formData);

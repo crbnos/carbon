@@ -7,6 +7,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getMaterialFormsList } from "~/modules/items/items.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
   return await getMaterialFormsList(client, companyId);
 }

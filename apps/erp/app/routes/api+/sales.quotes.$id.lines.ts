@@ -6,9 +6,7 @@ import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.quotes": "View" });
 
   const { id } = params;
   if (!id) return { data: [], error: null };

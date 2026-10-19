@@ -8,7 +8,7 @@ import { data } from "react-router";
 import { insertTag } from "~/modules/shared/shared.service";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {});
+  const { client, companyId, userId } = await authorize(request);
 
   const formData = await request.formData();
   const name = formData.get("name");

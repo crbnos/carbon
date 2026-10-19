@@ -106,7 +106,7 @@ const CustomerHeader = () => {
       <DropdownMenuSeparator />
       <DropdownMenuItem
         shortcut={MENU_ITEM_SHORTCUTS.delete}
-        disabled={!permissions.can("delete", "sales")}
+        disabled={!permissions.has({ "sales.customers": "Full" })}
         destructive
         onClick={deleteModal.onOpen}
       >
@@ -220,7 +220,7 @@ const CustomerHeader = () => {
                     id={customerId}
                     table="customer"
                     value={assignee ?? ""}
-                    isReadOnly={!permissions.can("update", "sales")}
+                    isReadOnly={!permissions.has({ "sales.customers": "Edit" })}
                   />
                 </CardAttributeValue>
               </CardAttribute>

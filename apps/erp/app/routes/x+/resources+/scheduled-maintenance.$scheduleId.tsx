@@ -16,10 +16,11 @@ import MaintenanceScheduleForm from "~/modules/resources/ui/MaintenanceSchedule/
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "resources.schedules": "View" },
+    { role: "employee" }
+  );
 
   const { scheduleId } = params;
   if (!scheduleId) throw notFound("scheduleId not found");

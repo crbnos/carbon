@@ -16,9 +16,11 @@ import { getDatabaseClient } from "~/services/database.server";
 // bytes are still served through the auth-checked /file/preview proxy), scoped to
 // the company. Any employee who can reach the page can resolve them.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    {},
+    { role: "employee" }
+  );
   const { modelUploadId } = params;
   if (!modelUploadId) throw new Response("Not found", { status: 404 });
 

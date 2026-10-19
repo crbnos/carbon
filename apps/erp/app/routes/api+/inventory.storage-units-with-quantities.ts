@@ -10,7 +10,7 @@ import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "parts"
+    "inventory.storageUnits": "View"
   });
   const url = new URL(request.url);
   const locationId = url.searchParams.get("locationId");

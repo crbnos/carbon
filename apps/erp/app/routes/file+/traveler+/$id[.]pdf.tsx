@@ -30,7 +30,7 @@ import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 const logger = getLogger("erp", "traveler", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await authorize(request, {});
+  const { companyId } = await authorize(request);
 
   const { id } = params;
   if (!id) throw new Error("Could not find job make method id");

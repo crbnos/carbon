@@ -31,7 +31,8 @@ export default function ContractExplorer() {
   const contract = routeData?.contract;
   const lines = routeData?.lines ?? [];
   const isDraft = contract?.status === "Draft";
-  const canAdd = isDraft && permissions.can("create", "sales");
+  const canAdd =
+    isDraft && permissions.has({ "sales.serviceContracts": "Create" });
 
   if (!contract) return null;
 

@@ -17,10 +17,11 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "sales.types": "View" },
+    { role: "employee" }
+  );
 
   const { customerTypeId } = params;
   if (!customerTypeId) throw notFound("customerTypeId not found");
@@ -42,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "sales"
+    "sales.types": "Edit"
   });
 
   const formData = await request.formData();

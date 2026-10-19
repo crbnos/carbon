@@ -52,7 +52,10 @@ const IssueHeader = () => {
   const statusBadge = <IssueStatus status={status} />;
   const menuItems = (
     <>
-      <DropdownMenuItem disabled={!permissions.can("create", "parts")} asChild>
+      <DropdownMenuItem
+        disabled={!permissions.has({ "parts.changeNotices": "Create" })}
+        asChild
+      >
         <Link
           to={`${
             path.to.newChangeNotice
@@ -68,7 +71,7 @@ const IssueHeader = () => {
         disabled={
           !["In Progress", "Closed"].includes(status ?? "") ||
           statusFetcher.state !== "idle" ||
-          !permissions.can("update", "quality")
+          !permissions.has({ "quality.issues": "Edit" })
         }
         onClick={() => {
           statusFetcher.submit(
@@ -84,7 +87,7 @@ const IssueHeader = () => {
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         destructive
         disabled={
-          !permissions.can("delete", "quality") ||
+          !permissions.has({ "quality.issues": "Full" }) ||
           !permissions.is("employee") ||
           isIssueLocked(status)
         }
@@ -161,7 +164,7 @@ const IssueHeader = () => {
                   isDisabled={
                     status !== "Registered" ||
                     statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "quality")
+                    !permissions.has({ "quality.issues": "Edit" })
                   }
                   isLoading={
                     statusFetcher.state !== "idle" &&
@@ -184,7 +187,7 @@ const IssueHeader = () => {
                   isDisabled={
                     status !== "In Progress" ||
                     statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "quality")
+                    !permissions.has({ "quality.issues": "Edit" })
                   }
                   isLoading={
                     statusFetcher.state !== "idle" &&

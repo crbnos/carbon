@@ -108,7 +108,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
               row.isEmployeeTypeGroup ||
               row.isCustomerTypeGroup ||
               row.isSupplierTypeGroup ||
-              !permissions.can("update", "users")
+              !permissions.has({ "users.groups": "Edit" })
             }
             onClick={() => {
               navigate(path.to.group(row.id));
@@ -124,7 +124,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
               row.isEmployeeTypeGroup ||
               row.isCustomerTypeGroup ||
               row.isSupplierTypeGroup ||
-              !permissions.can("delete", "users")
+              !permissions.has({ "users.groups": "Full" })
             }
             onClick={() => {
               navigate(path.to.deleteGroup(row.id));
@@ -145,7 +145,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
       count={count}
       columns={columns}
       primaryAction={
-        permissions.can("create", "users") && (
+        permissions.has({ "users.groups": "Create" }) && (
           <New label={t`Group`} to={`new?${params.toString()}`} />
         )
       }

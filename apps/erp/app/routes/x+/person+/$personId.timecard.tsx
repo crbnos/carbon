@@ -108,7 +108,7 @@ function formatDay(dateStr: string, locale: string) {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "people"
+    "people.employees": "View"
   });
 
   const { personId } = params;

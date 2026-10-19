@@ -23,7 +23,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "parts"
+    "parts.parts": "View"
   });
 
   const { itemId } = params;
@@ -54,7 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "parts"
+    "parts.parts": "Edit"
   });
 
   const { itemId } = params;

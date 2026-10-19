@@ -22,10 +22,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "accounting.assetClasses": "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -66,7 +67,7 @@ export default function AssetClassesRoute() {
         count={count}
         taxDepreciationEnabled={taxDepreciationEnabled}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.has({ "accounting.assetClasses": "Create" }) && (
             <NewAction label={t`Add Asset Class`} to={path.to.newAssetClass}>
               <Button
                 leftIcon={<LuCirclePlus />}

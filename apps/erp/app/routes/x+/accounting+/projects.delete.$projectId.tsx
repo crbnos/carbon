@@ -14,9 +14,7 @@ import { deleteProject } from "~/modules/accounting/accounting.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting"
-  });
+  const { api } = await authorize(request, { "accounting.projects": "View" });
   const { projectId } = params;
   if (!projectId) throw notFound("projectId not found");
 
@@ -33,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {
-    delete: "accounting"
+    "accounting.projects": "Full"
   });
 
   const { projectId } = params;

@@ -16,7 +16,7 @@ import {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    delete: "parts"
+    "parts.changeNotices": "Full"
   });
 
   const { id: changeNoticeId, actionId } = params;

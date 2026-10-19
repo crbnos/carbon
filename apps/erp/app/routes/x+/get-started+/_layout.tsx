@@ -142,7 +142,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
 
   const hub = await getImplementationHub(client, companyId);
   // Only enrolled companies have a hub row — others never reach this surface.

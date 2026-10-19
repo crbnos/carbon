@@ -25,7 +25,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    create: "accounting"
+    "accounting.chartOfAccounts": "Create"
   });
 
   const groupAccounts = await api.accounting.getGroupAccounts({});
@@ -38,7 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyGroupId, userId } = await authorize(request, {
-    create: "accounting"
+    "accounting.chartOfAccounts": "Create"
   });
 
   const formData = await request.formData();

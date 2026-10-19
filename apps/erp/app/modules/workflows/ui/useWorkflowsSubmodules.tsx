@@ -21,6 +21,7 @@ export default function useWorkflowsSubmodules() {
         {
           name: t`Workflows`,
           to: path.to.workflows,
+          page: "workflows.workflows",
           icon: <LuWorkflow />,
           table: "workflow",
           isActive: (pathname: string) =>
@@ -31,6 +32,7 @@ export default function useWorkflowsSubmodules() {
         {
           name: t`Runs`,
           to: path.to.workflowRuns,
+          page: "workflows.runs",
           icon: <LuHistory />,
           table: "workflowRun",
           isActive: (pathname: string) =>
@@ -41,20 +43,20 @@ export default function useWorkflowsSubmodules() {
     }
   ];
 
+  const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) =>
+    (!route.role || permissions.is(route.role)) &&
+    (!route.page || permissions.has({ [route.page]: "View" }));
+
   return {
     groups: workflowsRoutes
       .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) =>
-          route.role ? permissions.is(route.role) : true
-        );
+        const filteredRoutes = group.routes.filter(isRouteVisible);
 
         return filteredRoutes.length > 0;
       })
       .map((group) => ({
         ...group,
-        routes: group.routes
-          .filter((route) => (route.role ? permissions.is(route.role) : true))
-          .map(addSavedViewsToRoutes)
+        routes: group.routes.filter(isRouteVisible).map(addSavedViewsToRoutes)
       }))
   };
 }

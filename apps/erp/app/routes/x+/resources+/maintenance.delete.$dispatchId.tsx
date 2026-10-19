@@ -14,10 +14,11 @@ import { deleteMaintenanceDispatch } from "~/modules/resources/resources.service
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "resources.dispatches": "View" },
+    { role: "employee" }
+  );
   const { dispatchId } = params;
   if (!dispatchId) throw notFound("dispatchId not found");
 
@@ -37,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await authorize(request, {
-    delete: "production"
+    "resources.dispatches": "Full"
   });
 
   const { dispatchId } = params;

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -203,8 +204,8 @@ const SupplierPartForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has({ [ITEM_TYPE_PAGES[type]]: "Edit" })
+    : !permissions.has({ [ITEM_TYPE_PAGES[type]]: "Create" });
 
   const action = getAction(
     isEditing,

@@ -5,6 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import { validationError, validator } from "@carbon/form";
 import {
   Card,
@@ -45,15 +46,17 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    create: "invoicing"
-  });
+  const party = new URL(request.url).searchParams.get("party");
+  const type = party === "supplier" ? "supplierCredit" : "creditMemo";
+  const { client, companyId, api } = await authorize(
+    request,
+    type === "supplierCredit"
+      ? { "invoicing.supplierCredits": "Create" }
+      : { "invoicing.creditMemos": "Create" }
+  );
 
   const company = await api.settings.getCompany({});
   const currencyCode = company.data?.baseCurrencyCode ?? "";
-
-  const party = new URL(request.url).searchParams.get("party");
-  const type = party === "supplier" ? "supplierCredit" : "creditMemo";
 
   return {
     type,
@@ -78,15 +81,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
-    create: "invoicing"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    anyOf(["invoicing.supplierCredits", "invoicing.creditMemos"], "Create")
+  );
 
   const formData = await request.formData();
   const validation = await validator(memoValidator).validate(formData);
   if (validation.error) {
     return validationError(validation.error);
   }
+  // A supplier memo is a Supplier Credit, a customer memo a Credit Memo.
+  await authorize(
+    request,
+    validation.data.supplierId
+      ? { "invoicing.supplierCredits": "Create" }
+      : { "invoicing.creditMemos": "Create" }
+  );
 
   let memoId = validation.data.memoId;
   if (!memoId) {

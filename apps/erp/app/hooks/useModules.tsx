@@ -25,7 +25,11 @@ import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
 import { usePermissions } from "./usePermissions";
 
-type ModuleDefinition = Authenticated<NavItem> & { key: string };
+/** A nav module: it shows with View on any of its pages (`module`). */
+type ModuleDefinition = Authenticated<NavItem> & {
+  key: string;
+  module?: string;
+};
 
 type ModulePreference = {
   module: string;
@@ -38,8 +42,8 @@ function filterByPermissions(
   permissions: ReturnType<typeof usePermissions>
 ) {
   return modules.filter((item) => {
-    if (item.permission) {
-      return permissions.can("view", item.permission);
+    if (item.module) {
+      return permissions.hasAny(item.module, "View");
     } else if (item.role) {
       return permissions.is(item.role);
     } else {
@@ -53,84 +57,84 @@ function useModuleDefinitions(): ModuleDefinition[] {
   return [
     {
       key: "accounting",
-      permission: "accounting",
+      module: "accounting",
       name: t`Accounting`,
       to: path.to.accounting,
       icon: LuLandmark
     },
     {
       key: "documents",
-      permission: "documents",
+      module: "documents",
       name: t`Documents`,
       to: path.to.documents,
       icon: LuFiles
     },
     {
       key: "inventory",
-      permission: "inventory",
+      module: "inventory",
       name: t`Inventory`,
       to: path.to.inventory,
       icon: LuBox
     },
     {
       key: "invoicing",
-      permission: "invoicing",
+      module: "invoicing",
       name: t`Invoicing`,
       to: path.to.invoicing,
       icon: LuCreditCard
     },
     {
       key: "parts",
-      permission: "parts",
+      module: "parts",
       name: t`Items`,
       to: path.to.parts,
       icon: LuBlocks
     },
     {
       key: "people",
-      permission: "people",
+      module: "people",
       name: t`People`,
       to: path.to.people,
       icon: LuUsers
     },
     {
       key: "production",
-      permission: "production",
+      module: "production",
       name: t`Production`,
       to: path.to.production,
       icon: LuFactory
     },
     {
       key: "purchasing",
-      permission: "purchasing",
+      module: "purchasing",
       name: t`Purchasing`,
       to: path.to.purchasing,
       icon: LuShoppingCart
     },
     {
       key: "quality",
-      permission: "quality",
+      module: "quality",
       name: t`Quality`,
       to: path.to.quality,
       icon: LuFolderCheck
     },
     {
       key: "resources",
-      permission: "resources",
+      module: "resources",
       name: t`Resources`,
       to: path.to.resources,
       icon: LuWrench
     },
     {
       key: "sales",
-      permission: "sales",
+      module: "sales",
       name: t`Sales`,
       to: path.to.sales,
       icon: LuCrown
     },
     {
       key: "settings",
-      permission: "settings",
+      module: "settings",
       name: t`Settings`,
       to: path.to.company,
       icon: LuSettings
@@ -145,14 +149,14 @@ function useModuleDefinitions(): ModuleDefinition[] {
     },
     {
       key: "users",
-      permission: "users",
+      module: "users",
       name: t`Users`,
       to: path.to.employeeAccounts,
       icon: LuShield
     },
     {
       key: "workflows",
-      permission: "workflows",
+      module: "workflows",
       name: t`Workflows`,
       to: path.to.workflows,
       icon: LuWorkflow
@@ -200,7 +204,7 @@ export function useSettingsModule() {
   const modules = useModuleDefinitions();
   const settings = modules.find((m) => m.key === "settings");
   if (!settings) return null;
-  if (settings.permission && !permissions.can("view", settings.permission)) {
+  if (settings.module && !permissions.hasAny(settings.module, "View")) {
     return null;
   }
   return settings;

@@ -12,9 +12,7 @@ import { deleteTraining } from "~/modules/resources/resources.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, {
-    delete: "resources"
-  });
+  const { client } = await authorize(request, { "resources.training": "Full" });
 
   const { id } = params;
 

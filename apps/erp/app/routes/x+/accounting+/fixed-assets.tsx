@@ -22,10 +22,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "accounting.assets": "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -71,7 +72,7 @@ export default function FixedAssetsRoute() {
         count={count}
         assetClasses={assetClasses}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.has({ "accounting.assets": "Create" }) && (
             <NewAction label={t`Add Fixed Asset`} to={path.to.newFixedAsset}>
               <Button
                 leftIcon={<LuCirclePlus />}

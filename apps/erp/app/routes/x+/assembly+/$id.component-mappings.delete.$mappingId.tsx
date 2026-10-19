@@ -11,7 +11,7 @@ import { deleteAssemblyComponentMapping } from "~/modules/production/production.
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await authorize(request, {
-    update: "production"
+    "production.assemblies": "Edit"
   });
 
   const { mappingId } = params;

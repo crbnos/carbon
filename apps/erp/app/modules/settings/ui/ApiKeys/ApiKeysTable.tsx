@@ -218,7 +218,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
       count={count ?? 0}
       primaryAction={
         <HStack>
-          {permissions.can("update", "users") && (
+          {permissions.has({ "settings.apiKeys": "Edit" }) && (
             <New
               label={t`API Key`}
               to={`${path.to.newApiKey}?${params.toString()}`}

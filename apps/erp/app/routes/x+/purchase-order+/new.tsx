@@ -34,10 +34,8 @@ export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, companyGroupId, userId } = await authorize(
     request,
-    {
-      create: "purchasing",
-      bypassRls: true
-    }
+    { "purchasing.purchaseOrders": "Create" },
+    { bypassRls: true }
   );
 
   const formData = await request.formData();

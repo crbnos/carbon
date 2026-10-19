@@ -23,9 +23,7 @@ import {
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.quotes": "View" });
 
   const { quoteId, lineId, methodId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -134,7 +132,7 @@ export default function QuoteMakeMethodRoute() {
           {(model) => (
             <CadModel
               key={`cad:${model.itemId}`}
-              isReadOnly={!permissions.can("update", "sales")}
+              isReadOnly={!permissions.has({ "sales.quotes": "Edit" })}
               metadata={{
                 itemId: model?.itemId ?? undefined
               }}

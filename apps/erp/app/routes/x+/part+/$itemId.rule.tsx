@@ -15,7 +15,7 @@ const logger = getLogger("erp", "itemid-rule");
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "parts"
+    "parts.parts": "Edit"
   });
 
   const { itemId } = params;

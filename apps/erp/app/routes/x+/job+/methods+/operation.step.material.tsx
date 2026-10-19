@@ -12,9 +12,7 @@ import { setJobMaterialStepLink } from "~/modules/production/production.service"
 // Toggle a part↔step link from the step editor's "Parts" picker (job tier).
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, {
-    update: "production"
-  });
+  const { client } = await authorize(request, { "production.jobs": "Edit" });
 
   const formData = await request.formData();
   const jobMaterialId = String(formData.get("materialId") ?? "");

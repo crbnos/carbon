@@ -31,7 +31,7 @@ const rememberEndpoint = async (endpoint: string) => ({
 // GET ?endpoint= — are browser notifications on in this browser for the
 // signed-in user? Read-only: opening a page never claims the browser.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {});
+  const { client, companyId, userId } = await authorize(request);
 
   if (!isPushConfigured()) return { enabled: false };
 
@@ -67,7 +67,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 // PUT saves it (also from push-worker.js after a pushsubscriptionchange),
 // DELETE removes it.
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {});
+  const { client, companyId, userId } = await authorize(request);
 
   if (!isPushConfigured()) {
     return data({ error: "Push is not configured" }, { status: 404 });

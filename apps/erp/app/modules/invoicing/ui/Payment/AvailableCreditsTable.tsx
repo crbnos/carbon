@@ -111,7 +111,7 @@ const AvailableCreditsTable = ({
     currency: documentCurrency
   });
   const currencyDecimals = useCurrencyDecimals(currency);
-  const canEdit = permissions.can("update", "invoicing");
+  const canEdit = permissions.has({ "invoicing.payments": "Edit" });
 
   const balanceByInvoice = useMemo(
     () => new Map(openInvoices.map((i) => [i.id, i])),

@@ -69,10 +69,11 @@ export function shouldRevalidate({ formAction }: ShouldRevalidateFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {
-    view: "workflows",
-    role: "employee"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    { "workflows.workflows": "View" },
+    { role: "employee" }
+  );
   await requireFeature({
     request,
     client,
@@ -171,7 +172,7 @@ export default function WorkflowBuilderRoute() {
 
   // Two reasons, two behaviours: a locked version still allows dragging to tidy the
   // layout, a missing permission does not.
-  const canEdit = permissions.can("update", "workflows");
+  const canEdit = permissions.has({ "workflows.workflows": "Edit" });
   const isOwner = workflow.ownerId === userId;
 
   if (!definition || !versionId) {
@@ -207,14 +208,20 @@ export default function WorkflowBuilderRoute() {
             versionId={versionId}
             onIssues={issuesDisclosure.onOpen}
           />
-          {isVersionLocked && permissions.can("create", "workflows") && (
-            <WorkflowLockModal workflowId={workflow.id} versionId={versionId} />
-          )}
+          {isVersionLocked &&
+            permissions.has({ "workflows.workflows": "Create" }) && (
+              <WorkflowLockModal
+                workflowId={workflow.id}
+                versionId={versionId}
+              />
+            )}
           <div className="relative flex flex-1 overflow-hidden">
             <WorkflowBuilder
               workflowId={workflow.id}
               canvasState={canvasState}
-              canPersistCanvasState={permissions.can("update", "workflows")}
+              canPersistCanvasState={permissions.has({
+                "workflows.workflows": "Edit"
+              })}
             />
             {issuesDisclosure.isOpen && (
               <IssuesPanel onDismiss={issuesDisclosure.onClose} />

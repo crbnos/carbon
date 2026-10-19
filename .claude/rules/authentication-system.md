@@ -326,7 +326,7 @@ Supabase's `auth.mfa_factors` — no app table.
   strips colons: `otpauth://totp/{issuer}:{account}` uses one as its delimiter
   and the Key-URI spec forbids it in either field. The issuer is baked into the
   QR at enrollment — changing it does not update existing entries. Admin recovery:
-  `x+/users+/employees.reset-mfa.$employeeId.tsx` (`update: "users"`) calls
+  `x+/users+/employees.reset-mfa.$employeeId.tsx` (`{ "users.accounts": "Edit" }`) calls
   `adminDeleteTotpFactors` — factors are global to the auth user, so it affects
   every company the user belongs to.
 - **Org enforcement**: `companySettings.requireMfa` (migration
@@ -373,7 +373,7 @@ Supabase's `auth.mfa_factors` — no app table.
 
 ## Permissions & RLS gating (`auth.server.ts` → `requirePermissions`)
 
-`requirePermissions(request, { view?, create?, update?, delete?, role?, bypassRls?, allowPortalAccounts? })` is
+`requirePermissions(request, gate, { role?, bypassRls?, allowPortalAccounts? })` is
 the gate behind every loader/action. It is internal to `@carbon/auth`: apps call `authorize`
 (same module), which runs it and returns its result plus `api`, the service functions bound to
 that caller (bound on first read; the ERP registers the binding with `registerCarbon`, which
@@ -383,7 +383,7 @@ calls `registerApi`). Two paths:
 2. **Otherwise** → `requireAuthSession`, then `getUserClaims(userId, companyId)`.
    - A session whose role in the active company is `customer` or `supplier` (portal
      accounts) is refused with a 403 BEFORE the empty-requirement early exit, unless the
-     route passes `allowPortalAccounts: true`. Portal accounts hold `documents_*`,
+     route passes the `allowPortalAccounts: true` option. Portal accounts hold `documents_*`,
      `parts_view`, `sales_view`/`purchasing_view`, and `{}` admitted any session, so before
      this ~50 routes that read with the service role (file previews, job travelers, order
      and quote pages) served them. No route is theirs: portal pages are share links on
@@ -405,12 +405,15 @@ calls `registerApi`). Two paths:
      gate pass on claims the action just revoked. The Supabase clients
      `requirePermissions` returns are memoized per request too (`oncePerRequest`),
      which needs no gate — a client is not database state.
-   - Each required permission is checked with `holds(permissions, "<page>_<action>",
-     companyId)`. `role` is matched directly.
+   - The gate is `Partial<Record<PageId, GateLevel>>` (`Gate`, `@carbon/database/access`):
+     `{ "inventory.receipts": "Edit" }`. Each entry is checked with `holdsGate`, which reads
+     the highest action of its level, `<page>_<action>` (`inventory.receipts_update` for
+     Edit). Two entries need both; a list of gates (`anyOf(pages, level)`) passes on any one,
+     for a route several pages share (an item, a memo, a run). `role` is matched directly.
    - On failure: if `role === null` destroy session → `/`; else flash "Access Denied"
      → authenticated root.
    - Returns `{ client, companyId, companyGroupId, email, userId, sessionUserId,
-     consoleMode }`. `bypassRls: true` + employee role returns a service-role client;
+     consoleMode }`. The `bypassRls: true` option + employee role returns a service-role client;
      otherwise a Bearer-authed `getCarbon(accessToken)` client (RLS enforced).
    - `consoleMode` is `authSession.console === companyId`. In console mode `userId`
      is the pinned operator from `resolveConsolePinIn` (falling back to the session

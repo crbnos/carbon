@@ -46,7 +46,7 @@ export const handle: Handle = {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, api } = await authorize(request, {
-    view: "inventory"
+    "inventory.receipts": "View"
   });
 
   const serviceRole = await getCarbonServiceRole();

@@ -15,7 +15,7 @@ import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {
-    create: "resources"
+    "resources.schedules": "Create"
   });
 
   const defaults = await getUserDefaults(client, userId, companyId);

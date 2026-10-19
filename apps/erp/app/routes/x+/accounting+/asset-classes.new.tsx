@@ -20,7 +20,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    create: "accounting"
+    "accounting.assetClasses": "Create"
   });
 
   const [defaults, companySettings] = await Promise.all([
@@ -38,7 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "accounting"
+    "accounting.assetClasses": "Create"
   });
 
   const formData = await request.formData();

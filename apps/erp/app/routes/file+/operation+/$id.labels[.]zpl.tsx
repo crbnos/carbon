@@ -14,7 +14,7 @@ import {
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {});
+  const { client, companyId, api } = await authorize(request);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

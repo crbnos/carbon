@@ -20,7 +20,7 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId } = await authorize(request, {
-    create: "purchasing"
+    "purchasing.suppliers": "Create"
   });
 
   // RLS doesn't work for selecting a contact with no supplier

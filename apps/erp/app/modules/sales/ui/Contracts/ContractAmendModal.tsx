@@ -835,7 +835,7 @@ const ContractAmendModal = ({
                 !hasChanges ||
                 !isValid ||
                 isRefused ||
-                !permissions.can("update", "sales")
+                !permissions.has({ "sales.serviceContracts": "Edit" })
               }
             >
               <Trans>Amend</Trans>

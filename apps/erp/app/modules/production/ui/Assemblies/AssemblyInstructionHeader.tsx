@@ -75,7 +75,8 @@ function InstructionNameInput() {
   const nameFetcher = useFetcher<{}>();
   const [name, setName] = useState(instruction?.name ?? "");
   const isEditable =
-    instruction?.status === "Draft" && permissions.can("update", "production");
+    instruction?.status === "Draft" &&
+    permissions.has({ "production.assemblies": "Edit" });
 
   const onUpdateName = (value: string) => {
     if (!instruction || !value.trim() || value === instruction.name) return;
@@ -143,7 +144,7 @@ function InstructionPrimaryAction() {
   if (!instruction) return null;
 
   if (instruction.status === "Published") {
-    if (!permissions.can("create", "production")) return null;
+    if (!permissions.has({ "production.assemblies": "Create" })) return null;
     return (
       <RecordAction slot="primary">
         <Button
@@ -161,7 +162,7 @@ function InstructionPrimaryAction() {
     <>
       <RecordAction slot="primary">
         <Button
-          isDisabled={!permissions.can("update", "production")}
+          isDisabled={!permissions.has({ "production.assemblies": "Edit" })}
           onClick={activateDisclosure.onOpen}
         >
           <Trans>Make Active</Trans>
@@ -212,7 +213,7 @@ const AssemblyInstructionHeader = () => {
       )
   });
   const { onNewVersion, isCreatingVersion } = useNewVersion();
-  const canCreate = permissions.can("create", "production");
+  const canCreate = permissions.has({ "production.assemblies": "Create" });
 
   const [items] = useItems();
   const item = instruction?.itemId
@@ -231,7 +232,7 @@ const AssemblyInstructionHeader = () => {
       )}
       <DropdownMenuItem
         disabled={
-          !permissions.can("update", "production") ||
+          !permissions.has({ "production.assemblies": "Edit" }) ||
           invalidateFetcher.state !== "idle"
         }
         onClick={() =>
@@ -247,7 +248,7 @@ const AssemblyInstructionHeader = () => {
       <DropdownMenuItem
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         disabled={
-          !permissions.can("delete", "production") ||
+          !permissions.has({ "production.assemblies": "Full" }) ||
           !permissions.is("employee")
         }
         destructive

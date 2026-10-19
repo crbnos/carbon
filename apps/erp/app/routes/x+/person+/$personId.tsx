@@ -33,7 +33,7 @@ export const handle: Handle = {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "people"
+    "people.employees": "View"
   });
 
   const { personId } = params;
@@ -65,9 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, {
-    update: "people"
-  });
+  const { client } = await authorize(request, { "people.employees": "Edit" });
   const { personId } = params;
   if (!personId) throw new Error("No person ID provided");
 

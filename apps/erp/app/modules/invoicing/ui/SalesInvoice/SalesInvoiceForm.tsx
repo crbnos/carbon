@@ -280,8 +280,9 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
           <Submit
             isDisabled={
               isEditing
-                ? isLocked || !permissions.can("update", "invoicing")
-                : !permissions.can("create", "invoicing")
+                ? isLocked ||
+                  !permissions.has({ "invoicing.salesInvoices": "Edit" })
+                : !permissions.has({ "invoicing.salesInvoices": "Create" })
             }
           >
             <Trans>Save</Trans>

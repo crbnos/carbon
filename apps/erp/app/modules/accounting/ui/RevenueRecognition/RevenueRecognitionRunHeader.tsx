@@ -85,7 +85,9 @@ const RevenueRecognitionRunHeader = () => {
             <>
               {isPosted && canRepeat && (
                 <DropdownMenuItem
-                  disabled={!permissions.can("create", "accounting")}
+                  disabled={
+                    !permissions.has({ [RUN_PAGES[run.type].page]: "Create" })
+                  }
                   onClick={repeatModal.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuRepeat />} />
@@ -94,7 +96,9 @@ const RevenueRecognitionRunHeader = () => {
               )}
               {isPosted && (
                 <DropdownMenuItem
-                  disabled={!permissions.can("update", "accounting")}
+                  disabled={
+                    !permissions.has({ [RUN_PAGES[run.type].page]: "Edit" })
+                  }
                   destructive
                   onClick={reverseModal.onOpen}
                 >
@@ -104,7 +108,9 @@ const RevenueRecognitionRunHeader = () => {
               )}
               {isDraft && (
                 <DropdownMenuItem
-                  disabled={!permissions.can("delete", "accounting")}
+                  disabled={
+                    !permissions.has({ [RUN_PAGES[run.type].page]: "Full" })
+                  }
                   destructive
                   onClick={deleteModal.onOpen}
                 >
@@ -116,7 +122,7 @@ const RevenueRecognitionRunHeader = () => {
           ) : undefined
         }
         actions={
-          isDraft && permissions.can("update", "accounting") ? (
+          isDraft && permissions.has({ [RUN_PAGES[run.type].page]: "Edit" }) ? (
             <>
               <Button
                 variant="secondary"

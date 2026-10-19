@@ -98,7 +98,7 @@ const DepreciationRunTable = memo(
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.view}
-            disabled={!permissions.can("view", "accounting")}
+            disabled={!permissions.has({ "accounting.depreciation": "View" })}
             onClick={() => navigate(path.to.depreciationRun(row.id))}
           >
             <MenuIcon icon={<LuEye />} />
@@ -107,7 +107,7 @@ const DepreciationRunTable = memo(
           {row.status === "Draft" && (
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
-              disabled={!permissions.can("delete", "accounting")}
+              disabled={!permissions.has({ "accounting.depreciation": "Full" })}
               destructive
               onClick={() => {
                 setSelectedRun(row);

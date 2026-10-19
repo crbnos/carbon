@@ -7,10 +7,11 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "parts",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "parts.dimensions": "View" },
+    { role: "employee" }
+  );
 
   if (!params.formId) {
     return data({ error: "Form ID is required" }, { status: 400 });

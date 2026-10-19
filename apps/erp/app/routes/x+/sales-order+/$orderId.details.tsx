@@ -37,9 +37,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.salesOrders": "View" });
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");

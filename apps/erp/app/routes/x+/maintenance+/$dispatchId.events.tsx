@@ -103,7 +103,7 @@ export default function MaintenanceDispatchEventsRoute() {
     <VStack spacing={4}>
       <HStack className="justify-between w-full">
         <h2 className="text-lg font-semibold">Time Events</h2>
-        {permissions.can("update", "resources") &&
+        {permissions.has({ "resources.dispatches": "Edit" }) &&
           (activeEvent ? (
             <stop.Form method="post">
               <input type="hidden" name="intent" value="stop" />

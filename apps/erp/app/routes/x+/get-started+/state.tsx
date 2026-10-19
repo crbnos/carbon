@@ -25,7 +25,7 @@ import { data } from "react-router";
 // structural edits (tier/exclusions/contacts) require an internal Carbon user.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId, email } = await authorize(request, {});
+  const { client, companyId, userId, email } = await authorize(request);
 
   const validation = await validator(stateActionValidator).validate(
     await request.formData()

@@ -180,7 +180,9 @@ export default function SalesOrderExplorer() {
 
   const lines = salesOrderData?.lines ?? [];
   const canReorder =
-    !isDisabled && permissions.can("update", "sales") && lines.length > 1;
+    !isDisabled &&
+    permissions.has({ "sales.salesOrders": "Edit" }) &&
+    lines.length > 1;
 
   const editMode = useLineOrderEditMode<SalesOrderLine>({
     actionPath: path.to.salesOrderLineOrder(orderId),
@@ -220,7 +222,7 @@ export default function SalesOrderExplorer() {
             )
           ) : (
             <Empty>
-              {permissions.can("update", "sales") && (
+              {permissions.has({ "sales.salesOrders": "Edit" }) && (
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
@@ -246,7 +248,10 @@ export default function SalesOrderExplorer() {
               <Button
                 className="flex-1"
                 shortcut={EXPLORER_SHORTCUTS.addLine}
-                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                isDisabled={
+                  isDisabled ||
+                  !permissions.has({ "sales.salesOrders": "Edit" })
+                }
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
                 onClick={newSalesOrderLineDisclosure.onOpen}
@@ -412,7 +417,10 @@ function SalesOrderLineItem({
                 <DropdownMenuItem
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
-                  disabled={isDisabled || !permissions.can("update", "sales")}
+                  disabled={
+                    isDisabled ||
+                    !permissions.has({ "sales.salesOrders": "Edit" })
+                  }
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(line);

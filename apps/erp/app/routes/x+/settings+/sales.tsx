@@ -55,9 +55,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "settings"
-  });
+  const { api } = await authorize(request, { "settings.sales": "View" });
 
   const companySettings = await api.settings.getCompanySettings({});
   if (!companySettings.data)

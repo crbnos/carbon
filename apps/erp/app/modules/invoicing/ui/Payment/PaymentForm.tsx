@@ -113,7 +113,7 @@ const PaymentForm = ({
   const permissions = usePermissions();
   const isEditing = Boolean(initialValues.id);
   const isLocked = isPaymentLocked(initialValues.status);
-  const canMutate = permissions.can("update", "invoicing");
+  const canMutate = permissions.has({ "invoicing.payments": "Edit" });
 
   // Cash direction and subledger party are independent for refunds. An employee
   // payee is neither: it is always cash OUT against the reimbursement control
@@ -313,7 +313,7 @@ const PaymentForm = ({
           isDisabled={
             isEditing
               ? isLocked || !canMutate
-              : !permissions.can("create", "invoicing")
+              : !permissions.has({ "invoicing.payments": "Create" })
           }
         >
           <Trans>Save</Trans>

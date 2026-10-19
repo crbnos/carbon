@@ -10,7 +10,7 @@ import { data } from "react-router";
 import { getPartsList } from "~/modules/items/items.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
   const parts = await getPartsList(client, companyId);
   if (parts.error) {
     return data(

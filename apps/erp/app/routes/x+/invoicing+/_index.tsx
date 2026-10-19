@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
@@ -56,9 +57,10 @@ function sumAging(rows: AgingRow[]): AgingTotals {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "invoicing"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    anyOf(pagesOf("invoicing"), "View")
+  );
 
   const asOfDate = datetime
     .today(await getCompanyTimeZone(client, companyId))

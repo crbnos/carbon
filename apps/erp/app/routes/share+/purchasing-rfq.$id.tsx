@@ -48,9 +48,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   // Require authentication - this is an internal preview
-  const { api } = await authorize(request, {
-    view: "purchasing"
-  });
+  const { api } = await authorize(request, { "purchasing.rfqs": "View" });
 
   const [rfqResult, linesResult, company] = await Promise.all([
     api.purchasing.getPurchasingRFQ({ id }),

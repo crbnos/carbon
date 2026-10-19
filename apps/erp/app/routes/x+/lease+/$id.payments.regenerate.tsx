@@ -20,7 +20,7 @@ const logger = getLogger("erp", "lease-payments-regenerate");
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    update: "purchasing"
+    "purchasing.leases": "Edit"
   });
 
   const { id } = params;

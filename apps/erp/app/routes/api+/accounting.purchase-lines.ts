@@ -20,10 +20,11 @@ import type { LoaderFunctionArgs } from "react-router";
  * - colstart / colend    — period column bounds (period axis)
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "accounting.reporting": "View" },
+    { role: "employee" }
+  );
 
   const searchParams = new URL(request.url).searchParams;
 

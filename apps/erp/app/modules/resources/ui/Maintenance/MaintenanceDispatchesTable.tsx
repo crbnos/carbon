@@ -359,7 +359,7 @@ const MaintenanceDispatchesTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "resources")}
+              disabled={!permissions.has({ "resources.dispatches": "Full" })}
               onClick={() => {
                 navigate(
                   `${path.to.deleteMaintenanceDispatch(row.id)}?${params.toString()}`
@@ -404,7 +404,7 @@ const MaintenanceDispatchesTable = memo(
                 }}
               />
             )}
-            {permissions.can("create", "resources") && (
+            {permissions.has({ "resources.dispatches": "Create" }) && (
               <New
                 label={t`Dispatch`}
                 to={`${path.to.newMaintenanceDispatch}?${params.toString()}`}

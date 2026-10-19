@@ -28,7 +28,7 @@ import { createOperatorValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, { create: "users" });
+  await authorize(request, { "users.operators": "Create" });
   return null;
 }
 

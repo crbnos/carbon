@@ -217,7 +217,9 @@ const WarehouseTransfersTable = memo(
                   ? MENU_ITEM_SHORTCUTS.view
                   : MENU_ITEM_SHORTCUTS.edit
               }
-              disabled={!permissions.can("update", "inventory")}
+              disabled={
+                !permissions.has({ "inventory.warehouseTransfers": "Edit" })
+              }
               onClick={() => {
                 navigate(
                   `${path.to.warehouseTransferDetails(
@@ -232,7 +234,7 @@ const WarehouseTransfersTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
-                !permissions.can("delete", "inventory") ||
+                !permissions.has({ "inventory.warehouseTransfers": "Full" }) ||
                 row.status === "Draft"
               }
               destructive
@@ -266,7 +268,7 @@ const WarehouseTransfersTable = memo(
             updatedBy: false
           }}
           primaryAction={
-            permissions.can("create", "inventory") && (
+            permissions.has({ "inventory.warehouseTransfers": "Create" }) && (
               <New
                 label={t`Warehouse Transfer`}
                 to={path.to.newWarehouseTransfer}

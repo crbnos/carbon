@@ -263,36 +263,38 @@ export function PeopleHeader({
       </HStack>
 
       <HStack className="flex-wrap gap-y-2">
-        {range === "day" && permissions.can("update", "production") && (
-          <Button
-            variant="secondary"
-            leftIcon={<LuCopy />}
-            onClick={copyPreviousDay}
-          >
-            <Trans>Copy previous day</Trans>
-          </Button>
-        )}
-        {range === "week" && permissions.can("update", "production") && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="secondary"
-                leftIcon={<LuCopy />}
-                rightIcon={<LuChevronDown />}
-              >
-                <Trans>Copy week</Trans>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={copyPreviousWeek}>
-                <Trans>From previous week</Trans>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={copyToNextWeek}>
-                <Trans>To next week</Trans>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        {range === "day" &&
+          permissions.has({ "production.resourcePlanning": "Edit" }) && (
+            <Button
+              variant="secondary"
+              leftIcon={<LuCopy />}
+              onClick={copyPreviousDay}
+            >
+              <Trans>Copy previous day</Trans>
+            </Button>
+          )}
+        {range === "week" &&
+          permissions.has({ "production.resourcePlanning": "Edit" }) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuCopy />}
+                  rightIcon={<LuChevronDown />}
+                >
+                  <Trans>Copy week</Trans>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={copyPreviousWeek}>
+                  <Trans>From previous week</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={copyToNextWeek}>
+                  <Trans>To next week</Trans>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         <HStack>
           <Button variant="secondary" onClick={goToToday}>
             <Trans>Today</Trans>
@@ -358,7 +360,7 @@ export function PeopleHeader({
             icon={<LuChevronRight />}
             aria-label={range === "day" ? t`Next Day` : t`Next Week`}
           />
-          {permissions.can("update", "production") && (
+          {permissions.has({ "production.resourcePlanning": "Edit" }) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton

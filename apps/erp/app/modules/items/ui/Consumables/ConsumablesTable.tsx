@@ -575,7 +575,7 @@ const ConsumablesTable = memo(
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
-            disabled={!permissions.can("delete", "parts")}
+            disabled={!permissions.has({ "parts.consumables": "Full" })}
             destructive
             onClick={() => {
               setSelectedItem(row);
@@ -613,7 +613,7 @@ const ConsumablesTable = memo(
             }
           ]}
           primaryAction={
-            permissions.can("create", "parts") && (
+            permissions.has({ "parts.consumables": "Create" }) && (
               <div className="flex items-center gap-2">
                 <Button
                   variant="secondary"

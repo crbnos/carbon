@@ -13,9 +13,7 @@ import { useUser } from "~/hooks";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "people"
-  });
+  const { api } = await authorize(request, { "people.employees": "View" });
 
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");

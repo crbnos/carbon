@@ -43,7 +43,7 @@ const querySchema = z.object({
 /** Fields page data for the element the panel is open on. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorizePanel(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
 
   const url = new URL(request.url);
@@ -164,7 +164,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 /** Replace the property map, the description modes and the push defaults. */
 export async function action({ request }: ActionFunctionArgs) {
-  const { api } = await authorizePanel(request, { update: "settings" });
+  const { api } = await authorizePanel(request, {
+    "settings.integrations": "Edit"
+  });
   return panelResponse(
     await api.settings.saveOnshapePropertyMap(
       await request.json().catch(() => null)

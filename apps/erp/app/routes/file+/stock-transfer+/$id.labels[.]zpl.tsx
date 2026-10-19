@@ -16,7 +16,7 @@ import { getStockTransferLabelItems } from "./labels.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "inventory"
+    "inventory.stockTransfers": "View"
   });
 
   const { id } = params;

@@ -28,9 +28,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting"
-  });
+  const { api } = await authorize(request, { "accounting.fiscalYear": "View" });
 
   const [settings, committed] = await Promise.all([
     api.accounting.getFiscalYearSettings({}),
@@ -55,7 +53,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "accounting"
+    "accounting.fiscalYear": "Edit"
   });
 
   const validation = await validator(fiscalYearSettingsValidator).validate(

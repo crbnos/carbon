@@ -40,8 +40,8 @@ const HolidayForm = ({ initialValues }: HolidayFormProps) => {
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "people")
-    : !permissions.can("create", "people");
+    ? !permissions.has({ "people.holidays": "Edit" })
+    : !permissions.has({ "people.holidays": "Create" });
 
   return (
     <Drawer

@@ -19,9 +19,7 @@ import { ItemCostHistoryChart } from "~/modules/items/ui/Item/ItemCostHistoryCha
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.services": "View" });
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -53,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "parts"
+    "parts.services": "Edit"
   });
 
   const { itemId } = params;

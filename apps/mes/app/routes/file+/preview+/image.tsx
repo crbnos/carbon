@@ -12,7 +12,7 @@ const escapeAttribute = (value: string) =>
 
 export let loader = async ({ request }: LoaderFunctionArgs) => {
   await authorize(request, {
-    view: "documents"
+    documents: "View"
   });
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

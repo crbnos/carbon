@@ -16,10 +16,11 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "workflows",
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { "workflows.runs": "View" },
+    { role: "employee" }
+  );
   await requireFeature({
     request,
     client,

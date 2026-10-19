@@ -18,10 +18,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Required action ID is required");
 
-  const { api } = await authorize(request, {
-    view: "quality",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "quality.actionTypes": "View" },
+    { role: "employee" }
+  );
 
   const result = await api.quality.getRequiredAction({ requiredActionId: id });
   if (!result.data) {
@@ -40,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Required action ID is required");
 
   const { client, userId } = await authorize(request, {
-    update: "quality"
+    "quality.actionTypes": "Edit"
   });
 
   const formData = await request.formData();

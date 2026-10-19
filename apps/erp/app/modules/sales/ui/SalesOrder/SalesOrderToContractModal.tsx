@@ -396,7 +396,8 @@ const SalesOrderToContractModal = ({
             </Button>
             <Submit
               isDisabled={
-                selectedCount === 0 || !permissions.can("create", "sales")
+                selectedCount === 0 ||
+                !permissions.has({ "sales.salesOrders": "Create" })
               }
             >
               <Trans>Create Contract</Trans>

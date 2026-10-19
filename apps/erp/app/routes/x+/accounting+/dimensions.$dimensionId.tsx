@@ -16,10 +16,11 @@ import { DimensionForm } from "~/modules/accounting/ui/Dimensions";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "accounting.dimensions": "View" },
+    { role: "employee" }
+  );
 
   const { dimensionId } = params;
   if (!dimensionId) throw notFound("dimensionId not found");
@@ -34,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "accounting"
+    "accounting.dimensions": "Edit"
   });
 
   const formData = await request.formData();

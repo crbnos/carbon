@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import { getIntegrationIdsByRole } from "@carbon/ee";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -35,9 +36,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "accounting"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    anyOf(pagesOf("accounting"), "View")
+  );
 
   const [accounts, baseCurrency, companies, integrations] = await Promise.all([
     api.accounting.getAccountsList({

@@ -7,7 +7,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getSequencesList } from "~/modules/settings/settings.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
   const url = new URL(request.url);
   const table = url.searchParams.get("table");
 

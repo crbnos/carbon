@@ -84,7 +84,12 @@ function PaymentDocumentList({
   // The order or rental agreement this payment is a deposit for.
   const depositId = payment.rentalAgreementId ?? payment.salesOrderId;
   const deposit =
-    depositId && permissions.can("view", "sales")
+    depositId &&
+    permissions.has(
+      payment.rentalAgreementId
+        ? { "sales.rentalAgreements": "View" }
+        : { "sales.salesOrders": "View" }
+    )
       ? depositDocuments.find((doc) => doc.id === depositId)
       : undefined;
 

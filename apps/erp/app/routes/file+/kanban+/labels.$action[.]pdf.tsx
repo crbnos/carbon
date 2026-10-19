@@ -14,7 +14,7 @@ const logger = getLogger("erp", "labels-action-pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, api } = await authorize(request, {
-    view: "inventory"
+    "inventory.kanbans": "View"
   });
 
   const company = await api.settings.getCompany({});

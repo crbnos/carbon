@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { anyOf, type Gate, ITEM_PAGES } from "@carbon/database/access";
 import { FieldEmptyState, fieldEmptyStateLinkClassName } from "@carbon/form";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -9,11 +10,9 @@ import { Link } from "react-router";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 
-type Action = "view" | "create" | "update" | "delete";
-
 type EntityCopy = {
-  module: string;
-  action: Action;
+  /** The page and level that may create the entity. */
+  gate: Gate;
   route: string;
   noun: string;
   pluralNoun: string;
@@ -67,8 +66,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
   switch (entity) {
     case "supplier":
       return {
-        module: "purchasing",
-        action: "create",
+        gate: { "purchasing.suppliers": "Create" },
         route: path.to.newSupplier,
         noun: t`supplier`,
         pluralNoun: t`suppliers`,
@@ -76,8 +74,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "customer":
       return {
-        module: "sales",
-        action: "create",
+        gate: { "sales.customers": "Create" },
         route: path.to.newCustomer,
         noun: t`customer`,
         pluralNoun: t`customers`,
@@ -85,8 +82,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "location":
       return {
-        module: "resources",
-        action: "create",
+        gate: { "resources.locations": "Create" },
         route: path.to.newLocation,
         noun: t`location`,
         pluralNoun: t`locations`,
@@ -94,8 +90,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "costCenter":
       return {
-        module: "accounting",
-        action: "create",
+        gate: { "accounting.costCenters": "Create" },
         route: path.to.newCostCenter,
         noun: t`cost center`,
         pluralNoun: t`cost centers`,
@@ -103,8 +98,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "department":
       return {
-        module: "people",
-        action: "create",
+        gate: { "people.departments": "Create" },
         route: path.to.newDepartment,
         noun: t`department`,
         pluralNoun: t`departments`,
@@ -112,8 +106,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "shift":
       return {
-        module: "people",
-        action: "create",
+        gate: { "people.shifts": "Create" },
         route: path.to.newShift,
         noun: t`shift`,
         pluralNoun: t`shifts`,
@@ -121,8 +114,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "process":
       return {
-        module: "resources",
-        action: "create",
+        gate: { "resources.processes": "Create" },
         route: path.to.newProcess,
         noun: t`process`,
         pluralNoun: t`processes`,
@@ -130,8 +122,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "workCenter":
       return {
-        module: "resources",
-        action: "update",
+        gate: { "resources.workCenters": "Edit" },
         route: path.to.newWorkCenter,
         noun: t`work center`,
         pluralNoun: t`work centers`,
@@ -139,8 +130,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "employee":
       return {
-        module: "users",
-        action: "create",
+        gate: { "users.accounts": "Create" },
         route: path.to.newEmployee,
         noun: t`employee`,
         pluralNoun: t`employees`,
@@ -148,8 +138,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "paymentTerm":
       return {
-        module: "accounting",
-        action: "create",
+        gate: { "accounting.paymentTerms": "Create" },
         route: path.to.newPaymentTerm,
         noun: t`payment term`,
         pluralNoun: t`payment terms`,
@@ -157,8 +146,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "shippingMethod":
       return {
-        module: "inventory",
-        action: "create",
+        gate: { "inventory.shippingMethods": "Create" },
         route: path.to.newShippingMethod,
         noun: t`shipping method`,
         pluralNoun: t`shipping methods`,
@@ -166,8 +154,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "ability":
       return {
-        module: "resources",
-        action: "create",
+        gate: { "resources.abilities": "Create" },
         route: path.to.newAbility,
         noun: t`ability`,
         pluralNoun: t`abilities`,
@@ -175,8 +162,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "assetClass":
       return {
-        module: "accounting",
-        action: "create",
+        gate: { "accounting.assetClasses": "Create" },
         route: path.to.newAssetClass,
         noun: t`asset class`,
         pluralNoun: t`asset classes`,
@@ -184,8 +170,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "customerType":
       return {
-        module: "sales",
-        action: "create",
+        gate: { "sales.types": "Create" },
         route: path.to.newCustomerType,
         noun: t`customer type`,
         pluralNoun: t`customer types`,
@@ -193,8 +178,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "customerStatus":
       return {
-        module: "sales",
-        action: "create",
+        gate: { "sales.statuses": "Create" },
         route: path.to.newCustomerStatus,
         noun: t`customer status`,
         pluralNoun: t`customer statuses`,
@@ -202,8 +186,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "supplierType":
       return {
-        module: "purchasing",
-        action: "create",
+        gate: { "purchasing.types": "Create" },
         route: path.to.newSupplierType,
         noun: t`supplier type`,
         pluralNoun: t`supplier types`,
@@ -211,8 +194,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "itemPostingGroup":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.itemGroups": "Create" },
         route: path.to.newItemPostingGroup,
         noun: t`item group`,
         pluralNoun: t`item groups`,
@@ -220,8 +202,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "materialType":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.types": "Create" },
         route: path.to.newMaterialType,
         noun: t`material type`,
         pluralNoun: t`material types`,
@@ -229,8 +210,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "procedure":
       return {
-        module: "production",
-        action: "create",
+        gate: { "production.procedures": "Create" },
         route: path.to.newProcedure,
         noun: t`procedure`,
         pluralNoun: t`procedures`,
@@ -238,8 +218,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "scrapReason":
       return {
-        module: "production",
-        action: "create",
+        gate: { "production.scrapReasons": "Create" },
         route: path.to.newScrapReason,
         noun: t`scrap reason`,
         pluralNoun: t`scrap reasons`,
@@ -247,8 +226,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "storageType":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "inventory.storageTypes": "Create" },
         route: path.to.newStorageType,
         noun: t`storage type`,
         pluralNoun: t`storage types`,
@@ -256,8 +234,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "part":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.parts": "Create" },
         route: path.to.newPart,
         noun: t`part`,
         pluralNoun: t`parts`,
@@ -265,8 +242,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "material":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.materials": "Create" },
         route: path.to.newMaterial,
         noun: t`material`,
         pluralNoun: t`materials`,
@@ -274,8 +250,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "tool":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.tools": "Create" },
         route: path.to.newTool,
         noun: t`tool`,
         pluralNoun: t`tools`,
@@ -283,8 +258,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "service":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.services": "Create" },
         route: path.to.newService,
         noun: t`service`,
         pluralNoun: t`services`,
@@ -292,8 +266,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "consumable":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.consumables": "Create" },
         route: path.to.newConsumable,
         noun: t`consumable`,
         pluralNoun: t`consumables`,
@@ -301,8 +274,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "customerContact":
       return {
-        module: "sales",
-        action: "create",
+        gate: { "sales.customers": "Create" },
         route: path.to.customers,
         noun: t`contact`,
         pluralNoun: t`contacts`,
@@ -310,8 +282,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "customerLocation":
       return {
-        module: "sales",
-        action: "create",
+        gate: { "sales.customers": "Create" },
         route: path.to.customers,
         noun: t`location`,
         pluralNoun: t`locations`,
@@ -319,8 +290,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "supplierContact":
       return {
-        module: "purchasing",
-        action: "create",
+        gate: { "purchasing.suppliers": "Create" },
         route: path.to.suppliers,
         noun: t`contact`,
         pluralNoun: t`contacts`,
@@ -328,8 +298,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "supplierLocation":
       return {
-        module: "purchasing",
-        action: "create",
+        gate: { "purchasing.suppliers": "Create" },
         route: path.to.suppliers,
         noun: t`location`,
         pluralNoun: t`locations`,
@@ -337,8 +306,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "supplierProcess":
       return {
-        module: "purchasing",
-        action: "create",
+        gate: { "resources.processes": "Create" },
         route: path.to.suppliers,
         noun: t`supplier process`,
         pluralNoun: t`supplier processes`,
@@ -346,8 +314,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "item":
       return {
-        module: "parts",
-        action: "create",
+        gate: anyOf(ITEM_PAGES, "Create"),
         route: path.to.parts,
         noun: t`item`,
         pluralNoun: t`items`,
@@ -355,8 +322,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "gauge":
       return {
-        module: "quality",
-        action: "create",
+        gate: { "quality.gauges": "Create" },
         route: path.to.gauges,
         noun: t`gauge`,
         pluralNoun: t`gauges`,
@@ -364,8 +330,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "storageUnit":
       return {
-        module: "inventory",
-        action: "create",
+        gate: { "inventory.storageUnits": "Create" },
         route: path.to.storageUnits,
         noun: t`storage unit`,
         pluralNoun: t`storage units`,
@@ -373,8 +338,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "unitOfMeasure":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.units": "Create" },
         route: path.to.uoms,
         noun: t`unit of measure`,
         pluralNoun: t`units of measure`,
@@ -382,8 +346,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "materialDimension":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.dimensions": "Create" },
         route: path.to.materialDimensions,
         noun: t`dimension`,
         pluralNoun: t`dimensions`,
@@ -391,8 +354,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "materialFinish":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.finishes": "Create" },
         route: path.to.materialFinishes,
         noun: t`finish`,
         pluralNoun: t`finishes`,
@@ -400,8 +362,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "materialGrade":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.grades": "Create" },
         route: path.to.materialGrades,
         noun: t`grade`,
         pluralNoun: t`grades`,
@@ -409,8 +370,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "materialSubstance":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.substances": "Create" },
         route: path.to.materialSubstances,
         noun: t`substance`,
         pluralNoun: t`substances`,
@@ -418,8 +378,7 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
       };
     case "materialShape":
       return {
-        module: "parts",
-        action: "create",
+        gate: { "parts.shapes": "Create" },
         route: path.to.materialForms,
         noun: t`shape`,
         pluralNoun: t`shapes`,
@@ -440,7 +399,7 @@ export const useEmptyState = (
   const permissions = usePermissions();
   const copy = useEntityCopy(entity);
 
-  if (!permissions.can(copy.action, copy.module)) {
+  if (!permissions.has(copy.gate)) {
     return (
       <FieldEmptyState
         title={t`No ${copy.pluralNoun} yet`}

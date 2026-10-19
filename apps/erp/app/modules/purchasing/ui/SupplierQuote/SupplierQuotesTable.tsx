@@ -253,7 +253,7 @@ const SupplierQuotesTable = memo(
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "purchasing")}
+            disabled={!permissions.has({ "purchasing.supplierQuotes": "Full" })}
             onClick={() => {
               setSelectedSupplierQuote(row);
               deleteSupplierQuoteModal.onOpen();
@@ -282,7 +282,7 @@ const SupplierQuotesTable = memo(
             updatedBy: false
           }}
           primaryAction={
-            permissions.can("create", "purchasing") && (
+            permissions.has({ "purchasing.supplierQuotes": "Create" }) && (
               <New label={t`Supplier Quote`} to={path.to.newSupplierQuote} />
             )
           }

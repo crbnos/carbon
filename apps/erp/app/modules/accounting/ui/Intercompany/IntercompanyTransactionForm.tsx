@@ -50,7 +50,7 @@ const IntercompanyTransactionForm = ({
 }: IntercompanyTransactionFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const isDisabled = !permissions.can("create", "accounting");
+  const isDisabled = !permissions.has({ "accounting.intercompany": "Create" });
 
   const companyOptions = companies.map((c) => ({
     label: c.name,

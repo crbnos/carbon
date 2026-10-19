@@ -101,7 +101,7 @@ const ContractRevenueGrid = ({
   const contractId = contract.id!;
   const { currencyCode } = contract;
   const decimals = useCurrencyDecimals(currencyCode);
-  const canEdit = permissions.can("update", "sales");
+  const canEdit = permissions.has({ "sales.serviceContracts": "Edit" });
   const action = path.to.contractRevenue(contractId);
   const monthLabel = useCallback(
     (date: string) => formatDate(date, { month: "short", year: "numeric" }),
@@ -396,7 +396,7 @@ export const ContractRecognitionGrid = ({
   const { formatDate } = useDateFormatter();
 
   const contractId = contract.id!;
-  const canEdit = permissions.can("update", "sales");
+  const canEdit = permissions.has({ "sales.serviceContracts": "Edit" });
   const methodLabels = useMemo<Record<ContractLine["revenueMethod"], string>>(
     () => ({ Daily: t`Daily`, "Even Period": t`Even Period` }),
     [t]

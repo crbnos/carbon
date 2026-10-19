@@ -19,10 +19,11 @@ import { DataType } from "~/modules/shared/types";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "settings",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "settings.customFields": "View" },
+    { role: "employee" }
+  );
 
   const { table, id } = params;
   if (!table) throw notFound("Invalid table");
@@ -45,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    create: "settings"
+    "settings.customFields": "Create"
   });
 
   const { table } = params;

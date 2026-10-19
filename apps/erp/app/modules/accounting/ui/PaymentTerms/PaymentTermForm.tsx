@@ -70,8 +70,8 @@ const PaymentTermForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.has({ "accounting.paymentTerms": "Edit" })
+    : !permissions.has({ "accounting.paymentTerms": "Create" });
 
   const calculationMethodOptions = paymentTermsCalculationMethod.map((v) => ({
     label: v,

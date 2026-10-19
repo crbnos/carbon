@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -64,7 +65,7 @@ const ItemNotes = ({
         </CardHeader>
 
         <CardContent>
-          {permissions.can("update", "parts") ? (
+          {permissions.has(anyOf(ITEM_PAGES, "Edit")) ? (
             <Editor
               initialValue={(notes ?? {}) as JSONContent}
               onUpload={onUploadImage}

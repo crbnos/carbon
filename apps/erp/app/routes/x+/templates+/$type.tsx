@@ -26,10 +26,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "settings",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "settings.documentTemplates": "View" },
+    { role: "employee" }
+  );
 
   const documentType = documentTemplateTypeSchema.parse(params.type);
 
@@ -160,7 +161,7 @@ export default function DocumentTemplateRoute() {
       termsSeed={termsSeed as JSONContent | undefined}
       hasWatermark={hasWatermark}
       initialLabelSizeId={initialLabelSizeId}
-      canEdit={permissions.can("update", "settings")}
+      canEdit={permissions.has({ "settings.documentTemplates": "Edit" })}
     />
   );
 }

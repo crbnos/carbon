@@ -27,11 +27,11 @@ export const handle: Handle = {
 export const shouldRevalidate = revalidateIgnoringOffset;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting",
-    role: "employee",
-    bypassRls: true
-  });
+  const { api } = await authorize(
+    request,
+    { "accounting.chartOfAccounts": "View" },
+    { role: "employee", bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

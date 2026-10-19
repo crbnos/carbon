@@ -64,8 +64,8 @@ const RequiredActionForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "quality")
-    : !permissions.can("create", "quality");
+    ? !permissions.has({ "quality.actionTypes": "Edit" })
+    : !permissions.has({ "quality.actionTypes": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

@@ -98,7 +98,12 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={
-            row.status !== "Draft" || !permissions.can("delete", "invoicing")
+            row.status !== "Draft" ||
+            !permissions.has(
+              party === "supplier"
+                ? { "invoicing.supplierCredits": "Full" }
+                : { "invoicing.creditMemos": "Full" }
+            )
           }
           onClick={() => {
             setSelectedMemo(row);
@@ -110,7 +115,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
         </MenuItem>
       </>
     ),
-    [navigate, permissions, deleteModal]
+    [navigate, permissions, deleteModal, party]
   );
 
   const columns = useMemo<ColumnDef<MemoRow>[]>(
@@ -250,7 +255,11 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
           reference: false
         }}
         primaryAction={
-          permissions.can("create", "invoicing") && (
+          permissions.has(
+            party === "supplier"
+              ? { "invoicing.supplierCredits": "Create" }
+              : { "invoicing.creditMemos": "Create" }
+          ) && (
             <New
               label={party === "supplier" ? t`Supplier Credit` : t`Credit Memo`}
               to={`${path.to.memoNew}?party=${party}`}

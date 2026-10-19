@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Gate } from "@carbon/database/access";
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBuilding,
@@ -69,7 +70,8 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       name: t`Bank Accounts`,
       to: path.to.customerBankAccounts(customerId),
       role: ["employee"],
-      permission: { action: "view" as const, module: "accounting" },
+      // Bank accounts sit on the Customers page.
+      gate: { "sales.customers": "View" } as Gate,
       icon: <LuLandmark />
     },
     {
@@ -130,22 +132,12 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
     // },
   ].filter((item) => {
     // `role` gates on WHO the user is (employee / supplier / customer);
-    // `permission` gates on WHAT they may do (a <module>_<action> grant).
-    // They are separate checks — permissions.is() cannot express a module permission.
+    // `gate` gates on WHAT they may do (a page at a level).
     const roleOk =
       item.role === undefined ||
       item.role.some((role) => permissions.is(role as Role));
-    const permission = (
-      item as {
-        permission?: {
-          action: "view" | "create" | "update" | "delete";
-          module: string;
-        };
-      }
-    ).permission;
-    const permissionOk =
-      permission === undefined ||
-      permissions.can(permission.action, permission.module);
+    const gate = (item as { gate?: Gate }).gate;
+    const permissionOk = gate === undefined || permissions.has(gate);
     return roleOk && permissionOk;
   });
 }

@@ -36,7 +36,7 @@ const isPaymentField = (field: string): field is PaymentField =>
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "purchasing"
+    "purchasing.leases": "Edit"
   });
 
   const { id, paymentId } = params;

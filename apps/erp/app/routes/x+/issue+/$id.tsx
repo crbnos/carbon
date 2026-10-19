@@ -6,6 +6,7 @@ import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { ITEM_PAGES } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -50,10 +51,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, client, api } = await authorize(request, {
-    view: "quality",
-    bypassRls: true
-  });
+  const { companyId, client, api } = await authorize(
+    request,
+    { "quality.issues": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -130,56 +132,56 @@ export default function IssueRoute() {
                           key: "items",
                           name: t`Item`,
                           pluralName: t`Items`,
-                          module: "parts",
+                          pages: ITEM_PAGES,
                           children: resolvedAssociations.items
                         },
                         {
                           key: "jobOperations",
                           name: t`Job Operation`,
                           pluralName: t`Job Operations`,
-                          module: "production",
+                          pages: ["production.jobs"],
                           children: resolvedAssociations.jobOperations
                         },
                         {
                           key: "purchaseOrderLines",
                           name: t`Purchase Order`,
                           pluralName: t`Purchase Orders`,
-                          module: "purchasing",
+                          pages: ["purchasing.purchaseOrders"],
                           children: resolvedAssociations.purchaseOrderLines
                         },
                         {
                           key: "salesOrderLines",
                           name: t`Sales Order`,
                           pluralName: t`Sales Orders`,
-                          module: "sales",
+                          pages: ["sales.salesOrders"],
                           children: resolvedAssociations.salesOrderLines
                         },
                         {
                           key: "shipmentLines",
                           name: t`Shipment`,
                           pluralName: t`Shipments`,
-                          module: "shipping",
+                          pages: ["inventory.shipments"],
                           children: resolvedAssociations.shipmentLines
                         },
                         {
                           key: "receiptLines",
                           name: t`Receipt`,
                           pluralName: t`Receipts`,
-                          module: "receiving",
+                          pages: ["inventory.receipts"],
                           children: resolvedAssociations.receiptLines
                         },
                         {
                           key: "salesReturnOrderLines",
                           name: t`RMA Line`,
                           pluralName: t`RMA Lines`,
-                          module: "sales",
+                          pages: ["sales.returns"],
                           children: resolvedAssociations.salesReturnOrderLines
                         },
                         {
                           key: "purchaseReturnOrderLines",
                           name: t`Supplier Return Line`,
                           pluralName: t`Supplier Return Lines`,
-                          module: "purchasing",
+                          pages: ["purchasing.returns"],
                           children:
                             resolvedAssociations.purchaseReturnOrderLines
                         },
@@ -187,28 +189,28 @@ export default function IssueRoute() {
                           key: "trackedEntities",
                           name: t`Tracked Entity`,
                           pluralName: t`Tracked Entities`,
-                          module: "inventory",
+                          pages: ["inventory.trackedEntities"],
                           children: resolvedAssociations.trackedEntities
                         },
                         {
                           key: "customers",
                           name: t`Customer`,
                           pluralName: t`Customers`,
-                          module: "sales",
+                          pages: ["sales.customers"],
                           children: resolvedAssociations.customers
                         },
                         {
                           key: "suppliers",
                           name: t`Supplier`,
                           pluralName: t`Suppliers`,
-                          module: "purchasing",
+                          pages: ["purchasing.suppliers"],
                           children: resolvedAssociations.suppliers
                         },
                         {
                           key: "inspections",
                           name: t`Inspection`,
                           pluralName: t`Inspections`,
-                          module: "quality",
+                          pages: ["quality.inspections"],
                           children:
                             (resolvedAssociations as any).inspections ?? []
                         },
@@ -216,7 +218,7 @@ export default function IssueRoute() {
                           key: "changeNotices",
                           name: t`Change Notice`,
                           pluralName: t`Change Notices`,
-                          module: "parts",
+                          pages: ["parts.changeNotices"],
                           readOnly: true,
                           children: changeNotices.map((cn) => ({
                             id: cn.id,

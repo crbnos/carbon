@@ -28,7 +28,7 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "parts"
+    "parts.materials": "Edit"
   });
 
   const { itemId } = params;
@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // A new size is a new item revision, so it also needs create.
   if (validation.data.sizes?.length) {
-    await authorize(request, { create: "parts" });
+    await authorize(request, { "parts.materials": "Create" });
   }
 
   const updateMaterial = await upsertMaterial(client, getDatabaseClient(), {

@@ -44,7 +44,7 @@ export type SearchResponse = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, userId } = await authorize(request, {});
+  const { companyId, userId } = await authorize(request);
 
   const url = new URL(request.url);
   const query = url.searchParams.get("q")?.trim();

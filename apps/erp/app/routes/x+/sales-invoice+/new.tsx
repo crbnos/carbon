@@ -36,7 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   rejectCrossSiteNavigation(request);
   // we don't use the client here -- if they have this permission, we'll upgrade to a service role if needed
   const { companyId, userId } = await authorize(request, {
-    create: "invoicing"
+    "invoicing.salesInvoices": "Create"
   });
 
   const url = new URL(request.url);
@@ -106,9 +106,7 @@ export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, companyGroupId, userId } = await authorize(
     request,
-    {
-      create: "invoicing"
-    }
+    { "invoicing.salesInvoices": "Create" }
   );
 
   const formData = await request.formData();

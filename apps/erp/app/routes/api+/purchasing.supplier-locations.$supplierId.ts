@@ -11,7 +11,7 @@ import { data } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const authorized = await authorize(request, {
-    view: "purchasing"
+    "purchasing.suppliers": "View"
   });
 
   const { supplierId } = params;

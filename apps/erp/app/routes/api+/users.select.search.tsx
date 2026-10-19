@@ -13,9 +13,11 @@ import {
 } from "~/modules/users/users.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {
-    role: "employee"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    {},
+    { role: "employee" }
+  );
   const url = new URL(request.url);
   const q = url.searchParams.get("q")?.trim();
 

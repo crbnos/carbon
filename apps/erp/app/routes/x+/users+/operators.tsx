@@ -35,11 +35,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "users",
-    role: "employee",
-    bypassRls: true
-  });
+  const { api } = await authorize(
+    request,
+    { "users.operators": "View" },
+    { role: "employee", bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -176,7 +176,7 @@ const OperatorsTable = memo(
                 `${path.to.operatorResetPin(row.id!)}?${params.toString()}`
               )
             }
-            disabled={!permissions.can("update", "users")}
+            disabled={!permissions.has({ "users.operators": "Edit" })}
           >
             <MenuIcon icon={<LuKey />} />
             Reset PIN
@@ -185,7 +185,7 @@ const OperatorsTable = memo(
             onClick={() =>
               navigate(`${path.to.operator(row.id!)}?${params.toString()}`)
             }
-            disabled={!permissions.can("update", "users")}
+            disabled={!permissions.has({ "users.operators": "Edit" })}
           >
             <MenuIcon icon={<LuUser />} />
             Convert to Full User
@@ -201,7 +201,7 @@ const OperatorsTable = memo(
         columns={columns}
         data={data}
         primaryAction={
-          permissions.can("create", "users") && (
+          permissions.has({ "users.operators": "Create" }) && (
             <New label={t`Operator`} to={`new?${params.toString()}`} />
           )
         }

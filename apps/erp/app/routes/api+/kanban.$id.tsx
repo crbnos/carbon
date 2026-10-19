@@ -37,7 +37,7 @@ function destination(kanbanId: string, scan: KanbanScan): string {
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Writes on GET: a link on another site must not trigger it.
   rejectCrossSiteNavigation(request);
-  const auth = await authorize(request, { role: "employee" });
+  const auth = await authorize(request, {}, { role: "employee" });
 
   const { id } = params;
   if (!id) throw notFound("id not found");

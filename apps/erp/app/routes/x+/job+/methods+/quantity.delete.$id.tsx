@@ -12,9 +12,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, {
-    delete: "production"
-  });
+  const { client } = await authorize(request, { "production.jobs": "Full" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

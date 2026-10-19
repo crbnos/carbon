@@ -31,7 +31,7 @@ const CustomerLocations = ({ locations }: CustomerLocationsProps) => {
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
   const permissions = usePermissions();
-  const canEdit = permissions.can("create", "sales");
+  const canEdit = permissions.has({ "sales.customers": "Create" });
   const isEmpty = locations === undefined || locations?.length === 0;
 
   const deleteLocationModal = useDisclosure();
@@ -40,7 +40,7 @@ const CustomerLocations = ({ locations }: CustomerLocationsProps) => {
   const getActions = useCallback(
     (location: CustomerLocation) => {
       const actions = [];
-      if (permissions.can("update", "sales")) {
+      if (permissions.has({ "sales.customers": "Edit" })) {
         actions.push({
           label: "Edit Location",
           icon: <LuPencil />,
@@ -49,7 +49,7 @@ const CustomerLocations = ({ locations }: CustomerLocationsProps) => {
           }
         });
       }
-      if (permissions.can("delete", "sales")) {
+      if (permissions.has({ "sales.customers": "Full" })) {
         actions.push({
           label: "Delete Location",
           destructive: true,

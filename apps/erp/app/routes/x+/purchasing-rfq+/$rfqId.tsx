@@ -44,9 +44,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await authorize(request, {
-    view: "purchasing"
-  });
+  const { companyId } = await authorize(request, { "purchasing.rfqs": "View" });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");

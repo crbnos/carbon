@@ -36,7 +36,7 @@ const deleteForm = z.object({
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, api } = await authorize(request, {
-    view: "inventory"
+    "inventory.storageUnits": "View"
   });
   const { storageUnitId } = params;
   if (!storageUnitId) throw notFound("storageUnitId not found");

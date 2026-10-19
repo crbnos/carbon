@@ -12,7 +12,7 @@ import { updateTrainingQuestionOrder } from "~/modules/resources/resources.servi
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "resources"
+    "resources.training": "Edit"
   });
 
   const updateMap = (await request.formData()).get("updates") as string;

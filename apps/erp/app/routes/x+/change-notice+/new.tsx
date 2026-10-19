@@ -23,9 +23,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.changeNotices": "View" });
 
   const types = await api.items.getChangeNoticeTypesList({});
 

@@ -12,7 +12,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await authorize(request, {
-    delete: "accounting"
+    "accounting.journalEntries": "Full"
   });
 
   const { journalEntryId } = params;

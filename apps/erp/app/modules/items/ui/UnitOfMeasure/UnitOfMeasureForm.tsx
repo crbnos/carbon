@@ -72,8 +72,8 @@ const UnitOfMeasureForm = ({
   const isBuiltIn =
     isEditing && initialValues.code === EACH_UNIT_OF_MEASURE_CODE;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has({ "parts.units": "Edit" })
+    : !permissions.has({ "parts.units": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

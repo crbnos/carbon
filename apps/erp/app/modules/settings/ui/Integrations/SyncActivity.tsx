@@ -284,7 +284,7 @@ export function SyncActivity({
 }: SyncActivityProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "settings");
+  const canUpdate = permissions.has({ "settings.integrations": "Edit" });
   const { formatRelativeTime } = useDateFormatter();
   const [, setParams] = useUrlParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);

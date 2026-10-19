@@ -17,7 +17,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "webhook-stripe");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId } = await authorize(request, {});
+  const { companyId } = await authorize(request);
 
   const customerId = await getStripeCustomerId(companyId);
   if (customerId) {

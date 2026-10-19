@@ -138,7 +138,7 @@ const StorageRulesTable = memo(({ data, count }: StorageRulesTableProps) => {
       <>
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.edit}
-          disabled={!permissions.can("update", "settings")}
+          disabled={!permissions.has({ "inventory.storageRules": "Edit" })}
           onClick={() => {
             navigate(`${path.to.storageRule(row.id)}?${params.toString()}`);
           }}
@@ -148,7 +148,7 @@ const StorageRulesTable = memo(({ data, count }: StorageRulesTableProps) => {
         </MenuItem>
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
-          disabled={!permissions.can("delete", "settings")}
+          disabled={!permissions.has({ "inventory.storageRules": "Full" })}
           destructive
           onClick={() => {
             navigate(
@@ -170,7 +170,7 @@ const StorageRulesTable = memo(({ data, count }: StorageRulesTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "settings") && (
+        permissions.has({ "inventory.storageRules": "Create" }) && (
           <New
             label={t`Rule`}
             to={`${path.to.newStorageRule}?${params.toString()}`}

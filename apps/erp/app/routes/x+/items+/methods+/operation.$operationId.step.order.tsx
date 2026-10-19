@@ -5,6 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
@@ -15,9 +16,10 @@ import { updateMethodOperationStepOrder } from "~/modules/production/production.
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
-    update: "parts"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    anyOf(ITEM_PAGES, "Edit")
+  );
 
   const formData = await request.formData();
   const updateMap = formData.get("updates") as string;

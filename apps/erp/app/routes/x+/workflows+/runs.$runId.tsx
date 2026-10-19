@@ -27,10 +27,11 @@ import { MAX_RUN_STEPS } from "~/modules/workflows/workflows.utils";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "workflows",
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { "workflows.runs": "View" },
+    { role: "employee" }
+  );
   await requireFeature({
     request,
     client,

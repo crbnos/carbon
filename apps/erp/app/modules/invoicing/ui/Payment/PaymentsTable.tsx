@@ -80,7 +80,8 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={
-            row.status !== "Draft" || !permissions.can("delete", "invoicing")
+            row.status !== "Draft" ||
+            !permissions.has({ "invoicing.payments": "Full" })
           }
           onClick={() => {
             setSelectedPayment(row);
@@ -219,7 +220,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
           reference: false
         }}
         primaryAction={
-          permissions.can("create", "invoicing") && (
+          permissions.has({ "invoicing.payments": "Create" }) && (
             <New label={t`Payment`} to={path.to.paymentNew} />
           )
         }

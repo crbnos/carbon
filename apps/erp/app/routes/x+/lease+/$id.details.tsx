@@ -30,7 +30,7 @@ import { path } from "~/utils/path";
  *  who cannot edit sees the page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.leases": "View"
   });
   const { id } = params;
   if (!id) throw new Error("Could not find id");

@@ -74,7 +74,7 @@ export default function MigrationClearingTable({
   const formatter = useCurrencyFormatter();
   const accountsById = useAccountsById();
   const permissions = usePermissions();
-  const canEdit = permissions.can("update", "accounting");
+  const canEdit = permissions.has({ "settings.accounting": "Edit" });
   const action = activationStepPath("trial-balance", cutoverDate);
   const ignore = useAction();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());

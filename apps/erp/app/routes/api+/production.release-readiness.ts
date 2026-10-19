@@ -13,7 +13,7 @@ import type { JobReleaseReadiness } from "~/modules/production/production.servic
 // left out — their outside operations were handled when they were released.
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "production"
+    "production.jobs": "View"
   });
 
   const url = new URL(request.url);

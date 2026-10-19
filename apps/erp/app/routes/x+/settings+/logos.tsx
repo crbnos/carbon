@@ -49,7 +49,7 @@ type LogoTarget = keyof typeof TARGET_UPDATERS;
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    update: "settings"
+    "settings.logos": "Edit"
   });
 
   const formData = await request.formData();

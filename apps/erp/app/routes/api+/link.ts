@@ -135,11 +135,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     client,
     companyId: sessionCompanyId,
     userId
-  } = await authorize(request, {
-    // Notification links switch to the linked company, which must work from a
-    // portal company session too.
-    allowPortalAccounts: true
-  });
+  } = await authorize(
+    request,
+    {},
+    {
+      // Notification links switch to the linked company, which must work
+      // from a portal company session too.
+      allowPortalAccounts: true
+    }
+  );
 
   const url = new URL(request.url);
   const event = url.searchParams.get("event") as NotificationEvent | null;

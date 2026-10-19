@@ -16,9 +16,7 @@ import { DimensionForm } from "~/modules/accounting/ui/Dimensions";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    create: "accounting"
-  });
+  await authorize(request, { "accounting.dimensions": "Create" });
 
   return null;
 }
@@ -26,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyGroupId, userId } = await authorize(request, {
-    create: "accounting"
+    "accounting.dimensions": "Create"
   });
 
   const formData = await request.formData();

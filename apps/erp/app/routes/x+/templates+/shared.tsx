@@ -50,10 +50,11 @@ type Section = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "settings",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "settings.documentTemplates": "View" },
+    { role: "employee" }
+  );
 
   const sections = await api.settings.getDocumentSections({});
   return {
@@ -82,7 +83,7 @@ export async function action(args: ActionFunctionArgs) {
 export default function SharedSectionsRoute() {
   const { sections } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
-  const canEdit = permissions.can("update", "settings");
+  const canEdit = permissions.has({ "settings.documentTemplates": "Edit" });
 
   const [editing, setEditing] = useState<Section | null>(null);
   const disclosure = useDisclosure();

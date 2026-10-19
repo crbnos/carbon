@@ -25,7 +25,7 @@ const PublishRequestSchema = z.object({
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
 
   const parsed = PublishRequestSchema.safeParse({

@@ -7,7 +7,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getRecipeProcessIdsForItem } from "~/modules/items/items.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await authorize(request, {});
+  const { client } = await authorize(request);
   const { itemId } = params;
   if (!itemId) {
     return { data: [] as string[], error: null };

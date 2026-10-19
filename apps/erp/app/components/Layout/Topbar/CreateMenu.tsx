@@ -46,7 +46,7 @@ export function useCreate(): CreateLink[] {
 
   const result = useMemo(() => {
     const links: CreateLink[] = [];
-    if (permissions.can("create", "parts")) {
+    if (permissions.has({ "parts.parts": "Create" })) {
       links.push({
         name: t`Part`,
         to: path.to.newPart,
@@ -55,7 +55,7 @@ export function useCreate(): CreateLink[] {
       });
     }
 
-    if (permissions.can("create", "quality")) {
+    if (permissions.has({ "quality.issues": "Create" })) {
       links.push({
         name: t`Issue`,
         to: path.to.newIssue,
@@ -64,7 +64,7 @@ export function useCreate(): CreateLink[] {
       });
     }
 
-    if (permissions.can("create", "production")) {
+    if (permissions.has({ "production.jobs": "Create" })) {
       links.push({
         name: t`Job`,
         to: path.to.newJob,
@@ -73,7 +73,7 @@ export function useCreate(): CreateLink[] {
       });
     }
 
-    if (permissions.can("update", "production")) {
+    if (permissions.has({ "production.batches": "Edit" })) {
       links.push({
         name: t`Batch`,
         to: path.to.newOperationBatch,
@@ -82,7 +82,7 @@ export function useCreate(): CreateLink[] {
       });
     }
 
-    if (permissions.can("create", "inventory")) {
+    if (permissions.has({ "inventory.pickingLists": "Create" })) {
       links.push({
         name: t`Picking List`,
         to: path.to.pickingSchedule,
@@ -103,7 +103,7 @@ export function useCreate(): CreateLink[] {
       });
     }
 
-    if (permissions.can("create", "production")) {
+    if (permissions.has({ "resources.dispatches": "Create" })) {
       links.push({
         name: t`Maintenance`,
         to: path.to.newMaintenanceDispatch,
@@ -112,7 +112,7 @@ export function useCreate(): CreateLink[] {
       });
     }
 
-    if (permissions.can("create", "purchasing")) {
+    if (permissions.has({ "purchasing.purchaseOrders": "Create" })) {
       links.push({
         name: t`Purchase Order`,
         to: path.to.newPurchaseOrder,
@@ -121,7 +121,7 @@ export function useCreate(): CreateLink[] {
       });
     }
 
-    if (permissions.can("create", "purchasing")) {
+    if (permissions.has({ "purchasing.suppliers": "Create" })) {
       links.push({
         name: t`Supplier`,
         to: path.to.newSupplier,
@@ -130,7 +130,7 @@ export function useCreate(): CreateLink[] {
       });
     }
 
-    if (permissions.can("create", "sales")) {
+    if (permissions.has({ "sales.customers": "Create" })) {
       links.push({
         name: t`Customer`,
         to: path.to.newCustomer,
@@ -157,7 +157,7 @@ export function useCreate(): CreateLink[] {
       });
     }
 
-    if (permissions.can("create", "users")) {
+    if (permissions.has({ "users.accounts": "Create" })) {
       links.push({
         name: t`Employee`,
         to: path.to.newEmployee,

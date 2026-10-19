@@ -47,7 +47,7 @@ const CustomerBankAccounts = ({ bankAccounts }: CustomerBankAccountsProps) => {
   if (!customerId) throw new Error("customerId not found");
 
   const permissions = usePermissions();
-  const canEdit = permissions.can("create", "accounting");
+  const canEdit = permissions.has({ "sales.customers": "Create" });
   const isEmpty = !bankAccounts || bankAccounts.length === 0;
 
   const countries = useCountries();
@@ -204,7 +204,9 @@ const CustomerBankAccounts = ({ bankAccounts }: CustomerBankAccountsProps) => {
                       <DropdownMenuContent>
                         <DropdownMenuItem
                           shortcut={MENU_ITEM_SHORTCUTS.edit}
-                          disabled={!permissions.can("update", "accounting")}
+                          disabled={
+                            !permissions.has({ "sales.customers": "Edit" })
+                          }
                           onClick={() => navigate(account.id)}
                         >
                           <LuPencil className="mr-2" />
@@ -213,7 +215,9 @@ const CustomerBankAccounts = ({ bankAccounts }: CustomerBankAccountsProps) => {
                         <DropdownMenuItem
                           shortcut={MENU_ITEM_SHORTCUTS.delete}
                           destructive
-                          disabled={!permissions.can("delete", "accounting")}
+                          disabled={
+                            !permissions.has({ "sales.customers": "Full" })
+                          }
                           onClick={() => {
                             setSelected(account);
                             deleteModal.onOpen();

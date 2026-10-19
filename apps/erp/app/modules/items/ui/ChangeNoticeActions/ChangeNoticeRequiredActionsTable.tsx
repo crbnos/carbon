@@ -60,7 +60,9 @@ const ChangeNoticeRequiredActionsTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "parts")}
+              disabled={
+                !permissions.has({ "parts.changeNoticeActions": "Edit" })
+              }
               onClick={() => {
                 navigate(
                   `${path.to.changeNoticeRequiredAction(
@@ -75,7 +77,9 @@ const ChangeNoticeRequiredActionsTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "parts")}
+              disabled={
+                !permissions.has({ "parts.changeNoticeActions": "Full" })
+              }
               onClick={() => {
                 navigate(
                   `${path.to.deleteChangeNoticeRequiredAction(
@@ -99,7 +103,7 @@ const ChangeNoticeRequiredActionsTable = memo(
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "parts") && (
+          permissions.has({ "parts.changeNoticeActions": "Create" }) && (
             <New
               label={t`Action`}
               to={`${path.to.newChangeNoticeRequiredAction}?${params.toString()}`}

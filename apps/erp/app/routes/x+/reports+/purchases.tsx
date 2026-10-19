@@ -103,10 +103,11 @@ function parsePurchaseUrlParams(
 export const shouldRevalidate = revalidateIgnoringPivotDisplay;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "accounting.reporting": "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
 

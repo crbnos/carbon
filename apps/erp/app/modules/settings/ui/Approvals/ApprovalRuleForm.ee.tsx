@@ -50,7 +50,7 @@ const ApprovalRuleForm = ({
   } = useUser();
   const currencyDecimals = useCurrencyDecimals(baseCurrencyCode);
   const isEditing = !!rule?.id;
-  const isDisabled = !permissions.can("update", "settings");
+  const isDisabled = !permissions.has({ "settings.approvalRules": "Edit" });
   const effectiveDocumentType = rule?.documentType || documentType;
   const defaultValues = rule
     ? {

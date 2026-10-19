@@ -22,9 +22,7 @@ import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.services": "View" });
 
   const { itemId, makeMethodId } = params;
   if (!itemId) throw new Error("Could not find itemId");

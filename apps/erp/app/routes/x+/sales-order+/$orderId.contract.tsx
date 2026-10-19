@@ -21,8 +21,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   // Creates a contract and marks the order's lines invoiced.
   const { client, companyId, userId } = await authorize(request, {
-    create: "sales",
-    update: "sales"
+    "sales.salesOrders": "Edit"
   });
 
   const { orderId } = params;

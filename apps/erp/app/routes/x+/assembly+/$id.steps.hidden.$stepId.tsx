@@ -15,7 +15,7 @@ import { updateAssemblyStepHiddenComponents } from "~/modules/production/product
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "production"
+    "production.assemblies": "Edit"
   });
 
   const { id, stepId } = params;

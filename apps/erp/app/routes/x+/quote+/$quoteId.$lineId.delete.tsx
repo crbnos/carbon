@@ -15,16 +15,14 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, {
-    delete: "sales"
-  });
+  const { client } = await authorize(request, { "sales.quotes": "Full" });
 
   const { quoteId, lineId: quoteLineId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!quoteLineId) throw new Error("Could not find quoteLineId");
 
   const { client: viewClient } = await authorize(request, {
-    view: "sales"
+    "sales.quotes": "View"
   });
   const quote = await getQuote(viewClient, quoteId);
   await requireUnlocked({

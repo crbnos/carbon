@@ -304,6 +304,68 @@ export const postRun = defineServiceFn({
     ).toThrow("a published keyed permission names a literal page gate");
   });
 
+  // A row rule comes from a helper call: the reader takes the pages from
+  // the call's TYPE, as `rowRule` (`@carbon/api/permissions`) types it.
+  const ITEM_RULE = `
+declare function itemRule<const L extends string>(level: L): {
+  row: {
+    id: "itemId";
+    from: string;
+    cases: { column: string; then: { "parts.tools": L } | { "parts.parts": L } }[];
+  };
+};`;
+
+  it("publishes a row rule as one of its pages, and what picks it", () => {
+    const [run] = toolsFor({
+      "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+${ITEM_RULE}
+/**
+ * Set a cost.
+ *
+ * @mcp
+ */
+export const setCost = defineServiceFn({
+  input: null,
+  permission: itemRule("Edit"),
+  async run(_ctx, input: { itemId: string }) {
+    return null;
+  }
+});`,
+      "/m/router.ts": ROUTER
+    });
+    expect(run?.permission).toEqual({
+      module: "parts",
+      actions: ["view", "create", "update"],
+      oneOf: {
+        pages: ["parts.parts", "parts.tools"],
+        level: "Edit",
+        by: ["item.type"]
+      }
+    });
+    expect(run?.classification).toBe("WRITE");
+  });
+
+  it("publishes an anyOf rule as one of its pages, picked by nothing", () => {
+    const [list] = published(
+      `{ anyOf: [{ "parts.tools": "View" }, { "parts.parts": "View" }] } as const`
+    );
+    expect(list?.permission).toEqual({
+      module: "parts",
+      actions: ["view"],
+      oneOf: { pages: ["parts.parts", "parts.tools"], level: "View", by: [] }
+    });
+    expect(list?.classification).toBe("READ");
+  });
+
+  it("refuses an anyOf rule whose pages have different levels", () => {
+    expect(() =>
+      published(
+        `{ anyOf: [{ "parts.tools": "View" }, { "parts.parts": "Edit" }] } as const`
+      )
+    ).toThrow("a published anyOf rule names its pages at one level");
+  });
+
   it("refuses to publish a system-only function", () => {
     const published = PRODUCTION.replace(
       "/** Re-plan an item. Not published. */",

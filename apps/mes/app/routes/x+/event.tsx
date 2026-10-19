@@ -48,7 +48,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // would check is checked here, before anything is written. A refusal stays
   // on the page as a message.
   const permitted = async (
-    permission: { create: "production" } | { update: "production" }
+    permission: { "production.jobs": "Create" } | { "production.jobs": "Edit" }
   ) => {
     try {
       await authorize(request, permission);
@@ -72,7 +72,10 @@ export async function action({ request }: ActionFunctionArgs) {
   if (productionAction === "Start") {
     const machineWorkCenterId =
       d.type === "Machine" ? d.workCenterId : undefined;
-    if (machineWorkCenterId && !(await permitted({ create: "production" }))) {
+    if (
+      machineWorkCenterId &&
+      !(await permitted({ "production.jobs": "Create" }))
+    ) {
       return refused("You do not have permission to start machine time");
     }
 
@@ -185,7 +188,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (event.data.endTime) return refused("This event has already ended");
 
   if (event.data.type === "Machine" && event.data.workCenterId) {
-    if (!(await permitted({ update: "production" }))) {
+    if (!(await permitted({ "production.jobs": "Edit" }))) {
       return refused("You do not have permission to end machine time");
     }
     let press: Awaited<ReturnType<typeof endMachineProductionEvent>>;

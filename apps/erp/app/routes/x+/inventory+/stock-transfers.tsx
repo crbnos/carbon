@@ -27,7 +27,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId, api } = await authorize(request, {
-    view: "inventory"
+    "inventory.stockTransfers": "View"
   });
 
   const url = new URL(request.url);

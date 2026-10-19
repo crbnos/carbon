@@ -15,10 +15,11 @@ import { SequenceForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "settings",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "settings.sequences": "View" },
+    { role: "employee" }
+  );
 
   const { tableId } = params;
   if (!tableId) throw notFound("tableId not found");
@@ -39,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "settings"
+    "settings.sequences": "Edit"
   });
 
   const validation = await validator(sequenceValidator).validate(

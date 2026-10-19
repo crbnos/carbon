@@ -17,7 +17,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, email } = await authorize(request, {
-    view: "settings"
+    "settings.companies": "View"
   });
 
   // Multi-company management is gated to internal (Carbon) users for now.

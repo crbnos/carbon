@@ -12,7 +12,7 @@ import { getDatabaseClient } from "~/services/database.server";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    create: "sales"
+    "sales.quotes": "Create"
   });
 
   const { quoteId: id } = params;

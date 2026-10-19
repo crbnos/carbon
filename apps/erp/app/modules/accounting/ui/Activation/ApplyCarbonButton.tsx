@@ -34,7 +34,9 @@ export default function ApplyCarbonButton({
         type="submit"
         variant="secondary"
         leftIcon={<LuArrowLeftToLine />}
-        isDisabled={!permissions.can("update", "accounting") || !hasDifference}
+        isDisabled={
+          !permissions.has({ "settings.accounting": "Edit" }) || !hasDifference
+        }
         isLoading={apply.isPending}
       >
         <Trans>Apply to Trial Balance</Trans>

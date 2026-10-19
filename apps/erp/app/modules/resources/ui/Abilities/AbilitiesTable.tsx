@@ -111,7 +111,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         </MenuItem>
         <MenuItem
           destructive
-          disabled={!permissions.can("delete", "resources")}
+          disabled={!permissions.has({ "resources.abilities": "Full" })}
           onClick={() => {
             navigate(`${path.to.deleteAbility(row.id!)}?${params?.toString()}`);
           }}
@@ -130,7 +130,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
       columns={columns}
       count={count ?? 0}
       primaryAction={
-        permissions.can("create", "resources") && (
+        permissions.has({ "resources.abilities": "Create" }) && (
           <New label={t`Ability`} to={`new?${params.toString()}`} />
         )
       }

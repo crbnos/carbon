@@ -99,8 +99,8 @@ const IssueWorkflowForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "quality")
-    : !permissions.can("create", "quality");
+    ? !permissions.has({ "quality.issueWorkflows": "Edit" })
+    : !permissions.has({ "quality.issueWorkflows": "Create" });
 
   // Get the ordered list of selected actions
   const orderedActions = selectedActionIds
@@ -183,7 +183,7 @@ const IssueWorkflowForm = ({
           </label>
           <Card className="p-0 bg-transparent dark:from-transparent  dark:via-transparent dark:to-transparent">
             <CardContent className="flex flex-col gap-0 p-6">
-              {permissions.can("update", "quality") ? (
+              {permissions.has({ "quality.issueWorkflows": "Edit" }) ? (
                 <Editor
                   initialValue={content}
                   onUpload={onUploadImage}

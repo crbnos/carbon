@@ -244,7 +244,7 @@ const LeasePurchaseModal = ({
             </Button>
             <Submit
               isDisabled={
-                !permissions.can("update", "purchasing") ||
+                !permissions.has({ "purchasing.leases": "Edit" }) ||
                 !exerciseDate ||
                 refusal !== null
               }

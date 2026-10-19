@@ -7,9 +7,7 @@ import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "production"
-  });
+  const { api } = await authorize(request, { "production.procedures": "View" });
 
   return await api.production.getProceduresList({});
 }

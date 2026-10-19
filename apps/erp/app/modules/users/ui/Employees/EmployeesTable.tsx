@@ -102,7 +102,7 @@ const EmployeesTable = memo(
     const resendInviteModal = useDisclosure();
     const revokeInviteModal = useDisclosure();
 
-    const canEdit = permissions.can("update", "users");
+    const canEdit = permissions.has({ "users.accounts": "Edit" });
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(() => {
@@ -291,7 +291,7 @@ const EmployeesTable = memo(
                 bulkEditDrawer.onOpen();
               }}
               disabled={
-                !permissions.can("update", "users") ||
+                !permissions.has({ "users.accounts": "Edit" }) ||
                 selectedRows.every((row) => row.active === false)
               }
             >
@@ -315,7 +315,7 @@ const EmployeesTable = memo(
                 resendInviteModal.onOpen();
               }}
               disabled={
-                !permissions.can("create", "users") ||
+                !permissions.has({ "users.accounts": "Create" }) ||
                 !selectedRows.some(
                   (row) =>
                     row.active === false &&
@@ -341,7 +341,7 @@ const EmployeesTable = memo(
                 deactivateEmployeeModal.onOpen();
               }}
               disabled={
-                !permissions.can("delete", "users") ||
+                !permissions.has({ "users.accounts": "Full" }) ||
                 !selectedRows.some(
                   (row) => row.active === true && row.id !== currentUserId
                 )
@@ -389,8 +389,8 @@ const EmployeesTable = memo(
                     console operators need users_update, anyone else also
                     settings_update (enforced again by the route). */}
                 {settings.consoleEnabled &&
-                  permissions.can("update", "users") &&
-                  (permissions.can("update", "settings") ||
+                  permissions.has({ "users.accounts": "Edit" }) &&
+                  (permissions.has({ "settings.people": "Edit" }) ||
                     row.email?.endsWith("@console.internal")) && (
                     <MenuItem
                       onClick={() =>
@@ -427,7 +427,7 @@ const EmployeesTable = memo(
                 )}
               </>
             ) : hasUnrevokedInvite ? (
-              permissions.can("delete", "users") && (
+              permissions.has({ "users.accounts": "Full" }) && (
                 <MenuItem
                   onClick={() => {
                     setSelectedUserIds([row.id!]);
@@ -474,7 +474,7 @@ const EmployeesTable = memo(
           data={data}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
-            permissions.can("create", "users") && (
+            permissions.has({ "users.accounts": "Create" }) && (
               <New label={t`Account`} to={`new?${params.toString()}`} />
             )
           }

@@ -212,8 +212,8 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
           <Submit
             isDisabled={
               isEditing
-                ? !permissions.can("update", "purchasing")
-                : !permissions.can("create", "purchasing")
+                ? !permissions.has({ "purchasing.purchaseOrders": "Edit" })
+                : !permissions.has({ "purchasing.purchaseOrders": "Create" })
             }
           >
             <Trans>Save</Trans>

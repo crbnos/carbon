@@ -12,9 +12,7 @@ import DocumentView from "~/modules/documents/ui/Documents/DocumentView";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "documents"
-  });
+  const { api } = await authorize(request, { documents: "View" });
 
   const { documentId } = params;
   if (!documentId) throw notFound("documentId not found");

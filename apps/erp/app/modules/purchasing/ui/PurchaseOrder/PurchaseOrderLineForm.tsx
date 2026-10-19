@@ -334,8 +334,8 @@ const PurchaseOrderLineForm = ({
   });
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "purchasing")
-    : !permissions.can("create", "purchasing");
+    ? !permissions.has({ "purchasing.purchaseOrders": "Edit" })
+    : !permissions.has({ "purchasing.purchaseOrders": "Create" });
 
   const deleteDisclosure = useDisclosure();
   // These badges render DOCUMENT-currency values, so both formatters take the

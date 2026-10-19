@@ -391,7 +391,7 @@ function PickingListLineItem({
       }
     ).trackedEntities ?? []
   ).filter((t) => Number(t.quantityPicked ?? 0) > 0);
-  const canPick = permissions.can("update", "inventory");
+  const canPick = permissions.has({ "inventory.pickingLists": "Edit" });
 
   const pick = (quantity: number) => {
     const formData = new FormData();

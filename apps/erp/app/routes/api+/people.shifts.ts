@@ -7,7 +7,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getShiftsList } from "~/modules/people/people.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const authorized = await authorize(request, {});
+  const authorized = await authorize(request);
 
   const url = new URL(request.url);
   const location = url.searchParams.get("location");

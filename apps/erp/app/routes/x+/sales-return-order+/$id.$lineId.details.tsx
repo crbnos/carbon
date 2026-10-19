@@ -19,7 +19,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "sales"
+    "sales.returns": "View"
   });
 
   const { id: orderId, lineId } = params;

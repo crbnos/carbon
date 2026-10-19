@@ -94,6 +94,26 @@ export function moduleOf(pageId: string): string {
   return dot === -1 ? pageId : pageId.slice(0, dot);
 }
 
+/** The pages of a module, in sidebar order. */
+export function pagesOf(module: string): PageId[] {
+  return PAGES.filter((page) => moduleOf(page.id) === module).map(
+    (page) => page.id
+  );
+}
+
+/** The page of each item type, which picks its rows of `item`: `{ Part: "parts.parts", … }`. */
+export const ITEM_TYPE_PAGES: Readonly<Record<string, PageId>> =
+  Object.fromEntries(
+    PAGES.flatMap((page) =>
+      "where" in page && page.where.table === "item"
+        ? [[page.where.value, page.id]]
+        : []
+    )
+  );
+
+/** The five item type pages: Parts, Materials, Tools, Consumables and Services. */
+export const ITEM_PAGES: readonly PageId[] = Object.values(ITEM_TYPE_PAGES);
+
 /** One page's rows of a shared table: the column, and the value that picks them. */
 export type Branch = { page: string; column: string; value?: string };
 

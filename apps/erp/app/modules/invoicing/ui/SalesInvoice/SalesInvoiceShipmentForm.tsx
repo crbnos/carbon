@@ -147,7 +147,10 @@ const SalesInvoiceShipmentForm = forwardRef<
         </CardContent>
         <CardFooter>
           <Submit
-            isDisabled={!permissions.can("update", "invoicing") || !isEditable}
+            isDisabled={
+              !permissions.has({ "invoicing.salesInvoices": "Edit" }) ||
+              !isEditable
+            }
           >
             <Trans>Save</Trans>
           </Submit>

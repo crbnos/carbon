@@ -15,10 +15,11 @@ import { deleteTimeCardEntry } from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "people",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "people.timecards": "View" },
+    { role: "employee" }
+  );
 
   const { entryId } = params;
   if (!entryId) throw notFound("entryId not found");
@@ -37,9 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, {
-    delete: "people"
-  });
+  const { client } = await authorize(request, { "people.timecards": "Full" });
 
   const { entryId } = params;
   if (!entryId) {

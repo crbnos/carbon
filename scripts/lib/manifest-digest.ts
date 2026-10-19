@@ -95,9 +95,19 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
         classification: t.classification,
         schema: stableHash(t.schema),
         response: t.responseSchema ? stableHash(t.responseSchema) : "none",
-        permission: t.permission?.module
-          ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
-          : "none",
+        permission: `${
+          t.permission?.module
+            ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
+            : "none"
+        }${
+          t.permission?.oneOf
+            ? ` one of ${t.permission.oneOf.pages.join("|")}${
+                t.permission.oneOf.by.length
+                  ? ` by ${t.permission.oneOf.by.join("|")}`
+                  : ""
+              }`
+            : ""
+        }`,
         paginates: t.paginates
       }))
   };

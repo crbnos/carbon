@@ -209,10 +209,11 @@ const RentalAgreementProperties = () => {
   ];
   const isInvoicingReadOnly =
     !["Draft", "Active"].includes(agreement.status ?? "") ||
-    !permissions.can("update", "sales");
+    !permissions.has({ "sales.rentalAgreements": "Edit" });
 
   const isDisabled =
-    agreement.status !== "Draft" || !permissions.can("update", "sales");
+    agreement.status !== "Draft" ||
+    !permissions.has({ "sales.rentalAgreements": "Edit" });
   const moneyFormat = INPUT_FORMAT.money(currencyCode, currencyDecimals);
   const moneyStep = INPUT_STEP.money(currencyDecimals);
   // Only a fixed term can be a sales-type lease, so these inputs matter only

@@ -10,7 +10,7 @@ import RecordDocuments from "~/components/RecordDocuments";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.suppliers": "View"
   });
 
   const { supplierId } = params;
@@ -35,7 +35,7 @@ export default function SupplierDocumentsRoute() {
       id={supplierId}
       bucketPrefix="supplier"
       sourceDocument="Supplier"
-      module="purchasing"
+      page="purchasing.suppliers"
     />
   );
 }

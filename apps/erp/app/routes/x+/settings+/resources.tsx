@@ -40,9 +40,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "settings"
-  });
+  const { api } = await authorize(request, { "settings.resources": "View" });
 
   const [company, companySettings] = await Promise.all([
     api.settings.getCompany({}),

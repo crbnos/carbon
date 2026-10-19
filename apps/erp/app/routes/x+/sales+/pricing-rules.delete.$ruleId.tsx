@@ -14,9 +14,7 @@ import { deletePricingRule } from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.pricingRules": "View" });
 
   const { ruleId } = params;
   if (!ruleId) throw notFound("ruleId not found");
@@ -36,9 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, {
-    delete: "sales"
-  });
+  const { client } = await authorize(request, { "sales.pricingRules": "Full" });
 
   const { ruleId } = params;
   if (!ruleId) {

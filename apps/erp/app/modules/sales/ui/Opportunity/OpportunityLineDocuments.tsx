@@ -61,6 +61,7 @@ import type { ModelUpload } from "~/types";
 import { downloadModelFile } from "~/utils/download";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+import { OPPORTUNITY_PAGES } from "./OpportunityDocuments";
 
 const logger = getLogger("erp", "sales", "opportunity-documents");
 
@@ -82,8 +83,8 @@ const useOpportunityLineDocuments = ({
   const { company } = useUser();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", "sales");
-  const canUpdate = permissions.can("update", "sales");
+  const canDelete = permissions.has({ [OPPORTUNITY_PAGES[type]]: "Full" });
+  const canUpdate = permissions.has({ [OPPORTUNITY_PAGES[type]]: "Edit" });
 
   const getPath = useCallback(
     (
@@ -704,7 +705,7 @@ const OpportunityLineDocumentForm = ({
 
   return (
     <File
-      isDisabled={!permissions.can("update", "sales")}
+      isDisabled={!permissions.has({ [OPPORTUNITY_PAGES[type]]: "Edit" })}
       leftIcon={<LuUpload />}
       onChange={(e) => uploadFiles(e, "opportunity-line")}
       multiple

@@ -291,8 +291,8 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
           <Submit
             isDisabled={
               isEditing
-                ? !permissions.can("update", "sales")
-                : !permissions.can("create", "sales")
+                ? !permissions.has({ "sales.salesOrders": "Edit" })
+                : !permissions.has({ "sales.salesOrders": "Create" })
             }
           >
             <Trans>Save</Trans>

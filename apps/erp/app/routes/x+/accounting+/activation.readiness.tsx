@@ -30,7 +30,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "accounting"
+    "settings.accounting": "View"
   });
   const cutover = await getActivationCutover(client, companyId, request);
   const readiness = await getActivationReadiness(getDatabaseClient(), {

@@ -14,7 +14,7 @@ import { getDatabaseClient } from "~/services/database.server";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    update: "sales"
+    "sales.salesOrders": "Edit"
   });
 
   if (!params.orderId) throw new Error("Could not find orderId");

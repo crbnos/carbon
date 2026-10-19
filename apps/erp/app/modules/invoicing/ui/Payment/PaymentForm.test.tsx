@@ -144,7 +144,7 @@ vi.mock("~/hooks", async () => {
   const { useCurrencyDecimals } = await import("~/hooks/useCurrencies");
   return {
     useCurrencyDecimals,
-    usePermissions: () => ({ can: () => true }),
+    usePermissions: () => ({ has: () => true }),
     useUser: () => ({ company: { baseCurrencyCode: "USD" } })
   };
 });

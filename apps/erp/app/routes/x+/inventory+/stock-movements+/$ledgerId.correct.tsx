@@ -11,9 +11,7 @@ import { stockMovementCorrectionValidator } from "~/modules/inventory/inventory.
 // visible rows can miss off-page corrections (or descendants of a correction
 // row), so the client never derives the effective quantity itself.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "inventory"
-  });
+  const { api } = await authorize(request, { "inventory.movements": "View" });
 
   const { ledgerId } = params;
   if (!ledgerId) throw new Error("Could not find ledgerId");

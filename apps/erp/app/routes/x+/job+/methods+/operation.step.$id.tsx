@@ -14,7 +14,7 @@ import { operationStepValidator } from "~/modules/shared/shared.models";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "production"
+    "production.jobs": "Edit"
   });
 
   const { id } = params;

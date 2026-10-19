@@ -52,7 +52,8 @@ export default function RentalAgreementExplorer() {
   const rentalAgreement = routeData?.rentalAgreement;
   const lines = routeData?.lines ?? [];
   const isDraft = rentalAgreement?.status === "Draft";
-  const canAdd = isDraft && permissions.can("create", "sales");
+  const canAdd =
+    isDraft && permissions.has({ "sales.rentalAgreements": "Create" });
 
   if (!rentalAgreement) return null;
 

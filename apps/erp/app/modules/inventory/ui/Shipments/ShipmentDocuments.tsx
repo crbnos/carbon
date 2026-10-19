@@ -54,7 +54,7 @@ function useSourceDocument(shipment?: Shipment): SourceDocument | null {
 
   switch (shipment.sourceDocument) {
     case "Sales Order":
-      return permissions.can("view", "sales")
+      return permissions.has({ "sales.salesOrders": "View" })
         ? {
             to: path.to.salesOrderDetails(id),
             icon: <RiProgress8Line />,
@@ -62,7 +62,7 @@ function useSourceDocument(shipment?: Shipment): SourceDocument | null {
           }
         : null;
     case "Sales Invoice":
-      return permissions.can("view", "invoicing")
+      return permissions.has({ "invoicing.salesInvoices": "View" })
         ? {
             to: path.to.salesInvoice(id),
             icon: <LuCreditCard />,
@@ -70,7 +70,7 @@ function useSourceDocument(shipment?: Shipment): SourceDocument | null {
           }
         : null;
     case "Purchase Order":
-      return permissions.can("view", "purchasing")
+      return permissions.has({ "purchasing.purchaseOrders": "View" })
         ? {
             to: path.to.purchaseOrderDetails(id),
             icon: <LuShoppingCart />,
@@ -78,7 +78,7 @@ function useSourceDocument(shipment?: Shipment): SourceDocument | null {
           }
         : null;
     case "Outbound Transfer":
-      return permissions.can("view", "inventory")
+      return permissions.has({ "inventory.shipments": "View" })
         ? {
             to: path.to.warehouseTransferDetails(id),
             icon: <LuTruck />,
@@ -86,7 +86,7 @@ function useSourceDocument(shipment?: Shipment): SourceDocument | null {
           }
         : null;
     case "Purchase Return Order":
-      return permissions.can("view", "purchasing")
+      return permissions.has({ "purchasing.returns": "View" })
         ? {
             to: path.to.purchaseReturnOrderDetails(id),
             icon: <LuUndo2 />,
@@ -94,7 +94,7 @@ function useSourceDocument(shipment?: Shipment): SourceDocument | null {
           }
         : null;
     case "Sales Return Order":
-      return permissions.can("view", "sales")
+      return permissions.has({ "sales.returns": "View" })
         ? {
             to: path.to.salesReturnOrderDetails(id),
             icon: <LuUndo2 />,
@@ -102,7 +102,7 @@ function useSourceDocument(shipment?: Shipment): SourceDocument | null {
           }
         : null;
     case "Rental Agreement":
-      return permissions.can("view", "sales")
+      return permissions.has({ "sales.rentalAgreements": "View" })
         ? {
             to: path.to.rentalAgreementDetails(id),
             icon: <LuKeyRound />,
@@ -134,7 +134,8 @@ function useParty(
 
   if (isPurchase) {
     const supplier = suppliers.find((s) => s.id === shipment.supplierId);
-    if (!supplier || !permissions.can("view", "purchasing")) return null;
+    if (!supplier || !permissions.has({ "purchasing.suppliers": "View" }))
+      return null;
     return {
       to: path.to.supplier(supplier.id),
       icon: <LuContainer />,
@@ -144,7 +145,7 @@ function useParty(
   }
 
   const customer = customers.find((c) => c.id === shipment.customerId);
-  if (!customer || !permissions.can("view", "sales")) return null;
+  if (!customer || !permissions.has({ "sales.customers": "View" })) return null;
   return {
     to: path.to.customer(customer.id),
     icon: <LuSquareUser />,
@@ -208,7 +209,7 @@ const ShipmentDocuments = () => {
 
   const hasRows = Boolean(partyRow || sourceRow || packingSlipRow);
 
-  if (!permissions.can("view", "invoicing")) {
+  if (!permissions.has({ "invoicing.salesInvoices": "View" })) {
     return hasRows ? (
       <RelatedDocumentGroup>
         {partyRow}

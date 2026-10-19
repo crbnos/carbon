@@ -269,7 +269,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
-          disabled={!permissions.can("delete", "quality")}
+          disabled={!permissions.has({ "quality.risks": "Full" })}
           onClick={() => onDelete(row)}
         >
           <MenuIcon icon={<LuTrash />} />
@@ -288,7 +288,7 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
         columns={columns}
         count={count ?? 0}
         primaryAction={
-          permissions.can("create", "quality") && (
+          permissions.has({ "quality.risks": "Create" }) && (
             <New label={t`Risk`} to={`new?${params.toString()}`} />
           )
         }

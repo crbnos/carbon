@@ -48,7 +48,7 @@ const transferOwnershipValidator = z.object({
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "settings"
+    "settings.billing": "View"
   });
 
   // Get company plan and usage data for payment section

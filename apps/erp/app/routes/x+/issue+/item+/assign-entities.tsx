@@ -19,7 +19,7 @@ import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "quality"
+    "quality.issues": "Edit"
   });
 
   const formData = await request.formData();

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { unchecked } from "@carbon/utils";
 import { useCallback } from "react";
 import { usePermissions } from "~/hooks";
@@ -12,8 +13,8 @@ export default function useCustomerParts() {
   const { carbon } = useCarbon();
   const permissions = usePermissions();
 
-  const canEdit = permissions.can("update", "parts");
-  const canDelete = permissions.can("delete", "parts");
+  const canEdit = permissions.has(anyOf(ITEM_PAGES, "Edit"));
+  const canDelete = permissions.has(anyOf(ITEM_PAGES, "Full"));
 
   const onCellEdit = useCallback(
     async (id: string, value: unknown, row: CustomerPart) => {

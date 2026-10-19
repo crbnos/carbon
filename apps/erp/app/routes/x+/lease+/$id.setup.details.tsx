@@ -35,7 +35,7 @@ const logger = getLogger("erp", "lease-setup-details");
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "purchasing"
+    "purchasing.leases": "Edit"
   });
 
   const { id } = params;

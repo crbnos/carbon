@@ -16,7 +16,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(error(null, "Passkeys are disabled"), { status: 404 });
   }
 
-  const { userId, email } = await authorize(request, {});
+  const { userId, email } = await authorize(request);
 
   const serviceRole = getCarbonServiceRole();
 

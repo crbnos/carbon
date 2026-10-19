@@ -73,8 +73,13 @@ any other value export in a server file fails generation.
   update). Pages of one module → `{ module, actions }`; pages of several
   modules, or `"employee"` (any employee of the company) →
   `{ module: null, actions: [] }`. A keyed permission (`{ by, rules }`)
-  publishes every page its rules name. A page the registry does not have, or
-  a level that is not View, Create, Edit or Full, fails generation. The
+  publishes every page its rules name. An `anyOf` or row rule (`rowRule`,
+  `itemRule`) is read off its TYPE, so a helper call publishes like a
+  literal: its pages also go out as `oneOf: { pages, level, by }` (`by` is
+  the row column that picks, `item.type`), which `describe_tool` prints as
+  "one of … at <Level>" and the digest appends to its permission. A page
+  the registry does not have, or a level that is not View, Create, Edit or
+  Full, fails generation. The
   function's own gate is the only check. `"system"` cannot be published.
 - **Classification**: only `view` → READ; any `delete` → DESTRUCTIVE; else
   WRITE. `@mcp read` forces READ, for a read gated on membership alone (`"employee"`);

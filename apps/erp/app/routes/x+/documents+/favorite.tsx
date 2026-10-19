@@ -12,9 +12,7 @@ import { updateDocumentFavorite } from "~/modules/documents/documents.service";
 import { favoriteSchema } from "~/types/validators";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await authorize(request, {
-    view: "purchasing"
-  });
+  const { client, userId } = await authorize(request, { documents: "View" });
 
   const validation = await validator(favoriteSchema).validate(
     await request.formData()

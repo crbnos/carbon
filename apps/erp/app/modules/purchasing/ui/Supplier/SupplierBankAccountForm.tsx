@@ -82,8 +82,8 @@ const SupplierBankAccountForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.has({ "purchasing.suppliers": "Edit" })
+    : !permissions.has({ "purchasing.suppliers": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

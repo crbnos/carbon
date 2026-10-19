@@ -31,9 +31,7 @@ import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await authorize(request, {
-    update: "users"
-  });
+  const { client } = await authorize(request, { "users.operators": "Edit" });
 
   const { operatorId } = params;
   if (!operatorId) throw new Error("Operator ID is required");
@@ -57,7 +55,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "users"
+    "users.operators": "Edit"
   });
 
   const { operatorId } = params;

@@ -6,6 +6,7 @@ import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -16,10 +17,11 @@ import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    anyOf(["accounting.revenueRecognition", "accounting.leases"], "View"),
+    { role: "employee" }
+  );
 
   const { runId } = params;
   if (!runId) throw notFound("runId not found");
@@ -34,6 +36,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
+  // The run's type picks its page.
+  await authorize(request, { [RUN_PAGES[run.data.type].page]: "View" });
 
   return { run: run.data };
 }

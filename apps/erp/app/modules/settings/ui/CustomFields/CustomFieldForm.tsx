@@ -72,8 +72,8 @@ const CustomFieldForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "resources")
-    : !permissions.can("create", "resources");
+    ? !permissions.has({ "settings.customFields": "Edit" })
+    : !permissions.has({ "settings.customFields": "Create" });
 
   const [dataType, setDataType] = useState<string>(
     initialValues.dataTypeId.toString()

@@ -41,7 +41,7 @@ import { path } from "~/utils/path";
 //   salesOrderId / rentalAgreementId -> seeds the deposit document
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, api } = await authorize(request, {
-    create: "invoicing"
+    "invoicing.payments": "Create"
   });
 
   const url = new URL(request.url);
@@ -143,7 +143,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action(args: ActionFunctionArgs) {
   const { client, companyId } = await authorize(args.request, {
-    create: "invoicing"
+    "invoicing.payments": "Create"
   });
   const input = await validator(paymentValidator).request(args);
   if ("invalid" in input) return input.invalid;

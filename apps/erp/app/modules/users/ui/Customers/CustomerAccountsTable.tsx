@@ -79,7 +79,7 @@ const CustomerAccountsTable = memo(
       [unrevokedInviteSet]
     );
 
-    const canEdit = permissions.can("update", "users");
+    const canEdit = permissions.has({ "users.accounts": "Edit" });
 
     const rows = useMemo(
       () =>
@@ -225,7 +225,7 @@ const CustomerAccountsTable = memo(
                 resendInviteModal.onOpen();
               }}
               disabled={
-                !permissions.can("create", "users") ||
+                !permissions.has({ "users.accounts": "Create" }) ||
                 !selectedRows.some(
                   (row) =>
                     row.active === false && !hasUnrevokedInviteForRow(row)
@@ -247,7 +247,7 @@ const CustomerAccountsTable = memo(
                 deactivateCustomerModal.onOpen();
               }}
               disabled={
-                !permissions.can("delete", "users") ||
+                !permissions.has({ "users.accounts": "Full" }) ||
                 selectedRows.every((row) => row.active === false)
               }
             >
@@ -284,7 +284,7 @@ const CustomerAccountsTable = memo(
                 <Trans>Deactivate Account</Trans>
               </MenuItem>
             ) : hasUnrevokedInvite ? (
-              permissions.can("delete", "users") && (
+              permissions.has({ "users.accounts": "Full" }) && (
                 <MenuItem
                   onClick={() => {
                     setSelectedUserIds([row.user.id]);
@@ -327,7 +327,7 @@ const CustomerAccountsTable = memo(
           data={rows}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
-            permissions.can("create", "users") && (
+            permissions.has({ "users.accounts": "Create" }) && (
               <New label={t`Customer`} to={`new?${params.toString()}`} />
             )
           }

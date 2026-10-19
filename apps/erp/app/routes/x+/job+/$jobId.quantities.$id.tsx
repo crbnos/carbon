@@ -13,9 +13,7 @@ import { ProductionQuantityForm } from "~/modules/production/ui/Jobs";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "production"
-  });
+  const { api } = await authorize(request, { "production.jobs": "View" });
 
   const { id, jobId } = params;
   if (!id) throw notFound("id not found");

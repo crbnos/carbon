@@ -28,7 +28,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "production"
+    "production.jobs": "View"
   });
   // The Complete To pickers. A CIP class is the holding account a job's cost
   // sits in, never a target, so it is filtered out here rather than by name.

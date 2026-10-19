@@ -10,7 +10,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const authorized = await authorize(request, {});
+  const authorized = await authorize(request);
 
   const { processId } = params;
 

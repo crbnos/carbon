@@ -5,6 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -13,16 +14,20 @@ import { updateItem } from "~/modules/items/items.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await authorize(request, {
-    create: "parts"
-  });
-
   const { type } = params;
   if (!type) throw new Error("Could not find type");
 
-  if (!["Part", "Material", "Tool", "Service", "Consumable"].includes(type)) {
+  const page = Object.hasOwn(ITEM_TYPE_PAGES, type)
+    ? ITEM_TYPE_PAGES[type]
+    : undefined;
+  if (!page) {
     throw new Error("Invalid type");
   }
+
+  // The item's type picks its page.
+  const { client, companyId } = await authorize(request, {
+    [page]: "Create"
+  });
 
   const formData = await request.formData();
   const validation = await validator(itemValidator).validate(formData);

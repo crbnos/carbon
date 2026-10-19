@@ -22,10 +22,11 @@ import { ApprovalRuleForm } from "~/modules/settings/ui";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "settings",
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { "settings.approvalRules": "View" },
+    { role: "employee" }
+  );
 
   await requireFeature({
     request,
@@ -62,10 +63,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { client, companyId, userId } = await authorize(request, {
-    update: "settings",
-    role: "employee"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    { "settings.approvalRules": "Edit" },
+    { role: "employee" }
+  );
 
   await requireFeature({
     request,

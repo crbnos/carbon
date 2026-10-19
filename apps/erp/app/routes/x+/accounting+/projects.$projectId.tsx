@@ -16,10 +16,11 @@ import { ProjectForm } from "~/modules/accounting/ui/Projects";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "accounting.projects": "View" },
+    { role: "employee" }
+  );
 
   const { projectId } = params;
   if (!projectId) throw notFound("projectId not found");
@@ -34,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "accounting"
+    "accounting.projects": "Edit"
   });
 
   const { projectId } = params;

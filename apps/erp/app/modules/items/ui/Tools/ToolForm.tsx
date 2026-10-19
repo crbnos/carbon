@@ -424,8 +424,8 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={
                   isEditing
-                    ? !permissions.can("update", "parts")
-                    : !permissions.can("create", "parts")
+                    ? !permissions.has({ "parts.tools": "Edit" })
+                    : !permissions.has({ "parts.tools": "Create" })
                 }
               >
                 <Trans>Save</Trans>

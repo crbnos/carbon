@@ -4,9 +4,10 @@ Authentication, RBAC, session management, Supabase client factories, API key aut
 
 ## Always
 
-- Gate loaders/actions with `authorize(request, { view?, create?, update?, delete? })` — never construct Supabase clients directly in routes. It runs `requirePermissions` (internal to this package, not exported) and returns its result plus `api`: the ERP's service functions bound to that caller, built on first read by the binding the ERP registers through `registerApi` (`registerCarbon`, `@carbon/api/carbon.server`), with its type stated on `Register`. `authorize(caller)` binds a caller another gate authenticated (the Onshape panel's `authorizePanel`).
-- `authorize` also returns `caller` (`"session"` or `"apiKey"`) and `permissions` (the session user's claims, or the key's scopes, per module). `serviceContext` (ERP) builds the service-function actor from them, so the gate in `defineServiceFn` checks the same grants this function read.
-- `authorize` refuses customer and supplier portal sessions with a 403 (API keys are unaffected). `{}` used to admit them everywhere, and ~50 routes that then read with the service role were reachable by a portal account. Pass `allowPortalAccounts: true` ONLY on a route that acts on the user's own identity (onboarding, company switch, notification links, academy progress) — never on one that returns company data.
+- Gate loaders/actions with `authorize(request, gate?, options?)` — never construct Supabase clients directly in routes. It runs `requirePermissions` (internal to this package, not exported) and returns its result plus `api`: the ERP's service functions bound to that caller, built on first read by the binding the ERP registers through `registerApi` (`registerCarbon`, `@carbon/api/carbon.server`), with its type stated on `Register`. `authorize(caller)` binds a caller another gate authenticated (the Onshape panel's `authorizePanel`).
+- A gate names pages and levels: `{ "inventory.receipts": "Edit" }` (`Gate`, from `@carbon/database/access`, typed by the registry). Two entries need both; a list (`anyOf(pages, level)`) passes on any one, for a route several pages share. An entry passes when the claims hold the highest action of its level on the page (`holdsGate`). `options` holds `role`, `bypassRls` and `allowPortalAccounts`: `authorize(request, { "sales.customers": "View" }, { role: "employee" })`. No route gate names a module.
+- `authorize` also returns `caller` (`"session"` or `"apiKey"`) and `permissions` (the session user's claims, or the key's scopes, per page). `serviceContext` (ERP) builds the service-function actor from them, so the gate in `defineServiceFn` checks the same grants this function read.
+- `authorize` refuses customer and supplier portal sessions with a 403 (API keys are unaffected). `{}` used to admit them everywhere, and ~50 routes that then read with the service role were reachable by a portal account. Pass `{ allowPortalAccounts: true }` as the options ONLY on a route that acts on the user's own identity (onboarding, company switch, notification links, academy progress) — never on one that returns company data.
 - Use the factory from `@carbon/auth/client.server`: `getCarbon(accessToken)` for user-scoped (RLS), `getCarbonServiceRole()` for privileged server ops only.
 - Every server client built while a request is being handled is bound to it through `requestFetch()` (`lib/supabase/client.server.ts`): all of that request's clients share one limit of 8 calls in flight (a wait for a slot is a `supabase slot wait` span), and on a GET/HEAD request their reads (PostgREST GET/HEAD, storage reads) are cancelled when the request is. RPCs, table writes, auth and edge-function calls are never cancelled. Outside a request (jobs, scripts) `requestFetch()` is `undefined` and the client is unbound. A new client factory must pass `requestFetch()` too, or its calls escape both.
 - Invalidate Redis permission cache (`redis.del(getPermissionCacheKey(userId))`) when changing user permissions — stale cache is the #1 cause of "Access Denied" bugs.
@@ -24,7 +25,7 @@ Authentication, RBAC, session management, Supabase client factories, API key aut
 
 ## Never
 
-- Expose `getCarbonServiceRole()` client to code that hasn't verified permissions via `authorize` with `bypassRls: true` + employee role.
+- Expose `getCarbonServiceRole()` client to code that hasn't verified permissions via `authorize` with the `bypassRls: true` option + employee role.
 - Return or log raw API keys — only `keyHash` (SHA-256) and `keyPreview` are stored; raw key is shown once at creation.
 - Skip rate limiting on login or API key endpoints.
 
@@ -40,7 +41,7 @@ pnpm --filter @carbon/auth test
 | Subpath | Provides |
 |---------|----------|
 | `.` (index) | Env re-exports, Supabase client factories, `getClaims`, cookie/http/result utils, validators |
-| `./auth.server` | `authorize`, `registerApi`, `Register` / `Caller` / `CallerAuth` / `Gate` types, API key auth (30s Redis-cached `getApiKeyRecord` + `bustApiKeyCache`, from `services/api-key.server.ts`), `hashApiKey`, `hashOAuthSecret` |
+| `./auth.server` | `authorize`, `registerApi`, `Register` / `Caller` / `CallerAuth` / `Gate` / `GateOptions` types, API key auth (30s Redis-cached `getApiKeyRecord` + `bustApiKeyCache`, from `services/api-key.server.ts`), `hashApiKey`, `hashOAuthSecret` |
 | `./mfa.server` | TOTP MFA: `enrollTotpFactor`, `verifyTotpChallenge`, `unenrollTotpFactor`, `userHasVerifiedTotpFactor` (Redis-cached), `adminDeleteTotpFactors` |
 | `./session.server` | `createCookieSessionStorage`, `requireAuthSession` (incl. MFA re-check), `destroyAuthSession`, session refresh, pending-MFA session + `completeMfaChallenge`; `pushEndpointCookie` (signed `carbon-push`, this browser's Web Push endpoint) — `clearAuthCookies` deletes that endpoint's `pushSubscription` rows on every same-site sign-out (a cross-site navigation skips it, per the GET-write rule) |
 | `./company.server` | Company switching, `updateCompanySession`; the cached plan lookups `getCompanyPlanId` and `isCarbonOwnedCompany` (Redis 5 min, a missing plan row cached as `""`) |

@@ -216,8 +216,8 @@ const LeaseDetailsForm = ({ initialValues, action }: LeaseDetailsFormProps) => {
           <Submit
             isDisabled={
               isEditing
-                ? !permissions.can("update", "purchasing")
-                : !permissions.can("create", "purchasing")
+                ? !permissions.has({ "purchasing.leases": "Edit" })
+                : !permissions.has({ "purchasing.leases": "Create" })
             }
           >
             <Trans>Next</Trans>

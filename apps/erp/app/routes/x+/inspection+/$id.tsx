@@ -45,10 +45,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId, api } = await authorize(request, {
-    view: "quality",
-    role: "employee"
-  });
+  const { client, companyId, userId, api } = await authorize(
+    request,
+    { "quality.inspections": "View" },
+    { role: "employee" }
+  );
   const { id } = params;
   invariant(id, "id is required");
 

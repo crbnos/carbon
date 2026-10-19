@@ -15,7 +15,7 @@ const logger = getLogger("erp", "system-status");
 // SYSTEM_STATUS_URL is unset), plus the day the signed-in company's account
 // moves to another instance, if one is set on it.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
   const [status, company] = await Promise.all([
     getSystemStatus(),
     client.from("company").select("dimensions").eq("id", companyId).single()

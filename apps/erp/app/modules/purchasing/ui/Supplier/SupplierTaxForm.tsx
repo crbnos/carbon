@@ -49,7 +49,7 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
   );
   const [taxExempt, setTaxExempt] = useState(initialValues.taxExempt ?? false);
 
-  const isDisabled = !permissions.can("update", "purchasing");
+  const isDisabled = !permissions.has({ "purchasing.suppliers": "Edit" });
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {

@@ -17,9 +17,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "people"
-  });
+  const { api } = await authorize(request, { "people.departments": "View" });
 
   const { departmentId } = params;
   if (!departmentId) throw notFound("Department ID was not found");
@@ -41,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    create: "people"
+    "people.departments": "Create"
   });
 
   const formData = await request.formData();

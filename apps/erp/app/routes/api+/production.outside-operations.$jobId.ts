@@ -10,9 +10,7 @@ import { data } from "react-router";
 import { getOutsideOperationsByJobId } from "~/modules/production/production.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const authorized = await authorize(request, {
-    view: "production"
-  });
+  const authorized = await authorize(request, { "production.jobs": "View" });
 
   const { jobId } = params;
 

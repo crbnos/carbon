@@ -14,7 +14,7 @@ import { canManageBackups } from "~/modules/settings/settings.service";
 // the modal uses the backup list appearing to confirm completion.
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, email } = await authorize(request, {
-    update: "settings"
+    "settings.backups": "Edit"
   });
   if (!(await canManageBackups(client, companyId, email)))
     throw new Response("Not found", { status: 404 });

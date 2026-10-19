@@ -20,7 +20,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    create: "users"
+    "users.accounts": "Create"
   });
   const invitable = await getInvitable(client, companyId);
   if (invitable.error) {

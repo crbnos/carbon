@@ -21,9 +21,7 @@ import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.salesRules": "View" });
   const { id } = params;
   if (!id) throw notFound("id required");
   const rule = await api.shared.getEnforcementRule({ family: "sales", id });
@@ -34,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "sales"
+    "sales.salesRules": "Edit"
   });
 
   await requireFeature({

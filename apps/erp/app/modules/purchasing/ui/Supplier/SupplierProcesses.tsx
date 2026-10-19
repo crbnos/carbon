@@ -50,8 +50,8 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
   const navigate = useNavigate();
   const permissions = usePermissions();
 
-  const canEdit = permissions.can("update", "purchasing");
-  const canDelete = permissions.can("delete", "purchasing");
+  const canEdit = permissions.has({ "purchasing.suppliers": "Edit" });
+  const canDelete = permissions.has({ "purchasing.suppliers": "Full" });
   const { carbon } = useCarbon();
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";

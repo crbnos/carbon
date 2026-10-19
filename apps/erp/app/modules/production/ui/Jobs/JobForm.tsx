@@ -521,8 +521,8 @@ const JobForm = ({
                       (requiresConfiguration && !isConfigured) ||
                       isDisabled ||
                       (isEditing
-                        ? !permissions.can("update", "production")
-                        : !permissions.can("create", "production"))
+                        ? !permissions.has({ "production.jobs": "Edit" })
+                        : !permissions.has({ "production.jobs": "Create" }))
                     }
                   >
                     Save
@@ -681,7 +681,7 @@ const JobForm = ({
                       isDisabled={
                         (requiresConfiguration && !isConfigured) ||
                         isDisabled ||
-                        !permissions.can("create", "production")
+                        !permissions.has({ "production.jobs": "Create" })
                       }
                       withBlocker={false}
                     >

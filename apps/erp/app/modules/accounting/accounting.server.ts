@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { rowRule } from "@carbon/api/permissions";
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import type { Database } from "@carbon/database";
@@ -597,10 +598,7 @@ export const createRevenueRecognitionRun = defineServiceFn({
  */
 export const postRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
-  permission: {
-    "accounting.revenueRecognition": "Edit",
-    "accounting.leases": "Edit"
-  },
+  permission: rowRule("revenueRecognitionRun", "Edit", { id: "runId" }),
   async run(ctx, { runId }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -710,10 +708,7 @@ export const postRevenueRecognitionRun = defineServiceFn({
  */
 export const repeatRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
-  permission: {
-    "accounting.revenueRecognition": "Create",
-    "accounting.leases": "Create"
-  },
+  permission: rowRule("revenueRecognitionRun", "Create", { id: "runId" }),
   async run(ctx, { runId }) {
     const sourceRun = await ctx.asCaller.supabase
       .from("revenueRecognitionRun")
@@ -755,10 +750,7 @@ export const repeatRevenueRecognitionRun = defineServiceFn({
  */
 export const reverseRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
-  permission: {
-    "accounting.revenueRecognition": "Edit",
-    "accounting.leases": "Edit"
-  },
+  permission: rowRule("revenueRecognitionRun", "Edit", { id: "runId" }),
   async run(ctx, { runId }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -838,10 +830,7 @@ export const reverseRevenueRecognitionRun = defineServiceFn({
  */
 export const recalculateRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
-  permission: {
-    "accounting.revenueRecognition": "Edit",
-    "accounting.leases": "Edit"
-  },
+  permission: rowRule("revenueRecognitionRun", "Edit", { id: "runId" }),
   async run(ctx, { runId }) {
     // A run left with nothing due is deleted: the caller goes back to its
     // own type's list.
@@ -887,10 +876,7 @@ export const recalculateRevenueRecognitionRun = defineServiceFn({
  */
 export const deleteRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
-  permission: {
-    "accounting.revenueRecognition": "Full",
-    "accounting.leases": "Full"
-  },
+  permission: rowRule("revenueRecognitionRun", "Full", { id: "runId" }),
   async run(ctx, { runId }) {
     const run = await ctx.asCaller.supabase
       .from("revenueRecognitionRun")
@@ -4513,10 +4499,7 @@ export const getDepreciationRunLines = defineServiceFn({
  */
 export const getRevenueRecognitionRun = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: {
-    "accounting.revenueRecognition": "View",
-    "accounting.leases": "View"
-  },
+  permission: rowRule("revenueRecognitionRun", "View", { id: "id" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -4536,10 +4519,7 @@ export const getRevenueRecognitionRun = defineServiceFn({
  */
 export const getRevenueRecognitionRunLines = defineServiceFn({
   input: z.looseObject({ runId: z.string() }),
-  permission: {
-    "accounting.revenueRecognition": "View",
-    "accounting.leases": "View"
-  },
+  permission: rowRule("revenueRecognitionRun", "View", { id: "runId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,

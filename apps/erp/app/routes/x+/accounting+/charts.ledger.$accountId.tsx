@@ -20,11 +20,11 @@ const LEDGER_PAGE_SIZE = 50;
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // bypassRls matches the chart of accounts page, whose balances span every
   // company in the group regardless of the user's per-company roles
-  const { client, companyGroupId, api } = await authorize(request, {
-    view: "accounting",
-    role: "employee",
-    bypassRls: true
-  });
+  const { client, companyGroupId, api } = await authorize(
+    request,
+    { "accounting.chartOfAccounts": "View" },
+    { role: "employee", bypassRls: true }
+  );
 
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");

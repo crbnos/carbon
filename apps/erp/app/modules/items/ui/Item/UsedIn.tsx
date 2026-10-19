@@ -4,6 +4,12 @@
 
 import type { Database, Json } from "@carbon/database";
 import {
+  anyOf,
+  ITEM_PAGES,
+  moduleOf,
+  type PageId
+} from "@carbon/database/access";
+import {
   Badge,
   Count,
   cn,
@@ -123,7 +129,8 @@ const USED_IN_TOOLTIPS: Partial<Record<UsedInTooltipKey, MessageDescriptor>> = {
 export type UsedInNode = {
   key: UsedInKey;
   name: string;
-  module: string;
+  /** The pages of the records listed: any one at View shows the node. */
+  pages: readonly PageId[];
   children: {
     id: string;
     documentReadableId: string;
@@ -209,7 +216,7 @@ export function UsedInTree({
           node={{
             key: (revisions?.[0]?.type as UsedInKey) ?? "Part",
             name: hasSizesInsteadOfRevisions ? "Sizes" : "Revisions",
-            module: "parts",
+            pages: ITEM_PAGES,
             children: revisions
           }}
           maxRevision={revisions?.[0]?.revision ?? ""}
@@ -329,7 +336,7 @@ export function RevisionsItem({
             </div>
           </button>
         </UsedInGroupTooltip>
-        {permissions.can("create", "parts") &&
+        {permissions.has({ "parts.parts": "Create" }) &&
           (isChangeNoticeLocked ? (
             <ItemChangeNoticeLock
               changeNotices={openChangeNotices}
@@ -395,7 +402,7 @@ export function RevisionsItem({
                     />
                     <span className="truncate">{child.documentReadableId}</span>
                   </Hyperlink>
-                  {permissions.can("update", "parts") && (
+                  {permissions.has({ "parts.parts": "Edit" }) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <IconButton
@@ -501,7 +508,7 @@ export function UsedInItem({
   );
   const permissions = usePermissions();
 
-  if (!permissions.can("view", node.module)) {
+  if (!permissions.has(anyOf(node.pages, "View"))) {
     return null;
   }
 
@@ -557,7 +564,9 @@ export function UsedInItem({
                   <LevelLine isSelected={false} className="mr-2 shrink-0" />
                   {child.methodType === "Shipment" ? (
                     <LuTruck className="mr-2 shrink-0 text-indigo-600" />
-                  ) : node.module === "quality" ? (
+                  ) : node.pages.some(
+                      (page) => moduleOf(page) === "quality"
+                    ) ? (
                     <LuShieldX className="mr-2 shrink-0 text-red-600" />
                   ) : (
                     <MethodIcon
@@ -696,7 +705,7 @@ export function changeNoticesUsedInNode(
   return {
     key: "changeNotices",
     name,
-    module: "parts",
+    pages: ["parts.changeNotices"],
     children: changeNotices.map((cn) => ({
       id: cn.id,
       documentId: cn.id,

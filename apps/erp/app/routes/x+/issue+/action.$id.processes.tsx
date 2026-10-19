@@ -15,7 +15,7 @@ const updateProcessesSchema = z.object({
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, userId, companyId } = await authorize(request, {
-    update: "quality"
+    "quality.issues": "Edit"
   });
 
   const { id } = params;

@@ -18,10 +18,11 @@ import { EmployeeAbilityForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "resources.abilities": "View" },
+    { role: "employee" }
+  );
 
   const { id: abilityId, employeeAbilityId } = params;
   if (!abilityId || !employeeAbilityId) {

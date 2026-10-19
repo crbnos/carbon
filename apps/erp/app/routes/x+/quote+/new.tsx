@@ -31,10 +31,8 @@ export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, companyGroupId, userId } = await authorize(
     request,
-    {
-      create: "sales",
-      bypassRls: true
-    }
+    { "sales.quotes": "Create" },
+    { bypassRls: true }
   );
 
   const formData = await request.formData();

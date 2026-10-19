@@ -35,7 +35,7 @@ const MAX_RELEASES = 20;
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorizePanel(request, {
-    view: "parts"
+    "parts.parts": "View"
   });
 
   const url = new URL(request.url);

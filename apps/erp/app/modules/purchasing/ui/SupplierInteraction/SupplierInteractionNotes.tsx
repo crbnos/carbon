@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import type { PageId } from "@carbon/database/access";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -23,6 +24,22 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
+
+/** The page of each table whose notes this edits. */
+const NOTE_PAGES: Record<
+  | "supplierQuote"
+  | "purchaseOrder"
+  | "receipt"
+  | "purchaseInvoice"
+  | "purchasingRfq",
+  PageId
+> = {
+  purchasingRfq: "purchasing.rfqs",
+  supplierQuote: "purchasing.supplierQuotes",
+  purchaseOrder: "purchasing.purchaseOrders",
+  receipt: "inventory.receipts",
+  purchaseInvoice: "invoicing.purchaseInvoices"
+};
 
 const SupplierInteractionNotes = ({
   id,
@@ -113,7 +130,8 @@ const SupplierInteractionNotes = ({
           </HStack>
           <CardContent>
             <TabsContent value="internal">
-              {!isReadOnly && permissions.can("update", "purchasing") ? (
+              {!isReadOnly &&
+              permissions.has({ [NOTE_PAGES[table]]: "Edit" }) ? (
                 <Editor
                   initialValue={(internalNotes ?? {}) as JSONContent}
                   onUpload={onUploadImage}
@@ -131,7 +149,8 @@ const SupplierInteractionNotes = ({
             </TabsContent>
             {["purchaseOrder", "purchaseInvoice"].includes(table) && (
               <TabsContent value="external">
-                {!isReadOnly && permissions.can("update", "purchasing") ? (
+                {!isReadOnly &&
+                permissions.has({ [NOTE_PAGES[table]]: "Edit" }) ? (
                   <Editor
                     initialValue={(externalNotes ?? {}) as JSONContent}
                     onUpload={onUploadImage}

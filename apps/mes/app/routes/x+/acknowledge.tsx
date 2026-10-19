@@ -17,7 +17,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("mes", "acknowledge");
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId, email } = await authorize(request, {});
+  const { client, companyId, userId, email } = await authorize(request);
 
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
@@ -52,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // never renders Screen 1 (that is an ERP admin action), but this endpoint is
     // still live and writes via the service-role client (RLS bypassed), so
     // enforce the same permission the ERP action does.
-    await authorize(request, { update: "users" });
+    await authorize(request, { "users.accounts": "Edit" });
 
     // Carbon staff hold users_update in every tenant they provisioned, so the
     // permission check alone would let us bind a customer to a document only

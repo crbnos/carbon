@@ -15,7 +15,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.suppliers": "View"
   });
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");

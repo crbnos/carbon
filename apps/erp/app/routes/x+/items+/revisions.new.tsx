@@ -5,6 +5,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { anyOf, ITEM_PAGES, ITEM_TYPE_PAGES } from "@carbon/database/access";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -21,9 +22,10 @@ const logger = getLogger("erp", "items-revisions-new");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
-    create: "parts"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    anyOf(ITEM_PAGES, "Create")
+  );
 
   const formData = await request.formData();
   const validation = await validator(revisionValidator).validate(formData);
@@ -53,6 +55,11 @@ export async function action({ request }: ActionFunctionArgs) {
   if (currentItem.error) {
     return { success: false, message: "Failed to get current item" };
   }
+  // createRevision writes as the service role, so the item's type must
+  // pick the page here.
+  await authorize(request, {
+    [ITEM_TYPE_PAGES[currentItem.data.type]]: "Create"
+  });
 
   // createRevision writes through the service role with the SOURCE item's
   // companyId, and the RLS read above admits any company the user belongs to.

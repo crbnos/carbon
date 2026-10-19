@@ -124,7 +124,8 @@ const MaterialFinishesTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={
-                !permissions.can("update", "parts") || row.companyId === null
+                !permissions.has({ "parts.finishes": "Edit" }) ||
+                row.companyId === null
               }
               onClick={() => {
                 navigate(
@@ -138,7 +139,8 @@ const MaterialFinishesTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
-                !permissions.can("delete", "parts") || row.companyId === null
+                !permissions.has({ "parts.finishes": "Full" }) ||
+                row.companyId === null
               }
               destructive
               onClick={() => {
@@ -170,7 +172,7 @@ const MaterialFinishesTable = memo(
           }
         ]}
         primaryAction={
-          permissions.can("create", "parts") && (
+          permissions.has({ "parts.finishes": "Create" }) && (
             <New
               label={t`Material Finish`}
               to={`${path.to.newMaterialFinish}?${params.toString()}`}

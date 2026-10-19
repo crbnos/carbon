@@ -18,7 +18,7 @@ import { sendMfaEnabledEmail } from "~/services/mfa-email.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  await authorize(request, {});
+  await authorize(request);
   const authSession = await requireAuthSession(request);
 
   const ip = getClientIp(request) ?? "127.0.0.1";

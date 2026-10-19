@@ -17,9 +17,7 @@ const SUPPORTED_PRECISIONS = [2, 3, 4];
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { companyId } = await authorize(request, {
-    update: "sales"
-  });
+  const { companyId } = await authorize(request, { "sales.quotes": "Edit" });
 
   const { quoteId, lineId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");

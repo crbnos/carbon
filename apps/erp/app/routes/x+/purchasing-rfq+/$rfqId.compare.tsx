@@ -9,9 +9,7 @@ import { getSupplierQuotesForComparison } from "~/modules/purchasing/purchasing.
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await authorize(request, {
-    view: "purchasing"
-  });
+  const { companyId } = await authorize(request, { "purchasing.rfqs": "View" });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("rfqId not found");

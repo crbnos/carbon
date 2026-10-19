@@ -58,8 +58,8 @@ const GaugeTypeForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "quality")
-    : !permissions.can("create", "quality");
+    ? !permissions.has({ "quality.gaugeTypes": "Edit" })
+    : !permissions.has({ "quality.gaugeTypes": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

@@ -22,10 +22,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, api } = await authorize(request, {
-    view: "inventory",
-    role: "employee"
-  });
+  const { client, api } = await authorize(
+    request,
+    { "inventory.trackedEntities": "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

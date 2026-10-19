@@ -74,7 +74,7 @@ const UserAttributesForm = ({ attributeCategory }: UserAttributesFormProps) => {
   >({});
 
   const isAuthorized = !personId;
-  if (!isAuthorized && !permissions.can("update", "resources"))
+  if (!isAuthorized && !permissions.has({ "people.attributes": "Edit" }))
     throw new Error("Unauthorized");
 
   const userId = isAuthorized ? user.id : personId;

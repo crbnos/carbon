@@ -151,7 +151,7 @@ const ProcedureProperties = () => {
         table="procedure"
         value={assignee ?? ""}
         variant="inline"
-        isReadOnly={!permissions.can("update", "production")}
+        isReadOnly={!permissions.has({ "production.procedures": "Edit" })}
       />
 
       <ValidatedForm

@@ -15,10 +15,11 @@ import { employeeTypeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "users",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "users.employeeTypes": "View" },
+    { role: "employee" }
+  );
 
   await requireFeature({
     request,

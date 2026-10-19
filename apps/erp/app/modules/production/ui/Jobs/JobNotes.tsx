@@ -66,7 +66,7 @@ const JobNotes = ({
         </CardHeader>
 
         <CardContent>
-          {!isReadOnlyProp && permissions.can("update", "production") ? (
+          {!isReadOnlyProp && permissions.has({ "production.jobs": "Edit" }) ? (
             <Editor
               initialValue={(notes ?? {}) as JSONContent}
               onUpload={onUploadImage}

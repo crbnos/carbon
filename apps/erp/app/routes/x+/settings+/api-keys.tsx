@@ -23,7 +23,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId, api } = await authorize(request, {
-    update: "users"
+    "settings.apiKeys": "Edit"
   });
 
   const url = new URL(request.url);

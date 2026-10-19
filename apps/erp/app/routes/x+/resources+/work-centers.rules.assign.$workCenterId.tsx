@@ -14,7 +14,7 @@ import { path, requestReferrer } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "resources"
+    "inventory.storageRules": "Create"
   });
 
   await requireFeature({

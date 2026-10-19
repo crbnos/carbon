@@ -12,7 +12,7 @@ import { setFeedback } from "~/modules/agent/agent.service";
 const logger = getLogger("erp", "agent-feedback");
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
 
   const validation = await validator(feedbackValidator).validate(
     await request.formData()

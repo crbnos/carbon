@@ -33,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   rejectCrossSiteNavigation(request);
   // we don't use the client here -- if they have this permission, we'll upgrade to a service role if needed
   const { companyId, userId } = await authorize(request, {
-    create: "invoicing"
+    "invoicing.purchaseInvoices": "Create"
   });
 
   const url = new URL(request.url);

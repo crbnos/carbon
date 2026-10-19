@@ -12,7 +12,7 @@ import DefaultAttachmentsPanel from "~/components/DefaultAttachmentsPanel";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.suppliers": "View"
   });
   const { supplierId } = params;
   if (!supplierId) throw new Error("Missing supplierId");

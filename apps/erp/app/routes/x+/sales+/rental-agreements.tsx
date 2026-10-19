@@ -22,7 +22,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "sales"
+    "sales.rentalAgreements": "View"
   });
 
   const url = new URL(request.url);

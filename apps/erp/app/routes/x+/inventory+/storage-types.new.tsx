@@ -13,7 +13,7 @@ import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, { create: "parts" });
+  await authorize(request, { "inventory.storageTypes": "Create" });
   return null;
 }
 

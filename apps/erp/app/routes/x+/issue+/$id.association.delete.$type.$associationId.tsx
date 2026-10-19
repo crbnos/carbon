@@ -20,9 +20,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, {
-    delete: "quality"
-  });
+  const { client } = await authorize(request, { "quality.issues": "Full" });
 
   const { id, type, associationId } = params;
   if (!id) throw new Error("Could not find id");
@@ -30,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!associationId) throw new Error("Could not find associationId");
 
   const { client: viewClient } = await authorize(request, {
-    view: "quality"
+    "quality.issues": "View"
   });
   const issue = await getIssue(viewClient, id);
   await requireUnlocked({

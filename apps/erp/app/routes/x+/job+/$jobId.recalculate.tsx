@@ -13,10 +13,11 @@ import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { companyId, userId } = await authorize(request, {
-    update: "production",
-    role: "employee"
-  });
+  const { companyId, userId } = await authorize(
+    request,
+    { "production.jobs": "Edit" },
+    { role: "employee" }
+  );
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 

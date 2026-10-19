@@ -23,7 +23,7 @@ export async function loader({
   params
 }: LoaderFunctionArgs): Promise<{ stripeCustomerLinked: boolean }> {
   const { companyId, api } = await authorize(request, {
-    view: "sales"
+    "sales.serviceContracts": "View"
   });
 
   const { id } = params;

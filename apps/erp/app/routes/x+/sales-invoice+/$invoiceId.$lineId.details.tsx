@@ -25,10 +25,11 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "invoicing",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "invoicing.salesInvoices": "View" },
+    { role: "employee" }
+  );
 
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");

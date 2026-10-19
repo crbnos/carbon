@@ -55,7 +55,7 @@ const MaintenanceDispatchHeader = () => {
         disabled={
           !["In Progress", "Completed"].includes(status ?? "") ||
           statusFetcher.state !== "idle" ||
-          !permissions.can("update", "resources")
+          !permissions.has({ "resources.dispatches": "Edit" })
         }
         onClick={() => {
           statusFetcher.submit(
@@ -75,7 +75,7 @@ const MaintenanceDispatchHeader = () => {
         destructive
         disabled={
           isLocked ||
-          !permissions.can("delete", "resources") ||
+          !permissions.has({ "resources.dispatches": "Full" }) ||
           !permissions.is("employee")
         }
         onClick={deleteModal.onOpen}
@@ -116,7 +116,7 @@ const MaintenanceDispatchHeader = () => {
                   isDisabled={
                     !["Open", "Assigned"].includes(status ?? "") ||
                     statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "resources")
+                    !permissions.has({ "resources.dispatches": "Edit" })
                   }
                   isLoading={
                     statusFetcher.state !== "idle" &&
@@ -141,7 +141,7 @@ const MaintenanceDispatchHeader = () => {
                   isDisabled={
                     status !== "In Progress" ||
                     statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "resources")
+                    !permissions.has({ "resources.dispatches": "Edit" })
                   }
                   isLoading={
                     statusFetcher.state !== "idle" &&

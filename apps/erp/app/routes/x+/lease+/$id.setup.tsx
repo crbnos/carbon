@@ -30,7 +30,7 @@ import { path } from "~/utils/path";
  *  from its page and changed with Modify. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    update: "purchasing"
+    "purchasing.leases": "Edit"
   });
 
   const { id } = params;
@@ -148,7 +148,8 @@ export default function LeaseSetupRoute() {
                   <Button
                     leftIcon={<LuPlay />}
                     isDisabled={
-                      !isReady || !permissions.can("update", "purchasing")
+                      !isReady ||
+                      !permissions.has({ "purchasing.leases": "Edit" })
                     }
                     onClick={activate.onOpen}
                   >

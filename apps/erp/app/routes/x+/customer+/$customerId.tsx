@@ -23,9 +23,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.customers": "View" });
 
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");

@@ -34,6 +34,7 @@ export default function useQualitySubmodules() {
         {
           name: t`Actions`,
           to: path.to.qualityActions,
+          page: "quality.actions",
           icon: <LuListChecks />,
           table: "nonConformanceActionTask"
         },
@@ -41,12 +42,14 @@ export default function useQualitySubmodules() {
         {
           name: t`Issues`,
           to: path.to.issues,
+          page: "quality.issues",
           icon: <LuShieldX />,
           table: "nonConformance"
         },
         {
           name: t`Risks`,
           to: path.to.risks,
+          page: "quality.risks",
           icon: <LuShieldAlert />,
           table: "riskRegister"
         }
@@ -58,11 +61,13 @@ export default function useQualitySubmodules() {
         {
           name: t`Gauges`,
           to: path.to.gauges,
+          page: "quality.gauges",
           icon: <LuDraftingCompass />
         },
         {
           name: t`Records`,
           to: path.to.calibrations,
+          page: "quality.records",
           icon: <LuCircleGauge />
         }
       ]
@@ -73,12 +78,14 @@ export default function useQualitySubmodules() {
         {
           name: t`Inspections`,
           to: path.to.inspections,
+          page: "quality.inspections",
           icon: <LuClipboardCheck />,
           table: "inspection"
         },
         {
           name: t`Inspection Plans`,
           to: path.to.inspectionDocuments,
+          page: "quality.inspectionPlans",
           icon: <IoBalloonOutline />
         }
       ]
@@ -89,6 +96,7 @@ export default function useQualitySubmodules() {
         {
           name: t`Quality Documents`,
           to: path.to.qualityDocuments,
+          page: "quality.qualityDocuments",
           icon: <LuFileText />,
           table: "qualityDocument"
         }
@@ -100,37 +108,41 @@ export default function useQualitySubmodules() {
         {
           name: t`Action Types`,
           to: path.to.requiredActions,
+          page: "quality.actionTypes",
           icon: <LuSquareCheck />
         },
 
         {
           name: t`Gauge Types`,
           to: path.to.gaugeTypes,
+          page: "quality.gaugeTypes",
           icon: <LuShapes />
         },
         {
           name: t`Issue Types`,
           to: path.to.issueTypes,
+          page: "quality.issueTypes",
           icon: <LuOctagonX />
         },
         {
           name: t`Issue Workflows`,
           to: path.to.issueWorkflows,
+          page: "quality.issueWorkflows",
           icon: <LuWorkflow />
         }
       ]
     }
   ];
 
+  const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) =>
+    (!route.role || permissions.is(route.role)) &&
+    (!route.page || permissions.has({ [route.page]: "View" }));
+
   return {
     groups: qualityRoutes
       .filter((group) => {
         const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
-          }
+          return isRouteVisible(route);
         });
 
         return filteredRoutes.length > 0;
@@ -139,11 +151,7 @@ export default function useQualitySubmodules() {
         ...group,
         routes: group.routes
           .filter((route) => {
-            if (route.role) {
-              return permissions.is(route.role);
-            } else {
-              return true;
-            }
+            return isRouteVisible(route);
           })
           .map(addSavedViewsToRoutes)
       }))

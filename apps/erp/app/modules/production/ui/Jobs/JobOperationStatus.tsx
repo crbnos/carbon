@@ -65,7 +65,7 @@ export function JobOperationStatus({
   const permissions = usePermissions();
   const optimisticStatus = useOptimisticJobStatus(operation.id!);
 
-  const isDisabled = !permissions.can("update", "production");
+  const isDisabled = !permissions.has({ "production.jobs": "Edit" });
 
   const { submit } = fetcher;
   const onOperationStatusChange = useCallback(

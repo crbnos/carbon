@@ -415,7 +415,7 @@ export function ARAPWorkbench({
   const hasVariance = result
     ? Math.abs(result.variance) > VARIANCE_EPSILON
     : false;
-  const canAdjust = permissions.can("create", "accounting");
+  const canAdjust = permissions.has({ "accounting.journalEntries": "Create" });
 
   const filters = (
     <HStack>

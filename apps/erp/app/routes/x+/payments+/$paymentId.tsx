@@ -50,7 +50,7 @@ export const handle: Handle = {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "invoicing"
+    "invoicing.payments": "View"
   });
   const { paymentId } = params;
   if (!paymentId) throw notFound("Missing paymentId");
@@ -221,7 +221,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "invoicing"
+    "invoicing.payments": "Edit"
   });
   const { paymentId } = params;
   if (!paymentId) throw notFound("Missing paymentId");

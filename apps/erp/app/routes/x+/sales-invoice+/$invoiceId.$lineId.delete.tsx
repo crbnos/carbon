@@ -22,7 +22,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await authorize(request, {
-    delete: "invoicing"
+    "invoicing.salesInvoices": "Full"
   });
   const { lineId, invoiceId } = params;
   if (!lineId) throw notFound("lineId not found");

@@ -12,7 +12,7 @@ import { InventoryCountForm } from "~/modules/inventory/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, { create: "inventory" });
+  await authorize(request, { "inventory.inventoryCount": "Create" });
   return null;
 }
 

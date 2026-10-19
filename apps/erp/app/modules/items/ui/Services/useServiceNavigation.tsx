@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { PageId } from "@carbon/database/access";
 import { useLingui } from "@lingui/react/macro";
 import {
   LuClipboardCheck,
@@ -43,7 +44,7 @@ export function useServiceNavigation() {
       to: path.to.servicePurchasing(itemId),
       isDisabled: replenishment === "Make",
       role: ["employee", "supplier"],
-      permission: "purchasing",
+      page: "purchasing.suppliers" as PageId,
       icon: LuShoppingCart,
       shortcut: DETAIL_TAB_SHORTCUTS.purchasing
     },
@@ -58,7 +59,7 @@ export function useServiceNavigation() {
       name: t`Accounting`,
       to: path.to.serviceCosting(itemId),
       role: ["employee"],
-      permission: "purchasing",
+      page: "purchasing.suppliers" as PageId,
       icon: LuTags,
       shortcut: DETAIL_TAB_SHORTCUTS.accounting
     },
@@ -66,7 +67,7 @@ export function useServiceNavigation() {
       name: t`Quality`,
       to: path.to.serviceQuality(itemId),
       role: ["employee"],
-      permission: "quality",
+      page: "quality.inspectionPlans" as PageId,
       icon: LuClipboardCheck,
       shortcut: DETAIL_TAB_SHORTCUTS.quality
     }
@@ -75,7 +76,6 @@ export function useServiceNavigation() {
       !item.isDisabled &&
       (item.role === undefined ||
         item.role.some((role) => permissions.is(role as Role))) &&
-      (item.permission === undefined ||
-        permissions.can("view", item.permission))
+      (item.page === undefined || permissions.has({ [item.page]: "View" }))
   );
 }

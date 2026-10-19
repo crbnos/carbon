@@ -12,9 +12,7 @@ import AssemblyInstructionForm from "~/modules/production/ui/Assemblies/Assembly
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    create: "production"
-  });
+  await authorize(request, { "production.assemblies": "Create" });
 
   const url = new URL(request.url);
 

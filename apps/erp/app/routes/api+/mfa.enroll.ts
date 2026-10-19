@@ -12,7 +12,7 @@ import { getCompany } from "~/modules/settings/settings.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
   const authSession = await requireAuthSession(request);
 
   // GoTrue requires factor friendly names to be unique per user.

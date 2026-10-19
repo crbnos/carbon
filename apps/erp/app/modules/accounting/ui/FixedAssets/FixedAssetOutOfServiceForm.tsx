@@ -67,7 +67,9 @@ const FixedAssetOutOfServiceForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={!permissions.can("update", "accounting")}>
+                <Submit
+                  isDisabled={!permissions.has({ "accounting.assets": "Edit" })}
+                >
                   <Trans>Take Out of Service</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={() => onClose?.()}>

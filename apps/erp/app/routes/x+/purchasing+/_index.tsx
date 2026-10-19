@@ -5,6 +5,7 @@
 import { dataOrThrow } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import type { ApprovalRequest } from "@carbon/ee/approvals";
 import { getPendingApprovalsForApprover } from "@carbon/ee/approvals.server";
 import { useLoaderQuery } from "@carbon/query";
@@ -110,9 +111,10 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId, api } = await authorize(request, {
-    view: "purchasing"
-  });
+  const { client, userId, companyId, api } = await authorize(
+    request,
+    anyOf(pagesOf("purchasing"), "View")
+  );
 
   const serviceRole = getCarbonServiceRole();
 

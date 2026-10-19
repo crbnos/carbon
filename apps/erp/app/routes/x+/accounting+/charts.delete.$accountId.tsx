@@ -27,7 +27,7 @@ const IN_USE_MESSAGE =
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, companyGroupId, api } = await authorize(request, {
-    view: "accounting"
+    "accounting.chartOfAccounts": "View"
   });
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");
@@ -65,7 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await authorize(request, {
-    delete: "accounting"
+    "accounting.chartOfAccounts": "Full"
   });
 
   const { accountId } = params;

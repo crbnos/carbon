@@ -12,7 +12,7 @@ import { updateJobMaterialOrder } from "~/modules/production/production.service"
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "production"
+    "production.jobs": "Edit"
   });
 
   const updateMap = (await request.formData()).get("updates") as string;

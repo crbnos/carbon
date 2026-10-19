@@ -494,7 +494,7 @@ export default function AuthenticatedRoute() {
     (entityBlocking || !itarCertification.userCertified)
   ) {
     if (entityBlocking) {
-      itarScreen = permissions.can("update", "users") ? (
+      itarScreen = permissions.has({ "users.accounts": "Edit" }) ? (
         <ItarEntityCertification
           companyName={companyName ?? "your company"}
           riderPdfPath={ITAR_RIDER_PDF_PATH}

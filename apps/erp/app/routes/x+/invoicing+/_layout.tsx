@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
@@ -30,9 +31,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    view: "invoicing"
-  });
+  await authorize(request, anyOf(pagesOf("invoicing"), "View"));
 
   return null;
 }

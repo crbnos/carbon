@@ -45,12 +45,14 @@ export default function useProductionSubmodules() {
         {
           name: t`Jobs`,
           to: path.to.jobs,
+          page: "production.jobs",
           icon: <LuCirclePlay />,
           table: "job"
         },
         {
           name: t`Batches`,
           to: path.to.operationBatches,
+          page: "production.batches",
           icon: <LuLayers />,
           table: "jobOperationBatch"
         },
@@ -59,6 +61,7 @@ export default function useProductionSubmodules() {
               {
                 name: t`Unattributed Time`,
                 to: path.to.unattributedMachineTimes,
+                page: "production.unattributedTime" as const,
                 icon: <LuTimerOff />,
                 role: "employee" as const
               }
@@ -72,18 +75,21 @@ export default function useProductionSubmodules() {
         {
           name: t`Demand Forecasts`,
           to: path.to.demandProjections,
+          page: "production.demandForecasts",
           icon: <LuChartLine />,
           table: "demand-projection"
         },
         {
           name: t`Material Planning`,
           to: path.to.productionPlanning,
+          page: "production.materialPlanning",
           icon: <LuListTodo />,
           table: "production-planning"
         },
         {
           name: t`Resource Planning`,
           to: path.to.priorityPeople,
+          page: "production.resourcePlanning",
           icon: <LuChartBarBig />
         }
       ]
@@ -94,16 +100,19 @@ export default function useProductionSubmodules() {
         {
           name: t`Forecast`,
           to: path.to.scheduleForecast,
+          page: "production.forecast",
           icon: <LuSquareChartGantt />
         },
         {
           name: t`Priorities`,
           to: path.to.priorityDates,
+          page: "production.priorities",
           icon: <LuSquareKanban />
         },
         {
           name: t`Outbound`,
           to: path.to.scheduleOutbound,
+          page: "production.outbound",
           icon: <LuTruck />
         }
       ]
@@ -114,12 +123,14 @@ export default function useProductionSubmodules() {
         {
           name: t`Assemblies`,
           to: path.to.assemblyInstructions,
+          page: "production.assemblies",
           icon: <LuStepForward />,
           role: "employee"
         },
         {
           name: t`Procedures`,
           to: path.to.procedures,
+          page: "production.procedures",
           icon: <LuListChecks />,
           table: "procedure",
           role: "employee"
@@ -132,6 +143,7 @@ export default function useProductionSubmodules() {
         {
           name: t`Scrap Reasons`,
           to: path.to.scrapReasons,
+          page: "production.scrapReasons",
           role: "employee",
           icon: <LuTrash />
         }
@@ -142,8 +154,7 @@ export default function useProductionSubmodules() {
 
   const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) => {
     if (route.role && !permissions.is(route.role)) return false;
-    if (route.permission && !permissions.can("view", route.permission))
-      return false;
+    if (route.page && !permissions.has({ [route.page]: "View" })) return false;
     return true;
   };
 

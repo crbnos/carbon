@@ -26,7 +26,7 @@ import { path } from "~/utils/path";
  *  from its page and changed with Amend. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    update: "sales"
+    "sales.serviceContracts": "Edit"
   });
 
   const { id } = params;
@@ -128,7 +128,7 @@ export default function ContractSetupRoute() {
                     isDisabled={
                       !hasLines ||
                       !isBalanced ||
-                      !permissions.can("update", "sales")
+                      !permissions.has({ "sales.serviceContracts": "Edit" })
                     }
                     onClick={confirm.onOpen}
                   >

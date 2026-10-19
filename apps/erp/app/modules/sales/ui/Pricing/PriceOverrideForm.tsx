@@ -122,11 +122,11 @@ const PriceOverrideForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.priceLists": "Edit" })
+    : !permissions.has({ "sales.priceLists": "Create" });
 
   // Early-termination controls — only sales:delete can edit once live.
-  const canTerminate = permissions.can("delete", "sales");
+  const canTerminate = permissions.has({ "sales.priceLists": "Full" });
   const lifecycleLocked = isEditing && !canTerminate;
 
   return (

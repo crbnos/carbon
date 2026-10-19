@@ -46,6 +46,10 @@ that defines it: `~/modules/sales/sales.models`, never `~/modules/sales`.
   (`@mcp read`, `@mcp destructive`). The summary line is the title, `@remarks`
   the description, `@param name - text` a field's description, `@returns` the
   response. See `conventions-services.md`.
+- A permission the row decides (the page of an item's type) is a helper
+  call, `permission: service.itemRule("Edit", { id: "itemId" })`. The helper
+  is a function, so it lives in `.service.ts` (`itemRule`, `items.service.ts`,
+  which `inventory.server.ts` imports too); see `conventions-services.md`.
 - Call building blocks through a namespace import, so a service function and
   the building block it wraps can share a name:
   ```ts
@@ -89,7 +93,8 @@ function kept its logic as is:
   it checks the caller behind `client` first.
 - The operation keeps the function's permission exactly: a `<name>Permission`
   constant beside the body, passed as `as`. `apps/erp/test/posting-permissions.test.ts`
-  pins them.
+  pins them. A row rule passed as `as` is read by `authorizePostingCaller`
+  through `readRowRequirement`, as the gate reads it.
 - Its live-database tests move to `apps/erp/test/database/`, on the fixtures in
   `apps/erp/test/database/fixtures/` (`always-post.ts`, whose `service` is a
   system `ServiceContext`).

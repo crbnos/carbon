@@ -17,7 +17,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "accounting"
+    "accounting.assetClasses": "View"
   });
 
   const { assetClassId } = params;
@@ -45,7 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "accounting"
+    "accounting.assetClasses": "Edit"
   });
 
   const formData = await request.formData();

@@ -144,7 +144,7 @@ const PurchasingRFQLineForm = ({
   };
 
   const deleteDisclosure = useDisclosure();
-  const canDelete = !isLocked && permissions.can("update", "purchasing");
+  const canDelete = !isLocked && permissions.has({ "purchasing.rfqs": "Edit" });
   const canViewItem = !!itemData.itemId && itemTypes.includes(itemType);
 
   return (
@@ -346,8 +346,8 @@ const PurchasingRFQLineForm = ({
                   isDisabled={
                     isLocked ||
                     (isEditing
-                      ? !permissions.can("update", "purchasing")
-                      : !permissions.can("create", "purchasing"))
+                      ? !permissions.has({ "purchasing.rfqs": "Edit" })
+                      : !permissions.has({ "purchasing.rfqs": "Create" }))
                   }
                 >
                   <Trans>Save</Trans>

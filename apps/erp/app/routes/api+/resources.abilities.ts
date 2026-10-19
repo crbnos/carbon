@@ -9,7 +9,7 @@ import { getAbilitiesList } from "~/modules/resources/resources.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "people"
+    "resources.abilities": "View"
   });
   return await getAbilitiesList(client, companyId);
 }

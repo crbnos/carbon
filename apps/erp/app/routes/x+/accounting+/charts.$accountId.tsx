@@ -25,10 +25,11 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "accounting.chartOfAccounts": "View" },
+    { role: "employee" }
+  );
 
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");
@@ -47,7 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "accounting"
+    "accounting.chartOfAccounts": "Edit"
   });
 
   // Root accounts (Balance Sheet, Income Statement) cannot be modified

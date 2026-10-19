@@ -12,7 +12,7 @@ import { resolveItemIdFromExtractedText } from "~/modules/items/items.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "invoicing"
+    "invoicing.purchaseInvoices": "View"
   });
 
   const { invoiceId } = params;

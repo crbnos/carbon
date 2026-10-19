@@ -85,8 +85,8 @@ const ProcessForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "resources")
-    : !permissions.can("create", "resources");
+    ? !permissions.has({ "resources.processes": "Edit" })
+    : !permissions.has({ "resources.processes": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>
@@ -368,7 +368,9 @@ function SupplierProcesses({ processId }: { processId?: string }) {
                           path.to.supplierProcess(sp.supplierId!, sp.id!)
                         )
                       }
-                      disabled={!permissions.can("update", "purchasing")}
+                      disabled={
+                        !permissions.has({ "resources.processes": "Edit" })
+                      }
                     >
                       <DropdownMenuIcon icon={<LuPencil />} />
                       <Trans>Edit Process</Trans>
@@ -380,7 +382,9 @@ function SupplierProcesses({ processId }: { processId?: string }) {
                           path.to.deleteSupplierProcess(sp.supplierId!, sp.id!)
                         )
                       }
-                      disabled={!permissions.can("delete", "purchasing")}
+                      disabled={
+                        !permissions.has({ "resources.processes": "Full" })
+                      }
                     >
                       <DropdownMenuIcon icon={<LuTrash />} />
                       <Trans>Delete Process</Trans>

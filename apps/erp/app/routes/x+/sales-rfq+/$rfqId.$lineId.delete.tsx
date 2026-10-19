@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { client: viewClient } = await authorize(request, {
-    view: "sales"
+    "sales.rfqs": "View"
   });
 
   const rfq = await getSalesRFQ(viewClient, rfqId);
@@ -35,9 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client } = await authorize(request, {
-    delete: "sales"
-  });
+  const { client } = await authorize(request, { "sales.rfqs": "Full" });
 
   const deleteLine = await deleteSalesRFQLine(client, lineId);
   if (deleteLine.error) {

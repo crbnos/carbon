@@ -11,7 +11,7 @@ import { deleteAssemblyInstructionStepSlide } from "~/modules/production/product
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await authorize(request, {
-    delete: "production"
+    "production.assemblies": "Full"
   });
 
   const { slideId } = params;

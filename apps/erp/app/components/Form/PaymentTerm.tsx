@@ -38,7 +38,7 @@ const PaymentTerm = (props: PaymentTermSelectProps) => {
     onCreate: () => newPaymentTermModal.onOpen()
   });
 
-  return permissions.can("create", "accounting") ? (
+  return permissions.has({ "accounting.paymentTerms": "Create" }) ? (
     <>
       <CreatableCombobox
         ref={triggerRef}

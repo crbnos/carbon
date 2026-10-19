@@ -11,7 +11,8 @@ import {
 } from "@carbon/api/errors";
 import {
   type PermissionRule,
-  resolvePermissions
+  resolvePermissions,
+  rowRule
 } from "@carbon/api/permissions";
 import type {
   CarbonError,
@@ -9612,11 +9613,11 @@ export async function applyCtaToReportPeriodSeriesForReport(
   reportingCompanyId: string,
   args: Parameters<typeof applyCtaToReportPeriodSeries>[3]
 ) {
-  const { client, companyGroupId } = await authorize(request, {
-    view: "accounting",
-    role: "employee",
-    bypassRls: true
-  });
+  const { client, companyGroupId } = await authorize(
+    request,
+    { "accounting.reporting": "View" },
+    { role: "employee", bypassRls: true }
+  );
   const root = await client
     .from("company")
     .select("id")
@@ -21421,10 +21422,11 @@ export type RunRecalculation = {
   deleted: boolean;
 };
 
-export const recalculateRevenueRecognitionRunPermission = {
-  "accounting.revenueRecognition": "Edit",
-  "accounting.leases": "Edit"
-} satisfies PermissionRule<
+export const recalculateRevenueRecognitionRunPermission = rowRule(
+  "revenueRecognitionRun",
+  "Edit",
+  { id: "runId" }
+) satisfies PermissionRule<
   z.output<typeof recalculateRevenueRecognitionRunInput>
 >;
 

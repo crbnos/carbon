@@ -16,7 +16,7 @@ export const config = {
 /** The panel user and company, and whether they may edit the Fields page. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId, sessionUserId, email } =
-    await authorizePanel(request, {});
+    await authorizePanel(request);
 
   // `requireOnshapePanelPermissions` throws on a denial, so the Fields
   // permission is read from the claims directly.

@@ -26,10 +26,11 @@ export const shouldRevalidate: ShouldRevalidateFunction = () => false;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Read-only: explains the stored prices, writes nothing.
-  const { companyId, api } = await authorize(request, {
-    view: "sales",
-    role: "employee"
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "sales.quotes": "View" },
+    { role: "employee" }
+  );
 
   const { quoteId, lineId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -59,10 +60,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 // Reprice: store what today's rules give, with the trace that explains it.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
-    update: "sales",
-    role: "employee"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    { "sales.quotes": "Edit" },
+    { role: "employee" }
+  );
 
   const { quoteId, lineId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");

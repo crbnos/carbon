@@ -8,7 +8,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getWorkCentersList } from "~/modules/resources/resources.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
   return await getWorkCentersList(client, companyId);
 }
 

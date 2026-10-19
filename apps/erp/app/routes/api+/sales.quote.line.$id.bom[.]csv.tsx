@@ -54,7 +54,7 @@ const operationHeaders = [
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "sales"
+    "sales.quotes": "View"
   });
 
   const { id } = params;

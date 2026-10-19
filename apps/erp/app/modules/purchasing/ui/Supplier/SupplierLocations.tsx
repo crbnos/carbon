@@ -32,7 +32,7 @@ const SupplierLocations = ({ locations }: SupplierLocationsProps) => {
   const { supplierId } = useParams();
   if (!supplierId) throw new Error("supplierId not found");
   const permissions = usePermissions();
-  const canEdit = permissions.can("create", "purchasing");
+  const canEdit = permissions.has({ "purchasing.suppliers": "Create" });
   const isEmpty = locations === undefined || locations?.length === 0;
 
   const deleteLocationModal = useDisclosure();
@@ -41,7 +41,7 @@ const SupplierLocations = ({ locations }: SupplierLocationsProps) => {
   const getActions = useCallback(
     (location: SupplierLocation) => {
       const actions = [];
-      if (permissions.can("update", "purchasing")) {
+      if (permissions.has({ "purchasing.suppliers": "Edit" })) {
         actions.push({
           label: t`Edit Location`,
           icon: <LuPencil />,
@@ -50,7 +50,7 @@ const SupplierLocations = ({ locations }: SupplierLocationsProps) => {
           }
         });
       }
-      if (permissions.can("delete", "purchasing")) {
+      if (permissions.has({ "purchasing.suppliers": "Full" })) {
         actions.push({
           label: t`Delete Location`,
           icon: <LuTrash />,
@@ -62,7 +62,7 @@ const SupplierLocations = ({ locations }: SupplierLocationsProps) => {
         });
       }
 
-      if (permissions.can("create", "resources")) {
+      if (permissions.has({ "resources.abilities": "Create" })) {
         actions.push({
           label: t`Add Partner`,
           icon: <IoMdAdd />,

@@ -16,10 +16,11 @@ import { CustomFieldsTableDetail } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "settings",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "settings.customFields": "View" },
+    { role: "employee" }
+  );
 
   const { table } = params;
   if (!table) throw notFound("Invalid table");
@@ -45,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "resources"
+    "settings.customFields": "Edit"
   });
 
   const updateMap = (await request.formData()).get("updates") as string;

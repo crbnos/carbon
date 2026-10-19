@@ -69,7 +69,7 @@ function returnPath(params: URLSearchParams) {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId, api } = await authorize(request, {
-    update: "accounting"
+    "accounting.chartOfAccounts": "Edit"
   });
   const settings = await api.settings.getCompanySettings({});
   if (settings.error) {
@@ -117,7 +117,7 @@ function readFile<Row>(
 
 export async function action({ request }: ActionFunctionArgs) {
   const { companyId, companyGroupId } = await authorize(request, {
-    update: "accounting"
+    "accounting.chartOfAccounts": "Edit"
   });
 
   const formData = await request.formData();

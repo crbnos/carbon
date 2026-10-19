@@ -30,7 +30,7 @@ import {
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
-import { getItemReplenishment } from "~/modules/items/items.service";
+import { getItemReplenishment, itemRule } from "~/modules/items/items.service";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import {
   getActiveJobOperationByJobId,
@@ -3670,7 +3670,11 @@ export const scanKanban = defineServiceFn({
  */
 export const deleteBatchProperty = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "parts.parts": "Full" },
+  permission: itemRule("Full", {
+    id: "id",
+    from: "batchProperty",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     const owned = await refuseUnlessOwned(ctx, "batchProperty", {
       id: input.id
@@ -5519,7 +5523,11 @@ export const updateBatchPropertyOrder = defineServiceFn({
     sortOrder: z.number().min(0),
     batchPropertyGroupId: z.string().nullable().optional()
   }),
-  permission: { "parts.parts": "Edit" },
+  permission: itemRule("Edit", {
+    id: "id",
+    from: "batchProperty",
+    path: [["itemId", "item"]]
+  }),
   async run(ctx, input) {
     // The update matches by id alone: it must be this company's property.
     const owned = await refuseUnlessOwned(ctx, "batchProperty", {
@@ -5558,7 +5566,7 @@ export const upsertBatchProperty = defineServiceFn({
       message: "List options are required",
       path: ["listOptions"]
     }),
-  permission: { "parts.parts": "Edit" },
+  permission: itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
     if (input.id) {
       // The update matches by id alone: it must be this company's property.

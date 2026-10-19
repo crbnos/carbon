@@ -173,10 +173,8 @@ export const shouldRevalidate = revalidateIgnoringPivotDisplay;
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, userId, api } = await authorize(
     request,
-    {
-      view: "accounting",
-      role: "employee"
-    }
+    { "accounting.reporting": "View" },
+    { role: "employee" }
   );
 
   const reportKey = analyticsReportKeys.find((key) => key === params.reportKey);
@@ -340,10 +338,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    { "accounting.reporting": "View" },
+    { role: "employee" }
+  );
 
   const formData = await request.formData();
   const intent = formData.get("intent");

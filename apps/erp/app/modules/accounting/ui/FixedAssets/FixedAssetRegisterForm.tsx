@@ -96,7 +96,9 @@ const FixedAssetRegisterForm = ({ onClose }: FixedAssetRegisterFormProps) => {
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={!permissions.can("update", "accounting")}>
+                <Submit
+                  isDisabled={!permissions.has({ "accounting.assets": "Edit" })}
+                >
                   <Trans>Register</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={() => onClose?.()}>

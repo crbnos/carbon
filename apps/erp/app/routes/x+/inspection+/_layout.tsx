@@ -16,9 +16,7 @@ export const meta: MetaFunction = () => {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    view: "quality"
-  });
+  await authorize(request, { "quality.inspections": "View" });
 
   return null;
 }

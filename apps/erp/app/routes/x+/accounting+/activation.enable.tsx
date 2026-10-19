@@ -82,7 +82,7 @@ const SUMMARY_LIST_CLASS =
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "accounting"
+    "settings.accounting": "View"
   });
   const { cutoverDate } = await getActivationCutover(
     client,
@@ -143,7 +143,7 @@ export default function AccountingActivationEnableRoute() {
   const canEnable =
     readinessPassed &&
     isClearingZero &&
-    permissions.can("update", "accounting");
+    permissions.has({ "settings.accounting": "Edit" });
 
   return (
     <>

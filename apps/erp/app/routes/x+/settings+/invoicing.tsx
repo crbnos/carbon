@@ -61,7 +61,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId, api } = await authorize(request, {
-    view: "settings"
+    "settings.invoicing": "View"
   });
 
   const [companySettings, arBillingAddress, stripeAccountId] =

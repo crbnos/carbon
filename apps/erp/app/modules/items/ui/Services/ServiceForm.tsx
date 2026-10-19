@@ -162,8 +162,8 @@ const ServiceForm = ({
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={
                   isEditing
-                    ? !permissions.can("update", "parts")
-                    : !permissions.can("create", "parts")
+                    ? !permissions.has({ "parts.services": "Edit" })
+                    : !permissions.has({ "parts.services": "Create" })
                 }
               >
                 <Trans>Save</Trans>

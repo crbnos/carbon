@@ -8,9 +8,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { jobStatus } from "~/modules/production/production.models";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "production"
-  });
+  const { api } = await authorize(request, { "production.jobs": "View" });
 
   const url = new URL(request.url);
   const statuses = url.searchParams

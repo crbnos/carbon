@@ -65,7 +65,7 @@ const FIELDS = [
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
 
   const integration = availableIntegrations.find(

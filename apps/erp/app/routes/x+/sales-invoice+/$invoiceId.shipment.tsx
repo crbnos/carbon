@@ -28,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Check if SI is locked
   const { client: viewClient } = await authorize(request, {
-    view: "invoicing"
+    "invoicing.salesInvoices": "View"
   });
 
   const invoice = await getSalesInvoice(viewClient, invoiceId);
@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const { client, companyId, userId } = await authorize(request, {
-    update: "invoicing"
+    "invoicing.salesInvoices": "Edit"
   });
 
   const formData = await request.formData();

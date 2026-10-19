@@ -137,8 +137,8 @@ const WorkCenterForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "resources")
-    : !permissions.can("create", "resources");
+    ? !permissions.has({ "resources.workCenters": "Edit" })
+    : !permissions.has({ "resources.workCenters": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

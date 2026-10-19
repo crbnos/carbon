@@ -32,7 +32,7 @@ const QuerySchema = z.object({
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
 
   const query = QuerySchema.safeParse(

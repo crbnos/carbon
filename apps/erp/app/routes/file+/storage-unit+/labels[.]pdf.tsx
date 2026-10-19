@@ -10,7 +10,7 @@ import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client } = await authorize(request, {
-    view: "inventory"
+    "inventory.storageUnits": "View"
   });
 
   const url = new URL(request.url);

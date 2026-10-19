@@ -22,10 +22,11 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "parts",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "parts.tools": "View" },
+    { role: "employee" }
+  );
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -58,7 +59,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "parts"
+    "parts.tools": "Edit"
   });
 
   const { itemId } = params;

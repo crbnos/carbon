@@ -60,7 +60,7 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "parts")}
+            disabled={!permissions.has({ "inventory.storageTypes": "Edit" })}
             onClick={() => {
               navigate(`${path.to.storageType(row.id)}?${params.toString()}`);
             }}
@@ -70,7 +70,7 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
-            disabled={!permissions.can("delete", "parts")}
+            disabled={!permissions.has({ "inventory.storageTypes": "Full" })}
             destructive
             onClick={() => {
               navigate(
@@ -99,7 +99,7 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
         }
       ]}
       primaryAction={
-        permissions.can("create", "parts") && (
+        permissions.has({ "inventory.storageTypes": "Create" }) && (
           <New
             label={t`Storage Type`}
             to={`${path.to.newStorageType}?${params.toString()}`}

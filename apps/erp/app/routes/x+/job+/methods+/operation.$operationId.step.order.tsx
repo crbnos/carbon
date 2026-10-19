@@ -12,7 +12,7 @@ import { updateJobOperationStepOrder } from "~/modules/production/production.ser
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "production"
+    "production.jobs": "Edit"
   });
 
   const formData = await request.formData();

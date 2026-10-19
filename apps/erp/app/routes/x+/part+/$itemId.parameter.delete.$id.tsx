@@ -9,9 +9,7 @@ import { deleteConfigurationParameter } from "~/modules/items/items.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, {
-    delete: "parts"
-  });
+  const { client } = await authorize(request, { "parts.parts": "Full" });
 
   const { id } = params;
   if (!id) throw notFound("id not found");

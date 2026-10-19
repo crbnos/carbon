@@ -20,7 +20,7 @@ const inputSchema = z.object({
 });
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  await authorize(request, {});
+  await authorize(request);
 
   const { table } = params;
   if (!table) {

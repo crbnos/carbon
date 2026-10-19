@@ -27,7 +27,7 @@ const setApplicationsValidator = z.object({
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    update: "invoicing"
+    "invoicing.payments": "Edit"
   });
 
   const { paymentId } = params;

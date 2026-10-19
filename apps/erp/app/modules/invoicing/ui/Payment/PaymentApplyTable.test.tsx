@@ -175,7 +175,7 @@ vi.mock("~/components/Grid", () => {
   };
 });
 vi.mock("~/hooks", () => ({
-  usePermissions: () => ({ can: () => true }),
+  usePermissions: () => ({ has: () => true }),
   useCompanyToday: () => ({ toString: () => "2026-09-07" }),
   useCurrencyDecimals: () => 2,
   useCurrencyFormatter: ({ currency = "USD" } = {}) =>

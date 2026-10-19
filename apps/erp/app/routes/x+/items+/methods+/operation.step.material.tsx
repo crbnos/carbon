@@ -5,6 +5,7 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
@@ -15,7 +16,7 @@ import {
 // Toggle a part↔step link from the step editor's "Parts" picker (method/item tier).
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, { update: "parts" });
+  const { client } = await authorize(request, anyOf(ITEM_PAGES, "Edit"));
 
   const formData = await request.formData();
   const methodMaterialId = String(formData.get("materialId") ?? "");

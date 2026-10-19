@@ -98,7 +98,11 @@ const FixedAssetReturnToInventoryForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={!permissions.can("create", "accounting")}>
+                <Submit
+                  isDisabled={
+                    !permissions.has({ "accounting.assets": "Create" })
+                  }
+                >
                   <Trans>Return to Inventory</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={() => onClose?.()}>

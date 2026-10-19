@@ -19,7 +19,7 @@ import { makeDurations } from "~/utils/duration";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "parts"
+    "production.jobs": "View"
   });
 
   const { id } = params;

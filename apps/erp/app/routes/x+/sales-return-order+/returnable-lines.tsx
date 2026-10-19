@@ -6,9 +6,7 @@ import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.returns": "View" });
 
   const url = new URL(request.url);
   const customerId = url.searchParams.get("customerId");

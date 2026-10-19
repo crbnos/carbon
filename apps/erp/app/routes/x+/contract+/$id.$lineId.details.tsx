@@ -18,7 +18,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, api } = await authorize(request, {
-    view: "sales"
+    "sales.serviceContracts": "View"
   });
 
   const { id, lineId } = params;
@@ -45,7 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "sales"
+    "sales.serviceContracts": "Edit"
   });
 
   const { id, lineId } = params;

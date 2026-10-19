@@ -102,7 +102,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   const countMessages = useBatchCountMessages();
   const permissions = usePermissions();
   const navigate = useNavigate();
-  const canUpdate = permissions.can("update", "production");
+  const canUpdate = permissions.has({ "production.batches": "Edit" });
 
   // Release (Planned → Active) / Unrelease (Active → Planned) post to the
   // batching action; a refusal lands in the toast.
@@ -446,7 +446,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "production") && (
+          permissions.has({ "production.batches": "Create" }) && (
             <New label={t`Batch`} to={path.to.newOperationBatch} />
           )
         }

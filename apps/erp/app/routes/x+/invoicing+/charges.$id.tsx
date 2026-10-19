@@ -38,7 +38,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, api } = await authorize(request, {
-    view: "invoicing"
+    "invoicing.charges": "View"
   });
 
   const { id } = params;
@@ -164,7 +164,8 @@ export default function ChargeDetailRoute() {
   };
 
   const canVoid =
-    charge.status === "Posted" && permissions.can("update", "invoicing");
+    charge.status === "Posted" &&
+    permissions.has({ "invoicing.charges": "Edit" });
 
   return (
     <Drawer

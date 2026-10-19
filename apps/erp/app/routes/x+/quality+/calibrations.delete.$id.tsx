@@ -12,9 +12,7 @@ import { deleteGaugeCalibrationRecord } from "~/modules/quality/quality.service"
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, {
-    delete: "quality"
-  });
+  const { client } = await authorize(request, { "quality.records": "Full" });
 
   const { id } = params;
 

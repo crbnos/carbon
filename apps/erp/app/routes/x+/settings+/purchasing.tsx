@@ -61,7 +61,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "settings"
+    "settings.purchasing": "View"
   });
 
   const [companySettings, apBillingAddress, defaultAttachmentsResult] =

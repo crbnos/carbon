@@ -18,10 +18,11 @@ import { ItemSerialSequenceForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    create: "settings",
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { "settings.serialNumbers": "Create" },
+    { role: "employee" }
+  );
   // Items that already have a sequence can't get a second one.
   const existing = await getItemSerialSequences(client, companyId, {
     search: null,
@@ -41,7 +42,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "settings"
+    "settings.serialNumbers": "Create"
   });
 
   const validation = await validator(itemSerialSequenceValidator).validate(

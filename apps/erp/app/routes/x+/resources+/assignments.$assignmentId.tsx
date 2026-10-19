@@ -60,10 +60,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "resources.assignments": "View" },
+    { role: "employee" }
+  );
 
   const { assignmentId } = params;
   if (!assignmentId) {
@@ -509,8 +510,12 @@ export default function TrainingAssignmentDetailRoute() {
                       key={`${assignment.employeeId}-${assignment.trainingAssignmentId}`}
                       assignment={assignment}
                       isExternal={isExternal}
-                      canRemove={permissions.can("delete", "resources")}
-                      disabled={!permissions.can("update", "resources")}
+                      canRemove={permissions.has({
+                        "resources.assignments": "Full"
+                      })}
+                      disabled={
+                        !permissions.has({ "resources.assignments": "Edit" })
+                      }
                       isLast={index === filteredAssignments.length - 1}
                     />
                   ))}

@@ -15,9 +15,7 @@ import { DocumentForm } from "~/modules/documents/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "documents"
-  });
+  const { api } = await authorize(request, { documents: "View" });
 
   const { documentId } = params;
   if (!documentId) throw notFound("documentId not found");
@@ -38,9 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await authorize(request, {
-    update: "documents"
-  });
+  const { client, userId } = await authorize(request, { documents: "Edit" });
 
   const validation = await validator(documentValidator).validate(
     await request.formData()

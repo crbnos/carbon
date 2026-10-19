@@ -23,10 +23,10 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client: viewClient } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.rfqs": "View"
   });
   const { client, companyId, userId } = await authorize(request, {
-    create: "purchasing"
+    "purchasing.rfqs": "Create"
   });
 
   const { rfqId } = params;

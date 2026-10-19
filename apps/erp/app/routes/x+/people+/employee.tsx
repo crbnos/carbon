@@ -16,11 +16,11 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "people",
-    role: "employee",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "people.employees": "View" },
+    { role: "employee", bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

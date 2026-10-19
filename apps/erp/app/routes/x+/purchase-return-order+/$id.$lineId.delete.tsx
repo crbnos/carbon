@@ -23,7 +23,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw notFound("Could not find lineId");
 
   const { client: viewClient } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.returns": "View"
   });
 
   const [purchaseReturnOrder, line] = await Promise.all([
@@ -60,9 +60,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { client } = await authorize(request, {
-    delete: "purchasing"
-  });
+  const { client } = await authorize(request, { "purchasing.returns": "Full" });
 
   const { error: deleteLineError } = await deletePurchaseReturnOrderLine(
     client,

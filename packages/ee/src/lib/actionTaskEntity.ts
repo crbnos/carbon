@@ -2,6 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { PageGate } from "@carbon/database/access";
+
 export type ActionTaskEntityType =
   | "nonConformanceActionTask"
   | "changeOrderActionTask";
@@ -32,12 +34,12 @@ export function isActionTaskEntityType(
   return !!value && value in actionTaskEntities;
 }
 
-export function actionTaskPermissions(entityType: ActionTaskEntityType): {
-  update?: string;
-} {
+export function actionTaskPermissions(
+  entityType: ActionTaskEntityType
+): PageGate {
   return entityType === "changeOrderActionTask"
-    ? { update: "parts" }
-    : { update: "quality" };
+    ? { "parts.changeNotices": "Edit" }
+    : { "quality.issues": "Edit" };
 }
 
 export function actionTaskParentId(

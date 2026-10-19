@@ -303,7 +303,7 @@ export default function ProcedureExplorer() {
                 </Reorder.Group>
               ) : (
                 <Empty>
-                  {permissions.can("update", "production") && (
+                  {permissions.has({ "production.procedures": "Edit" }) && (
                     <Button
                       isDisabled={isDisabled}
                       leftIcon={<LuCirclePlus />}
@@ -328,7 +328,8 @@ export default function ProcedureExplorer() {
                     ref={newAttributeRef}
                     className="w-full"
                     isDisabled={
-                      isDisabled || !permissions.can("update", "production")
+                      isDisabled ||
+                      !permissions.has({ "production.procedures": "Edit" })
                     }
                     leftIcon={<LuCirclePlus />}
                     variant="secondary"
@@ -388,7 +389,7 @@ export default function ProcedureExplorer() {
                   ))
               ) : (
                 <Empty>
-                  {permissions.can("update", "production") && (
+                  {permissions.has({ "production.procedures": "Edit" }) && (
                     <Button
                       isDisabled={isDisabled}
                       leftIcon={<LuCirclePlus />}
@@ -413,7 +414,8 @@ export default function ProcedureExplorer() {
                     ref={newParameterRef}
                     className="w-full"
                     isDisabled={
-                      isDisabled || !permissions.can("update", "production")
+                      isDisabled ||
+                      !permissions.has({ "production.procedures": "Edit" })
                     }
                     leftIcon={<LuCirclePlus />}
                     variant="secondary"
@@ -591,7 +593,7 @@ function ProcedureStepItem({
               <DropdownMenuItem
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
-                disabled={!permissions.can("update", "production")}
+                disabled={!permissions.has({ "production.procedures": "Edit" })}
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(attribute);
@@ -683,7 +685,7 @@ function ProcedureParameterItem({
               <DropdownMenuItem
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
-                disabled={!permissions.can("update", "production")}
+                disabled={!permissions.has({ "production.procedures": "Edit" })}
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(parameter);

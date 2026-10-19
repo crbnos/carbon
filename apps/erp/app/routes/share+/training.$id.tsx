@@ -113,9 +113,11 @@ async function getAuthorizedAssignment(
 }
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
-  const { userId, companyId } = await authorize(request, {
-    role: "employee"
-  });
+  const { userId, companyId } = await authorize(
+    request,
+    {},
+    { role: "employee" }
+  );
 
   const { id } = params;
   if (!id) {
@@ -158,9 +160,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { userId } = await authorize(request, {
-    role: "employee"
-  });
+  const { userId } = await authorize(request, {}, { role: "employee" });
 
   const { id } = params;
   if (!id) {

@@ -19,7 +19,7 @@ import { path, requestReferrer } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "invoicing"
+    "invoicing.purchaseInvoices": "Edit"
   });
 
   const { invoiceId } = params;
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Check if PI is locked
   const { client: viewClient } = await authorize(request, {
-    view: "invoicing"
+    "invoicing.purchaseInvoices": "View"
   });
 
   const purchaseInvoice = await getPurchaseInvoice(viewClient, invoiceId);

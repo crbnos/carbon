@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { anyOfRule, rowRule } from "@carbon/api/permissions";
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import {
@@ -1573,10 +1574,7 @@ export const voidPayment = defineServiceFn({
  */
 export const postMemo = defineServiceFn({
   input: z.object({ memoId: z.string() }),
-  permission: {
-    "invoicing.supplierCredits": "Edit",
-    "invoicing.creditMemos": "Edit"
-  },
+  permission: rowRule("memo", "Edit", { id: "memoId" }),
 
   async run(ctx, { memoId }) {
     const refused = await refuseUnlessOwned(ctx, "memo", { id: memoId });
@@ -1608,10 +1606,7 @@ export const postMemo = defineServiceFn({
  */
 export const voidMemo = defineServiceFn({
   input: z.object({ memoId: z.string() }),
-  permission: {
-    "invoicing.supplierCredits": "Edit",
-    "invoicing.creditMemos": "Edit"
-  },
+  permission: rowRule("memo", "Edit", { id: "memoId" }),
 
   async run(ctx, { memoId }) {
     const refused = await refuseUnlessOwned(ctx, "memo", { id: memoId });
@@ -1644,10 +1639,7 @@ export const voidMemo = defineServiceFn({
  */
 export const deleteDraftMemo = defineServiceFn({
   input: z.object({ memoId: z.string() }),
-  permission: {
-    "invoicing.supplierCredits": "Full",
-    "invoicing.creditMemos": "Full"
-  },
+  permission: rowRule("memo", "Full", { id: "memoId" }),
 
   async run(ctx, { memoId }) {
     const client = ctx.asCaller.supabase;
@@ -2984,10 +2976,7 @@ export const getInvoiceSettlementsForInvoice = defineServiceFn({
  */
 export const getMemoApplications = defineServiceFn({
   input: z.looseObject({ memoId: z.string() }),
-  permission: {
-    "invoicing.supplierCredits": "View",
-    "invoicing.creditMemos": "View"
-  },
+  permission: rowRule("memo", "View", { id: "memoId" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3238,10 +3227,7 @@ export const replaceInvoiceSettlements = defineServiceFn({
  */
 export const getMemo = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: {
-    "invoicing.supplierCredits": "View",
-    "invoicing.creditMemos": "View"
-  },
+  permission: rowRule("memo", "View", { id: "id" }),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3273,10 +3259,7 @@ export const getMemos = defineServiceFn({
     counterpartyIds: z.array(z.string()).nullable().optional(),
     party: z.enum(["customer", "supplier"]).nullable().optional()
   }),
-  permission: {
-    "invoicing.supplierCredits": "View",
-    "invoicing.creditMemos": "View"
-  },
+  permission: anyOfRule("memo", "View"),
   async run(ctx, input) {
     return paged(
       ctx,
@@ -3321,10 +3304,7 @@ export const createMemo = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: {
-    "invoicing.supplierCredits": "Create",
-    "invoicing.creditMemos": "Create"
-  },
+  permission: anyOfRule("memo", "Create"),
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3370,10 +3350,7 @@ export const updateMemo = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: {
-    "invoicing.supplierCredits": "Edit",
-    "invoicing.creditMemos": "Edit"
-  },
+  permission: rowRule("memo", "Edit", { id: "id" }),
   async run(ctx, input) {
     return unwrap(
       ctx,

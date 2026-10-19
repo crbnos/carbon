@@ -4,6 +4,7 @@
 
 import { dataOrThrow } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -97,9 +98,10 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "sales"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    anyOf(pagesOf("sales"), "View")
+  );
 
   const [openSalesOrders, openQuotes, openRFQs] = await Promise.all([
     client

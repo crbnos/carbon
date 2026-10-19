@@ -55,10 +55,11 @@ import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "production",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "production.jobs": "View" },
+    { bypassRls: true }
+  );
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -275,7 +276,7 @@ export default function JobDetailsRoute() {
         </DeferredFiles>
 
         <CadModel
-          isReadOnly={!permissions.can("update", "production")}
+          isReadOnly={!permissions.has({ "production.jobs": "Edit" })}
           metadata={{
             jobId: jobData?.job?.id ?? undefined,
             itemId: jobData?.job?.itemId ?? undefined

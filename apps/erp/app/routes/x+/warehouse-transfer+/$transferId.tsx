@@ -37,7 +37,7 @@ export const handle: Handle = {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "inventory"
+    "inventory.warehouseTransfers": "View"
   });
 
   const { transferId } = params;

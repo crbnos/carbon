@@ -38,10 +38,11 @@ function parseAsOf(raw: string | null): string | null {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "accounting.reporting": "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
   const asOf =

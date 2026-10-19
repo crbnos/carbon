@@ -10,7 +10,7 @@ import RecordDocuments from "~/components/RecordDocuments";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "sales"
+    "sales.customers": "View"
   });
 
   const { customerId } = params;
@@ -35,7 +35,7 @@ export default function CustomerDocumentsRoute() {
       id={customerId}
       bucketPrefix="customer"
       sourceDocument="Customer"
-      module="sales"
+      page="sales.customers"
     />
   );
 }

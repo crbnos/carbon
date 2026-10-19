@@ -14,7 +14,7 @@ import { operationStepSlideValidator } from "~/modules/shared/shared.models";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "production"
+    "production.assemblies": "Create"
   });
 
   const formData = await request.formData();

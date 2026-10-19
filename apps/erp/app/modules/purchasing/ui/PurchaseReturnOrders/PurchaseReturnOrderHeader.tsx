@@ -83,7 +83,7 @@ const PurchaseReturnOrderHeader = () => {
   const deleteDisclosure = useDisclosure();
   const creditDisclosure = useDisclosure();
 
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.returns": "Edit" });
 
   const statusBadge = <PurchaseReturnOrderStatus status={status} />;
   const menuItems = (
@@ -112,7 +112,7 @@ const PurchaseReturnOrderHeader = () => {
         destructive
         disabled={
           !["Draft", "Cancelled"].includes(status ?? "") ||
-          !permissions.can("delete", "purchasing") ||
+          !permissions.has({ "purchasing.returns": "Full" }) ||
           !permissions.is("employee")
         }
         onClick={deleteDisclosure.onOpen}
@@ -181,7 +181,7 @@ const PurchaseReturnOrderHeader = () => {
                   leftIcon={<LuTruck />}
                   isDisabled={
                     isCreatingDocument ||
-                    !permissions.can("create", "inventory")
+                    !permissions.has({ "inventory.shipments": "Create" })
                   }
                   onClick={ship}
                 >
@@ -197,7 +197,11 @@ const PurchaseReturnOrderHeader = () => {
                     <Button
                       leftIcon={<LuCreditCard />}
                       variant="secondary"
-                      isDisabled={!permissions.can("create", "invoicing")}
+                      isDisabled={
+                        !permissions.has({
+                          "invoicing.supplierCredits": "Create"
+                        })
+                      }
                       onClick={creditDisclosure.onOpen}
                     >
                       <Trans>Issue Credit</Trans>
@@ -229,7 +233,7 @@ const PurchaseReturnOrderHeader = () => {
                       isLoading={replacementFetcher.state !== "idle"}
                       isDisabled={
                         replacementFetcher.state !== "idle" ||
-                        !permissions.can("create", "purchasing")
+                        !permissions.has({ "purchasing.returns": "Create" })
                       }
                       onClick={() => {
                         replacementFetcher.submit(null, {

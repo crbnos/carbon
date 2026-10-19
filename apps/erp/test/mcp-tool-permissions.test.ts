@@ -14,8 +14,25 @@ type Tool = {
   name: string;
   module: string;
   classification: "READ" | "WRITE" | "DESTRUCTIVE";
-  permission: { module: string | null; actions: string[] };
+  permission: {
+    module: string | null;
+    actions: string[];
+    oneOf?: { pages: string[]; level: string; by: string[] };
+  };
 };
+
+const ITEM_PAGES = [
+  "parts.parts",
+  "parts.materials",
+  "parts.tools",
+  "parts.consumables",
+  "parts.services"
+];
+const byItemType = (level: string) => ({
+  pages: ITEM_PAGES,
+  level,
+  by: ["item.type"]
+});
 
 const allTools = metadata.tools as Tool[];
 
@@ -69,18 +86,22 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     module: "sales",
     actions: ["view", "create", "update", "delete"]
   },
-  // Batch properties hang off an item: the Parts page (was inventory).
+  // Batch properties hang off an item: the page of the item's type (was
+  // inventory).
   inventory_upsertBatchProperty: {
     module: "parts",
-    actions: ["view", "create", "update"]
+    actions: ["view", "create", "update"],
+    oneOf: byItemType("Edit")
   },
   inventory_updateBatchPropertyOrder: {
     module: "parts",
-    actions: ["view", "create", "update"]
+    actions: ["view", "create", "update"],
+    oneOf: byItemType("Edit")
   },
   inventory_deleteBatchProperty: {
     module: "parts",
-    actions: ["view", "create", "update", "delete"]
+    actions: ["view", "create", "update", "delete"],
+    oneOf: byItemType("Full")
   },
   // Failure modes, dispatches and schedules are Resources pages (was
   // production; the tables' RLS was already resources).
@@ -400,5 +421,64 @@ describe("permission actions in the manifest", () => {
     )) {
       expect(t.classification, t.name).toBe("DESTRUCTIVE");
     }
+  });
+});
+
+// A table several pages share gates on its row: an item on the page of its
+// type, a memo on the page of its party, a run on the page of its type. Each
+// such tool publishes every page the row can pick.
+describe("gates the row decides", () => {
+  const oneOf = allTools.filter((t) => t.permission.oneOf);
+  const named = (name: string) =>
+    allTools.find((t) => t.name === name)?.permission;
+
+  it("lets Tools at Edit change a tool's cost: the item's type picks the page", () => {
+    expect(named("items_updateItemCost")).toEqual({
+      module: "parts",
+      actions: ["view", "create", "update"],
+      oneOf: byItemType("Edit")
+    });
+    expect(named("items_getItemCost")?.oneOf).toEqual(byItemType("View"));
+    expect(named("items_deleteItem")?.oneOf).toEqual(byItemType("Full"));
+  });
+
+  it("gates an item list on any one item page", () => {
+    expect(named("items_getItemMpnsList")?.oneOf).toEqual({
+      pages: ITEM_PAGES,
+      level: "View",
+      by: []
+    });
+  });
+
+  it("gates a memo on the page of its party, and a run on the page of its type", () => {
+    expect(named("invoicing_postMemo")?.oneOf).toEqual({
+      pages: ["invoicing.supplierCredits", "invoicing.creditMemos"],
+      level: "Edit",
+      by: ["memo.supplierId", "memo.customerId"]
+    });
+    expect(named("accounting_postRevenueRecognitionRun")?.oneOf).toEqual({
+      pages: ["accounting.leases", "accounting.revenueRecognition"],
+      level: "Edit",
+      by: ["revenueRecognitionRun.type"]
+    });
+  });
+
+  it("names the pages of one shared table, in one module", () => {
+    const tables: Record<string, string[]> = {
+      parts: ITEM_PAGES,
+      invoicing: ["invoicing.supplierCredits", "invoicing.creditMemos"],
+      accounting: ["accounting.leases", "accounting.revenueRecognition"]
+    };
+    for (const t of oneOf) {
+      const module = t.permission.module ?? "";
+      expect(t.permission.oneOf?.pages, t.name).toEqual(tables[module]);
+    }
+    const counts = Object.fromEntries(
+      Object.keys(tables).map((module) => [
+        module,
+        oneOf.filter((t) => t.permission.module === module).length
+      ])
+    );
+    expect(counts).toEqual({ parts: 83, invoicing: 8, accounting: 7 });
   });
 });

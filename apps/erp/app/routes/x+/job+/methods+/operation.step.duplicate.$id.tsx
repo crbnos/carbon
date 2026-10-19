@@ -12,7 +12,7 @@ import { duplicateJobOperationStep } from "~/modules/production/production.servi
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "production"
+    "production.jobs": "Create"
   });
 
   const { id } = params;

@@ -727,7 +727,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "parts")}
+            disabled={!permissions.has({ "parts.materials": "Full" })}
             onClick={() => {
               setSelectedItem(row);
               deleteItemModal.onOpen();
@@ -765,7 +765,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
           }
         ]}
         primaryAction={
-          permissions.can("create", "parts") && (
+          permissions.has({ "parts.materials": "Create" }) && (
             <div className="flex items-center gap-2">
               <Button
                 variant="secondary"

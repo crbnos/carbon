@@ -79,8 +79,8 @@ const ChartOfAccountForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.has({ "accounting.chartOfAccounts": "Edit" })
+    : !permissions.has({ "accounting.chartOfAccounts": "Create" });
 
   const onParentChange = (newValue: { value: string } | null) => {
     if (newValue) {

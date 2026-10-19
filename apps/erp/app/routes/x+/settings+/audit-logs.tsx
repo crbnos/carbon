@@ -37,7 +37,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "settings"
+    "settings.auditLogs": "View"
   });
 
   // Check if audit log is enabled for this company

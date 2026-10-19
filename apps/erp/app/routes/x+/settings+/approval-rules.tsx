@@ -26,10 +26,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "settings",
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { "settings.approvalRules": "View" },
+    { role: "employee" }
+  );
 
   const serviceRole = getCarbonServiceRole();
 

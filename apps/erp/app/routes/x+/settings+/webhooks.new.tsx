@@ -17,9 +17,7 @@ import { WebhookForm } from "~/modules/settings/ui/Webhooks";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    view: "settings"
-  });
+  await authorize(request, { "settings.webhooks": "View" });
 
   return null;
 }
@@ -27,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    view: "settings"
+    "settings.webhooks": "View"
   });
 
   await requireFeature({

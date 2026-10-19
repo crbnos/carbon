@@ -38,7 +38,7 @@ const BulkEditPermissions = ({
   // The overrides to apply. A module left on "No change" is not touched.
   const [grants, setGrants] = useState<AccessGrant[]>([]);
 
-  const canEditPermissions = permissions.can("update", "users");
+  const canEditPermissions = permissions.has({ "users.accounts": "Edit" });
 
   return (
     <Drawer

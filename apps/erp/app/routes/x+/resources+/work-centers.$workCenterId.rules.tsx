@@ -10,10 +10,11 @@ import { useLoaderData } from "react-router";
 import RuleAssignmentsList from "~/modules/inventory/ui/StorageRules/RuleAssignmentsList";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { "resources.workCenters": "View" },
+    { role: "employee" }
+  );
   const { workCenterId } = params;
   if (!workCenterId) throw notFound("workCenterId required");
 

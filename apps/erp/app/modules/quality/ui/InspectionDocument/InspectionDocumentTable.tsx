@@ -137,7 +137,7 @@ const InspectionDocumentTable = memo(
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "quality")}
+            disabled={!permissions.has({ "quality.inspectionPlans": "Edit" })}
             onClick={() => {
               navigate(
                 `${path.to.inspectionDocument(row.id)}?${params?.toString()}`
@@ -150,7 +150,7 @@ const InspectionDocumentTable = memo(
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "quality")}
+            disabled={!permissions.has({ "quality.inspectionPlans": "Full" })}
             onClick={() => {
               flushSync(() => {
                 setSelectedDiagram(row);
@@ -174,7 +174,7 @@ const InspectionDocumentTable = memo(
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
-            permissions.can("create", "quality") && (
+            permissions.has({ "quality.inspectionPlans": "Create" }) && (
               <New
                 label={t`Inspection Plan`}
                 to={`${path.to.newInspectionDocument}?${params?.toString()}`}

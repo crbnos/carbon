@@ -950,7 +950,10 @@ function SubAssemblyRow({
           <DropdownMenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={isDisabled || !permissions.can("delete", "production")}
+            disabled={
+              isDisabled ||
+              !permissions.has({ "production.assemblies": "Full" })
+            }
             onClick={onDelete}
           >
             <DropdownMenuIcon icon={<LuTrash />} />
@@ -1135,7 +1138,7 @@ function StepRow({
             <DropdownMenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "production")}
+              disabled={!permissions.has({ "production.assemblies": "Full" })}
               onClick={onDelete}
             >
               <DropdownMenuIcon icon={<LuTrash />} />

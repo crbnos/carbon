@@ -54,7 +54,8 @@ export function useCounterparty(party?: {
 
   if (party.customerId) {
     const customer = customers.find((c) => c.id === party.customerId);
-    if (!customer || !permissions.can("view", "sales")) return null;
+    if (!customer || !permissions.has({ "sales.customers": "View" }))
+      return null;
     return {
       to: path.to.customer(customer.id),
       icon: <LuSquareUser />,
@@ -65,7 +66,8 @@ export function useCounterparty(party?: {
 
   if (party.supplierId) {
     const supplier = suppliers.find((s) => s.id === party.supplierId);
-    if (!supplier || !permissions.can("view", "purchasing")) return null;
+    if (!supplier || !permissions.has({ "purchasing.suppliers": "View" }))
+      return null;
     return {
       to: path.to.supplier(supplier.id),
       icon: <LuContainer />,
@@ -76,7 +78,8 @@ export function useCounterparty(party?: {
 
   if (party.employeeId) {
     const person = people.find((p) => p.id === party.employeeId);
-    if (!person || !permissions.can("view", "people")) return null;
+    if (!person || !permissions.has({ "people.employees": "View" }))
+      return null;
     return {
       to: path.to.person(person.id),
       icon: <LuUser />,
@@ -174,7 +177,10 @@ export function useSettlementRows(
     );
   }
 
-  if (related.journal && permissions.can("view", "accounting")) {
+  if (
+    related.journal &&
+    permissions.has({ "accounting.journalEntries": "View" })
+  ) {
     rows.push(
       <RelatedDocument
         key={`journal:${related.journal.id}`}

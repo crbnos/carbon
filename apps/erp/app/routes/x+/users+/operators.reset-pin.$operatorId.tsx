@@ -31,9 +31,7 @@ import { path } from "~/utils/path";
  * checked here too so the modal never opens for a reset the action refuses.
  */
 async function requireResetPinPermission(request: Request, operatorId: string) {
-  const { client } = await authorize(request, {
-    update: "users"
-  });
+  const { client } = await authorize(request, { "users.operators": "Edit" });
 
   const user = await client
     .from("user")
@@ -49,7 +47,7 @@ async function requireResetPinPermission(request: Request, operatorId: string) {
   }
 
   if (!user.data.isConsoleOperator) {
-    await authorize(request, { update: "settings" });
+    await authorize(request, { "settings.people": "Edit" });
   }
 
   return { operator: user.data };

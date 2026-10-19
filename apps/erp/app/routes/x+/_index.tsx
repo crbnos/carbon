@@ -81,7 +81,7 @@ const AGENT_WIDGET_COOKIE = "onboardAgentDismissed";
 // finished) it surfaces as a primary-nav item (`getImplementationNavItem`) and a
 // summary card below — it never replaces the home page for anyone.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
 
   // Compute the greeting on the server so SSR and hydration render the SAME
   // line — no client-side randomness, so no flash on refresh. `pick` is the
@@ -158,7 +158,7 @@ export default function AppIndexRoute() {
   const enrollFetcher = useAction();
   // Self-serve: anyone who can update company settings can enroll their
   // company — no Carbon staff required.
-  const canEnroll = permissions.can("update", "settings");
+  const canEnroll = permissions.has({ "settings.company": "Edit" });
 
   return (
     <div className="relative w-full h-full overflow-hidden">

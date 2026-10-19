@@ -9,7 +9,7 @@ import { renderSalesOrderPdf } from "~/modules/sales/sales.pdf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await authorize(request, {
-    view: "sales"
+    "sales.salesOrders": "View"
   });
 
   const { id } = params;

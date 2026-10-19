@@ -70,8 +70,8 @@ type RecordDocumentsProps = {
   bucketPrefix: string;
   /** documentSourceType value */
   sourceDocument: "Supplier" | "Customer";
-  /** Permission module gating upload/delete */
-  module: "purchasing" | "sales";
+  /** The page whose level gates upload and delete */
+  page: "purchasing.suppliers" | "sales.customers";
   isReadOnly?: boolean;
 };
 
@@ -80,12 +80,12 @@ const RecordDocuments = ({
   id,
   bucketPrefix,
   sourceDocument,
-  module,
+  page,
   isReadOnly
 }: RecordDocumentsProps) => {
   const { t } = useLingui();
   const { canDelete, download, view, deleteAttachment, getPath, upload } =
-    useRecordDocuments({ id, bucketPrefix, sourceDocument, module });
+    useRecordDocuments({ id, bucketPrefix, sourceDocument, page });
 
   const effectiveCanDelete = isReadOnly ? false : canDelete;
 
@@ -124,7 +124,7 @@ const RecordDocuments = ({
               id={id}
               bucketPrefix={bucketPrefix}
               sourceDocument={sourceDocument}
-              module={module}
+              page={page}
             />
           )}
         </CardAction>
@@ -240,7 +240,7 @@ type RecordDocumentUploadProps = {
   id: string;
   bucketPrefix: string;
   sourceDocument: "Supplier" | "Customer";
-  module: "purchasing" | "sales";
+  page: "purchasing.suppliers" | "sales.customers";
 };
 
 const RecordDocumentUpload = (props: RecordDocumentUploadProps) => {
@@ -256,7 +256,7 @@ const RecordDocumentUpload = (props: RecordDocumentUploadProps) => {
 
   return (
     <File
-      isDisabled={!permissions.can("update", props.module)}
+      isDisabled={!permissions.has({ [props.page]: "Edit" })}
       leftIcon={<LuUpload />}
       onChange={uploadFiles}
       multiple
@@ -270,7 +270,7 @@ export const useRecordDocuments = ({
   id,
   bucketPrefix,
   sourceDocument,
-  module
+  page
 }: RecordDocumentUploadProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -279,7 +279,7 @@ export const useRecordDocuments = ({
   const revalidator = useRevalidator();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", module);
+  const canDelete = permissions.has({ [page]: "Full" });
 
   const getPath = useCallback(
     (file: { name: string }) =>

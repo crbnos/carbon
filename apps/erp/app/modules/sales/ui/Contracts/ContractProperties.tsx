@@ -178,7 +178,7 @@ const ContractProperties = () => {
 
   const companyLabel =
     labels.invoiceAutomation[companySettings.invoiceAutomation];
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.serviceContracts": "Edit" });
   const isDisabled = contract.status !== "Draft" || !canUpdate;
   const isEnded = contract.status === "Ended";
   const billTo = contract.invoiceCustomerId ?? contract.customerId ?? "";

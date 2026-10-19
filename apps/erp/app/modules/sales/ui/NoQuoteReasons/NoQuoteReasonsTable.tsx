@@ -65,7 +65,7 @@ const NoQuoteReasonsTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "sales")}
+              disabled={!permissions.has({ "sales.noQuoteReasons": "Full" })}
               onClick={() => {
                 navigate(
                   `${path.to.deleteNoQuoteReason(row.id)}?${params.toString()}`
@@ -87,7 +87,7 @@ const NoQuoteReasonsTable = memo(
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "sales") && (
+          permissions.has({ "sales.noQuoteReasons": "Create" }) && (
             <New
               label={t`Reason`}
               to={`${path.to.newNoQuoteReason}?${params.toString()}`}

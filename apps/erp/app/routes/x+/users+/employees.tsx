@@ -22,11 +22,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(request, {
-    view: "users",
-    role: "employee",
-    bypassRls: true
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "users.accounts": "View" },
+    { role: "employee", bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

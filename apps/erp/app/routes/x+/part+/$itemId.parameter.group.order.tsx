@@ -14,9 +14,7 @@ const logger = getLogger("erp", "itemid-parameter-group-order");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, {
-    update: "parts"
-  });
+  const { client } = await authorize(request, { "parts.parts": "Edit" });
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");

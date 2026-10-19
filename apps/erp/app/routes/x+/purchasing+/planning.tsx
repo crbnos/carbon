@@ -44,10 +44,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId, api } = await authorize(request, {
-    view: "purchasing",
-    bypassRls: true
-  });
+  const { client, companyId, userId, api } = await authorize(
+    request,
+    { "purchasing.materialPlanning": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

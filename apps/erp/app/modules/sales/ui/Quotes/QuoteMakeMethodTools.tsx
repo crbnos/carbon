@@ -246,7 +246,7 @@ const QuoteMakeMethodTools = () => {
   return (
     <Fragment key={lineId}>
       {line &&
-        permissions.can("update", "sales") &&
+        permissions.has({ "sales.quotes": "Edit" }) &&
         (isQuoteLineMethod || isQuoteMakeMethod) && (
           <Menubar>
             <HStack className="w-full justify-start">
@@ -261,7 +261,8 @@ const QuoteMakeMethodTools = () => {
                 </MenubarItem>
                 <MenubarItem
                   isDisabled={
-                    !permissions.can("update", "parts") || isSaveMethodLoading
+                    !permissions.has({ "parts.parts": "Edit" }) ||
+                    isSaveMethodLoading
                   }
                   isLoading={isSaveMethodLoading}
                   leftIcon={<LuGitMerge />}
@@ -273,7 +274,8 @@ const QuoteMakeMethodTools = () => {
                   <MenubarItem
                     leftIcon={<LuSettings />}
                     isDisabled={
-                      !permissions.can("update", "sales") || isConfigureLoading
+                      !permissions.has({ "sales.quotes": "Edit" }) ||
+                      isConfigureLoading
                     }
                     isLoading={isConfigureLoading}
                     onClick={() => {

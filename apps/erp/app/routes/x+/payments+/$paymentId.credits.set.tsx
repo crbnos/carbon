@@ -42,7 +42,7 @@ const rowsValidator = z.array(
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "invoicing"
+    "invoicing.payments": "Edit"
   });
 
   const { paymentId } = params;

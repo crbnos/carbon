@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -198,7 +199,9 @@ const ItemPlanningForm = ({
           </div>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!permissions.can("update", "parts")}>
+          <Submit
+            isDisabled={!permissions.has({ [ITEM_TYPE_PAGES[type]]: "Edit" })}
+          >
             <Trans>Save</Trans>
           </Submit>
         </CardFooter>

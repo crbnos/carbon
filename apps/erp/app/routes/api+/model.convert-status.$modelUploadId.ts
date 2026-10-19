@@ -15,10 +15,11 @@ const NO_SIGNAL = { phase: null, done: 0, total: 0 } as const;
 // the service doesn't track it — and the client falls back to its coarse
 // processingStatus rendering.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "production",
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { "production.assemblies": "View" },
+    { role: "employee" }
+  );
   const { modelUploadId } = params;
   if (!modelUploadId) throw new Response("Not found", { status: 404 });
 

@@ -12,7 +12,7 @@ import { updateQuoteOperationOrder } from "~/modules/sales/sales.service";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "sales"
+    "sales.quotes": "Edit"
   });
 
   const updateMap = (await request.formData()).get("updates") as string;

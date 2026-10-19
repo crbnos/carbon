@@ -79,9 +79,11 @@ export function usePurchaseOrderPlanningCommands(): {
     [statusFetcher.submit]
   );
 
-  const canUpdate = permissions.can("update", "purchasing");
-  const canDelete = permissions.can("delete", "purchasing");
-  const canCreate = permissions.can("create", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.materialPlanning": "Edit" });
+  const canDelete = permissions.has({ "purchasing.materialPlanning": "Full" });
+  const canCreate = permissions.has({
+    "purchasing.materialPlanning": "Create"
+  });
 
   const purchaseOrderMenuItems = useCallback(
     (order: PlanningPurchaseOrder) => {

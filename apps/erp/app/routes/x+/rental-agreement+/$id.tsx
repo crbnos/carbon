@@ -33,7 +33,7 @@ export const handle: Handle = {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    view: "sales"
+    "sales.rentalAgreements": "View"
   });
 
   const { id } = params;

@@ -15,7 +15,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   // Read-only "best case" what-if — no writes happen, so view is sufficient.
   const { companyId, userId } = await authorize(request, {
-    view: "production"
+    "production.jobs": "View"
   });
 
   const { jobId } = params;

@@ -67,7 +67,7 @@ export const handle: Handle = {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {
-    view: "parts"
+    "parts.changeNotices": "View"
   });
 
   const { id } = params;

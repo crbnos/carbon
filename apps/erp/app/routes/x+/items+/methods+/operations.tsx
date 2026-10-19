@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -22,10 +23,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "production",
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    anyOf(ITEM_PAGES, "View"),
+    { role: "employee" }
+  );
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");

@@ -5,15 +5,17 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { updateDefaultRevision } from "~/modules/items/items.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await authorize(request, {
-    update: "parts"
-  });
+  const { client, userId } = await authorize(
+    request,
+    anyOf(ITEM_PAGES, "Edit")
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

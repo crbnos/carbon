@@ -8,10 +8,11 @@ import { fetchJobStepRecords } from "~/modules/inventory/inventory.service";
 import type { StepRecord } from "~/modules/inventory/ui/Traceability/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "inventory",
-    bypassRls: true
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { "inventory.traceability": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const activityId = url.searchParams.get("activityId");

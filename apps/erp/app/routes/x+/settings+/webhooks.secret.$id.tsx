@@ -58,7 +58,7 @@ async function respond(
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    update: "settings"
+    "settings.webhooks": "Edit"
   });
   const webhookId = params.id;
   if (!webhookId) throw new Error("Could not find id");
@@ -76,7 +76,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    update: "settings"
+    "settings.webhooks": "Edit"
   });
   const webhookId = params.id;
   if (!webhookId) throw new Error("Could not find id");

@@ -66,7 +66,16 @@ export const cancelJob = defineServiceFn({
   supplier portal account (a read every screen needs, such as locations or
   units; RLS still filters the rows). Use it only when every table the read
   touches is one RLS lets every employee read. `"system"` admits only the
-  system actor, `{ by, rules }` keys the rule on an input field.
+  system actor, `{ by, rules }` keys the rule on an input field. A table
+  several pages share (`item` by type, `memo` by party,
+  `revenueRecognitionRun` by type) gates on the row: `rowRule(table, level,
+  { id, from?, path? })` (`@carbon/api/permissions`; the ERP's
+  `itemRule(level, { id, from?, path? })` in `items.service.ts`) reads the
+  row the input names, through `path` hops, and requires the page its type
+  picks. A list with no one row is `anyOfRule(table, level)` (any one page;
+  RLS filters the rows). An id `run` alone can name (one inside a list of
+  objects, or an item OR a make method) is checked there with
+  `refusalOf(ctx, rule, input)`.
   `permission: {}` is refused by `service-fn-file`: write `"employee"`. The
   user actor carries `role` for this check: `requirePermissions` returns it,
   and a workflow runs only while its owner is an employee

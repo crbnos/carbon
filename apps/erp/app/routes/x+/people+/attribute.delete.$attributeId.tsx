@@ -11,9 +11,7 @@ import { deleteAttribute } from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: LoaderFunctionArgs) {
-  const { client } = await authorize(request, {
-    delete: "people"
-  });
+  const { client } = await authorize(request, { "people.attributes": "Full" });
 
   const { attributeId } = params;
   if (!attributeId) {

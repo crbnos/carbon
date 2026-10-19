@@ -11,7 +11,7 @@ import { path } from "~/utils/path";
 
 async function beginAuthorization(request: Request) {
   const { userId, companyId } = await authorize(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
   return beginOnshapeAuthorization(request, {
     integrationId: Onshape.id,

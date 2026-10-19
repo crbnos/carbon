@@ -26,7 +26,7 @@ const logger = getLogger("erp", "workflow-save");
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "workflows"
+    "workflows.workflows": "Edit"
   });
   await requireFeature({
     request,

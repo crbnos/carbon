@@ -58,8 +58,8 @@ const CustomerStatusForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.statuses": "Edit" })
+    : !permissions.has({ "sales.statuses": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

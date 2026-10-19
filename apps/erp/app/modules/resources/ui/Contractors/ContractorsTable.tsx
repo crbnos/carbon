@@ -139,7 +139,7 @@ const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "resources")}
+            disabled={!permissions.has({ "resources.abilities": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deleteContractor(
@@ -163,7 +163,7 @@ const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
       count={count}
       columns={columns}
       primaryAction={
-        permissions.can("create", "resources") && (
+        permissions.has({ "resources.abilities": "Create" }) && (
           <New label={t`Contractor`} to={`new?${params.toString()}`} />
         )
       }

@@ -16,7 +16,7 @@ export const config = {
 // integration settings (see x+/settings+/integrations.$id.tsx).
 export async function loader({ request }: LoaderFunctionArgs) {
   const { userId, companyId } = await authorize(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
 
   return completeOnshapeAuthorization({

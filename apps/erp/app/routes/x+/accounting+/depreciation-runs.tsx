@@ -35,10 +35,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "accounting.depreciation": "View" },
+    { role: "employee" }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -91,7 +92,8 @@ export default function DepreciationRunsRoute() {
   const periodEnd = pickedPeriodEnd ?? nextPeriodEnd;
 
   const canCreate =
-    permissions.can("create", "accounting") && !hasDraftBlocking;
+    permissions.has({ "accounting.depreciation": "Create" }) &&
+    !hasDraftBlocking;
 
   return (
     <VStack spacing={0} className="h-full">
@@ -99,7 +101,7 @@ export default function DepreciationRunsRoute() {
         data={data}
         count={count}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.has({ "accounting.depreciation": "Create" }) && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

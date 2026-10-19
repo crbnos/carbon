@@ -15,7 +15,7 @@ import { data } from "react-router";
 // re-auth clears the lock. Its job is to keep an ACTIVE session from ever locking.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  await authorize(request, {});
+  await authorize(request);
   const cookie = await touchAuthSession(request);
   return data(
     { ok: Boolean(cookie) },

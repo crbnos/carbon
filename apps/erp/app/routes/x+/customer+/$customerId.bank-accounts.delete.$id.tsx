@@ -18,9 +18,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, {
-    delete: "accounting"
-  });
+  const { client } = await authorize(request, { "sales.customers": "Full" });
 
   const { customerId, id } = params;
   if (!customerId) throw new Error("Could not find customerId");

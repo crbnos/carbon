@@ -18,7 +18,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "accounting"
+    "accounting.assets": "View"
   });
 
   const { fixedAssetId } = params;

@@ -23,9 +23,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "quality"
-  });
+  const { api } = await authorize(request, { "quality.issues": "View" });
 
   const [workflows, types, requiredActions] = await Promise.all([
     api.quality.getIssueWorkflowsList({}),

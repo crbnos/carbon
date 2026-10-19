@@ -17,7 +17,7 @@ export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   // Manager override — gated on the Production DELETE permission (operators lack it).
   const { companyId, userId } = await authorize(request, {
-    delete: "production"
+    "production.jobs": "Full"
   });
 
   const formData = await request.formData();

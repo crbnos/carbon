@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import {
   now,
   parseDateTime,
@@ -19,9 +20,10 @@ type ProductionEvent = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "production"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    anyOf(pagesOf("production"), "View")
+  );
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
 

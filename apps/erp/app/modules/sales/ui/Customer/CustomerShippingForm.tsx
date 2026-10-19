@@ -49,7 +49,7 @@ const CustomerShippingForm = ({ initialValues }: CustomerShippingFormProps) => {
   //     label: term.name,
   //   })) ?? [];
 
-  const isDisabled = !permissions.can("update", "sales");
+  const isDisabled = !permissions.has({ "sales.customers": "Edit" });
 
   return (
     <ValidatedForm

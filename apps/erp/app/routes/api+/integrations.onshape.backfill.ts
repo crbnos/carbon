@@ -20,7 +20,7 @@ export const config = {
 // company has turned Onshape asset sync on.
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
 
   const integration = await getOnshapeIntegration(client, companyId);

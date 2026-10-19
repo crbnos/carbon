@@ -37,11 +37,11 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "purchase-order-line-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(request, {
-    view: "purchasing",
-    role: "employee",
-    bypassRls: true
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "purchasing.purchaseOrders": "View" },
+    { role: "employee", bypassRls: true }
+  );
 
   const { orderId, lineId } = params;
   if (!orderId) throw notFound("orderId not found");
@@ -88,7 +88,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // First check with view permission to get the PO status
   const { client: viewClient } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.purchaseOrders": "View"
   });
 
   // Get PO status and current line data
@@ -125,7 +125,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const { client, userId } = await authorize(request, {
-    update: "purchasing"
+    "purchasing.purchaseOrders": "Edit"
   });
 
   const formData = await request.formData();
@@ -237,7 +237,10 @@ export default function EditPurchaseOrderLineRoute() {
         )}
       </DeferredFiles>
       <CadModel
-        isReadOnly={isReadOnly || !permissions.can("update", "purchasing")}
+        isReadOnly={
+          isReadOnly ||
+          !permissions.has({ "purchasing.purchaseOrders": "Edit" })
+        }
         metadata={{
           itemId: line?.itemId ?? undefined
         }}

@@ -116,8 +116,8 @@ const ShipmentForm = ({ initialValues, status }: ShipmentFormProps) => {
           formId={formId}
           isDisabled={
             isEditing
-              ? !permissions.can("update", "inventory")
-              : !permissions.can("create", "inventory")
+              ? !permissions.has({ "inventory.shipments": "Edit" })
+              : !permissions.has({ "inventory.shipments": "Create" })
           }
         >
           <Trans>Save</Trans>

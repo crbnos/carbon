@@ -20,7 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Read-only capable-to-promise what-if — nothing is persisted, so `view` is
   // sufficient (same reasoning as $jobId.expedite.tsx).
   const { client, companyId, userId } = await authorize(request, {
-    view: "sales"
+    "sales.quotes": "View"
   });
 
   const { quoteId, lineId } = params;

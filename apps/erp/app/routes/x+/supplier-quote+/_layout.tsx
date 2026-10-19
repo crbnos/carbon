@@ -22,9 +22,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    view: "purchasing"
-  });
+  await authorize(request, { "purchasing.supplierQuotes": "View" });
 
   return {};
 }

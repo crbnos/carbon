@@ -12,7 +12,7 @@ import { path } from "~/utils/path";
  *  page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {
-    view: "sales"
+    "sales.serviceContracts": "View"
   });
   const { id } = params;
   if (!id) throw new Error("Could not find id");

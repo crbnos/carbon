@@ -48,10 +48,11 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "parts",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "parts.tools": "View" },
+    { bypassRls: true }
+  );
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -315,7 +316,9 @@ export default function ToolDetailsRoute() {
           </DeferredFiles>
 
           <CadModel
-            isReadOnly={!permissions.can("update", "parts") || !!draftLock}
+            isReadOnly={
+              !permissions.has({ "parts.tools": "Edit" }) || !!draftLock
+            }
             metadata={{ itemId }}
             modelUpload={toolData?.toolSummary ?? null}
             title={t`CAD Model`}

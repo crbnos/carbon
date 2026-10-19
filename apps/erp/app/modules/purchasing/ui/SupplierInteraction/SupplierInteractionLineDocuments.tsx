@@ -46,6 +46,7 @@ import type { ItemFile } from "~/modules/items/types";
 import type { OptimisticFileObject } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+import { SUPPLIER_INTERACTION_PAGES } from "./SupplierInteractionDocuments";
 
 const logger = getLogger("erp", "supplierinteractionlinedocuments");
 
@@ -71,8 +72,12 @@ const useSupplierInteractionLineDocuments = ({
   const { company } = useUser();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", "purchasing");
-  const canUpdate = permissions.can("update", "purchasing");
+  const canDelete = permissions.has({
+    [SUPPLIER_INTERACTION_PAGES[type]]: "Full"
+  });
+  const canUpdate = permissions.has({
+    [SUPPLIER_INTERACTION_PAGES[type]]: "Edit"
+  });
 
   const getPath = useCallback(
     (file: { name: string }) => {
@@ -371,7 +376,9 @@ const SupplierInteractionLineDocumentForm = ({
 
   return (
     <File
-      isDisabled={!permissions.can("update", "purchasing")}
+      isDisabled={
+        !permissions.has({ [SUPPLIER_INTERACTION_PAGES[type]]: "Edit" })
+      }
       leftIcon={<LuUpload />}
       onChange={uploadFiles}
       multiple

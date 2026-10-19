@@ -30,10 +30,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(request, {
-    view: "quality",
-    bypassRls: true
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "quality.records": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -72,7 +73,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "quality"
+    "quality.records": "Create"
   });
 
   const formData = await request.formData();

@@ -64,8 +64,8 @@ const DepartmentForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "people")
-    : !permissions.can("create", "people");
+    ? !permissions.has({ "people.departments": "Edit" })
+    : !permissions.has({ "people.departments": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

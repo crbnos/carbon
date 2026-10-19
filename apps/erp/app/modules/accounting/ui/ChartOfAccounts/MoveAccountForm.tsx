@@ -55,7 +55,7 @@ const MoveAccountForm = ({
     }
   });
 
-  const isDisabled = !permissions.can("update", "accounting");
+  const isDisabled = !permissions.has({ "accounting.chartOfAccounts": "Edit" });
 
   return (
     <ModalDrawerProvider type="modal">

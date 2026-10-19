@@ -82,8 +82,8 @@ const CustomerBankAccountForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.has({ "sales.customers": "Edit" })
+    : !permissions.has({ "sales.customers": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

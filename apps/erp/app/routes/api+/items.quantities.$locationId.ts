@@ -3,12 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, anyOf(ITEM_PAGES, "View"));
 
   const { locationId } = params;
   if (!locationId) throw new Error("Could not find locationId");

@@ -14,7 +14,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    create: "resources"
+    "resources.abilities": "Create"
   });
   const processes = await getProcessesWithoutAbility(client, companyId);
 

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import type { PageId } from "@carbon/database/access";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -24,6 +25,20 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
+
+/** The page of each line table whose notes this edits. */
+const LINE_NOTE_PAGES: Record<
+  | "purchasingRfqLine"
+  | "supplierQuoteLine"
+  | "purchaseOrderLine"
+  | "purchaseInvoiceLine",
+  PageId
+> = {
+  purchasingRfqLine: "purchasing.rfqs",
+  supplierQuoteLine: "purchasing.supplierQuotes",
+  purchaseOrderLine: "purchasing.purchaseOrders",
+  purchaseInvoiceLine: "invoicing.purchaseInvoices"
+};
 
 const SupplierInteractionLineNotes = ({
   id,
@@ -124,7 +139,8 @@ const SupplierInteractionLineNotes = ({
           </HStack>
           <CardContent>
             <TabsContent value="internal">
-              {!isReadOnly && permissions.can("update", "purchasing") ? (
+              {!isReadOnly &&
+              permissions.has({ [LINE_NOTE_PAGES[table]]: "Edit" }) ? (
                 <Editor
                   initialValue={(internalNotes ?? {}) as JSONContent}
                   onUpload={onUploadImage}
@@ -146,7 +162,8 @@ const SupplierInteractionLineNotes = ({
               "purchaseOrderLine"
             ].includes(table) && (
               <TabsContent value="external">
-                {!isReadOnly && permissions.can("update", "purchasing") ? (
+                {!isReadOnly &&
+                permissions.has({ [LINE_NOTE_PAGES[table]]: "Edit" }) ? (
                   <Editor
                     initialValue={(externalNotes ?? {}) as JSONContent}
                     onUpload={onUploadImage}

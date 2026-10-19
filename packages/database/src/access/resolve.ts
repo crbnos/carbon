@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ACTIONS, type Action, LEVELS, type Level, levelHolds } from "./levels";
-import { moduleOf, PAGES } from "./registry";
+import { moduleOf, PAGES, type PageId } from "./registry";
 
 /** One row of the `permission` table, as the resolver reads it. */
 export type Grant = {
@@ -201,6 +201,45 @@ export function holds(
   if (!match) return false;
   const [, page, action] = match as [string, string, Action];
   return expanded[page]?.[action]?.includes(companyId) ?? false;
+}
+
+/** A level a gate can ask for: `"None"` asks for nothing. */
+export type GateLevel = Exclude<Level, "None">;
+
+/**
+ * `{ "inventory.receipts": "Edit" }`: each page a gate needs, and the lowest
+ * level it needs there. A gate with two entries needs both.
+ */
+export type PageGate = Partial<Record<PageId, GateLevel>>;
+
+/** One gate, or a list of gates of which any one passes (`anyOf`). */
+export type Gate = PageGate | readonly PageGate[];
+
+/** The highest action a level holds: the one a gate's check reads. */
+export const LEVEL_ACTION: Record<GateLevel, Action> = {
+  View: "view",
+  Create: "create",
+  Edit: "update",
+  Full: "delete"
+};
+
+/** A gate that any one of the pages passes at the level. */
+export function anyOf(pages: readonly PageId[], level: GateLevel): PageGate[] {
+  return pages.map((page) => ({ [page]: level }) as PageGate);
+}
+
+/** Whether the expanded claims pass the gate in the company. */
+export function holdsGate(
+  expanded: ExpandedClaims,
+  gate: Gate,
+  companyId: string
+): boolean {
+  if (Array.isArray(gate))
+    return gate.some((one: PageGate) => holdsGate(expanded, one, companyId));
+  return Object.entries(gate as PageGate).every(
+    ([page, level]) =>
+      !level || holds(expanded, `${page}_${LEVEL_ACTION[level]}`, companyId)
+  );
 }
 
 /** Whether any page of the module holds the action in the company (navigation). */

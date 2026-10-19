@@ -309,7 +309,7 @@ const QuoteBillOfProcess = ({
   const quoteData = useRouteData<{ quote: Quotation }>(path.to.quote(quoteId));
 
   const isDisabled = quoteData?.quote?.status !== "Draft";
-  const isReadOnly = isDisabled || !permissions.can("update", "sales");
+  const isReadOnly = isDisabled || !permissions.has({ "sales.quotes": "Edit" });
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
@@ -459,7 +459,7 @@ const QuoteBillOfProcess = ({
     .map((item) => item.id);
 
   const onReorder = (items: ItemWithData[]) => {
-    if (!permissions.can("update", "sales") || isDisabled) return;
+    if (!permissions.has({ "sales.quotes": "Edit" }) || isDisabled) return;
     const newItems = items.map((item, index) => ({
       ...item,
       data: {
@@ -587,14 +587,14 @@ const QuoteBillOfProcess = ({
         content: (
           <div className="flex flex-col">
             <div>
-              {permissions.can("update", "parts") ? (
+              {permissions.has({ "sales.quotes": "Edit" }) ? (
                 <Editor
                   initialValue={
                     workInstructions[item.id] ?? ({} as JSONContent)
                   }
                   onUpload={onUploadImage}
                   onChange={(content) => {
-                    if (!permissions.can("update", "sales")) return;
+                    if (!permissions.has({ "sales.quotes": "Edit" })) return;
                     setWorkInstructions((prev) => ({
                       ...prev,
                       [item.id]: content
@@ -799,7 +799,7 @@ const QuoteBillOfProcess = ({
               ref={addOperationButtonRef}
               variant="secondary"
               isDisabled={
-                !permissions.can("update", "sales") ||
+                !permissions.has({ "sales.quotes": "Edit" }) ||
                 selectedItemId !== null ||
                 isDisabled
               }

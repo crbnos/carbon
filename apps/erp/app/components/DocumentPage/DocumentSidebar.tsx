@@ -35,7 +35,9 @@ export function DocumentSidebar({ documents, activity }: DocumentSidebarProps) {
   const { isGated } = usePlanGate({ feature: "AUDIT_LOG" });
   const [tab, setTab] = useState<"documents" | "activity">("documents");
   // The audit log is a settings-level read; without it there is no tab.
-  const canViewActivity = usePermissions().can("view", "settings");
+  const canViewActivity = usePermissions().has({
+    "settings.auditLogs": "View"
+  });
 
   if (!activity || !canViewActivity) {
     return (

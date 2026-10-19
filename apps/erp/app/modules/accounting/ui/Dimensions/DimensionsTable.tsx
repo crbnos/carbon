@@ -103,7 +103,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "accounting")}
+            disabled={!permissions.has({ "accounting.dimensions": "Edit" })}
             onClick={() => {
               navigate(`${path.to.dimension(row.id)}?${params.toString()}`);
             }}
@@ -113,7 +113,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
-            disabled={!permissions.can("delete", "accounting")}
+            disabled={!permissions.has({ "accounting.dimensions": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deleteDimension(row.id)}?${params.toString()}`
@@ -135,7 +135,7 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "accounting") && (
+        permissions.has({ "accounting.dimensions": "Create" }) && (
           <New label={t`Dimension`} to={`new?${params.toString()}`} />
         )
       }

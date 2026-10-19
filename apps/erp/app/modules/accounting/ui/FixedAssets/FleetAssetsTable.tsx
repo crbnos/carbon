@@ -155,13 +155,13 @@ const FleetAssetsTable = memo(
         if (!id) return null;
         const onBooks = isOnBooks(row);
         const isOutOfService = Boolean(row.outOfServiceSince);
-        const canUpdate = permissions.can("update", "accounting");
-        const canCreate = permissions.can("create", "accounting");
+        const canUpdate = permissions.has({ "accounting.assets": "Edit" });
+        const canCreate = permissions.has({ "accounting.assets": "Create" });
 
         return (
           <>
             <MenuItem
-              disabled={!permissions.can("view", "accounting")}
+              disabled={!permissions.has({ "accounting.assets": "View" })}
               onClick={() => navigate(path.to.fixedAsset(id))}
             >
               <MenuIcon icon={<LuPencil />} />
@@ -169,7 +169,9 @@ const FleetAssetsTable = memo(
             </MenuItem>
             {row.fleetStatus === "Available" && (
               <MenuItem
-                disabled={!permissions.can("create", "sales")}
+                disabled={
+                  !permissions.has({ "sales.rentalAgreements": "Create" })
+                }
                 onClick={() =>
                   navigate(`${path.to.newRentalAgreement}?fixedAssetId=${id}`)
                 }

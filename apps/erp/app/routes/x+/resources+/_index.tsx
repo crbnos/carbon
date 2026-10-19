@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -79,9 +80,10 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await authorize(request, {
-    view: "resources"
-  });
+  const { client, userId, companyId } = await authorize(
+    request,
+    anyOf(pagesOf("resources"), "View")
+  );
 
   const [openDispatches, openScheduled, openReactive, recentlyCreated] =
     await Promise.all([

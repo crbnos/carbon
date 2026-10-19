@@ -109,7 +109,8 @@ function ActionItem({
 
   const [content, setContent] = useState((action.notes ?? {}) as JSONContent);
   const status = (action.status ?? "Pending") as ActionTaskStatus;
-  const canEdit = permissions.can("update", "parts") && !isDisabled;
+  const canEdit =
+    permissions.has({ "parts.changeNotices": "Edit" }) && !isDisabled;
 
   const onUploadImage = useImageUpload("parts");
 

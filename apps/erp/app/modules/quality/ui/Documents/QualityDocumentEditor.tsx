@@ -75,7 +75,8 @@ export default function QualityDocumentEditor() {
   const onUploadImage = useImageUpload("parts");
 
   const isDraft = loaderData?.document?.status === "Draft";
-  const canEdit = permissions.can("update", "quality") && isDraft;
+  const canEdit =
+    permissions.has({ "quality.qualityDocuments": "Edit" }) && isDraft;
 
   // Mirror the live title only while editing; clear it when editing ends (e.g.
   // a Draft→Active transition that doesn't remount the route) or on unmount, so

@@ -49,10 +49,11 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "sales-order-line-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await authorize(request, {
-    view: "sales",
-    bypassRls: true
-  });
+  const { companyId } = await authorize(
+    request,
+    { "sales.salesOrders": "View" },
+    { bypassRls: true }
+  );
 
   const { orderId, lineId } = params;
   if (!orderId) throw notFound("orderId not found");
@@ -248,7 +249,9 @@ export default function EditSalesOrderLineRoute() {
         )}
       </DeferredFiles>
       <CadModel
-        isReadOnly={isReadOnly || !permissions.can("update", "sales")}
+        isReadOnly={
+          isReadOnly || !permissions.has({ "sales.salesOrders": "Edit" })
+        }
         metadata={{
           salesOrderLineId: line?.id ?? undefined,
           itemId: line?.itemId ?? undefined

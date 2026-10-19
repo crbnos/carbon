@@ -19,7 +19,7 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    create: "purchasing"
+    "purchasing.purchaseOrders": "Create"
   });
 
   const { orderId } = params;
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Check if PO is locked
   const { client: viewClient } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.purchaseOrders": "View"
   });
 
   const purchaseOrder = await getPurchaseOrder(viewClient, orderId);

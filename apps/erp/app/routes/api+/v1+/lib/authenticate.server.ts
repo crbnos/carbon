@@ -43,8 +43,7 @@ export async function authenticateApiKey(
   const authHeaders = new Headers();
   authHeaders.set("carbon-key", rawKey);
   const { client, companyId, companyGroupId, userId } = await authorize(
-    new Request(url, { headers: authHeaders }),
-    {}
+    new Request(url, { headers: authHeaders })
   );
 
   const { data: keyRow } = await getCompanyIdFromAPIKey(rawKey);

@@ -109,7 +109,9 @@ const RentalAgreementLineForm = ({
   const [showOverride, setShowOverride] = useState(false);
   // A classification is an accounting call, and only a Draft line changes.
   const canOverride =
-    isEditing && !isLocked && permissions.can("update", "accounting");
+    isEditing &&
+    !isLocked &&
+    permissions.has({ "accounting.revenueRecognition": "Edit" });
 
   const assetOptions = useMemo(() => {
     const options = rentableAssets.map((asset) => ({
@@ -183,8 +185,8 @@ const RentalAgreementLineForm = ({
   const isDisabled =
     isLocked ||
     (isEditing
-      ? !permissions.can("update", "sales")
-      : !permissions.can("create", "sales"));
+      ? !permissions.has({ "sales.rentalAgreements": "Edit" })
+      : !permissions.has({ "sales.rentalAgreements": "Create" }));
 
   const moneyFormat = INPUT_FORMAT.money(currencyCode, currencyDecimals);
   const moneyStep = INPUT_STEP.money(currencyDecimals);

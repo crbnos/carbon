@@ -34,7 +34,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId, api } = await authorize(request, {
-    create: "purchasing"
+    "purchasing.leases": "Create"
   });
 
   const companySettings = await api.settings.getCompanySettings({});
@@ -63,7 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "purchasing"
+    "purchasing.leases": "Create"
   });
 
   const formData = await request.formData();

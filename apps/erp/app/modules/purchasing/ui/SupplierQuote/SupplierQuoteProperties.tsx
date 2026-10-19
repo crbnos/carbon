@@ -112,7 +112,7 @@ const SupplierQuoteProperties = () => {
       : routeData?.quote?.assignee;
   const permissions = usePermissions();
 
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.supplierQuotes": "Edit" });
   const isLocked = isSupplierQuoteLocked(routeData?.quote?.status);
   const isDisabled = !canUpdate || isLocked;
 

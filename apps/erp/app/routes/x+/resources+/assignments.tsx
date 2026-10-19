@@ -46,10 +46,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "resources.assignments": "View" },
+    { role: "employee" }
+  );
 
   const summary = await api.resources.getTrainingAssignmentSummary({});
 
@@ -208,7 +209,7 @@ const TrainingAssignmentsTable = memo(
                 <Trans>View Status</Trans>
               </Link>
             </MenuItem>
-            {permissions.can("update", "resources") && (
+            {permissions.has({ "resources.assignments": "Edit" }) && (
               <MenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
                 <Link to={path.to.trainingAssignment(assignmentId)}>
                   <MenuIcon icon={<LuPencil />} />
@@ -216,7 +217,7 @@ const TrainingAssignmentsTable = memo(
                 </Link>
               </MenuItem>
             )}
-            {permissions.can("delete", "resources") && (
+            {permissions.has({ "resources.assignments": "Full" }) && (
               <MenuItem
                 onClick={() => {
                   fetcher.submit(null, {
@@ -240,7 +241,7 @@ const TrainingAssignmentsTable = memo(
         columns={columns}
         count={data.length}
         primaryAction={
-          permissions.can("create", "resources") && (
+          permissions.has({ "resources.assignments": "Create" }) && (
             <New label={t`Assignment`} to={path.to.newTrainingAssignment} />
           )
         }

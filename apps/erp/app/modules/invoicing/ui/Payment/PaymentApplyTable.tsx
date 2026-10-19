@@ -178,7 +178,7 @@ const PaymentApplyTable = ({
   const isReceipt = paymentType === "Receipt";
   // Discount and write-off only exist on a trade invoice settlement.
   const hasAdjustments = !isRefund && !isReimbursement;
-  const canEdit = permissions.can("update", "invoicing");
+  const canEdit = permissions.has({ "invoicing.payments": "Edit" });
   const seed = useMemo<ApplyRow[]>(() => {
     const byInvoice = new Map<
       string,

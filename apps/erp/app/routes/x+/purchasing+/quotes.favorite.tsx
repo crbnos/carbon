@@ -13,7 +13,7 @@ import { favoriteSchema } from "~/types/validators";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, userId } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.supplierQuotes": "View"
   });
 
   const validation = await validator(favoriteSchema).validate(

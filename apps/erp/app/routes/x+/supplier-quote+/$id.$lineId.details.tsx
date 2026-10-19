@@ -47,7 +47,7 @@ const logger = getLogger("erp", "supplier-quote-line-details");
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.supplierQuotes": "View"
   });
 
   const { id, lineId } = params;
@@ -94,7 +94,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    create: "purchasing"
+    "purchasing.supplierQuotes": "Create"
   });
 
   const { id, lineId } = params;
@@ -102,7 +102,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw new Error("Could not find lineId");
 
   const { client: viewClient } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.supplierQuotes": "View"
   });
   const quote = await getSupplierQuote(viewClient, id);
   await requireUnlocked({

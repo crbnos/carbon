@@ -74,7 +74,7 @@ const InventoryCountDetails = ({
 }: InventoryCountDetailsProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "inventory");
+  const canUpdate = permissions.has({ "inventory.inventoryCount": "Edit" });
 
   const confirmModal = useDisclosure();
   const notesModal = useDisclosure();

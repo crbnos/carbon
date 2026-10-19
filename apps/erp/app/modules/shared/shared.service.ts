@@ -9,11 +9,14 @@ import {
   ServerFnError
 } from "@carbon/api/errors";
 import {
-  hasPermissions,
+  type AnyOfRule,
+  meetsRequirement,
   type PermissionRule,
   type Permissions,
   permissionsFromClaims,
   type RequiredPermissions,
+  type Requirement,
+  type RowsToRead,
   resolvePermissions
 } from "@carbon/api/permissions";
 import {
@@ -27,6 +30,7 @@ import {
   type Actor,
   type CarbonError,
   createServiceContext,
+  readRowRequirement,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import { attempt, serverFnRefusal } from "@carbon/api/service-tools.server";
@@ -16251,12 +16255,17 @@ export async function authorizePostingCaller(
     userId
   }: Pick<PostingHandles, "db" | "companyId" | "userId">,
   caller: PostingCaller,
-  required: Permissions
+  resolved: Requirement | RowsToRead
 ): Promise<void> {
   if (caller.type === "system") return;
-  if (required === "system") {
+  if (resolved === "system") {
     throw new ForbiddenError("Only server-side callers may run this");
   }
+  // A row rule reads its rows the way the service function gate does.
+  const required =
+    typeof resolved === "object" && "ids" in resolved
+      ? await readRowRequirement(db, companyId, resolved)
+      : resolved;
   const needed = required === "employee" ? {} : required;
   if (caller.type === "apiKey") {
     return authorizeApiKey(db, companyId, caller.apiKey, needed);
@@ -16270,7 +16279,11 @@ export async function authorizePostingCaller(
     throw new ForbiddenError();
   }
   if (
-    !hasPermissions(permissionsFromClaims(claims, companyId), companyId, needed)
+    !meetsRequirement(
+      permissionsFromClaims(claims, companyId),
+      companyId,
+      needed
+    )
   ) {
     throw new ForbiddenError();
   }
@@ -16282,7 +16295,7 @@ async function authorizeApiKey(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   apiKey: string,
-  required: RequiredPermissions
+  required: RequiredPermissions | AnyOfRule
 ): Promise<void> {
   const key = await db
     .selectFrom("apiKey")
@@ -16301,7 +16314,7 @@ async function authorizeApiKey(
     )
     .executeTakeFirst();
   if (!key) throw new ForbiddenError("Invalid API key");
-  if (Object.keys(required).length === 0) return;
+  if (!("anyOf" in required) && Object.keys(required).length === 0) return;
   const grants = await db
     .selectFrom("permission")
     .select(["module", "page", "level"])
@@ -16312,7 +16325,7 @@ async function authorizeApiKey(
     { grants: grants.map((grant) => ({ subject: "key", ...grant })) },
     companyId
   );
-  if (!hasPermissions(scopes, companyId, required)) {
+  if (!meetsRequirement(scopes, companyId, required)) {
     throw new ForbiddenError("API key lacks required permissions");
   }
 }

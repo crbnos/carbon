@@ -11,7 +11,7 @@ import { deleteTrainingQuestion } from "~/modules/resources/resources.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    delete: "resources"
+    "resources.training": "Full"
   });
 
   const { questionId } = params;

@@ -19,7 +19,7 @@ import {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {
-    update: "settings"
+    "settings.apiKeys": "Edit"
   });
 
   const [userCompanies, claims] = await Promise.all([
@@ -79,7 +79,7 @@ const formValidator = z.object({
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {
-    update: "settings"
+    "settings.apiKeys": "Edit"
   });
 
   const validation = await validator(formValidator).validate(

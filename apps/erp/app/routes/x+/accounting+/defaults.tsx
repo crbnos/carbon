@@ -27,7 +27,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "accounting"
+    "accounting.defaultAccounts": "View"
   });
 
   const defaultAccounts = await api.accounting.getDefaultAccounts({});
@@ -50,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "accounting"
+    "accounting.defaultAccounts": "Create"
   });
 
   const formData = await request.formData();

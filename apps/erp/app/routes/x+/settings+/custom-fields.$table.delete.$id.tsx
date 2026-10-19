@@ -12,7 +12,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    delete: "settings"
+    "settings.customFields": "Full"
   });
 
   const { table, id } = params;

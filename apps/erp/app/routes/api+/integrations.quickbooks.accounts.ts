@@ -22,7 +22,7 @@ export const config = {
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "settings"
+    "settings.integrations": "View"
   });
 
   try {

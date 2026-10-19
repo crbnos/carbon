@@ -14,7 +14,7 @@ import { upsertTrainingQuestion } from "~/modules/resources/resources.service";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    create: "resources"
+    "resources.training": "Create"
   });
 
   const { id: trainingId } = params;

@@ -157,7 +157,7 @@ RuleSectionCard.displayName = "RuleSectionCard";
 const StorageRulesGroups = memo(({ rules }: StorageRulesGroupsProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canCreate = permissions.can("create", "inventory");
+  const canCreate = permissions.has({ "inventory.storageRules": "Create" });
 
   // Only item (storage) rules are shown here; workCenter rules are managed via
   // Resources and hidden until their entry point + MES modal ship.
@@ -208,8 +208,8 @@ const StorageRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
   const permissions = usePermissions();
   const deleteDisclosure = useDisclosure();
 
-  const canEdit = permissions.can("update", "inventory");
-  const canDelete = permissions.can("delete", "inventory");
+  const canEdit = permissions.has({ "inventory.storageRules": "Edit" });
+  const canDelete = permissions.has({ "inventory.storageRules": "Full" });
   const { broadcastLabel, showAssignments } = ruleReach(rule);
 
   const handleEdit = useCallback(() => {

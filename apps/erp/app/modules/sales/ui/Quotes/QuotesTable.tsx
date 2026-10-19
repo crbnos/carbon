@@ -333,7 +333,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         </MenuItem>
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
-          disabled={!permissions.can("delete", "sales")}
+          disabled={!permissions.has({ "sales.quotes": "Full" })}
           destructive
           onClick={() => {
             setSelectedQuotation(row);
@@ -365,7 +365,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         importCSV={
           // The import action gates on `sales_update` (see import.$tableId.tsx),
           // so match that here rather than `create`.
-          permissions.can("update", "sales")
+          permissions.has({ "sales.quotes": "Edit" })
             ? [
                 {
                   table: "quoteWithLines" as const,
@@ -377,7 +377,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
             : undefined
         }
         primaryAction={
-          permissions.can("create", "sales") && (
+          permissions.has({ "sales.quotes": "Create" }) && (
             <New label={t`Quote`} to={path.to.newQuote} />
           )
         }

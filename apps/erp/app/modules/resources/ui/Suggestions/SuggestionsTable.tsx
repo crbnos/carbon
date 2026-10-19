@@ -150,7 +150,7 @@ const SuggestionsTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "resources")}
+              disabled={!permissions.has({ "resources.suggestions": "Full" })}
               onClick={() => {
                 navigate(
                   `${path.to.deleteSuggestion(row.id!)}?${params.toString()}`

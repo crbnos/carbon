@@ -13,7 +13,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await authorize(request, {
-    delete: "quality"
+    "quality.qualityDocuments": "Full"
   });
 
   const { id } = params;

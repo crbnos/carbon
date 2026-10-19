@@ -240,7 +240,7 @@ const ActionsTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.view}
-              disabled={!permissions.can("update", "quality")}
+              disabled={!permissions.has({ "quality.actions": "Edit" })}
               onClick={() => {
                 navigate(`${path.to.issue(row.nonConformanceId!)}`);
               }}

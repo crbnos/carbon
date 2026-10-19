@@ -92,7 +92,7 @@ export default function TrialBalanceEditor({
   const currencyDecimals = useCurrencyDecimals(company.baseCurrencyCode);
   const accountsById = useAccountsById();
   const action = activationStepPath("trial-balance", cutoverDate);
-  const canEdit = permissions.can("update", "accounting");
+  const canEdit = permissions.has({ "settings.accounting": "Edit" });
 
   const [search, setSearch] = useState("");
   // Only what the user typed since the last save. The saved lines come from

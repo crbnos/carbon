@@ -16,7 +16,7 @@ import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
-    create: "production"
+    "production.jobs": "Create"
   });
 
   const { id, jobId } = params;

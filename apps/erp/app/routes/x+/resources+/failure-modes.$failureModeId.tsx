@@ -16,10 +16,11 @@ import FailureModeForm from "~/modules/resources/ui/FailureModes/FailureModeForm
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "resources.failureModes": "View" },
+    { role: "employee" }
+  );
 
   const { failureModeId } = params;
   if (!failureModeId) throw notFound("failureModeId not found");
@@ -44,7 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "resources"
+    "resources.failureModes": "Edit"
   });
 
   const formData = await request.formData();

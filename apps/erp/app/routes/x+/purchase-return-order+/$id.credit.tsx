@@ -15,9 +15,7 @@ import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "purchasing"
-  });
+  const { api } = await authorize(request, { "purchasing.returns": "View" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -38,10 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, companyGroupId, userId } = await authorize(
     request,
-    {
-      create: "invoicing",
-      view: "purchasing"
-    }
+    { "invoicing.supplierCredits": "Create", "purchasing.returns": "View" }
   );
 
   const { id } = params;

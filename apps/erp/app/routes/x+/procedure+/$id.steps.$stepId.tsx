@@ -14,7 +14,7 @@ import { upsertProcedureStep } from "~/modules/production/production.service";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "production"
+    "production.procedures": "Edit"
   });
 
   const { stepId } = params;

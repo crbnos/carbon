@@ -2283,7 +2283,7 @@ export default function InspectionDocumentEditor({
   // drag saves when it ends, and one save at a time: an edit made while a save
   // is in flight is picked up when it returns. Someone without update
   // permission can still look around, but nothing they change is saved.
-  const canUpdate = permissions.can("update", "quality");
+  const canUpdate = permissions.has({ "quality.inspectionPlans": "Edit" });
   const isSaving = fetcher.state !== "idle";
   const hasUnsavedChanges =
     canUpdate &&
@@ -2932,7 +2932,9 @@ export default function InspectionDocumentEditor({
               <DropdownMenuItem
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
-                disabled={!permissions.can("delete", "quality")}
+                disabled={
+                  !permissions.has({ "quality.inspectionPlans": "Full" })
+                }
                 onClick={() => deleteDisclosure.onOpen()}
               >
                 <LuTrash2 className="mr-2 size-4" />

@@ -16,7 +16,8 @@ export default function useWarehouseTransferLines(
   const permissions = usePermissions();
 
   const isEditable = ["Draft"].includes(warehouseTransfer.status);
-  const canEdit = isEditable && permissions.can("update", "inventory");
+  const canEdit =
+    isEditable && permissions.has({ "inventory.warehouseTransfers": "Edit" });
 
   const onCellEdit = useCallback(
     (id: string, value: any, field: string) => {

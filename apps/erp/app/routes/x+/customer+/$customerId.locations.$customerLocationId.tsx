@@ -22,9 +22,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.customers": "View" });
 
   const { customerId, customerLocationId } = params;
   if (!customerId) throw notFound("customerId not found");
@@ -48,9 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, {
-    update: "sales"
-  });
+  const { client } = await authorize(request, { "sales.customers": "Edit" });
 
   const { customerId, customerLocationId } = params;
   if (!customerId) throw notFound("customerId not found");

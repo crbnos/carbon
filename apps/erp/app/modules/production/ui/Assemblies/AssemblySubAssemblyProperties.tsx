@@ -133,7 +133,8 @@ export default function AssemblySubAssemblyProperties({
       { preventScrollReset: true }
     );
 
-  const cannotSave = isDisabled || !permissions.can("update", "production");
+  const cannotSave =
+    isDisabled || !permissions.has({ "production.assemblies": "Edit" });
   // The checked motion the player plays (a malformed row reads as "none").
   const hasOwnPath =
     (viewerSteps.find((viewerStep) => viewerStep.id === step.id)?.motion.type ??
@@ -332,7 +333,7 @@ export default function AssemblySubAssemblyProperties({
           <Button
             variant="destructive"
             leftIcon={<LuTrash />}
-            isDisabled={!permissions.can("delete", "production")}
+            isDisabled={!permissions.has({ "production.assemblies": "Full" })}
             onClick={() => setIsDeleting(true)}
           >
             <Trans>Delete Sub-Assembly</Trans>

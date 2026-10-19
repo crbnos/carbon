@@ -269,8 +269,8 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
             isDisabled={
               isDisabled ||
               (isEditing
-                ? !permissions.can("update", "sales")
-                : !permissions.can("create", "sales"))
+                ? !permissions.has({ "sales.quotes": "Edit" })
+                : !permissions.has({ "sales.quotes": "Create" }))
             }
           >
             <Trans>Save</Trans>

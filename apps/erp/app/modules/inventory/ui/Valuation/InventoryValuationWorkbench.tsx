@@ -565,7 +565,8 @@ export function InventoryValuationWorkbench({
                   {money(tieOutTotal.variance)}
                 </span>
               </div>
-              {hasVariance && permissions.can("create", "accounting") ? (
+              {hasVariance &&
+              permissions.has({ "accounting.journalEntries": "Create" }) ? (
                 <reconcileFetcher.Form
                   method="post"
                   action={path.to.inventoryValuationReconcile}

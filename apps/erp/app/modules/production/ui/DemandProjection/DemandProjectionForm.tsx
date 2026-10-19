@@ -93,8 +93,8 @@ const DemandProjectionsForm = ({
     };
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "production")
-    : !permissions.can("create", "production");
+    ? !permissions.has({ "production.demandForecasts": "Edit" })
+    : !permissions.has({ "production.demandForecasts": "Create" });
 
   const timeZone = getLocalTimeZone();
   const startDate = startOfWeek(today(timeZone), "en-US");

@@ -27,7 +27,7 @@ import { path } from "~/utils/path";
  *  on from its page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    update: "sales"
+    "sales.rentalAgreements": "Edit"
   });
 
   const { id } = params;
@@ -142,7 +142,7 @@ export default function RentalAgreementSetupRoute() {
                     isDisabled={
                       !hasLines ||
                       hasUnpricedUnit ||
-                      !permissions.can("update", "sales")
+                      !permissions.has({ "sales.rentalAgreements": "Edit" })
                     }
                     onClick={activate.onOpen}
                   >

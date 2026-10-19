@@ -14,10 +14,11 @@ import { deleteLocation } from "~/modules/resources/resources.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "resources.locations": "View" },
+    { role: "employee" }
+  );
 
   const { locationId } = params;
   if (!locationId) throw notFound("locationId not found");
@@ -37,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await authorize(request, {
-    delete: "resources"
+    "resources.locations": "Full"
   });
 
   const { locationId } = params;

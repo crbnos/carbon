@@ -11,7 +11,7 @@ import { getCurrentSequence } from "~/modules/settings/settings.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsDelete(request);
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

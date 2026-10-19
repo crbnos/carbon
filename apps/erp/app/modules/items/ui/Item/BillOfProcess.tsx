@@ -272,7 +272,7 @@ const BillOfProcess = ({
   });
   const { isPhone } = useViewport();
   const isReadOnly =
-    permissions.can("update", "parts") === false ||
+    permissions.has({ "parts.parts": "Edit" }) === false ||
     makeMethod.status !== "Draft" ||
     isReleaseLocked ||
     isDisabled;

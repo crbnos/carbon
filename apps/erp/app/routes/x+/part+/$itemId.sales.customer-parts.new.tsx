@@ -15,10 +15,11 @@ import CustomerPartForm from "~/modules/items/ui/Item/CustomerPartForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "parts",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "parts.parts": "View" },
+    { role: "employee" }
+  );
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -34,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    create: "parts"
+    "parts.parts": "Create"
   });
 
   const { itemId } = params;

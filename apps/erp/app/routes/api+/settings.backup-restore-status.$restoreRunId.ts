@@ -13,7 +13,7 @@ import { canManageBackups } from "~/modules/settings/settings.service";
 // client knows which phase it's in, so it interprets absence accordingly.
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, email } = await authorize(request, {
-    update: "settings"
+    "settings.backups": "Edit"
   });
   if (!(await canManageBackups(client, companyId, email)))
     throw new Response("Not found", { status: 404 });

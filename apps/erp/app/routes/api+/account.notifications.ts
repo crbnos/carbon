@@ -17,7 +17,7 @@ import { upsertNotificationPreference } from "~/modules/users/users.service";
 
 // Data and writes for the Notifications pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {});
+  const { client, companyId, api } = await authorize(request);
 
   const [preferences, slackIntegration, emailPlanEnabled] = await Promise.all([
     api.users.getNotificationPreferences({}),
@@ -46,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, companyId } = await authorize(request, {});
+  const { client, userId, companyId } = await authorize(request);
 
   const validation = await validator(notificationPreferenceValidator).validate(
     await request.formData()

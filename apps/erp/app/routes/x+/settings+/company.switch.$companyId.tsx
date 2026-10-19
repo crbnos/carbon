@@ -20,11 +20,15 @@ export async function loader() {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId } = await authorize(request, {
-    // Switching away from a portal company must work: a user can be an
-    // employee of one company and a customer or supplier of another.
-    allowPortalAccounts: true
-  });
+  const { client, userId } = await authorize(
+    request,
+    {},
+    {
+      // Switching away from a portal company must work: a user can be an
+      // employee of one company and a customer or supplier of another.
+      allowPortalAccounts: true
+    }
+  );
 
   const formData = await request.formData();
   const redirectTo = formData.get("redirectTo");

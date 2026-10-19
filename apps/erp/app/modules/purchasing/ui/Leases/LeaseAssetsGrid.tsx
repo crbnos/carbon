@@ -76,9 +76,11 @@ const LeaseAssetsGrid = ({ lease, lines }: LeaseAssetsGridProps) => {
   const currencyCode = lease.currencyCode ?? "";
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const canEdit =
-    lease.status === "Draft" && permissions.can("update", "purchasing");
+    lease.status === "Draft" &&
+    permissions.has({ "purchasing.leases": "Edit" });
   const canAdd =
-    lease.status === "Draft" && permissions.can("create", "purchasing");
+    lease.status === "Draft" &&
+    permissions.has({ "purchasing.leases": "Create" });
 
   const addAsset = useDisclosure();
   const [deleting, setDeleting] = useState<AssetRow | null>(null);
@@ -190,7 +192,8 @@ const LeaseAssetsGrid = ({ lease, lines }: LeaseAssetsGridProps) => {
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         destructive
         disabled={
-          lease.status !== "Draft" || !permissions.can("delete", "purchasing")
+          lease.status !== "Draft" ||
+          !permissions.has({ "purchasing.leases": "Full" })
         }
         onClick={() => setDeleting(row)}
       >

@@ -54,8 +54,8 @@ const DimensionForm = ({ initialValues, onClose }: DimensionFormProps) => {
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.has({ "accounting.dimensions": "Edit" })
+    : !permissions.has({ "accounting.dimensions": "Create" });
 
   const [entityType, setEntityType] = useState<string>(
     initialValues.entityType

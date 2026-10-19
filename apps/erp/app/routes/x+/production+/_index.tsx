@@ -5,6 +5,7 @@
 import { useCarbon } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { activeJobStatuses } from "@carbon/database";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import { useChangedRows, useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -108,9 +109,10 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId, api } = await authorize(request, {
-    view: "production"
-  });
+  const { client, companyId, userId, api } = await authorize(
+    request,
+    anyOf(pagesOf("production"), "View")
+  );
 
   const [activeJobs, assignedJobs, unbatchedOperations, workCenters] =
     await Promise.all([

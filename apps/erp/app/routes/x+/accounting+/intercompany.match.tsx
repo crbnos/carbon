@@ -13,7 +13,7 @@ import { getParams, path } from "~/utils/path";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyGroupId } = await authorize(request, {
-    create: "accounting"
+    "accounting.intercompany": "Create"
   });
 
   const result = await runIntercompanyMatching(client, companyGroupId);

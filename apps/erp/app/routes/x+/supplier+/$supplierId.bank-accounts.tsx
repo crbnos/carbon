@@ -12,9 +12,7 @@ import SupplierBankAccounts from "~/modules/purchasing/ui/Supplier/SupplierBankA
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "accounting"
-  });
+  const { api } = await authorize(request, { "purchasing.suppliers": "View" });
 
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");

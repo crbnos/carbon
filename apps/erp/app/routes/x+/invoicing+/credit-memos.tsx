@@ -23,9 +23,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "invoicing"
-  });
+  const { api } = await authorize(request, { "invoicing.creditMemos": "View" });
 
   const url = new URL(request.url);
   const searchParams = url.searchParams;

@@ -20,7 +20,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const isUpdate = Boolean(formData.get("id"));
   const { client, companyId, userId } = await authorize(
     request,
-    isUpdate ? { update: "production" } : { create: "production" }
+    isUpdate ? { "production.jobs": "Edit" } : { "production.jobs": "Create" }
   );
 
   const validation = await validator(operationStepSlideValidator).validate(

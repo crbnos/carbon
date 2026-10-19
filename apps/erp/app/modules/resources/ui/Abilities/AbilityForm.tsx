@@ -48,8 +48,8 @@ const AbilityForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "resources")
-    : !permissions.can("create", "resources");
+    ? !permissions.has({ "resources.abilities": "Edit" })
+    : !permissions.has({ "resources.abilities": "Create" });
 
   return (
     <ModalDrawerProvider type="drawer">

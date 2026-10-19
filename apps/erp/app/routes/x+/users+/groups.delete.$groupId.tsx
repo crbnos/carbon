@@ -14,10 +14,11 @@ import { deleteGroup } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "users",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "users.groups": "View" },
+    { role: "employee" }
+  );
 
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
@@ -34,9 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, {
-    delete: "users"
-  });
+  const { client } = await authorize(request, { "users.groups": "Full" });
 
   const { groupId } = params;
   if (!groupId) {

@@ -133,7 +133,7 @@ export function BatchDetailDrawer({
   const canRemoveOperations =
     isPreStart &&
     events.length === 0 &&
-    permissions.can("update", "production");
+    permissions.has({ "production.batches": "Edit" });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [removeOpen, setRemoveOpen] = useState(false);
   useEffect(() => {

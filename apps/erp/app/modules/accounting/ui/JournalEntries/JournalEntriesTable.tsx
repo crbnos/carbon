@@ -250,7 +250,9 @@ const JournalEntriesTable = memo(
               shortcut={
                 isDraft ? MENU_ITEM_SHORTCUTS.edit : MENU_ITEM_SHORTCUTS.view
               }
-              disabled={!permissions.can("view", "accounting")}
+              disabled={
+                !permissions.has({ "accounting.journalEntries": "View" })
+              }
               onClick={() => {
                 navigate(path.to.journalEntryDetails(row.id?.toString()!));
               }}
@@ -260,7 +262,10 @@ const JournalEntriesTable = memo(
             </MenuItem>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
-              disabled={!isDraft || !permissions.can("delete", "accounting")}
+              disabled={
+                !isDraft ||
+                !permissions.has({ "accounting.journalEntries": "Full" })
+              }
               destructive
               onClick={() => {
                 setSelectedEntry(row);

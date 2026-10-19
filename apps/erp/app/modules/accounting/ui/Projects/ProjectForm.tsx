@@ -55,8 +55,8 @@ const ProjectForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.has({ "accounting.projects": "Edit" })
+    : !permissions.has({ "accounting.projects": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

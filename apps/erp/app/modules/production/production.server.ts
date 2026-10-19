@@ -31,6 +31,7 @@ import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.utils
 import {
   checkRevisionLock,
   getUnreleasedChangeOrderItems,
+  itemRule,
   jobCreationRefusal,
   methodStepRefusal,
   saveMethodRefusal,
@@ -105,7 +106,7 @@ const logger = getLogger("erp", "production");
 export const replanAfterItemChange = defineServiceFn({
   input: z.object({ itemId: z.string() }),
   // Whoever may save the item's planning may have it re-planned.
-  permission: { "parts.parts": "Edit" },
+  permission: itemRule("Edit", { id: "itemId" }),
 
   async run(ctx, { itemId }) {
     const mrp = await service.runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {

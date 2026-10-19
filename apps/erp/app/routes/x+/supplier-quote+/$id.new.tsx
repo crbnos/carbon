@@ -25,14 +25,14 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    create: "purchasing"
+    "purchasing.supplierQuotes": "Create"
   });
 
   const { id: supplierQuoteId } = params;
   if (!supplierQuoteId) throw new Error("Could not find supplierQuoteId");
 
   const { client: viewClient } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.supplierQuotes": "View"
   });
   const quote = await getSupplierQuote(viewClient, supplierQuoteId);
   await requireUnlocked({

@@ -466,7 +466,7 @@ async function getDimensionSyncTabData(
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, api } = await authorize(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
 
   const { id: integrationId } = params;
@@ -1123,7 +1123,7 @@ export async function action(args: ActionFunctionArgs) {
 async function installIntegration({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "settings"
+    "settings.integrations": "Edit"
   });
 
   const { id: integrationId } = params;

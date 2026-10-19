@@ -18,7 +18,7 @@ import { path } from "~/utils/path";
 // Redirects into the auth-checked /file/preview proxy, which decompresses `.zst`
 // server-side and sets the content type from the inner extension.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {});
+  const { client, companyId } = await authorize(request);
   const { modelUploadId } = params;
   if (!modelUploadId) throw new Response("Not found", { status: 404 });
 

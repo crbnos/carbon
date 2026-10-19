@@ -19,7 +19,7 @@ import { getOpenSalesOrderLinesForItem } from "~/modules/sales/sales.service";
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "production"
+    "production.jobs": "View"
   });
   const { jobId } = params;
   if (!jobId) {

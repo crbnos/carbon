@@ -14,10 +14,11 @@ import { deleteDepartment } from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "people",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "people.departments": "View" },
+    { role: "employee" }
+  );
 
   const { departmentId } = params;
   if (!departmentId) throw notFound("departmentId not found");
@@ -36,9 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, {
-    delete: "people"
-  });
+  const { client } = await authorize(request, { "people.departments": "Full" });
 
   const { departmentId } = params;
   if (!departmentId) {

@@ -49,7 +49,7 @@ const isLineField = (field: string): field is LineField =>
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "sales"
+    "sales.serviceContracts": "Edit"
   });
 
   const { id, lineId } = params;

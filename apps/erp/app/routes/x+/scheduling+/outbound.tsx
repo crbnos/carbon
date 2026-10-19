@@ -34,7 +34,7 @@ const logger = getLogger("erp", "scheduling", "outbound");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId, api } = await authorize(request, {
-    view: "production"
+    "production.outbound": "View"
   });
 
   const searchParams = new URL(request.url).searchParams;

@@ -86,7 +86,9 @@ export default function PurchasingRFQExplorer() {
   const lines = purchasingRfqData?.lines ?? [];
 
   const canReorder =
-    !isDisabled && permissions.can("update", "purchasing") && lines.length > 1;
+    !isDisabled &&
+    permissions.has({ "purchasing.rfqs": "Edit" }) &&
+    lines.length > 1;
 
   const editMode = useLineOrderEditMode<PurchasingRFQLine>({
     actionPath: path.to.purchasingRfqLineOrder(rfqId),
@@ -127,7 +129,7 @@ export default function PurchasingRFQExplorer() {
             )
           ) : (
             <Empty>
-              {permissions.can("update", "purchasing") && (
+              {permissions.has({ "purchasing.rfqs": "Edit" }) && (
                 <Button
                   leftIcon={<LuCirclePlus />}
                   isDisabled={isDisabled}
@@ -154,7 +156,7 @@ export default function PurchasingRFQExplorer() {
                 className="flex-1"
                 shortcut={EXPLORER_SHORTCUTS.addLine}
                 isDisabled={
-                  isDisabled || !permissions.can("update", "purchasing")
+                  isDisabled || !permissions.has({ "purchasing.rfqs": "Edit" })
                 }
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
@@ -289,7 +291,8 @@ function PurchasingRFQLineItem({
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={
-                    isDisabled || !permissions.can("update", "purchasing")
+                    isDisabled ||
+                    !permissions.has({ "purchasing.rfqs": "Edit" })
                   }
                   onClick={(e) => {
                     e.stopPropagation();

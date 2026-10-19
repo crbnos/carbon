@@ -73,8 +73,8 @@ const SupplierProcessForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "purchasing")
-    : !permissions.can("create", "purchasing");
+    ? !permissions.has({ "purchasing.suppliers": "Edit" })
+    : !permissions.has({ "purchasing.suppliers": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

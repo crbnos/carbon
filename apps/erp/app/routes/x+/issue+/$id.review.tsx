@@ -22,14 +22,14 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "quality"
+    "quality.issues": "Edit"
   });
 
   const { id } = params;
   if (!id) throw new Error("Non-conformance ID is required");
 
   const { client: viewClient } = await authorize(request, {
-    view: "quality"
+    "quality.issues": "View"
   });
   const issue = await getIssue(viewClient, id);
   await requireUnlocked({

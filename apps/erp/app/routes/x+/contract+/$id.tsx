@@ -69,7 +69,7 @@ export async function loader({
   params
 }: LoaderFunctionArgs): Promise<ContractRouteData> {
   const { client, companyId, api } = await authorize(request, {
-    view: "sales"
+    "sales.serviceContracts": "View"
   });
 
   const { id } = params;

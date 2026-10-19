@@ -12,7 +12,7 @@ import { updateQuoteOperationStepOrder } from "~/modules/production/production.s
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await authorize(request, {
-    update: "sales"
+    "sales.quotes": "Edit"
   });
 
   const formData = await request.formData();

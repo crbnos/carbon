@@ -36,9 +36,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "purchasing"
-  });
+  const { api } = await authorize(request, { "purchasing.rfqs": "View" });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
@@ -59,10 +57,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client: viewClient } = await authorize(request, {
-    view: "purchasing"
+    "purchasing.rfqs": "View"
   });
   const { client, companyId, userId } = await authorize(request, {
-    update: "purchasing"
+    "purchasing.rfqs": "Edit"
   });
 
   const { rfqId: id } = params;

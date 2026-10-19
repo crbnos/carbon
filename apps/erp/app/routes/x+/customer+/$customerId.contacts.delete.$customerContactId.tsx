@@ -11,9 +11,7 @@ import { deleteCustomerContact } from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, {
-    delete: "sales"
-  });
+  const { client } = await authorize(request, { "sales.customers": "Full" });
 
   const { customerId, customerContactId } = params;
   if (!customerId || !customerContactId) {

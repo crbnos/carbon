@@ -70,8 +70,8 @@ const AssetClassForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.has({ "accounting.assetClasses": "Edit" })
+    : !permissions.has({ "accounting.assetClasses": "Create" });
 
   const [taxMethod, setTaxMethod] = useState<string>(
     initialValues.taxDepreciationMethod ?? ""

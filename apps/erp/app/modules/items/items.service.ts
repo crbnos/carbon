@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { NotFoundError } from "@carbon/api/errors";
-import type { PermissionRule } from "@carbon/api/permissions";
+import {
+  type GateLevel,
+  type PermissionRule,
+  type RowHop,
+  rowRule
+} from "@carbon/api/permissions";
 import {
   CarbonError,
   type ServiceContext
@@ -10151,6 +10156,38 @@ export function priceBreakRows(
 
 export const isMakeMethodId = (id: string) => id.startsWith("make_");
 
+/**
+ * The gate of an operation on one item's data: the page of the item's type
+ * (Parts, Materials, Tools, Consumables or Services) at `level`. `id` names
+ * the item, or a row that leads to it through `from` and `path`
+ * (`[fk, table]` hops ending at `item`). An item type no page owns, a
+ * Fixture, is refused.
+ */
+export function itemRule<const L extends GateLevel, const K extends string>(
+  level: L,
+  at: { id: K; from?: string; path?: readonly RowHop[] }
+) {
+  return rowRule("item", level, at);
+}
+
+/**
+ * `itemRule` for an input field that holds an item id or a make method id
+ * (`copyMethod`'s source and target), which no single row rule can name:
+ * `run` checks it with `refusalOf`.
+ */
+export function itemOrMethodRule<
+  const L extends GateLevel,
+  const K extends string
+>(level: L, field: K, id: string) {
+  return isMakeMethodId(id)
+    ? itemRule(level, {
+        id: field,
+        from: "makeMethod",
+        path: [["itemId", "item"]]
+      })
+    : itemRule(level, { id: field });
+}
+
 // ── Change notices ──────────────────────────────────────────────────────────
 
 // Reason and description arrive as plain text; the columns are tiptap JSON, so
@@ -10319,9 +10356,11 @@ async function copyMakeMethodOperations(
   }
 }
 
-export const syncMakeMethodPermission = {
-  "parts.parts": "Edit"
-} satisfies PermissionRule<z.output<typeof syncInput>>;
+export const syncMakeMethodPermission = itemRule("Edit", {
+  id: "makeMethodId",
+  from: "makeMethod",
+  path: [["itemId", "item"]]
+}) satisfies PermissionRule<z.output<typeof syncInput>>;
 
 /** Syncs an external CAD structure (Onshape) into a make method's BOM, per `type`. */
 export async function syncMakeMethod(

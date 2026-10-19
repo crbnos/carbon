@@ -13,7 +13,7 @@ const INTERNAL_DOMAINS = ["@carbon.us.org", "@carbon.ms"];
 // Carbon-only page: hard-gate non-internal users server-side. State + mutations
 // come from <HubProvider> in the layout.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { email } = await authorize(request, {});
+  const { email } = await authorize(request);
   const isInternal = INTERNAL_DOMAINS.some((domain) =>
     email.toLowerCase().trim().endsWith(domain)
   );

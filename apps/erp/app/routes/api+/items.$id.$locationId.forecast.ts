@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import {
   jobCompletionDate,
@@ -163,9 +164,10 @@ async function getRedirectedOpenJobMaterials(
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "parts"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    anyOf(ITEM_PAGES, "View")
+  );
 
   const { id: itemId, locationId } = params;
   if (!itemId) throw new Error("Could not find itemId");

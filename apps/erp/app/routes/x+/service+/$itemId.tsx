@@ -48,10 +48,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "parts",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "parts.services": "View" },
+    { bypassRls: true }
+  );
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -159,13 +160,13 @@ export default function ServiceRoute() {
       {
         key: "issues",
         name: t`Issues`,
-        module: "quality",
+        pages: ["quality.issues"],
         children: issues
       },
       {
         key: "jobs",
         name: t`Jobs`,
-        module: "production",
+        pages: ["production.jobs"],
         children: jobs.map((job) => ({
           ...job,
           methodType: "Make to Order"
@@ -174,7 +175,7 @@ export default function ServiceRoute() {
       {
         key: "purchaseOrderLines",
         name: t`Purchase Orders`,
-        module: "purchasing",
+        pages: ["purchasing.purchaseOrders"],
         children: purchaseOrderLines.map((po) => ({
           ...po,
           methodType: "Purchase to Order"
@@ -183,19 +184,19 @@ export default function ServiceRoute() {
       {
         key: "quoteLines",
         name: t`Quotes`,
-        module: "sales",
+        pages: ["sales.quotes"],
         children: quoteLines
       },
       {
         key: "salesOrderLines",
         name: t`Sales Orders`,
-        module: "sales",
+        pages: ["sales.salesOrders"],
         children: salesOrderLines
       },
       {
         key: "supplierQuotes",
         name: t`Supplier Quotes`,
-        module: "purchasing",
+        pages: ["purchasing.supplierQuotes"],
         children: supplierQuotes
       }
     ];

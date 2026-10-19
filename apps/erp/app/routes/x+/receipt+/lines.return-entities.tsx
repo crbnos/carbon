@@ -15,7 +15,7 @@ import { getShippedTrackedEntitiesForCustomer } from "~/modules/sales/sales.serv
 // (attributes "Receipt Line").
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "inventory"
+    "inventory.receipts": "View"
   });
   const url = new URL(request.url);
   const lineId = url.searchParams.get("lineId");

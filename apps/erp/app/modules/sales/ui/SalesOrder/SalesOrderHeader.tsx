@@ -301,7 +301,7 @@ const SalesOrderHeader = () => {
           !["To Ship and Invoice", "To Ship"].includes(
             routeData?.salesOrder?.status ?? ""
           ) ||
-          !permissions.can("create", "production") ||
+          !permissions.has({ "production.jobs": "Create" }) ||
           !permissions.is("employee") ||
           !linesRequireJobs
         }
@@ -316,7 +316,7 @@ const SalesOrderHeader = () => {
             routeData?.salesOrder?.status ?? ""
           ) ||
           contractEligibleLines.length === 0 ||
-          !permissions.can("create", "sales") ||
+          !permissions.has({ "sales.salesOrders": "Create" }) ||
           !permissions.is("employee")
         }
         onClick={salesOrderToContractModal.onOpen}
@@ -338,7 +338,7 @@ const SalesOrderHeader = () => {
         disabled={
           ["Draft"].includes(routeData?.salesOrder?.status ?? "") ||
           statusFetcher.state !== "idle" ||
-          !permissions.can("update", "sales")
+          !permissions.has({ "sales.salesOrders": "Edit" })
         }
         onClick={() => {
           statusFetcher.submit(
@@ -358,7 +358,7 @@ const SalesOrderHeader = () => {
         destructive
         disabled={
           isLocked ||
-          !permissions.can("delete", "sales") ||
+          !permissions.has({ "sales.salesOrders": "Full" }) ||
           !permissions.is("employee")
         }
         onClick={deleteSalesOrderModal.onOpen}
@@ -442,7 +442,7 @@ const SalesOrderHeader = () => {
                     routeData?.salesOrder?.status ?? ""
                   ) ||
                   routeData?.lines.length === 0 ||
-                  !permissions.can("update", "sales")
+                  !permissions.has({ "sales.salesOrders": "Edit" })
                 }
               >
                 <Trans>Confirm</Trans>
@@ -459,7 +459,7 @@ const SalesOrderHeader = () => {
                     routeData?.salesOrder?.status ?? ""
                   ) ||
                   statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "sales")
+                  !permissions.has({ "sales.salesOrders": "Edit" })
                 }
                 isLoading={
                   statusFetcher.state !== "idle" &&

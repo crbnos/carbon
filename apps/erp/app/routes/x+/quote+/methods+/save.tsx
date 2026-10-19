@@ -18,7 +18,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { companyId, userId } = await authorize(request, {
-    update: "sales"
+    "sales.quotes": "Edit"
   });
 
   const formData = await request.formData();

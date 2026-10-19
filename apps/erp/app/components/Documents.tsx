@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import type { PageId } from "@carbon/database/access";
 import {
   convertKbToString,
   downloadUrl,
@@ -64,7 +65,8 @@ type DocumentsProps = {
   sourceDocumentId?: string;
   sourceDocumentLineId?: string;
   writeBucket: string;
-  writeBucketPermission: string;
+  /** The page whose level gates upload and delete. */
+  writePage: PageId;
 };
 
 const Documents = ({
@@ -74,7 +76,7 @@ const Documents = ({
   sourceDocumentId,
   sourceDocumentLineId,
   writeBucket,
-  writeBucketPermission
+  writePage
 }: DocumentsProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -83,8 +85,8 @@ const Documents = ({
   const { company } = useUser();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", writeBucketPermission);
-  const canUpdate = permissions.can("update", writeBucketPermission);
+  const canDelete = permissions.has({ [writePage]: "Full" });
+  const canUpdate = permissions.has({ [writePage]: "Edit" });
 
   const attachmentsByName = new Map<string, StorageItem | OptimisticFileObject>(
     files.map((file) => [file.name, file])

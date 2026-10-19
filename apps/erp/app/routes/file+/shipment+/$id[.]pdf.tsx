@@ -10,7 +10,7 @@ import { renderPackingSlip } from "~/modules/inventory/packing-slip.pdf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    view: "inventory"
+    "inventory.shipments": "View"
   });
 
   const { id } = params;

@@ -31,7 +31,7 @@ async function countEntity(
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, email } = await authorize(
     request,
-    { view: "settings" }
+    { "settings.backups": "View" }
   );
   if (!(await canManageBackups(client, companyId, email)))
     throw new Response("Not found", { status: 404 });

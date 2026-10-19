@@ -21,9 +21,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "people"
-  });
+  const { api } = await authorize(request, { "people.timecards": "View" });
 
   const companySettings = await api.settings.getCompanySettings({});
   if (!companySettings.data?.timeCardEnabled) {

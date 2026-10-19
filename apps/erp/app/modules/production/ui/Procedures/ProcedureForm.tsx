@@ -43,8 +43,8 @@ const ProcedureForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "production")
-    : !permissions.can("create", "production");
+    ? !permissions.has({ "production.procedures": "Edit" })
+    : !permissions.has({ "production.procedures": "Create" });
 
   return (
     <ModalDrawerProvider type="modal">

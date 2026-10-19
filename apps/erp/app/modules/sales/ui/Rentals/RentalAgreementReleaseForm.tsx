@@ -82,7 +82,11 @@ const RentalAgreementReleaseForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={!permissions.can("update", "sales")}>
+                <Submit
+                  isDisabled={
+                    !permissions.has({ "sales.rentalAgreements": "Edit" })
+                  }
+                >
                   <Trans>Release unit</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={onClose}>

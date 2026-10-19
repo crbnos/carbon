@@ -258,7 +258,7 @@ const MaintenanceSchedulesTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "production")}
+              disabled={!permissions.has({ "resources.schedules": "Full" })}
               onClick={() => {
                 navigate(
                   `${path.to.deleteMaintenanceSchedule(row.id!)}?${params.toString()}`
@@ -293,7 +293,7 @@ const MaintenanceSchedulesTable = memo(
                 }}
               />
             )}
-            {permissions.can("create", "production") && (
+            {permissions.has({ "resources.schedules": "Create" }) && (
               <New
                 label={t`Scheduled Maintenance`}
                 to={`${path.to.newMaintenanceSchedule}?${params.toString()}`}

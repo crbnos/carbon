@@ -66,7 +66,7 @@ const isDetailField = (field: string): field is LeaseDetailField =>
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {
-    update: "purchasing"
+    "purchasing.leases": "Edit"
   });
 
   const formData = await request.formData();

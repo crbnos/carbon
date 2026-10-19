@@ -52,10 +52,11 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    view: "parts",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "parts.parts": "View" },
+    { bypassRls: true }
+  );
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -364,7 +365,9 @@ export default function PartDetailsRoute() {
           /> */}
 
           <CadModel
-            isReadOnly={!permissions.can("update", "parts") || !!draftLock}
+            isReadOnly={
+              !permissions.has({ "parts.parts": "Edit" }) || !!draftLock
+            }
             metadata={{ itemId }}
             modelUpload={partData?.partSummary ?? null}
             title={t`CAD Model`}
@@ -372,7 +375,7 @@ export default function PartDetailsRoute() {
           />
           <ExternalSourceCard
             itemId={itemId}
-            canDetach={permissions.can("update", "parts")}
+            canDetach={permissions.has({ "parts.parts": "Edit" })}
           />
           <ItemRiskRegister itemId={itemId} />
           <ItemChangeNotices

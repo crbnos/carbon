@@ -15,9 +15,7 @@ export type CancelPreviewJob = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await authorize(request, {
-    update: "sales"
-  });
+  const { client } = await authorize(request, { "sales.salesOrders": "Edit" });
 
   const { orderId } = params;
   if (!orderId) {

@@ -46,8 +46,8 @@ const MaterialFinishForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has({ "parts.finishes": "Edit" })
+    : !permissions.has({ "parts.finishes": "Create" });
 
   useEffect(() => {
     if (type !== "modal") return;

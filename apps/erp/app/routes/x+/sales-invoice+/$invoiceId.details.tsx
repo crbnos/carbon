@@ -34,7 +34,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {
-    view: "invoicing"
+    "invoicing.salesInvoices": "View"
   });
 
   const { invoiceId } = params;

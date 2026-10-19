@@ -11,9 +11,11 @@ import { getKanban } from "~/modules/inventory/inventory.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    role: "employee"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    {},
+    { role: "employee" }
+  );
 
   const { id } = params;
   if (!id) throw notFound("id not found");

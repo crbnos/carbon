@@ -50,8 +50,8 @@ const StorageTypeForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has({ "inventory.storageTypes": "Edit" })
+    : !permissions.has({ "inventory.storageTypes": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

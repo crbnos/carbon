@@ -88,8 +88,8 @@ const PriceListTable = memo(
       overrideIds?: string[];
     } | null>(null);
 
-    const canCreate = permissions.can("create", "sales");
-    const canDelete = permissions.can("delete", "sales");
+    const canCreate = permissions.has({ "sales.priceLists": "Create" });
+    const canDelete = permissions.has({ "sales.priceLists": "Full" });
 
     const currentCustomerId = searchParams.get("customerId") ?? undefined;
     const currentCustomerTypeId =
@@ -300,7 +300,7 @@ const PriceListTable = memo(
 
     const renderContextMenu = useCallback(
       (row: PriceListRow) => {
-        const canUpdate = permissions.can("update", "sales");
+        const canUpdate = permissions.has({ "sales.priceLists": "Edit" });
         return (
           <>
             <MenuItem
@@ -352,7 +352,7 @@ const PriceListTable = memo(
         navigate,
         searchParams,
         t,
-        permissions.can
+        permissions.has
       ]
     );
 

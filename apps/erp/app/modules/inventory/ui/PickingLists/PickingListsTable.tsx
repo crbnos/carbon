@@ -181,7 +181,7 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
                 ? MENU_ITEM_SHORTCUTS.view
                 : MENU_ITEM_SHORTCUTS.edit
             }
-            disabled={!permissions.can("update", "inventory")}
+            disabled={!permissions.has({ "inventory.pickingLists": "Edit" })}
             onClick={() => {
               navigate(
                 `${path.to.pickingListDetails(row.id)}?${params.toString()}`
@@ -196,7 +196,8 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
-              !permissions.can("delete", "inventory") || row.status !== "Draft"
+              !permissions.has({ "inventory.pickingLists": "Full" }) ||
+              row.status !== "Draft"
             }
             destructive
             onClick={() => {
@@ -227,7 +228,7 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
           createdBy: false
         }}
         primaryAction={
-          permissions.can("create", "inventory") ? (
+          permissions.has({ "inventory.pickingLists": "Create" }) ? (
             <NewAction label={t`New Picking List`} to={path.to.pickingSchedule}>
               <Button asChild leftIcon={<LuCirclePlus />}>
                 <Link to={path.to.pickingSchedule}>

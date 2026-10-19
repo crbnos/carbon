@@ -618,7 +618,7 @@ const AccountDefaultsForm = ({
   const onClose = () => closeRoute();
   const [salesAccount, setSalesAccount] = useState(initialValues.salesAccount);
 
-  const isDisabled = !permissions.can("update", "accounting");
+  const isDisabled = !permissions.has({ "accounting.defaultAccounts": "Edit" });
   const categoryGroups = useAccountDefaultGroups();
 
   const accountOptions: Record<

@@ -253,7 +253,7 @@ const AssemblyInstructionsTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "production")}
+              disabled={!permissions.has({ "production.assemblies": "Edit" })}
               onClick={() => {
                 navigate(path.to.assemblyInstruction(row.id!));
               }}
@@ -264,7 +264,7 @@ const AssemblyInstructionsTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "production")}
+              disabled={!permissions.has({ "production.assemblies": "Full" })}
               onClick={() => {
                 flushSync(() => {
                   setSelectedInstruction(row);
@@ -288,7 +288,7 @@ const AssemblyInstructionsTable = memo(
           columns={columns}
           count={count}
           primaryAction={
-            permissions.can("create", "production") && (
+            permissions.has({ "production.assemblies": "Create" }) && (
               <New
                 label={t`Assembly Instruction`}
                 to={path.to.newAssemblyInstruction}

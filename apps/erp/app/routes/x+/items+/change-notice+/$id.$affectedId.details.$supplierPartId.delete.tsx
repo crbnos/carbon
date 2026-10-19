@@ -17,7 +17,7 @@ import { path } from "~/utils/path";
 // the flash — mirroring the part purchasing delete route's shape.
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId } = await authorize(request, {
-    delete: "parts"
+    "parts.changeNotices": "Full"
   });
 
   const { id, affectedId, supplierPartId } = params;

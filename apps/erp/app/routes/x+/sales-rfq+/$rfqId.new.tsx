@@ -26,7 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { client: viewClient } = await authorize(request, {
-    view: "sales"
+    "sales.rfqs": "View"
   });
 
   const rfq = await getSalesRFQ(viewClient, rfqId);
@@ -38,7 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const { client, companyId, userId } = await authorize(request, {
-    create: "sales"
+    "sales.rfqs": "Create"
   });
 
   const formData = await request.formData();

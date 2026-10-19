@@ -5,6 +5,7 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
@@ -14,9 +15,7 @@ import {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, {
-    delete: "parts"
-  });
+  const { client } = await authorize(request, anyOf(ITEM_PAGES, "Full"));
 
   const { id } = params;
   if (!id) {

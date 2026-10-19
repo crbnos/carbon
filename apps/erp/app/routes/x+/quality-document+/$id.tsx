@@ -51,10 +51,11 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, userId, api } = await authorize(request, {
-    view: "quality",
-    bypassRls: true
-  });
+  const { companyId, userId, api } = await authorize(
+    request,
+    { "quality.qualityDocuments": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

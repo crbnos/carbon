@@ -224,8 +224,8 @@ const PurchaseReturnOrderForm = ({
           <Submit
             isDisabled={
               isEditing
-                ? !permissions.can("update", "purchasing")
-                : !permissions.can("create", "purchasing")
+                ? !permissions.has({ "purchasing.returns": "Edit" })
+                : !permissions.has({ "purchasing.returns": "Create" })
             }
           >
             <Trans>Save</Trans>

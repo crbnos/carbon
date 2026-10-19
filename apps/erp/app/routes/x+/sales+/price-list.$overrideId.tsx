@@ -22,10 +22,11 @@ import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "sales",
-    role: "employee"
-  });
+  const { api } = await authorize(
+    request,
+    { "sales.priceLists": "View" },
+    { role: "employee" }
+  );
 
   const { overrideId } = params;
   if (!overrideId) throw notFound("overrideId not found");
@@ -40,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    update: "sales"
+    "sales.priceLists": "Edit"
   });
 
   const { overrideId } = params;

@@ -7,7 +7,7 @@ import { getSlackInstallUrl } from "@carbon/ee/slack.server";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { userId, companyId } = await authorize(request, {});
+  const { userId, companyId } = await authorize(request);
 
   const url = await getSlackInstallUrl({
     companyId,

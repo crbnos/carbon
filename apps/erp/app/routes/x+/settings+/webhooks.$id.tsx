@@ -17,9 +17,7 @@ import { WebhookForm } from "~/modules/settings/ui/Webhooks";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    view: "settings"
-  });
+  const { api } = await authorize(request, { "settings.webhooks": "View" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -40,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    view: "settings"
+    "settings.webhooks": "View"
   });
 
   await requireFeature({

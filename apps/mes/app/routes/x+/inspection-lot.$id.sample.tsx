@@ -18,7 +18,7 @@ const logger = getLogger("mes", "inspection-lot-sample");
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    update: "quality"
+    "quality.inspections": "Edit"
   });
   const { id } = params;
   if (!id) throw new Error("id is required");

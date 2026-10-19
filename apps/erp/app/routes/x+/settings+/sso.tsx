@@ -35,7 +35,7 @@ export async function loader() {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    update: "settings"
+    "settings.security": "Edit"
   });
 
   // Defense in depth on top of the ee module's self-gating: a non-Enterprise

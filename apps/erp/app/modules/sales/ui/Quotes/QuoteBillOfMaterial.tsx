@@ -295,10 +295,10 @@ const QuoteBillOfMaterial = ({
 
   const quoteData = useRouteData<{ quote: Quotation }>(path.to.quote(quoteId));
   const isDisabled = quoteData?.quote?.status !== "Draft";
-  const isReadOnly = isDisabled || !permissions.can("update", "sales");
+  const isReadOnly = isDisabled || !permissions.has({ "sales.quotes": "Edit" });
 
   const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "sales") || isDisabled) return;
+    if (!permissions.has({ "sales.quotes": "Edit" }) || isDisabled) return;
     setCheckedState((prev) => ({
       ...prev,
       [id]: !prev[id]
@@ -306,7 +306,7 @@ const QuoteBillOfMaterial = ({
   };
 
   const onAddItem = () => {
-    if (!permissions.can("update", "sales") || isDisabled) return;
+    if (!permissions.has({ "sales.quotes": "Edit" }) || isDisabled) return;
     const materialId = nanoid();
     setSelectedItemId(materialId);
     setSearchParams({ materialId: materialId });
@@ -337,7 +337,7 @@ const QuoteBillOfMaterial = ({
   // One request for every saved row, so "Delete Selected" removes the checked
   // rows together rather than racing one fetcher submit per row.
   const onRemoveItems = (ids: string[]) => {
-    if (!permissions.can("update", "sales") || isDisabled) return;
+    if (!permissions.has({ "sales.quotes": "Edit" }) || isDisabled) return;
 
     const without = <T,>(state: Record<string, T>) =>
       Object.fromEntries(
@@ -380,7 +380,7 @@ const QuoteBillOfMaterial = ({
   );
 
   const onReorder = (items: ItemWithData[]) => {
-    if (!permissions.can("update", "sales") || isDisabled) return;
+    if (!permissions.has({ "sales.quotes": "Edit" }) || isDisabled) return;
 
     // Create new order state
     const newOrderState = items.reduce<OrderState>((acc, item, index) => {
@@ -507,7 +507,9 @@ const QuoteBillOfMaterial = ({
             <Button
               ref={addItemButtonRef}
               variant="secondary"
-              isDisabled={isDisabled || !permissions.can("update", "sales")}
+              isDisabled={
+                isDisabled || !permissions.has({ "sales.quotes": "Edit" })
+              }
               onClick={onAddItem}
             >
               <Trans>Add Item</Trans>

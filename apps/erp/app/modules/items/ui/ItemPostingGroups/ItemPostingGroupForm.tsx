@@ -51,8 +51,8 @@ const ItemPostingGroupForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has({ "parts.itemGroups": "Edit" })
+    : !permissions.has({ "parts.itemGroups": "Create" });
 
   useEffect(() => {
     if (type !== "modal") return;

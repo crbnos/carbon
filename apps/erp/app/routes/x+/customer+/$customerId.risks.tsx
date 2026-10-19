@@ -8,9 +8,7 @@ import { data, useParams } from "react-router";
 import CustomerRiskRegister from "~/modules/sales/ui/Customer/CustomerRiskRegister";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    view: "sales"
-  });
+  await authorize(request, { "sales.customers": "View" });
 
   return data({});
 }

@@ -137,8 +137,8 @@ const ChangeNoticeForm = ({
       withBlocker={false}
       isDisabled={
         isEditing
-          ? !permissions.can("update", "parts")
-          : !permissions.can("create", "parts")
+          ? !permissions.has({ "parts.changeNotices": "Edit" })
+          : !permissions.has({ "parts.changeNotices": "Create" })
       }
     >
       <Trans>Save</Trans>

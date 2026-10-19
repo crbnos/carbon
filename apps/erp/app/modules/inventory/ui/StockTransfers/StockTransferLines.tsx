@@ -243,7 +243,8 @@ function StockTransferLineComponent({
                 <DropdownMenuItem
                   shortcut={MENU_ITEM_SHORTCUTS.edit}
                   disabled={
-                    !isEditable || !permissions.can("update", "inventory")
+                    !isEditable ||
+                    !permissions.has({ "inventory.stockTransfers": "Edit" })
                   }
                   asChild
                 >
@@ -260,7 +261,8 @@ function StockTransferLineComponent({
                 <DropdownMenuItem
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={
-                    !isEditable || !permissions.can("delete", "inventory")
+                    !isEditable ||
+                    !permissions.has({ "inventory.stockTransfers": "Full" })
                   }
                   destructive
                   onClick={() => onDelete(line)}
@@ -360,18 +362,19 @@ export default function StockTransferLines() {
             </CardDescription>
           </CardHeader>
           <CardAction>
-            {isEditable && permissions.can("create", "inventory") && (
-              <Button
-                variant="secondary"
-                isDisabled={!isEditable}
-                leftIcon={<LuCirclePlus />}
-                asChild
-              >
-                <Link to={path.to.newStockTransferLine(id)}>
-                  <Trans>Add Line</Trans>
-                </Link>
-              </Button>
-            )}
+            {isEditable &&
+              permissions.has({ "inventory.stockTransfers": "Create" }) && (
+                <Button
+                  variant="secondary"
+                  isDisabled={!isEditable}
+                  leftIcon={<LuCirclePlus />}
+                  asChild
+                >
+                  <Link to={path.to.newStockTransferLine(id)}>
+                    <Trans>Add Line</Trans>
+                  </Link>
+                </Button>
+              )}
           </CardAction>
         </HStack>
 

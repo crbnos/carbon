@@ -11,7 +11,7 @@ import { saveJournalLineDimensions } from "~/modules/accounting/accounting.servi
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await authorize(request, {
-    update: "accounting"
+    "accounting.journalEntries": "Edit"
   });
 
   const { journalLineId } = params;

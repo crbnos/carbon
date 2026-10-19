@@ -6,10 +6,11 @@ import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "inventory",
-    bypassRls: true
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { "inventory.traceability": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const q = (url.searchParams.get("q") ?? "").trim();

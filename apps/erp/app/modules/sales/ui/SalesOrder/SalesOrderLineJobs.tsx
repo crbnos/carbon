@@ -337,7 +337,7 @@ export function SalesOrderJobItem({
             table="job"
             size="sm"
             value={job.assignee ?? ""}
-            isReadOnly={!permissions.can("update", "production")}
+            isReadOnly={!permissions.has({ "production.jobs": "Edit" })}
           />
         </HStack>
         <HStack className="justify-between items-center" spacing={8}>
@@ -363,7 +363,7 @@ export function SalesOrderJobItem({
             isDisabled={
               job.status !== "Draft" ||
               release.isPending ||
-              !permissions.can("update", "production") ||
+              !permissions.has({ "production.jobs": "Edit" }) ||
               (job?.quantity === 0 && job?.scrapQuantity === 0)
             }
             leftIcon={<LuCirclePlay />}

@@ -155,7 +155,7 @@ const InspectionView = ({
 }: InspectionViewProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "quality");
+  const canUpdate = permissions.has({ "quality.inspections": "Edit" });
   const [items] = useItems();
 
   const isSerial = itemTrackingType === "Serial";

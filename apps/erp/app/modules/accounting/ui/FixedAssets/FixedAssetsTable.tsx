@@ -189,7 +189,7 @@ const FixedAssetsTable = memo(
               shortcut={
                 isDraft ? MENU_ITEM_SHORTCUTS.edit : MENU_ITEM_SHORTCUTS.view
               }
-              disabled={!permissions.can("view", "accounting")}
+              disabled={!permissions.has({ "accounting.assets": "View" })}
               onClick={() => navigate(path.to.fixedAsset(row.id))}
             >
               <MenuIcon icon={<LuPencil />} />
@@ -198,7 +198,7 @@ const FixedAssetsTable = memo(
             {isDraft && (
               <MenuItem
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
-                disabled={!permissions.can("delete", "accounting")}
+                disabled={!permissions.has({ "accounting.assets": "Full" })}
                 destructive
                 onClick={() => {
                   setSelectedAsset(row);

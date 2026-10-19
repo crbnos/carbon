@@ -12,9 +12,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await authorize(request, {
-    delete: "documents"
-  });
+  const { client, userId } = await authorize(request, { documents: "Full" });
 
   const { documentId } = params;
   if (!documentId) throw notFound("documentId not found");

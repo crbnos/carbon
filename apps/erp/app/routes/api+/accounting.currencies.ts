@@ -8,7 +8,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getCurrenciesList } from "~/modules/accounting/accounting.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await authorize(request, {});
+  const { client, companyGroupId } = await authorize(request);
   return await getCurrenciesList(client, companyGroupId);
 }
 

@@ -605,7 +605,7 @@ const StorageUnitsTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "inventory")}
+              disabled={!permissions.has({ "inventory.storageUnits": "Edit" })}
               onClick={() => {
                 navigate(`${path.to.storageUnit(row.id)}?${params.toString()}`);
               }}
@@ -614,7 +614,9 @@ const StorageUnitsTable = memo(
               <Trans>Edit Storage Unit</Trans>
             </MenuItem>
             <MenuItem
-              disabled={!permissions.can("create", "inventory")}
+              disabled={
+                !permissions.has({ "inventory.storageUnits": "Create" })
+              }
               onClick={() => {
                 const newParams = new URLSearchParams(params);
                 newParams.set("parentId", row.id);
@@ -627,7 +629,7 @@ const StorageUnitsTable = memo(
             </MenuItem>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
-              disabled={!permissions.can("delete", "inventory")}
+              disabled={!permissions.has({ "inventory.storageUnits": "Full" })}
               destructive
               onClick={() => {
                 navigate(

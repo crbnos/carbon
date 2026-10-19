@@ -67,7 +67,7 @@ const InspectionForm = ({
   const showFourEyesWarning =
     enforceFourEyes && !!receiverId && receiverId === currentUserId;
 
-  const canUpdate = permissions.can("update", "quality");
+  const canUpdate = permissions.has({ "quality.inspections": "Edit" });
 
   return (
     <ModalDrawerProvider type="drawer">

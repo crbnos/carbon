@@ -16,11 +16,11 @@ import { getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  // The wizard's mutations submit to batching.update (update: "production") and
-  // the batch-operations server fn also requires update: "production"; gate the
-  // wizard on the same permission so opening it never dead-ends at submit.
+  // The wizard's mutations submit to batching.update and the batch-operations
+  // server fn, which both need Batches at Edit; gate the wizard on the same
+  // level so opening it never dead-ends at submit.
   const { client, companyId, userId, api } = await authorize(request, {
-    update: "production"
+    "production.batches": "Edit"
   });
 
   const url = new URL(request.url);

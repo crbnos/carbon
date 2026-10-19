@@ -13,7 +13,7 @@ import { data } from "react-router";
 
 // Data and writes for the Security pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { userId } = await authorize(request, {});
+  const { userId } = await authorize(request);
   const serviceRole = getCarbonServiceRole();
   const [passkeysResult, totpFactors] = await Promise.all([
     (serviceRole as any)
@@ -32,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await authorize(request, {});
+  const { userId } = await authorize(request);
   const formData = await request.formData();
 
   if (formData.get("intent") === "deletePasskey") {

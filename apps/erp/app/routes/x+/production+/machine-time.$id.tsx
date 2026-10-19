@@ -52,10 +52,11 @@ import { getParams, path } from "~/utils/path";
 const logger = getLogger("erp", "production", "machine-time");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    view: "production",
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    { "production.unattributedTime": "View" },
+    { role: "employee" }
+  );
 
   const { id } = params;
   if (!id) throw notFound("id not found");
@@ -179,7 +180,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    update: "production"
+    "production.unattributedTime": "Edit"
   });
 
   const { id } = params;

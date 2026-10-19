@@ -21,7 +21,7 @@ const logger = getLogger("erp", "settings-companies-delete");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, email } = await authorize(request, {
-    view: "settings"
+    "settings.companies": "View"
   });
 
   // Multi-company management is gated to internal (Carbon) users for now.
@@ -45,7 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { companyGroupId, email } = await authorize(request, {
-    delete: "settings"
+    "settings.companies": "Full"
   });
 
   // Multi-company management is gated to internal (Carbon) users for now.

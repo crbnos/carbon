@@ -294,7 +294,7 @@ export function AssociatedItemsList({
     return null;
   }
 
-  const canEdit = permissions.can("update", "quality") && !isDisabled;
+  const canEdit = permissions.has({ "quality.issues": "Edit" }) && !isDisabled;
   // Tracked rows (with entity links) derive their quantity from the links, so
   // only link-less rows get the input; the update route enforces the same.
   const canEditQuantity = canEdit && !isQuantityReadOnly;

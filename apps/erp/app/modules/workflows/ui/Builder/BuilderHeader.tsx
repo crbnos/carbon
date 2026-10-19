@@ -106,7 +106,7 @@ function WorkflowTitle({
     });
   }
 
-  if (!permissions.can("update", "workflows")) {
+  if (!permissions.has({ "workflows.workflows": "Edit" })) {
     return <Heading className={headingClassName}>{name}</Heading>;
   }
 
@@ -265,7 +265,7 @@ export function BuilderHeader({
                 />
               )}
               onNewVersion={
-                permissions.can("create", "workflows")
+                permissions.has({ "workflows.workflows": "Create" })
                   ? () => {
                       const formData = new FormData();
                       formData.set("copyFromVersionId", versionId);
@@ -282,7 +282,7 @@ export function BuilderHeader({
             <RecordAction slot="primary">
               <Button
                 variant="secondary"
-                isDisabled={!permissions.can("update", "workflows")}
+                isDisabled={!permissions.has({ "workflows.workflows": "Edit" })}
                 onClick={confirmUnpublish.onOpen}
               >
                 <Trans>Unpublish</Trans>
@@ -292,7 +292,7 @@ export function BuilderHeader({
             <RecordAction slot="primary">
               <Button
                 isDisabled={
-                  !permissions.can("update", "workflows") ||
+                  !permissions.has({ "workflows.workflows": "Edit" }) ||
                   publishFetcher.state !== "idle"
                 }
                 isLoading={publishFetcher.state !== "idle"}
