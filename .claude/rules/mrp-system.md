@@ -208,7 +208,10 @@ Phase-7 write) and throws on failure.
      `packages/database/src/mrp-engine.test.ts`.
    - **BOM explosion**: for `Make` items, explodes the active make method to
      derive child demand with low-level-code ordering, per-period inventory
-     netting, and lead-time offsetting.
+     netting, and lead-time offsetting. A line with quantity 0 is left out
+     (`bomChildren`, `packages/planning/src/mrp/bom-children.ts`), never
+     defaulted to 1: a configured item carries every configuration's lines at 0
+     except the default's, and `|| 1` exploded all of them per parent.
    - **Outputs (DB writes)**: deletes prior MRP forecast rows — including EVERY
      `supplyForecast` row at the company's locations (MRP never inserts
      `supplyForecast`; the planning.update routes do) — then batch-inserts
