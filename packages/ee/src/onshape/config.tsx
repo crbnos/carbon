@@ -1,7 +1,12 @@
-import { CONTROLLED_ENVIRONMENT, ONSHAPE_CLIENT_ID } from "@carbon/auth";
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+import { ONSHAPE_CLIENT_ID } from "@carbon/auth";
 import { type SVGProps, useEffect, useState } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
+import { beginOAuthPopup } from "../oauth-popup";
 import {
   normalizeOnshapeUrl,
   ONSHAPE_GOVERNMENT_INTEGRATION_ID,
@@ -43,6 +48,17 @@ const backfillAction = {
   enabledWhenSetting: "assetSyncEnabled"
 };
 
+// A revoked grant or dead refresh token can only be re-authorized.
+export function onshapeReconnectAction(installEndpoint: string) {
+  return {
+    id: "reconnect",
+    label: "Reconnect Onshape",
+    description:
+      "Sign in to Onshape again to renew Carbon's access. Use this when the connection shows Unhealthy; settings and linked items are kept.",
+    endpoint: installEndpoint
+  };
+}
+
 export const Onshape = defineIntegration({
   name: "Onshape",
   id: ONSHAPE_INTEGRATION_ID,
@@ -57,45 +73,26 @@ export const Onshape = defineIntegration({
   schema: z.object({
     assetSyncEnabled: assetSyncEnabledSchema
   }),
-  actions: [backfillAction],
+  actions: [
+    onshapeReconnectAction("/api/integrations/onshape/install"),
+    backfillAction
+  ],
   onClientInstall: async () => {
-    const response = await fetch("/api/integrations/onshape/install").then(
-      (res) => res.json()
-    );
-
-    const { url, error } = response as { url?: string; error?: string };
-    if (!url) {
-      // The integrations page turns `?integration=&error=` into a toast — the
-      // same place a failed callback lands (see integration-errors.ts).
-      window.location.href = `/x/settings/integrations?integration=${ONSHAPE_INTEGRATION_ID}&error=${error ?? "unexpected"}`;
-      return;
-    }
-
-    const width = 600;
-    const height = 800;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2.5;
-
-    const popup = window.open(
-      url,
-      "",
-      `toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=${width}, height=${height}, top=${top}, left=${left}`
-    );
-
-    if (!popup) {
-      window.location.href = url;
-      return;
-    }
-
-    const listener = (e: MessageEvent) => {
-      if (e.data === "app_oauth_completed") {
-        window.location.reload();
-        window.removeEventListener("message", listener);
-        popup.close();
+    const popup = beginOAuthPopup();
+    let error = "unexpected";
+    try {
+      const response = await fetch("/api/integrations/onshape/install");
+      const body = (await response.json()) as { url?: string; error?: string };
+      if (body?.url) {
+        popup.navigate(body.url);
+        return;
       }
-    };
-
-    window.addEventListener("message", listener);
+      error = body?.error ?? error;
+    } catch {
+      // Falls through to the error redirect.
+    }
+    popup.close();
+    window.location.href = `/x/settings/integrations?integration=${ONSHAPE_INTEGRATION_ID}&error=${error}`;
   }
 });
 
@@ -117,14 +114,13 @@ const onshapeUrlSchema = z
  * a PRIVATE OAuth app inside their own Enterprise and enters its client here;
  * saving the settings then sends them through that app's consent screen.
  *
- * Offered only on a controlled (ITAR) Carbon instance — the only place a
- * Government customer's data belongs. It needs nothing else from this
- * instance's environment: the OAuth client is the customer's own.
+ * Always offered: it needs nothing from this instance's environment, since the
+ * OAuth client is the customer's own.
  */
 export const OnshapeGovernment = defineIntegration({
   name: "Onshape Government",
   id: ONSHAPE_GOVERNMENT_INTEGRATION_ID,
-  active: CONTROLLED_ENVIRONMENT,
+  active: true,
   category: "CAD",
   logo: Logo,
   setupInstructions: GovernmentSetupInstructions,
@@ -156,16 +152,6 @@ export const OnshapeGovernment = defineIntegration({
       value: ""
     },
     {
-      name: "oauthUrl",
-      label: "OAuth URL",
-      description:
-        "The OAuth server for your Onshape Government environment, from your Onshape account team. Carbon appends /oauth/authorize and /oauth/token.",
-      group: "Connection",
-      type: "text" as const,
-      required: true,
-      value: ""
-    },
-    {
       name: "clientId",
       label: "Client ID",
       description: "Shown on the private OAuth application in Onshape.",
@@ -188,7 +174,6 @@ export const OnshapeGovernment = defineIntegration({
   ],
   schema: z.object({
     baseUrl: onshapeUrlSchema,
-    oauthUrl: onshapeUrlSchema,
     clientId: z.string().trim().min(1),
     // Empty keeps the vaulted secret; the settings save requires one on a
     // fresh install.
@@ -234,8 +219,7 @@ function GovernmentSetupInstructions() {
       <p className="mt-3 text-sm text-muted-foreground">
         5. Create the application and copy the client ID and secret straight
         away — Onshape shows the secret once. Enter them below with your Onshape
-        URL and OAuth URL, then save: Carbon sends you to Onshape to approve the
-        connection.
+        URL, then save: Carbon sends you to Onshape to approve the connection.
       </p>
       <p className="mt-3 text-sm text-muted-foreground">
         The app is private to your Enterprise, so its API calls count toward

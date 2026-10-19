@@ -1,15 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   getInventoryValuation,
-  getInventoryValuationTieOut,
-  InventoryValuationWorkbench
-} from "~/modules/inventory";
-import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+  getInventoryValuationTieOut
+} from "~/modules/inventory/inventory.service";
+import { InventoryValuationWorkbench } from "~/modules/inventory/ui";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -32,16 +37,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     url.searchParams.get("groupBy") === "item" ? "item" : "location";
   const locationId = url.searchParams.get("locationId") || null;
 
-  // The tie-out only means something when journals are being posted — skip it
-  // entirely when accounting is disabled (tieOut: null hides the panel).
+  // The tie-out only means something once journals count — skip it entirely
+  // before the accounting cutover (tieOut: null hides the panel).
   const companySettings = await getCompanySettings(client, companyId);
-  const accountingEnabled =
-    (companySettings.data as { accountingEnabled?: boolean } | null)
-      ?.accountingEnabled ?? false;
+  const accountingSetUp = hasAccountingCutover(companySettings.data);
 
   const [valuation, tieOut, locations] = await Promise.all([
     getInventoryValuation(client, companyId, { asOfDate, locationId }),
-    accountingEnabled
+    accountingSetUp
       ? getInventoryValuationTieOut(client, companyId, asOfDate)
       : Promise.resolve({ data: null, error: null }),
     client

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getLogger } from "@carbon/logger";
 import { ClientOnly, cn, toast } from "@carbon/react";
 import type {
@@ -22,6 +26,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState
 } from "react";
@@ -30,12 +35,13 @@ import { useFetchers, useSubmit } from "react-router";
 import { path } from "~/utils/path";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { JobCard } from "./components/JobCard";
-import { KanbanProvider } from "./context/KanbanContext";
+import { type KanbanMoveTo, KanbanProvider } from "./context/KanbanContext";
 import { getDateOnly, getPendingDueDate } from "./date-utils";
 import {
   comparePriorityThenId,
   createDragOrigin,
   type DragOrigin,
+  type DragPlacement,
   type DragPreview,
   getColumnPlacement,
   getItemPlacement,
@@ -45,6 +51,12 @@ import {
 } from "./placement";
 import type { Column, DisplaySettings, JobItem, Progress } from "./types";
 import { hasDraggableData, kanbanCollisionDetection } from "./utils";
+
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const KEYBOARD_SENSOR_OPTIONS = {
+  coordinateGetter: sortableKeyboardCoordinates
+};
 
 const logger = getLogger("erp", "datekanban");
 
@@ -238,14 +250,15 @@ function useDateUpdateFailureToast() {
       }
 
       const data = fetcher.data as
-        | { success: boolean; message?: string }
+        | { error?: { message?: string } | null; fieldErrors?: unknown }
         | undefined;
+      const failed = !!data?.error || !!data?.fieldErrors;
 
-      if (data?.success === false && !toastedKeys.current.has(key)) {
+      if (failed && !toastedKeys.current.has(key)) {
         toastedKeys.current.add(key);
         // Surface a friendly, translated message; log the raw server detail.
-        if (data.message)
-          logger.error("Reschedule failed", { error: data.message });
+        if (data?.error?.message)
+          logger.error("Reschedule failed", { error: data.error.message });
         toast.error(t`Couldn't reschedule the job. Please try again.`);
       }
     }
@@ -270,14 +283,7 @@ const DateKanban = ({
   );
 
   // For date-based kanban, always use the column order from props (don't persist)
-  const [columnOrder, setColumnOrder] = useState<string[]>(
-    columns.map((col) => col.id)
-  );
-
-  // Update column order when columns change (e.g., navigating to a different week/month)
-  useEffect(() => {
-    setColumnOrder(columns.map((col) => col.id));
-  }, [columns]);
+  const columnOrder = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const itemsById = new Map<string, JobItem>(
     initialItems.map((item) => [item.id, item])
@@ -301,10 +307,20 @@ const DateKanban = ({
 
   const sensors = useSensors(
     useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
+
+  function createDateDragOrigin(activeItem: JobItem): DateDragOrigin | null {
+    const placementOrigin = createDragOrigin(baseItems, activeItem);
+    if (!placementOrigin) return null;
+    return {
+      ...placementOrigin,
+      dueDate:
+        activeItem.dueDate === undefined
+          ? undefined
+          : getDateOnly(activeItem.dueDate)
+    };
+  }
 
   function clearDragState() {
     dragOriginRef.current = null;
@@ -326,19 +342,12 @@ const DateKanban = ({
       return;
     }
 
-    const placementOrigin = createDragOrigin(baseItems, activeItem);
-    if (!placementOrigin) {
+    const origin = createDateDragOrigin(activeItem);
+    if (!origin) {
       clearDragState();
       return;
     }
 
-    const origin: DateDragOrigin = {
-      ...placementOrigin,
-      dueDate:
-        activeItem.dueDate === undefined
-          ? undefined
-          : getDateOnly(activeItem.dueDate)
-    };
     dragOriginRef.current = origin;
     setDragState({ origin, preview: null });
   }
@@ -388,33 +397,7 @@ const DateKanban = ({
           )
         : null;
 
-    if (
-      origin &&
-      origin.dueDate !== undefined &&
-      placement &&
-      !isSamePlacement(origin.placement, placement)
-    ) {
-      const isSameDisplayBucket =
-        placement.columnId === origin.placement.columnId;
-      submit(
-        {
-          id: origin.item.id,
-          locationId,
-          columnId: isSameDisplayBucket
-            ? (origin.dueDate ?? origin.placement.columnId)
-            : placement.columnId,
-          optimisticColumnId: placement.columnId,
-          priority: placement.priority
-        },
-        {
-          method: "post",
-          action: path.to.priorityDatesUpdate,
-          navigate: false,
-          flushSync: true,
-          fetcherKey: `job:${origin.item.id}`
-        }
-      );
-    }
+    if (origin && placement) submitPlacement(origin, placement);
 
     clearDragState();
   }
@@ -422,6 +405,57 @@ const DateKanban = ({
   function onDragCancel() {
     clearDragState();
   }
+
+  function submitPlacement(origin: DateDragOrigin, placement: DragPlacement) {
+    if (
+      origin.dueDate === undefined ||
+      isSamePlacement(origin.placement, placement)
+    ) {
+      return;
+    }
+    const isSameDisplayBucket =
+      placement.columnId === origin.placement.columnId;
+    submit(
+      {
+        id: origin.item.id,
+        locationId,
+        columnId: isSameDisplayBucket
+          ? (origin.dueDate ?? origin.placement.columnId)
+          : placement.columnId,
+        optimisticColumnId: placement.columnId,
+        priority: placement.priority
+      },
+      {
+        method: "post",
+        action: path.to.priorityDatesUpdate,
+        navigate: false,
+        flushSync: true,
+        fetcherKey: `job:${origin.item.id}`
+      }
+    );
+  }
+
+  // Phones: "Move to" on a card makes the same move as dropping it on that
+  // column's background.
+  const moveTo: KanbanMoveTo = {
+    targetsFor: (itemId) => {
+      const item = itemsById.get(itemId);
+      if (!item || item.dueDate === undefined) return [];
+      return columnOrder.flatMap((columnId) => {
+        const column = columnsMap.get(columnId);
+        return column && column.id !== item.columnId
+          ? [{ id: column.id, title: column.title }]
+          : [];
+      });
+    },
+    onMove: (itemId, columnId) => {
+      const activeItem = itemsById.get(itemId);
+      const origin = activeItem ? createDateDragOrigin(activeItem) : null;
+      if (!origin) return;
+      const placement = getColumnPlacement(origin, baseItems, columnId);
+      if (placement) submitPlacement(origin, placement);
+    }
+  };
 
   const isInitialMount = useRef(true);
 
@@ -439,6 +473,7 @@ const DateKanban = ({
       setSelectedGroup={setSelectedGroup}
       tags={tags}
       columnIds={columns.map((col) => col.id)}
+      moveTo={moveTo}
     >
       <DateDragPreviewContext.Provider value={dragState}>
         <DndContext

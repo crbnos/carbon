@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -8,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
   Combobox,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -25,6 +31,7 @@ import {
   Th,
   Thead,
   Tr,
+  useViewport,
   VStack
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
@@ -38,7 +45,7 @@ import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import {
   LuCalendarClock,
   LuChevronDown,
@@ -50,7 +57,7 @@ import {
   LuWrench
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Await, useFetcher, useLoaderData } from "react-router";
+import { Await, Link, useLoaderData } from "react-router";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { DateSelect, Empty, Hyperlink, MetricCard } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
@@ -131,6 +138,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function MaintenanceDashboard() {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const {
     openDispatches,
     openScheduled,
@@ -138,9 +146,6 @@ export default function MaintenanceDashboard() {
     recentlyCreated,
     assignedToMe
   } = useLoaderData<typeof loader>();
-
-  const kpiFetcher = useFetcher<typeof kpiLoader>();
-  const isFetching = kpiFetcher.state !== "idle" || !kpiFetcher.data;
 
   const dateFormatter = useDateFormatter({
     month: "short",
@@ -177,6 +182,15 @@ export default function MaintenanceDashboard() {
   const selectedKpiData =
     MaintenanceKPIs.find((k) => k.key === selectedKpi) || MaintenanceKPIs[0];
 
+  const kpiFetcher = useLoaderQuery<typeof kpiLoader>(
+    `${path.to.api.resourcesKpi(
+      selectedKpiData.key
+    )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
+      workCenterId === "all" ? "" : `&workCenterId=${workCenterId}`
+    }`
+  );
+  const isFetching = kpiFetcher.isFetching || !kpiFetcher.data;
+
   const kpiLabels: Record<string, string> = useMemo(
     () => ({
       mttr: t`Mean Time To Repair`,
@@ -187,17 +201,6 @@ export default function MaintenanceDashboard() {
     }),
     [t]
   );
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: deps are intentionally limited
-  useEffect(() => {
-    kpiFetcher.load(
-      `${path.to.api.resourcesKpi(
-        selectedKpiData.key
-      )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
-        workCenterId === "all" ? "" : `&workCenterId=${workCenterId}`
-      }`
-    );
-  }, [selectedKpi, dateRange, interval, selectedKpiData.key, workCenterId]);
 
   const onIntervalChange = (value: string) => {
     const end = today("UTC");
@@ -327,7 +330,7 @@ export default function MaintenanceDashboard() {
           ? item.date
           : "month" in item
             ? item.month
-            : // @ts-ignore
+            : // @ts-expect-error
               item.monthKey,
         item.value
       ])
@@ -353,7 +356,7 @@ export default function MaintenanceDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
+      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
           icon={<LuWrench />}
           title={<Trans>Open Dispatches</Trans>}
@@ -386,15 +389,19 @@ export default function MaintenanceDashboard() {
       </div>
 
       <Card>
-        <HStack className="justify-between items-center">
+        <HStack className="justify-between items-center max-md:flex-col max-md:items-stretch max-md:space-x-0">
           <CardHeader>
-            <div className="flex w-full justify-start items-center gap-2">
+            <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="secondary"
                     rightIcon={<LuChevronDown />}
-                    className="hover:bg-background/80"
+                    className={cn(
+                      "hover:bg-background/80",
+                      // Phones: the KPI picker reads as the section title.
+                      "max-md:px-0 max-md:bg-transparent max-md:shadow-none max-md:dark:bg-transparent max-md:text-[17px] max-md:font-semibold max-md:text-foreground"
+                    )}
                   >
                     <span>{kpiLabels[selectedKpiData.key]}</span>
                   </Button>
@@ -419,7 +426,7 @@ export default function MaintenanceDashboard() {
                 onChange={setWorkCenterId}
                 options={workCenterOptions}
                 size="sm"
-                className="min-w-[160px] gap-4"
+                className="min-w-[160px] gap-4 max-md:min-w-0"
               />
             </div>
           </CardHeader>
@@ -436,6 +443,7 @@ export default function MaintenanceDashboard() {
                   variant="secondary"
                   icon={<LuEllipsisVertical />}
                   aria-label={t`More`}
+                  className="max-md:rounded-full"
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -481,12 +489,12 @@ export default function MaintenanceDashboard() {
           </VStack>
           <Loading
             isLoading={isFetching}
-            className="h-[30dvw] md:h-[23dvw] w-full"
+            className="h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
           >
             {selectedKpi === "worstPerformingMachines" ? (
               <ChartContainer
                 config={chartConfig}
-                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full"
+                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
               >
                 <BarChart
                   accessibilityLayer
@@ -518,7 +526,7 @@ export default function MaintenanceDashboard() {
             ) : (
               <ChartContainer
                 config={chartConfig}
-                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full"
+                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
               >
                 <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
                   <CartesianGrid vertical={false} />
@@ -526,12 +534,17 @@ export default function MaintenanceDashboard() {
                     dataKey="value"
                     tickLine={false}
                     axisLine={false}
+                    {...(isPhone ? { width: 64 } : {})}
                     tickFormatter={(value) => {
                       if (["mttr", "mtbf"].includes(selectedKpiData.key)) {
-                        return formatDurationMilliseconds(
+                        const duration = formatDurationMilliseconds(
                           (value as number) * 1000,
                           { style: "short" }
                         );
+                        // Recharts wraps ticks on spaces; keep "3h, 20m" on one line.
+                        return isPhone
+                          ? duration.replace(/ /g, "\u00a0")
+                          : duration;
                       }
                       if (["sparePartCost"].includes(selectedKpiData.key)) {
                         return currencyFormatter.format(value as number);
@@ -657,12 +670,45 @@ type DispatchRow = {
 
 function DispatchTable({ data }: { data: DispatchRow[] }) {
   const workCenters = useWorkCenters();
+  const { isPhone } = useViewport();
 
   const getWorkCenterName = (workCenterId: string | null) => {
     if (!workCenterId) return "-";
     const wc = workCenters.find((w) => w.value === workCenterId);
     return wc?.label ?? "-";
   };
+
+  // Phone: the 4-column table becomes a stacked list; each row opens the dispatch.
+  if (isPhone) {
+    return (
+      <ul className="flex w-full flex-col divide-y divide-border">
+        {data.map((dispatch) => (
+          <li key={dispatch.id}>
+            <Link
+              to={path.to.maintenanceDispatch(dispatch.id)}
+              className="flex min-h-14 flex-col justify-center gap-1 py-2 active:bg-accent"
+            >
+              <span className="flex min-w-0 items-center gap-1 text-base font-medium text-foreground">
+                <LuWrench className="size-4 shrink-0" />
+                <span className="truncate">
+                  {dispatch.maintenanceDispatchId}
+                </span>
+              </span>
+              <span className="truncate text-[13px] text-muted-foreground">
+                {getWorkCenterName(dispatch.workCenterId)}
+              </span>
+              <span className="flex items-center gap-2">
+                <MaintenanceStatus status={dispatch.status} />
+                <MaintenanceSource
+                  source={dispatch.source as (typeof maintenanceSource)[number]}
+                />
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    );
+  }
 
   return (
     <Table>

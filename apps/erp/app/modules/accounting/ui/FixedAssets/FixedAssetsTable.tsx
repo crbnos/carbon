@@ -1,4 +1,13 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
@@ -22,7 +31,10 @@ import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { path } from "~/utils/path";
-import { fixedAssetStatuses } from "../../accounting.models";
+import {
+  type fixedAssetStatuses,
+  visibleFixedAssetStatuses
+} from "../../accounting.models";
 import type { FixedAssetListItem } from "../../types";
 import FixedAssetStatus from "./FixedAssetStatus";
 
@@ -58,6 +70,7 @@ const FixedAssetsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -65,6 +78,7 @@ const FixedAssetsTable = memo(
           accessorKey: "name",
           header: t`Name`,
           meta: {
+            mobile: "P3",
             icon: <LuBuilding2 />
           }
         },
@@ -86,9 +100,10 @@ const FixedAssetsTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
-              options: fixedAssetStatuses.map((v) => ({
+              options: visibleFixedAssetStatuses.map((v) => ({
                 label: <FixedAssetStatus status={v} />,
                 value: v
               }))
@@ -157,6 +172,7 @@ const FixedAssetsTable = memo(
             return currencyFormatter.format(nbv);
           },
           meta: {
+            mobile: "P2",
             icon: <LuCircleDollarSign />
           }
         }
@@ -170,6 +186,9 @@ const FixedAssetsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={
+                isDraft ? MENU_ITEM_SHORTCUTS.edit : MENU_ITEM_SHORTCUTS.view
+              }
               disabled={!permissions.can("view", "accounting")}
               onClick={() => navigate(path.to.fixedAsset(row.id))}
             >
@@ -178,6 +197,7 @@ const FixedAssetsTable = memo(
             </MenuItem>
             {isDraft && (
               <MenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 disabled={!permissions.can("delete", "accounting")}
                 destructive
                 onClick={() => {
@@ -204,6 +224,8 @@ const FixedAssetsTable = memo(
           primaryAction={primaryAction}
           renderContextMenu={renderContextMenu}
           title={t`Fixed Assets`}
+          table="fixedAsset"
+          withSavedView
         />
         {selectedAsset && (
           <ConfirmDelete

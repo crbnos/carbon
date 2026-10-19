@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Alert,
   AlertDescription,
@@ -16,7 +20,7 @@ export type ScrappableEntity = {
 
 // The material's scrappable tracked entities: available ones (picked / in
 // stock, not yet consumed) and already-consumed ones. Each row scraps the
-// entity via the shared ScrapEntityModal (opened by onScrap). The edge
+// entity via the shared ScrapEntityModal (opened by onScrap). The server
 // function branches on the entity's state — Available scraps from stock,
 // Consumed relieves WIP and reopens the requirement.
 export function ScrapTab({

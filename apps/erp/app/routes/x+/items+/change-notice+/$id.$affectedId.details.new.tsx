@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
@@ -33,7 +37,7 @@ export default function ChangeNoticeNewSupplierPartRoute() {
     itemId: affected.draftItemId,
     supplierId: "",
     supplierPartId: "",
-    unitPrice: 0,
+    supplierUnitPrice: 0,
     supplierUnitOfMeasureCode: "EA",
     minimumOrderQuantity: 1,
     orderMultiple: 1,

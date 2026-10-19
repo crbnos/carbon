@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   cn,
@@ -67,20 +71,31 @@ export function JobOperationProgress({
   return (
     <Tooltip delayDuration={150}>
       <TooltipTrigger asChild>
-        <div className="flex items-center gap-1.5 cursor-default">
+        {/* One continuous tracker: segments touch (overlapping their 1px
+            borders), and only the two ends are rounded. */}
+        <div className="flex items-center cursor-default">
           {visibleIndices.map((idx, i) => {
             const hasGapBefore = i > 0 && idx - visibleIndices[i - 1] > 1;
             return (
               <Fragment key={sorted[idx].id}>
                 {hasGapBefore && (
-                  <span
+                  <Badge
+                    variant="gray"
                     aria-hidden="true"
-                    className="text-muted-foreground text-xs select-none leading-none"
+                    className="-ml-px rounded-none text-[10px] select-none"
                   >
                     ···
-                  </span>
+                  </Badge>
                 )}
-                <OperationPill operation={sorted[idx]} />
+                <OperationPill
+                  operation={sorted[idx]}
+                  className={cn(
+                    "rounded-none",
+                    i > 0 && "-ml-px",
+                    i === 0 && "rounded-l-full",
+                    i === visibleIndices.length - 1 && "rounded-r-full"
+                  )}
+                />
               </Fragment>
             );
           })}

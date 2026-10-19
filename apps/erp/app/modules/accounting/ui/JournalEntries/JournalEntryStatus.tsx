@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Status } from "@carbon/react";
 import { JOURNAL_ENTRY_STATUS_COLOR_MAP } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -16,7 +20,9 @@ const JournalEntryStatus = ({ status }: JournalEntryStatusProps) => {
   const labels: Record<(typeof journalEntryStatuses)[number], string> = {
     Draft: t`Draft`,
     Posted: t`Posted`,
-    Reversed: t`Reversed`
+    Reversed: t`Reversed`,
+    Provisional: t`Provisional`,
+    Superseded: t`Before cutover`
   };
 
   return <Status color={color}>{labels[status] ?? status}</Status>;

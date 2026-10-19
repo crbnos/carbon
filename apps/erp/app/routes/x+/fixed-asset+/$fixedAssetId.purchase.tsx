@@ -1,7 +1,12 @@
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ValidatedForm, validationError, validator } from "@carbon/form";
+import { ValidatedForm, validator } from "@carbon/form";
 import {
   Button,
   HStack,
@@ -11,34 +16,35 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useNavigate } from "react-router";
 import { z } from "zod";
 import { Submit, Supplier } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { getFixedAsset } from "~/modules/accounting";
-import {
-  insertPurchaseOrder,
-  upsertPurchaseOrderLine
-} from "~/modules/purchasing";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getFixedAsset } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 
 const purchaseAssetValidator = z.object({
   supplierId: z.string().min(1, { message: "Supplier is required" })
 });
 
+// A construction-in-progress asset collects purchased cost alongside job
+// cost, so it can still be purchased while Under Construction; receipt and
+// invoice posting add a CIP cost row and leave its status alone.
+const PURCHASABLE_ASSET_STATUSES: string[] = ["Draft", "Under Construction"];
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
-  const asset = await getFixedAsset(client, fixedAssetId);
+  const asset = await getFixedAsset(client, fixedAssetId, companyId);
   if (asset.error) {
     throw redirect(
       path.to.fixedAssets,
@@ -46,105 +52,47 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  if (asset.data.status !== "Draft") {
+  if (!PURCHASABLE_ASSET_STATUSES.includes(asset.data.status)) {
     throw redirect(
       path.to.fixedAsset(fixedAssetId),
-      await flash(request, error(null, "Only Draft assets can be purchased"))
+      await flash(
+        request,
+        error(null, "Only a Draft or Under Construction asset can be purchased")
+      )
     );
   }
 
   return null;
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      create: "purchasing"
-    });
-
-  const { fixedAssetId } = params;
-  if (!fixedAssetId) throw notFound("fixedAssetId not found");
-
-  const formData = await request.formData();
-  const validation = await validator(purchaseAssetValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { supplierId } = validation.data;
-
-  const [asset, defaults] = await Promise.all([
-    getFixedAsset(client, fixedAssetId),
-    getUserDefaults(client, userId, companyId)
-  ]);
-
-  if (asset.error || !asset.data) {
-    throw redirect(
-      path.to.fixedAssets,
-      await flash(request, error(asset.error, "Failed to get fixed asset"))
-    );
-  }
-
-  const locationId = asset.data.locationId ?? defaults.data?.locationId ?? "";
-
-  const newPO = await insertPurchaseOrder(client, {
-    supplierId,
-    locationId,
-    status: "Draft",
-    purchaseOrderType: "Purchase",
-    companyId,
-    companyGroupId,
-    createdBy: userId
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(purchaseAssetValidator).request(args, {
+    params: ["fixedAssetId"]
   });
-
-  if (newPO.error || !newPO.data) {
-    throw redirect(
-      path.to.fixedAsset(fixedAssetId),
-      await flash(
-        request,
-        error(newPO.error, "Failed to create purchase order")
-      )
-    );
-  }
-
-  const purchaseOrderId = newPO.data.id;
-
-  await upsertPurchaseOrderLine(client, {
-    purchaseOrderId,
-    purchaseOrderLineType: "Fixed Asset",
-    assetId: fixedAssetId,
-    description: asset.data.name,
-    locationId,
-    purchaseQuantity: 1,
-    supplierUnitPrice: 0,
-    supplierShippingCost: 0,
-    supplierTaxAmount: 0,
-    taxPercent: 0,
-    exchangeRate: 1,
-    purchaseUnitOfMeasureCode: "EA",
-    inventoryUnitOfMeasureCode: "EA",
-    conversionFactor: 1,
-    companyId,
-    createdBy: userId
+  if ("invalid" in input) return input.invalid;
+  const { fixedAssetId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.accounting.purchaseFixedAsset({
+    fixedAssetId,
+    supplierId: input.data.supplierId
   });
-
-  throw redirect(
-    path.to.purchaseOrder(purchaseOrderId),
-    await flash(request, success("Purchase order created"))
+  return respond(args.request, result).redirect(
+    result.data
+      ? path.to.purchaseOrder(result.data.purchaseOrderId)
+      : path.to.fixedAsset(fixedAssetId),
+    { message: "Purchase order created" }
   );
 }
 
 export default function PurchaseFixedAssetRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const permissions = usePermissions();
 
   return (
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) navigate(-1);
+        if (!open) closeRoute();
       }}
     >
       <ModalContent>
@@ -162,7 +110,7 @@ export default function PurchaseFixedAssetRoute() {
               <Submit isDisabled={!permissions.can("create", "purchasing")}>
                 Create Purchase Order
               </Submit>
-              <Button size="md" variant="solid" onClick={() => navigate(-1)}>
+              <Button size="md" variant="solid" onClick={() => closeRoute()}>
                 Cancel
               </Button>
             </HStack>

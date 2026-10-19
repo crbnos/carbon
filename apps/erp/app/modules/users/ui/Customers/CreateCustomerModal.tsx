@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useControlField, useField, ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Combobox,
   FormControl,
@@ -21,11 +26,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher, useNavigate } from "react-router";
 import { Customer, Submit } from "~/components/Form";
 import { useUrlParams } from "~/hooks";
-import type {
-  CustomerContact as CustomerContactType,
-  getCustomerContacts
-} from "~/modules/sales";
-import { createCustomerAccountValidator } from "~/modules/users";
+import type { getCustomerContacts } from "~/modules/sales/sales.service";
+import type { CustomerContact as CustomerContactType } from "~/modules/sales/types";
+import { createCustomerAccountValidator } from "~/modules/users/users.models";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
@@ -146,15 +149,12 @@ const CustomerContact = ({
   } = useField(name);
   const [value, setValue] = useControlField<string | null>(name);
 
-  const customerContactFetcher =
-    useFetcher<Awaited<ReturnType<typeof getCustomerContacts>>>();
+  const customerContactFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getCustomerContacts>>
+  >(customer ? path.to.api.customerContacts(customer) : null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    if (customer) {
-      customerContactFetcher.load(path.to.api.customerContacts(customer));
-    }
-
     if (initialLoad.current) {
       initialLoad.current = false;
     } else {

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Rillet, RilletProductWrite } from "../../models";
 import { buildRilletIdempotencyKey } from "../../provider";
@@ -10,12 +14,15 @@ describe("Rillet monetary decimal strings", () => {
     [1.005, 2, "1.01"],
     [-2.5, 3, "-2.500"],
     [0, 0, "0"]
-  ] as const)("serializes %s at %s decimals without exponent notation or grouping", (amount, decimals, expected) => {
-    expect(toRilletMoney(amount, "USD", decimals)).toEqual({
-      amount: expected,
-      currency: "USD"
-    });
-  });
+  ] as const)(
+    "serializes %s at %s decimals without exponent notation or grouping",
+    (amount, decimals, expected) => {
+      expect(toRilletMoney(amount, "USD", decimals)).toEqual({
+        amount: expected,
+        currency: "USD"
+      });
+    }
+  );
 });
 
 const { links, control } = vi.hoisted(() => ({

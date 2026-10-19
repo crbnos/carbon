@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Array as ArrayInput,
   Boolean as BooleanInput,
@@ -13,6 +17,11 @@ import {
   Badge,
   Button,
   cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
   HStack,
   IconButton,
   Label,
@@ -31,23 +40,33 @@ import { Editor } from "@carbon/react/Editor";
 import type {
   AssemblyGraphIndex,
   AssemblyStep,
-  NamedUnit
+  NamedUnit,
+  SubAssemblyInfo
 } from "@carbon/viewer";
-import { describeStep, groupComponentNodeIds } from "@carbon/viewer";
-import { Plural, Trans, useLingui } from "@lingui/react/macro";
-import { memo, useEffect, useMemo, useState } from "react";
 import {
+  buildSubAssemblyPlan,
+  describeStep,
+  groupComponentNodeIds,
+  hasCustomMotion,
+  isPlanFlagged,
+  isSavedView,
+  subAssemblyPartIds,
+  usableSubAssemblies
+} from "@carbon/viewer";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { memo, useCallback, useMemo, useState } from "react";
+import {
+  LuBoxes,
   LuCirclePlus,
-  LuEyeOff,
   LuMousePointerClick,
   LuTriangleAlert,
   LuX
 } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { useFetcher, useParams, useSearchParams } from "react-router";
 import { UnitOfMeasure } from "~/components/Form";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { useImageUpload, usePermissions } from "~/hooks";
-import { procedureStepType } from "~/modules/shared";
+import { procedureStepType } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 import {
   assemblyInstructionStepValidator,
@@ -61,20 +80,23 @@ import type {
   AssemblyStepSlide,
   AssemblyStepTool
 } from "../../types";
+import AssemblyCameraRow from "./AssemblyCameraRow";
+import AssemblyOrientationRow from "./AssemblyOrientationRow";
 import PlaybackRow from "./AssemblyPlaybackRow";
 import { ComponentColorSwatch } from "./AssemblyStepBom";
-import AssemblyStepJoin from "./AssemblyStepJoin";
+import AssemblyStepHiddenComponents from "./AssemblyStepHiddenComponents";
+import { SUB_ASSEMBLY_PARAM } from "./AssemblyStepList";
 import AssemblyStepMaterials from "./AssemblyStepMaterials";
 import AssemblyStepSlides from "./AssemblyStepSlides";
 import { AssemblyStepStatus, normalizeStepStatus } from "./AssemblyStepStatus";
 import AssemblyStepTools from "./AssemblyStepTools";
+import SubAssemblyPathRow from "./AssemblySubAssemblyPathRow";
+import AssemblySubAssemblyProperties from "./AssemblySubAssemblyProperties";
+import type { BuildOrientationControls } from "./useBuildOrientation";
+import type { CameraControls, MotionEditing } from "./useStepMotionEditor";
 
 type AssemblyInstructionPropertiesProps = {
   step: AssemblyInstructionStepRow | null;
-  /** Zero-based index of the selected step; null when nothing is selected */
-  stepIndex: number | null;
-  /** Total step count, for the "Step N of M" header */
-  stepCount: number;
   draftComponentNodeIds: string[] | null;
   /** Current viewer/Components-panel selection — marks the matching component rows */
   selectedNodeIds: string[];
@@ -94,21 +116,16 @@ type AssemblyInstructionPropertiesProps = {
   onRemoveComponents: (nodeIds: string[]) => void;
   hiddenNodeIds: string[];
   onSetHiddenComponents: (nodeIds: string[]) => void;
-  /** The active step's motion path is open in the 3D editor */
-  isEditingMotion: boolean;
-  onEditMotion: (stepId: string) => void;
-  onStopEditMotion: () => void;
-  onSetCamera: (stepId: string) => void;
-  onClearCamera: (stepId: string) => void;
-  /** Every step of the instruction, in order — for the "Build off to the side" select */
+  motionEditing: MotionEditing;
+  camera: CameraControls;
+  orientation: BuildOrientationControls;
+  /** Every step of the instruction, in play order — numbering and sub-assemblies */
   viewerSteps: AssemblyStep[];
   onSelectStep: (stepId: string) => void;
 };
 
 const AssemblyInstructionProperties = ({
   step,
-  stepIndex,
-  stepCount,
   draftComponentNodeIds,
   selectedNodeIds,
   isAddingComponents,
@@ -125,11 +142,9 @@ const AssemblyInstructionProperties = ({
   onRemoveComponents,
   hiddenNodeIds,
   onSetHiddenComponents,
-  isEditingMotion,
-  onEditMotion,
-  onStopEditMotion,
-  onSetCamera,
-  onClearCamera,
+  motionEditing,
+  camera,
+  orientation,
   viewerSteps,
   onSelectStep
 }: AssemblyInstructionPropertiesProps) => {
@@ -137,15 +152,48 @@ const AssemblyInstructionProperties = ({
   if (!instructionId) throw new Error("Could not find id");
   const { t } = useLingui();
 
+  const subPlan = useMemo(
+    () => buildSubAssemblyPlan(viewerSteps),
+    [viewerSteps]
+  );
+  const viewerStepsById = useMemo(
+    () => new Map(viewerSteps.map((viewerStep) => [viewerStep.id, viewerStep])),
+    [viewerSteps]
+  );
+  const titleOf = useCallback(
+    (stepId: string) => {
+      const viewerStep = viewerStepsById.get(stepId);
+      if (!viewerStep) return "";
+      if (subPlan.get(stepId)?.isHeader) {
+        return viewerStep.title || t`Sub-Assembly`;
+      }
+      return describeStep(viewerStep, graphIndex, units) ?? t`Untitled step`;
+    },
+    [viewerStepsById, subPlan, graphIndex, units, t]
+  );
+  const info = step ? subPlan.get(step.id) : undefined;
+  const isHeader = info?.isHeader === true;
+  const number = info?.number ?? null;
+  const memberCount = step
+    ? viewerSteps.filter((viewerStep) => viewerStep.parentStepId === step.id)
+        .length
+    : 0;
+  const partCount = useMemo(
+    () =>
+      step && isHeader ? subAssemblyPartIds(viewerSteps, step.id).length : 0,
+    [step, isHeader, viewerSteps]
+  );
+
   const componentCount = (draftComponentNodeIds ?? step?.componentNodeIds ?? [])
     .length;
-  const title =
-    (step &&
-      (step.title ||
-        describeStep(toStepDescriptor(step), graphIndex, units))) ||
-    t`Untitled step`;
+  const title = isHeader
+    ? step?.title || t`Sub-Assembly`
+    : (step &&
+        (step.title ||
+          describeStep(toStepDescriptor(step), graphIndex, units))) ||
+      t`Untitled step`;
   const planFlag = useMemo(
-    () => (step ? getPlanFlag(step.warnings, graphIndex) : null),
+    () => (step ? getPlanFlag(step, graphIndex) : null),
     [step, graphIndex]
   );
 
@@ -176,9 +224,11 @@ const AssemblyInstructionProperties = ({
           <VStack spacing={1} className="w-full min-w-0">
             <HStack className="w-full min-w-0 items-center justify-between gap-2">
               <Subheading variant="heavy" className="shrink-0 tabular-nums">
-                {stepIndex != null
-                  ? t`Step ${stepIndex + 1} of ${stepCount}`
-                  : t`Step`}
+                {isHeader
+                  ? t`Sub-Assembly ${number}`
+                  : number
+                    ? t`Step ${number}`
+                    : t`Step`}
               </Subheading>
               <AssemblyStepStatus status={normalizeStepStatus(step.status)} />
             </HStack>
@@ -186,13 +236,21 @@ const AssemblyInstructionProperties = ({
               {title}
             </h3>
             <HStack className="w-full min-w-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
-              <span>
-                <Plural
-                  value={componentCount}
-                  one="# component"
-                  other="# components"
-                />
-              </span>
+              {isHeader ? (
+                <span>
+                  <Plural value={memberCount} one="# step" other="# steps" />
+                  {" · "}
+                  <Plural value={partCount} one="# part" other="# parts" />
+                </span>
+              ) : (
+                <span>
+                  <Plural
+                    value={componentCount}
+                    one="# component"
+                    other="# components"
+                  />
+                </span>
+              )}
               {planFlag && (
                 <>
                   <span aria-hidden>·</span>
@@ -207,7 +265,20 @@ const AssemblyInstructionProperties = ({
           </Subheading>
         )}
       </div>
-      {step ? (
+      {step && isHeader ? (
+        <AssemblySubAssemblyProperties
+          key={step.id}
+          step={step}
+          viewerSteps={viewerSteps}
+          subPlan={subPlan}
+          titleOf={titleOf}
+          isDisabled={isDisabled}
+          itemMentions={itemMentions}
+          onSelectStep={onSelectStep}
+          camera={camera}
+          motionEditing={motionEditing}
+        />
+      ) : step ? (
         <Tabs defaultValue="details" className="w-full px-4 pb-2 pt-3">
           <TabsList className="w-full mb-4">
             <TabsTrigger className="flex-1" value="details">
@@ -242,12 +313,12 @@ const AssemblyInstructionProperties = ({
               onRemoveComponents={onRemoveComponents}
               hiddenNodeIds={hiddenNodeIds}
               onSetHiddenComponents={onSetHiddenComponents}
-              isEditingMotion={isEditingMotion}
-              onEditMotion={onEditMotion}
-              onStopEditMotion={onStopEditMotion}
-              onSetCamera={onSetCamera}
-              onClearCamera={onClearCamera}
+              motionEditing={motionEditing}
+              camera={camera}
+              orientation={orientation}
               viewerSteps={viewerSteps}
+              subPlan={subPlan}
+              titleOf={titleOf}
               onSelectStep={onSelectStep}
             />
           </TabsContent>
@@ -304,12 +375,13 @@ const AssemblyInstructionProperties = ({
  * fades them in at the seated pose; a manual motion overrides the flag.
  */
 function getPlanFlag(
-  warnings: unknown,
+  step: Pick<AssemblyInstructionStepRow, "warnings" | "motion">,
   graphIndex: AssemblyGraphIndex | null
 ): { blockers: string[] } | null {
-  const parsed = stepPlanWarningsSchema.safeParse(warnings);
-  if (!parsed.success || parsed.data.flagged !== true) return null;
-  const blockers = (parsed.data.blockedBy ?? [])
+  if (!isPlanFlagged(step.warnings, step.motion)) return null;
+  const blockedBy =
+    stepPlanWarningsSchema.safeParse(step.warnings).data?.blockedBy ?? [];
+  const blockers = blockedBy
     .map((nodeId) => graphIndex?.nodesById.get(nodeId)?.name)
     .filter((name): name is string => Boolean(name));
   return { blockers: [...new Set(blockers)] };
@@ -363,12 +435,12 @@ function StepForm({
   onRemoveComponents,
   hiddenNodeIds,
   onSetHiddenComponents,
-  isEditingMotion,
-  onEditMotion,
-  onStopEditMotion,
-  onSetCamera,
-  onClearCamera,
+  motionEditing,
+  camera,
+  orientation,
   viewerSteps,
+  subPlan,
+  titleOf,
   onSelectStep
 }: {
   step: AssemblyInstructionStepRow;
@@ -385,12 +457,12 @@ function StepForm({
   onRemoveComponents: (nodeIds: string[]) => void;
   hiddenNodeIds: string[];
   onSetHiddenComponents: (nodeIds: string[]) => void;
-  isEditingMotion: boolean;
-  onEditMotion: (stepId: string) => void;
-  onStopEditMotion: () => void;
-  onSetCamera: (stepId: string) => void;
-  onClearCamera: (stepId: string) => void;
+  motionEditing: MotionEditing;
+  camera: CameraControls;
+  orientation: BuildOrientationControls;
   viewerSteps: AssemblyStep[];
+  subPlan: Map<string, SubAssemblyInfo>;
+  titleOf: (stepId: string) => string;
   onSelectStep: (stepId: string) => void;
 }) {
   const { id: instructionId } = useParams();
@@ -427,7 +499,8 @@ function StepForm({
 
   const cannotSave = isDisabled || !permissions.can("update", "production");
 
-  const hasCamera = step.camera != null;
+  const hasSavedView = isSavedView(step.camera);
+  const isEditingMotion = motionEditing.isEditingStep;
 
   // Title shown when the title field is left blank — derived from the components
   // plus any stored fastener, matching how the step is titled elsewhere.
@@ -445,8 +518,19 @@ function StepForm({
   }, [componentNodeIds, step.fastener, graphIndex, units]);
 
   const planFlag = useMemo(
-    () => getPlanFlag(step.warnings, graphIndex),
-    [step.warnings, graphIndex]
+    () => getPlanFlag(step, graphIndex),
+    [step, graphIndex]
+  );
+  const customMotion = hasCustomMotion(step.warnings, step.motion);
+
+  const carriedIn = useMemo(
+    () =>
+      viewerSteps.filter(
+        (viewerStep) =>
+          subPlan.get(viewerStep.id)?.isHeader &&
+          viewerStep.usedInStepId === step.id
+      ),
+    [viewerSteps, subPlan, step.id]
   );
 
   return (
@@ -544,6 +628,11 @@ function StepForm({
         />
 
         <StepComponentsEditor
+          stepId={step.id}
+          viewerSteps={viewerSteps}
+          subPlan={subPlan}
+          titleOf={titleOf}
+          onSelectStep={onSelectStep}
           componentNodeIds={componentNodeIds}
           graphIndex={graphIndex}
           selectedNodeIds={selectedNodeIds}
@@ -555,7 +644,7 @@ function StepForm({
           onRemoveComponents={onRemoveComponents}
         />
 
-        <StepHiddenComponentsEditor
+        <AssemblyStepHiddenComponents
           hiddenNodeIds={hiddenNodeIds}
           graphIndex={graphIndex}
           isDisabled={isDisabled}
@@ -574,13 +663,15 @@ function StepForm({
                 </LabelWithHelp>
               }
               value={
-                planFlag ? (
+                isEditingMotion ? (
+                  <Trans>Drag the red waypoints in the viewer</Trans>
+                ) : customMotion ? (
+                  <Trans>Custom path</Trans>
+                ) : planFlag ? (
                   <span className="inline-flex items-center gap-1">
                     <LuTriangleAlert className="size-3.5 shrink-0 text-amber-500" />
                     <Trans>No clear path</Trans>
                   </span>
-                ) : isEditingMotion ? (
-                  <Trans>Drag the red waypoints in the viewer</Trans>
                 ) : componentNodeIds.length === 0 ? (
                   <Trans>Add components first</Trans>
                 ) : (
@@ -589,60 +680,59 @@ function StepForm({
               }
             >
               {!isDisabled && (
-                <Button
-                  variant={isEditingMotion ? "primary" : "secondary"}
-                  size="sm"
-                  isDisabled={componentNodeIds.length === 0}
-                  onClick={() =>
-                    isEditingMotion ? onStopEditMotion() : onEditMotion(step.id)
-                  }
-                >
-                  {isEditingMotion ? (
-                    <Trans>Done Editing Path</Trans>
-                  ) : (
-                    <Trans>Edit Path</Trans>
-                  )}
-                </Button>
-              )}
-            </PlaybackRow>
-            <PlaybackRow
-              label={
-                <LabelWithHelp termId="assembly-step-camera" variant="inline">
-                  <Trans>Camera</Trans>
-                </LabelWithHelp>
-              }
-              value={
-                hasCamera ? <Trans>Saved view</Trans> : <Trans>Automatic</Trans>
-              }
-            >
-              {!isDisabled && (
-                <HStack spacing={1}>
-                  {hasCamera && (
+                <HStack spacing={1} className="shrink-0">
+                  {customMotion && !isEditingMotion && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onClearCamera(step.id)}
+                      onClick={() => motionEditing.onReset(step.id)}
                     >
-                      <Trans>Clear</Trans>
+                      <Trans>Reset</Trans>
                     </Button>
                   )}
                   <Button
-                    variant="secondary"
+                    variant={isEditingMotion ? "primary" : "secondary"}
                     size="sm"
-                    onClick={() => onSetCamera(step.id)}
+                    isDisabled={componentNodeIds.length === 0}
+                    onClick={() =>
+                      isEditingMotion
+                        ? motionEditing.onStop()
+                        : motionEditing.onEdit(step.id)
+                    }
                   >
-                    <Trans>Use Current View</Trans>
+                    {isEditingMotion ? (
+                      <Trans>Done Editing Path</Trans>
+                    ) : (
+                      <Trans>Edit Path</Trans>
+                    )}
                   </Button>
                 </HStack>
               )}
             </PlaybackRow>
-            <AssemblyStepJoin
+            {carriedIn.map((header) => (
+              <SubAssemblyPathRow
+                key={header.id}
+                name={titleOf(header.id)}
+                hasPath={header.motion.type !== "none"}
+                isEditing={motionEditing.editingUnitId === header.id}
+                isDisabled={isDisabled}
+                onEdit={() => motionEditing.onEdit(step.id, header.id)}
+                onStopEdit={motionEditing.onStop}
+                onReset={() => motionEditing.onReset(header.id)}
+              />
+            ))}
+            <AssemblyCameraRow
               stepId={step.id}
-              steps={viewerSteps}
-              graphIndex={graphIndex}
-              units={units}
+              hasSavedView={hasSavedView}
               isDisabled={isDisabled}
-              onSelectStep={onSelectStep}
+              camera={camera}
+            />
+            <AssemblyOrientationRow
+              stepId={step.id}
+              viewerSteps={viewerSteps}
+              subPlan={subPlan}
+              isDisabled={isDisabled}
+              controls={orientation}
             />
           </div>
         </VStack>
@@ -670,6 +760,11 @@ function StepForm({
  * autosave immediately.
  */
 function StepComponentsEditor({
+  stepId,
+  viewerSteps,
+  subPlan,
+  titleOf,
+  onSelectStep,
   componentNodeIds,
   graphIndex,
   selectedNodeIds,
@@ -680,6 +775,11 @@ function StepComponentsEditor({
   onStopAddComponents,
   onRemoveComponents
 }: {
+  stepId: string;
+  viewerSteps: AssemblyStep[];
+  subPlan: Map<string, SubAssemblyInfo>;
+  titleOf: (stepId: string) => string;
+  onSelectStep: (stepId: string) => void;
   componentNodeIds: string[];
   graphIndex: AssemblyGraphIndex | null;
   selectedNodeIds: string[];
@@ -701,30 +801,126 @@ function StepComponentsEditor({
   );
 
   const { t } = useLingui();
+  const { id: instructionId } = useParams();
+  if (!instructionId) throw new Error("Could not find id");
+  const [, setSearchParams] = useSearchParams();
+  const subAssemblyFetcher = useFetcher<{ success: boolean }>();
+
+  // Sub-assemblies this step fits as one piece, and the ones it could.
+  const usedSubAssemblies = viewerSteps
+    .filter(
+      (viewerStep) =>
+        subPlan.get(viewerStep.id)?.isHeader &&
+        viewerStep.usedInStepId === stepId
+    )
+    .map((header) => ({
+      headerId: header.id,
+      number: subPlan.get(header.id)?.number ?? "",
+      title: titleOf(header.id),
+      partCount: subAssemblyPartIds(viewerSteps, header.id).length
+    }));
+  const useOptions = usableSubAssemblies(viewerSteps, stepId).map((option) => {
+    const header = viewerSteps.find((s) => s.id === option.headerId);
+    const usedIn = header?.usedInStepId ?? null;
+    const note =
+      option.reason === "own"
+        ? t`This step is part of it`
+        : option.reason === "before"
+          ? t`Built after this step`
+          : usedIn === stepId
+            ? t`Used in this step`
+            : usedIn
+              ? t`Used in ${subPlan.get(usedIn)?.number ?? ""} — moves here`
+              : null;
+    return {
+      headerId: option.headerId,
+      label: `${subPlan.get(option.headerId)?.number ?? ""} · ${titleOf(
+        option.headerId
+      )}`,
+      note,
+      isDisabled: option.reason !== null || usedIn === stepId
+    };
+  });
+  const setUsedIn = (headerId: string, usedInStepId: string) => {
+    const formData = new FormData();
+    formData.append("usedInStepId", usedInStepId);
+    subAssemblyFetcher.submit(formData, {
+      method: "post",
+      action: path.to.assemblySubAssembly(instructionId, headerId)
+    });
+  };
+  const openSubAssembly = (headerId: string) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set(SUB_ASSEMBLY_PARAM, headerId);
+        return next;
+      },
+      { preventScrollReset: true }
+    );
 
   return (
     <VStack spacing={2} className="w-full">
-      <HStack className="w-full justify-between">
-        <Subheading as="h4" variant="heavy" className="tabular-nums">
+      <HStack className="w-full flex-wrap justify-between gap-y-2">
+        <Subheading
+          as="h4"
+          variant="heavy"
+          className="shrink-0 whitespace-nowrap tabular-nums"
+        >
           <Trans>Components</Trans> · {componentNodeIds.length}
         </Subheading>
         {!isDisabled && (
-          <Button
-            variant={isAddingComponents ? "primary" : "secondary"}
-            size="sm"
-            leftIcon={isAddingComponents ? undefined : <LuCirclePlus />}
-            onClick={() =>
-              isAddingComponents
-                ? onStopAddComponents()
-                : onStartAddComponents()
-            }
-          >
-            {isAddingComponents ? (
-              <Trans>Done Adding</Trans>
-            ) : (
-              <Trans>Add</Trans>
+          <HStack spacing={1} className="ml-auto">
+            {useOptions.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm" leftIcon={<LuBoxes />}>
+                    <Trans>Use Sub-Assembly</Trans>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="min-w-[16rem] max-w-[20rem]"
+                >
+                  <DropdownMenuLabel>
+                    <Trans>Use a finished sub-assembly in this step</Trans>
+                  </DropdownMenuLabel>
+                  {useOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.headerId}
+                      disabled={option.isDisabled}
+                      onClick={() => setUsedIn(option.headerId, stepId)}
+                    >
+                      <div className="min-w-0">
+                        <span className="block truncate">{option.label}</span>
+                        {option.note && (
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {option.note}
+                          </span>
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-          </Button>
+            <Button
+              variant={isAddingComponents ? "primary" : "secondary"}
+              size="sm"
+              leftIcon={isAddingComponents ? undefined : <LuCirclePlus />}
+              onClick={() =>
+                isAddingComponents
+                  ? onStopAddComponents()
+                  : onStartAddComponents()
+              }
+            >
+              {isAddingComponents ? (
+                <Trans>Done Adding</Trans>
+              ) : (
+                <Trans>Add</Trans>
+              )}
+            </Button>
+          </HStack>
         )}
       </HStack>
       {isAddingComponents && (
@@ -735,10 +931,60 @@ function StepComponentsEditor({
           </Trans>
         </p>
       )}
+      {usedSubAssemblies.length > 0 && (
+        <ul className="w-full divide-y divide-border rounded-lg border border-border">
+          {usedSubAssemblies.map((used) => (
+            <li
+              key={used.headerId}
+              className="group flex w-full items-center gap-2 px-2 py-1.5 text-sm"
+            >
+              <span className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground">
+                <LuBoxes className="size-3.5" />
+              </span>
+              <button
+                type="button"
+                className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                onClick={() => onSelectStep(used.headerId)}
+              >
+                <span className="block truncate font-medium">{used.title}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  <Trans>
+                    Sub-Assembly {used.number} ·{" "}
+                    <Plural
+                      value={used.partCount}
+                      one="# part"
+                      other="# parts"
+                    />
+                  </Trans>
+                </span>
+              </button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => openSubAssembly(used.headerId)}
+              >
+                <Trans>Open</Trans>
+              </Button>
+              {!isDisabled && (
+                <IconButton
+                  aria-label={t`Stop using ${used.title} in this step`}
+                  icon={<LuX />}
+                  variant="ghost"
+                  size="sm"
+                  className="md:opacity-0 group-hover:opacity-100 focus:opacity-100"
+                  onClick={() => setUsedIn(used.headerId, "")}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
       {groups.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
-          <Trans>No components yet</Trans>
-        </p>
+        usedSubAssemblies.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            <Trans>No components yet</Trans>
+          </p>
+        )
       ) : (
         <ul className="max-h-64 w-full divide-y divide-border overflow-y-auto rounded-lg border border-border scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
           {groups.map((group) => {
@@ -777,7 +1023,7 @@ function StepComponentsEditor({
                     icon={<LuX />}
                     variant="ghost"
                     size="sm"
-                    className="opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    className="md:opacity-0 group-hover:opacity-100 focus:opacity-100"
                     onClick={(event) => {
                       event.stopPropagation();
                       onRemoveComponents(group.nodeIds);
@@ -790,148 +1036,5 @@ function StepComponentsEditor({
         </ul>
       )}
     </VStack>
-  );
-}
-
-/** Parts are hidden from the Components panel eye; here they can only be shown again. */
-function StepHiddenComponentsEditor({
-  hiddenNodeIds,
-  graphIndex,
-  isDisabled,
-  onSetHiddenComponents
-}: {
-  hiddenNodeIds: string[];
-  graphIndex: AssemblyGraphIndex | null;
-  isDisabled: boolean;
-  onSetHiddenComponents: (nodeIds: string[]) => void;
-}) {
-  const { t } = useLingui();
-  // "Show all" saves at once but stays undoable for SHOW_ALL_UNDO_MS, so a stray
-  // click can't silently throw away a step's tuned hidden list.
-  const [undoNodeIds, setUndoNodeIds] = useState<string[] | null>(null);
-  useEffect(() => {
-    if (!undoNodeIds) return;
-    const timer = setTimeout(() => setUndoNodeIds(null), SHOW_ALL_UNDO_MS);
-    return () => clearTimeout(timer);
-  }, [undoNodeIds]);
-  const isUndoPending = undoNodeIds !== null;
-  const listedNodeIds = undoNodeIds ?? hiddenNodeIds;
-
-  const groups = useMemo(
-    () => (graphIndex ? groupComponentNodeIds(listedNodeIds, graphIndex) : []),
-    [listedNodeIds, graphIndex]
-  );
-  const onShow = (nodeIds: string[]) => {
-    const show = new Set(nodeIds);
-    onSetHiddenComponents(hiddenNodeIds.filter((nodeId) => !show.has(nodeId)));
-  };
-
-  const onShowAll = () => {
-    setUndoNodeIds(hiddenNodeIds);
-    onSetHiddenComponents([]);
-  };
-
-  // Restore the shown parts, keeping anything hidden elsewhere in the meantime.
-  const onHideAgain = () => {
-    if (!undoNodeIds) return;
-    onSetHiddenComponents([...new Set([...hiddenNodeIds, ...undoNodeIds])]);
-    setUndoNodeIds(null);
-  };
-
-  return (
-    <VStack spacing={2} className="w-full">
-      <HStack className="w-full justify-between">
-        <Subheading as="h4" variant="heavy">
-          <LabelWithHelp
-            termId="assembly-step-hidden-components"
-            variant="inline"
-          >
-            <Trans>Hidden on this step</Trans>
-          </LabelWithHelp>
-        </Subheading>
-        {groups.length === 0 ? (
-          <span className="text-xs text-muted-foreground">
-            <Trans>None</Trans>
-          </span>
-        ) : (
-          !isDisabled &&
-          (isUndoPending ? (
-            <HideAgainButton onClick={onHideAgain} />
-          ) : (
-            <Button variant="secondary" size="sm" onClick={onShowAll}>
-              <Trans>Show All</Trans>
-            </Button>
-          ))
-        )}
-      </HStack>
-      {groups.length === 0 ? null : (
-        <ul className="max-h-64 w-full divide-y divide-border overflow-y-auto rounded-lg border border-border scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-          {groups.map((group) => (
-            <li
-              key={group.key}
-              className={cn(
-                "flex w-full items-center gap-2 px-2 py-1.5 text-sm",
-                isUndoPending && "opacity-50"
-              )}
-            >
-              <ComponentColorSwatch color={group.color} />
-              <span
-                className="min-w-0 flex-1 truncate text-muted-foreground"
-                title={group.name}
-              >
-                {group.name}
-              </span>
-              {group.count > 1 && (
-                <Badge variant="secondary" className="tabular-nums">
-                  ×{group.count}
-                </Badge>
-              )}
-              {!isDisabled && !isUndoPending && (
-                <IconButton
-                  aria-label={t`Show ${group.name}`}
-                  icon={<LuEyeOff />}
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground"
-                  onClick={() => onShow(group.nodeIds)}
-                />
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </VStack>
-  );
-}
-
-const SHOW_ALL_UNDO_MS = 4000;
-
-function HideAgainButton({ onClick }: { onClick: () => void }) {
-  const [isDraining, setIsDraining] = useState(false);
-  useEffect(() => {
-    // Start full, then drain on the next frame so the width transition runs.
-    const frame = requestAnimationFrame(() => setIsDraining(true));
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
-  return (
-    <Button
-      variant="secondary"
-      size="sm"
-      className="relative overflow-hidden"
-      onClick={onClick}
-    >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-0 bg-primary/15"
-        style={{
-          width: isDraining ? "0%" : "100%",
-          transition: `width ${SHOW_ALL_UNDO_MS}ms linear`
-        }}
-      />
-      <span className="relative">
-        <Trans>Hide Again</Trans>
-      </span>
-    </Button>
   );
 }

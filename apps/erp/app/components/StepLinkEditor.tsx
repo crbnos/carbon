@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Command,
@@ -158,7 +162,10 @@ export function StepLinkEditor({
   if (isDisabled && linked.length === 0) return null;
 
   return (
-    <VStack spacing={2} className="w-full col-span-2 border-t pt-4">
+    <VStack
+      spacing={2}
+      className="w-full col-span-2 max-md:col-span-full border-t pt-4"
+    >
       <div className="flex w-full items-center justify-between">
         <Label className="text-xs text-muted-foreground">{label}</Label>
         {!isDisabled && (

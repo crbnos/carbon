@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Json } from "@carbon/database";
 import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
+  Copy,
   HStack,
   IconButton,
   Subheading,
@@ -13,8 +19,14 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
-import { LuCopy, LuInfo, LuLink, LuRefreshCcw } from "react-icons/lu";
+import { useCallback } from "react";
+import {
+  LuCopy,
+  LuInfo,
+  LuKeySquare,
+  LuLink,
+  LuRefreshCcw
+} from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -50,13 +62,13 @@ const QuoteProperties = () => {
     quote: Quotation;
   }>(path.to.quote(quoteId));
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
-
+  });
   const { company } = useUser();
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
 
@@ -143,6 +155,13 @@ const QuoteProperties = () => {
                 <span>Copy link to Quote</span>
               </TooltipContent>
             </Tooltip>
+            <Copy
+              text={quoteId}
+              label={t`Copy quote unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -342,7 +361,6 @@ const QuoteProperties = () => {
               onUpdate("locationId", value.value);
             }
           }}
-          termId="quote"
         />
       </ValidatedForm>
 

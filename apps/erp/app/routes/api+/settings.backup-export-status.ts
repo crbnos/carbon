@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompanyExportRun } from "~/modules/settings";
-import { canManageBackups } from "~/modules/settings/backups.server";
+import { getCompanyExportRun } from "~/modules/settings/backups.service";
+import { canManageBackups } from "~/modules/settings/settings.service";
 
 // Polled by the export progress modal (and the in-progress list row) for live
 // phase/done/total. One marker per company: the export job writes it while

@@ -1,18 +1,24 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
-import { getConsumables } from "~/modules/items";
+import { useLoaderData } from "react-router";
+import { getConsumables } from "~/modules/items/items.service";
 import { ConsumablesTable } from "~/modules/items/ui/Consumables";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["item"],
   breadcrumb: msg`Consumables`,
   to: path.to.consumables
 };
@@ -67,7 +73,7 @@ export default function ConsumablesSearchRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <ConsumablesTable data={consumables} count={count} tags={tags} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Four opportunities at different completeness levels — this is the acceptance
 // test for the whole seed. Every detail page (opportunity, rfq, quote,
 // salesOrder, shipment, salesInvoice) must open without a 500 or redirect.
 
 import type {
+  ContractSpec,
   PriceBreak,
   SalesData,
   SalesOpportunitySpec,
@@ -441,7 +446,7 @@ export const STATUS_ORDERS: SalesStatusOrderSpec[] = [
 ];
 
 // Released order — "To Ship and Invoice". The status is written by the app
-// (releaseSalesOrder), not derived by a trigger, but it must still agree with
+// (confirmSalesOrder), not derived by a trigger, but it must still agree with
 // what getSalesOrderStatus would compute: nothing sent and nothing invoiced.
 export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
   {
@@ -958,11 +963,63 @@ export const SALES_RETURNS: SalesReturnSpec[] = [
   }
 ];
 
+// One Active contract: an implementation fee and two subscriptions on Service
+// items, two months in. Tier 04 marks every invoice dated up to today Billed
+// Externally, so the schedule shows history without drafted invoices.
+export const CONTRACTS: ContractSpec[] = [
+  {
+    key: "cedar-quality",
+    name: "Cedar Valley quality services",
+    customer: "Cedar Valley Hydraulics",
+    startOffset: -60,
+    termMonths: 12,
+    renewal: "Renew",
+    renewalUpliftPercent: 5,
+    billingFrequency: "Month",
+    billingAlignment: "Calendar",
+    billingTiming: "Advance",
+    lines: [
+      {
+        revenueType: "One-time",
+        item: "CMM Program Development",
+        description: "CMM programs for the valve body family",
+        quantity: 1,
+        rate: 7500,
+        startOffset: -60,
+        endOffset: -31,
+        revenueMethod: "Daily"
+      },
+      {
+        revenueType: "Recurring",
+        item: "Inspection Data Portal",
+        description: "Inspection data portal, plant licence",
+        quantity: 1,
+        rate: 450,
+        rateUnit: "Month",
+        startOffset: -60,
+        revenueMethod: "Even Period"
+      },
+      {
+        revenueType: "Recurring",
+        item: "Gauge Management Service",
+        description: "Gauge management, up to 200 gauges",
+        quantity: 1,
+        rate: 980,
+        rateUnit: "Month",
+        discountPercent: 10,
+        startOffset: -60,
+        revenueMethod: "Even Period"
+      }
+    ]
+  }
+];
+
 export const precisionSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
   releasedOrders: RELEASED_ORDERS,
   salesReturns: SALES_RETURNS,
+  contracts: CONTRACTS,
   customerPortals: ["Cedar Valley Hydraulics", "Dominion Ag Equipment"],
   customerBankAccounts: [
     {

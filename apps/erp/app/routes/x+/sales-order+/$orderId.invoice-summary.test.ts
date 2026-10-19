@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as sales from "~/modules/sales";
-import { getCompanySettings } from "~/modules/settings";
+import * as sales from "~/modules/sales/sales.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { loader } from "./$orderId";
 
 vi.mock("@carbon/auth", () => ({
@@ -28,7 +32,9 @@ vi.mock("~/modules/sales/ui/SalesOrder", () => ({
   SalesOrderHeader: () => null,
   SalesOrderProperties: () => null
 }));
-vi.mock("~/modules/settings", () => ({ getCompanySettings: vi.fn() }));
+vi.mock("~/modules/settings/settings.service", () => ({
+  getCompanySettings: vi.fn()
+}));
 vi.mock("~/utils/handle", () => ({
   detailBreadcrumb: () => undefined
 }));
@@ -41,7 +47,7 @@ vi.mock("~/utils/path", () => ({
     }
   }
 }));
-vi.mock("~/modules/sales", () => ({
+vi.mock("~/modules/sales/sales.service", () => ({
   getCustomer: vi.fn(),
   getOpportunity: vi.fn(),
   getOpportunityDocuments: vi.fn(),

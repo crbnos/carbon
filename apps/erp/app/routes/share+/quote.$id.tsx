@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { Input, ValidatedForm } from "@carbon/form";
@@ -9,7 +13,9 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  ClientOnly,
   cn,
+  DisabledReason,
   generateHTML,
   Heading,
   HStack,
@@ -40,7 +46,7 @@ import { formatCityStatePostalCode, moneyFormatOptions } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -62,24 +68,32 @@ import {
   useCurrencyFormatter,
   usePercentFormatter
 } from "~/hooks";
-import { getCurrenciesList, getPaymentTermsList } from "~/modules/accounting";
-import { getShippingMethodsList } from "~/modules/inventory";
-import type { SalesOrderLine } from "~/modules/sales";
 import {
-  externalQuoteValidator,
+  getCurrenciesList,
+  getPaymentTermsList
+} from "~/modules/accounting/accounting.service";
+import { getShippingMethodsList } from "~/modules/inventory/inventory.service";
+import { externalQuoteValidator } from "~/modules/sales/sales.models";
+import {
   getOpportunity,
   getQuoteByExternalId,
   getQuoteCustomerDetails,
-  getQuoteLinePricesByQuoteId,
-  getQuoteLines,
   getQuotePayment,
   getQuoteShipment,
   getSalesOrderLines,
   getSalesTerms
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
+import {
+  getQuoteLinePricesByQuoteId,
+  getQuoteLines
+} from "~/modules/sales/sales.utils";
+import type { SalesOrderLine } from "~/modules/sales/types";
 import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
-import { getCompany, getCompanySettings } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/api+/sales.digital-quote.$id";
 import { path } from "~/utils/path";
 
@@ -149,6 +163,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getOpportunity(serviceRole, quote.data.opportunityId)
   ]);
 
+  // A No Quote line is the company's own decision not to bid — the customer
+  // never sees it, its prices, or its thumbnail.
+  const quotedLines = (quoteLines.data ?? []).filter(
+    (line) => line.status !== "No Quote"
+  );
+  const quotedLineIds = new Set(quotedLines.map((line) => line.id));
+
   // Started before the conditional await below so this costs no extra round trip.
   // The group's configured currency.decimalPlaces is authoritative over CLDR, and
   // useCurrencies' own fetcher is permission-gated, so a public page has to carry
@@ -168,7 +189,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     );
   }
 
-  const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
+  const thumbnailPaths = quotedLines.reduce<Record<string, string | null>>(
     (acc, line) => {
       if (line.thumbnailPath) {
         acc[line.id!] = line.thumbnailPath;
@@ -221,31 +242,32 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
           }
         : null,
       currencies: (await currenciesPromise)?.data ?? [],
-      quoteLines:
-        quoteLines.data?.map((line) => ({
-          id: line.id,
-          description: line.description,
-          itemReadableId: line.itemReadableId,
-          quantity: line.quantity,
-          additionalCharges: line.additionalCharges,
-          taxPercent: line.taxPercent,
-          unitPricePrecision: line.unitPricePrecision,
-          externalNotes: line.externalNotes
-        })) ?? [],
+      quoteLines: quotedLines.map((line) => ({
+        id: line.id,
+        description: line.description,
+        itemReadableId: line.itemReadableId,
+        quantity: line.quantity,
+        additionalCharges: line.additionalCharges,
+        taxPercent: line.taxPercent,
+        unitPricePrecision: line.unitPricePrecision,
+        externalNotes: line.externalNotes
+      })),
       thumbnails: thumbnails,
       quoteLinePrices:
-        quoteLinePrices.data?.map((price) => ({
-          quoteLineId: price.quoteLineId,
-          quantity: price.quantity,
-          unitPrice: price.unitPrice,
-          convertedUnitPrice: price.convertedUnitPrice,
-          netUnitPrice: price.netUnitPrice,
-          convertedNetUnitPrice: price.convertedNetUnitPrice,
-          discountPercent: price.discountPercent,
-          shippingCost: price.shippingCost,
-          convertedShippingCost: price.convertedShippingCost,
-          leadTime: price.leadTime
-        })) ?? null,
+        quoteLinePrices.data
+          ?.filter((price) => quotedLineIds.has(price.quoteLineId))
+          .map((price) => ({
+            quoteLineId: price.quoteLineId,
+            quantity: price.quantity,
+            unitPrice: price.unitPrice,
+            convertedUnitPrice: price.convertedUnitPrice,
+            netUnitPrice: price.netUnitPrice,
+            convertedNetUnitPrice: price.convertedNetUnitPrice,
+            discountPercent: price.discountPercent,
+            shippingCost: price.shippingCost,
+            convertedShippingCost: price.convertedShippingCost,
+            leadTime: price.leadTime
+          })) ?? null,
       customerDetails: customerDetails.data,
       quotePayment: quotePayment.data,
       quoteShipment: quoteShipment.data,
@@ -433,9 +455,9 @@ const LineItems = ({
         return (
           <motion.div
             key={line.id}
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="border-b border-input py-6 w-full"
           >
             <HStack spacing={4} className="items-start">
@@ -463,9 +485,26 @@ const LineItems = ({
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
                     {/* min-w-0 so a long item id wraps inside the card
                         instead of shoving the price out of it. */}
-                    <Heading className="min-w-0">{line.itemReadableId}</Heading>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Heading className="min-w-0">
+                        {line.itemReadableId}
+                      </Heading>
+                      {selectedLines[line.id!]?.quantity === 0 &&
+                        (pricingByLine[line.id!]?.length ?? 0) > 0 &&
+                        ![
+                          "Ordered",
+                          "Partial",
+                          "Expired",
+                          "Cancelled"
+                        ].includes(quote.status) && (
+                          <Badge variant="secondary" className="shrink-0">
+                            <Trans>Removed</Trans>
+                          </Badge>
+                        )}
+                    </div>
                     <HStack spacing={4} className="shrink-0">
                       <MotionMoney
+                        className="font-semibold text-xl whitespace-nowrap"
                         value={
                           (selectedLines[line.id!]?.convertedNetUnitPrice ??
                             0) *
@@ -568,7 +607,10 @@ const LinePricingOptions = ({
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(quoteCurrency);
   const percentFormatter = usePercentFormatter();
-  const { quote } = useLoaderData<typeof loader>().data!;
+  const { quote, quoteLines } = useLoaderData<typeof loader>().data!;
+  // Removing the only item would just empty the quote; Reject covers that.
+  const canRemoveLine =
+    (quoteLines?.filter((quoteLine) => !!quoteLine.id).length ?? 0) > 1;
 
   const [selectedValue, setSelectedValue] = useState<string | null>(
     selectedLine?.quantity?.toString() ?? null
@@ -934,7 +976,7 @@ const LinePricingOptions = ({
                 </Td>
               </Tr>
 
-              <Tr key="total" className="font-bold">
+              <Tr key="total" className="font-semibold">
                 <Td>
                   <Trans>Total</Trans>
                 </Td>
@@ -961,7 +1003,8 @@ const LinePricingOptions = ({
         </div>
       )}
 
-      {selectedLine.quantity !== 0 &&
+      {canRemoveLine &&
+        selectedLine.quantity !== 0 &&
         !["Ordered", "Partial", "Expired", "Cancelled"].includes(
           quote.status
         ) && (
@@ -977,7 +1020,7 @@ const LinePricingOptions = ({
                 }));
               }}
             >
-              <Trans>Remove</Trans>
+              <Trans>Remove this item</Trans>
             </Button>
           </HStack>
         )}
@@ -1186,6 +1229,11 @@ const Quote = ({ data }: { data: QuoteData }) => {
   const convertedShippingCost =
     (quote.exchangeRate ?? 1) * (quoteShipment?.shippingCost ?? 0);
   const total = subtotal + tax + convertedShippingCost;
+  // Gate on items, not money: quote-level shipping keeps the total above zero
+  // even after the customer removes every item.
+  const hasSelectedItem = Object.values(selectedLines).some(
+    (line) => line.quantity > 0
+  );
 
   const termsHTML = generateHTML(terms as JSONContent);
 
@@ -1257,7 +1305,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
                     <Trans>Shipping Method</Trans>:
                   </span>
                 </HStack>
-                <span className="text-foreground font-bold">
+                <span className="text-foreground font-semibold">
                   {shippingMethod}
                 </span>
               </HStack>
@@ -1270,7 +1318,9 @@ const Quote = ({ data }: { data: QuoteData }) => {
                     <Trans>Payment Term</Trans>:
                   </span>
                 </HStack>
-                <span className="text-foreground font-bold">{paymentTerm}</span>
+                <span className="text-foreground font-semibold">
+                  {paymentTerm}
+                </span>
               </HStack>
             )}
             {(shippingMethod || paymentTerm) && <Separator />}
@@ -1320,7 +1370,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               </HStack>
             )}
             <Separator className="my-2" />
-            <HStack className="justify-between text-xl font-bold w-full">
+            <HStack className="justify-between text-xl font-semibold w-full">
               <span>
                 <Trans>Total</Trans>:
               </span>
@@ -1335,15 +1385,24 @@ const Quote = ({ data }: { data: QuoteData }) => {
             {companySettings?.digitalQuoteEnabled &&
               quote?.status === "Sent" && (
                 <>
-                  <Button
-                    onClick={confirmQuoteModal.onOpen}
-                    size="lg"
-                    variant="primary"
-                    isDisabled={total === 0}
-                    className="w-full mt-8 text-lg"
+                  <DisabledReason
+                    className="w-full mt-8"
+                    reason={
+                      hasSelectedItem
+                        ? undefined
+                        : t`Select at least one item to accept the quote`
+                    }
                   >
-                    <Trans>Accept Quote</Trans>
-                  </Button>
+                    <Button
+                      onClick={confirmQuoteModal.onOpen}
+                      size="lg"
+                      variant="primary"
+                      isDisabled={!hasSelectedItem}
+                      className="w-full text-lg"
+                    >
+                      <Trans>Accept Quote</Trans>
+                    </Button>
+                  </DisabledReason>
                   <Button
                     onClick={rejectQuoteModal.onOpen}
                     size="lg"
@@ -1356,14 +1415,20 @@ const Quote = ({ data }: { data: QuoteData }) => {
           </div>
         </CardContent>
       </Card>
-      {termsHTML && (
-        <div
-          className="prose dark:prose-invert text-muted-foreground max-w-5xl mx-auto"
-          dangerouslySetInnerHTML={{
-            __html: termsHTML
-          }}
-        />
-      )}
+      {/* generateHTML returns nothing on the server, so the server never
+          renders this block: rendering it during hydration would not match. */}
+      <ClientOnly>
+        {() =>
+          termsHTML ? (
+            <div
+              className="prose dark:prose-invert text-muted-foreground max-w-5xl mx-auto"
+              dangerouslySetInnerHTML={{
+                __html: termsHTML
+              }}
+            />
+          ) : null
+        }
+      </ClientOnly>
       {confirmQuoteModal.isOpen && (
         <Modal
           open
@@ -1600,8 +1665,8 @@ export const ErrorMessage = ({
           </svg>
           <motion.div
             className="absolute inset-0 flex items-center justify-center"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             transition={{
               delay: 0.5,
               type: "spring",
@@ -1609,11 +1674,13 @@ export const ErrorMessage = ({
               damping: 10
             }}
           >
-            <span className="text-2xl font-bold text-muted-foreground">!</span>
+            <span className="text-2xl font-semibold text-muted-foreground">
+              !
+            </span>
           </motion.div>
         </motion.div>
         <motion.h1
-          className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+          className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
           variants={itemVariants}
         >
           {title}

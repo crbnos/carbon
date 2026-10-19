@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   assertIsPost,
   callbackValidator,
   carbonClient,
   error,
-  getCarbon,
-  safeRedirect
+  getCarbon
 } from "@carbon/auth";
 import { refreshAccessToken } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -43,18 +46,16 @@ import {
   CarbonPulse,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useFetcher, useLocation, useSearchParams } from "react-router";
 import {
-  data,
-  redirect,
-  useFetcher,
-  useLocation,
-  useSearchParams
-} from "react-router";
-import { getCompanies, getEmployeeCompanies } from "~/modules/settings";
+  getCompanies,
+  getEmployeeCompanies
+} from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -354,7 +355,7 @@ export async function action({ request }: ActionFunctionArgs) {
     authSession.mfaVerified = true;
 
     const ssoSessionCookie = await setAuthSession(request, { authSession });
-    return redirect(safeRedirect(redirectTo, path.to.authenticatedRoot), {
+    return redirect(redirectTo || path.to.authenticatedRoot, {
       headers: [
         ["Set-Cookie", ssoSessionCookie],
         ["Set-Cookie", setCompanyId(ssoCompanyId)]
@@ -473,7 +474,7 @@ export async function action({ request }: ActionFunctionArgs) {
       headers.push(["Set-Cookie", setCompanyId(authSession.companyId)]);
     }
 
-    return redirect(safeRedirect(redirectTo, path.to.authenticatedRoot), {
+    return redirect(redirectTo || path.to.authenticatedRoot, {
       headers
     });
   } else {

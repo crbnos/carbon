@@ -1,13 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import type { PivotState } from "~/modules/accounting";
+import type { PivotState } from "~/modules/accounting/accounting.models";
 import {
   analyticsReportKeys,
   analyticsReports,
-  getDimensionPivotLines,
-  getScrapAccountIds,
   pivotStateValidator
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.models";
+import {
+  getDimensionPivotLines,
+  getScrapAccountIds
+} from "~/modules/accounting/accounting.service";
 
 /**
  * Fetcher endpoint for the analytics pivot drill-through drawer

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Array as ArrayInput,
   Hidden,
@@ -26,6 +30,7 @@ import {
   HStack,
   IconButton,
   Label,
+  MENU_ITEM_SHORTCUTS,
   ShortcutKey,
   Tabs,
   TabsContent,
@@ -43,8 +48,8 @@ import {
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
-import { Reorder, useDragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
+import { Reorder, useDragControls } from "motion/react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -65,7 +70,7 @@ import { UnitOfMeasure } from "~/components/Form";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { useImageUpload, usePermissions, useRouteData } from "~/hooks";
-import { procedureStepType } from "~/modules/shared";
+import { procedureStepType } from "~/modules/shared/shared.models";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import {
@@ -277,7 +282,6 @@ export default function ProcedureExplorer() {
                   values={sortOrder}
                   onReorder={onReorder}
                   className="w-full"
-                  disabled={isDisabled}
                 >
                   {sortOrder.map((sortId) => (
                     <DraggableStepItem
@@ -441,7 +445,7 @@ export default function ProcedureExplorer() {
       </VStack>
       {procedureStepDisclosure.isOpen && (
         <ProcedureStepForm
-          // @ts-ignore
+          // @ts-expect-error
           initialValues={procedureAttribtueInitialValues}
           isDisabled={isDisabled}
           onClose={procedureStepDisclosure.onClose}
@@ -567,7 +571,7 @@ function ProcedureStepItem({
             <DropdownMenuTrigger asChild>
               <IconButton
                 aria-label={t`More`}
-                className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                 icon={<LuEllipsisVertical />}
                 variant="solid"
                 onClick={(e) => e.stopPropagation()}
@@ -575,6 +579,7 @@ function ProcedureStepItem({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(attribute);
@@ -584,6 +589,7 @@ function ProcedureStepItem({
                 Edit Step
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={!permissions.can("update", "production")}
                 onClick={(e) => {
@@ -657,7 +663,7 @@ function ProcedureParameterItem({
             <DropdownMenuTrigger asChild>
               <IconButton
                 aria-label={t`More`}
-                className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                 icon={<LuEllipsisVertical />}
                 variant="solid"
                 onClick={(e) => e.stopPropagation()}
@@ -665,6 +671,7 @@ function ProcedureParameterItem({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(parameter);
@@ -674,6 +681,7 @@ function ProcedureParameterItem({
                 Edit Parameter
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={!permissions.can("update", "production")}
                 onClick={(e) => {

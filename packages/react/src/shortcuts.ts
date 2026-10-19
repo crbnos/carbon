@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Shortcut, ShortcutInput } from "./hooks/useShortcutKeys";
 
 /**
@@ -21,3 +25,23 @@ export const SHORTCUTS = {
   /** Toggle the app sidebar. */
   sidebarToggle: "mod+b" as ShortcutInput
 } as const;
+
+/**
+ * One-key shortcuts for menu items, live only while their menu is open.
+ * `delete` is Backspace (or Delete); only wire it on an item that asks for
+ * confirmation before anything is removed.
+ */
+export const MENU_ITEM_SHORTCUTS = {
+  edit: "e",
+  rename: "r",
+  pin: "p",
+  duplicate: "c",
+  copy: "c",
+  download: "d",
+  view: "o",
+  open: "o",
+  delete: "backspace"
+} as const;
+
+export type MenuItemShortcut =
+  (typeof MENU_ITEM_SHORTCUTS)[keyof typeof MENU_ITEM_SHORTCUTS];

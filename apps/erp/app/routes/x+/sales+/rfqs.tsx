@@ -1,17 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
-import { getSalesRFQs } from "~/modules/sales";
+import { useLoaderData } from "react-router";
+import { getSalesRFQs } from "~/modules/sales/sales.service";
 import { SalesRFQsTable } from "~/modules/sales/ui/SalesRFQ";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["salesRfq"],
   breadcrumb: msg`RFQs`,
   to: path.to.salesRfqs
 };
@@ -56,7 +62,7 @@ export default function RFQsRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <SalesRFQsTable data={rfqs} count={count} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

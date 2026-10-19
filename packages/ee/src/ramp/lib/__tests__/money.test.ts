@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import {
   normalizeRampTransactionAmount,
@@ -29,16 +33,14 @@ describe("parseVerifiedRampMinorAmount", () => {
     });
   });
 
-  it.each([
-    undefined,
-    null,
-    Number.NaN,
-    12.34
-  ])("rejects absent or ambiguous bare-number value %s", (value) => {
-    const result = parseVerifiedRampMinorAmount(value, "Transfer amount");
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toContain("Transfer amount");
-  });
+  it.each([undefined, null, Number.NaN, 12.34])(
+    "rejects absent or ambiguous bare-number value %s",
+    (value) => {
+      const result = parseVerifiedRampMinorAmount(value, "Transfer amount");
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toContain("Transfer amount");
+    }
+  );
 
   it.each([
     { value: Number.POSITIVE_INFINITY, currency: "USD" },
@@ -99,21 +101,19 @@ describe("normalizeRampTransactionAmount", () => {
     ).toBe(false);
   });
 
-  it.each([
-    undefined,
-    null,
-    Number.NaN,
-    Number.POSITIVE_INFINITY
-  ])("rejects missing or non-finite fallback %s", (deprecatedMajorAmount) => {
-    expect(
-      normalizeRampTransactionAmount({
-        entityAmount: null,
-        deprecatedMajorAmount,
-        currencyCode: "USD",
-        decimals: 2
-      }).ok
-    ).toBe(false);
-  });
+  it.each([undefined, null, Number.NaN, Number.POSITIVE_INFINITY])(
+    "rejects missing or non-finite fallback %s",
+    (deprecatedMajorAmount) => {
+      expect(
+        normalizeRampTransactionAmount({
+          entityAmount: null,
+          deprecatedMajorAmount,
+          currencyCode: "USD",
+          decimals: 2
+        }).ok
+      ).toBe(false);
+    }
+  );
 });
 
 describe("currency metadata validation", () => {
@@ -124,15 +124,12 @@ describe("currency metadata validation", () => {
     });
   });
 
-  it.each([
-    undefined,
-    null,
-    -1,
-    1.5,
-    Number.NaN
-  ])("rejects unknown or invalid precision %s", (value) => {
-    expect(validateRampCurrencyDecimals(value, "USD").ok).toBe(false);
-  });
+  it.each([undefined, null, -1, 1.5, Number.NaN])(
+    "rejects unknown or invalid precision %s",
+    (value) => {
+      expect(validateRampCurrencyDecimals(value, "USD").ok).toBe(false);
+    }
+  );
 
   it("accepts a finite positive exchange rate", () => {
     expect(validateRampExchangeRate("1.25", "EUR")).toEqual({
@@ -141,14 +138,10 @@ describe("currency metadata validation", () => {
     });
   });
 
-  it.each([
-    undefined,
-    null,
-    0,
-    -1,
-    Number.NaN,
-    "not-a-rate"
-  ])("rejects unknown or invalid exchange rate %s", (value) => {
-    expect(validateRampExchangeRate(value, "EUR").ok).toBe(false);
-  });
+  it.each([undefined, null, 0, -1, Number.NaN, "not-a-rate"])(
+    "rejects unknown or invalid exchange rate %s",
+    (value) => {
+      expect(validateRampExchangeRate(value, "EUR").ok).toBe(false);
+    }
+  );
 });

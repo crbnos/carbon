@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   CardAction,
@@ -16,6 +20,10 @@ type UseAuditLogOptions = {
   variant: "dropdown" | "card-action";
   triggerLabel?: React.ReactNode;
   drawerTitle?: React.ReactNode;
+  /** Opt-in: offer a CSV download of the full history in the drawer. */
+  downloadable?: boolean;
+  /** Leads the downloaded file's name, e.g. the record's readable id. */
+  downloadName?: string;
 };
 
 /**
@@ -33,7 +41,9 @@ export function useAuditLog({
   companyId,
   variant,
   triggerLabel = "History",
-  drawerTitle
+  drawerTitle,
+  downloadable,
+  downloadName
 }: UseAuditLogOptions) {
   const disclosure = useDisclosure();
   const { isGated } = usePlanGate({ feature: "AUDIT_LOG" });
@@ -65,6 +75,8 @@ export function useAuditLog({
       companyId={companyId}
       title={drawerTitle}
       planRestricted={isGated}
+      downloadable={downloadable}
+      downloadName={downloadName}
     />
   );
 

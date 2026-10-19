@@ -1,24 +1,45 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
-import { datetime } from "@carbon/utils";
+import { getLogger } from "@carbon/logger";
+import {
+  RecordOutlet,
+  ResizablePanel,
+  ResizablePanelGroup,
+  VStack
+} from "@carbon/react";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
-import type { PurchasingPlanningItem } from "~/modules/purchasing";
-import { getPurchasingPlanning } from "~/modules/purchasing";
+import { useLoaderData } from "react-router";
+import {
+  PLANNING_DRAWER_PARAM,
+  resolvePlanningActionScope
+} from "~/modules/production/production.models";
+import { getPlanningActions } from "~/modules/production/production.service";
+import { getPurchasingPlanning } from "~/modules/purchasing/purchasing.service";
+import type { PurchasingPlanningItem } from "~/modules/purchasing/types";
 import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  getOrCreatePeriods,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 const WEEKS_TO_PLAN = 12 * 4;
 
+const logger = getLogger("erp", "purchasing", "planning");
+
 export const handle: Handle = {
+  appBarSubtitle: msg`Purchasing`,
   breadcrumb: msg`Material Planning`,
   to: path.to.purchasingPlanning
 };
@@ -47,21 +68,48 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const locationToday = datetime.today(
     await getLocationTimeZone(client, locationId, companyId)
   );
-  const periods = await getOrCreatePeriods(locationToday, WEEKS_TO_PLAN);
+  const periods = await getOrCreatePeriods(
+    getDatabaseClient(),
+    locationToday,
+    WEEKS_TO_PLAN
+  );
 
-  const items = await getPurchasingPlanning(
-    client,
-    locationId,
-    companyId,
-    periods.map((p) => p.id),
-    {
+  // The grid's Actions and Assignee filters are not RPC
+  // columns: they go to the RPC as arguments, which keeps the items with a
+  // matching OPEN action inside each item's planning horizon.
+  const { gridFilters, actionTypes, actionAssignees } =
+    resolvePlanningActionScope({ filters });
+
+  const periodIds = periods.map((p) => p.id);
+  const asOf = locationToday.toString();
+
+  // A link to a row's order drawer (`?item=`) opens it even when the row is
+  // not on this page — the plan has changed since the link was made, or it
+  // came from another page. That row is read on its own, alongside the page.
+  const drawerItemId = searchParams.get(PLANNING_DRAWER_PARAM);
+
+  const [items, drawerItemRead] = await Promise.all([
+    getPurchasingPlanning(client, locationId, companyId, periodIds, {
       search,
       limit,
       offset,
       sorts,
-      filters
-    }
-  );
+      filters: gridFilters,
+      asOf,
+      actionTypes,
+      actionAssignees
+    }),
+    drawerItemId
+      ? getPurchasingPlanning(client, locationId, companyId, periodIds, {
+          search: null,
+          limit: 1,
+          offset: 0,
+          sorts: [],
+          filters: [{ column: "id", operator: "eq", value: drawerItemId }],
+          asOf
+        })
+      : null
+  ]);
 
   if (items.error) {
     redirect(
@@ -70,9 +118,57 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  // A failed read of the linked row only leaves its drawer closed: the grid
+  // drops a link it cannot resolve.
+  if (drawerItemRead?.error) {
+    logger.error("Failed to load the linked planning item", {
+      companyId,
+      locationId,
+      itemId: drawerItemId,
+      error: drawerItemRead.error
+    });
+  }
+  const pageItems = (items.data ?? []) as PurchasingPlanningItem[];
+  const linkedItem = (drawerItemRead?.data?.[0] ??
+    null) as PurchasingPlanningItem | null;
+  const drawerItem =
+    linkedItem && !pageItems.some((item) => item.id === linkedItem.id)
+      ? linkedItem
+      : null;
+
+  // The persisted MRP action worklist for the rows on THIS page (and the
+  // drawer's row). Every action is loaded, whatever its date: the grid hides
+  // the ones beyond each row's time fence, and a planner can widen one row's
+  // fence without a reload.
+  const planningActions = await getPlanningActions(client, {
+    companyId,
+    locationId,
+    kind: "Buy",
+    itemIds: [...pageItems, ...(drawerItem ? [drawerItem] : [])].map(
+      (item) => item.id
+    )
+  });
+
+  // No fallback to an empty list: a grid with no actions reads as "nothing to
+  // do", which is the one thing a failed read must not look like.
+  if (planningActions.error) {
+    logger.error("Failed to load planning actions", {
+      companyId,
+      locationId,
+      error: planningActions.error
+    });
+    throw new Response("Failed to load planning actions", { status: 500 });
+  }
+
   return {
-    items: (items.data ?? []) as PurchasingPlanningItem[],
+    items: pageItems,
+    // The row a `?item=` link opens the drawer on, when it is not in `items`.
+    drawerItem,
     count: items.count ?? 0,
+    planningActions: planningActions.data ?? [],
+    // The Actions-column filter the rows were matched on: each row shows only
+    // its actions of these types.
+    actionTypes: actionTypes ?? null,
     periods,
     locationId,
     // Planned-order date defaults are business dates on the plant's calendar —
@@ -82,11 +178,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PurchasingPlanningRoute() {
-  const { items, count, locationId, periods } = useLoaderData<typeof loader>();
+  const {
+    items,
+    drawerItem,
+    count,
+    locationId,
+    periods,
+    planningActions,
+    actionTypes,
+    locationToday
+  } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full ">
-      <ResizablePanelGroup direction="horizontal">
+      <ResizablePanelGroup direction="horizontal" stackOnCompact>
         <ResizablePanel
           defaultSize={50}
           maxSize={70}
@@ -95,12 +200,16 @@ export default function PurchasingPlanningRoute() {
         >
           <PurchasingPlanningTable
             data={items}
+            drawerItem={drawerItem}
             count={count}
             locationId={locationId}
             periods={periods}
+            planningActions={planningActions}
+            actionTypes={actionTypes}
+            locationToday={locationToday}
           />
         </ResizablePanel>
-        <Outlet />
+        <RecordOutlet />
       </ResizablePanelGroup>
     </VStack>
   );

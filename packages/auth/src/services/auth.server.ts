@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import {
   ApiKeyNotFoundError,
@@ -6,36 +10,40 @@ import {
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRequest } from "@carbon/logger/middleware.server";
-import { Edition, getClientIp, Plan } from "@carbon/utils";
+import { annotateRequestSpan } from "@carbon/logger/tracing.server";
+import { Edition, getClientIp, Plan, redirect, safePath } from "@carbon/utils";
 import type {
   AuthSession as SupabaseAuthSession,
   SupabaseClient
 } from "@supabase/supabase-js";
 import { createHash } from "crypto";
-import { redirect } from "react-router";
 import {
   CarbonEdition,
   IS_LOCAL_DEV,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   STRIPE_BYPASS_COMPANY_IDS,
+  SUPABASE_ANON_KEY,
   VERCEL_URL
 } from "../config/env";
 import { getCarbon } from "../lib/supabase";
-import { getCarbonAPIKeyClient } from "../lib/supabase/client";
-import { getCarbonServiceRole } from "../lib/supabase/client.server";
-import type { AuthSession } from "../types";
+import { getCarbonAPIKeyClient, getCarbonClient } from "../lib/supabase/client";
+import {
+  getCarbonServiceRole,
+  requestFetch
+} from "../lib/supabase/client.server";
+import type { AuthSession, Permission } from "../types";
 import { path } from "../utils/path";
 import { error } from "../utils/result";
 import { type ApiKeyRecord, getApiKeyRecord } from "./api-key.server";
 import { logAuthEvent } from "./auth-events.server";
-import { isCarbonOwnedCompany } from "./company.server";
+import { getCompanyPlanId, isCarbonOwnedCompany } from "./company.server";
 import { resolveConsolePinIn } from "./console-pin.server";
 import {
   destroyAuthSession,
   flash,
   requireAuthSession
 } from "./session.server";
-import { getCompaniesForUser } from "./users";
+import { getCompaniesForUser, makePermissionsFromClaims } from "./users";
 import { getUserClaims } from "./users.server";
 
 const log = getLogger("auth");
@@ -43,9 +51,12 @@ const log = getLogger("auth");
 export { logAuthEvent } from "./auth-events.server";
 
 // Each matched loader used to build its own Supabase client for identical
-// credentials; `createClient` is not free and they are interchangeable.
-const carbonForRequest = (accessToken: string) =>
-  oncePerRequest(`carbon:${accessToken}`, () => getCarbon(accessToken));
+// credentials; `createClient` is not free and they are interchangeable. Both are
+// bound to the request (`requestFetch`).
+const carbonForRequest = (accessToken: string, request: Request) =>
+  oncePerRequest(`carbon:${accessToken}`, () =>
+    getCarbonClient(SUPABASE_ANON_KEY!, accessToken, requestFetch(request))
+  );
 
 const serviceRoleForRequest = () =>
   oncePerRequest("carbon:service-role", () => getCarbonServiceRole());
@@ -117,9 +128,9 @@ export {
   hashApiKey
 } from "./api-key.server";
 
-// Exported so the Carbon API v1 surface can read a key's scopes for its per-operation
-// scope gate (the gate lives in oRPC middleware, not in requirePermissions). The
-// carbon-key branch of requirePermissions already covers client/rate-limit/plan/expiry.
+// Exported so the Carbon API v1 surface can read a key's scopes: each service
+// function's own permission gate checks them per operation. The carbon-key
+// branch of requirePermissions already covers client/rate-limit/plan/expiry.
 // Kept as `{ data, error }` for its existing callers; the row now comes through the
 // ~30s Redis cache (with per-request memoization) in api-key.server.ts.
 export async function getCompanyIdFromAPIKey(apiKey: string) {
@@ -206,6 +217,10 @@ export async function requirePermissions(
   userId: string;
   sessionUserId: string;
   consoleMode: boolean;
+  /** How the caller authenticated: a session, or an API key. */
+  caller: "session" | "apiKey";
+  /** The session user's claims, or the API key's scopes, per module. */
+  permissions: Record<string, Permission>;
 }> {
   const apiKey = request.headers.get("carbon-key");
 
@@ -217,6 +232,8 @@ export async function requirePermissions(
       throw new Response("Invalid API key", { status: 401 });
     }
     if (company.data) {
+      // Lets traces tell a script from a person at the keyboard.
+      annotateRequestSpan({ "carbon.caller": "apiKey" });
       const apiKeyData = company.data as unknown as ApiKeyRecord;
       const companyId = apiKeyData.companyId;
       const companyGroupId = apiKeyData.companyGroupId;
@@ -260,12 +277,6 @@ export async function requirePermissions(
         });
       }
 
-      // Update lastUsedAt (fire-and-forget)
-      void serviceRole
-        .from("apiKey")
-        .update({ lastUsedAt: new Date().toISOString() } as any)
-        .eq("id" as any, apiKeyData.id);
-
       // Check scopes against required permissions
       const scopes = apiKeyData.scopes ?? {};
       const scopeCheckPassed = Object.entries(requiredPermissions).every(
@@ -308,14 +319,8 @@ export async function requirePermissions(
           : false;
 
         if (!isBypass) {
-          const { data: planData } = await serviceRole
-            .from("companyPlan")
-            .select("planId")
-            .eq("id", companyId)
-            .single();
-
           if (
-            planData?.planId === Plan.Starter &&
+            (await getCompanyPlanId(companyId)) === Plan.Starter &&
             !(await isCarbonOwnedCompany(companyId))
           ) {
             throw new Response(
@@ -326,7 +331,7 @@ export async function requirePermissions(
         }
       }
 
-      const client = getCarbonAPIKeyClient(apiKey);
+      const client = getCarbonAPIKeyClient(apiKey, requestFetch(request));
 
       return {
         client,
@@ -335,7 +340,9 @@ export async function requirePermissions(
         userId,
         sessionUserId: userId,
         email: "",
-        consoleMode: false
+        consoleMode: false,
+        caller: "apiKey",
+        permissions: makePermissionsFromClaims(scopes)?.permissions ?? {}
       };
     }
   }
@@ -373,13 +380,15 @@ export async function requirePermissions(
       client:
         requiredPermissions.bypassRls && myClaims.role === "employee"
           ? serviceRoleForRequest()
-          : carbonForRequest(accessToken),
+          : carbonForRequest(accessToken, request),
       companyId,
       companyGroupId,
       email,
       userId: await getEffectiveUser(request, companyId, userId, consoleMode),
       sessionUserId: userId,
-      consoleMode
+      consoleMode,
+      caller: "session",
+      permissions: myClaims.permissions
     };
   }
 
@@ -433,15 +442,17 @@ export async function requirePermissions(
 
   return {
     client:
-      !!requiredPermissions.bypassRls && myClaims.role === "employee"
+      requiredPermissions.bypassRls && myClaims.role === "employee"
         ? serviceRoleForRequest()
-        : carbonForRequest(accessToken),
+        : carbonForRequest(accessToken, request),
     companyId,
     companyGroupId,
     email,
     userId: await getEffectiveUser(request, companyId, userId, consoleMode),
     sessionUserId: userId,
-    consoleMode
+    consoleMode,
+    caller: "session",
+    permissions: myClaims.permissions
   };
 }
 
@@ -471,12 +482,17 @@ export async function sendMagicLink(
   // for — in local dev crbn writes the ERP url (or a localhost fallback) into
   // .env.local, so an MES started outside `crbn up` would send its first-login
   // magic link back to the wrong origin. MES passes getMESUrl().
-  origin?: string
+  origin?: string,
+  // Where the user was headed before they were sent to log in.
+  redirectTo?: string
 ) {
+  const destination = safePath(redirectTo, "");
   return getCarbonServiceRole().auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${origin ?? VERCEL_URL}/callback`
+      emailRedirectTo: `${origin ?? VERCEL_URL}/callback${
+        destination ? `?redirectTo=${encodeURIComponent(destination)}` : ""
+      }`
     }
   });
 }

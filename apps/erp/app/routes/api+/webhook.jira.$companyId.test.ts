@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { createHmac } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,7 +14,8 @@ const db = vi.hoisted(() => ({
 }));
 // Env constants only: the real @carbon/auth barrel reaches Lingui macros that
 // only compile under Vite's lingui plugin.
-vi.mock("@carbon/auth", () => ({
+vi.mock("@carbon/auth", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   SUPABASE_URL: "http://localhost",
   JIRA_CLIENT_ID: "test",
   JIRA_CLIENT_SECRET: "test"

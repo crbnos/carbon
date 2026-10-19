@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Popover, PopoverContent, PopoverTrigger } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -37,7 +41,7 @@ export function BackupContentsInfo() {
         <button
           type="button"
           aria-label={t`What a backup contains`}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground max-md:hit-area"
         >
           <LuInfo className="h-3.5 w-3.5" />
         </button>

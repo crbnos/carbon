@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import {
   buildDimensionValueMappingEntityId,
   loadJournalLineDimensions
@@ -5,6 +9,7 @@ import {
 import { resolveMemoJournalPartyFromDatabase } from "../../../core/memo-party";
 import {
   getPostingSyncSourceTypeSkipReason,
+  getZeroJournalSkipReason,
   JournalEntrySyncError,
   type PostingSyncSettings,
   parseJournalEntrySyncEntityId,
@@ -422,6 +427,11 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
       }
     );
     if (sourceTypeSkipReason) return sourceTypeSkipReason;
+
+    // An all-zero journal (an outbound movement at no cost) has nothing to
+    // book, and some providers refuse a journal of zero lines.
+    const zeroJournalSkipReason = getZeroJournalSkipReason(local);
+    if (zeroJournalSkipReason) return zeroJournalSkipReason;
 
     return true;
   }

@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { getJobDocuments } from "~/modules/production/production.service";
-import { getCompanyIntegration } from "~/modules/settings/settings.server";
+import { getCompanyIntegration } from "~/modules/settings/settings.service";
 
 const integrationMetadataParser = z.object({
   processes: z.array(z.string())

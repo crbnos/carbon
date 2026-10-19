@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Error contract — uniform `{ ok:false, error: { code, message } }` envelope
 //! with the status codes from `app/errors.py` / `app/main.py`.
 
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
 
+#[derive(Debug)]
 pub struct ApiError {
     pub status: u16,
     pub code: String,

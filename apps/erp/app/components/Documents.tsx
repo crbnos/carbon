@@ -1,12 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadBlob, storage } from "@carbon/files";
+import {
+  convertKbToString,
+  downloadUrl,
+  getDocumentType,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardAction,
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -14,6 +25,7 @@ import {
   File,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -27,7 +39,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuAxis3D, LuEllipsisVertical, LuUpload } from "react-icons/lu";
-import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
+import { Link, useFetchers, useSubmit } from "react-router";
 import {
   DocumentPreview,
   FileDropzone,
@@ -36,8 +48,7 @@ import {
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useFileUpload, usePermissions, useUser } from "~/hooks";
-import type { OptimisticFileObject } from "~/modules/shared";
-import { getDocumentType } from "~/modules/shared";
+import type { OptimisticFileObject } from "~/modules/shared/types";
 import type { ModelUpload, StorageItem } from "~/types";
 import { downloadModelFile } from "~/utils/download";
 import { path } from "~/utils/path";
@@ -169,8 +180,7 @@ const Documents = ({
     async (file: StorageItem) => {
       const url = path.to.file.previewFile(`private/${getReadPath(file)}`);
       try {
-        const response = await fetch(url);
-        downloadBlob(await response.blob(), file.name);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });
@@ -230,7 +240,7 @@ const Documents = ({
             <Trans>Files</Trans>
           </CardTitle>
         </CardHeader>
-        <CardAction>
+        <CardAction className="max-md:hidden">
           <File
             isDisabled={!canUpdate}
             leftIcon={<LuUpload />}
@@ -247,7 +257,11 @@ const Documents = ({
       </HStack>
       <CardContent>
         <Table>
-          <Thead>
+          <Thead
+            className={cn(
+              allFiles.length === 0 && !modelUpload && "max-md:hidden"
+            )}
+          >
             <Tr>
               <Th>
                 <Trans>Name</Trans>
@@ -306,11 +320,15 @@ const Documents = ({
                               original (xbf rows included); only legacy rows
                               404 → surfaced as a toast. */}
                           <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.download}
                             onClick={() => downloadModel(modelUpload)}
                           >
                             <Trans>Download</Trans>
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.view}
+                            asChild
+                          >
                             <Link
                               to={
                                 modelUpload.modelId
@@ -361,7 +379,7 @@ const Documents = ({
                           <DocumentPreview
                             bucket="private"
                             pathToFile={getReadPath(file)}
-                            // @ts-ignore
+                            // @ts-expect-error
                             type={getDocumentType(file.name)}
                           >
                             {file.name}
@@ -395,7 +413,10 @@ const Documents = ({
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem onClick={() => download(file)}>
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.download}
+                            onClick={() => download(file)}
+                          >
                             <Trans>Download</Trans>
                           </DropdownMenuItem>
                           <DropdownMenuItem

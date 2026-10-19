@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { create } from "zustand";
 
 export type SuggestionPrefill = {
@@ -14,10 +18,6 @@ interface UIStore {
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
-  /** True while the current route renders a module content sub-nav. Lets the
-   * mobile Topbar show a "Sections" trigger only where one exists. */
-  hasContentSidebar: boolean;
-  setHasContentSidebar: (has: boolean) => void;
   suggestionPrefill: SuggestionPrefill | null;
   requestSuggestion: (prefill: SuggestionPrefill) => void;
   clearSuggestionRequest: () => void;
@@ -33,8 +33,6 @@ export const useUIStore = create<UIStore>()((set) => ({
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
   toggleSidebar: () =>
     set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
-  hasContentSidebar: false,
-  setHasContentSidebar: (has) => set({ hasContentSidebar: has }),
   suggestionPrefill: null,
   requestSuggestion: (prefill) => set({ suggestionPrefill: prefill }),
   clearSuggestionRequest: () => set({ suggestionPrefill: null })

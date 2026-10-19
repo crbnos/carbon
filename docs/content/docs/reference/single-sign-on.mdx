@@ -3,7 +3,7 @@ title: Single sign-on
 description: Route sign-in for your company's email domains through your own identity provider with enterprise SAML SSO.
 ---
 
-Single sign-on hands control of Carbon sign-in to your own <Term>identity provider</Term>: Okta, Entra ID, Google Workspace, or any SAML 2.0 IdP. Register your email domains once, proving you own each with a DNS record, and everyone on them signs in to both ERP and MES with their normal work email — Carbon recognizes the domain and routes to your IdP automatically, no SSO button to find. Registering takes nothing away: the <Term>magic link</Term> and other methods keep working until you turn on [Require SSO](#requiring-sso).
+Single sign-on delegates Carbon authentication to a SAML 2.0 <Term>identity provider</Term>, such as Okta, Entra ID, or Google Workspace. After you verify an email domain through DNS, Carbon routes ERP and MES users on that domain to the identity provider automatically. <Term>Magic link</Term> and other sign-in methods remain available until you enable [Require SSO](#requiring-sso).
 
 ## Requirements
 
@@ -54,13 +54,13 @@ Only one company can hold a domain verified, first to prove DNS control wins, an
 
 ## How sign-in works
 
-The login page is email-first and the SSO fork is invisible: the user types their email, presses **"Continue"**, and Carbon either redirects to your IdP (active connection on that domain) or falls through to the ordinary magic-link flow. Before any session is created, the asserted email's domain must be one of the connection's **verified** domains, so even a misconfigured or hostile IdP can't sign someone into another company.
+On the email-first login page, selecting **"Continue"** either redirects the user to the domain's active IdP or continues to the standard magic-link flow. Before creating a session, Carbon requires the asserted email domain to match a **verified** domain on the connection.
 
-Provisioning is **invite-first**: no self-serve signup through SSO. An existing member signs straight in (their first SSO sign-in quietly links the SAML identity to their account; the magic link keeps working). Someone with a pending invite has it accepted by their first SSO sign-in, landing with exactly the invite's role. Anyone else is rejected by name and nothing is provisioned; create the invite in the [employees directory](/docs/reference/people) and the retry just works.
+SSO provisioning is **invite-first**; it does not support self-service signup. An existing member's first SSO login links the SAML identity to their account. A pending invite is accepted during the first SSO login and applies its assigned role. Carbon rejects all other users without provisioning an account. Create their invite in the [employees directory](/docs/reference/people), then retry.
 
 ## Requiring SSO
 
-Once a sign-in has worked, the **"Require SSO"** switch on the Identity Provider card makes the IdP the only way in for verified domains: magic links, Google, Outlook, and passkeys are all refused server-side. The switch exists only on an active connection, so the path is always *set up, prove a sign-in works, enforce last*. Turning it off — or **"Deactivate"**, which deletes the connection and releases the domain claims — immediately restores the other methods.
+The **"Require SSO"** switch makes the IdP the only permitted authentication method for verified domains. Carbon rejects magic links, Google, Outlook, and passkeys server-side. The switch appears only for an active connection, allowing you to verify sign-in before enforcement. Turning it off restores other methods. **"Deactivate"** deletes the connection, releases its domain claims, and also restores other methods.
 
 <Callout type="warn" title="Break-glass recovery">
 If enforcement is on and your IdP is unreachable, nobody on the covered domains can sign in to turn it off. Operators can lift it directly in the database, and magic-link sign-in works on the next attempt:
@@ -70,7 +70,7 @@ UPDATE "ssoConnection" SET "requireSso" = false WHERE "companyId" = '<id>';
 ```
 </Callout>
 
-SSO sessions skip Carbon's [two-factor challenge](/docs/reference/two-factor) and the company-wide requirement in every environment, including controlled (ITAR) deployments: your IdP already enforced its own MFA policy at sign-in. Magic-link logins still get Carbon's own challenge.
+SSO sessions bypass Carbon's [two-factor challenge](/docs/reference/two-factor), including in controlled deployments, because the IdP enforces its own MFA policy. Magic-link logins still use Carbon's challenge.
 
 <AgentContext>
 ## Behavior details and exact messages

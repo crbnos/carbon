@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -5,6 +9,7 @@ import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { erpPosting } from "~/services/erp";
 import { issueTrackedEntityValidator } from "~/services/models";
 
 const log = getLogger("mes", "unconsume");
@@ -109,19 +114,19 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: {
+  const issued = await erpPosting(
+    "issue",
+    { companyId, userId },
+    {
       type: "unconsumeTrackedEntities",
       materialId,
-      parentTrackedEntityId,
-      children,
-      companyId,
-      userId
+      parentTrackedEntityId: parentTrackedEntityId!,
+      children
     }
-  });
+  );
 
-  if (issue.error) {
-    log.error("Failed to issue material", { error: issue.error });
+  if (issued.error) {
+    log.error("Failed to issue material", { error: issued.error });
     return data(
       { success: false, message: "Failed to issue material" },
       { status: 400 }

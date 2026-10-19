@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useControlField, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -10,6 +14,7 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
+  Subheading,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
@@ -31,11 +36,13 @@ import {
   DatePicker,
   Hidden,
   Input,
+  Item,
   ItemPostingGroup,
   Items,
   Number,
   Select,
-  Submit
+  Submit,
+  useConfigurableItems
 } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
@@ -43,6 +50,7 @@ import {
   pricingRuleTypes,
   pricingRuleValidator
 } from "../../sales.models";
+import PricingRuleConfigurationPrices from "./PricingRuleConfigurationPrices";
 
 type CustomerScopeType = "all" | "customer" | "customerType";
 type ItemScopeType = "all" | "item" | "group";
@@ -60,6 +68,14 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
     company?.baseCurrencyCode ?? "USD"
   );
 
+  const [ruleType, setRuleType] = useState<(typeof pricingRuleTypes)[number]>(
+    initialValues.ruleType ?? "Discount"
+  );
+  const isConfiguration = ruleType === "Configuration";
+  const [configurationItemId, setConfigurationItemId] = useState<string | null>(
+    initialValues.itemId ?? null
+  );
+  const configurableItemIds = useConfigurableItems();
   const [amountType, setAmountType] = useState<
     (typeof pricingRuleAmountTypes)[number]
   >(initialValues.amountType ?? "Percentage");
@@ -116,49 +132,62 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
                     label: rt,
                     value: rt
                   }))}
-                />
-                <Select
-                  name="amountType"
-                  label={t`Amount Type`}
-                  termId="pricing-rule-amount-type"
-                  options={pricingRuleAmountTypes.map((at) => ({
-                    label: at,
-                    value: at
-                  }))}
                   onChange={(v) => {
                     if (v)
-                      setAmountType(
-                        v.value as (typeof pricingRuleAmountTypes)[number]
-                      );
+                      setRuleType(v.value as (typeof pricingRuleTypes)[number]);
                   }}
                 />
-
-                {amountType === "Percentage" ? (
-                  <Number
-                    name="amount"
-                    label={t`Amount`}
-                    minValue={0}
-                    maxValue={1}
-                    step={INPUT_STEP.percent}
-                    formatOptions={INPUT_FORMAT.percent}
-                  />
+                {isConfiguration ? (
+                  <>
+                    <Hidden name="amountType" value="Fixed" />
+                    <Hidden name="amount" value="0" />
+                  </>
                 ) : (
-                  <Number
-                    name="amount"
-                    label={t`Amount`}
-                    minValue={0}
-                    formatOptions={INPUT_FORMAT.money(
-                      company?.baseCurrencyCode ?? "USD",
-                      currencyDecimals
+                  <>
+                    <Select
+                      name="amountType"
+                      label={t`Amount Type`}
+                      termId="pricing-rule-amount-type"
+                      options={pricingRuleAmountTypes.map((at) => ({
+                        label: at,
+                        value: at
+                      }))}
+                      onChange={(v) => {
+                        if (v)
+                          setAmountType(
+                            v.value as (typeof pricingRuleAmountTypes)[number]
+                          );
+                      }}
+                    />
+
+                    {amountType === "Percentage" ? (
+                      <Number
+                        name="amount"
+                        label={t`Amount`}
+                        minValue={0}
+                        maxValue={1}
+                        step={INPUT_STEP.percent}
+                        formatOptions={INPUT_FORMAT.percent}
+                      />
+                    ) : (
+                      <Number
+                        name="amount"
+                        label={t`Amount`}
+                        minValue={0}
+                        formatOptions={INPUT_FORMAT.money(
+                          company?.baseCurrencyCode ?? "USD",
+                          currencyDecimals
+                        )}
+                      />
                     )}
-                  />
+                  </>
                 )}
 
                 <BooleanField name="active" label={t`Active`} bordered />
 
-                <p className="text-sm font-medium text-muted-foreground pt-2">
+                <Subheading as="h3" className="pt-2">
                   {t`Scope`}
-                </p>
+                </Subheading>
 
                 <ChoiceCardGroup<CustomerScopeType>
                   label={t`Customer Scope`}
@@ -210,54 +239,81 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
                   />
                 )}
 
-                <ChoiceCardGroup<ItemScopeType>
-                  label={t`Item Scope`}
-                  value={itemScope}
-                  onChange={setItemScope}
-                  options={[
-                    {
-                      value: "all",
-                      title: t`All Items`,
-                      description: t`Rule applies to every item.`,
-                      icon: <LuLayers />
-                    },
-                    {
-                      value: "item",
-                      title: t`Specific Items`,
-                      description: t`Target one or more items.`,
-                      icon: <LuBlocks />
-                    },
-                    {
-                      value: "group",
-                      title: t`Item Group`,
-                      description: t`Target an item group.`,
-                      icon: <LuBoxes />
-                    }
-                  ]}
-                />
+                {isConfiguration ? (
+                  <>
+                    <Item
+                      name="itemId"
+                      label={t`Configured Part`}
+                      isOptional={false}
+                      type="Part"
+                      replenishmentSystem="Make"
+                      whitelist={configurableItemIds}
+                      onChange={(value) =>
+                        setConfigurationItemId(value?.value ?? null)
+                      }
+                    />
+                    <Hidden name="itemPostingGroupId" value="" />
+                    <PricingRuleConfigurationPrices
+                      itemId={configurationItemId}
+                      initialItemId={initialValues.itemId ?? null}
+                      initialPrices={initialValues.configurationPrices ?? []}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <ChoiceCardGroup<ItemScopeType>
+                      label={t`Item Scope`}
+                      value={itemScope}
+                      onChange={setItemScope}
+                      options={[
+                        {
+                          value: "all",
+                          title: t`All Items`,
+                          description: t`Rule applies to every item.`,
+                          icon: <LuLayers />
+                        },
+                        {
+                          value: "item",
+                          title: t`Specific Items`,
+                          description: t`Target one or more items.`,
+                          icon: <LuBlocks />
+                        },
+                        {
+                          value: "group",
+                          title: t`Item Group`,
+                          description: t`Target an item group.`,
+                          icon: <LuBoxes />
+                        }
+                      ]}
+                    />
 
-                <ClearArrayField name="itemIds" active={itemScope === "item"} />
+                    <ClearArrayField
+                      name="itemIds"
+                      active={itemScope === "item"}
+                    />
 
-                {itemScope === "item" && (
-                  <Items
-                    name="itemIds"
-                    label={t`Items`}
-                    placeholder={t`Select items`}
-                  />
-                )}
-                {itemScope === "group" && (
-                  <ItemPostingGroup
-                    name="itemPostingGroupId"
-                    label={t`Item Group`}
-                  />
-                )}
-                {itemScope !== "group" && (
-                  <Hidden name="itemPostingGroupId" value="" />
+                    {itemScope === "item" && (
+                      <Items
+                        name="itemIds"
+                        label={t`Items`}
+                        placeholder={t`Select items`}
+                      />
+                    )}
+                    {itemScope === "group" && (
+                      <ItemPostingGroup
+                        name="itemPostingGroupId"
+                        label={t`Item Group`}
+                      />
+                    )}
+                    {itemScope !== "group" && (
+                      <Hidden name="itemPostingGroupId" value="" />
+                    )}
+                  </>
                 )}
 
-                <p className="text-sm font-medium text-muted-foreground pt-2">
+                <Subheading as="h3" className="pt-2">
                   {t`Optional`}
-                </p>
+                </Subheading>
 
                 <div className="grid grid-cols-2 gap-3 w-full">
                   <DatePicker name="validFrom" label={t`Valid From`} />

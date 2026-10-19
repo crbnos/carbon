@@ -1,28 +1,32 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
-import { datetime, defaultReportRange } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { datetime, defaultReportRange, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
-import type { Chart } from "~/modules/accounting";
+import { useLoaderData } from "react-router";
+import { financialReportParamsValidator } from "~/modules/accounting/accounting.models";
 import {
-  financialReportParamsValidator,
   getCompaniesInGroup,
+  getConsolidatedBalancesForReport,
   getFinancialStatementBalances,
   getFiscalYearSettings,
   translateCompanyBalances
-} from "~/modules/accounting";
-import { getConsolidatedBalancesForReport } from "~/modules/accounting/accounting.server";
+} from "~/modules/accounting/accounting.service";
+import type { Chart } from "~/modules/accounting/types";
 import {
   exportTrialBalance,
   ReportFilters,
   TrialBalanceTree
 } from "~/modules/accounting/ui/Reports";
-import { months } from "~/modules/shared";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { months } from "~/modules/shared/shared.models";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { revalidateIgnoringOffset } from "~/utils/revalidate";
@@ -266,7 +270,7 @@ export default function TrialBalanceRoute() {
         search={search}
         ledgerPath={path.to.trialBalanceLedger}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

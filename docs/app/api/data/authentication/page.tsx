@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ReactNode } from "react";
 import { CodeBlock } from "@/components/api/code-block";
 import {
@@ -16,7 +20,7 @@ import { highlight } from "@/lib/highlight";
 import { pageSeo, SEO } from "@/lib/seo";
 
 export const metadata = pageSeo({
-  title: `${SEO.api.auth.title} — Carbon`,
+  title: `${SEO.api.auth.title} | Carbon`,
   ogTitle: SEO.api.auth.title,
   description: SEO.api.auth.description,
   path: "/api/data/authentication",
@@ -191,7 +195,7 @@ export default async function AuthenticationPage() {
           cols="72px 1fr"
           cells={[
             <Code key="c">429</Code>,
-            "Rate limit exceeded — every key allows 60 requests per minute by default, a platform-set limit shown (not editable) in Settings → API Keys. Back off and retry per the X-RateLimit-* and Retry-After response headers."
+            "Rate limit exceeded — a new key allows 20 requests per minute (shown, not editable, in Settings → API Keys) and all of a company's keys share 60 per minute. Back off and retry per the X-RateLimit-* and Retry-After response headers; contact Carbon support to raise either limit."
           ]}
         />
       </Table>

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Checkbox,
@@ -6,6 +10,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Tooltip,
@@ -122,7 +127,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
             <ItemThumbnail
               size="md"
               thumbnailPath={row.original.thumbnailPath}
-              // @ts-ignore
+              // @ts-expect-error
               type={row.original.itemType}
             />
             <Hyperlink to={path.to.salesOrderDetails(row.original.id!)}>
@@ -131,6 +136,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -141,6 +147,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           return <CustomerAvatar customerId={row.original.customerId} />;
         },
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -156,6 +163,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <SalesStatus status={row.original.displayStatus} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: salesOrderStatusType.map((status) => ({
@@ -337,6 +345,9 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -345,6 +356,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         header: t`Order Total`,
         cell: (item) => currencyFormatter.format(item.getValue<number>()),
         meta: {
+          mobile: "P2",
           icon: <LuDollarSign />,
           formatter: currencyFormatter.format,
           renderTotal: true
@@ -375,6 +387,9 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -525,6 +540,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
     return (row: SalesOrderListItem) => (
       <>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
           disabled={!permissions.can("view", "sales")}
           onClick={() => edit(row)}
         >
@@ -546,6 +562,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
             Receive
           </MenuItem>*/}
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           disabled={!permissions.can("delete", "sales")}
           destructive
           onClick={() => {

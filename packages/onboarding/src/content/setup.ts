@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import type { Mod } from "../types";
@@ -52,7 +56,7 @@ export const SETUP_GROUPS: SetupGroup[] = [
       {
         key: "chart-of-accounts",
         object: msg`Chart of Accounts`,
-        detail: msg`Your general-ledger accounts and their structure`,
+        detail: msg`Import your chart of accounts from a spreadsheet`,
         moduleTags: ["acc"]
       },
       {

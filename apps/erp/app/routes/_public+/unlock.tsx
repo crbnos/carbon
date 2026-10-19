@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   assertIsPost,
   error,
   isAuthProviderEnabled,
-  RATE_LIMIT,
-  safeRedirect
+  RATE_LIMIT
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
@@ -35,7 +38,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { getClientIp } from "@carbon/utils";
+import { getClientIp, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { WebAuthnCredential } from "@simplewebauthn/browser";
 import {
@@ -52,7 +55,6 @@ import type {
 import {
   data,
   Form,
-  redirect,
   useFetcher,
   useLoaderData,
   useSearchParams
@@ -106,7 +108,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   // Not actually locked → nothing to unlock, send them where they were going.
   if (!isSessionIdleLocked(authSession)) {
-    throw redirect(safeRedirect(redirectTo, path.to.authenticatedRoot));
+    throw redirect(redirectTo || path.to.authenticatedRoot);
   }
 
   // Unlock credentials: a verified TOTP factor and/or a registered passkey.
@@ -254,7 +256,7 @@ async function unlockWithPasskey(request: Request) {
       );
     }
 
-    return redirect(safeRedirect(redirectTo, path.to.authenticatedRoot), {
+    return redirect(redirectTo || path.to.authenticatedRoot, {
       headers: [["Set-Cookie", sessionCookie]]
     });
   } catch {
@@ -335,7 +337,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   return redirect(
-    safeRedirect(result.redirectTo ?? redirectTo, path.to.authenticatedRoot),
+    (result.redirectTo ?? redirectTo) || path.to.authenticatedRoot,
     { headers: [["Set-Cookie", result.sessionCookie]] }
   );
 }

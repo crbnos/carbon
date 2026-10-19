@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertSingle, insertId, insertMaybe, maybeOne } from "../sql.ts";
 import type {
   Ctx,
@@ -59,7 +63,7 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
     unitOfMeasureCode: uom,
     description: spec.description ?? null,
     thumbnailPath: ctx.dataset.industryId
-      ? `_templates/${ctx.dataset.industryId}/${spec.readableId}.svg`
+      ? `_templates/${ctx.dataset.industryId}/${spec.thumbnail ?? spec.readableId}.svg`
       : null,
     active: spec.active ?? true,
     // undefined is dropped by insertRow, keeping the column default.

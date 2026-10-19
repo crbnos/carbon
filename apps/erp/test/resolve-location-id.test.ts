@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it, vi } from "vitest";
 
-import { resolveLocationId } from "~/modules/shared/location.server";
+import { resolveLocationId } from "~/modules/shared/shared.service";
 
 /**
  * `resolveLocationId` returns the location id that five `bypassRls: true`
@@ -69,9 +73,9 @@ function args(searchParams: string) {
 }
 
 // `~/modules/resources` is a barrel that reaches UI components and so pulls in
-// `@carbon/glossary`, whose `msg` macro is untransformed under vitest (no
+// `@carbon/content/glossary`, whose `msg` macro is untransformed under vitest (no
 // lingui plugin here). Stub it so this test exercises the server helper only.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
   getTermText: () => "",
@@ -86,14 +90,16 @@ vi.mock("@carbon/glossary", () => ({
 // The defaults path goes through `getUserDefaults`, which reads a different
 // table via a different shape; stub it so these cases exercise only the
 // scoping decision.
-vi.mock("~/modules/users/users.server", () => ({
+vi.mock("~/modules/users/users.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getUserDefaults: async () => ({
     data: { locationId: DEFAULT_LOCATION },
     error: null
   })
 }));
 
-vi.mock("~/modules/resources", () => ({
+vi.mock("~/modules/resources/resources.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getLocationsList: async () => ({
     data: [{ id: DEFAULT_LOCATION }],
     error: null

@@ -1,12 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
-import { getAccountsList } from "~/modules/accounting";
-import { getItemPostingGroups } from "~/modules/items";
+import { useLoaderData } from "react-router";
+import { getAccountsList } from "~/modules/accounting/accounting.service";
+import { getItemPostingGroups } from "~/modules/items/items.service";
 import { ItemPostingGroupsTable } from "~/modules/items/ui/ItemPostingGroups";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -70,7 +75,7 @@ export default function ItemPostingGroupsRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <ItemPostingGroupsTable data={itemPostingGroups} count={count ?? 0} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

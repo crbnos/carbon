@@ -1,11 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// The operations in settings.server.ts reach the glossary, whose `msg` macro
+// only runs compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
 
 const getCarbonServiceRole = vi.hoisted(() => vi.fn());
 const patchRampSettings = vi.hoisted(() => vi.fn());
 
 vi.mock("@carbon/auth/auth.server", () => ({ bustApiKeyCache: vi.fn() }));
 vi.mock("@carbon/auth/client.server", () => ({ getCarbonServiceRole }));
-vi.mock("@carbon/ee", () => ({
+vi.mock("@carbon/ee", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@carbon/ee")>()),
   getIntegrationConfigById: vi.fn(),
   resolveIntegrationSecrets: vi.fn(),
   splitSecrets: vi.fn(() => ({ config: {}, secrets: {} }))
@@ -22,7 +33,7 @@ vi.mock("@carbon/kv", () => ({
   }
 }));
 
-import { upsertCompanyIntegration } from "./settings.server";
+import { upsertCompanyIntegration } from "./settings.service";
 
 describe("Ramp settings persistence", () => {
   beforeEach(() => {

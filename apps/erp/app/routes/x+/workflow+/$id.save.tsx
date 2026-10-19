@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Json } from "@carbon/database";
@@ -10,11 +14,11 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { workflowDefinitionSaveValidator } from "~/modules/workflows/workflows.models";
 import {
-  updateWorkflowDefinition,
-  workflowDefinitionSaveValidator
-} from "~/modules/workflows";
-import { checkWorkflowVersionLock } from "~/modules/workflows/workflows.server";
+  checkWorkflowVersionLock,
+  updateWorkflowDefinition
+} from "~/modules/workflows/workflows.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "workflow-save");

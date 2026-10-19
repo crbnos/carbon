@@ -1,18 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
 import { downloadCsv } from "@carbon/files/csv";
 import { ValidatedForm } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
 import {
   Badge,
   Button,
   Heading,
   HStack,
   IconButton,
-  LabelWithHelp
+  LabelWithHelp,
+  useCloseRoute
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
 import { LuDownload } from "react-icons/lu";
-import { useNavigate } from "react-router";
 import { Combobox, Hidden, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
@@ -58,23 +62,13 @@ type AccountDefaultsFormProps = {
   initialValues: Record<string, string>;
 };
 
-const AccountDefaultsForm = ({
-  balanceSheetAccounts,
-  incomeStatementAccounts,
-  initialValues
-}: AccountDefaultsFormProps) => {
+/** The account default fields, grouped as the defaults page shows them.
+ *  Built in a hook so labels and descriptions go through `t`. The tooltip body
+ *  comes from the glossary via `termId`; the on-row `description` is the short
+ *  context shown below the label. */
+export function useAccountDefaultGroups(): CategoryGroup[] {
   const { t } = useLingui();
-  const permissions = usePermissions();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
-  const [salesAccount, setSalesAccount] = useState(initialValues.salesAccount);
-
-  const isDisabled = !permissions.can("update", "accounting");
-
-  // Built inside the component so labels/descriptions go through `t`. The
-  // tooltip body comes from the glossary via `termId`; the on-row `description`
-  // is the short context shown below the label.
-  const categoryGroups: CategoryGroup[] = useMemo(
+  return useMemo<CategoryGroup[]>(
     () => [
       {
         id: "cash-banking",
@@ -128,6 +122,27 @@ const AccountDefaultsForm = ({
             label: t`Customer Write-Off (Bad Debt)`,
             description: t`Expense account for customer balances written off as uncollectable on AR settlement`,
             badgeType: "Expense"
+          },
+          {
+            name: "deferredRevenueAccount",
+            label: t`Deferred Revenue`,
+            description: t`Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs`,
+            badgeType: "Liability",
+            termId: "account-default-deferred-revenue"
+          },
+          {
+            name: "contractAssetAccount",
+            label: t`Contract Assets`,
+            description: t`Unbilled receivable for rent earned before it is invoiced`,
+            badgeType: "Asset",
+            termId: "account-default-contract-assets"
+          },
+          {
+            name: "netInvestmentInLeasesAccount",
+            label: t`Net Investment in Leases`,
+            description: t`Receivable recognized at commencement of a sales-type lease, reduced by each rental payment`,
+            badgeType: "Asset",
+            termId: "account-default-net-investment-in-leases"
           }
         ]
       },
@@ -191,6 +206,55 @@ const AccountDefaultsForm = ({
             description: t`Depreciation reversal when a fixed asset is disposed`,
             badgeType: "Asset",
             termId: "account-default-accumulated-depreciation-on-disposal"
+          }
+        ]
+      },
+      {
+        id: "leases",
+        title: t`Leases (Lessee)`,
+        description: t`Default accounts for leases the company pays, under ASC 842`,
+        fields: [
+          {
+            name: "rightOfUseAssetAccount",
+            label: t`Right-of-Use Assets`,
+            description: t`Asset recognized at lease commencement for the right to use a leased asset`,
+            badgeType: "Asset"
+          },
+          {
+            name: "accumulatedRightOfUseAmortizationAccount",
+            label: t`Accumulated Amortization – Right-of-Use Assets`,
+            description: t`Contra-asset account for the amortization of right-of-use assets`,
+            badgeType: "Asset"
+          },
+          {
+            name: "leaseLiabilityAccount",
+            label: t`Lease Liabilities`,
+            description: t`Present value of the lease payments not yet paid, reduced by each lease invoice`,
+            badgeType: "Liability"
+          },
+          {
+            name: "operatingLeaseExpenseAccount",
+            label: t`Operating Lease Expense`,
+            description: t`Straight-line lease cost of operating leases, and the payments of short-term leases`,
+            badgeType: "Expense"
+          },
+          {
+            name: "variableLeaseExpenseAccount",
+            label: t`Variable Lease Expense`,
+            description: t`Lease charges that are not part of the fixed payments, such as usage or maintenance`,
+            badgeType: "Expense"
+          },
+          {
+            name: "rightOfUseAmortizationExpenseAccount",
+            label: t`Amortization – Right-of-Use Assets`,
+            description: t`Straight-line amortization of finance lease right-of-use assets`,
+            badgeType: "Expense"
+          },
+          {
+            name: "leaseInterestExpenseAccount",
+            label: t`Interest Expense – Leases`,
+            description: t`Interest on finance lease liabilities`,
+            badgeType: "Expense"
           }
         ]
       },
@@ -286,6 +350,13 @@ const AccountDefaultsForm = ({
             description: t`Equity account for currency translation adjustments (CTA)`,
             badgeType: "Equity",
             termId: "account-default-currency-translation"
+          },
+          {
+            name: "migrationClearingAccount",
+            label: t`Migration Clearing`,
+            description: t`Equity account that offsets the opening balances when accounting is set up. It must total zero.`,
+            badgeType: "Equity",
+            termId: "account-default-migration-clearing"
           }
         ]
       },
@@ -327,6 +398,27 @@ const AccountDefaultsForm = ({
             label: t`Realized Exchange Gain`,
             description: t`Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate`,
             badgeType: "Revenue"
+          },
+          {
+            name: "rentalIncomeAccount",
+            label: t`Rental Income`,
+            description: t`Revenue recognized straight-line for operating rentals and for variable rental charges`,
+            badgeType: "Revenue",
+            termId: "account-default-rental-income"
+          },
+          {
+            name: "leaseRevenueAccount",
+            label: t`Lease Revenue`,
+            description: t`Revenue recognized at commencement of a sales-type lease`,
+            badgeType: "Revenue",
+            termId: "account-default-lease-revenue"
+          },
+          {
+            name: "leaseInterestIncomeAccount",
+            label: t`Interest Income – Leases`,
+            description: t`Other Income account for the monthly interest earned on the net investment in sales-type leases`,
+            badgeType: "Revenue",
+            termId: "account-default-lease-interest-income"
           }
         ]
       },
@@ -513,6 +605,21 @@ const AccountDefaultsForm = ({
     ],
     [t]
   );
+}
+
+const AccountDefaultsForm = ({
+  balanceSheetAccounts,
+  incomeStatementAccounts,
+  initialValues
+}: AccountDefaultsFormProps) => {
+  const { t } = useLingui();
+  const permissions = usePermissions();
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
+  const [salesAccount, setSalesAccount] = useState(initialValues.salesAccount);
+
+  const isDisabled = !permissions.can("update", "accounting");
+  const categoryGroups = useAccountDefaultGroups();
 
   const accountOptions: Record<
     BadgeType,
@@ -588,7 +695,7 @@ const AccountDefaultsForm = ({
     >
       <Hidden name="intent" value="all" />
       <div className="rounded-lg border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border p-6">
+        <div className="flex items-center justify-between border-b border-border p-6 max-md:flex-col max-md:items-start max-md:gap-3 max-md:p-4">
           <div>
             <Heading as="h1" size="h3">
               <Trans>Default Accounts</Trans>
@@ -617,10 +724,13 @@ const AccountDefaultsForm = ({
             </Button>
           </HStack>
         </div>
-        <div className="flex flex-col gap-8 p-6">
+        <div className="flex flex-col gap-8 p-6 max-md:gap-6 max-md:p-4">
           {categoryGroups.map((group) => (
-            <div key={group.id} className="border border-border rounded-lg">
-              <div className="py-6 px-4 border-b border-border">
+            <div
+              key={group.id}
+              className="border border-border rounded-lg max-md:border-0"
+            >
+              <div className="py-6 px-4 border-b border-border max-md:px-0 max-md:pt-0 max-md:pb-3">
                 <h2 className="text-base font-semibold text-foreground">
                   {group.title}
                 </h2>
@@ -628,13 +738,13 @@ const AccountDefaultsForm = ({
                   {group.description}
                 </p>
               </div>
-              <div className="flex flex-col gap-3 p-4">
+              <div className="flex flex-col gap-3 p-4 max-md:gap-5 max-md:px-0">
                 {group.fields.map((field) => (
                   <div
                     key={field.name}
-                    className="group rounded-lg border border-border p-4 transition-all hover:border-muted-foreground/30"
+                    className="group rounded-lg border border-border p-4 transition-colors hover:border-muted-foreground/30 max-md:border-0 max-md:p-0"
                   >
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start justify-between gap-4 max-md:flex-col max-md:items-stretch max-md:gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-sm font-medium text-foreground">
@@ -657,7 +767,7 @@ const AccountDefaultsForm = ({
                           {field.description}
                         </p>
                       </div>
-                      <div className="flex-shrink-0 w-64">
+                      <div className="flex-shrink-0 w-64 max-md:w-full">
                         <Combobox
                           name={field.name}
                           options={

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -6,6 +10,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  RecordOutlet,
   Spinner,
   Tabs,
   TabsContent,
@@ -13,37 +18,30 @@ import {
   TabsTrigger,
   useRouteData
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useState } from "react";
 import { LuSearch } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  Await,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
-import type { ItemFile, PartSummary } from "~/modules/items";
+import { isChangeNoticeOpen } from "~/modules/items/items.models";
 import {
-  findChangeNoticesForItem,
+  findChangeNoticesForItemOnce,
   getItemFiles,
-  getItemSupersededBy,
-  getItemSupersession,
-  getMakeMethodById,
-  getMakeMethods,
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce,
   getMethodTree,
   getPart,
   getPartUsedIn,
   getPickMethods,
   getSupplierParts,
-  isChangeNoticeOpen
-} from "~/modules/items";
-import { getUnreleasedChangeOrderForItem } from "~/modules/items/items.server";
-import type { Method } from "~/modules/items/types";
+  getUnreleasedChangeOrderForItem,
+  streamItemSupersession
+} from "~/modules/items/items.service";
+import type { ItemFile, Method, PartSummary } from "~/modules/items/types";
 import {
   BoMActions,
   BoMExplorer,
@@ -56,11 +54,12 @@ import {
   UsedInTree
 } from "~/modules/items/ui/Item/UsedIn";
 import { PartHeader, PartProperties } from "~/modules/items/ui/Parts";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Part`,
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Parts`, to: path.to.parts },
     (data) => data?.partSummary?.readableIdWithRevision
@@ -77,13 +76,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
+  const { supersession, supersededBy } = streamItemSupersession(
+    client,
+    itemId,
+    companyId
+  );
+
   const [
     partSummary,
     supplierParts,
     pickMethods,
     tags,
-    supersession,
-    supersededBy,
     allChangeNotices,
     unreleasedChangeOrder
   ] = await Promise.all([
@@ -91,11 +94,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getSupplierParts(client, itemId, companyId),
     getPickMethods(client, itemId, companyId),
     getTagsList(client, companyId, "part"),
-    getItemSupersession(client, itemId, companyId),
-    getItemSupersededBy(client, itemId, companyId),
     // Every CO, any status; the open subset (which locks manual version/revision
     // creation) is derived below.
-    findChangeNoticesForItem(client, { itemId, companyId }),
+    findChangeNoticesForItemOnce(client, { itemId, companyId }),
     // Locks the Active toggle while the change notice that minted this item is
     // still open — release is what activates it.
     getUnreleasedChangeOrderForItem(client, { itemId, companyId })
@@ -126,7 +127,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // One query, two consumers: `methodTree` derives from it and the raw list is
   // also deferred to the client. Calling getMakeMethods twice issued the same
   // query twice on every part-detail load.
-  const makeMethodsPromise = getMakeMethods(client, itemId, companyId);
+  const makeMethodsPromise = getMakeMethodsOnce(client, itemId, companyId);
 
   const methodTree = makeMethodsPromise.then(async (makeMethods) => {
     // Include CO-owned drafts so a revision/new-part item created by an open
@@ -140,7 +141,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : (selectable.find((m) => m.status === "Active") ?? selectable[0]);
     if (!makeMethod) return null;
 
-    const fullMethod = await getMakeMethodById(
+    const fullMethod = await getMakeMethodByIdOnce(
       client,
       makeMethod.id,
       companyId
@@ -161,8 +162,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     partSummary: partSummary.data,
-    supersession: supersession.data,
-    supersededBy: supersededBy.data ?? [],
+    supersession,
+    supersededBy,
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
@@ -198,10 +199,11 @@ export default function PartRoute() {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
-      <PartHeader />
+      <PartHeader key={itemId} />
       <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
         <div className="flex flex-grow overflow-hidden">
           <ResizablePanels
+            explorerLabel={isManufactured ? t`Manufacturing` : t`Used In`}
             explorer={
               <div className="flex flex-col h-full">
                 {isManufactured ? (
@@ -606,8 +608,8 @@ export default function PartRoute() {
               </div>
             }
             content={
-              <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-                <Outlet />
+              <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
+                <RecordOutlet />
               </div>
             }
             properties={

@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { CountryFlag } from "@carbon/form";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
@@ -75,7 +80,7 @@ function CompanyNodeComponent({ data }: NodeProps & { data: CompanyNodeData }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="ml-auto shrink-0 rounded-md p-1 opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100 focus:opacity-100"
+              className="ml-auto shrink-0 rounded-md p-1 md:opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100 focus:opacity-100 max-md:hit-area"
               aria-label="Actions"
             >
               <LuEllipsisVertical className="size-3.5 text-muted-foreground" />
@@ -91,6 +96,7 @@ function CompanyNodeComponent({ data }: NodeProps & { data: CompanyNodeData }) {
 
             {company.parentCompanyId && (
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 className="text-destructive focus:text-destructive"
                 onClick={() => onDelete(company.id!)}
               >

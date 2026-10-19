@@ -1,17 +1,37 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import { useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   getWarehouseTransfer,
-  getWarehouseTransferLines
-} from "~/modules/inventory";
+  getWarehouseTransferLines,
+  getWarehouseTransferRelatedItems
+} from "~/modules/inventory/inventory.service";
+import {
+  WarehouseTransferDocuments,
+  WarehouseTransferHeader
+} from "~/modules/inventory/ui/WarehouseTransfers";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "warehouseTransfer", column: "id", param: "transferId" },
+    {
+      table: "warehouseTransferLine",
+      column: "transferId",
+      param: "transferId"
+    }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Warehouse Transfer`, to: path.to.warehouseTransfers },
     (data) => data?.warehouseTransfer?.transferId
@@ -20,7 +40,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -57,22 +77,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     warehouseTransfer: warehouseTransfer.data,
-    warehouseTransferLines: warehouseTransferLines.data ?? []
+    warehouseTransferLines: warehouseTransferLines.data ?? [],
+    relatedItems: getWarehouseTransferRelatedItems(
+      client,
+      companyId,
+      transferId
+    )
   };
 }
 
 export default function WarehouseTransferRoute() {
-  const params = useParams();
-  const { transferId } = params;
-  if (!transferId) throw new Error("Could not find transferId");
+  const { warehouseTransfer } = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-      <div className="h-full p-4 w-full max-w-5xl mx-auto">
-        <div className="flex flex-col gap-4 pb-16 w-full">
-          <Outlet />
-        </div>
-      </div>
-    </div>
+    <DocumentPage
+      header={<WarehouseTransferHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<WarehouseTransferDocuments />}
+          activity={{
+            entityType: "warehouseTransfer",
+            entityId: warehouseTransfer.id,
+            refreshKey: `${warehouseTransfer.updatedAt ?? ""}:${warehouseTransfer.status}`
+          }}
+        />
+      }
+    >
+      <RecordOutlet />
+    </DocumentPage>
   );
 }

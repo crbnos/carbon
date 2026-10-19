@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { EPSILON, round } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import { QboSalesInvoiceSyncer } from "../providers/quickbooks-online/entities/invoice";
@@ -87,27 +91,31 @@ const build = (source: ReturnType<typeof fixture>) =>
   buildSalesDocumentComponents(source as Accounting.SalesInvoice);
 
 describe("buildSalesDocumentComponents", () => {
-  it.each([
-    1, 3
-  ])("keeps provider quantity × unit price equal to reconciled net for quantity %i", (quantity) => {
-    const source = fixture();
-    source.currencyCode = "JPY";
-    source.currencyDecimalPlaces = 0;
-    source.lines[0]!.quantity = quantity;
-    source.lines[0]!.unitPrice = 100 / quantity;
-    source.lines[0]!.convertedUnitPrice = 80 / quantity;
-    const document = build(source);
-    // 100 base converts to exactly 80 at rate 0.8. The JPY rounding unit is
-    // apportioned to the component with the largest fractional remainder (the
-    // non-taxable add-on, exactly 2.4), not concentrated on merchandise.
-    expect(document.components[0]?.netAmount).toBe(80);
-    for (const component of document.components) {
-      expect(
-        round(component.quantity * component.unitAmount, document.decimalPlaces)
-      ).toBe(component.netAmount);
+  it.each([1, 3])(
+    "keeps provider quantity × unit price equal to reconciled net for quantity %i",
+    (quantity) => {
+      const source = fixture();
+      source.currencyCode = "JPY";
+      source.currencyDecimalPlaces = 0;
+      source.lines[0]!.quantity = quantity;
+      source.lines[0]!.unitPrice = 100 / quantity;
+      source.lines[0]!.convertedUnitPrice = 80 / quantity;
+      const document = build(source);
+      // 100 base converts to exactly 80 at rate 0.8. The JPY rounding unit is
+      // apportioned to the component with the largest fractional remainder (the
+      // non-taxable add-on, exactly 2.4), not concentrated on merchandise.
+      expect(document.components[0]?.netAmount).toBe(80);
+      for (const component of document.components) {
+        expect(
+          round(
+            component.quantity * component.unitAmount,
+            document.decimalPlaces
+          )
+        ).toBe(component.netAmount);
+      }
+      expect(source.lines[0]!.convertedUnitPrice).toBe(80 / quantity);
     }
-    expect(source.lines[0]!.convertedUnitPrice).toBe(80 / quantity);
-  });
+  );
 
   it("exports base151 as document120.80 with net98.40 Sales, net12 Shipping and native tax10.40", () => {
     const result = build(fixture());
@@ -257,44 +265,45 @@ describe("buildSalesDocumentComponents", () => {
     expect(result.totalAmount).toBe(0.8);
   });
 
-  it.each([
-    0, 3
-  ])("honors %i-decimal document amounts and reconciles deterministic fractional residuals", (decimalPlaces) => {
-    const source = fixture();
-    source.currencyDecimalPlaces = decimalPlaces;
-    source.currencyCode = decimalPlaces === 0 ? "JPY" : "BHD";
-    source.headerShippingCost = 0;
-    source.subtotal = 1;
-    source.totalTax = 0;
-    source.totalAmount = 1;
-    source.balance = 0.5;
-    source.lines = ["b", "c", "a"].map((id) => ({
-      ...source.lines[0]!,
-      id,
-      unitPrice: 1 / 3,
-      convertedUnitPrice: 0.8 / 3,
-      shippingCost: 0,
-      addOnCost: 0,
-      nonTaxableAddOnCost: 0,
-      taxPercent: 0
-    }));
-    const result = build(source);
-    expect(result.totalAmount).toBe(decimalPlaces === 0 ? 1 : 0.8);
-    expect(result.balance).toBe(decimalPlaces === 0 ? 0 : 0.4);
-    expect(
-      result.components.reduce((sum, line) => sum + line.netAmount, 0)
-    ).toBeCloseTo(result.subtotal, decimalPlaces);
-    const reversed = build({ ...source, lines: [...source.lines].reverse() });
-    expect(
-      Object.fromEntries(
-        result.components.map((line) => [line.id, line.netAmount])
-      )
-    ).toEqual(
-      Object.fromEntries(
-        reversed.components.map((line) => [line.id, line.netAmount])
-      )
-    );
-  });
+  it.each([0, 3])(
+    "honors %i-decimal document amounts and reconciles deterministic fractional residuals",
+    (decimalPlaces) => {
+      const source = fixture();
+      source.currencyDecimalPlaces = decimalPlaces;
+      source.currencyCode = decimalPlaces === 0 ? "JPY" : "BHD";
+      source.headerShippingCost = 0;
+      source.subtotal = 1;
+      source.totalTax = 0;
+      source.totalAmount = 1;
+      source.balance = 0.5;
+      source.lines = ["b", "c", "a"].map((id) => ({
+        ...source.lines[0]!,
+        id,
+        unitPrice: 1 / 3,
+        convertedUnitPrice: 0.8 / 3,
+        shippingCost: 0,
+        addOnCost: 0,
+        nonTaxableAddOnCost: 0,
+        taxPercent: 0
+      }));
+      const result = build(source);
+      expect(result.totalAmount).toBe(decimalPlaces === 0 ? 1 : 0.8);
+      expect(result.balance).toBe(decimalPlaces === 0 ? 0 : 0.4);
+      expect(
+        result.components.reduce((sum, line) => sum + line.netAmount, 0)
+      ).toBeCloseTo(result.subtotal, decimalPlaces);
+      const reversed = build({ ...source, lines: [...source.lines].reverse() });
+      expect(
+        Object.fromEntries(
+          result.components.map((line) => [line.id, line.netAmount])
+        )
+      ).toEqual(
+        Object.fromEntries(
+          reversed.components.map((line) => [line.id, line.netAmount])
+        )
+      );
+    }
+  );
 
   it("preserves merchandise quantity and the precise stored document unit mirror", () => {
     const source = fixture();
@@ -318,6 +327,57 @@ describe("buildSalesDocumentComponents", () => {
       unitAmount: 15.9992,
       netAmount: 48
     });
+  });
+
+  it("reconciles a discounted line against the view's net totals and sends the net unit price", () => {
+    const source = fixture();
+    // 4 × 25 base list, 20% off → 80 base merchandise (64 EUR at 0.8). The
+    // add-ons and shipping are not discounted; tax is on the discounted base.
+    // View: subtotal 80 + 20 + 3 + 10 = 113, tax 0.1 × (80 + 20 + 10) = 11,
+    // total 113 + 11 + 5 header = 129.
+    const document = buildSalesDocumentComponents({
+      ...source,
+      subtotal: 113,
+      totalTax: 11,
+      totalAmount: 129,
+      balance: 129,
+      lines: [
+        {
+          ...source.lines[0]!,
+          quantity: 4,
+          unitPrice: 25,
+          convertedUnitPrice: 20,
+          discountPercent: 0.2,
+          lineAmount: 80
+        }
+      ]
+    } as Accounting.SalesInvoice);
+    expect(document).toMatchObject({
+      subtotal: 94.4,
+      totalTax: 8.8,
+      totalAmount: 103.2
+    });
+    expect(document.components[0]).toMatchObject({
+      kind: "Merchandise",
+      quantity: 4,
+      unitAmount: 16,
+      netAmount: 64,
+      taxAmount: 6.4
+    });
+    // Add-ons stay at full price.
+    expect(
+      document.components.find((c) => c.kind === "TaxableAddOn")
+    ).toMatchObject({ netAmount: 16 });
+  });
+
+  it("refuses a discounted line when the view's subtotal is not net of the discount", () => {
+    const source = fixture();
+    expect(() =>
+      buildSalesDocumentComponents({
+        ...source,
+        lines: [{ ...source.lines[0]!, discountPercent: 0.2 }]
+      } as Accounting.SalesInvoice)
+    ).toThrow(/subtotal does not reconcile/);
   });
 
   it("rejects a document mirror that contradicts the stored FX snapshot", () => {
@@ -347,26 +407,23 @@ describe("buildSalesDocumentComponents", () => {
     expect(() => build(source)).toThrow(/unit price.*reconcile/i);
   });
 
-  it.each([
-    "subtotal",
-    "totalTax",
-    "totalAmount"
-  ] as const)("does not conceal an economic mismatch in authoritative %s", (field) => {
-    const source = fixture();
-    source[field] += 1;
-    expect(() => build(source)).toThrow(/reconcil|total|tax|subtotal/i);
-  });
+  it.each(["subtotal", "totalTax", "totalAmount"] as const)(
+    "does not conceal an economic mismatch in authoritative %s",
+    (field) => {
+      const source = fixture();
+      source[field] += 1;
+      expect(() => build(source)).toThrow(/reconcil|total|tax|subtotal/i);
+    }
+  );
 
-  it.each([
-    Number.NaN,
-    0,
-    -1,
-    Number.POSITIVE_INFINITY
-  ])("rejects invalid foreign-per-base rate %s", (rate) => {
-    const source = fixture();
-    source.exchangeRate = rate;
-    expect(() => build(source)).toThrow(/rate|finite/i);
-  });
+  it.each([Number.NaN, 0, -1, Number.POSITIVE_INFINITY])(
+    "rejects invalid foreign-per-base rate %s",
+    (rate) => {
+      const source = fixture();
+      source.exchangeRate = rate;
+      expect(() => build(source)).toThrow(/rate|finite/i);
+    }
+  );
 
   it("requires authoritative currency precision and an identity rate for the base currency", () => {
     const source = fixture();
@@ -1050,43 +1107,49 @@ describe("document rounding residual distribution", () => {
     [40, 0.07, 0.07],
     [15, 0.5, 0.13],
     [3, 1.2, 0.0625]
-  ])("keeps every component of %i x %d @ %d within one minor unit of its own rate", (count, unitPrice, taxPercent) => {
-    const document = build(
-      uniformLines(count, unitPrice, taxPercent) as ReturnType<typeof fixture>
-    );
-    const net = round(
-      document.components.reduce((sum, c) => sum + c.netAmount, 0),
-      document.decimalPlaces
-    );
-    const tax = round(
-      document.components.reduce((sum, c) => sum + c.taxAmount, 0),
-      document.decimalPlaces
-    );
-    expect(net).toBe(
-      round(document.totalAmount - document.totalTax, document.decimalPlaces)
-    );
-    expect(tax).toBe(document.totalTax);
-    for (const component of document.components) {
-      const implied = round(
-        component.netAmount * component.taxPercent,
+  ])(
+    "keeps every component of %i x %d @ %d within one minor unit of its own rate",
+    (count, unitPrice, taxPercent) => {
+      const document = build(
+        uniformLines(count, unitPrice, taxPercent) as ReturnType<typeof fixture>
+      );
+      const net = round(
+        document.components.reduce((sum, c) => sum + c.netAmount, 0),
         document.decimalPlaces
       );
-      // The exact envelope QuickBooks' `tax = net x percent` preflight uses
-      // (invoice-tax.ts), so passing here means the push is accepted.
-      expect(Math.abs(implied - component.taxAmount)).toBeLessThanOrEqual(
-        1 / 10 ** document.decimalPlaces + EPSILON
+      const tax = round(
+        document.components.reduce((sum, c) => sum + c.taxAmount, 0),
+        document.decimalPlaces
       );
-      // A negative tax on positive revenue is silently postable in Xero.
-      if (component.taxAmount !== 0) {
-        expect(Math.sign(component.taxAmount)).toBe(
-          Math.sign(component.netAmount)
+      expect(net).toBe(
+        round(document.totalAmount - document.totalTax, document.decimalPlaces)
+      );
+      expect(tax).toBe(document.totalTax);
+      for (const component of document.components) {
+        const implied = round(
+          component.netAmount * component.taxPercent,
+          document.decimalPlaces
         );
+        // The exact envelope QuickBooks' `tax = net x percent` preflight uses
+        // (invoice-tax.ts), so passing here means the push is accepted.
+        expect(Math.abs(implied - component.taxAmount)).toBeLessThanOrEqual(
+          1 / 10 ** document.decimalPlaces + EPSILON
+        );
+        // A negative tax on positive revenue is silently postable in Xero.
+        if (component.taxAmount !== 0) {
+          expect(Math.sign(component.taxAmount)).toBe(
+            Math.sign(component.netAmount)
+          );
+        }
+        expect(
+          round(
+            component.quantity * component.unitAmount,
+            document.decimalPlaces
+          )
+        ).toBe(component.netAmount);
       }
-      expect(
-        round(component.quantity * component.unitAmount, document.decimalPlaces)
-      ).toBe(component.netAmount);
     }
-  });
+  );
 
   // Mixed-sign invariant guard (CodeRabbit, #1599). The distributor could place
   // a residual unit on a component whose sign it then reversed — a negative tax

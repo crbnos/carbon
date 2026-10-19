@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { ServerFnError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { createMappingService } from "@carbon/ee/accounting";
@@ -10,6 +15,14 @@ import { stageOrResumeRampCharge } from "./ramp-sync-card-stage";
 import type { RampSyncContext } from "./ramp-sync-shared";
 
 const runDatabaseTests = process.env.RUN_RAMP_DB_TESTS === "true";
+
+// Only the posting operation is substituted; everything else is real Postgres.
+const { post } = vi.hoisted(() => ({ post: vi.fn() }));
+// A posting with a client runs as the caller behind it, else as the system.
+vi.mock("@carbon/api/postings.server", () => ({
+  posting: (_name: string, handles: { client?: unknown }, input: unknown) =>
+    post({ ...handles, actor: handles.client ? "caller" : "system" }, input)
+}));
 
 vi.mock("@carbon/ee/ramp.server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/ee/ramp.server")>()),
@@ -30,7 +43,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
   const rampIds: string[] = [];
 
   beforeAll(async () => {
-    db = getJobDatabaseClient(2);
+    db = getJobDatabaseClient();
     const company = await db
       .selectFrom("company")
       .innerJoin("employeeJob", "employeeJob.companyId", "company.id")
@@ -270,9 +283,8 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { persistSession: false, autoRefreshToken: false } }
     );
-    const functions = client.functions;
-    vi.spyOn(client, "functions", "get").mockReturnValue(functions);
-    const post = vi.spyOn(functions, "invoke").mockImplementation(async () => {
+    post.mockReset();
+    post.mockImplementation(async () => {
       const lines = await db
         .selectFrom("chargeLine")
         .select("accountId")
@@ -283,7 +295,10 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         lines.length !== 1 ||
         lines[0]?.accountId !== fixture.correctedAccountId
       ) {
-        return { data: null, error: new Error("Account must be recoded") };
+        return {
+          data: null,
+          error: new ServerFnError("Account must be recoded")
+        };
       }
       await db
         .updateTable("charge")
@@ -296,7 +311,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         .where("id", "=", staged.chargeId)
         .where("companyId", "=", fixture.companyId)
         .execute();
-      return { data: null, error: new Error("response lost") };
+      return { data: null, error: new ServerFnError("response lost") };
     });
     const ctx: RampSyncContext = {
       client,
@@ -307,8 +322,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         credentials: {
           type: "client_credentials",
           clientId: "integration-test",
-          clientSecret: "integration-test",
-          environment: "sandbox"
+          clientSecret: "integration-test"
         },
         sync: {
           pullTransactions: true,
@@ -378,7 +392,6 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
       .where("companyId", "=", fixture.companyId)
       .executeTakeFirstOrThrow();
     expect(unchanged.memo).toBe("Corrected Ramp source");
-    post.mockRestore();
   });
 
   it("anchors the Ramp source id before an ambiguous post response", async () => {
@@ -403,26 +416,24 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         error: null
       })
     };
+    post.mockReset();
+    post.mockImplementation(
+      async (_fields: unknown, input: { chargeId: string }) => {
+        await db
+          .updateTable("charge")
+          .set({
+            status: "Posted",
+            postingDate: "2026-09-11",
+            postedAt: "2026-09-11T12:00:00.000Z",
+            postedBy: fixture.actorId
+          })
+          .where("id", "=", input.chargeId)
+          .where("companyId", "=", fixture.companyId)
+          .execute();
+        return { data: null, error: new ServerFnError("response lost") };
+      }
+    );
     const ambiguousClient = {
-      functions: {
-        invoke: async (
-          _name: string,
-          options: { body: { chargeId: string } }
-        ) => {
-          await db
-            .updateTable("charge")
-            .set({
-              status: "Posted",
-              postingDate: "2026-09-11",
-              postedAt: "2026-09-11T12:00:00.000Z",
-              postedBy: fixture.actorId
-            })
-            .where("id", "=", options.body.chargeId)
-            .where("companyId", "=", fixture.companyId)
-            .execute();
-          return { data: null, error: new Error("response lost") };
-        }
-      },
       from: () => statusQuery
     } as unknown as SupabaseClient<Database>;
     const ctx: RampSyncContext = {
@@ -434,8 +445,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         credentials: {
           type: "client_credentials",
           clientId: "integration-test",
-          clientSecret: "integration-test",
-          environment: "sandbox"
+          clientSecret: "integration-test"
         },
         sync: {
           pullTransactions: true,

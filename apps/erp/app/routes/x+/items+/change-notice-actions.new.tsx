@@ -1,13 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useNavigate } from "react-router";
-import {
-  changeNoticeRequiredActionValidator,
-  upsertChangeNoticeRequiredAction
-} from "~/modules/items";
+import { changeNoticeRequiredActionValidator } from "~/modules/items/items.models";
+import { upsertChangeNoticeRequiredAction } from "~/modules/items/items.service";
 import { ChangeNoticeRequiredActionForm } from "~/modules/items/ui/ChangeNoticeActions";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
@@ -64,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewChangeNoticeRequiredActionRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const initialValues = {
     name: "",
     active: true
@@ -73,7 +76,7 @@ export default function NewChangeNoticeRequiredActionRoute() {
   return (
     <ChangeNoticeRequiredActionForm
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

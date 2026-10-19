@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // @carbon/api — the Carbon API contract layer.
 //
 // The operation manifest's types live in `./manifest-types` (the generated data
@@ -5,4 +9,5 @@
 // wrapper and OpenAPI converter live in `./schema`.
 
 export * from "./manifest-types";
+export * from "./rule-error";
 export * from "./schema";

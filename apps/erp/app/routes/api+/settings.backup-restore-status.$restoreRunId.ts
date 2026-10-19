@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompanyRestoreRuns } from "~/modules/settings";
-import { canManageBackups } from "~/modules/settings/backups.server";
+import { getCompanyRestoreRuns } from "~/modules/settings/backups.service";
+import { canManageBackups } from "~/modules/settings/settings.service";
 
 // Polled by the restore progress modal. A restore run is "running" until its
 // marker row appears (the job writes it once the wipe+load commits), then

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Checkbox,
   DropdownMenuContent,
@@ -22,12 +26,12 @@ import {
 import { Avatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { Customer } from "~/modules/users";
+import type { Customer } from "~/modules/users/types";
 import {
   DeactivateUsersModal,
   ResendInviteModal,
   RevokeInviteModal
-} from "~/modules/users";
+} from "~/modules/users/ui";
 import { useCustomers } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -103,9 +107,8 @@ const CustomerAccountsTable = memo(
             <HStack>
               <Avatar
                 size="sm"
-                // @ts-ignore
+                // @ts-expect-error
                 name={row.original.user?.fullName}
-                // @ts-ignore
                 path={row.original.user?.avatarUrl}
               />
 
@@ -117,6 +120,7 @@ const CustomerAccountsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuUser />
           }
         },
@@ -150,6 +154,7 @@ const CustomerAccountsTable = memo(
           header: t`Customer`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P3",
             icon: <LuSquareUser />,
             filter: {
               type: "static",
@@ -164,7 +169,7 @@ const CustomerAccountsTable = memo(
           accessorKey: "customer.customerTypeId",
           header: t`Customer Type`,
           cell: ({ row }) => (
-            // @ts-ignore
+            // @ts-expect-error
             <Enumerable value={row.original.customer?.customerType?.name} />
           ),
           meta: {
@@ -183,6 +188,7 @@ const CustomerAccountsTable = memo(
           header: t`Active`,
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
           meta: {
+            mobile: "P2",
             icon: <LuUserCheck />,
             filter: {
               type: "static",

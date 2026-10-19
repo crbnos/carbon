@@ -1,6 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadBlob, storage } from "@carbon/files";
+import {
+  convertKbToString,
+  downloadUrl,
+  getDocumentType,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardAction,
@@ -14,6 +24,7 @@ import {
   File,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -28,7 +39,7 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuAxis3D, LuEllipsisVertical, LuUpload } from "react-icons/lu";
-import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
+import { Link, useFetchers, useSubmit } from "react-router";
 import {
   DateTime,
   DocumentPreview,
@@ -38,8 +49,7 @@ import {
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useFileUpload, usePermissions, useUser } from "~/hooks";
-import type { ItemType, OptimisticFileObject } from "~/modules/shared";
-import { getDocumentType } from "~/modules/shared";
+import type { ItemType, OptimisticFileObject } from "~/modules/shared/types";
 import type { ModelUpload } from "~/types";
 import { downloadModelFile } from "~/utils/download";
 import { path } from "~/utils/path";
@@ -172,12 +182,16 @@ const ItemDocuments = ({
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem asChild>
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.view}
+                            asChild
+                          >
                             <Link to={getModelPath(modelUpload)}>
                               <Trans>View</Trans>
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.download}
                             onClick={() => downloadModel(modelUpload)}
                           >
                             Download
@@ -221,7 +235,7 @@ const ItemDocuments = ({
                           <DocumentPreview
                             bucket="private"
                             pathToFile={getPath(file)}
-                            // @ts-ignore
+                            // @ts-expect-error
                             type={type}
                           >
                             {file.name}
@@ -255,7 +269,10 @@ const ItemDocuments = ({
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem onClick={() => download(file)}>
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.download}
+                            onClick={() => download(file)}
+                          >
                             Download
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -395,8 +412,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
     async (file: FileObject) => {
       const url = path.to.file.previewFile(`private/${getPath(file)}`);
       try {
-        const response = await fetch(url);
-        downloadBlob(await response.blob(), file.name);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });

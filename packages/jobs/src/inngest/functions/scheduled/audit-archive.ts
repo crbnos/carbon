@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { gzipSync } from "node:zlib";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -68,13 +72,10 @@ async function archiveCompanyLogs(
   const timestamp = `${year}-${month}-${day}`;
   // Keys in the company bucket start with `${companyId}/` — the module-wide
   // private-storage invariant (it is what backup listing and the prefix-guarded
-  // helpers key off). Pre-migration archives used `audit-logs/${companyId}/...`
-  // in the legacy shared bucket; readers resolve via the stored `archivePath`,
-  // so both shapes stay readable.
+  // helpers key off).
   const archivePath = `${companyId}/audit-logs/${year}/${month}/${timestamp}.jsonl.gz`;
 
-  // Upload to the company's own private bucket (auditConfig.archiveBucket is
-  // the legacy shared bucket, kept only as a read fallback for old archives).
+  // Upload to the company's own private bucket.
   const archiveBucket = getCompanyPrivateBucket(companyId);
   const { error: uploadError } = await client.storage
     .from(archiveBucket)
@@ -117,7 +118,8 @@ async function archiveCompanyLogs(
   );
 
   if (deleteError) {
-    log.error(`Failed to delete archived records for ${companyId}`, {
+    log.error("Failed to delete archived records for {companyId}", {
+      companyId,
       error: deleteError
     });
     // Don't throw - archive was successful, just couldn't clean up
@@ -175,7 +177,8 @@ export const auditArchiveFunction = inngest.createFunction(
           results.recordsArchived += archived.recordsArchived;
           results.recordsDeleted += archived.recordsDeleted;
         } catch (error) {
-          logger.error(`Failed to archive logs for company ${company.id}`, {
+          logger.error("Failed to archive logs for company {companyId}", {
+            companyId: company.id,
             error
           });
           results.errors++;

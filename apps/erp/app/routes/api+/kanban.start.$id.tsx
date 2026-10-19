@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
@@ -7,8 +11,8 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
 import { Redirect } from "~/components/Redirect";
-import { getKanban } from "~/modules/inventory";
-import { getActiveJobOperationByJobId } from "~/modules/production";
+import { getKanban } from "~/modules/inventory/inventory.service";
+import { getActiveJobOperationByJobId } from "~/modules/production/production.service";
 import { path } from "~/utils/path";
 
 async function handleKanbanStart({

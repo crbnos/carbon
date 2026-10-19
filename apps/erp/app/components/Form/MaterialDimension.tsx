@@ -1,13 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
-import type {
-  getMaterialDimensionList,
-  MaterialDimension as MaterialDimensionType
-} from "~/modules/items";
+import { useMemo, useRef, useState } from "react";
+import type { getMaterialDimensionList } from "~/modules/items/items.service";
+import type { MaterialDimension as MaterialDimensionType } from "~/modules/items/types";
 import MaterialDimensionForm from "~/modules/items/ui/MaterialDimensions/MaterialDimensionForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
@@ -32,29 +34,13 @@ const MaterialDimensionPreview = (
 
 const MaterialDimension = (props: MaterialDimensionSelectProps) => {
   const { t } = useLingui();
-  const materialDimensionsLoader =
-    useFetcher<Awaited<ReturnType<typeof getMaterialDimensionList>>>();
+  const materialDimensionsLoader = useLoaderQuery<
+    Awaited<ReturnType<typeof getMaterialDimensionList>>
+  >(props.formId ? path.to.api.materialDimensions(props.formId) : null);
 
   const newDimensionModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useMount(() => {
-    if (props.formId) {
-      materialDimensionsLoader.load(
-        path.to.api.materialDimensions(props.formId)
-      );
-    }
-  });
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (props.formId) {
-      materialDimensionsLoader.load(
-        path.to.api.materialDimensions(props.formId)
-      );
-    }
-  }, [props.formId]);
 
   const options = useMemo(() => {
     return (materialDimensionsLoader.data?.data ?? []).map((c) => ({

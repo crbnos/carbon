@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
 import {
@@ -17,8 +21,8 @@ import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
 import ServiceForm from "~/modules/items/ui/Services/ServiceForm";
 import ToolForm from "~/modules/items/ui/Tools/ToolForm";
-import type { ItemType } from "~/modules/shared";
-import { itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { MethodItemTypeIcon } from "../Icons";
 import { useEmptyState } from "./emptyStates";
@@ -221,8 +225,6 @@ const Items = (props: ItemsSelectProps) => {
           type="modal"
           onClose={handleCreateClose}
           initialValues={{
-            id: "",
-            revision: "0",
             name: created,
             description: "",
             itemTrackingType: "Non-Inventory",

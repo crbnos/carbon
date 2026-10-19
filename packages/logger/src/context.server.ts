@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
   createContext,
@@ -46,14 +50,42 @@ export const requestContextMiddleware: MiddlewareFunction<Response> = (
   { context, request },
   next
 ) => {
-  context.set(isReadRequestContext, READ_METHODS.has(request.method));
+  context.set(isReadRequestContext, isReadRequest(request));
+  context.set(requestContext, request);
   return storage.run(context, () => next());
 };
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
+/** Whether a request only reads. The one definition, shared with `@carbon/auth`. */
+export function isReadRequest(request: { method: string }): boolean {
+  return READ_METHODS.has(request.method);
+}
+
 /** Whether this request only reads — see `oncePerRead`. */
 const isReadRequestContext = createContext<boolean>(false);
+
+const requestContext = createContext<Request | null>(null);
+
+/**
+ * The request being handled, for code that is not handed it: a Supabase client
+ * built deep in a service binds itself to it (`requestFetch` in
+ * `@carbon/auth`), and the log filter reads its signal. Undefined outside a
+ * request.
+ */
+export function currentRequest(): Request | undefined {
+  return storage.getStore()?.get(requestContext) ?? undefined;
+}
+
+/**
+ * Whether the current request only reads and its client has gone away before
+ * the response was done. Never true for a mutating request or outside one.
+ */
+export function isAbandonedRead(): boolean {
+  const provider = storage.getStore();
+  if (!provider?.get(isReadRequestContext)) return false;
+  return provider.get(requestContext)?.signal.aborted ?? false;
+}
 
 /** The current request's context provider, or undefined outside a request. */
 export function getRouterContext(): RequestContext | undefined {
@@ -66,6 +98,17 @@ export function getRouterContext(): RequestContext | undefined {
  */
 export function getRequestContext<T>(context: RouterContext<T>): T | undefined {
   return storage.getStore()?.get(context);
+}
+
+export const requestDetailContext = createContext<string | null>(null);
+
+/**
+ * What a route that serves many things on one path ran for this request:
+ * the Inngest function behind `/api/inngest`, the tool behind `/api/mcp`.
+ * The access log prints it after the path. No-op outside a request.
+ */
+export function describeRequest(detail: string) {
+  storage.getStore()?.set(requestDetailContext, detail);
 }
 
 /** Backing store for `oncePerRequest`, kept in the router context itself. */
@@ -126,8 +169,13 @@ export function requestMemoSize(): number {
 export function runInRequestContext<T>(
   provider: RequestContext,
   fn: () => T,
-  options?: { isRead?: boolean }
+  options?: { isRead?: boolean; request?: Request }
 ): T {
-  provider.set(isReadRequestContext, options?.isRead ?? true);
+  // As the middleware decides it: from the request's method, when there is one.
+  const isRead =
+    options?.isRead ??
+    (options?.request ? isReadRequest(options.request) : true);
+  provider.set(isReadRequestContext, isRead);
+  provider.set(requestContext, options?.request ?? null);
   return storage.run(provider, fn);
 }

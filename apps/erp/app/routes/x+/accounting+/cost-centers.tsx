@@ -1,22 +1,28 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getApprovalRulesForApprover } from "@carbon/ee/approvals.server";
 import {
-  Heading,
   HStack,
+  RecordOutlet,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
-import { getCostCentersTree } from "~/modules/accounting";
+import { SettingsPageHeading } from "~/components/SettingsPage";
+import { getCostCentersTree } from "~/modules/accounting/accounting.service";
 import {
   CostCentersListView,
   CostCentersTreeView
@@ -85,7 +91,9 @@ export default function Route() {
   return (
     <Tabs defaultValue="tree" className="w-full">
       <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
-        <Heading size="h3">Cost Centers</Heading>
+        <SettingsPageHeading>
+          <Trans>Cost Centers</Trans>
+        </SettingsPageHeading>
         <HStack>
           <TabsList>
             <TabsTrigger value="tree">Tree View</TabsTrigger>
@@ -117,7 +125,7 @@ export default function Route() {
         />
       </TabsContent>
 
-      <Outlet />
+      <RecordOutlet />
     </Tabs>
   );
 }

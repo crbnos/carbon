@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { randomUUID } from "node:crypto";
 import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
@@ -43,13 +47,11 @@ export const EXPORTS_PREFIX = "exports";
 export const TEMPLATE_BUCKET = "company-templates";
 
 /**
- * The LEGACY shared bucket that held per-company assets (3D models, item
- * thumbnails, document attachments) under a `{companyId}/` prefix. Current
- * writes go to the company's own bucket (bucket id = companyId, same object
- * keys); files uploaded before the per-company bucket migration may still live
- * here, so backup reads try the company bucket first and fall back.
+ * The retired shared bucket that held every company's files under a
+ * `{companyId}/` prefix before each company got its own bucket. Nothing reads
+ * or writes it; a company purge still deletes what that company left there.
  */
-export const STORAGE_BUCKET = "private";
+export const LEGACY_SHARED_BUCKET = "private";
 
 /**
  * TEXT columns holding a storage path (`{companyId}/…/{id}.ext`). A cross-company
@@ -101,10 +103,6 @@ export const READABLE_ID_TABLES = new Set([
  * per workspace (3D models, etc.), uploaded at deploy from the committed
  * template gz. A template import references these instead of copying the files
  * into every onboarded company's `{companyId}/` prefix.
- *
- * NOTE: `ci/src/upload-backup-templates.ts` (a plain Node script that can't
- * import this Deno/Inngest module cheaply) hardcodes the same literal — keep
- * the two in sync.
  */
 export const TEMPLATE_ASSET_PREFIX = "_templates";
 
@@ -647,18 +645,24 @@ async function copyStorageObject(
 }
 
 /**
- * Copy a company's storage assets (shared `private` bucket, under `{companyId}/`)
- * into a backup's own `.assets/` folder in the per-company bucket. Server-side —
+ * Copy a company's storage assets (its own bucket, under `{companyId}/`) into
+ * a backup's own `.assets/` folder in the same bucket. Server-side —
  * no bytes pass through this process, so a 200MB asset set costs no memory.
  * Best-effort: a per-file failure warns and continues, matching the
  * non-transactional storage semantics of restore/import.
  */
 export async function copyAssetsToBackup(
   client: SupabaseClient,
-  args: { sourcePaths: string[]; destBucket: string; destPrefix: string },
+  args: {
+    companyId: string;
+    sourcePaths: string[];
+    destBucket: string;
+    destPrefix: string;
+  },
   onProgress?: (done: number, total: number) => Promise<void>
 ): Promise<{ copied: number; failed: number }> {
-  const { sourcePaths, destBucket, destPrefix } = args;
+  const { companyId, sourcePaths, destBucket, destPrefix } = args;
+  const srcBucket = getCompanyPrivateBucket(companyId);
   const total = sourcePaths.length;
   let copied = 0;
   let failed = 0;
@@ -667,27 +671,14 @@ export async function copyAssetsToBackup(
     sourcePaths,
     ASSET_COPY_CONCURRENCY,
     async (path) => {
-      // Assets live in the company's own bucket (keys start with companyId);
-      // pre-migration files still live in the legacy shared bucket. A key with
-      // no companyId segment can only live in the legacy bucket.
-      const companySegment = path.split("/")[0] ?? "";
-      const companyBucket = companySegment
-        ? getCompanyPrivateBucket(companySegment)
-        : STORAGE_BUCKET;
-      let { ok, error } = await copyStorageObject(client, {
-        srcBucket: companyBucket,
+      // The bucket comes from the company, never from the path: a path naming
+      // another company would otherwise read that company's bucket.
+      const { ok, error } = await copyStorageObject(client, {
+        srcBucket,
         srcPath: path,
         destBucket,
         destPath: `${destPrefix}/${path}`
       });
-      if (!ok) {
-        ({ ok, error } = await copyStorageObject(client, {
-          srcBucket: STORAGE_BUCKET,
-          srcPath: path,
-          destBucket,
-          destPath: `${destPrefix}/${path}`
-        }));
-      }
       if (ok) {
         copied++;
       } else {

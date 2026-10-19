@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
 import { Combobox, ValidatedForm } from "@carbon/form";
@@ -30,12 +34,14 @@ import {
   VStack
 } from "@carbon/react";
 import {
+  distinctItemText,
   getItemReadableId,
   INPUT_FORMAT,
   INPUT_STEP,
   taxableBase,
   taxPairFromPercent
 } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
@@ -51,6 +57,7 @@ import type { z } from "zod";
 import { MethodIcon } from "~/components";
 import {
   CustomFormFields,
+  DatePicker,
   Hidden,
   Item,
   Location,
@@ -62,6 +69,7 @@ import {
   TaxFields,
   useTaxPair
 } from "~/components/Form";
+import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -70,12 +78,24 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import type { SalesInvoice } from "~/modules/invoicing";
-import { salesInvoiceLineValidator } from "~/modules/invoicing";
-import { type ItemType, itemType, methodType } from "~/modules/shared";
+import { salesInvoiceLineValidator } from "~/modules/invoicing/invoicing.models";
+import type { SalesInvoice } from "~/modules/invoicing/types";
+import { itemType, methodType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";
+import ContractInvoiceLineSource from "./ContractInvoiceLineSource";
+import RentalInvoiceLineSummary from "./RentalInvoiceLineSummary";
+
+/** The unit price after a percent-points discount. An emptied discount field
+ *  commits NaN, which reads as no discount rather than poisoning the tax base. */
+function netUnitPrice(unitPrice: number, discountPoints: number) {
+  const discount = globalThis.Number.isFinite(discountPoints)
+    ? discountPoints
+    : 0;
+  return unitPrice * (1 - discount / 100);
+}
 
 type SalesInvoiceLineFormProps = {
   initialValues: z.infer<typeof salesInvoiceLineValidator> & {
@@ -88,13 +108,26 @@ type SalesInvoiceLineFormProps = {
   onClose?: () => void;
 };
 
-const SalesInvoiceLineForm = ({
+// A Rental line is written by rental invoice generation from its agreement's
+// billing period or charge — it has no item, and it is never edited here.
+const SalesInvoiceLineForm = (props: SalesInvoiceLineFormProps) =>
+  props.initialValues.invoiceLineType === "Rental" ? (
+    <RentalInvoiceLineSummary
+      lineId={props.initialValues.id}
+      type={props.type}
+      onClose={props.onClose}
+    />
+  ) : (
+    <SalesInvoiceItemLineForm {...props} />
+  );
+
+const SalesInvoiceItemLineForm = ({
   initialValues,
   type,
   isSalesOrderLine = false,
   onClose
 }: SalesInvoiceLineFormProps) => {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const permissions = usePermissions();
   const { carbon } = useCarbon();
 
@@ -140,6 +173,14 @@ const SalesInvoiceLineForm = ({
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.invoiceLineType as ItemType
   );
+  // The picker's type filter. It starts on every item type; the line's own
+  // type is a real enum value — "Item" is not one — and follows the selected
+  // item.
+  const [itemFilter, setItemFilter] = useState<ItemType | "Item">("Item");
+  // A service can run a single day, so its end may equal its start.
+  const [serviceStartDate, setServiceStartDate] = useState(
+    initialValues.serviceStartDate
+  );
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
     itemId: string;
@@ -147,6 +188,8 @@ const SalesInvoiceLineForm = ({
     description: string;
     quantity: number;
     unitPrice: number;
+    /** Percent points (0–100), as the field types it. */
+    discountPercent: number;
     shippingCost: number;
     unitOfMeasureCode: string;
     storageUnitId: string | null;
@@ -158,6 +201,7 @@ const SalesInvoiceLineForm = ({
     description: initialValues.description ?? "",
     quantity: initialValues.quantity ?? 1,
     unitPrice: initialValues.unitPrice ?? 0,
+    discountPercent: initialValues.discountPercent ?? 0,
     shippingCost: initialValues.shippingCost ?? 0,
     unitOfMeasureCode: initialValues.unitOfMeasureCode ?? "",
     storageUnitId: initialValues.storageUnitId ?? "",
@@ -165,7 +209,10 @@ const SalesInvoiceLineForm = ({
     // amount is rounded to the currency's decimals rather than a raw product.
     taxAmount: taxPairFromPercent(
       taxableBase(
-        initialValues.unitPrice ?? 0,
+        netUnitPrice(
+          initialValues.unitPrice ?? 0,
+          initialValues.discountPercent ?? 0
+        ),
         initialValues.quantity ?? 1,
         initialValues.shippingCost ?? 0
       ),
@@ -175,8 +222,10 @@ const SalesInvoiceLineForm = ({
     taxPercent: initialValues.taxPercent ?? 0
   });
 
+  // Tax is charged on the discounted merchandise, so the pair's base takes the
+  // NET unit price.
   const itemTax = useTaxPair({
-    unitPrice: itemData.unitPrice,
+    unitPrice: netUnitPrice(itemData.unitPrice, itemData.discountPercent),
     quantity: itemData.quantity,
     shippingCost: itemData.shippingCost,
     percent: itemData.taxPercent,
@@ -264,7 +313,11 @@ const SalesInvoiceLineForm = ({
         : !permissions.can("create", "purchasing");
 
   const onTypeChange = (t: ItemType | "Item") => {
-    if (t === lineType) return;
+    if (t === itemFilter) return;
+    setItemFilter(t);
+    // Widening to every type keeps the selected item; narrowing to another
+    // type clears it.
+    if (t === "Item" || t === lineType) return;
     setLineType(t as ItemType);
     setItemData({
       itemId: "",
@@ -272,6 +325,7 @@ const SalesInvoiceLineForm = ({
       description: "",
       quantity: 1,
       unitPrice: 0,
+      discountPercent: 0,
       shippingCost: 0,
       unitOfMeasureCode: "",
       storageUnitId: "",
@@ -326,6 +380,7 @@ const SalesInvoiceLineForm = ({
             description: "",
             quantity: 1,
             unitPrice: 0,
+            discountPercent: 0,
             shippingCost: 0,
             unitOfMeasureCode: "",
             storageUnitId: "",
@@ -344,7 +399,11 @@ const SalesInvoiceLineForm = ({
             (itemCost?.unitCost ?? 0) /
             (routeData?.salesInvoice?.exchangeRate ?? 1),
           shippingCost: 0,
-          unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
+          // A service is always sold in "EA"
+          unitOfMeasureCode:
+            item.data?.type === "Service"
+              ? "EA"
+              : (item.data?.unitOfMeasureCode ?? "EA"),
           storageUnitId: inventory.data?.defaultStorageUnitId ?? null,
           taxAmount: 0,
           taxPercent: 0
@@ -425,7 +484,7 @@ const SalesInvoiceLineForm = ({
             >
               <HStack
                 className={cn(
-                  "w-full justify-between items-start",
+                  "w-full justify-between items-start max-md:flex-col max-md:items-stretch max-md:space-x-0",
                   type === "modal" && "pr-16"
                 )}
               >
@@ -451,11 +510,16 @@ const SalesInvoiceLineForm = ({
                   <ModalCardDescription>
                     {isEditing ? (
                       <div className="flex flex-col items-start gap-1">
-                        <span>
-                          {isFixedAsset
-                            ? initialValues.assetName || assetData.description
-                            : itemData?.description}
-                        </span>
+                        {isFixedAsset ? (
+                          <span>
+                            {initialValues.assetName || assetData.description}
+                          </span>
+                        ) : (
+                          distinctItemText(
+                            getItemReadableId(items, itemData?.itemId),
+                            itemData?.description
+                          ) && <span>{itemData?.description}</span>
+                        )}
                         <div className="flex items-center gap-2">
                           <Badge
                             variant="outline"
@@ -481,13 +545,14 @@ const SalesInvoiceLineForm = ({
                             </Badge>
                           ) : null}
                         </div>
+                        <ContractInvoiceLineSource lineId={initialValues.id} />
                       </div>
                     ) : (
                       t`A sales invoice line contains invoice details for a particular item`
                     )}
                   </ModalCardDescription>
                 </ModalCardHeader>
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 max-md:min-w-0 max-md:overflow-x-auto max-md:scroll-fade-x max-md:px-4 max-md:pb-2 max-md:empty:hidden">
                   {!isEditing && (
                     <TabsList>
                       <TabsTrigger value="item">
@@ -515,7 +580,11 @@ const SalesInvoiceLineForm = ({
                   <Hidden name="description" value={itemData.description} />
                   <Hidden
                     name="unitOfMeasureCode"
-                    value={itemData?.unitOfMeasureCode}
+                    value={
+                      lineType === "Service"
+                        ? "EA"
+                        : itemData?.unitOfMeasureCode
+                    }
                   />
 
                   <VStack>
@@ -532,9 +601,10 @@ const SalesInvoiceLineForm = ({
                     )}
                     <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                       <Item
+                        autoFocus={!isEditing}
                         name="itemId"
-                        label={lineType}
-                        type={lineType}
+                        label={i18n._(itemTypeLabel(itemFilter))}
+                        type={itemFilter}
                         validItemTypes={[...itemType]}
                         locationId={locationId}
                         // Required by a refine rather than the schema object,
@@ -546,7 +616,7 @@ const SalesInvoiceLineForm = ({
                         onTypeChange={onTypeChange}
                       />
 
-                      <FormControl className="col-span-2">
+                      <FormControl className="col-span-2 max-md:col-span-full">
                         <FormLabel isOptional>
                           <Trans>Description</Trans>
                         </FormLabel>
@@ -625,6 +695,41 @@ const SalesInvoiceLineForm = ({
                               }))
                             }
                           />
+                          <NumberControlled
+                            name="discountPercent"
+                            label={t`Discount (%)`}
+                            value={itemData.discountPercent}
+                            minValue={0}
+                            maxValue={100}
+                            step={INPUT_STEP.percent}
+                            formatOptions={INPUT_FORMAT.percentPoints}
+                            onChange={(value) =>
+                              setItemData((d) => ({
+                                ...d,
+                                discountPercent: value
+                              }))
+                            }
+                          />
+                          {lineType === "Service" && (
+                            <>
+                              <DatePicker
+                                name="serviceStartDate"
+                                label={t`Service start`}
+                                onChange={(date) =>
+                                  setServiceStartDate(date ?? undefined)
+                                }
+                              />
+                              <DatePicker
+                                name="serviceEndDate"
+                                label={t`Service end`}
+                                minValue={
+                                  serviceStartDate
+                                    ? parseDate(serviceStartDate)
+                                    : undefined
+                                }
+                              />
+                            </>
+                          )}
                           <Location
                             name="locationId"
                             label={t`Shipping Location`}

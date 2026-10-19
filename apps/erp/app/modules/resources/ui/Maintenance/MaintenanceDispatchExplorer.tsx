@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { DateTimePicker, Hidden, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Count,
@@ -13,6 +18,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -21,13 +27,14 @@ import {
   ModalTitle,
   ScrollArea,
   Skeleton,
+  toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuBox,
@@ -40,13 +47,15 @@ import {
   LuSearch,
   LuTrash
 } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { Employee, TextArea, WorkCenter } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions, useRouteData } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
+import type { action as editEventAction } from "~/routes/x+/maintenance+/$dispatchId.event.$eventId";
+import type { action as newEventAction } from "~/routes/x+/maintenance+/$dispatchId.event.new";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 import {
@@ -376,12 +385,13 @@ function MaintenanceExplorerChildItem({
               icon={<LuEllipsisVertical />}
               variant="ghost"
               size="sm"
-              className="absolute right-1 top-1 flex-shrink-0 opacity-0 group-hover/child:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+              className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/child:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
             />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {child.type === "event" && (
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
                 onSelect={() => {
                   onEdit(child);
                 }}
@@ -392,6 +402,7 @@ function MaintenanceExplorerChildItem({
             )}
             {permissions.can("delete", "resources") && (
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 onSelect={() => {
                   onDelete(child);
@@ -418,13 +429,12 @@ function NewTimecardModal({
   dispatchId: string;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher();
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.success === true) {
+  const fetcher = useAction<typeof newEventAction>({
+    onSuccess: ({ data }) => {
+      if (data?.warning) toast.error(data.warning);
       onClose();
     }
-  }, [fetcher.state, fetcher.data, onClose]);
+  });
 
   return (
     <Modal
@@ -485,13 +495,12 @@ function EditTimecardModal({
   event: MaintenanceDispatchEvent & { type: "event" };
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher();
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.success === true) {
+  const fetcher = useAction<typeof editEventAction>({
+    onSuccess: ({ data }) => {
+      if (data?.warning) toast.error(data.warning);
       onClose();
     }
-  }, [fetcher.state, fetcher.data, onClose]);
+  });
 
   return (
     <Modal

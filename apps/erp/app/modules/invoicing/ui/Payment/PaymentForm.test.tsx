@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComponentProps, ReactNode } from "react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -41,25 +45,10 @@ vi.mock("react", async (importOriginal) => {
     }
   };
 });
-vi.mock("@carbon/react", () => {
-  const Box = ({ children }: { children?: ReactNode }) =>
-    createElement("div", null, children);
-  return {
-    Button: Box,
-    Card: Box,
-    CardContent: Box,
-    CardDescription: Box,
-    CardFooter: Box,
-    CardHeader: Box,
-    CardTitle: Box,
-    DropdownMenuIcon: Box,
-    DropdownMenuItem: Box,
-    Status: Box,
-    VStack: Box,
-    useDisclosure: () => ({ isOpen: false }),
-    useMount: () => undefined
-  };
-});
+// PaymentForm imports nothing from @carbon/react; `useCurrencies` needs useMount.
+vi.mock("@carbon/react", () => ({
+  useMount: () => undefined
+}));
 vi.mock("@carbon/form", () => ({
   ValidatedForm: ({
     children,
@@ -83,7 +72,6 @@ vi.mock("~/components/Form", () => {
     Hidden: ({ name, value }: { name: string; value?: string }) =>
       createElement("input", { type: "hidden", name, value, readOnly: true }),
     Input: Field,
-    Select: Field,
     SelectControlled: ({
       options,
       onChange
@@ -137,13 +125,18 @@ vi.mock("@lingui/react/macro", () => ({
       )
   })
 }));
+// The currency list is read through the query cache (`useCurrencies`).
+vi.mock("@carbon/query", () => ({
+  RefreshRate: { Never: Number.POSITIVE_INFINITY },
+  useLoaderQuery: () => ({
+    data: { data: harness.currencies },
+    isFetching: false
+  })
+}));
 vi.mock("react-router", () => ({
   generatePath: (path: string) => path,
-  useFetcher: () => ({ state: "idle", data: { data: harness.currencies } })
+  useFetcher: () => ({ state: "idle" })
 }));
-vi.mock("~/components", () => ({ DocumentHeader: () => null }));
-vi.mock("~/components/Enumerable", () => ({ Enumerable: () => null }));
-vi.mock("~/components/Modals", () => ({ ConfirmDelete: () => null }));
 vi.mock("~/hooks/useCompanySettings", () => ({
   useCompanySettings: () => ({ showCurrencyTrailingZeros: true })
 }));
@@ -155,7 +148,6 @@ vi.mock("~/hooks", async () => {
     useUser: () => ({ company: { baseCurrencyCode: "USD" } })
   };
 });
-vi.mock("~/modules/invoicing", () => import("../../invoicing.models"));
 
 import PaymentForm from "./PaymentForm";
 
@@ -191,18 +183,21 @@ describe("PaymentForm refund directions", () => {
   it.each([
     ["customer-refund", "Disbursement", "customerId", "supplierId"],
     ["supplier-refund", "Receipt", "supplierId", "customerId"]
-  ])("offers %s and submits its cash direction with one party", (kind, direction, party, otherParty) => {
-    const html = render();
-    expect(html).toContain("Refund to Customer");
-    expect(html).toContain("Refund from Supplier");
-    harness.typeChange?.({ value: kind, label: kind });
-    const next = render();
-    expect(next).toContain(
-      `name="paymentType" readonly="" value="${direction}"`
-    );
-    expect(next).toContain(`name="${party}"`);
-    expect(next).toContain(`name="${otherParty}" readonly="" value=""`);
-  });
+  ])(
+    "offers %s and submits its cash direction with one party",
+    (kind, direction, party, otherParty) => {
+      const html = render();
+      expect(html).toContain("Refund to Customer");
+      expect(html).toContain("Refund from Supplier");
+      harness.typeChange?.({ value: kind, label: kind });
+      const next = render();
+      expect(next).toContain(
+        `name="paymentType" readonly="" value="${direction}"`
+      );
+      expect(next).toContain(`name="${party}"`);
+      expect(next).toContain(`name="${otherParty}" readonly="" value=""`);
+    }
+  );
 });
 
 describe("PaymentForm employee payee", () => {
@@ -237,42 +232,45 @@ describe("PaymentForm employee payee", () => {
 });
 
 describe("PaymentForm document currency", () => {
-  it.each([
-    undefined,
-    "payment-id"
-  ])("labels document cash in EUR for payment id %s while the company uses USD", (id) => {
-    const html = render({ ...initialValues, id, status: "Draft" });
-    expect(html).toContain(
-      'aria-label="Total Amount" readonly="" value="€120.80"'
-    );
-    expect(html).not.toContain("$120.80");
-  });
+  it.each([undefined, "payment-id"])(
+    "labels document cash in EUR for payment id %s while the company uses USD",
+    (id) => {
+      const html = render({ ...initialValues, id, status: "Draft" });
+      expect(html).toContain(
+        'aria-label="Total Amount" readonly="" value="€120.80"'
+      );
+      expect(html).not.toContain("$120.80");
+    }
+  );
 
   it.each([
     ["JPY", 123, "¥123"],
     ["BHD", 123.456, "BHD 123.456"]
-  ] as const)("uses %s document settlement precision", (currencyCode, totalAmount, formatted) => {
-    expect(render({ ...initialValues, currencyCode, totalAmount })).toContain(
-      `aria-label="Total Amount" readonly="" value="${formatted}"`
-    );
-  });
+  ] as const)(
+    "uses %s document settlement precision",
+    (currencyCode, totalAmount, formatted) => {
+      expect(render({ ...initialValues, currencyCode, totalAmount })).toContain(
+        `aria-label="Total Amount" readonly="" value="${formatted}"`
+      );
+    }
+  );
 
-  it.each([
-    undefined,
-    "payment-id"
-  ])("updates currency and decimal precision after selection for payment id %s", (id) => {
-    const values = {
-      ...initialValues,
-      id,
-      status: "Draft",
-      totalAmount: 123.456
-    };
-    render(values);
-    harness.currencyChange?.({ value: "BHD", label: "Bahraini Dinar" });
-    expect(render(values)).toContain('value="BHD 123.456"');
-    harness.currencyChange?.({ value: "JPY", label: "Japanese Yen" });
-    expect(render(values)).toContain('value="¥123"');
-    harness.currencyChange?.({ value: "EUR", label: "Euro" });
-    expect(render(values)).toContain('value="€123.46"');
-  });
+  it.each([undefined, "payment-id"])(
+    "updates currency and decimal precision after selection for payment id %s",
+    (id) => {
+      const values = {
+        ...initialValues,
+        id,
+        status: "Draft",
+        totalAmount: 123.456
+      };
+      render(values);
+      harness.currencyChange?.({ value: "BHD", label: "Bahraini Dinar" });
+      expect(render(values)).toContain('value="BHD 123.456"');
+      harness.currencyChange?.({ value: "JPY", label: "Japanese Yen" });
+      expect(render(values)).toContain('value="¥123"');
+      harness.currencyChange?.({ value: "EUR", label: "Euro" });
+      expect(render(values)).toContain('value="€123.46"');
+    }
+  );
 });

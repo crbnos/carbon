@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 import { useCarbon } from "@carbon/auth";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -24,6 +29,7 @@ import {
   IconButton,
   Label,
   Loading,
+  MENU_ITEM_SHORTCUTS,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
@@ -35,11 +41,11 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { INPUT_FORMAT } from "@carbon/utils";
+import { distinctItemText, INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
-import { motion, Reorder, useDragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
+import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -56,6 +62,7 @@ import {
   LuListChecks,
   LuMaximize2,
   LuMinimize2,
+  LuTrash,
   LuTriangleAlert
 } from "react-icons/lu";
 import { useFetcher, useFetchers, useParams } from "react-router";
@@ -85,7 +92,6 @@ import {
 import AssemblyInstruction from "~/components/Form/AssemblyInstruction";
 import InspectionDocument from "~/components/Form/InspectionDocument";
 import Procedure from "~/components/Form/Procedure";
-import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 import { getUnitHint } from "~/components/Form/UnitHint";
 import UnitOfMeasure, {
   useUnitOfMeasure
@@ -106,11 +112,10 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import type {
-  OperationParameter,
-  OperationStep,
-  OperationTool
-} from "~/modules/shared";
+import {
+  OperationRowDetails,
+  OperationRowTitle
+} from "~/modules/items/ui/Item/MethodRow";
 import {
   methodOperationOrders,
   operationParameterValidator,
@@ -118,7 +123,14 @@ import {
   operationToolValidator,
   operationTypes,
   procedureStepType
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
+import type {
+  OperationParameter,
+  OperationStep,
+  OperationTool
+} from "~/modules/shared/types";
+import type { action as editQuoteOperationAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.operation.$id";
+import type { action as newQuoteOperationAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.operation.new";
 import type { action as editQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.$id";
 import type { action as newQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.new";
 import type { action as editQuoteOperationStepAction } from "~/routes/x+/quote+/methods+/operation.step.$id";
@@ -184,49 +196,16 @@ function makeItem(
   return {
     id: operation.id!,
     title: (
-      <VStack spacing={0}>
-        <h3 className="font-semibold max-w-full truncate cursor-pointer">
-          {operation.description}
-        </h3>
-        {operation.operationType === "Outside Processing" && (
-          <SupplierProcessPreview
-            processId={operation.processId}
-            supplierProcessId={operation.operationSupplierProcessId}
-          />
-        )}
-      </VStack>
+      <OperationRowTitle
+        description={operation.description}
+        operationType={operation.operationType}
+        processId={operation.processId}
+        supplierProcessId={operation.operationSupplierProcessId}
+      />
     ),
     checked: false,
     order: operation.operationOrder,
-    details: (
-      <HStack spacing={1}>
-        {operation.operationType === "Outside Processing" ? (
-          <Badge>Outside Processing</Badge>
-        ) : (
-          <>
-            {(operation?.setupTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Setup" className="h-3 w-3 mr-1" />
-                {operation.setupTime} {operation.setupUnit}
-              </Badge>
-            )}
-            {(operation?.laborTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Labor" className="h-3 w-3 mr-1" />
-                {operation.laborTime} {operation.laborUnit}
-              </Badge>
-            )}
-
-            {(operation?.machineTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Machine" className="h-3 w-3 mr-1" />
-                {operation.machineTime} {operation.machineUnit}
-              </Badge>
-            )}
-          </>
-        )}
-      </HStack>
-    ),
+    details: <OperationRowDetails operation={operation} />,
     data: operation
   };
 }
@@ -297,7 +276,8 @@ const QuoteBillOfProcess = ({
 }: QuoteBillOfProcessProps) => {
   const { carbon } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
-  const deleteOperationFetcher = useFetcher<{ success: boolean }>();
+  // A failed delete is toasted.
+  const deleteOperationFetcher = useAction();
   const permissions = usePermissions();
   const { id: userId } = useUser();
 
@@ -315,7 +295,9 @@ const QuoteBillOfProcess = ({
         .map((item) => ({
           id: item.id,
           label: item.name ?? item.readableIdWithRevision,
-          helper: item.name ? item.readableIdWithRevision : undefined
+          helper: item.name
+            ? distinctItemText(item.name, item.readableIdWithRevision)
+            : undefined
         })),
     [allItems, materialItemIds]
   );
@@ -327,6 +309,7 @@ const QuoteBillOfProcess = ({
   const quoteData = useRouteData<{ quote: Quotation }>(path.to.quote(quoteId));
 
   const isDisabled = quoteData?.quote?.status !== "Draft";
+  const isReadOnly = isDisabled || !permissions.can("update", "sales");
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
@@ -340,12 +323,10 @@ const QuoteBillOfProcess = ({
       }, {} as PendingWorkInstructions);
     });
   const [checkedState, setCheckedState] = useState<CheckedState>({});
-  const [orderState, setOrderState] = useState<OrderState>(() => {
-    return initialOperations.reduce((acc, op) => {
-      acc[op.id!] = op.order;
-      return acc;
-    }, {} as OrderState);
-  });
+  // Only the rows this session has reordered. Every other row takes its order
+  // from the loaded data: a copy of all of them taken at mount hid a reorder
+  // made anywhere else until the page was reloaded.
+  const [orderState, setOrderState] = useState<OrderState>({});
 
   const { t } = useLingui();
 
@@ -415,7 +396,7 @@ const QuoteBillOfProcess = ({
   const onUploadImage = useImageUpload(`opportunity-line/${selectedItemId}`);
 
   const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "parts")) return;
+    if (isReadOnly) return;
     setCheckedState((prev) => ({
       ...prev,
       [id]: !prev[id]
@@ -445,33 +426,37 @@ const QuoteBillOfProcess = ({
     setSelectedItemId(operationId);
   };
 
-  const onRemoveItem = async (id: string) => {
-    if (!permissions.can("update", "sales")) return;
+  // One request for every saved row, so "Delete Selected" removes the checked
+  // rows together rather than racing one fetcher submit per row.
+  const onRemoveItems = (ids: string[]) => {
+    if (isReadOnly) return;
 
-    const operation = operationsById.get(id);
-    if (!operation) return;
-
-    if (temporaryItems[id]) {
-      setTemporaryItems((prev) => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      deleteOperationFetcher.submit(
-        { id },
-        {
-          method: "post",
-          action: path.to.quoteOperationsDelete
-        }
+    const without = <T,>(state: Record<string, T>) =>
+      Object.fromEntries(
+        Object.entries(state).filter(([id]) => !ids.includes(id))
       );
+
+    // Temporary rows were never saved: dropping them from state is enough.
+    setTemporaryItems(without);
+    const savedIds = ids.filter((id) => !temporaryItems[id]);
+    if (savedIds.length > 0) {
+      const formData = new FormData();
+      for (const id of savedIds) formData.append("id", id);
+      deleteOperationFetcher.submit(formData, {
+        method: "post",
+        action: path.to.quoteOperationsDelete
+      });
     }
 
     setSelectedItemId(null);
-    setOrderState((prev) => {
-      const { [id]: _, ...rest } = prev;
-      return rest;
-    });
+    setOrderState(without);
+    setCheckedState(without);
   };
+
+  const onRemoveItem = (id: string) => onRemoveItems([id]);
+  const checkedIds = items
+    .filter((item) => item.checked)
+    .map((item) => item.id);
 
   const onReorder = (items: ItemWithData[]) => {
     if (!permissions.can("update", "sales") || isDisabled) return;
@@ -544,9 +529,8 @@ const QuoteBillOfProcess = ({
               animate={{ opacity: 1, filter: "blur(0px)" }}
               transition={{
                 type: "spring",
-                bounce: 0.2,
-                duration: 0.75,
-                delay: 0.15
+                bounce: 0,
+                duration: 0.3
               }}
             >
               <OperationForm
@@ -761,6 +745,7 @@ const QuoteBillOfProcess = ({
 
     return (
       <SortableListItem<Operation>
+        isReadOnly={isReadOnly}
         item={item}
         items={items}
         order={order}
@@ -799,22 +784,35 @@ const QuoteBillOfProcess = ({
         </CardHeader>
 
         <CardAction>
-          <Button
-            ref={addOperationButtonRef}
-            variant="secondary"
-            isDisabled={
-              !permissions.can("update", "sales") ||
-              selectedItemId !== null ||
-              isDisabled
-            }
-            onClick={onAddItem}
-          >
-            <Trans>Add Operation</Trans>
-          </Button>
+          <div className="flex items-center gap-2">
+            {checkedIds.length > 1 && (
+              <Button
+                variant="destructive"
+                leftIcon={<LuTrash />}
+                isDisabled={isReadOnly}
+                onClick={() => onRemoveItems(checkedIds)}
+              >
+                <Trans>Delete Selected</Trans>
+              </Button>
+            )}
+            <Button
+              ref={addOperationButtonRef}
+              variant="secondary"
+              isDisabled={
+                !permissions.can("update", "sales") ||
+                selectedItemId !== null ||
+                isDisabled
+              }
+              onClick={onAddItem}
+            >
+              <Trans>Add Operation</Trans>
+            </Button>
+          </div>
         </CardAction>
       </HStack>
       <CardContent>
         <SortableList
+          isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
           onToggleItem={onToggleItem}
@@ -856,7 +854,8 @@ function AttributesForm({
 
   // Update sort order when steps change
   useEffect(() => {
-    if (steps && steps.length > 0) {
+    // Also when the last step is deleted: its id must leave the order.
+    if (steps) {
       const sorted = [...steps]
         .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
         .map((step) => step.id || "");
@@ -971,7 +970,10 @@ function AttributesForm({
               <Input name="name" label={t`Name`} />
             </div>
 
-            <VStack spacing={2} className="w-full col-span-2">
+            <VStack
+              spacing={2}
+              className="w-full col-span-2 max-md:col-span-full"
+            >
               <Label>Description</Label>
               <Editor
                 initialValue={description}
@@ -1142,15 +1144,14 @@ function AttributesListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editQuoteOperationStepAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editQuoteOperationStepAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const [type, setType] = useState<OperationStep["type"]>(attribute.type);
 
@@ -1218,7 +1219,10 @@ function AttributesListItem({
               <Input name="name" label={t`Name`} />
             </div>
 
-            <VStack spacing={2} className="w-full col-span-2">
+            <VStack
+              spacing={2}
+              className="w-full col-span-2 max-md:col-span-full"
+            >
               <Label>Description</Label>
               <Editor
                 initialValue={description}
@@ -1393,10 +1397,14 @@ function AttributesListItem({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={disclosure.onOpen}>
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
+                  onClick={disclosure.onOpen}
+                >
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   onClick={deleteModalDisclosure.onOpen}
                 >
@@ -1527,15 +1535,14 @@ function ParametersListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editQuoteOperationParameterAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editQuoteOperationParameterAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const isUpdated = updatedBy !== null;
   const person = isUpdated ? updatedBy : createdBy;
@@ -1614,10 +1621,14 @@ function ParametersListItem({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={disclosure.onOpen}>
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
+                  onClick={disclosure.onOpen}
+                >
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   onClick={deleteModalDisclosure.onOpen}
                 >
@@ -1673,30 +1684,24 @@ function OperationForm({
   if (!quoteId) throw new Error("quoteId not found");
   if (!lineId) throw new Error("lineId not found");
 
-  const fetcher = useFetcher<{
-    id: string;
-    success: boolean;
-    message: string;
-  }>();
-  const { carbon } = useCarbon();
-
-  const baseCurrency = company?.baseCurrencyCode ?? "USD";
-  const currencyDecimals = useCurrencyDecimals(baseCurrency);
-
-  useEffect(() => {
-    if (fetcher.data && fetcher.data.id) {
-      // Clear temporary item after successful save
+  const isNew = !!temporaryItems[item.id];
+  const fetcher = useAction<
+    typeof newQuoteOperationAction | typeof editQuoteOperationAction
+  >({
+    onSuccess: () => {
+      // The operation is saved: it is no longer a temporary row.
       setTemporaryItems((prev) => {
         const { [item.id]: _, ...rest } = prev;
         return rest;
       });
-
-      if (fetcher.data?.success) {
-        toast.success(fetcher.data.message);
-      }
+      toast.success(isNew ? t`Operation created` : t`Operation updated`);
       onSubmit();
     }
-  }, [item.id, fetcher.data, setTemporaryItems, onSubmit]);
+  });
+  const { carbon } = useCarbon();
+
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const machineDisclosure = useDisclosure();
   const assemblyDisclosure = useDisclosure();
@@ -2004,7 +2009,7 @@ function OperationForm({
           onChange={(newValue) => {
             setProcessData((d) => ({ ...d, description: newValue }));
           }}
-          className="col-span-2"
+          className="col-span-2 max-md:col-span-full"
         />
 
         <Select
@@ -2514,7 +2519,7 @@ function OperationForm({
         transition={{
           type: "spring",
           bounce: 0,
-          duration: 0.55
+          duration: 0.25
         }}
       >
         <motion.div layout className="ml-auto mr-1 pt-2">
@@ -2543,15 +2548,14 @@ function ToolsListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editQuoteOperationToolAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editQuoteOperationToolAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const tools = useTools();
   const tool = tools.find((t) => t.id === toolId);
@@ -2637,10 +2641,14 @@ function ToolsListItem({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={disclosure.onOpen}>
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
+                  onClick={disclosure.onOpen}
+                >
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   onClick={deleteModalDisclosure.onOpen}
                 >

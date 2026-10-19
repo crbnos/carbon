@@ -1,15 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import { Spinner, useMount, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Await, redirect, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Job } from "~/modules/production";
 import {
   getJob,
   getJobMakeMethodById,
@@ -17,7 +21,8 @@ import {
   getJobOperationsByMethodId,
   getPartDocuments,
   getProductionDataByOperations
-} from "~/modules/production";
+} from "~/modules/production/production.service";
+import type { Job } from "~/modules/production/types";
 import {
   JobBillOfMaterial,
   JobBillOfProcess,
@@ -25,8 +30,11 @@ import {
   JobEstimatesVsActuals
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
-import { getModelByItemId, getTagsList } from "~/modules/shared";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import {
+  getModelByItemId,
+  getTagsList,
+  requireCompanyRecord
+} from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

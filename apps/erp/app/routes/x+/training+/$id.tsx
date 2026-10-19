@@ -1,31 +1,47 @@
-import { error, useCarbon } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { generateHTML, Input, useDebounce } from "@carbon/react";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  HStack,
+  isRichTextEmpty,
+  RecordOutlet,
+  RichTextView,
+  ToggleGroup,
+  ToggleGroupItem,
+  toast,
+  useDebounce,
+  VStack
+} from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  Outlet,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { useImageUpload, usePermissions, useUser } from "~/hooks";
+import { Confirm } from "~/components/Modals";
+import { useImageUpload, usePermissions } from "~/hooks";
+import { getTraining } from "~/modules/resources/resources.service";
 import {
-  getTraining,
   TrainingExplorer,
+  TrainingGuide,
   TrainingHeader,
   TrainingProperties
-} from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
-import type { action } from "~/routes/x+/training+/update";
+} from "~/modules/resources/ui";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -77,6 +93,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function TrainingRoute() {
+  const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
@@ -87,11 +104,14 @@ export default function TrainingRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Questions`}
               explorer={<TrainingExplorer key={`explorer-${id}`} />}
               content={
-                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                  <TrainingEditor />
-                  <Outlet />
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <VStack spacing={4} className="p-4">
+                    <TrainingContent key={`content-${id}`} />
+                    <RecordOutlet />
+                  </VStack>
                 </div>
               }
               properties={<TrainingProperties key={`properties-${id}`} />}
@@ -103,94 +123,143 @@ export default function TrainingRoute() {
   );
 }
 
-function TrainingEditor() {
+function TrainingContent() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
+  const { t } = useLingui();
   const permissions = usePermissions();
-
   const loaderData = useLoaderData<typeof loader>();
-
-  const [trainingName, setTrainingName] = useState(
-    loaderData?.training?.name ?? ""
-  );
 
   const [content, setContent] = useState<JSONContent>(
     (loaderData?.training?.content ?? {}) as JSONContent
   );
 
-  const { carbon } = useCarbon();
-  const { id: userId } = useUser();
-
+  // A quiet POST, not a fetcher: an autosave every pause in typing must not
+  // reload every loader on the page.
   const updateTraining = useDebounce(
     async (content: JSONContent) => {
-      await carbon
-        ?.from("training")
-        .update({
-          content: content ?? {},
-          updatedAt: today(getLocalTimeZone()).toString(),
-          updatedBy: userId
-        })
-        .eq("id", id!);
+      const formData = new FormData();
+      formData.append("ids", id);
+      formData.append("field", "content");
+      formData.append("value", JSON.stringify(content ?? {}));
+      const response = await fetch(path.to.bulkUpdateTraining, {
+        method: "post",
+        body: formData
+      }).catch(() => null);
+      const body = (await response?.json().catch(() => null)) as {
+        error?: { message: string } | null;
+      } | null;
+      if (!response?.ok || body?.error) {
+        toast.error(body?.error?.message ?? t`Failed to save the content`);
+      }
     },
     500,
     true
   );
 
-  const fetcher = useFetcher<typeof action>();
-
-  const updateTrainingName = async (name: string) => {
-    const formData = new FormData();
-
-    formData.append("ids", id);
-    formData.append("field", "name");
-    formData.append("value", name);
-
-    fetcher.submit(formData, {
-      method: "post",
-      action: path.to.bulkUpdateTraining
-    });
-  };
-
   const onUploadImage = useImageUpload("training");
 
-  return (
-    <div className="flex flex-col gap-6 w-full h-full p-6">
-      <Input
-        className="md:text-3xl text-2xl font-semibold leading-none tracking-tight text-foreground"
-        value={trainingName}
-        borderless
-        onChange={
-          loaderData?.training?.status === "Draft"
-            ? (e) => setTrainingName(e.target.value)
-            : undefined
-        }
-        onBlur={
-          loaderData?.training?.status === "Draft"
-            ? (e) => updateTrainingName(e.target.value)
-            : undefined
-        }
-      />
+  const canEdit =
+    permissions.can("update", "people") &&
+    permissions.can("update", "resources") &&
+    loaderData?.training?.status === "Draft";
 
-      {permissions.can("update", "people") &&
-      loaderData?.training?.status === "Draft" ? (
-        <Editor
-          toolbar
-          initialValue={content}
-          onUpload={onUploadImage}
-          onChange={(value) => {
-            setContent(value);
-            updateTraining(value);
+  const guidePath = loaderData?.training?.guidePath ?? null;
+  // Content is written text or a PDF, never both. A training with a guide is a
+  // PDF training; the toggle only remembers "PDF" before the first upload.
+  const [pdfChosen, setPdfChosen] = useState(false);
+  const [isRemovePdfOpen, setIsRemovePdfOpen] = useState(false);
+  const contentType = guidePath || pdfChosen ? "pdf" : "write";
+
+  return (
+    <Card>
+      <HStack className="w-full justify-between items-start">
+        <CardHeader>
+          <CardTitle>
+            <Trans>Content</Trans>
+          </CardTitle>
+          <CardDescription>
+            <Trans>What employees read before the questions</Trans>
+          </CardDescription>
+        </CardHeader>
+        <CardAction>
+          <ToggleGroup
+            type="single"
+            value={contentType}
+            disabled={!canEdit}
+            onValueChange={(value) => {
+              if (value === "pdf") setPdfChosen(true);
+              if (value === "write") {
+                if (guidePath) setIsRemovePdfOpen(true);
+                else setPdfChosen(false);
+              }
+            }}
+          >
+            <ToggleGroupItem size="sm" value="write">
+              <Trans>Write</Trans>
+            </ToggleGroupItem>
+            <ToggleGroupItem size="sm" value="pdf">
+              <Trans>Upload PDF</Trans>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </CardAction>
+      </HStack>
+      <CardContent
+        className={
+          canEdit && contentType === "write" ? "p-0 overflow-hidden" : undefined
+        }
+      >
+        {contentType === "pdf" ? (
+          <TrainingGuide
+            trainingId={id}
+            guidePath={guidePath}
+            canEdit={canEdit}
+          />
+        ) : canEdit ? (
+          // Flush toolbar: pad the text, not the panel.
+          <Editor
+            toolbar
+            toolbarClassName="static bg-transparent px-4"
+            className="w-full [&_.ProseMirror]:min-h-[240px] [&_.ProseMirror]:px-6 [&_.ProseMirror]:py-4 max-md:[&_.ProseMirror]:px-4"
+            initialValue={content}
+            onUpload={onUploadImage}
+            onChange={(value) => {
+              setContent(value);
+              updateTraining(value);
+            }}
+          />
+        ) : // RichTextView shows its empty text on phones only, so say it here.
+        isRichTextEmpty(content) ? (
+          <p className="text-sm text-muted-foreground">
+            <Trans>No content</Trans>
+          </p>
+        ) : (
+          <RichTextView
+            content={content}
+            empty={<Trans>No content</Trans>}
+            className="prose dark:prose-invert max-w-none"
+          />
+        )}
+      </CardContent>
+      {isRemovePdfOpen && (
+        <Confirm
+          action={path.to.bulkUpdateTraining}
+          title={t`Switch to Written Content`}
+          text={t`This removes the PDF. Employees will see the written content instead.`}
+          confirmText={t`Remove PDF`}
+          confirmVariant="destructive"
+          onCancel={() => setIsRemovePdfOpen(false)}
+          onSubmit={() => {
+            setIsRemovePdfOpen(false);
+            setPdfChosen(false);
           }}
-        />
-      ) : (
-        <div
-          className="prose dark:prose-invert"
-          dangerouslySetInnerHTML={{
-            __html: generateHTML(content)
-          }}
-        />
+        >
+          <input type="hidden" name="ids" value={id} />
+          <input type="hidden" name="field" value="guidePath" />
+          <input type="hidden" name="value" value="" />
+        </Confirm>
       )}
-    </div>
+    </Card>
   );
 }

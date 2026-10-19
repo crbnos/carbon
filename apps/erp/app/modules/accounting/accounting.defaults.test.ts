@@ -1,12 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
-vi.mock("@carbon/glossary", () => ({ terms: {}, glossaryEntries: () => [] }));
-vi.mock("@carbon/auth", () => ({
+vi.mock("~/modules/settings/settings.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  getNextSequence: vi.fn()
+}));
+vi.mock("@carbon/content/glossary", () => ({
+  terms: {},
+  glossaryEntries: () => []
+}));
+vi.mock("@carbon/auth", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   assertIsPost: () => undefined,
   getMESUrl: () => "http://localhost",
   getAppUrl: () => "http://localhost",
@@ -43,10 +54,6 @@ vi.mock("@lingui/core/macro", () => ({
 vi.mock("~/hooks", () => ({ useRouteData: vi.fn() }));
 vi.mock("~/modules/accounting/ui/AccountDefaults", () => ({
   AccountDefaultsForm: () => null
-}));
-vi.mock("~/modules/accounting", async () => ({
-  ...(await import("./accounting.service")),
-  ...(await import("./accounting.models"))
 }));
 
 import {

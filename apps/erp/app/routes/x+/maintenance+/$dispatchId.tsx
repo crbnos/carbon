@@ -1,12 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { storage } from "@carbon/files";
 import type { JSONContent } from "@carbon/react";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import RiskRegisterCard from "~/modules/quality/ui/RiskRegister/RiskRegisterCard";
 import {
@@ -15,7 +21,7 @@ import {
   getMaintenanceDispatchComments,
   getMaintenanceDispatchEvents,
   getMaintenanceDispatchItems
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service";
 import { MaintenanceDispatchExplorer } from "~/modules/resources/ui/Maintenance/MaintenanceDispatchExplorer";
 import MaintenanceDispatchHeader from "~/modules/resources/ui/Maintenance/MaintenanceDispatchHeader";
 import {
@@ -27,6 +33,9 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "maintenanceDispatch", column: "id", param: "dispatchId" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Maintenance`, to: path.to.maintenanceDispatches },
     (data) => data?.dispatch?.maintenanceDispatchId
@@ -82,6 +91,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function MaintenanceDispatchRoute() {
+  const { t } = useLingui();
   const { dispatchId } = useParams();
   const { dispatch, events, items, files } = useLoaderData<typeof loader>();
 
@@ -96,11 +106,12 @@ export default function MaintenanceDispatchRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Items`}
               explorer={
                 <MaintenanceDispatchExplorer items={items} events={events} />
               }
               content={
-                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
                     <MaintenanceDispatchNotes
                       id={dispatchId}
@@ -118,7 +129,7 @@ export default function MaintenanceDispatchRoute() {
                         source="Work Center"
                       />
                     )}
-                    <Outlet />
+                    <RecordOutlet />
                   </VStack>
                 </div>
               }

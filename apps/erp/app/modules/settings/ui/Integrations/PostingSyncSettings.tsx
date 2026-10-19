@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { PostingSourceFamily } from "@carbon/ee/accounting";
 import {
   ChoiceCardGroup,
@@ -7,13 +11,15 @@ import {
   useControlField,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Checkbox,
   DrawerBody,
   DrawerFooter,
   HStack,
-  Subheading
+  Subheading,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -183,6 +189,9 @@ export function PostingSyncSettings({
   const { t } = useLingui();
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "settings");
+  const fetcher = useAction({
+    onSuccess: () => toast.success(t`Updated posting sync settings`)
+  });
 
   // Always-on: every automated (non-Manual) journal type syncs; Manual never
   // does and is never rendered. The only per-type control is granularity.
@@ -250,6 +259,7 @@ export function PostingSyncSettings({
     <ValidatedForm
       validator={postingSyncSettingsValidator}
       method="post"
+      fetcher={fetcher}
       defaultValues={{
         intent: "update-posting-settings",
         familyAr:

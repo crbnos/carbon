@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Combobox,
@@ -12,7 +16,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuClipboardList, LuPackagePlus, LuSettings2 } from "react-icons/lu";
-import { Form, Link } from "react-router";
+import { Form, Link, useNavigation } from "react-router";
 import { SearchFilter } from "~/components";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions } from "~/hooks";
@@ -49,10 +53,11 @@ export function PickingListsHeader({
 }: PickingListsHeaderProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const navigation = useNavigation();
   const locations = useLocations();
 
   return (
-    <HStack className="px-4 py-2 justify-between bg-card border-b border-border w-full">
+    <HStack className="px-4 py-2 justify-between bg-card border-b border-border w-full max-md:[&_:is(button,a)]:h-11 max-md:[&_:is(button,a)]:min-w-11">
       <HStack>
         <Button variant="secondary" leftIcon={<LuClipboardList />} asChild>
           <Link to={path.to.pickingListsTable}>
@@ -67,17 +72,13 @@ export function PickingListsHeader({
           <Form method="post" action={path.to.newPickingList}>
             <input type="hidden" name="locationId" value={locationId} />
             {selectedJobOperationIds.map((id) => (
-              <input
-                key={id}
-                type="hidden"
-                name="jobOperationIds[]"
-                value={id}
-              />
+              <input key={id} type="hidden" name="jobOperationIds" value={id} />
             ))}
             <Button
               type="submit"
               leftIcon={<LuPackagePlus />}
               isDisabled={!permissions.can("create", "inventory")}
+              isLoading={navigation.formAction === path.to.newPickingList}
             >
               <Trans>Generate Picking List</Trans>{" "}
               {selectedJobOperationIds.length}

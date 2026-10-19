@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getLogger } from "@carbon/logger";
-import { useCarbon, useRealtimeChannel } from "@carbon/react";
+import { useTopic } from "@carbon/query";
+import { useCarbon } from "@carbon/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Notification } from "~/types";
 
@@ -35,8 +40,12 @@ export function useNotifications({
   const { carbon } = useCarbon();
   const [isLoading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  // Bumped to run the initial load again (a reconnect, a bulk change).
+  const [reloads, setReloads] = useState(0);
 
-  // Initial fetch — runs once per (carbon/user/company) tuple.
+  // Initial fetch — runs once per (carbon/user/company) tuple, and again when
+  // `reloads` is bumped.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `reloads` is a trigger, not an input
   useEffect(() => {
     if (!carbon) return;
     let cancelled = false;
@@ -66,64 +75,47 @@ export function useNotifications({
     return () => {
       cancelled = true;
     };
-  }, [carbon, userId, companyId]);
+  }, [carbon, userId, companyId, reloads]);
 
-  // Realtime stream — useRealtimeChannel waits for isRealtimeAuthSet so RLS
-  // policies on `notification` resolve via the user's JWT.
-  useRealtimeChannel({
-    dependencies: [userId, companyId],
-    setup(channel) {
-      return channel.on(
-        "postgres_changes" as any,
-        {
-          event: "*",
-          filter: `userId=eq.${userId}`,
-          schema: "public",
-          table: "notification"
-        },
-        (payload: {
-          eventType: string;
-          new: NotificationRow;
-          old: NotificationRow;
-        }) => {
-          if (payload.new && payload.new.companyId !== companyId) return;
-          if (payload.eventType === "INSERT") {
-            // Rows born inside a digest (digestedInto set on insert) are
-            // represented by their parent — never shown individually.
-            const insertedRow = payload.new as NotificationRow & {
-              digestedInto?: string | null;
-            };
-            if (insertedRow.digestedInto) return;
-            setNotifications((prev) => [
-              rowToNotification(payload.new),
-              ...prev
-            ]);
-          } else if (payload.eventType === "UPDATE") {
-            // A row that just got attached to a digest disappears from the
-            // topbar — it's now represented by its digest parent.
-            const newRow = payload.new as NotificationRow & {
-              digestedInto?: string | null;
-            };
-            if (newRow.digestedInto) {
-              setNotifications((prev) =>
-                prev.filter((n) => n._id !== newRow.id)
-              );
-            } else {
-              setNotifications((prev) =>
-                prev.map((n) =>
-                  n._id === newRow.id ? rowToNotification(newRow) : n
-                )
-              );
-            }
-          } else if (payload.eventType === "DELETE") {
-            setNotifications((prev) =>
-              prev.filter((n) => n._id !== (payload.old as NotificationRow).id)
-            );
-          }
-        }
+  // Realtime stream. A broadcast names the rows that changed and nothing else,
+  // so they are re-read here: table RLS limits that read to this user's rows.
+  useTopic(`user:${userId}:notification`, async (change) => {
+    // A reconnect or a bulk change: load the list again.
+    if (!change?.ids || !carbon) {
+      setReloads((n) => n + 1);
+      return;
+    }
+    const { op, ids } = change;
+    if (op === "DELETE") {
+      setNotifications((prev) => prev.filter((n) => !ids.includes(n._id)));
+      return;
+    }
+    const { data, error } = await carbon
+      .from("notification")
+      .select(
+        "id, userId, companyId, readAt, seenAt, createdAt, payload, digestedInto"
+      )
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (error) {
+      logger.error("Failed to load changed notifications", error);
+      return;
+    }
+    const rows = (data ?? []) as (NotificationRow & {
+      digestedInto?: string | null;
+    })[];
+    setNotifications((prev) => {
+      // A row attached to a digest — on insert or later — is represented
+      // by its digest parent, never shown on its own.
+      const changed = new Set(ids);
+      const kept = prev.filter((n) => !changed.has(n._id));
+      const shown = rows
+        .filter((row) => !row.digestedInto)
+        .map(rowToNotification);
+      return [...shown, ...kept].sort((a, b) =>
+        b.createdAt.localeCompare(a.createdAt)
       );
-    },
-    topic: `notification:${companyId}:${userId}`
+    });
   });
 
   const markMessageAsRead = useCallback(

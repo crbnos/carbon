@@ -1,6 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 type Item = {
   id: string;
   readableIdWithRevision: string;
+};
+
+/** `readableId.revision`, or the bare readableId for revision "0" / none. */
+export const getReadableIdWithRevision = (
+  readableId: string,
+  revision?: string | null
+) => {
+  if (revision && revision !== "0") {
+    return `${readableId}.${revision}`;
+  }
+
+  return readableId;
 };
 
 /**
@@ -22,6 +38,22 @@ export function getItemReadableId(
     if (item.id === itemId) return item.readableIdWithRevision;
   }
   return undefined;
+}
+
+/**
+ * The secondary text shown with an item's readable id — its name, or a line's
+ * description — or undefined when it only repeats the readable id. A service's
+ * readable id IS its name, and a part's name is sometimes typed the same as its
+ * number; showing both reads as a stutter. Compares the text, not the item
+ * type, so an edited line description still shows.
+ */
+export function distinctItemText(
+  primary: string | null | undefined,
+  secondary: string | null | undefined
+): string | undefined {
+  const text = secondary?.trim();
+  if (!text) return undefined;
+  return text === primary?.trim() ? undefined : secondary!;
 }
 
 /**

@@ -1,5 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -52,7 +61,14 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
   const renderContextMenu = useCallback(
     (row: PaymentRow) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.payment(row.id))}>
+        <MenuItem
+          shortcut={
+            row.status === "Draft"
+              ? MENU_ITEM_SHORTCUTS.edit
+              : MENU_ITEM_SHORTCUTS.view
+          }
+          onClick={() => navigate(path.to.payment(row.id))}
+        >
           <MenuIcon icon={row.status === "Draft" ? <LuPencil /> : <LuEye />} />
           {row.status === "Draft" ? (
             <Trans>Edit Payment</Trans>
@@ -61,6 +77,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
           )}
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={
             row.status !== "Draft" || !permissions.can("delete", "invoicing")
@@ -88,13 +105,14 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
             {row.original.paymentId}
           </Hyperlink>
         ),
-        meta: { icon: <LuHash /> }
+        meta: { icon: <LuHash />, mobile: "P1" }
       },
       {
         accessorKey: "paymentType",
         header: t`Type`,
         cell: ({ row }) => <Enumerable value={row.original.paymentType} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -116,6 +134,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
             <SupplierAvatar supplierId={row.original.supplierId} />
           ) : null,
         meta: {
+          mobile: "P3",
           icon: <LuUser />,
           filter: {
             type: "static",
@@ -141,7 +160,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
         cell: (item) => (
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
-        meta: { icon: <LuCalendar /> }
+        meta: { filter: { type: "dateRange" }, icon: <LuCalendar /> }
       },
       {
         accessorKey: "totalAmount",
@@ -152,6 +171,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
           </span>
         ),
         meta: {
+          mobile: "P2",
           icon: <LuCoins />,
           renderTotal: true,
           formatter: currencyFormatter.format
@@ -167,6 +187,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <PaymentStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",

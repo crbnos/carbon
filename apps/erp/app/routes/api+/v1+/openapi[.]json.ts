@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // GET /api/v1/openapi.json — the generated OpenAPI 3 spec for the Carbon API.
 // Public, so clients can generate a typed client in any language. Memoized at module
 // scope (the router and its schemas are static for the process lifetime).
@@ -5,7 +9,7 @@
 import { CarbonJsonSchemaConverter } from "@carbon/api/schema";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { router } from "./lib/router.server";
-import { specOptions } from "./lib/spec-options.server";
+import { specOptions, withErrorResponses } from "./lib/spec-options.server";
 
 // The promise, not the string: concurrent cold-start requests on this public
 // route must share ONE generation of the 1,495-operation spec.
@@ -16,7 +20,7 @@ async function generateSpec(): Promise<string> {
     schemaConverters: [new CarbonJsonSchemaConverter()]
   });
   const spec = await generator.generate(router, specOptions());
-  return JSON.stringify(spec);
+  return JSON.stringify(withErrorResponses(spec as never));
 }
 
 export async function loader() {

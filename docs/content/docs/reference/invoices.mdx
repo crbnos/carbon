@@ -3,11 +3,13 @@ title: Invoices
 description: The billing documents — what you charge customers, and what suppliers charge you.
 ---
 
-An **invoice** records money owed. Carbon has two kinds that behave almost identically: a **sales invoice** is what you bill a customer, and a **purchase invoice** is the bill a supplier sends you. Both are drawn from an upstream document, both post to the ledger, and both are settled by a **separate posted transaction** — a <Term id="payment">payment</Term> or a <Term id="credit-memo">credit or debit memo</Term> applied to the invoice, not a field you flip.
+An **invoice** records an amount owed. A **sales invoice** bills a customer; a **purchase invoice** records a supplier bill. Both originate from upstream documents, post to the ledger, and are settled by a separate posted <Term id="payment">payment</Term> or <Term id="credit-memo">credit or debit memo</Term>.
 
 ## Where they come from
 
-A **sales invoice** is raised from a <Term id="sales-order">sales order</Term>, or from a **<Term id="shipment">posted shipment</Term>**: billing on the order or billing on what actually shipped. A **purchase invoice** is raised from a <Term id="purchase-order">purchase order</Term>, keeping the lines that still have something to bill. Either way the new invoice opens at **Draft**, fully editable, and links each line back to the order line it bills.
+A **sales invoice** is raised from a <Term id="sales-order">sales order</Term>, or from a **<Term id="shipment">posted shipment</Term>**: billing on the order or billing on what actually shipped. A **purchase invoice** is raised from a <Term id="purchase-order">purchase order</Term>, keeping the lines that still have something to bill. Either way the new invoice opens at **Draft**, fully editable, and links each line back to the order line it bills. A [contract](/docs/reference/contracts) or a [rental agreement](/docs/reference/rental-agreements) also drafts sales invoices as its billing falls due.
+
+A sales invoice's **"Ship To"**, on its **Shipping** card, is one of the customer's locations. An invoice from a sales order takes the order's delivery location (the drop-ship location on a drop shipment), a contract invoice takes the contract's **"Ship To"**, and a rental invoice takes the agreement's **"Rental Site"**. The PDF prints it as the Ship To address, and [sales rules](/docs/reference/sales-rules) check the invoice's own lines against it. It is never the bill-to.
 
 <Callout type="note">
 A purchase invoice reconciles on the **purchase order line**, not on a <Term id="receipt">receipt</Term>. There's no direct receipt link, and a receipt isn't even required to bill. Posting clears the <Term id="gr-ir">goods-received-not-invoiced</Term> accrual against the shared order line and books any price difference to <Term id="purchase-price-variance">variance</Term>.
@@ -15,7 +17,7 @@ A purchase invoice reconciles on the **purchase order line**, not on a <Term id=
 
 ## Status lifecycle
 
-Both start at **Draft** and lock the moment they leave it — numbers that have entered the books can't be edited in place. The two sides share a shape but name a few states differently.
+Both invoice types start in **Draft** and become read-only after leaving it. Their lifecycles are equivalent but use different names for some states.
 
 | | Sales invoice | Purchase invoice |
 | --- | --- | --- |
@@ -30,20 +32,36 @@ The posted state has a different name on each side, **Submitted** for sales and 
 
 ## Line types
 
-An invoice line is one of a handful of types, most of which pull an item's details in for you. The two sides differ in one place:
+Most invoice line types populate details from an item. Sales and purchase invoices differ in these supported types:
 
 | Type | Sales invoice | Purchase invoice |
 | --- | --- | --- |
 | Part, Service, Material, Tool, Consumable | Yes | Yes |
 | Comment (a note, no charge) | Yes | Yes |
-| Fixed Asset | Yes | — |
+| Fixed Asset | Yes | Yes |
+| Rental (drafted from a rental agreement, read-only) | Yes | — |
 | G/L Account (charge straight to an account) | — | Yes |
+| Lease (a payment or charge of a lease you pay) | — | Yes |
 
-A **G/L Account** line lets a purchase invoice book a cost directly to a ledger account with a description — freight, a fee, anything without an item behind it. Sales invoices don't offer it; they carry a **Fixed Asset** line instead, for billing a capitalized asset.
+A sales invoice line can carry a **"Discount (%)"**. It discounts the line's quantity times unit price only: add-ons and shipping are charged in full, and tax is charged on the discounted amount. The line keeps its list unit price, and the invoice and its PDF show the discount beside it.
+
+A **G/L Account** line lets a purchase invoice book a cost directly to a ledger account with a description: freight, a fee, anything without an item behind it. Sales invoices don't offer it.
+
+A **Fixed Asset** line exists on both sides: on a sales invoice it bills a capitalized asset, and on a purchase invoice (the line form's **"Asset"** tab) it buys an asset or adds cost to one under construction.
+
+A **Lease** line (the line form's **"Lease"** tab) names one of the supplier's [leases](/docs/reference/leases). The daily job drafts one per payment that falls due, with the lease and amount locked, and posting it reduces the lease liability. A Lease line you add by hand is a variable charge, such as maintenance or usage, and posts to Variable Lease Expense. Deleting a draft invoice, or voiding a posted one, returns its lease payments to Pending.
+
+<Screenshot label="Purchase invoice line form with the Item, GL Account and Asset tabs, the Asset tab selected" caption="A purchase invoice line picks its type by tab: an item, a ledger account, or a fixed asset." />
+
+A **Rental** line is never added by hand: [rental agreement](/docs/reference/rental-agreements) billing writes one per billing period or charge, with no item, and it posts to lease accounts rather than to sales.
+
+On a unit treated as a rental, rent posts to contract assets and deferred revenue, and the lease run releases it across its period. An early-return credit is drafted as a credit memo, not an invoice line; posting it takes the credit off deferred revenue, and off rental income for any part already recognized.
+
+On a unit treated as a sale, rent and the purchase option credit net investment in leases, and the purchase option also settles the rest of the unit's net investment: a shortfall to cost of goods sold, an excess to lease revenue. A charge posts to rental income either way.
 
 ## Posting
 
-<Term id="posting">Posting</Term> an invoice writes its general-ledger entries, but only when accounting is enabled for the company: receivables against sales for a sale, payables against inventory or WIP for a purchase. Posting also bumps the invoiced quantity on each order line and stamps the posting date.
+<Term id="posting">Posting</Term> creates general-ledger entries: receivables against sales for a sales invoice, or payables against inventory or WIP for a purchase invoice. Before the company has [set up accounting](/docs/reference/accounting#setting-up-accounting), those entries are Provisional and count in no balance. Posting also updates invoiced quantities on order lines and records the posting date.
 
 <Callout type="warn">
 Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Settling it is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history.
@@ -51,7 +69,7 @@ Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open*
 
 ## Settling an invoice
 
-A posted invoice is settled by a separate posted document applied to it, never by flipping a field. Two kinds of document do the settling, and an **invoice settlement** is the row that links one to an invoice for a given amount.
+A posted invoice is settled by applying another posted document. An **invoice settlement** links that document to the invoice for a specified amount.
 
 A **<Term id="payment">payment</Term>** moves cash. A **Receipt** is money in from a customer (it settles sales invoices); a **Disbursement** is money out to a supplier (it settles purchase invoices). A payment carries a bank account, a date, a currency, and a total, and moves **Draft → Posted → Voided** like the invoice itself. While it's **Draft** you stage which invoices it applies to and for how much; posting it books the cash to the ledger — bank against the receivables or payables control account — and freezes those applications.
 
@@ -91,6 +109,9 @@ Carbon forgives **dust**. When settlements leave a balance under one cent — sm
 ## Troubleshooting
 
 Exact errors users hit when posting, voiding, deleting, or paying invoices.
+
+### "Invoice has recognized revenue; reverse the revenue recognition or lease run that posted it first"
+Voiding a sales invoice (`post-sales-invoice` VOID) whose deferred rent or service revenue a run has already released: a revenue recognition run for service revenue, a lease run for rental rent. Reverse that run, then void the invoice; the invoice's periods and charges return to unbilled.
 
 ### "Can only void posted purchase invoices"
 Voiding applies only after posting. A Draft invoice can simply be edited or deleted.

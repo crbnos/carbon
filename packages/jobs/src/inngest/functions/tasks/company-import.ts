@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { chunkArray } from "@carbon/utils";
@@ -72,7 +76,7 @@ export const companyImportFunction = inngest.createFunction(
 
     return await step.run("import-company", async () => {
       const client = getCarbonServiceRole();
-      const db = getJobDatabaseClient(1);
+      const db = getJobDatabaseClient();
 
       // Idempotency guard — a retry after a partial failure must not
       // duplicate rows that already committed under this run id.
@@ -99,8 +103,8 @@ export const companyImportFunction = inngest.createFunction(
       }
 
       // Reseed populates a fresh company; refuse a target that's already been
-      // set up (the edge function gates this too — this is defense in depth
-      // for retries or direct triggers). accountDefault is the seed marker.
+      // set up (defense in depth for retries or direct triggers).
+      // accountDefault is the seed marker.
       if (mode === "reseed") {
         const seeded = await client
           .from("accountDefault")

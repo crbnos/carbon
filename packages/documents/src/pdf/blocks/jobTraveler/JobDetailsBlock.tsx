@@ -1,4 +1,8 @@
-import { formatDate } from "@carbon/utils";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { distinctItemText, formatDate } from "@carbon/utils";
 import { Image, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { tw } from "./tw";
 import type { JobTravelerData } from "./types";
@@ -78,7 +82,9 @@ export function JobDetailsBlock({ data }: { data: JobTravelerData }) {
           </View>
 
           <View style={jobHeaderStyles.infoRow}>
-            <Text style={jobHeaderStyles.label}>Part ID:</Text>
+            <Text style={jobHeaderStyles.label}>
+              {item.type === "Service" ? "Service:" : "Part ID:"}
+            </Text>
             <Text style={jobHeaderStyles.value}>
               {job.itemReadableIdWithRevision}
             </Text>
@@ -98,12 +104,12 @@ export function JobDetailsBlock({ data }: { data: JobTravelerData }) {
             </View>
           ) : null}
 
-          <View style={jobHeaderStyles.infoRow}>
-            <Text style={jobHeaderStyles.label}>Item:</Text>
-            <Text style={jobHeaderStyles.value}>
-              {item.name || item.readableIdWithRevision}
-            </Text>
-          </View>
+          {distinctItemText(job.itemReadableIdWithRevision, item.name) ? (
+            <View style={jobHeaderStyles.infoRow}>
+              <Text style={jobHeaderStyles.label}>Item:</Text>
+              <Text style={jobHeaderStyles.value}>{item.name}</Text>
+            </View>
+          ) : null}
 
           <View style={jobHeaderStyles.infoRow}>
             <Text style={jobHeaderStyles.label}>Quantity:</Text>

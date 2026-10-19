@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Result } from "@carbon/auth";
 import { error, getClaims, getPermissionCacheKey, success } from "@carbon/auth";
 import { logPermissionChange } from "@carbon/auth/auth-events.server";
@@ -18,9 +22,9 @@ import { requireEntitlement } from "./entitlements.server";
  * bulk-edit task (`carbon/update-permissions`), which previously carried its own
  * drifting copy of `updatePermissions` — this is now the only copy.
  *
- * The low-level community primitives (`setUserPermissions`,
- * `makePermissionsFromEmployeeType`) stay in the ERP `users.server.ts`: they are
- * shared plumbing the invite flow depends on, not authoring.
+ * The low-level community primitives (`makePermissionsFromEmployeeType` and
+ * the invite flow's permission merge) stay in the ERP `users.service.ts`: they
+ * are shared plumbing the invite flow depends on, not authoring.
  */
 
 export type CompanyPermission = {

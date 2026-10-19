@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Four opportunities at different completeness levels — this is the acceptance
 // test for the whole seed. Every detail page (opportunity, rfq, quote,
 // salesOrder, shipment, salesInvoice) must open without a 500 or redirect.
 
 import type {
+  ContractSpec,
   PriceBreak,
   SalesData,
   SalesOpportunitySpec,
@@ -440,7 +445,7 @@ export const STATUS_ORDERS: SalesStatusOrderSpec[] = [
 ];
 
 // Released order — "To Ship and Invoice". The status is written by the app
-// (releaseSalesOrder), not derived by a trigger, but it must still agree with
+// (confirmSalesOrder), not derived by a trigger, but it must still agree with
 // what getSalesOrderStatus would compute: nothing sent and nothing invoiced.
 export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
   {
@@ -957,11 +962,63 @@ export const SALES_RETURNS: SalesReturnSpec[] = [
   }
 ];
 
+// One Active contract: an implementation fee and two subscriptions on Service
+// items, two months in. Tier 04 marks every invoice dated up to today Billed
+// Externally, so the schedule shows history without drafted invoices.
+export const CONTRACTS: ContractSpec[] = [
+  {
+    key: "cascade-uptime",
+    name: "Cascade fleet uptime program",
+    customer: "Cascade Integration Group",
+    startOffset: -60,
+    termMonths: 12,
+    renewal: "Renew",
+    renewalUpliftPercent: 5,
+    billingFrequency: "Month",
+    billingAlignment: "Calendar",
+    billingTiming: "Advance",
+    lines: [
+      {
+        revenueType: "One-time",
+        item: "Robot Cell Commissioning",
+        description: "Commissioning of three welding cells",
+        quantity: 3,
+        rate: 9800,
+        startOffset: -60,
+        endOffset: -31,
+        revenueMethod: "Daily"
+      },
+      {
+        revenueType: "Recurring",
+        item: "Fleet Uptime Support",
+        description: "Fleet uptime support per cell",
+        quantity: 3,
+        rate: 2100,
+        rateUnit: "Month",
+        startOffset: -60,
+        revenueMethod: "Even Period"
+      },
+      {
+        revenueType: "Recurring",
+        item: "Robot Calibration & Certification",
+        description: "Quarterly calibration and certification visit",
+        quantity: 1,
+        rate: 2650,
+        rateUnit: "Quarter",
+        discountPercent: 10,
+        startOffset: -60,
+        revenueMethod: "Even Period"
+      }
+    ]
+  }
+];
+
 export const roboticsSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
   releasedOrders: RELEASED_ORDERS,
   salesReturns: SALES_RETURNS,
+  contracts: CONTRACTS,
   customerPortals: ["Cascade Integration Group", "Lakeshore Automotive"],
   customerBankAccounts: [
     {

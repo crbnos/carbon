@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BaseUrl } from "@/components/api/base-url";
@@ -18,7 +22,7 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
   const { module, resource } = await props.params;
   const found = getResource(module, resource);
   return pageSeo({
-    title: found ? `${found.resource.name} — Carbon Data API` : "Carbon Data API",
+    title: found ? `${found.resource.name} | Carbon Data API` : "Carbon Data API",
     ogTitle: found?.resource.name ?? "Carbon Data API",
     description: found?.resource.description,
     path: `/api/data/${module}/${resource}`,

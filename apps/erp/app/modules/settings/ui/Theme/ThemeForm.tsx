@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Card,
@@ -15,7 +19,7 @@ import { Trans } from "@lingui/react/macro";
 import { RxCheck } from "react-icons/rx";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import type { themeValidator } from "~/modules/settings";
+import type { themeValidator } from "~/modules/settings/settings.models";
 import type { Action } from "~/types";
 import { path } from "~/utils/path";
 

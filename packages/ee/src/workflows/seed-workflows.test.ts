@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import {
   buildSeedWorkflows,
   EVENT_SOURCES,
@@ -56,17 +60,18 @@ describe("dev seed workflows", () => {
 
   // Tier 11 subscribes each trigger's table from EVENT_SOURCES, which it cannot
   // read from this catalog (package cycle) — so pin the copy to the catalog here.
-  it.each(
-    Object.entries(EVENT_SOURCES)
-  )("EVENT_SOURCES %s matches the catalog event", (eventId, source) => {
-    const match = catalog.getEvent(eventId)?.match;
-    expect(match).toBeDefined();
-    expect(
-      match && "table" in match
-        ? { table: match.table, operation: match.operation }
-        : null
-    ).toEqual(source);
-  });
+  it.each(Object.entries(EVENT_SOURCES))(
+    "EVENT_SOURCES %s matches the catalog event",
+    (eventId, source) => {
+      const match = catalog.getEvent(eventId)?.match;
+      expect(match).toBeDefined();
+      expect(
+        match && "table" in match
+          ? { table: match.table, operation: match.operation }
+          : null
+      ).toEqual(source);
+    }
+  );
 
   it("has an event source for every seeded trigger event", () => {
     const triggered = everyDataset.flatMap(([, workflow]) =>

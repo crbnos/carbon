@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   HStack,
@@ -16,7 +20,7 @@ import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { Ability, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { trainingValidator } from "~/modules/resources";
+import { trainingValidator } from "~/modules/resources/resources.models";
 import { path } from "~/utils/path";
 
 type TrainingFormProps = {

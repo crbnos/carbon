@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ── Redis-down simulation ─────────────────────────────────────────────────
@@ -17,6 +21,7 @@ vi.mock("@carbon/kv", () => ({
 // Env is validated at import time (getEnv throws on missing required vars), so we
 // stub the config module rather than requiring a full environment in the test run.
 vi.mock("../config/env", () => ({
+  AUTH_COOKIE_SUFFIX: undefined,
   DOMAIN: "localhost",
   ERP_URL: "http://localhost:3000",
   MES_URL: "http://localhost:3001",

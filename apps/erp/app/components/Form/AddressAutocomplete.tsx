@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Input, useControlField, useField, useFormContext } from "@carbon/form";
 import {
   Command,
@@ -172,7 +176,7 @@ const AddressAutocomplete = ({
             className="bg-transparent"
           />
           {open && suggestions.length > 0 && (
-            <CommandList className="absolute w-full top-10 z-[9999] rounded-md border bg-popover text-popover-foreground shadow-md p-0">
+            <CommandList className="absolute w-full top-10 max-md:top-11 z-[9999] rounded-md border bg-popover text-popover-foreground shadow-md p-0">
               <CommandEmpty>
                 {loading ? t`Loading...` : t`No addresses found`}
               </CommandEmpty>

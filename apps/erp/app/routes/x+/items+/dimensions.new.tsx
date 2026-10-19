@@ -1,16 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useNavigate } from "react-router";
-import {
-  materialDimensionValidator,
-  upsertMaterialDimension
-} from "~/modules/items";
+import { data } from "react-router";
+import { materialDimensionValidator } from "~/modules/items/items.models";
+import { upsertMaterialDimension } from "~/modules/items/items.service";
 import MaterialDimensionForm from "~/modules/items/ui/MaterialDimensions/MaterialDimensionForm";
-import { getCompanySettings } from "~/modules/settings";
-
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -82,7 +85,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewMaterialDimensionsRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const initialValues = {
     name: "",
     materialFormId: ""
@@ -90,7 +93,7 @@ export default function NewMaterialDimensionsRoute() {
 
   return (
     <MaterialDimensionForm
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       initialValues={initialValues}
     />
   );

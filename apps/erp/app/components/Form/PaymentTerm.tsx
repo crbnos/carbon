@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox, CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
-import type { getPaymentTermsList } from "~/modules/accounting";
+import type { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import PaymentTermForm from "~/modules/accounting/ui/PaymentTerms/PaymentTermForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
@@ -82,12 +86,9 @@ PaymentTerm.displayName = "PaymentTerm";
 export default PaymentTerm;
 
 export const usePaymentTerm = () => {
-  const paymentTermFetcher =
-    useFetcher<Awaited<ReturnType<typeof getPaymentTermsList>>>();
-
-  useMount(() => {
-    paymentTermFetcher.load(path.to.api.paymentTerms);
-  });
+  const paymentTermFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getPaymentTermsList>>
+  >(path.to.api.paymentTerms);
 
   const options = useMemo(() => {
     return (paymentTermFetcher.data?.data ?? []).map((c) => ({

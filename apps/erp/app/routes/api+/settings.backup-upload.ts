@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Readable } from "node:stream";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -5,8 +9,10 @@ import { TEMP_STAGING_BUCKET } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
-import { canManageBackups } from "~/modules/settings/backups.server";
-import { unpackBackupArchive } from "~/modules/settings/backups-archive.server";
+import {
+  canManageBackups,
+  unpackBackupArchive
+} from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "settings-backup-upload");
 
@@ -32,11 +38,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const intent = formData.get("intent");
-  // Service role: `temp-staging` RLS only admits `${companyId}/models/...`; the
-  // permission checks above gate this route.
-  const staging = (await getCarbonServiceRole()).storage.from(
-    TEMP_STAGING_BUCKET
-  );
+  // Service role: `temp-staging` RLS only admits `${companyId}/models/...` and
+  // backup objects are service-role only; the permission checks above gate
+  // this route.
+  const serviceRole = getCarbonServiceRole();
+  const staging = serviceRole.storage.from(TEMP_STAGING_BUCKET);
 
   if (intent === "sign") {
     const path = `${companyId}/backups/${nanoid()}.tar.gz`;
@@ -78,7 +84,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const source = Readable.fromWeb(
         res.body as Parameters<typeof Readable.fromWeb>[0]
       );
-      return await unpackBackupArchive(client, companyId, source);
+      return await unpackBackupArchive(serviceRole, companyId, source);
     } catch (err) {
       logger.error("Failed to unpack uploaded backup", {
         companyId,

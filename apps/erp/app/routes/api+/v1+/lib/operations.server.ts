@@ -1,16 +1,30 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The operation catalog for the Carbon API v1 surface. Reads the generated MCP
-// manifest (tool-metadata.json) and shapes it for the oRPC router and the MCP/agent
-// bridges — a single source of truth for HTTP and MCP.
-//
-// (Decision 7's build-time relocation of this manifest into @carbon/api is deferred
-// to Docs Phase 2; see the plan. For now the committed manifest is the source.)
+// manifest (tool-metadata.json, gitignored build output of `pnpm generate:mcp`)
+// and shapes it for the oRPC router and the MCP/agent bridges — a single source
+// of truth for HTTP and MCP.
 
 import type { ManifestEntry } from "@carbon/api";
 import raw from "../../mcp+/lib/tool-metadata.json";
 
 export const OPERATIONS = (raw as { tools: ManifestEntry[] }).tools;
 
-/** operation name (`module_func`) → entry. */
+const companyTables = (raw as { companyTables?: string[] }).companyTables;
+// The dispatcher confines every write to the caller's company by this list
+// (`scopedToCompany`). An empty one would switch that off without a sound, so
+// a manifest generated before the list existed stops the module loading.
+if (!Array.isArray(companyTables) || companyTables.length === 0) {
+  throw new Error(
+    "tool-metadata.json has no companyTables. Regenerate it: pnpm run generate:mcp"
+  );
+}
+
+/** Every table with a `companyId` column, from the generated database types. */
+export const COMPANY_TABLES: ReadonlySet<string> = new Set(companyTables);
+/** Every published operation by its name. */
 export const operationsByName = new Map<string, ManifestEntry>(
   OPERATIONS.map((op) => [op.name, op])
 );
@@ -18,6 +32,11 @@ export const operationsByName = new Map<string, ManifestEntry>(
 /** The bare operation id (the name without its `module_` prefix). */
 export function operationId(op: ManifestEntry): string {
   return op.name.slice(op.module.length + 1);
+}
+
+/** The operation's HTTP path: `/{module}/{operationId}` (`/production/cancelJob`). */
+export function operationPath(op: ManifestEntry): `/${string}` {
+  return `/${op.module}/${operationId(op)}`;
 }
 
 /**

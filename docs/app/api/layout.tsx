@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ReactNode } from "react";
 import { ContextualNav } from "@/components/api/contextual-nav";
 import { ApiConfigProvider } from "@/components/api/config-context";
@@ -29,7 +33,7 @@ export default function ApiLayout({ children }: { children: ReactNode }) {
         <MainHeader active="api" mobileNav={<ApiSidebar />} />
 
         <div className="mx-auto flex w-full max-w-370 pt-16">
-          <aside className="sticky top-16 hidden h-[calc(100dvh-64px)] w-70 shrink-0 overflow-y-auto border-r border-ed-hairline px-5 py-7 scrollbar-hidden-until-scroll nav-scroll-fade lg:block">
+          <aside className="sticky top-16 hidden h-[calc(100dvh-64px)] w-84 shrink-0 overflow-y-auto border-r border-ed-hairline px-5 py-7 scrollbar-hidden-until-scroll nav-scroll-fade lg:block">
             <ApiSidebar />
             <NavScrollChevron />
           </aside>

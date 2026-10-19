@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database, Json } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -95,8 +99,7 @@ export async function patchRampOAuthCredentials(
     "credentials.accessToken": credentials.accessToken
   };
   const metadata: Record<string, Json | undefined> = {
-    "credentials.type": credentials.type,
-    "credentials.environment": credentials.environment
+    "credentials.type": credentials.type
   };
   if (args.syncMode) metadata.syncMode = args.syncMode;
   if (args.grantedScopes) metadata.grantedScopes = args.grantedScopes;
@@ -104,7 +107,9 @@ export async function patchRampOAuthCredentials(
     metadata.accountingConnectionProvider = args.accountingConnectionProvider;
   }
 
-  const removeMetadata = ["credentials.clientId"];
+  // `credentials.environment` is the retired sandbox/production stamp; a
+  // reconnect clears it from installs made while the sandbox switch was live.
+  const removeMetadata = ["credentials.clientId", "credentials.environment"];
   const removeSecrets = ["credentials.clientSecret"];
   if (credentials.expiresAt) {
     metadata["credentials.expiresAt"] = credentials.expiresAt;

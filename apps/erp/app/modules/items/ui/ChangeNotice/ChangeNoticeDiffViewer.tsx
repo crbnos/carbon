@@ -1,4 +1,8 @@
-import type { TermId } from "@carbon/glossary";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
 import {
   Collapsible,
   CollapsibleContent,
@@ -73,7 +77,8 @@ const FIELD_LABELS: Record<string, string> = {
   key: "Parameter",
   toolId: "Tool",
   supplierPartId: "Part #",
-  unitPrice: "Unit price",
+  supplierUnitPrice: "Unit price",
+  currencyCode: "Currency",
   minimumOrderQuantity: "Min order qty",
   orderMultiple: "Order multiple",
   conversionFactor: "Conversion factor",
@@ -665,9 +670,13 @@ export default function ChangeNoticeDiffViewer({
     // non-hidden field to show.
     return entryHasBody(a, skip);
   });
-  const supplierParts = (diff?.supplierParts ?? []).filter(
-    (s) => s.status !== "unchanged"
-  );
+  const supplierParts = (diff?.supplierParts ?? []).filter((s) => {
+    if (s.status === "unchanged") return false;
+    // As with materials: a modified row whose only change is a hidden field
+    // reads as unchanged.
+    if (s.status !== "modified") return true;
+    return entryHasBody(s, SUPPLIER_PART_LABEL_FIELDS);
+  });
 
   const isEmpty =
     materials.length === 0 &&

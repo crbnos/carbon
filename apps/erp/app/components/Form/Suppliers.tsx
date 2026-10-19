@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { SupplierForm } from "~/modules/purchasing/ui/Supplier";
 import { useSuppliers } from "~/stores";
+import SupplierAvatar from "../SupplierAvatar";
 import { useEmptyState } from "./emptyStates";
 
 type SupplierSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
@@ -21,7 +26,8 @@ const Suppliers = (props: SupplierSelectProps) => {
     return (
       suppliers.map((c) => ({
         value: c.id,
-        label: c.name
+        label: <SupplierAvatar supplierId={c.id} />,
+        keywords: c.name
       })) ?? []
     );
   }, [suppliers]);

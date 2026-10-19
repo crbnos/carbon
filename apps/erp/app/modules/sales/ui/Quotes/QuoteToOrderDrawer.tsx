@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
+import { getDocumentType } from "@carbon/files";
 import { SelectControlled, ValidatedForm } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import {
@@ -31,7 +36,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, pluralize } from "@carbon/utils";
+import { distinctItemText, INPUT_FORMAT, pluralize } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -58,7 +63,6 @@ import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { useCurrencyDecimals, useRouteData, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { useIntegrations } from "~/hooks/useIntegrations";
-import { getDocumentType } from "~/modules/shared";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { selectedLineSchema } from "../../sales.models";
 import { salesConfirmValidator } from "../../sales.models";
@@ -313,7 +317,7 @@ const QuoteToOrderDrawer = ({
   };
 
   // Converting re-evaluates sales rules across every quote line (the terminal
-  // gate in the action) before the edge function writes sales order lines.
+  // gate in the action) before the server function writes sales order lines.
   // Submitting through the violations hook — rather than a plain navigation —
   // is what lets a blocked convert surface the shared modal.
   const ruleViolations = useRuleViolations({
@@ -459,12 +463,14 @@ const LinePricingForm = ({
                 the card edge. min-w-0 is what lets truncate bite. */}
             <VStack spacing={0} className="flex-1 min-w-0">
               <Heading className="min-w-0">{line.itemReadableId}</Heading>
-              <TruncatedTooltipText
-                className="text-muted-foreground text-base truncate"
-                tooltip={line.description}
-              >
-                {line.description}
-              </TruncatedTooltipText>
+              {distinctItemText(line.itemReadableId, line.description) && (
+                <TruncatedTooltipText
+                  className="text-muted-foreground text-base truncate"
+                  tooltip={line.description}
+                >
+                  {line.description}
+                </TruncatedTooltipText>
+              )}
             </VStack>
           </HStack>
           <LinePricingOptions

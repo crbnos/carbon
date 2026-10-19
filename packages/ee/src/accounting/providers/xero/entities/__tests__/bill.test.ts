@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import type { CostingLine } from "../../../../core/document-costing";
 import { JournalEntrySyncError } from "../../../../core/posting";
@@ -331,22 +335,22 @@ it("refuses unsupported Xero bill monetary precision without changing principal"
     })
   ).toThrow(/Xero.*precision|Xero.*decimal/i);
 });
-it.each([
-  false,
-  true
-])("opts into supported unit precision at the actual bill transport (batch=%s)", async (batch) => {
-  const syncer = makeBillSyncer({} as never, null) as any;
-  const requests: string[] = [];
-  syncer.provider.request = async (_method: string, url: string) => {
-    requests.push(url);
-    return { data: { Invoices: [{ InvoiceID: "remote" }] } };
-  };
-  const payload = {
-    Type: "ACCPAY",
-    InvoiceNumber: "AP000001",
-    LineItems: [{ LineAmount: 10, AccountCode: "2125", TaxType: "NONE" }]
-  };
-  if (batch) await syncer.upsertRemoteBatch([{ localId: "pi_1", payload }]);
-  else await syncer.upsertRemote(payload, "pi_1");
-  expect(requests).toEqual(["/Invoices?unitdp=4"]);
-});
+it.each([false, true])(
+  "opts into supported unit precision at the actual bill transport (batch=%s)",
+  async (batch) => {
+    const syncer = makeBillSyncer({} as never, null) as any;
+    const requests: string[] = [];
+    syncer.provider.request = async (_method: string, url: string) => {
+      requests.push(url);
+      return { data: { Invoices: [{ InvoiceID: "remote" }] } };
+    };
+    const payload = {
+      Type: "ACCPAY",
+      InvoiceNumber: "AP000001",
+      LineItems: [{ LineAmount: 10, AccountCode: "2125", TaxType: "NONE" }]
+    };
+    if (batch) await syncer.upsertRemoteBatch([{ localId: "pi_1", payload }]);
+    else await syncer.upsertRemote(payload, "pi_1");
+    expect(requests).toEqual(["/Invoices?unitdp=4"]);
+  }
+);

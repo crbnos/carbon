@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -9,22 +13,19 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
   ModalDescription,
   ModalHeader,
   ModalTitle,
-  ShortcutKey,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   useDisclosure,
-  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   LuChevronDown,
   LuCirclePlus,
@@ -98,17 +99,6 @@ export default function SalesReturnOrderExplorer() {
     deleteLineDisclosure.onClose();
   };
 
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useShortcutKeyMap([
-    {
-      shortcut: EXPLORER_SHORTCUTS.addLine,
-      action: (event: KeyboardEvent) => {
-        event.stopPropagation();
-        newButtonRef.current?.click();
-      }
-    }
-  ]);
-
   const lines = routeData?.lines ?? [];
 
   return (
@@ -143,31 +133,16 @@ export default function SalesReturnOrderExplorer() {
           )}
         </VStack>
         <div className="w-full flex border-t border-border p-4">
-          <Tooltip>
-            <TooltipTrigger className="flex-1">
-              <Button
-                ref={newButtonRef}
-                className="w-full"
-                isDisabled={isDisabled}
-                leftIcon={<LuCirclePlus />}
-                variant="secondary"
-                onClick={chooseSourceDisclosure.onOpen}
-              >
-                <Trans>Add Line Item</Trans>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <HStack>
-                <span>
-                  <Trans>New Line Item</Trans>
-                </span>
-                <ShortcutKey
-                  shortcut={EXPLORER_SHORTCUTS.addLine}
-                  variant="small"
-                />
-              </HStack>
-            </TooltipContent>
-          </Tooltip>
+          <Button
+            className="flex-1"
+            shortcut={EXPLORER_SHORTCUTS.addLine}
+            isDisabled={isDisabled}
+            leftIcon={<LuCirclePlus />}
+            variant="secondary"
+            onClick={chooseSourceDisclosure.onOpen}
+          >
+            <Trans>Add Line Item</Trans>
+          </Button>
         </div>
       </VStack>
       {chooseSourceDisclosure.isOpen && (
@@ -305,9 +280,14 @@ function SalesReturnOrderLineItem({
             <span className="font-semibold line-clamp-1">
               {line.item?.readableIdWithRevision}
             </span>
-            <span className="text-muted-foreground text-xs truncate line-clamp-1">
-              {line.item?.name}
-            </span>
+            {distinctItemText(
+              line.item?.readableIdWithRevision,
+              line.item?.name
+            ) && (
+              <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                {line.item?.name}
+              </span>
+            )}
           </VStack>
         </HStack>
         <div className="absolute right-2">
@@ -315,7 +295,7 @@ function SalesReturnOrderLineItem({
             <IconButton
               aria-label={disclosure.isOpen ? t`Hide` : t`Show`}
               className={cn(
-                "animate opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                "animate md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
                 disclosure.isOpen && "-rotate-180"
               )}
               icon={<LuChevronDown />}
@@ -330,7 +310,7 @@ function SalesReturnOrderLineItem({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="More"
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   size="md"
                   variant="solid"
@@ -339,6 +319,7 @@ function SalesReturnOrderLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={isDisabled || !permissions.can("delete", "sales")}
                   onClick={(e) => {

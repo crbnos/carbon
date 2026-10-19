@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import {
@@ -5,20 +9,21 @@ import {
   DrawerBody,
   DrawerContent,
   DrawerHeader,
-  DrawerTitle
+  DrawerTitle,
+  useViewport
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
+import { collectEntityRefs } from "~/modules/workflows/ui/Runs/entityRefs";
+import { WorkflowRunDetail } from "~/modules/workflows/ui/Runs/WorkflowRunDetail";
 import {
   getWorkflowRun,
   getWorkflowRunChain,
   getWorkflowRunRecordNames,
-  getWorkflowRunSteps,
-  MAX_RUN_STEPS
-} from "~/modules/workflows";
-import { collectEntityRefs } from "~/modules/workflows/ui/Runs/entityRefs";
-import { WorkflowRunDetail } from "~/modules/workflows/ui/Runs/WorkflowRunDetail";
+  getWorkflowRunSteps
+} from "~/modules/workflows/workflows.service";
+import { MAX_RUN_STEPS } from "~/modules/workflows/workflows.utils";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -37,12 +42,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { runId } = params;
   if (!runId) throw new Error("runId is not found");
 
-  const runResult = await getWorkflowRun(client, runId, companyId);
+  // One row past the cap tells us it truncated without a second COUNT query.
+  const [runResult, stepsResult] = await Promise.all([
+    getWorkflowRun(client, runId, companyId),
+    getWorkflowRunSteps(client, runId, companyId)
+  ]);
   const run = runResult.data;
   if (!run) throw new Error("Run not found");
 
-  // One row past the cap tells us it truncated without a second COUNT query.
-  const stepsResult = await getWorkflowRunSteps(client, runId, companyId);
   const allSteps = stepsResult.data ?? [];
   const truncated = allSteps.length > MAX_RUN_STEPS;
   const steps = truncated ? allSteps.slice(0, MAX_RUN_STEPS) : allSteps;
@@ -73,6 +80,7 @@ export default function WorkflowRunDetailRoute() {
   const { run, steps, chain, recordNames, truncated } =
     useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const { isPhone } = useViewport();
   return (
     <Drawer
       open
@@ -80,13 +88,19 @@ export default function WorkflowRunDetailRoute() {
         if (!open) navigate(path.to.workflowRuns);
       }}
     >
-      <DrawerContent size="xl">
+      <DrawerContent
+        size="xl"
+        // Phones: no focus ring on the first link when the sheet opens.
+        onOpenAutoFocus={(e) => {
+          if (isPhone) e.preventDefault();
+        }}
+      >
         <DrawerHeader>
           <DrawerTitle>
             <Trans>Run Details</Trans>
           </DrawerTitle>
         </DrawerHeader>
-        <DrawerBody className="p-0">
+        <DrawerBody className="p-0 max-md:p-0">
           <WorkflowRunDetail
             run={run}
             steps={steps}

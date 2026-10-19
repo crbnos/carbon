@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Button, HStack, VStack } from "@carbon/react";
 import { Plural, Trans } from "@lingui/react/macro";
 import { LuLoaderCircle } from "react-icons/lu";
 import { DateTime } from "~/components";
-import { totalScopeRows } from "../../backups.service";
+import { totalScopeRows } from "../../settings.utils";
 import { ExcludedRowsInfo } from "./ExcludedRowsInfo";
 
 export type RestoreRun = {

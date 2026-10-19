@@ -16,6 +16,7 @@ unless they start with `apps/` or `packages/`.
 9. Archetype G — Config collection (table + drawer)
 10. Archetype H — Module dashboard
 11. Archetype I — Split list/detail lookup
+11a. Archetype J — Setup wizard (agreements: contract, rental agreement, lease)
 12. Where "create" opens — decision rule
 13. Navigation: sub-nav, breadcrumbs, handles, command palette
 14. Responsive behaviour
@@ -28,14 +29,17 @@ unless they start with `apps/` or `packages/`.
 ```
 ┌──────┬──────────────────────────────────────────────────────────────────┐
 │ RAIL │ ╭ content panel: bg-card, md:inset + rounded-2xl + border ───────╮ │
-│ w-14 │ │ TOPBAR 49px  Company ▾ / Module / List / ID     ✎ 🔔 Avatar    │ │
-│ ⌕    │ ├────────────────────────────────────────────────────────────────┤ │
-│ mods │ │ <main>  module layout (sub-nav + Outlet) or document workspace │ │
+│ w-14 │ │ TOPBAR 49px  Module / List / ID                 ✎ 🔔 Avatar    │ │
+│ Co ▾ │ ├────────────────────────────────────────────────────────────────┤ │
+│ ⌕    │ │ <main>  module layout (sub-nav + Outlet) or document workspace │ │
+│ mods │ │                                                                │ │
 │ ⚙    │ ╰────────────────────────────────────────────────────────────────╯ │
 └──────┴──────────────────────────────────────────────────────────────────┘
 ```
-- Shell: `routes/x+/_layout.tsx`. Rail: `components/Layout/Navigation/PrimaryNavigation.tsx`
-  (icon rail, hover-expands, pushes content). Modules are registered in `hooks/useModules.tsx`
+- Shell: `routes/x+/_layout.tsx`. Rail: `components/Layout/Navigation/PrimaryNavigation.tsx`,
+  built on the shared `NavRail` from `@carbon/react` (the same rail MES uses): icon rail that
+  expands on mouse hover or when pinned with the toggle beside the company switcher
+  (`Navigation/CompanySwitcher.tsx`, the rail's header), and pushes content. Modules are registered in `hooks/useModules.tsx`
   (`{ key, permission, name, to, icon }`, Lucide icons, Settings pinned bottom).
 - Topbar: breadcrumbs (from route `handle`), global ✎ Create menu
   (`components/Layout/Topbar/CreateMenu.tsx`), notifications, avatar.
@@ -52,6 +56,13 @@ unless they start with `apps/` or `packages/`.
 
 Both set `handle.module` so the rail stays highlighted. A detail route nested under a module
 folder hides the sub-nav with `handle.hideModuleSidebar` (`utils/handle.ts`).
+
+There is ONE sub-nav, owned by the shell (`ModuleSidebarLayout`, rendered in `x+/_layout.tsx`).
+A module `_layout.tsx` does not render a sidebar: it names its sub-nav component on the route
+handle (`handle.sidebar`, a small component that calls `use{Module}Submodules` and returns
+`<GroupedContentSidebar groups={groups} />`) and its default export is only the page column.
+The frame, its width and its collapsed state therefore persist from module to module; only the
+links change.
 
 ## 3. Archetype A — Module list page
 
@@ -154,12 +165,24 @@ Exemplar: `routes/x+/customer+/$customerId.tsx`, `modules/sales/ui/Customer/Cust
 `components/Layout/Navigation/DetailSidebar.tsx`. Use for long-lived records with many
 sub-collections (contacts, locations, terms) and no line-based lifecycle.
 
-## 7. Archetype E — Posting document (Receipt, Shipment, Journal Entry, Fixed Asset)
+## 7. Archetype E — Posting document (Shipment, Receipt, Transfers, Picking List, Journal Entry, Payment, Memo, Reimbursement, Runs, Fixed Asset)
 
-Centered `max-w-5xl mx-auto p-4` stack of cards, no explorer/properties; header via
-`components/DocumentHeader.tsx` inside a Card or a `*Header` strip. Lines are a card-row list
-with inline inputs (`.claude/rules/shipments-receipts-ui-patterns.md`). Use for short-lived,
-often system-generated documents that are filled in then posted.
+`components/DocumentPage/`: `DocumentPage header sidebar` — one readable column (`max-w-5xl`,
+an `@container`) beside a resizable, collapsible side panel whose size is shared by every
+page using it (on mobile it is a drawer).
+- **Header** — `DocumentPageHeader`: flat (no Card), pinned, a bottom rule only once content
+  scrolls under it. ID (`Heading h2`) + `Copy` + ⋯ menu + status left; outputs then lifecycle
+  actions right, exactly one `primary` (the next step), hidden once it can no longer apply;
+  a muted `meta` line under the ID ("Created 3 days ago by X · Posted Sep 30 by Y").
+- **Body** — the record's own fields laid flat (`ValidatedForm` with no Card, grids on
+  container queries), then the work (lines, notes) as Cards. Line rows size by their own
+  width (`@container`), never by the viewport — the pane is resizable.
+- **Side panel** — `DocumentSidebar`: **Documents** (one untitled `RelatedDocumentGroup` of
+  `RelatedDocument` rows: counterparty, source, downstream with status, then files as
+  `external` rows) and **Activity** (the inline `AuditLogFeed`), Activity only for
+  audit-logged entities. Cross-link buttons and the ⋯ History item do not exist here.
+Exemplar: `routes/x+/shipment+/$shipmentId.tsx` + `modules/inventory/ui/Shipments/Shipment{Header,Documents,Form}.tsx`.
+Rollout notes: `.ai/plans/implemented/2026-10-02-document-page-layout.md`.
 
 ## 8. Archetype F — Settings preference page
 
@@ -202,11 +225,42 @@ For rapid lookup loops across many rows (inventory quantities): the table stays 
 `ResizablePanel`, the detail renders beside it via `<Outlet/>`, close ✕ returns with params
 preserved. Exemplar: `routes/x+/inventory+/quantities.tsx`.
 
+## 11a. Archetype J — Setup wizard (agreements)
+
+A record that is **set up once as a Draft over several concerns, then activated or confirmed**
+and lives for months: the AR contract, the rental agreement, the lessee lease. Its Draft is
+never edited in the 3-pane workspace; it is set up in a full-page wizard, and only an
+activated record opens the **B** workspace.
+
+Built from `~/components/Setup` — never a hand-rolled stepper, Card stack or Drawer:
+
+- `SetupFrame` (title, subtitle, `SetupSteps` stepper) → each step's `SetupBody` of
+  `SetupSection`s → a sticky `SetupFooter` (running total on the left; Back / Next, and on the
+  last step **Save as Draft** + the primary **Activate** / **Confirm** with a `Confirm` that
+  previews what it posts).
+- Routes: `new.tsx` renders step 1 inside `SetupFrame` and creates the Draft; `$id.setup.tsx`
+  is the shell (refuses a non-Draft); `$id.setup._index.tsx` redirects to the first step after
+  Details; `$id.setup.{step}.tsx` per step. `$id.tsx` renders `<RecordOutlet />` alone when the
+  setup is matched, and `$id._index` / `$id.details` send an editor's Draft to the setup
+  (`draft…SetupPath` in `{module}.server.ts`).
+- Step 1 (Details) is one `ValidatedForm` whose submit is **Next**, carrying the later steps'
+  terms as hidden fields. Every later step saves **as you edit**: one `TermForm` per term
+  posting to `update.tsx`, and lines in an inline-editing grid (`Table` with
+  `editableComponents`, `useCellSave` → `$id.$lineId.update` returning `{ error }`).
+- The last step is **Review**: a summary, the gaps that block activation linked to the step
+  that fixes them, and the posting preview.
+
+Exemplars: `routes/x+/rental-agreement+/{new,$id,$id.setup*}.tsx` +
+`modules/sales/ui/Rentals/{RentalSetupSteps,RentalAgreementDetailsForm,RentalAgreementBilling,RentalUnitsGrid,RentalAgreementAccounting}.tsx`;
+`routes/x+/contract+/$id.setup*.tsx` + `modules/sales/ui/Contracts/`; `routes/x+/lease+/$id.setup*.tsx` +
+`modules/purchasing/ui/Leases/LeaseSetupSteps.tsx`.
+
 ## 12. Where "create" opens — decision rule
 
 | What is created | Opens as | Shape |
 |---|---|---|
 | A record that gets its own detail workspace (document, job, part, customer) | **full page** `routes/x+/{entity}+/new.tsx`, centered `max-w-4xl`, the record form in a Card; on save redirect to the detail page | `routes/x+/quote+/new.tsx` + `QuoteForm.tsx` |
+| An agreement set up as a Draft over several concerns, then activated (contract, rental agreement, lease) | **setup wizard** (Archetype J): `new.tsx` is step 1 inside `SetupFrame`; Next saves the Draft and goes to `$id.setup.{step}` — never a Card form that redirects to the workspace | `routes/x+/rental-agreement+/new.tsx` + `$id.setup*.tsx` |
 | A flat lookup/config row (≤ ~5 fields, no children) | **right drawer** over the list via nested route; form written with `ModalDrawer` | CustomerTypeForm |
 | The same row created from inside a picker | same form, `type="modal"` (ModalDrawer switches to Modal) | `components/Form/Customer.tsx` |
 | A child line of an open document | **modal** from the Explorer "Add Line Item"; then edited as a Card in the content pane (`ModalCard`) | SalesReturnOrderLineForm |
@@ -229,7 +283,7 @@ menu (add new document types to `CreateMenu.tsx`). Both link to the same `path.t
 ## 14. Responsive
 
 One JS breakpoint: `useIsMobile` = `< 768px`. ERP is desktop-first:
-- < md: rail hidden → hamburger drawer; module sub-nav → "Submodules" drawer; Explorer and
+- < md: rail hidden → the same `NavRail` items in a left drawer, opened by the Topbar hamburger; module sub-nav → "Submodules" drawer; Explorer and
   Properties become overlay drawers that close on navigation; breadcrumbs hidden.
 - 768–1023px: Properties starts collapsed.
 - Form grids collapse to one column (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`).
@@ -242,13 +296,18 @@ MES is tablet-first with `lg` as the pivot — see `shop-floor-mes.md`.
 
 Ask in order:
 1. Is it a collection users search, filter and open? → **A** (and **G** for its config rows).
-2. Does one record have a lifecycle (statuses, next steps) and lines or rich sub-content? → **B**.
-3. Is it a master record with many sub-collections and no lifecycle? → **D**.
-4. Is it a short-lived document that is filled in and posted? → **E**.
-5. Is it a company-wide preference? → **F**.
-6. Is it a rapid lookup loop across many rows? → **I**.
-7. Is it an item-like record with several facets (planning, costing, inventory)? → **C**.
-8. Operator on the shop floor? → MES (`shop-floor-mes.md`).
+2. Is it an agreement set up once as a Draft over several concerns (parties and term,
+   lines or payments, billing, accounting treatment), then activated and lived with for
+   months? → **J** for the Draft, **B** once active. Check the siblings first: if the same
+   kind of record already exists in another module (rental agreement ↔ lease ↔ contract),
+   use its archetype, not a lookalike.
+3. Does one record have a lifecycle (statuses, next steps) and lines or rich sub-content? → **B**.
+4. Is it a master record with many sub-collections and no lifecycle? → **D**.
+5. Is it a short-lived document that is filled in and posted? → **E**.
+6. Is it a company-wide preference? → **F**.
+7. Is it a rapid lookup loop across many rows? → **I**.
+8. Is it an item-like record with several facets (planning, costing, inventory)? → **C**.
+9. Operator on the shop floor? → MES (`shop-floor-mes.md`).
 
 If none fits, compose from these shells (header strip, 3-pane, card stack, table) before
 inventing a new layout, and state in your design brief why no archetype fits.

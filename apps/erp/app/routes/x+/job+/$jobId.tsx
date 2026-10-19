@@ -1,40 +1,40 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
-import { datetime } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  Await,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { ExplorerSkeleton } from "~/components/Skeletons";
 import { flattenTree } from "~/components/TreeView";
-import { getConfigurationParameters } from "~/modules/items";
-import type { JobMethodTreeItem } from "~/modules/production";
+import { getConfigurationParameters } from "~/modules/items/items.utils";
 import {
   getJob,
-  getJobDocuments,
   getJobMaterialsWithQuantityOnHand,
-  getJobMethodTree,
   getJobOrderStatusMap,
   getTrackedEntitiesByJobId
-} from "~/modules/production";
+} from "~/modules/production/production.service";
+import type { JobMethodTreeItem } from "~/modules/production/production.utils";
+import { getJobMethodTree } from "~/modules/production/production.utils";
 import {
   JobBoMExplorer,
   JobHeader,
   JobProperties
 } from "~/modules/production/ui/Jobs";
 import type { JobOrderStatusData } from "~/modules/production/ui/Jobs/JobBoMExplorer";
-import { getTagsList } from "~/modules/shared";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  getTagsList
+} from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -71,11 +71,31 @@ async function getJobOrderStatus(
 }
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Job`,
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Jobs`, to: path.to.jobs },
     (data) => data?.job?.jobId
   ),
-  module: "production"
+  module: "production",
+  // Everything the job's pages show: an operation finished on the shop floor,
+  // a pick, a step record — all reach this page without a reload.
+  realtime: [
+    { table: "job", column: "id", param: "jobId" },
+    { table: "jobOperation", column: "jobId", param: "jobId" },
+    { table: "jobMaterial", column: "jobId", param: "jobId" },
+    { table: "jobMakeMethod", column: "jobId", param: "jobId" },
+    { table: "jobOperationStep", column: "jobId", param: "jobId" },
+    { table: "jobOperationStepRecord", column: "jobId", param: "jobId" },
+    { table: "productionEvent", column: "jobId", param: "jobId" },
+    { table: "pickingListLine", column: "jobId", param: "jobId" },
+    {
+      // The job's own model. A job without one follows none: attaching a model
+      // changes the job row, which is followed above.
+      table: "modelUpload",
+      filter: ({ data }) =>
+        data?.job?.modelUploadId ? `id=eq.${data.job.modelUploadId}` : false
+    }
+  ]
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -127,7 +147,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job: job.data,
     unbatchedBatchableOperations,
     tags: tags.data ?? [],
-    files: getJobDocuments(client, companyId, job.data),
     trackedEntities: getTrackedEntitiesByJobId(client, jobId),
     method: getJobMethodTree(client, jobId), // returns a promise
     orderStatus: getJobOrderStatus(
@@ -146,6 +165,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function JobRoute() {
+  const { t } = useLingui();
   const params = useParams();
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -159,6 +179,7 @@ export default function JobRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Structure`}
               explorer={
                 <div className="w-full h-full p-2">
                   <Suspense fallback={<ExplorerSkeleton />}>
@@ -181,8 +202,8 @@ export default function JobRoute() {
                 </div>
               }
               content={
-                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
-                  <Outlet />
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
+                  <RecordOutlet />
                 </div>
               }
               properties={<JobProperties key={jobId} />}

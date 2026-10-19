@@ -1,13 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { getRequestOrigin } from "@carbon/utils";
+import { getRequestOrigin, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import { checkRevisionLock } from "~/modules/items/items.server";
-import { activateMethodVersion } from "~/modules/items/items.service";
+import {
+  activateMethodVersion,
+  checkRevisionLock
+} from "~/modules/items/items.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "items");
@@ -80,7 +86,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // spinning fresh method versions at Done and never stages/reserves a pending
   // revision, so there is nothing for an open CO to lock against.
 
-  const update = await activateMethodVersion(serviceRole, {
+  const update = await activateMethodVersion(serviceRole, getDatabaseClient(), {
     id,
     companyId,
     userId
@@ -94,7 +100,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
     return {
       success: false,
-      message: "Failed to activate method version"
+      message: update.error.message || "Failed to activate method version"
     };
   }
 

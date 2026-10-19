@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Checkbox,
   DropdownMenuContent,
   DropdownMenuItem,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Tooltip,
@@ -31,13 +36,13 @@ import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
-import type { Employee } from "~/modules/users";
+import type { Employee } from "~/modules/users/types";
 import {
   BulkEditPermissionsForm,
   DeactivateUsersModal,
   ResendInviteModal,
   RevokeInviteModal
-} from "~/modules/users";
+} from "~/modules/users/ui";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -116,6 +121,7 @@ const EmployeesTable = memo(
           ),
 
           meta: {
+            mobile: "P1",
             icon: <LuUser />
           }
         },
@@ -151,6 +157,7 @@ const EmployeesTable = memo(
             return email;
           },
           meta: {
+            mobile: "P3",
             icon: <LuMail />
           }
         },
@@ -165,6 +172,7 @@ const EmployeesTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: employeeTypes.map((type) => ({
@@ -189,6 +197,7 @@ const EmployeesTable = memo(
             return <Badge variant="secondary">{t`Inactive`}</Badge>;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: [
@@ -272,6 +281,7 @@ const EmployeesTable = memo(
         return (
           <DropdownMenuContent>
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               onClick={() => {
                 setSelectedUserIds(
                   selectedRows
@@ -365,6 +375,7 @@ const EmployeesTable = memo(
             {row.active === true ? (
               <>
                 <MenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
                   onClick={() =>
                     navigate(
                       `${path.to.employeeAccount(row.id!)}?${params.toString()}`

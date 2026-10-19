@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type {
   BackupCompatibilityStatus,
@@ -5,11 +9,13 @@ import type {
   Manifest
 } from "@carbon/jobs/backups";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { RowsByTable } from "./settings.utils";
 
-// Company backup data access. The export edge function is a thin auth boundary;
-// the heavy lifting runs in the carbon/company-export inngest job. Restore is
-// enqueued server-side (see backups.server.ts) and tracked via the
-// externalIntegrationMapping marker (getCompanyRestoreRuns).
+// Company backup data access. Export is enqueued server-side
+// (exportCompanyBackup in backups.server.ts) and runs in the
+// carbon/company-export inngest job. Restore is also enqueued server-side (see
+// backups.server.ts) and tracked via the externalIntegrationMapping marker
+// (getCompanyRestoreRuns).
 
 // A backup is a folder `exports/<name>/` of small objects: `manifest.json`, one
 // `tables/<table>.ndjson.gz` per table, and `assets/<path>` files. Pre-restore
@@ -29,19 +35,6 @@ export type ScopeViolationSummary = {
   refTable: string;
   rows: number;
 };
-
-/** DISTINCT rows per table. The ONLY shape a user-facing total may be summed from. */
-export type RowsByTable = { table: string; rows: number };
-
-/**
- * How many ROWS a skip or purge affects. `violations`/`excludedRows` are per FK
- * EDGE — a row escaping scope through three of its foreign keys appears three
- * times there — so totals must come from the per-table distinct counts.
- */
-export function totalScopeRows(rowsByTable: RowsByTable[]): number {
-  return rowsByTable.reduce((sum, t) => sum + t.rows, 0);
-}
-
 /** Supabase storage caps a `list` call; page until a short page comes back. */
 const BACKUP_LIST_PAGE_SIZE = 100;
 const BACKUP_LIST_MAX_PAGES = 50;
@@ -73,20 +66,6 @@ async function removeStoragePrefix(
   }
 }
 
-export async function exportCompanyBackup(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    userId: string;
-    label?: string;
-    includeStorage?: "none" | "all";
-    /** Opt-in recovery: leave out rows whose links escape company scope. */
-    skipCorrupted?: boolean;
-  }
-) {
-  return client.functions.invoke("export-company", { body: args });
-}
-
 export type CompanyBackupSummary = {
   /** Backup folder name (also the restore `source` identifier). */
   name: string;
@@ -100,7 +79,7 @@ export type CompanyBackupSummary = {
   sizeBytes: number;
   /**
    * "Would this backup restore into TODAY's schema?" — computed live against
-   * the current schema by `getCompanyBackups` (backups.server.ts) on every
+   * the current schema by `getCompanyBackups` (settings.service.ts) on every
    * load, never stored. The hard refusal is still `assertBackupImportable`
    * inside the restore job; this is the same diff, disclosed upfront.
    *
@@ -123,7 +102,7 @@ export type CompanyBackupSummary = {
 /**
  * List a company's backup folders (`exports/<name>/`, snapshots excluded),
  * reading each manifest for its metadata. Storage layer only: `compatibility`
- * is a placeholder here — `getCompanyBackups` in backups.server.ts computes
+ * is a placeholder here — `getCompanyBackups` in settings.service.ts computes
  * the real verdict from the returned `manifest` (server-only, since it needs
  * `@carbon/jobs/backups` and a schema read) and strips it before the loader
  * returns.

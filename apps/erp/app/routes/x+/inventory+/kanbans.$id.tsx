@@ -1,15 +1,17 @@
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
-import {
-  getKanban,
-  KanbanForm,
-  kanbanValidator,
-  upsertKanban
-} from "~/modules/inventory";
+import { useLoaderData } from "react-router";
+import { kanbanValidator } from "~/modules/inventory/inventory.models";
+import { getKanban } from "~/modules/inventory/inventory.service";
+import { KanbanForm } from "~/modules/inventory/ui";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -28,44 +30,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(kanbanValidator).request(args, {
+    params: ["id"]
   });
-
-  const formData = await request.formData();
-  const validation = await validator(kanbanValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...d } = validation.data;
-  if (!id) throw new Error("id not found");
-
-  const updateKanban = await upsertKanban(client, {
-    id,
-    ...d,
-    updatedBy: userId
+  if ("invalid" in input) return input.invalid;
+  const { id: _, ...kanban } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.inventory.updateKanban({
+    ...kanban,
+    id: input.params.id
   });
-
-  if (updateKanban.error) {
-    return data(
-      {},
-      await flash(request, error(updateKanban.error, "Failed to update kanban"))
-    );
-  }
-
-  throw redirect(
-    `${path.to.kanbans}?${getParams(request)}`,
-    await flash(request, success("Updated kanban"))
+  const { pathname, search } = new URL(args.request.url);
+  return respond(args.request, result).redirect(
+    `${path.to.kanbans}?${getParams(args.request)}`,
+    { message: "Updated kanban", onError: `${pathname}${search}` }
   );
 }
 
 export default function EditKanbanRoute() {
   const { kanban } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: kanban?.id ?? undefined,
@@ -78,6 +63,7 @@ export default function EditKanbanRoute() {
     supplierId: kanban?.supplierId ?? "",
     purchaseUnitOfMeasureCode: kanban?.purchaseUnitOfMeasureCode ?? "",
     conversionFactor: kanban?.conversionFactor ?? 1,
+    replenishmentLevel: kanban?.replenishmentLevel ?? undefined,
     autoRelease: kanban?.autoRelease ?? false,
     autoStartJob: kanban?.autoStartJob ?? false,
     completedBarcodeOverride: kanban?.completedBarcodeOverride ?? ""
@@ -88,7 +74,7 @@ export default function EditKanbanRoute() {
       key={initialValues.id}
       initialValues={initialValues}
       locationId={initialValues.locationId}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

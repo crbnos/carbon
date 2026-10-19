@@ -1,84 +1,23 @@
-import { error, safeRedirect, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { deactivateUser } from "@carbon/auth/users.server";
-import { validationError, validator } from "@carbon/form";
-import { batchTrigger } from "@carbon/jobs";
-import { getClientIp } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { redirect } from "react-router";
-import { deactivateUsersValidator } from "~/modules/users";
-import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    delete: "users"
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import type { ActionFunctionArgs } from "react-router";
+import { deactivateUsersValidator } from "~/modules/users/users.models";
+import { originOf } from "~/modules/users/users.service";
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(deactivateUsersValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { users, redirectTo } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.users.deactivateUsers({
+    userIds: users,
+    ip: originOf(args.request).ip
   });
-
-  const validation = await validator(deactivateUsersValidator).validate(
-    await request.formData()
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { users, redirectTo } = validation.data;
-
-  const ip = getClientIp(request) ?? undefined;
-
-  if (users.includes(userId)) {
-    throw redirect(
-      safeRedirect(redirectTo),
-      await flash(request, error(null, "You cannot deactivate yourself"))
-    );
-  }
-
-  if (users.length === 1) {
-    const [targetUserId] = users;
-    // deactivateUser() handles Stripe subscription quantity update internally
-    const result = await deactivateUser(
-      client,
-      targetUserId,
-      companyId,
-      userId,
-      ip
-    );
-
-    throw redirect(safeRedirect(redirectTo), await flash(request, result));
-  } else {
-    const batchPayload = users.map((id) => ({
-      payload: {
-        id,
-        type: "deactivate" as const,
-        companyId,
-        actorId: userId,
-        ip
-      }
-    }));
-
-    try {
-      await batchTrigger("user-admin", batchPayload);
-      throw redirect(
-        safeRedirect(redirectTo),
-        await flash(
-          request,
-          success("Success. Please check back in a few moments.")
-        )
-      );
-    } catch (e) {
-      throw redirect(
-        safeRedirect(redirectTo),
-        await flash(request, error(e, "Failed to deactivate users"))
-      );
-    }
-  }
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateUserSelectQueries(getCompanyId());
-  return await serverAction();
+  return respond(args.request, result).redirect(redirectTo, {
+    message: result.data?.message
+  });
 }

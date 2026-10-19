@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { OnshapeLogo } from "@carbon/ee";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -21,12 +26,12 @@ import {
   useMount
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LuChevronRight } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { MethodIcon } from "~/components";
 import { OnshapeStatus } from "~/components/Icons";
-import { methodType } from "~/modules/shared";
+import { methodType } from "~/modules/shared/shared.models";
 import type { action as onShapeSyncAction } from "~/routes/api+/integrations.onshape.sync";
 import { path } from "~/utils/path";
 import { DateTime } from "./DateTime";
@@ -204,10 +209,14 @@ export const OnshapeSync = ({
     }
   };
 
-  const upsertBomFetcher = useFetcher<typeof onShapeSyncAction>();
-  const syncSubmitted = useRef(false);
+  const upsertBomFetcher = useAction<typeof onShapeSyncAction>({
+    onSuccess: () => {
+      setBomRows([]);
+      setLastSyncedAt(new Date().toISOString());
+      toast.success(t`BOM synced successfully`);
+    }
+  });
   const saveBom = () => {
-    syncSubmitted.current = true;
     const formData = new FormData();
     formData.append("documentId", documentId ?? "");
     formData.append("versionId", versionId ?? "");
@@ -219,23 +228,6 @@ export const OnshapeSync = ({
       action: path.to.api.onShapeSync
     });
   };
-
-  useEffect(() => {
-    if (
-      syncSubmitted.current &&
-      upsertBomFetcher.data?.success &&
-      bomRows.length > 0
-    ) {
-      setBomRows([]);
-      setLastSyncedAt(new Date().toISOString());
-      syncSubmitted.current = false;
-      toast.success(t`BOM synced successfully`);
-    }
-
-    if (upsertBomFetcher.data?.success === false) {
-      toast.error(upsertBomFetcher.data.message);
-    }
-  }, [bomRows.length, upsertBomFetcher.data, t]);
 
   return (
     <div className="flex flex-col gap-2 w-full">

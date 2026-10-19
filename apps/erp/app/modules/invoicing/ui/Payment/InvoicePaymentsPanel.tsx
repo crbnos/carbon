@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Card,
   CardContent,
@@ -16,7 +20,7 @@ import { Link } from "react-router";
 import { DateTime, Empty } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useCurrencyFormatter } from "~/hooks";
-import type { InvoiceSettlementForInvoice } from "~/modules/invoicing";
+import type { InvoiceSettlementForInvoice } from "~/modules/invoicing/invoicing.service";
 import { path } from "~/utils/path";
 
 type InvoiceSettlementsPanelProps = {

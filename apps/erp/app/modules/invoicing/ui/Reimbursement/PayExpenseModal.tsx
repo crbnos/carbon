@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -18,7 +22,7 @@ import {
   useCurrencyDecimals,
   useCurrencyFormatter
 } from "~/hooks";
-import { reimbursementPaymentValidator } from "~/modules/invoicing";
+import { reimbursementPaymentValidator } from "~/modules/invoicing/invoicing.models";
 import { path } from "~/utils/path";
 
 type PayExpenseModalProps = {

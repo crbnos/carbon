@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useRouteData } from "@carbon/react";
 import { useCallback } from "react";
-import type { Permission } from "~/modules/users";
+import type { Permission } from "~/modules/users/types";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
 import { useUser } from "./useUser";

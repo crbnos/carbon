@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Modal,
@@ -10,7 +14,7 @@ import {
 } from "@carbon/react";
 import { Plural, Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { type RowsByTable, totalScopeRows } from "../../backups.service";
+import { type RowsByTable, totalScopeRows } from "../../settings.utils";
 
 // Shared by a failed restore and a failed demo data apply, whose safety snapshots
 // refuse on the same out-of-scope rows. Callers own the differing copy and the submit.

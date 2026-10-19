@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /// <reference path="./.sst/platform/config.d.ts" />
 
 // Assembler service infrastructure (SST v4 Ion / Pulumi-based). ONE shared deployment per
@@ -34,7 +38,8 @@ export default $config({
     const account = process.env.AWS_ACCOUNT_ID;
     const region = process.env.AWS_REGION;
     const imageTag = process.env.IMAGE_TAG ?? "latest";
-    // Same image for both runtimes (built once by .github/workflows/assembler.yml).
+    // Same image for both runtimes: build-images.yml builds it and deploy.yml
+    // copies it into this account's ECR.
     const image = `${account}.dkr.ecr.${region}.amazonaws.com/carbon/assembler:${imageTag}`;
 
     // Shared runtime env (same knobs on Lambda and the ECS service).
@@ -44,6 +49,18 @@ export default $config({
       // Job/result store — REQUIRED; the assembler refuses to boot without it.
       REDIS_URL: process.env.REDIS_URL,
       TZ: "UTC",
+      // Tracing (optional): forwarded only when set at deploy time. Without an
+      // endpoint the service exports nothing.
+      ...Object.fromEntries(
+        [
+          "OTEL_EXPORTER_OTLP_ENDPOINT",
+          "OTEL_EXPORTER_OTLP_HEADERS",
+          "OTEL_RESOURCE_ATTRIBUTES",
+          "OTEL_SERVICE_NAME",
+          "OTEL_TRACES_SAMPLER",
+          "OTEL_TRACES_SAMPLER_ARG",
+        ].flatMap((name) => (process.env[name] ? [[name, process.env[name]]] : [])),
+      ),
       // Optimize time budget + dispatch mode are AUTO-DETECTED in-service from
       // AWS_LAMBDA_FUNCTION_NAME (720s ladder budget on Lambda; self-invoke
       // dispatch) — no env needed here.

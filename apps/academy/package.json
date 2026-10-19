@@ -6,11 +6,13 @@
     "@carbon/database": "workspace:*",
     "@carbon/documents": "workspace:*",
     "@carbon/form": "workspace:*",
-    "@carbon/glossary": "workspace:*",
+    "@carbon/content": "workspace:*",
     "@carbon/kv": "workspace:*",
+    "@carbon/locale": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/react": "workspace:*",
     "@carbon/utils": "workspace:*",
+    "@lingui/core": "catalog:",
     "@react-aria/i18n": "catalog:",
     "@react-router/dev": "catalog:",
     "@react-router/remix-routes-option-adapter": "catalog:",
@@ -38,6 +40,7 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@carbon/dev": "workspace:*",
     "@lingui/vite-plugin": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
@@ -49,7 +52,6 @@
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-babel-macros": "catalog:",
     "wait-on": "catalog:"
   },
   "private": true,
@@ -59,8 +61,10 @@
     "dev": "NODE_EXTRA_CA_CERTS=$HOME/.portless/ca.pem react-router dev",
     "lint": "biome lint --write",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "react-router typegen && tsgo --noEmit",
     "typegen": "react-router typegen"
   },
-  "sideEffects": false
+  "sideEffects": [
+    "./app/zod.client.ts"
+  ]
 }

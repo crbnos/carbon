@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, TEMP_STAGING_BUCKET } from "@carbon/files";
+import { convertKbToString } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
   CardHeader,
@@ -17,22 +22,24 @@ import {
   Spinner,
   toast,
   useDisclosure,
-  useMode
+  useMode,
+  useViewport
 } from "@carbon/react";
 import { getFileSizeLimit, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
-import { Trans } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
-import { useFetcher, useRevalidator } from "react-router";
+import { LuBox, LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
 import { useModelUpload, useUser } from "~/hooks";
 import type { ModelUpload } from "~/types";
+import type { ViewDirection } from "~/utils/model-thumbnail";
+import { regenerateModelThumbnail } from "~/utils/model-thumbnail";
 import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
-import { ModelUploadProgress } from "./ModelUploadProgress";
+import type { InterruptedUpload } from "~/utils/resumable-upload";
+import { InterruptedUploadNotice, UploadProgress } from "./UploadProgress";
 
 const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
 
@@ -68,6 +75,7 @@ const CadModel = ({
   uploadClassName,
   viewerClassName
 }: CadModelProps) => {
+  const { t } = useLingui();
   const { modelPath = null, modelId: modelUploadId = null } = modelUpload ?? {};
   const {
     company: { id: companyId }
@@ -75,9 +83,16 @@ const CadModel = ({
   const mode = useMode();
   const { carbon } = useCarbon();
   const revalidator = useRevalidator();
-  const { upload, runUpload } = useModelUpload();
+  // What the model is for, so an upload a reload cut off is offered back here.
+  const uploadScope =
+    Object.entries(metadata ?? {})
+      .filter(([, id]) => id)
+      .map(([key, id]) => `${key}:${id}`)
+      .join(",") || "cad";
+  const { upload, runUpload, interrupted, dismissInterrupted } =
+    useModelUpload(uploadScope);
 
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction();
   const [file, setFile] = useState<File | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteModal = useDisclosure();
@@ -99,6 +114,35 @@ const CadModel = ({
   } = useOptimizedModel({ modelPath, modelUploadId, companyId, file });
   // Never on top of the upload progress overlay.
   const showOptimizeProgress = optimizeProgressActive && upload === null;
+
+  // The thumbnail is drawn from where the viewer's camera stands. The item
+  // panel reads the model's thumbnail from the loader, so revalidate once the
+  // new one lands.
+  // One at a time: two in flight both wait for "a new path", so the first to
+  // land would be reported as the second's view.
+  const [isCapturing, setIsCapturing] = useState(false);
+  const onCaptureThumbnail = async (direction: ViewDirection) => {
+    if (!modelUploadId || !carbon || isCapturing) return;
+    setIsCapturing(true);
+    toast.info(t`Regenerating thumbnail…`);
+    try {
+      const thumbnailPath = await regenerateModelThumbnail({
+        carbon,
+        modelId: modelUploadId,
+        direction
+      });
+      if (thumbnailPath) {
+        revalidator.revalidate();
+        toast.success(t`Thumbnail updated`);
+      } else {
+        toast.info(t`Thumbnail is still generating`);
+      }
+    } catch {
+      toast.error(t`Failed to regenerate thumbnail`);
+    } finally {
+      setIsCapturing(false);
+    }
+  };
 
   const onDelete = async () => {
     if (!carbon) {
@@ -160,8 +204,6 @@ const CadModel = ({
     );
 
   const onFileChange = async (file: File | null) => {
-    const modelId = nanoid();
-
     setFile(file);
 
     if (file) {
@@ -169,19 +211,17 @@ const CadModel = ({
         toast.error("Failed to initialize carbon client");
         return;
       }
-      const fileExtension = file.name.split(".").pop();
-      const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
-
       // Raw CAD lands in `temp-staging` (2.5 GB cap) via a resumable (TUS) upload
       // — a standard buffered upload times out on multi-GB files. The
       // optimise/assembly jobs read it from there and write the gated artifacts
-      // (<=50 MB) to `private`.
+      // (<=50 MB) to `private`. The id and path are the upload's: a resumed
+      // upload keeps its own.
       const toastId = toast.loading(`Uploading ${file.name}…`);
-      const { error: uploadError } = await runUpload({
-        bucket: TEMP_STAGING_BUCKET,
-        path: fileName,
-        file
-      });
+      const {
+        error: uploadError,
+        modelId,
+        modelPath: fileName
+      } = await runUpload(file);
       if (uploadError) {
         toast.error("Failed to upload file to storage", { id: toastId });
         setFile(null);
@@ -273,11 +313,17 @@ const CadModel = ({
                 onRetry={modelPath && canRetry ? onRetry : undefined}
                 retryLabel={retryLabel}
                 onCancelWait={modelPath ? onCancelWait : undefined}
+                onCaptureThumbnail={
+                  !isReadOnly && modelUploadId ? onCaptureThumbnail : undefined
+                }
+                isCapturingThumbnail={isCapturing}
                 onDelete={canDelete ? deleteModal.onOpen : undefined}
               />
               {upload !== null && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-background/95 p-6">
-                  <ModelUploadProgress
+                  <UploadProgress
+                    label={t`Uploading model`}
+                    description={t`Uploading the CAD file`}
                     percent={upload.percent}
                     uploaded={upload.uploaded}
                     total={upload.total}
@@ -389,6 +435,8 @@ const CadModel = ({
             isReadOnly={isReadOnly}
             titleExtras={titleExtras}
             onFileChange={onFileChange}
+            interrupted={interrupted}
+            onDismissInterrupted={dismissInterrupted}
           />
         );
       }}
@@ -405,6 +453,8 @@ type CadModelUploadProps = {
   className?: string;
   isReadOnly?: boolean;
   onFileChange: (file: File | null) => void;
+  interrupted?: InterruptedUpload | null;
+  onDismissInterrupted?: () => void;
 };
 
 const CadModelUpload = ({
@@ -413,9 +463,12 @@ const CadModelUpload = ({
   file,
   isReadOnly,
   className,
-  onFileChange
+  onFileChange,
+  interrupted,
+  onDismissInterrupted
 }: CadModelUploadProps) => {
   const hasFile = !!file;
+  const { isPhone } = useViewport();
 
   const { getRootProps, getInputProps } = useDropzone({
     disabled: hasFile,
@@ -451,6 +504,45 @@ const CadModelUpload = ({
       toast.error(message);
     }
   });
+
+  // Phones: no model yet is one line with an Upload button, not a 400px drop zone.
+  if (isPhone && !hasFile) {
+    return (
+      <div className="flex w-full flex-col rounded-xl border border-border bg-card">
+        {title && (
+          <div className="flex items-center gap-2 border-b border-border px-4 py-3 font-medium">
+            {title}
+            {titleExtras}
+          </div>
+        )}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <LuBox className="size-4" />
+          </span>
+          <p className="min-w-0 flex-1 text-sm text-muted-foreground">
+            <Trans>No CAD model to preview.</Trans>
+          </p>
+          {!isReadOnly && (
+            <div {...getRootProps()}>
+              <input {...getInputProps()} name="file" className="sr-only" />
+              <Button variant="secondary" leftIcon={<LuCloudUpload />}>
+                <Trans>Upload</Trans>
+              </Button>
+            </div>
+          )}
+        </div>
+        {!isReadOnly && interrupted && onDismissInterrupted && (
+          <div className="px-4 pb-3">
+            <InterruptedUploadNotice
+              name={interrupted.name}
+              percent={interrupted.percent}
+              onDismiss={onDismissInterrupted}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // Read-only with no model yet: keep the section (and its title) so the reader
   // knows it exists, but drop the drop zone entirely.
@@ -520,6 +612,14 @@ const CadModelUpload = ({
               <p className="text-xs text-muted-foreground group-hover:text-foreground">
                 Supports {supportedModelTypes.join(", ")} files
               </p>
+              {interrupted && onDismissInterrupted && (
+                <InterruptedUploadNotice
+                  className="mt-4 max-w-md"
+                  name={interrupted.name}
+                  percent={interrupted.percent}
+                  onDismiss={onDismissInterrupted}
+                />
+              )}
             </>
           )}
         </div>

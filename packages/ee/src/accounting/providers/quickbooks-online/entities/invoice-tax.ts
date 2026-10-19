@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { EPSILON, round, SCALE } from "@carbon/utils";
 import { JournalEntrySyncError } from "../../../core/posting";
 import type { SalesDocumentComponents } from "../../../core/sales-document-components";

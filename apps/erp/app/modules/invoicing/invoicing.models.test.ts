@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import {
   invoiceSettlementValidator,
   isInvoicePayable,
   memoValidator,
-  paymentValidator
+  paymentValidator,
+  purchaseInvoiceSupplierChange,
+  salesInvoiceCustomerChange
 } from "./invoicing.models";
 
 describe("paymentValidator", () => {
@@ -51,18 +57,18 @@ describe("paymentValidator", () => {
     ).toBe(true);
   });
 
-  it.each([
-    "Receipt",
-    "Disbursement"
-  ])("rejects ambiguous %s counterparty", (paymentType) => {
-    expect(
-      paymentValidator.safeParse({
-        ...validReceipt,
-        paymentType,
-        supplierId: "supp1"
-      }).success
-    ).toBe(false);
-  });
+  it.each(["Receipt", "Disbursement"])(
+    "rejects ambiguous %s counterparty",
+    (paymentType) => {
+      expect(
+        paymentValidator.safeParse({
+          ...validReceipt,
+          paymentType,
+          supplierId: "supp1"
+        }).success
+      ).toBe(false);
+    }
+  );
 
   it("rejects a Receipt missing customer", () => {
     const r = paymentValidator.safeParse({
@@ -341,5 +347,71 @@ describe("memoValidator", () => {
     expect(
       memoValidator.safeParse({ ...base, customerId: "cust_1" }).success
     ).toBe(false);
+  });
+});
+
+describe("salesInvoiceCustomerChange", () => {
+  it("sets the invoice customer and clears its contact and location", () => {
+    expect(salesInvoiceCustomerChange("cust_billing", null)).toEqual({
+      invoiceCustomerId: "cust_billing",
+      invoiceCustomerContactId: null,
+      invoiceCustomerLocationId: null
+    });
+  });
+
+  it("never writes the sold-to customer", () => {
+    for (const currency of [
+      null,
+      { currencyCode: "EUR", exchangeRate: 0.92 }
+    ]) {
+      expect(
+        salesInvoiceCustomerChange("cust_billing", currency)
+      ).not.toHaveProperty("customerId");
+    }
+  });
+
+  it("keeps the invoice currency when the customer has none", () => {
+    const change = salesInvoiceCustomerChange("cust_billing", null);
+    expect(change).not.toHaveProperty("currencyCode");
+    expect(change).not.toHaveProperty("exchangeRate");
+  });
+
+  it("takes the customer's currency and rate when it has one", () => {
+    expect(
+      salesInvoiceCustomerChange("cust_billing", {
+        currencyCode: "EUR",
+        exchangeRate: 0.92
+      })
+    ).toMatchObject({ currencyCode: "EUR", exchangeRate: 0.92 });
+  });
+});
+
+describe("purchaseInvoiceSupplierChange", () => {
+  it("sets the invoice supplier and clears its contact and location", () => {
+    expect(purchaseInvoiceSupplierChange("supp_billing", null)).toEqual({
+      invoiceSupplierId: "supp_billing",
+      invoiceSupplierContactId: null,
+      invoiceSupplierLocationId: null
+    });
+  });
+
+  it("never writes the supplier", () => {
+    for (const currency of [
+      null,
+      { currencyCode: "EUR", exchangeRate: 0.92 }
+    ]) {
+      expect(
+        purchaseInvoiceSupplierChange("supp_billing", currency)
+      ).not.toHaveProperty("supplierId");
+    }
+  });
+
+  it("takes the supplier's currency and rate when it has one", () => {
+    expect(
+      purchaseInvoiceSupplierChange("supp_billing", {
+        currencyCode: "EUR",
+        exchangeRate: 0.92
+      })
+    ).toMatchObject({ currencyCode: "EUR", exchangeRate: 0.92 });
   });
 });

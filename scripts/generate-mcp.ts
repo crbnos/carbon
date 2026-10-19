@@ -1,23 +1,25 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * MCP Tool Metadata Generator
  *
- * Writes tool-metadata.json from the shared service parser
- * (`scripts/lib/service-metadata.ts`).
+ * Writes tool-metadata.json from the service functions the ERP router
+ * publishes (`scripts/lib/service-fn-metadata.ts`).
  *
  * Usage: npx tsx scripts/generate-mcp.ts
  */
 
 import * as fs from "fs";
+import { getDbTablesWithColumn } from "./lib/db-types";
 import * as path from "path";
 
 import {
   buildManifestDigest,
   serializeManifestDigest
 } from "./lib/manifest-digest";
-import {
-  buildAllToolMetadataWithValidators,
-  MODULE_LIST
-} from "./lib/service-metadata";
+import { buildManifest } from "./lib/service-fn-metadata";
 
 const ROOT = path.resolve(__dirname, "..");
 const METADATA_FILE = path.join(
@@ -34,62 +36,35 @@ export const DIGEST_FILE = path.join(
 );
 
 export async function generateToolMetadata(): Promise<void> {
-  console.log("Generating tool metadata from service files...");
+  console.log("Generating tool metadata from the service functions...");
+  const tools = buildManifest();
 
-  const { tools: allTools, registryStats, responseStats, resolutions } =
-    await buildAllToolMetadataWithValidators({
-      onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
-    });
+  // The tables a tenant's rows live in. Every update and delete an API caller
+  // makes on one of them is filtered by the caller's company
+  // (`scopedToCompany`), so a list that came back empty would switch that off
+  // without a sound.
+  const companyTables = getDbTablesWithColumn("companyId");
+  if (!companyTables.includes("customer") || companyTables.length < 100) {
+    throw new Error(
+      `generate:mcp found only ${companyTables.length} tables with a companyId column in the generated database types; the company filter depends on that list. Nothing was written.`
+    );
+  }
 
   // No timestamp: the file must be a pure function of the sources so repeated
-  // runs on an unchanged tree are byte-identical.
+  // runs on an unchanged tree are byte-identical. Minified: this file is
+  // gitignored build output that only machines read; the readable artifact is
+  // the digest.
   const metadata = {
-    totalTools: allTools.length,
-    modules: [...new Set(allTools.map((t) => t.module))].length,
-    tools: allTools,
+    totalTools: tools.length,
+    modules: [...new Set(tools.map((t) => t.module))].length,
+    companyTables,
+    tools
   };
-
-  // Minified: this file is gitignored build output that only machines read, and
-  // response schemas roughly tripled it. The readable artifact is the digest.
   fs.writeFileSync(METADATA_FILE, JSON.stringify(metadata));
-  fs.writeFileSync(
-    DIGEST_FILE,
-    serializeManifestDigest(buildManifestDigest(allTools))
-  );
-  console.log(`\n✓ Generated metadata for ${allTools.length} tools`);
+  fs.writeFileSync(DIGEST_FILE, serializeManifestDigest(buildManifestDigest(tools)));
+  console.log(`✓ Generated metadata for ${tools.length} tools across ${metadata.modules} modules`);
   console.log(`  Output: ${path.relative(ROOT, METADATA_FILE)} (gitignored)`);
   console.log(`  Digest: ${path.relative(ROOT, DIGEST_FILE)} (committed)`);
-
-  // Schema provenance. A validator that fell back to source-text parsing still
-  // produces a manifest entry, so surface it rather than letting the degrade pass
-  // silently — that fallback is the only path that can publish a lossy schema.
-  const fallbacks = resolutions.filter((r) => r.how !== "native");
-  console.log(
-    `  Schemas: ${registryStats.validatorsConverted} validators converted from ${registryStats.modulesLoaded}/${MODULE_LIST.length} modules`
-  );
-  console.log(
-    `  Responses: ${responseStats.derived}/${responseStats.functions} reflected from return types (${responseStats.empty} yielded nothing usable)`
-  );
-  if (registryStats.moduleErrors.length > 0) {
-    console.warn(`  ⚠ ${registryStats.moduleErrors.length} module(s) failed to load:`);
-    for (const e of registryStats.moduleErrors) {
-      console.warn(`      ${e.module}: ${e.error}`);
-    }
-  }
-  if (registryStats.conversionFailures.length > 0) {
-    console.warn(
-      `  ⚠ ${registryStats.conversionFailures.length} validator(s) failed to convert:`
-    );
-    for (const f of registryStats.conversionFailures.slice(0, 10)) {
-      console.warn(`      ${f.module}.${f.name}: ${f.error}`);
-    }
-  }
-  if (fallbacks.length > 0) {
-    const unique = [...new Set(fallbacks.map((f) => f.validatorName))];
-    console.warn(
-      `  ⚠ ${fallbacks.length} param(s) used the source-text fallback: ${unique.slice(0, 12).join(", ")}`
-    );
-  }
 }
 
 if (require.main === module) {

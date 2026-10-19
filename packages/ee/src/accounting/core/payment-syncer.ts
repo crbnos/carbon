@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+import { posting } from "@carbon/api/postings.server";
 import type { KyselyTx } from "@carbon/database/client";
 import { round } from "@carbon/utils";
 import { sql } from "kysely";
@@ -29,7 +34,7 @@ import { withTriggersDisabled } from "./utils";
  *  1. In the base pull transaction, `upsertLocal` writes an idempotent **Draft**
  *     `payment` + `invoiceSettlement` via `upsertLocalPaymentDraft`.
  *  2. AFTER the transaction commits, the pull override invokes the native
- *     `post-payment` edge function (`{ type: "post" }` for a settled payment,
+ *     `post-payment` server function (`{ type: "post" }` for a settled payment,
  *     `{ type: "void" }` for a failed/void one), which builds the GL journal,
  *     sets `payment.journalId`, flips the status to Posted/Voided, and lets the
  *     invoice/bill status derive from the settlement.
@@ -227,7 +232,7 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
       return result;
     }
 
-    const posted = await this.invokePostPayment(
+    const posted = await this.runPostPayment(
       pending.paymentRowId,
       pending.postAction,
       pending.actorId
@@ -246,25 +251,20 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
     return result;
   }
 
-  private async invokePostPayment(
+  private async runPostPayment(
     paymentId: string,
     type: "post" | "void",
     userId: string
   ): Promise<{ error: false } | { error: true; message: string }> {
-    // Dynamic import: keeps the server-only auth/env module out of the module
-    // graph for consumers (and tests) that never post a payment (mirrors the
-    // base's dynamic import of the SyncFactory).
-    const { getCarbonServiceRole } = await import("@carbon/auth/client.server");
-    const serviceRole = getCarbonServiceRole();
-    const response = await serviceRole.functions.invoke("post-payment", {
-      body: { type, paymentId, userId, companyId: this.companyId }
-    });
+    const posted = await posting(
+      "post-payment",
+      { db: this.database, companyId: this.companyId, userId },
+      { type, paymentId }
+    );
 
-    if (response.error) {
+    if (posted.error) {
       const message =
-        (response.data as { message?: string } | undefined)?.message ??
-        response.error.message ??
-        `Failed to ${type} payment ${paymentId}`;
+        posted.error.message || `Failed to ${type} payment ${paymentId}`;
       return { error: true, message };
     }
     return { error: false };
@@ -737,7 +737,7 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
   /**
    * Load the Carbon payment + its settlements for an outbound push. Numeric
    * columns arrive as strings from Kysely and are coerced. `paidDate` is the
-   * posting date when set (accounting on), else the payment date.
+   * posting date when set (the payment is posted), else the payment date.
    */
   private async loadLocalPaymentForPush(
     paymentId: string

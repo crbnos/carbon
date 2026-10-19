@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
-import { downloadBlob, storage } from "@carbon/files";
+import { downloadUrl, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { toast } from "@carbon/react";
 import { useCallback } from "react";
@@ -8,7 +12,7 @@ import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import type {
   DocumentTransactionType,
   Document as DocumentType
-} from "~/modules/documents";
+} from "~/modules/documents/types";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "usedocument");
@@ -24,7 +28,6 @@ export const useDocument = () => {
     (doc: DocumentType) => {
       return (
         !permissions.can("delete", "documents") ||
-        // @ts-ignore
         !doc.writeGroups?.some((group) => user?.groups.includes(group))
       );
     },
@@ -35,7 +38,6 @@ export const useDocument = () => {
     (document: DocumentType) => {
       return (
         !permissions.can("update", "documents") ||
-        // @ts-ignore
         !document.writeGroups?.some((group) => user?.groups.includes(group))
       );
     },
@@ -78,8 +80,7 @@ export const useDocument = () => {
 
       const url = path.to.file.previewFile(`private/${doc.path}`);
       try {
-        const response = await fetch(url);
-        downloadBlob(await response.blob(), doc.name ?? "File");
+        await downloadUrl(url, doc.name ?? "File");
       } catch (error) {
         toast.error("Error downloading file");
         logger.error("Error", { error: error });

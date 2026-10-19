@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   HStack,
   Modal,
@@ -8,11 +13,11 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  useMount,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useFetcher, useNavigate } from "react-router";
+import { useFetcher } from "react-router";
 import {
   Boolean,
   Hidden,
@@ -23,8 +28,11 @@ import {
 } from "~/components/Form";
 import { useFlags, useUser } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import type { getEmployeeTypes, getInvitable } from "~/modules/users";
-import { createEmployeeValidator } from "~/modules/users";
+import { createEmployeeValidator } from "~/modules/users/users.models";
+import type {
+  getEmployeeTypes,
+  getInvitable
+} from "~/modules/users/users.service";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
@@ -40,14 +48,11 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
   // plan. When gated (Community / Starter), every invite defaults to the seeded
   // Admin type — "everyone is an admin".
   const { isGated: permissionsGated } = usePlanGate({ feature: "PERMISSIONS" });
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<Result>();
-  const employeeTypeFetcher =
-    useFetcher<Awaited<ReturnType<typeof getEmployeeTypes>>>();
-
-  useMount(() => {
-    employeeTypeFetcher.load(path.to.api.employeeTypes);
-  });
+  const employeeTypeFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getEmployeeTypes>>
+  >(path.to.api.employeeTypes);
 
   const employeeTypes = employeeTypeFetcher.data?.data ?? [];
   const employeeTypeOptions = employeeTypes.map((et) => ({
@@ -66,7 +71,7 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) navigate(-1);
+        if (!open) closeRoute();
       }}
     >
       <ModalOverlay />

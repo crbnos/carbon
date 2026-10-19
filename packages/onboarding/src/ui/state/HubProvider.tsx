@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Provider + selector hooks for the hub store. The provider owns one store
 // instance and re-hydrates it from loader data on every change; everything below
 // it reads via hooks, so no view needs `states`/`fieldValues`/`canEdit` props.
@@ -90,12 +94,8 @@ export const usePreviewing = () => useHub((s) => s.previewing);
 export const useIsInternal = () => useHub((s) => s.isInternal);
 export const useTier = () => useHub((s) => s.tier);
 export const useHubStatus = () => useHub((s) => s.status);
-// What views filter by: stored exclusions + app-forced modules (e.g. "acc"
-// while accounting is disabled in company settings).
-export const useExclusions = () => useHub((s) => s.effectiveExclusions);
-// The stored, staff-editable exclusions — the editing surface for Setup &
-// Controls. Never includes forced modules, so edits can't persist them.
-export const useStoredExclusions = () => useHub((s) => s.exclusions);
+// The staff-editable exclusions every view filters by.
+export const useExclusions = () => useHub((s) => s.exclusions);
 export const useContacts = () => useHub((s) => s.contacts);
 export const useSignals = () => useHub((s) => s.signals);
 export const useCheckMap = () => useHub((s) => s.checkMap);

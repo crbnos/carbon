@@ -47,6 +47,8 @@ load_env() {
     set -a; . "$ENV_FILE"; set +a
     : "${CARBON_REPO:?CARBON_REPO must be set in .env}"
     : "${STACK_NAME:?STACK_NAME must be set in .env}"
+    # Defaulted here so a .env written before this image existed still works.
+    : "${CARBON_IMAGE_BOOTSTRAP:=carbon/bootstrap:latest}"
     [ -f "$CARBON_REPO/Dockerfile" ] || error "CARBON_REPO=$CARBON_REPO is not a Carbon checkout (no Dockerfile)"
 }
 
@@ -160,6 +162,8 @@ cmd_build() {
     docker build --build-arg APP=erp -t "$CARBON_IMAGE_ERP" "$CARBON_REPO"
     log "Building mes image ($CARBON_IMAGE_MES)"
     docker build --build-arg APP=mes -t "$CARBON_IMAGE_MES" "$CARBON_REPO"
+    log "Building bootstrap image ($CARBON_IMAGE_BOOTSTRAP)"
+    docker build --target bootstrap -t "$CARBON_IMAGE_BOOTSTRAP" "$CARBON_REPO"
 }
 
 # ── deploy ─────────────────────────────────────────────────────────────────────
@@ -210,7 +214,7 @@ cmd_migrate() {
     --restart-max-attempts 10 \
     --env PGSSLMODE=disable \
     --workdir /repo/packages/database \
-    "$CARBON_IMAGE_ERP" \
+    "$CARBON_IMAGE_BOOTSTRAP" \
     sh -c 'pnpm exec supabase migration up --include-all \
     --db-url "postgresql://supabase_admin:$(cat /run/secrets/postgres_password)@postgres:5432/postgres"' >/dev/null
 
@@ -235,6 +239,29 @@ cmd_migrate() {
     fi
     docker service rm "$job" >/dev/null 2>&1 || true
     log "Migrations applied"
+    set_inngest_event_url
+}
+
+# Postgres posts its events (event queue, embeddings, notifications) to Inngest
+# at the Vault secret `inngest_event_url`; without it they are never delivered.
+# The event key is a Swarm secret the host cannot read back, so it is read from
+# the running erp task. Idempotent; re-run `migrate` after rotating the key.
+set_inngest_event_url() {
+    local erp pg key
+    erp="$(docker ps -qf "name=${STACK_NAME}_erp.1" | head -1)"
+    pg="$(docker ps -qf "name=${STACK_NAME}_postgres.1" | head -1)"
+    if [ -z "$erp" ] || [ -z "$pg" ]; then
+        warn "erp or postgres is not running — database events are not wired yet; re-run '$SCRIPT_NAME migrate' once the stack is up"
+        return 0
+    fi
+    key="$(docker exec "$erp" cat /run/secrets/inngest_event_key)" || {
+        warn "Could not read inngest_event_key from the erp task — database events will not be delivered"
+        return 0
+    }
+    printf "SELECT public.set_inngest_event_url('http://inngest:8288/e/%s');\n" "$key" \
+        | docker exec -i "$pg" psql -q -U postgres -d postgres -v ON_ERROR_STOP=1 >/dev/null \
+        && log "Database events wired to Inngest" \
+        || warn "Could not set the Inngest event URL — database events will not be delivered"
 }
 
 # ── up (build + deploy + migrate + roll apps) ───────────────────────────────────

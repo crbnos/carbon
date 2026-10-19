@@ -1,19 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { data, useLoaderData, useNavigate } from "react-router";
 import { useRouteData, useUrlParams } from "~/hooks";
-import type { AttributeDataType } from "~/modules/people";
-import { CustomFieldsTableDetail, getCustomFields } from "~/modules/settings";
-import { updateCustomFieldsSortOrder } from "~/modules/settings/settings.server";
-import { getTagsList } from "~/modules/shared";
+import type { AttributeDataType } from "~/modules/people/types";
+import {
+  getCustomFields,
+  updateCustomFieldsSortOrder
+} from "~/modules/settings/settings.service";
+import { CustomFieldsTableDetail } from "~/modules/settings/ui";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -95,7 +98,7 @@ export default function CustomFieldsListRoute() {
         dataTypes={routeData?.dataTypes ?? []}
         onClose={onClose}
       />
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

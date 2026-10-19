@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Status } from "@carbon/react";
 import { FIXED_ASSET_STATUS_COLOR_MAP } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -17,7 +21,8 @@ const FixedAssetStatus = ({ status }: FixedAssetStatusProps) => {
     Draft: t`Draft`,
     Active: t`Active`,
     "Fully Depreciated": t`Fully Depreciated`,
-    Disposed: t`Disposed`
+    Disposed: t`Disposed`,
+    "Under Construction": t`Under Construction`
   };
 
   return <Status color={color}>{labels[status]}</Status>;

@@ -1,16 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { CarbonEdition } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { TooltipProvider } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import { Edition } from "@carbon/utils";
+import { Edition, redirect } from "@carbon/utils";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect } from "react-router";
+import { Outlet } from "react-router";
 import { MeshGradientBackground } from "~/components/MeshGradientBackground";
-import { getLocationsList } from "~/modules/resources";
-import { getCompany } from "~/modules/settings";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getCompany } from "~/modules/settings/settings.service";
 import { onboardingSequence, path } from "~/utils/path";
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;

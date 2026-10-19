@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it, vi } from "vitest";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { Accounting } from "../../../../core/types";
@@ -411,18 +415,19 @@ describe("Rillet bill currency contract", () => {
       })
     ).toThrow();
   });
-  it.each([
-    0.8, 1.2, 1
-  ])("preserves USD base principal at foreign rate %s", (rate) => {
-    const result = toRilletExchangeRate({
-      baseCurrencyCode: "USD",
-      documentCurrencyCode: "EUR",
-      foreignPerBaseRate: rate,
-      date: "2026-09-09"
-    });
-    expect(result).toMatchObject({ base: "EUR", target: "USD" });
-    expect(100 * rate * Number(result?.rate)).toBeCloseTo(100, 12);
-  });
+  it.each([0.8, 1.2, 1])(
+    "preserves USD base principal at foreign rate %s",
+    (rate) => {
+      const result = toRilletExchangeRate({
+        baseCurrencyCode: "USD",
+        documentCurrencyCode: "EUR",
+        foreignPerBaseRate: rate,
+        date: "2026-09-09"
+      });
+      expect(result).toMatchObject({ base: "EUR", target: "USD" });
+      expect(100 * rate * Number(result?.rate)).toBeCloseTo(100, 12);
+    }
+  );
   it.each([
     [0, "80"],
     [3, "80.003"]

@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// @carbon/glossary's terms.ts evaluates Lingui `msg` macros at module load,
+// @carbon/content/glossary's terms.ts evaluates Lingui `msg` macros at module load,
 // which vitest doesn't transform; the module graph pulls it in transitively.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   getEntry: vi.fn(),
   lookupEntry: vi.fn(),
@@ -103,21 +107,16 @@ const trx = {
   insertInto: (table: string) => query(table, "insert")
 };
 
-vi.mock("~/services/database.server", () => ({
-  getDatabaseClient: () => ({
-    transaction: () => ({
-      execute: async (fn: (t: typeof trx) => unknown) => fn(trx)
-    })
+const db = {
+  transaction: () => ({
+    execute: async (fn: (t: typeof trx) => unknown) => fn(trx)
   })
-}));
-vi.mock("./quality.server", () => ({
-  errResult: (message: string) => ({ data: null, error: { message } })
-}));
+};
 
 import {
   linkEntitiesToIssueItemRow,
   updateIssueItemQuantity
-} from "./quality-disposition.server";
+} from "./quality.service";
 
 function seed(overrides: Partial<Tables> = {}) {
   tables = {
@@ -139,7 +138,7 @@ function seed(overrides: Partial<Tables> = {}) {
 }
 
 const edit = (quantity: number, expectedQuantity: number) =>
-  updateIssueItemQuantity({
+  updateIssueItemQuantity(db as any, {
     id: "nci-1",
     companyId: "c-1",
     userId: "u-1",

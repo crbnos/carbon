@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   cn,
@@ -7,12 +11,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   Subheading,
   useDebounce,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Reorder } from "framer-motion";
+import { Reorder } from "motion/react";
 import { useEffect, useState } from "react";
 import {
   LuChevronDown,
@@ -21,24 +27,43 @@ import {
   LuGripVertical,
   LuTrash
 } from "react-icons/lu";
-import { Link, useSubmit } from "react-router";
+import { useSubmit } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { useOptimisticLocation } from "~/hooks";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
-import { CollapsibleSidebar } from "./CollapsibleSidebar";
+import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
+import {
+  SheetNavGroup,
+  SheetNavRow,
+  useSidebarPresentation
+} from "./SidebarPresentation";
+
+type GroupedRoute = RouteGroup["routes"][number];
+
+const matchesRoute = (
+  route: GroupedRoute,
+  pathname: string,
+  exactMatch: boolean
+) =>
+  route.isActive
+    ? route.isActive(pathname)
+    : exactMatch
+      ? pathname === route.to
+      : pathname.includes(route.to);
 
 const GroupedContentSidebar = ({
   groups,
-  width = 240,
   exactMatch = false
 }: {
   groups: RouteGroup[];
-  width?: number;
   exactMatch?: boolean;
 }) => {
   const { t } = useLingui();
-  const location = useOptimisticLocation();
+  const location = useSidebarLocation((pathname) =>
+    groups.some((group) =>
+      group.routes.some((route) => matchesRoute(route, pathname, exactMatch))
+    )
+  );
   const submit = useSubmit();
 
   const [expandedViews, setExpandedViews] = useState<Record<string, boolean>>(
@@ -70,9 +95,66 @@ const GroupedContentSidebar = ({
     }));
   };
 
+  const presentation = useSidebarPresentation();
+  const search = `${location.pathname}${location.search}`;
+  const isViewActive = (view: { id: string }) =>
+    search.includes(`view=${view.id}`);
+  // While a saved view is open (view= in the URL), it holds the highlight.
+  const isActive = (route: GroupedRoute) =>
+    matchesRoute(route, location.pathname, exactMatch) &&
+    (Boolean(route.isActive) || exactMatch || !search.includes("view="));
+
+  if (presentation === "title") {
+    // Compact app bar title: the item the switcher sheet below ticks.
+    for (const route of groups.flatMap((group) => group.routes)) {
+      if (!matchesRoute(route, location.pathname, exactMatch)) continue;
+      const view = route.views?.find(isViewActive);
+      if (view) return <>{view.name}</>;
+      if (isActive(route)) return <>{route.name}</>;
+    }
+    return null;
+  }
+  if (presentation === "sheet") {
+    // Compact section switcher: the same groups, order and active rule as
+    // the panel below. Saved views open from here; reordering and deleting
+    // them stays on desktop.
+    return (
+      <div className="flex flex-col">
+        {groups.map((group) => (
+          <SheetNavGroup key={group.name} title={group.name}>
+            {group.routes.map((route) => {
+              const views = [...(route.views ?? [])].sort(
+                (a, b) => a.sortOrder - b.sortOrder
+              );
+              return (
+                <div key={route.name} className="flex flex-col">
+                  <SheetNavRow
+                    to={route.to + (route.q ? `?q=${route.q}` : "")}
+                    icon={route.icon}
+                    label={route.name}
+                    isActive={isActive(route)}
+                  />
+                  {views.map((view) => (
+                    <SheetNavRow
+                      key={view.to}
+                      to={view.to}
+                      label={view.name}
+                      isActive={isViewActive(view)}
+                      inset
+                    />
+                  ))}
+                </div>
+              );
+            })}
+          </SheetNavGroup>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <CollapsibleSidebar width={width}>
-      <div className="overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent h-full w-full pb-8">
+    <>
+      <SidebarLinks>
         <VStack>
           {groups.map((group) => (
             <VStack
@@ -83,14 +165,7 @@ const GroupedContentSidebar = ({
                 {group.name}
               </Subheading>
               {group.routes.map((route) => {
-                const isActive = route.isActive
-                  ? route.isActive(location.pathname)
-                  : exactMatch
-                    ? location.pathname === route.to
-                    : location.pathname.includes(route.to) &&
-                      !`${location.pathname}${location.search}`.includes(
-                        "view="
-                      );
+                const active = isActive(route);
 
                 const hasViews = route.views && route.views.length > 0;
                 const isExpanded = expandedViews[route.name];
@@ -104,24 +179,26 @@ const GroupedContentSidebar = ({
 
                 return (
                   <div className="w-full flex flex-col" key={route.name}>
-                    <div className="flex items-center gap-x-0.5 relative">
+                    <div
+                      className="flex items-center gap-x-0.5 relative"
+                      data-nav-item=""
+                    >
                       <Button
                         asChild
                         leftIcon={route.icon}
-                        variant={isActive ? "active" : "ghost"}
+                        variant={active ? "active" : "ghost"}
                         className={cn(
                           "justify-start flex-grow truncate",
-                          isActive
+                          active
                             ? "shadow-none dark:shadow-button-base"
-                            : "hover:bg-active hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
+                            : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
                         )}
                       >
-                        <Link
+                        <PrefetchLink
                           to={route.to + (route.q ? `?q=${route.q}` : "")}
-                          prefetch="intent"
                         >
                           {route.name}
-                        </Link>
+                        </PrefetchLink>
                       </Button>
                       {hasViews && (
                         <IconButton
@@ -139,7 +216,7 @@ const GroupedContentSidebar = ({
                     {hasViews && isExpanded && (
                       <ViewsReorderGroup
                         views={route.views ?? []}
-                        location={location}
+                        isViewActive={isViewActive}
                         onReorder={(updates) => {
                           const formData = new FormData();
                           formData.append("updates", JSON.stringify(updates));
@@ -158,7 +235,7 @@ const GroupedContentSidebar = ({
             </VStack>
           ))}
         </VStack>
-      </div>
+      </SidebarLinks>
       {selectedView && (
         <ConfirmDelete
           isOpen={!!selectedView}
@@ -171,18 +248,18 @@ const GroupedContentSidebar = ({
           }}
         />
       )}
-    </CollapsibleSidebar>
+    </>
   );
 };
 
 const ViewsReorderGroup = ({
   views,
-  location,
+  isViewActive,
   onReorder,
   onDelete
 }: {
   views: { id: string; name: string; to: string; sortOrder: number }[];
-  location: ReturnType<typeof useOptimisticLocation>;
+  isViewActive: (view: { id: string }) => boolean;
   onReorder: (
     updates: { id: string; name: string; to: string; sortOrder: number }[]
   ) => void;
@@ -201,15 +278,17 @@ const ViewsReorderGroup = ({
     return [];
   });
 
-  const viewNames = views
-    .map((view) => view.name)
+  // Everything a row shows or links to. Names alone missed a view whose
+  // filters or position changed: its link stayed the old one until a reload.
+  const viewsSignature = views
+    .map((view) => `${view.id}|${view.name}|${view.to}|${view.sortOrder}`)
     .sort()
     .join(",");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  // biome-ignore lint/correctness/useExhaustiveDependencies: views is followed by value
   useEffect(() => {
     setSortedViews([...views].sort((a, b) => a.sortOrder - b.sortOrder));
-  }, [views.length, viewNames]);
+  }, [viewsSignature]);
 
   const debouncedOnReorder = useDebounce(onReorder, 500, true);
 
@@ -229,33 +308,31 @@ const ViewsReorderGroup = ({
       className="flex flex-col gap-y-0.5 my-0.5"
     >
       {sortedViews.map((view) => {
-        const isViewActive = `${location.pathname}${location.search}`.includes(
-          `view=${view.id}`
-        );
-
+        const active = isViewActive(view);
         return (
           <Reorder.Item key={view.to} value={view} className="w-full">
-            <div className="group/view flex items-center relative">
+            <div
+              className="group/view flex items-center relative"
+              data-nav-item=""
+            >
               <Button
                 asChild
-                variant={isViewActive ? "active" : "ghost"}
+                variant={active ? "active" : "ghost"}
                 className={cn(
                   "justify-start text-sm pl-7 pr-7 truncate flex-grow !shadow-none",
-                  isViewActive
+                  active
                     ? "shadow-none border-active-foreground/30 dark:border-none dark:shadow-button-base"
-                    : "hover:bg-active hover:text-active-foreground"
+                    : "hover:bg-transparent hover:text-active-foreground"
                 )}
               >
-                <Link to={view.to} prefetch="intent">
-                  {view.name}
-                </Link>
+                <PrefetchLink to={view.to}>{view.name}</PrefetchLink>
               </Button>
               <IconButton
                 aria-label={t`Drag handle`}
                 icon={<LuGripVertical />}
                 variant="ghost"
                 size="sm"
-                className="flex-shrink-0 opacity-0 group-hover/view:opacity-100 absolute left-1"
+                className="flex-shrink-0 md:opacity-0 group-hover/view:opacity-100 absolute left-1"
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -264,11 +341,15 @@ const ViewsReorderGroup = ({
                     icon={<LuEllipsisVertical />}
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 flex-shrink-0 opacity-0 group-hover/view:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+                    className="absolute right-1 flex-shrink-0 md:opacity-0 group-hover/view:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem destructive onSelect={() => onDelete(view)}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
+                    destructive
+                    onSelect={() => onDelete(view)}
+                  >
                     <DropdownMenuIcon icon={<LuTrash />} />
                     <Trans>Delete View</Trans>
                   </DropdownMenuItem>

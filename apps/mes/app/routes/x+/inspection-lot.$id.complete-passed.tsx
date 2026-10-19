@@ -1,18 +1,24 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { inspectionCompletePassedValidator } from "~/services/models";
 import { returnPickedRemainders } from "~/services/operations.service";
 import {
+  checkStrictBackflush,
   getInspectionOutcomeState,
   getSerialCompletionCandidates,
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
+import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 // Completions posted here insert productionQuantity rows, whose SQL interceptor
@@ -63,7 +69,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     laborProductionEventId,
     machineProductionEventId
   };
-  const returnTo = path.to.inspection(operationId);
+  // The page the inspection was opened from; Back keeps returning there.
+  const origin = readOrigin(formData);
+  const returnTo = withOrigin(path.to.inspection(operationId), origin);
   const fail = async (err: unknown, message: string): Promise<never> => {
     throw redirect(returnTo, await flash(request, error(err, message)));
   };
@@ -97,6 +105,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
         null,
         `Passed units (${candidates.length}) exceed the operation's remaining quantity (${state.opRemaining}) — quantities were already recorded from the actions menu`
       );
+    }
+    const backflushCheck = await checkStrictBackflush({
+      jobOperationId: state.jobOperationId,
+      quantity: candidates.length,
+      companyId,
+      userId
+    });
+    if (backflushCheck.error) {
+      return fail(backflushCheck.error, backflushCheck.message!);
     }
     const completions = await postSerialCompletions(serviceRole, {
       candidates,
@@ -135,6 +152,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (quantity <= 0) {
     return fail(null, "No passed units to complete");
+  }
+
+  const backflushCheck = await checkStrictBackflush({
+    jobOperationId: state.jobOperationId,
+    quantity,
+    companyId,
+    userId
+  });
+  if (backflushCheck.error) {
+    return fail(backflushCheck.error, backflushCheck.message!);
   }
 
   const completion = await postBulkCompletion(serviceRole, client, state, {

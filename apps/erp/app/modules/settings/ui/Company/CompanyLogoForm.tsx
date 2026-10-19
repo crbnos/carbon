@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { SUPABASE_URL, useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket } from "@carbon/files";
 import {
@@ -19,7 +23,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import { useSubmit } from "react-router";
-import type { Company } from "~/modules/settings";
+import type { Company } from "~/modules/settings/types";
 import { path } from "~/utils/path";
 
 const STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;

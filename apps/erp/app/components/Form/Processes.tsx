@@ -1,12 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
-import {
-  batchRuleInitialValues,
-  type getProcessesList
-} from "~/modules/resources";
+import { batchRuleInitialValues } from "~/modules/resources/resources.models";
+import type { getProcessesList } from "~/modules/resources/resources.service";
 import ProcessForm from "~/modules/resources/ui/Processes/ProcessForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
@@ -67,11 +69,9 @@ Processes.displayName = "Process";
 export default Processes;
 
 export const useProcesses = () => {
-  const fetcher = useFetcher<Awaited<ReturnType<typeof getProcessesList>>>();
-
-  useMount(() => {
-    fetcher.load(path.to.api.processes);
-  });
+  const fetcher = useLoaderQuery<Awaited<ReturnType<typeof getProcessesList>>>(
+    path.to.api.processes
+  );
 
   const options = useMemo(
     () =>

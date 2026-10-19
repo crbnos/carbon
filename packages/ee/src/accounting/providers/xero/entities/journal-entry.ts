@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { KyselyTx } from "@carbon/database/client";
 import { getAccountMappings } from "../../../core/account-mapping";
 import {
@@ -13,6 +17,7 @@ import { resolveMemoJournalPartyFromDatabase } from "../../../core/memo-party";
 import type { PostingSyncDimensionSlot } from "../../../core/models";
 import {
   getPostingSyncSourceTypeSkipReason,
+  getZeroJournalSkipReason,
   JournalEntrySyncError,
   type PostingSyncSettings,
   parseJournalEntrySyncEntityId,
@@ -552,6 +557,11 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
       }
     );
     if (sourceTypeSkipReason) return sourceTypeSkipReason;
+
+    // An all-zero journal (an outbound movement at no cost) has nothing to
+    // book, and some providers refuse a journal of zero lines.
+    const zeroJournalSkipReason = getZeroJournalSkipReason(local);
+    if (zeroJournalSkipReason) return zeroJournalSkipReason;
 
     return true;
   }

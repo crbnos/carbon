@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useControlField, useField, ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Combobox,
   FormControl,
@@ -21,11 +26,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher, useNavigate } from "react-router";
 import { Submit, Supplier } from "~/components/Form";
 import { useUrlParams } from "~/hooks";
-import type {
-  getSupplierContacts,
-  SupplierContact as SupplierContactType
-} from "~/modules/purchasing";
-import { createSupplierAccountValidator } from "~/modules/users";
+import type { getSupplierContacts } from "~/modules/purchasing/purchasing.service";
+import type { SupplierContact as SupplierContactType } from "~/modules/purchasing/types";
+import { createSupplierAccountValidator } from "~/modules/users/users.models";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
@@ -146,15 +149,12 @@ const SupplierContact = ({
   } = useField(name);
   const [value, setValue] = useControlField<string | null>(name);
 
-  const supplierContactFetcher =
-    useFetcher<Awaited<ReturnType<typeof getSupplierContacts>>>();
+  const supplierContactFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getSupplierContacts>>
+  >(supplier ? path.to.api.supplierContacts(supplier) : null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    if (supplier) {
-      supplierContactFetcher.load(path.to.api.supplierContacts(supplier));
-    }
-
     if (initialLoad.current) {
       initialLoad.current = false;
     } else {

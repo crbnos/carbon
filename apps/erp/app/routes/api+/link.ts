@@ -1,20 +1,32 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
-import { NotificationEvent } from "@carbon/notifications";
+import {
+  NotificationEvent,
+  type RecurringInvoicingDocumentType
+} from "@carbon/notifications";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import { getCompanies } from "~/modules/settings";
+import { getCompanies } from "~/modules/settings/settings.service";
 import { getRecordPath } from "~/utils/entity";
 import { path } from "~/utils/path";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
+/** The approvable document of an Approval* event, or what a Recurring
+ *  invoicing notification lists. */
+type NotificationDocumentType =
+  | ApprovalDocumentType
+  | RecurringInvoicingDocumentType;
 
 function resolve(
   event: NotificationEvent,
   documentId: string,
-  documentType?: ApprovalDocumentType
+  documentType?: NotificationDocumentType
 ): string | null {
   switch (event) {
     case NotificationEvent.TrainingAssignment:
@@ -91,6 +103,15 @@ function resolve(
       return path.to.pickingList(documentId);
     case NotificationEvent.SuggestionResponse:
       return path.to.suggestion(documentId);
+    case NotificationEvent.RecurringInvoicing:
+      // documentId is only the digest's first invoice; land on the list it
+      // is about (same target as the topbar row): the lease drafts waiting
+      // for the buyer, else the sales invoices that need review.
+      return documentType === "purchaseInvoice"
+        ? `${path.to.invoicingPurchasing}?filter=status:eq:Draft`
+        : `${path.to.invoicingSales}?filter=needsReview:eq:true`;
+    case NotificationEvent.LeaseCriticalDate:
+      return path.to.leaseDetails(documentId);
     case NotificationEvent.Workflow:
       return getRecordPath(documentType, documentId);
     case NotificationEvent.ApprovalApproved:
@@ -100,8 +121,9 @@ function resolve(
         return path.to.purchaseOrder(documentId);
       if (documentType === "qualityDocument")
         return path.to.qualityDocument(documentId);
-      if (documentType === "supplier")
-        return path.to.supplierApproval(documentId);
+      if (documentType === "supplier") return path.to.supplier(documentId);
+      if (documentType === "changeOrder")
+        return path.to.changeNoticeDetails(documentId);
       return null;
     default:
       return null;
@@ -124,7 +146,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const documentId = url.searchParams.get("documentId");
   const documentType = url.searchParams.get(
     "documentType"
-  ) as ApprovalDocumentType | null;
+  ) as NotificationDocumentType | null;
   const page = url.searchParams.get("page");
 
   const companyId = url.searchParams.get("companyId");
@@ -132,7 +154,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let redirectTo: string;
   if (page === "notification-settings") {
     // Email footer link — no document, but the company-switch below still applies.
-    redirectTo = path.to.notificationSettings;
+    redirectTo = path.to.accountSettings("notifications");
   } else if (event && documentId) {
     const link = resolve(event, documentId, documentType ?? undefined);
     redirectTo = link ?? path.to.authenticatedRoot;

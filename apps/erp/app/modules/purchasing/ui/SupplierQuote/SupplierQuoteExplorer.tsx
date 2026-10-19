@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   cn,
@@ -8,18 +12,15 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  ShortcutKey,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
+  MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   useDisclosure,
   useMount,
-  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
@@ -37,8 +38,8 @@ import {
 } from "~/components/LineReorder";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { ItemType } from "~/modules/shared";
-import { itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -84,17 +85,6 @@ export default function SupplierQuoteExplorer() {
     setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
-
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useShortcutKeyMap([
-    {
-      shortcut: EXPLORER_SHORTCUTS.addLine,
-      action: (event: KeyboardEvent) => {
-        event.stopPropagation();
-        newButtonRef.current?.click();
-      }
-    }
-  ]);
 
   const lines = routeData?.lines ?? [];
   const canReorder =
@@ -161,33 +151,16 @@ export default function SupplierQuoteExplorer() {
             />
           ) : (
             <>
-              <Tooltip>
-                <TooltipTrigger className="flex-1">
-                  <Button
-                    ref={newButtonRef}
-                    className="w-full"
-                    isDisabled={
-                      isDisabled || !permissions.can("update", "sales")
-                    }
-                    leftIcon={<LuCirclePlus />}
-                    variant="secondary"
-                    onClick={newSupplierQuoteLineDisclosure.onOpen}
-                  >
-                    <Trans>Add Line Item</Trans>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <HStack>
-                    <span>
-                      <Trans>New Line Item</Trans>
-                    </span>
-                    <ShortcutKey
-                      shortcut={EXPLORER_SHORTCUTS.addLine}
-                      variant="small"
-                    />
-                  </HStack>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                className="flex-1"
+                shortcut={EXPLORER_SHORTCUTS.addLine}
+                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                leftIcon={<LuCirclePlus />}
+                variant="secondary"
+                onClick={newSupplierQuoteLineDisclosure.onOpen}
+              >
+                <Trans>Add Line Item</Trans>
+              </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
                   aria-label="Reorder lines"
@@ -231,6 +204,13 @@ function SupplierQuoteLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
+  const subtitle =
+    line.supplierQuoteLineType === "G/L Account"
+      ? "G/L Account"
+      : distinctItemText(
+          getItemReadableId(items, line.itemId),
+          line.description
+        );
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
@@ -241,11 +221,11 @@ function SupplierQuoteLineBody({
               ? line.description || "Indirect Expense"
               : getItemReadableId(items, line.itemId)}
           </span>
-          <span className="text-muted-foreground text-xs truncate line-clamp-1">
-            {line.supplierQuoteLineType === "G/L Account"
-              ? "G/L Account"
-              : line.description}
-          </span>
+          {subtitle && (
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {subtitle}
+            </span>
+          )}
         </VStack>
       </HStack>
     </ReorderableRow>
@@ -281,11 +261,18 @@ function SupplierQuoteLineItem({
   const isSelected =
     location.pathname === path.to.supplierQuoteLine(id, line.id!);
 
+  const subtitle =
+    line.supplierQuoteLineType === "G/L Account"
+      ? "G/L Account"
+      : distinctItemText(
+          getItemReadableId(items, line.itemId),
+          line.description
+        );
+
   return (
     <VStack spacing={0} className="border-b">
-      <Link
+      <PrefetchLink
         to={path.to.supplierQuoteLine(id, line.id!)}
-        prefetch="intent"
         className="w-full"
       >
         <HStack
@@ -306,11 +293,11 @@ function SupplierQuoteLineItem({
                   ? line.description || "Indirect Expense"
                   : getItemReadableId(items, line.itemId)}
               </span>
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {line.supplierQuoteLineType === "G/L Account"
-                  ? "G/L Account"
-                  : line.description}
-              </span>
+              {subtitle && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {subtitle}
+                </span>
+              )}
             </VStack>
           </HStack>
           <div className="absolute right-2">
@@ -318,7 +305,7 @@ function SupplierQuoteLineItem({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label={t`More`}
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   variant="solid"
                   onClick={(e) => e.stopPropagation()}
@@ -326,6 +313,7 @@ function SupplierQuoteLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={isDisabled || !permissions.can("update", "sales")}
                   onClick={(e) => {
@@ -340,6 +328,7 @@ function SupplierQuoteLineItem({
                 {lineItemType &&
                   itemType.includes(lineItemType as ItemType) && (
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.view}
                       asChild
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -364,7 +353,7 @@ function SupplierQuoteLineItem({
             </DropdownMenu>
           </div>
         </HStack>
-      </Link>
+      </PrefetchLink>
     </VStack>
   );
 }

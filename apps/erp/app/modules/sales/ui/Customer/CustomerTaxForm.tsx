@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { storage } from "@carbon/files";
 import { ValidatedForm } from "@carbon/form";
@@ -21,7 +25,7 @@ import { FileDropzone } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Boolean, Hidden, Input, Select, Submit } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
-import { taxExemptionReasons } from "~/modules/shared";
+import { taxExemptionReasons } from "~/modules/shared/shared.models";
 import { customerTaxValidator } from "../../sales.models";
 
 type CustomerTaxFormProps = {
@@ -96,7 +100,7 @@ const CustomerTaxForm = ({ initialValues }: CustomerTaxFormProps) => {
             ) : (
               <div />
             )}
-            <div className="col-span-3">
+            <div className="col-span-3 max-md:col-span-full">
               <Boolean
                 name="taxExempt"
                 label={t`Tax Exempt`}
@@ -155,7 +159,7 @@ const CustomerTaxForm = ({ initialValues }: CustomerTaxFormProps) => {
             </div>
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="max-md:[&>*]:flex-1 max-md:[&>div>*]:flex-1 max-md:[&_button]:h-11">
           <HStack>
             <Submit isDisabled={isDisabled}>
               <Trans>Save</Trans>

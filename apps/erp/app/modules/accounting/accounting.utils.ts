@@ -1,4 +1,16 @@
-import { credit, debit, round, toStoredAmount } from "@carbon/utils";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
+import { credit, debit, equals, round, toStoredAmount } from "@carbon/utils";
+import {
+  type CalendarDate,
+  endOfMonth,
+  parseDate,
+  startOfMonth,
+  today
+} from "@internationalized/date";
 
 /**
  * Gain/(loss) on disposal of a fixed asset = sale proceeds − net book value
@@ -29,24 +41,35 @@ export function computeDisposalGainLoss(
 
 /**
  * Display figures for one depreciation-run line: the accumulated depreciation
- * *before* this run and the net book value *after* it.
+ * *before* this line's month and the net book value *after* it.
  *
  * `accumulatedDepreciation` is the asset's live value. On a Draft run that is
  * the pre-run balance; once the run is Posted, `postDepreciationRun` has already
- * folded this run's `amount` into it. To keep the row arithmetic identical
- * before and after posting — `cost − accumulatedBefore − amount = nbvAfter` —
- * and to avoid double-counting the amount in NBV, subtract the run's own amount
- * back out of the live balance for a Posted run.
+ * folded every line of the asset in this run (`runAmount`) into it. A run holds
+ * one line per asset per month, so a later month starts from the earlier
+ * months' amounts (`earlierAmount`). Either way the row arithmetic holds:
+ * `cost − accumulatedBefore − amount = nbvAfter`.
  */
 export function depreciationRunLineDisplay(args: {
   acquisitionCost: number;
   accumulatedDepreciation: number;
   amount: number;
   isPosted: boolean;
+  /** This asset's amounts in this run for months before this line's. */
+  earlierAmount?: number;
+  /** This asset's amounts in this run across all its months. */
+  runAmount?: number;
 }): { accumulatedDepreciationBefore: number; netBookValueAfter: number } {
-  const { acquisitionCost, accumulatedDepreciation, amount, isPosted } = args;
+  const {
+    acquisitionCost,
+    accumulatedDepreciation,
+    amount,
+    isPosted,
+    earlierAmount = 0,
+    runAmount = amount
+  } = args;
   const accumulatedDepreciationBefore =
-    accumulatedDepreciation - (isPosted ? amount : 0);
+    accumulatedDepreciation - (isPosted ? runAmount : 0) + earlierAmount;
   const netBookValueAfter =
     acquisitionCost - accumulatedDepreciationBefore - amount;
   return { accumulatedDepreciationBefore, netBookValueAfter };
@@ -239,6 +262,8 @@ export function getMacrsPercentage(
   return table[yearIndex];
 }
 
+const QUARTER_OF_MONTH = [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4];
+
 export function calculateMacrsDepreciation(args: {
   adjustedBasis: number;
   propertyClass: MacrsPropertyClass;
@@ -265,10 +290,10 @@ export function calculateMacrsDepreciation(args: {
 
   if (adjustedBasis <= 0) return 0;
 
-  const startDate = new Date(depreciationStartDate);
-  const periodEndDate = new Date(periodEnd);
+  const startDate = toCalendarDate(depreciationStartDate);
+  const periodEndDate = toCalendarDate(periodEnd);
   const fromDate = lastPostedPeriodEnd
-    ? new Date(lastPostedPeriodEnd)
+    ? toCalendarDate(lastPostedPeriodEnd)
     : startDate;
 
   // 27.5 and 39-year property: straight-line with mid-month convention
@@ -276,8 +301,8 @@ export function calculateMacrsDepreciation(args: {
     const lifeMonths = propertyClass === "27.5" ? 27.5 * 12 : 39 * 12;
     const monthlyAmount = adjustedBasis / lifeMonths;
     const monthsElapsed =
-      (periodEndDate.getFullYear() - fromDate.getFullYear()) * 12 +
-      (periodEndDate.getMonth() - fromDate.getMonth());
+      (periodEndDate.year - fromDate.year) * 12 +
+      (periodEndDate.month - fromDate.month);
     const months = lastPostedPeriodEnd ? monthsElapsed : monthsElapsed + 0.5;
     const amount = monthlyAmount * Math.max(0, months);
     const remaining =
@@ -291,11 +316,12 @@ export function calculateMacrsDepreciation(args: {
   // convention (half-year or mid-quarter), so year 1 = the full first calendar year amount.
   // Year 1 is spread across months from placed-in-service through Dec 31.
   // Subsequent years are spread evenly across 12 calendar months.
-  const quarterPlaced = Math.ceil((startDate.getMonth() + 1) / 3);
-  const startYear = startDate.getFullYear();
-  const periodEndYear = periodEndDate.getFullYear();
+  // Calendar quarter of the month placed in service (1–4).
+  const quarterPlaced = QUARTER_OF_MONTH[startDate.month - 1];
+  const startYear = startDate.year;
+  const periodEndYear = periodEndDate.year;
   const lastYearToCalc = periodEndYear - startYear + 1;
-  const startMonth = startDate.getMonth(); // 0-based
+  const startMonth = startDate.month - 1; // 0-based
 
   let cumulativeThrough = 0;
 
@@ -319,9 +345,7 @@ export function calculateMacrsDepreciation(args: {
       const yearStartMonth = year === 1 ? startMonth : 0;
       const calendarYear = startYear + year - 1;
       const periodEndMonth =
-        periodEndDate.getFullYear() === calendarYear
-          ? periodEndDate.getMonth()
-          : 11;
+        periodEndDate.year === calendarYear ? periodEndDate.month - 1 : 11;
 
       const monthsElapsed = periodEndMonth - yearStartMonth + 1;
       cumulativeThrough +=
@@ -340,29 +364,76 @@ export function calculateMacrsDepreciation(args: {
 
 export type DepreciationLine = {
   fixedAssetId: string;
+  /** The month end this line depreciates; it posts in that month's period. */
+  periodEnd: string;
   amount: number;
   taxAmount: number | null;
 };
 
-export function getMonthsBetween(start: Date, end: Date): number {
-  const years = end.getFullYear() - start.getFullYear();
-  const months = end.getMonth() - start.getMonth();
+/** The usage map key for one asset in one month. */
+export function usageKey(fixedAssetId: string, monthEnd: string): string {
+  return `${fixedAssetId}|${monthEnd}`;
+}
+
+/**
+ * Whether a Draft depreciation run's stored lines are exactly what the period
+ * should post now — same assets, same book and tax amounts. A Draft is
+ * computed once; an asset disposed, added or re-valued since makes it stale.
+ */
+export function depreciationRunLinesMatch(
+  stored: Array<{
+    fixedAssetId: string;
+    periodEnd: string;
+    amount: number | string;
+    taxAmount: number | string | null;
+  }>,
+  computed: DepreciationLine[]
+): boolean {
+  if (stored.length !== computed.length) return false;
+  const byMonth = new Map(
+    stored.map((line) => [usageKey(line.fixedAssetId, line.periodEnd), line])
+  );
+  if (byMonth.size !== stored.length) return false;
+  return computed.every((line) => {
+    const match = byMonth.get(usageKey(line.fixedAssetId, line.periodEnd));
+    if (!match || !equals(Number(match.amount), line.amount)) return false;
+    if (match.taxAmount === null || line.taxAmount === null) {
+      return match.taxAmount === null && line.taxAmount === null;
+    }
+    return equals(Number(match.taxAmount), line.taxAmount);
+  });
+}
+
+/** A `YYYY-MM-DD` (or ISO timestamp) as a calendar day — no timezone, so
+ *  Jan 1 is Jan 1 on every server. */
+function toCalendarDate(date: string): CalendarDate {
+  return parseDate(date.slice(0, 10));
+}
+
+export function getMonthsBetween(
+  start: CalendarDate,
+  end: CalendarDate
+): number {
+  const years = end.year - start.year;
+  const months = end.month - start.month;
   let total = years * 12 + months;
-  if (end.getDate() >= start.getDate()) total += 1;
+  if (end.day >= start.day) total += 1;
   return Math.max(0, total);
 }
 
-export function getMonthsElapsed(start: Date, end: Date): number {
-  const years = end.getFullYear() - start.getFullYear();
-  const months = end.getMonth() - start.getMonth();
+export function getMonthsElapsed(
+  start: CalendarDate,
+  end: CalendarDate
+): number {
+  const years = end.year - start.year;
+  const months = end.month - start.month;
   return Math.max(0, years * 12 + months);
 }
 
-export function addOneMonth(dateStr: string): Date {
-  const d = new Date(dateStr);
-  d.setMonth(d.getMonth() + 1);
-  d.setDate(1);
-  return d;
+/** The first day of the month after `dateStr`. Taking the month start first
+ *  keeps Aug 31 from overflowing a 30-day September into October. */
+export function addOneMonth(dateStr: string): CalendarDate {
+  return startOfMonth(toCalendarDate(dateStr)).add({ months: 1 });
 }
 
 export function getLastDayOfMonth(year: number, month: number): string {
@@ -372,15 +443,97 @@ export function getLastDayOfMonth(year: number, month: number): string {
   return d.toISOString().split("T")[0];
 }
 
-export function getNextPeriodEnd(lastPeriodEnd: string | null): string {
-  if (lastPeriodEnd) {
-    const last = new Date(lastPeriodEnd);
-    const nextMonth = last.getMonth() + 1;
-    const nextYear = last.getFullYear() + (nextMonth > 11 ? 1 : 0);
-    return getLastDayOfMonth(nextYear, nextMonth % 12);
+/**
+ * The month end after `lastPeriodEnd`; with no prior run, the end of the
+ * current month of `todayIso` (a `YYYY-MM-DD` business date, default UTC
+ * today). Depreciation runs for the month in progress, so its first run is
+ * this month.
+ */
+export function getNextPeriodEnd(
+  lastPeriodEnd: string | null,
+  todayIso?: string
+): string {
+  const base = lastPeriodEnd
+    ? parseDate(lastPeriodEnd).add({ months: 1 })
+    : todayIso
+      ? parseDate(todayIso)
+      : today("UTC");
+  return endOfMonth(base).toString();
+}
+
+/**
+ * The month end after `lastPeriodEnd`; with no prior run, the end of the
+ * month BEFORE `todayIso`. Revenue is recognized for a month once it has
+ * closed (the monthly proposal job runs on the 1st for the prior month), so a
+ * first run proposed in November is for October. Defaulting to the current
+ * month would sweep the current month's rows into the same run a month early.
+ */
+export function getNextRevenueRecognitionPeriodEnd(
+  lastPeriodEnd: string | null,
+  todayIso: string
+): string {
+  const base = lastPeriodEnd
+    ? parseDate(lastPeriodEnd).add({ months: 1 })
+    : parseDate(todayIso).subtract({ months: 1 });
+  const next = endOfMonth(base).toString();
+  // A month that has not started cannot run (isFutureRunPeriod). After a run
+  // for the current month, stay on it: a period can take more than one run.
+  const currentMonthEnd = endOfMonth(parseDate(todayIso)).toString();
+  return next > currentMonthEnd ? currentMonthEnd : next;
+}
+
+/**
+ * Whether a period run ends after the company's current month. A run may
+ * cover the current month (a close can start before the month ends) or an
+ * earlier one, never a month that has not started — that recognizes revenue
+ * or depreciation early.
+ */
+export function isFutureRunPeriod(
+  periodEnd: string,
+  companyToday: string
+): boolean {
+  return periodEnd > endOfMonth(parseDate(companyToday)).toString();
+}
+
+/** Why `accountId` cannot move under `parentId` in this chart, or null. */
+export function accountMoveRefusal(
+  accounts: { id: string; parentId: string | null; isGroup: boolean }[],
+  accountId: string,
+  parentId: string
+): string | null {
+  const parent = accounts.find((account) => account.id === parentId);
+  if (!parent?.isGroup) return "Choose a group account to move it under";
+  const parentOf = new Map(accounts.map((a) => [a.id, a.parentId]));
+  // Walk up from the new parent: meeting the account means a cycle.
+  for (let id: string | null = parentId; id; id = parentOf.get(id) ?? null) {
+    if (id === accountId) {
+      return "An account cannot move under itself or one of its own accounts";
+    }
   }
-  const now = new Date();
-  return getLastDayOfMonth(now.getFullYear(), now.getMonth());
+  return null;
+}
+
+/** The last day of the month a `YYYY-MM-DD` (or ISO timestamp) falls in. */
+export function monthEndOf(date: string): string {
+  return endOfMonth(parseDate(date.slice(0, 10))).toString();
+}
+
+/**
+ * The posting date for each month a run covers: the month's own end, so a
+ * catch-up run puts each month in its own period — or the run's `periodEnd`
+ * when the month's period is Closed and can no longer take a posting.
+ */
+export function runPostingTargets(args: {
+  months: string[];
+  runPeriodEnd: string;
+  closedMonths: Set<string>;
+}): Map<string, string> {
+  return new Map(
+    args.months.map((month) => [
+      month,
+      args.closedMonths.has(month) ? args.runPeriodEnd : month
+    ])
+  );
 }
 
 export function calculateDepreciation(
@@ -408,12 +561,12 @@ export function calculateDepreciation(
 
   if (remainingDepreciable <= 0) return 0;
 
-  const periodEndDate = new Date(periodEnd);
-  const startDate = new Date(
+  const periodEndDate = toCalendarDate(periodEnd);
+  const startDate = toCalendarDate(
     asset.depreciationStartDate ?? asset.acquisitionDate!
   );
 
-  if (startDate > periodEndDate) return 0;
+  if (startDate.compare(periodEndDate) > 0) return 0;
 
   switch (asset.depreciationMethod) {
     case "Straight Line": {
@@ -529,10 +682,10 @@ export function calculateTaxDepreciation(
 
   if (remainingDepreciable <= 0) return 0;
 
-  const periodEndDate = new Date(periodEnd);
-  const depStartDate = new Date(startDate);
+  const periodEndDate = toCalendarDate(periodEnd);
+  const depStartDate = toCalendarDate(startDate);
 
-  if (depStartDate > periodEndDate) return 0;
+  if (depStartDate.compare(periodEndDate) > 0) return 0;
 
   const from = lastPostedPeriodEnd
     ? addOneMonth(lastPostedPeriodEnd)
@@ -572,6 +725,67 @@ export function calculateTaxDepreciation(
   return null;
 }
 
+/** Cost less residual less what is already accumulated, never negative. */
+function depreciableRemaining(
+  asset: { acquisitionCost: number; residualValuePercent: number },
+  accumulated: number,
+  decimalPlaces: number
+): number {
+  const cost = Number(asset.acquisitionCost);
+  const base = cost - cost * (Number(asset.residualValuePercent) / 100);
+  return Math.max(0, round(base - accumulated, decimalPlaces));
+}
+
+/**
+ * What a Straight Line asset is behind by after its cost was raised: the
+ * depreciation its CURRENT cost would have accumulated from its start through
+ * `through` (the last month already depreciated), less what it accumulated at
+ * the old cost. Never negative — an asset ahead of schedule (an opening
+ * balance at registration) is left alone.
+ */
+export function straightLineShortfall(args: {
+  acquisitionCost: number;
+  residualValuePercent: number;
+  usefulLifeMonths: number;
+  startDate: string;
+  through: string | null;
+  accumulated: number;
+  /** Settlement decimals from currency.decimalPlaces — data, never a literal. */
+  decimalPlaces: number;
+}): number {
+  if (!args.through || args.usefulLifeMonths <= 0) return 0;
+  const start = toCalendarDate(args.startDate);
+  const through = toCalendarDate(args.through);
+  if (start.compare(through) > 0) return 0;
+  const cost = Number(args.acquisitionCost);
+  const depreciableBase =
+    cost - cost * (Number(args.residualValuePercent) / 100);
+  const expected = Math.min(
+    round(
+      (depreciableBase / args.usefulLifeMonths) *
+        getMonthsBetween(start, through),
+      args.decimalPlaces
+    ),
+    depreciableBase
+  );
+  return Math.max(0, round(expected - args.accumulated, args.decimalPlaces));
+}
+
+/**
+ * One line per asset per month, from the month after `lastPostedPeriodEnd` (or
+ * the asset's start month) through `periodEnd` — FAM's depreciation history
+ * record. Each month is calculated on its own, with the accumulated book and
+ * tax depreciation of the months before it, so a catch-up run posts each
+ * month in its own period at the amount a monthly run would have posted.
+ * `usageMap` holds Units of Production usage by `usageKey(asset, month)`.
+ *
+ * An asset whose cost was adjusted after capitalization (`costAdjusted`, a
+ * posted Cost Adjustment transfer) took its earlier months at the old cost.
+ * Straight Line — book, and tax when its method is Straight Line — adds that
+ * shortfall to the run's first month, so the asset still ends on its original
+ * schedule. Declining Balance and MACRS need nothing: both depreciate what is
+ * left over the life that is left. Units of Production does not catch up.
+ */
 export function buildDepreciationLines(
   assets: Array<{
     id: string;
@@ -590,67 +804,329 @@ export function buildDepreciationLines(
     macrsPropertyClass: string | null;
     macrsConvention: string | null;
     bonusDepreciationPercent: number | null;
+    costAdjusted?: boolean;
   }>,
   periodEnd: string,
   lastPostedPeriodEnd: string | null,
   taxEnabled: boolean,
-  usageMap: Map<string, { unitsProduced: number }>,
+  usageMap: Map<string, number>,
   /** Settlement decimals from currency.decimalPlaces — data, never a literal. */
   decimalPlaces: number
 ): DepreciationLine[] {
   const lines: DepreciationLine[] = [];
 
   for (const asset of assets) {
-    const usageLog = usageMap.get(asset.id);
-    const amount = calculateDepreciation(
-      {
-        acquisitionCost: Number(asset.acquisitionCost),
-        accumulatedDepreciation: Number(asset.accumulatedDepreciation),
-        residualValuePercent: Number(asset.residualValuePercent),
-        depreciationMethod: asset.depreciationMethod,
-        usefulLifeMonths: asset.usefulLifeMonths,
-        depreciationStartDate: asset.depreciationStartDate,
-        acquisitionDate: asset.acquisitionDate,
-        assetLifetimeUsage: asset.assetLifetimeUsage
-          ? Number(asset.assetLifetimeUsage)
-          : null
-      },
-      periodEnd,
-      lastPostedPeriodEnd,
-      decimalPlaces,
-      usageLog
-    );
+    const start = asset.depreciationStartDate ?? asset.acquisitionDate;
+    const afterLastPosted = lastPostedPeriodEnd
+      ? endOfMonth(parseDate(lastPostedPeriodEnd).add({ months: 1 }))
+      : null;
+    const startMonth = start ? endOfMonth(parseDate(start.slice(0, 10))) : null;
+    // The later of the month after the last posted run and the asset's
+    // in-service month: an asset placed in service after that run gets no
+    // line (and no bonus depreciation) for the months before it.
+    const firstMonth =
+      afterLastPosted && startMonth
+        ? afterLastPosted.compare(startMonth) >= 0
+          ? afterLastPosted
+          : startMonth
+        : (afterLastPosted ?? startMonth ?? endOfMonth(parseDate(periodEnd)));
 
-    let taxAmount: number | null = null;
-    if (taxEnabled) {
-      taxAmount = calculateTaxDepreciation(
-        {
+    let accumulated = Number(asset.accumulatedDepreciation);
+    let accumulatedTax = Number(asset.accumulatedTaxDepreciation ?? 0);
+    // The month before the first one, as the calculators expect it.
+    let previous =
+      afterLastPosted && firstMonth !== afterLastPosted
+        ? endOfMonth(firstMonth.subtract({ months: 1 })).toString()
+        : lastPostedPeriodEnd;
+
+    let catchUp = 0;
+    let taxCatchUp = 0;
+    if (asset.costAdjusted && start) {
+      if (asset.depreciationMethod === "Straight Line") {
+        catchUp = straightLineShortfall({
           acquisitionCost: Number(asset.acquisitionCost),
-          accumulatedTaxDepreciation: Number(
-            asset.accumulatedTaxDepreciation ?? 0
-          ),
-          depreciationStartDate: asset.depreciationStartDate,
-          acquisitionDate: asset.acquisitionDate,
-          taxDepreciationMethod: asset.taxDepreciationMethod,
-          taxUsefulLifeMonths: asset.taxUsefulLifeMonths,
-          taxResidualValuePercent: asset.taxResidualValuePercent,
-          macrsPropertyClass: asset.macrsPropertyClass,
-          macrsConvention: asset.macrsConvention,
-          bonusDepreciationPercent: asset.bonusDepreciationPercent
-        },
-        periodEnd,
-        lastPostedPeriodEnd,
-        decimalPlaces
-      );
-      if (taxAmount === null) {
-        taxAmount = amount;
+          residualValuePercent: Number(asset.residualValuePercent),
+          usefulLifeMonths: asset.usefulLifeMonths,
+          startDate: start,
+          through: previous,
+          accumulated,
+          decimalPlaces
+        });
+      }
+      if (
+        taxEnabled &&
+        asset.taxDepreciationMethod === "Straight Line" &&
+        asset.taxUsefulLifeMonths
+      ) {
+        taxCatchUp = straightLineShortfall({
+          acquisitionCost: Number(asset.acquisitionCost),
+          residualValuePercent: Number(asset.taxResidualValuePercent ?? 0),
+          usefulLifeMonths: asset.taxUsefulLifeMonths,
+          startDate: start,
+          through: previous,
+          accumulated: accumulatedTax,
+          decimalPlaces
+        });
       }
     }
 
-    if (amount > 0 || (taxAmount !== null && taxAmount > 0)) {
-      lines.push({ fixedAssetId: asset.id, amount, taxAmount });
+    for (
+      let month = firstMonth;
+      month.toString() <= periodEnd;
+      month = endOfMonth(month.add({ months: 1 }))
+    ) {
+      const monthEnd = month.toString();
+      const units = usageMap.get(usageKey(asset.id, monthEnd)) ?? 0;
+      const scheduled = calculateDepreciation(
+        {
+          acquisitionCost: Number(asset.acquisitionCost),
+          accumulatedDepreciation: accumulated,
+          residualValuePercent: Number(asset.residualValuePercent),
+          depreciationMethod: asset.depreciationMethod,
+          usefulLifeMonths: asset.usefulLifeMonths,
+          depreciationStartDate: asset.depreciationStartDate,
+          acquisitionDate: asset.acquisitionDate,
+          assetLifetimeUsage: asset.assetLifetimeUsage
+            ? Number(asset.assetLifetimeUsage)
+            : null
+        },
+        monthEnd,
+        previous,
+        decimalPlaces,
+        { unitsProduced: units }
+      );
+      // The catch-up lands on the first month only, within what is left.
+      const amount =
+        catchUp > 0
+          ? Math.min(
+              round(scheduled + catchUp, decimalPlaces),
+              depreciableRemaining(asset, accumulated, decimalPlaces)
+            )
+          : scheduled;
+      catchUp = 0;
+
+      let taxAmount: number | null = null;
+      if (taxEnabled) {
+        taxAmount = calculateTaxDepreciation(
+          {
+            acquisitionCost: Number(asset.acquisitionCost),
+            accumulatedTaxDepreciation: accumulatedTax,
+            depreciationStartDate: asset.depreciationStartDate,
+            acquisitionDate: asset.acquisitionDate,
+            taxDepreciationMethod: asset.taxDepreciationMethod,
+            taxUsefulLifeMonths: asset.taxUsefulLifeMonths,
+            taxResidualValuePercent: asset.taxResidualValuePercent,
+            macrsPropertyClass: asset.macrsPropertyClass,
+            macrsConvention: asset.macrsConvention,
+            bonusDepreciationPercent: asset.bonusDepreciationPercent
+          },
+          monthEnd,
+          previous,
+          decimalPlaces
+        );
+        if (taxAmount === null) {
+          taxAmount = amount;
+        } else if (taxCatchUp > 0) {
+          taxAmount = Math.min(
+            round(taxAmount + taxCatchUp, decimalPlaces),
+            depreciableRemaining(
+              {
+                acquisitionCost: asset.acquisitionCost,
+                residualValuePercent: asset.taxResidualValuePercent ?? 0
+              },
+              accumulatedTax,
+              decimalPlaces
+            )
+          );
+        }
+        taxCatchUp = 0;
+      }
+
+      if (amount > 0 || (taxAmount !== null && taxAmount > 0)) {
+        lines.push({
+          fixedAssetId: asset.id,
+          periodEnd: monthEnd,
+          amount,
+          taxAmount
+        });
+      }
+      accumulated += amount;
+      accumulatedTax += taxAmount ?? 0;
+      previous = monthEnd;
     }
   }
 
   return lines;
 }
+
+type JournalLineDimension = { dimensionId: string; valueId: string };
+
+/** A journal line as stored. */
+export type StoredJournalLine = {
+  id: string;
+  accountId: string | null;
+  description: string | null;
+  amount: number;
+  dimensions: JournalLineDimension[];
+};
+
+/** A journal line as submitted, its amount already class-signed. */
+export type SubmittedJournalLine = {
+  /** The stored line it edits; absent (or unmatched) for a new line. */
+  id?: string;
+  accountId: string;
+  description?: string;
+  amount: number;
+  dimensions: JournalLineDimension[];
+};
+
+export type JournalLineChange = {
+  op: "keep" | "update" | "insert";
+  /** Set for `keep` and `update`. */
+  id?: string;
+  accountId: string;
+  description: string | null;
+  amount: number;
+  dimensions: JournalLineDimension[];
+  /** Whether the line's dimension set must be rewritten. */
+  dimensionsChanged: boolean;
+};
+
+const dimensionKey = (dimensions: JournalLineDimension[]) =>
+  dimensions
+    .map((d) => `${d.dimensionId}:${d.valueId}`)
+    .sort()
+    .join("|");
+
+/**
+ * Turns a submitted set of journal lines into the changes against the stored
+ * ones, in submitted order: a line whose id matches a stored line is kept or
+ * updated in place (updated only when its account, description or amount
+ * changed), anything else is inserted, and stored lines no longer submitted
+ * are deleted. A stored id is matched once — a repeat is inserted as a new
+ * line rather than updating the same row twice — so the audit log records
+ * what was actually edited instead of a delete and re-insert of every line.
+ */
+export function diffJournalLines(
+  stored: StoredJournalLine[],
+  submitted: SubmittedJournalLine[]
+): { changes: JournalLineChange[]; deleteIds: string[] } {
+  const storedById = new Map(stored.map((line) => [line.id, line]));
+  const claimed = new Set<string>();
+
+  const changes = submitted.map((line): JournalLineChange => {
+    const description = line.description ?? null;
+    const match =
+      line.id && !claimed.has(line.id) ? storedById.get(line.id) : undefined;
+
+    if (!match) {
+      return {
+        op: "insert",
+        accountId: line.accountId,
+        description,
+        amount: line.amount,
+        dimensions: line.dimensions,
+        dimensionsChanged: line.dimensions.length > 0
+      };
+    }
+
+    claimed.add(match.id);
+    const changed =
+      match.accountId !== line.accountId ||
+      (match.description ?? "") !== (description ?? "") ||
+      !equals(Number(match.amount), line.amount);
+
+    return {
+      op: changed ? "update" : "keep",
+      id: match.id,
+      accountId: line.accountId,
+      description,
+      amount: line.amount,
+      dimensions: line.dimensions,
+      dimensionsChanged:
+        dimensionKey(match.dimensions) !== dimensionKey(line.dimensions)
+    };
+  });
+
+  return {
+    changes,
+    deleteIds: stored.map((l) => l.id).filter((id) => !claimed.has(id))
+  };
+}
+
+/**
+ * The period end a depreciation run continues from: the last posted run's,
+ * or the day before the accounting cutover when that is later. Depreciation
+ * before the cutover lives in the prior system and in each asset's
+ * accumulated depreciation at the cutover, never in a Carbon run, so a
+ * company's first run after the cutover starts at the cutover month.
+ * Dates are `YYYY-MM-DD`, so string order is chronological.
+ */
+export function depreciationFloor(
+  postedPeriodEnd: string | null,
+  cutoverDate: string | null
+): string | null {
+  if (!cutoverDate) return postedPeriodEnd;
+  const beforeCutover = dayBeforeCutover(cutoverDate);
+  return !postedPeriodEnd || postedPeriodEnd < beforeCutover
+    ? beforeCutover
+    : postedPeriodEnd;
+}
+
+/** A company has set up accounting once it has a cutover date. The wizard
+ *  sets it, and nothing clears it. */
+export function hasAccountingCutover(
+  settings: { accountingCutoverDate?: string | null } | null | undefined
+): boolean {
+  return settings?.accountingCutoverDate != null;
+}
+
+/** The enable wizard's cutover date and the range its date picker allows. */
+export type ActivationCutoverDates = {
+  cutoverDate: string;
+  earliestCutoverDate: string;
+  latestCutoverDate: string;
+};
+
+/**
+ * The cutover date the enable wizard works against: `param` (the wizard's
+ * search param) when it is a `YYYY-MM-DD` calendar date, else the first day
+ * of the current period. Periods are calendar months, as `cutoverDateError`
+ * reads them. The date picker allows the first day of the current period and
+ * of the `maxPeriodsBack` periods before it. A date outside that range still
+ * comes back as the cutover date: the readiness check refuses it.
+ */
+export function activationCutoverDates(
+  param: string | null,
+  companyToday: CalendarDate,
+  maxPeriodsBack: number
+): ActivationCutoverDates {
+  const currentPeriodStart = startOfMonth(companyToday);
+  return {
+    cutoverDate:
+      param && isCalendarDateString(param)
+        ? param
+        : currentPeriodStart.toString(),
+    earliestCutoverDate: currentPeriodStart
+      .subtract({ months: maxPeriodsBack })
+      .toString(),
+    latestCutoverDate: currentPeriodStart.toString()
+  };
+}
+
+function isCalendarDateString(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  try {
+    parseDate(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// The "Lock the period" checklist step is an Action task whose completion IS the
+// Open -> Locked transition. Its status is derived from the period's closeStatus
+// (Locked/Closed => Done) rather than a stored task status, and its button drives
+// lock/unlock instead of a generic "Mark Done". Identified by name (a stable,
+// non-deletable system definition).
+export const LOCK_PERIOD_TASK_NAME = "Lock the period";

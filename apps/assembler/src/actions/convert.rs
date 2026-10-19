@@ -1,11 +1,15 @@
-//! `convert` action — STEP → GLB + graph.json. Async job: the caller long-polls
-//! and hands fresh signed upload URLs (`glb`, `graph`) per poll (late-mint). The
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+//! `convert` action — STEP → GLB + graph.json. Async job: the caller hands the
+//! signed upload URLs (`glb`, `graph`) at submit and long-polls. The
 //! in-process result cache still skips re-tessellation for repeated content; the
 //! artifacts are re-uploaded to each job's own paths.
 
 use crate::cache::{CachedConvert, ResultCache};
 use crate::jobs::{Done, Output};
-use crate::{config, http, progress, AppState};
+use crate::{admission, compute, config, http, progress, telemetry, AppState};
 use serde_json::json;
 use std::sync::Arc;
 use std::time::Instant;
@@ -16,7 +20,7 @@ pub struct ConvertReq {
     /// Caller-declared content identity (storage etag); a hit skips the download.
     pub declared_hash: Option<String>,
     /// Storage paths recorded in the completion pointer (the app persists these);
-    /// the actual signed PUT URLs are late-minted per poll, keyed `glb`/`graph`.
+    /// the signed PUT URLs come with the submit, keyed `glb`/`graph`.
     pub glb_path: Option<String>,
     pub graph_path: Option<String>,
     pub lin: f64,
@@ -29,16 +33,15 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
     let jobs = state.jobs.clone();
     let cache = Arc::clone(&state.cache);
     let progress_store = state.progress.clone();
-    let slots = Arc::clone(&state.slots);
+    let admission = state.admission.clone();
+    let sources = state.sources.clone();
     let job_id = job_id.to_string();
-    tokio::spawn(async move {
-        let _permit = slots.acquire().await;
+    telemetry::spawn_job(&job_id.clone(), "convert", async move {
         if jobs.is_canceled(&job_id).await {
             return;
         }
-        jobs.set_status(&job_id, "running").await;
         let tracker = progress_store.start(&job_id);
-        eprintln!("[{job_id}] convert running");
+        eprintln!("[{job_id}] convert started");
         let started = Instant::now();
 
         // Declared-hash pre-check: a hit skips the source download entirely.
@@ -51,17 +54,18 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
             }
         }
 
-        let tmp = http::temp_path("step");
-        let content_hash =
-            match http::download_hashed(&req.source_url, &tmp, Some(&tracker.progress)).await {
-                Ok(h) => h,
-                Err(e) => {
-                    let _ = tokio::fs::remove_file(&tmp).await;
-                    eprintln!("[{job_id}] convert failed: source download: {}", e.message);
-                    jobs.set_error(&job_id, &e.code, e.message).await;
-                    return;
-                }
-            };
+        let src = match sources
+            .download(&req.source_url, "step", Some(&tracker.progress))
+            .await
+        {
+            Ok(src) => src,
+            Err(e) => {
+                eprintln!("[{job_id}] convert failed: source download: {}", e.message);
+                jobs.set_error(&job_id, &e.code, e.message).await;
+                return;
+            }
+        };
+        let content_hash = src.hash;
         tracker.progress.set_phase(progress::PHASE_CONVERT);
 
         let key = match &req.declared_hash {
@@ -70,23 +74,41 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
         };
         let entry = match cache.get(&key) {
             Some(entry) => {
-                let _ = tokio::fs::remove_file(&tmp).await;
+                drop(src);
                 entry
             }
             None => {
-                let tmp_str = tmp.to_string_lossy().to_string();
+                // Held for the tessellation only: the download before it streams
+                // to disk and the upload after it holds just the outputs.
+                let grant = admission
+                    .acquire(admission::estimate_mb(http::file_len(src.path()).await))
+                    .await;
+                // The wait may have been long: a job cancelled meanwhile is
+                // dropped before it takes the memory it was granted.
+                if jobs.is_canceled(&job_id).await {
+                    return;
+                }
+                // Running from here on: the wait for memory is queue time, not work.
+                jobs.set_status(&job_id, "running").await;
+                let tmp_str = src.path_string();
                 let cache_ins = Arc::clone(&cache);
                 let (lin, ang, optimize) = (req.lin, req.ang, req.optimize);
-                let res = tokio::task::spawn_blocking(move || {
+                let res = compute::run(Some(grant), move || {
                     // Compacted retained raws are BinXCAF (`.xbf`) — binary, no
                     // STEP header to unit-detect (already mm); running the lossy
                     // text scan on them is wasted work at best.
                     if converter::convert::is_xbf(&tmp_str) {
                         converter::convert::convert_xbf(&tmp_str, lin, ang)
                     } else {
-                        // Unit detection scans at most the first 32MB of STEP text.
-                        let text = read_head_lossy(&tmp_str, 32 * 1024 * 1024)?;
-                        converter::convert::convert_step(&tmp_str, &text, lin, ang)
+                        // Unit detection scans the head of the mapped file — no
+                        // decoded copy of it.
+                        let head = http::map_file(std::path::Path::new(&tmp_str)).map_err(|e| {
+                            converter::convert::ConvertError::new(
+                                "READ_FAILED",
+                                format!("read temp: {e}"),
+                            )
+                        })?;
+                        converter::convert::convert_step_head(&tmp_str, &head, lin, ang)
                     }
                     .map(|conv| {
                         let glb = if optimize {
@@ -94,19 +116,20 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                         } else {
                             conv.glb
                         };
-                        let entry = Arc::new(CachedConvert {
-                            glb: glb.into(),
-                            graph_bytes: serde_json::to_vec(&conv.graph).unwrap().into(),
-                            component_count: conv.component_count,
-                            triangles: conv.triangles,
-                            unit: conv.graph["unit"].clone(),
-                        });
-                        cache_ins.insert(key, Arc::clone(&entry));
-                        entry
+                        cache_ins.insert(
+                            key,
+                            CachedConvert {
+                                glb: glb.into(),
+                                graph_bytes: serde_json::to_vec(&conv.graph).unwrap().into(),
+                                component_count: conv.component_count,
+                                triangles: conv.triangles,
+                                unit: conv.graph["unit"].clone(),
+                            },
+                        )
                     })
                 })
                 .await;
-                let _ = tokio::fs::remove_file(&tmp).await;
+                drop(src);
                 match res {
                     Ok(Ok(entry)) => entry,
                     Ok(Err(e)) => {
@@ -116,9 +139,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                         return;
                     }
                     Err(e) => {
-                        let msg = format!("convert panicked: {e}");
+                        let msg = format!("convert {e}");
                         eprintln!("[{job_id}] {msg}");
-                        jobs.set_error(&job_id, "TESSELLATION_FAILED", msg).await;
+                        jobs.set_error(&job_id, e.code("TESSELLATION_FAILED"), msg).await;
                         return;
                     }
                 }
@@ -130,7 +153,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
     });
 }
 
-/// Enforce the part-count limit, then hold the GLB + graph for late-mint upload.
+/// Enforce the part-count limit, then upload the GLB + graph.
 async fn complete(
     jobs: &crate::jobs::JobStore,
     job_id: &str,
@@ -176,12 +199,12 @@ async fn complete(
         Output {
             name: "glb".into(),
             content_type: "model/gltf-binary".into(),
-            bytes: entry.glb.to_vec(),
+            bytes: entry.glb.clone(),
         },
         Output {
             name: "graph".into(),
             content_type: "application/json".into(),
-            bytes: entry.graph_bytes.to_vec(),
+            bytes: entry.graph_bytes.clone(),
         },
     ];
     // Convert output paths are job-scoped, so no result-pointer cache (the bytes
@@ -209,19 +232,6 @@ fn optimize_glb(glb: Vec<u8>) -> Vec<u8> {
             glb
         }
     }
-}
-
-/// Read at most `cap` bytes from the head of a file, lossy-decoded.
-fn read_head_lossy(path: &str, cap: usize) -> Result<String, converter::convert::ConvertError> {
-    use std::io::Read;
-    let file = std::fs::File::open(path).map_err(|e| {
-        converter::convert::ConvertError::new("READ_FAILED", format!("read temp: {e}"))
-    })?;
-    let mut buf = Vec::new();
-    file.take(cap as u64).read_to_end(&mut buf).map_err(|e| {
-        converter::convert::ConvertError::new("READ_FAILED", format!("read temp: {e}"))
-    })?;
-    Ok(String::from_utf8_lossy(&buf).into_owned())
 }
 
 fn convert_code(e: &converter::convert::ConvertError) -> &'static str {

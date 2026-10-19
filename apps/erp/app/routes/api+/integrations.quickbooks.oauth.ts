@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   getAppUrl,
   QUICKBOOKS_CLIENT_ID,
@@ -9,14 +13,19 @@ import { QuickBooks } from "@carbon/ee";
 import {
   DEFAULT_SYNC_CONFIG,
   getProviderIntegration,
-  ProviderID
+  ProviderID,
+  syncEnabledOnConnect
 } from "@carbon/ee/accounting";
 import { quickbooksOnInstall } from "@carbon/ee/quickbooks/hooks.server";
 import { getLogger } from "@carbon/logger";
+import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
-import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
-import { oAuthCallbackSchema } from "~/modules/shared";
+import { data } from "react-router";
+import {
+  getIntegration,
+  upsertCompanyIntegration
+} from "~/modules/settings/settings.service";
+import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
 export const config = {
@@ -100,14 +109,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
+    // Sync starts off on a new connection so accounts can be mapped first; a
+    // reconnect to the same organization keeps the switch where it was.
+    const existing = await getIntegration(client, QuickBooks.id, companyId);
+    const syncEnabled = syncEnabledOnConnect(existing.data?.metadata, realmId);
+
     const createdQuickBooksIntegration = await upsertCompanyIntegration(
       client,
       {
         id: QuickBooks.id,
         active: true,
-        // @ts-ignore
+        // @ts-expect-error
         metadata: {
           syncConfig: DEFAULT_SYNC_CONFIG,
+          settings: { syncEnabled },
           // Provider-specific fields live under providerMetadata (new
           // credential shape) — legacy rows are upgraded on read
           credentials: {
@@ -127,7 +142,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (createdQuickBooksIntegration?.data?.metadata) {
       // Canonical public origin — `request.url`'s origin is the internal proxy
       // address in dev, which would drop the session cookies on redirect.
-      return redirect(`${getAppUrl()}${path.to.integrations}`, {
+      return redirectExternal(`${getAppUrl()}${path.to.integrations}`, {
         headers: { "Set-Cookie": consumedState.cookie }
       });
     } else {

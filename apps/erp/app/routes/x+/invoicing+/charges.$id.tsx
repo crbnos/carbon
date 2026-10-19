@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -19,16 +23,18 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
-import { ChargeStatus, getCharge } from "~/modules/invoicing";
+import { JournalEntryStatus } from "~/modules/accounting/ui/JournalEntries";
+import { getCharge } from "~/modules/invoicing/invoicing.service";
+import { ChargeStatus } from "~/modules/invoicing/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -96,14 +102,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     charge.data.journalId
       ? client
           .from("journal")
-          .select("id, journalEntryId")
+          .select("id, journalEntryId, status")
           .eq("id", charge.data.journalId)
           .eq("companyId", companyId)
           .maybeSingle()
-      : Promise.resolve({
-          data: null as { id: string; journalEntryId: string } | null,
-          error: null
-        })
+      : Promise.resolve({ data: null, error: null })
   ]);
 
   const auxiliaryError =
@@ -215,9 +218,12 @@ export default function ChargeDetailRoute() {
                   </dt>
                   <dd>
                     {journal ? (
-                      <Hyperlink to={path.to.journalEntryDetails(journal.id)}>
-                        {journal.journalEntryId}
-                      </Hyperlink>
+                      <HStack spacing={2}>
+                        <Hyperlink to={path.to.journalEntryDetails(journal.id)}>
+                          {journal.journalEntryId}
+                        </Hyperlink>
+                        <JournalEntryStatus status={journal.status} />
+                      </HStack>
                     ) : (
                       charge.journalId
                     )}

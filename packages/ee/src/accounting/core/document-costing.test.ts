@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import {
   type CostingLine,
@@ -256,7 +260,15 @@ describe("loadBillCostingLines", () => {
         { companyId: "company-1", billId: "pi_1" }
       )
     ).rejects.toMatchObject({
-      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+      failure: {
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        // Both causes: a bill dated before the cutover never gets a Posted
+        // journal, so "post it" alone would stay wrong after setup.
+        message: expect.stringMatching(
+          /not posted yet.*dated before your accounting cutover/
+        )
+      }
     });
   });
 });
@@ -328,20 +340,18 @@ describe("toTransactionCurrencyLines", () => {
       })
     ).toThrow(/total|reconcil/i);
   });
-  it.each([
-    0,
-    -1,
-    Number.NaN,
-    Number.POSITIVE_INFINITY
-  ])("rejects invalid rate %s", (exchangeRate) => {
-    expect(() =>
-      toTransactionCurrencyLines([line("a", 100)], {
-        exchangeRate,
-        documentTotal: 80,
-        decimalPlaces: 2
-      })
-    ).toThrow();
-  });
+  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
+    "rejects invalid rate %s",
+    (exchangeRate) => {
+      expect(() =>
+        toTransactionCurrencyLines([line("a", 100)], {
+          exchangeRate,
+          documentTotal: 80,
+          decimalPlaces: 2
+        })
+      ).toThrow();
+    }
+  );
   it("rejects nonfinite amounts and invalid precision", () => {
     expect(() =>
       toTransactionCurrencyLines([line("a", Infinity)], {
@@ -434,49 +444,49 @@ it("does not borrow currency precision from another company group", async () => 
 });
 
 describe("original bill control provenance", () => {
-  it.each([
-    "Accounts Payable",
-    "IC Payables"
-  ])("excludes original %s after a default change without dropping a costing row on the same account", async (description) => {
-    const result = await loadBillCostingLines(
-      makeDb({
-        purchaseInvoice: { currencyCode: "EUR", exchangeRate: 1.1 },
-        purchaseInvoiceLine: [
-          {
-            quantity: 1,
-            supplierUnitPrice: 110,
-            supplierShippingCost: 0,
-            supplierTaxAmount: 0
-          }
-        ],
-        journalLine: [
-          {
-            id: "cost",
-            accountId: "old-ap",
-            amount: -100,
-            description: "Explicit account charge",
-            documentLineReference: null,
-            accountClass: "Liability"
-          },
-          {
-            id: "ap",
-            accountId: "old-ap",
-            amount: 100,
-            description,
-            documentLineReference: null,
-            accountClass: "Liability"
-          }
-        ]
-      }),
-      { companyId: "company-1", billId: "pi_1" }
-    );
-    expect(result.lines.map((line) => [line.id, line.amount])).toEqual([
-      ["cost", 100]
-    ]);
-    expect(toTransactionCurrencyLines(result.lines, result)[0]?.amount).toBe(
-      110
-    );
-  });
+  it.each(["Accounts Payable", "IC Payables"])(
+    "excludes original %s after a default change without dropping a costing row on the same account",
+    async (description) => {
+      const result = await loadBillCostingLines(
+        makeDb({
+          purchaseInvoice: { currencyCode: "EUR", exchangeRate: 1.1 },
+          purchaseInvoiceLine: [
+            {
+              quantity: 1,
+              supplierUnitPrice: 110,
+              supplierShippingCost: 0,
+              supplierTaxAmount: 0
+            }
+          ],
+          journalLine: [
+            {
+              id: "cost",
+              accountId: "old-ap",
+              amount: -100,
+              description: "Explicit account charge",
+              documentLineReference: null,
+              accountClass: "Liability"
+            },
+            {
+              id: "ap",
+              accountId: "old-ap",
+              amount: 100,
+              description,
+              documentLineReference: null,
+              accountClass: "Liability"
+            }
+          ]
+        }),
+        { companyId: "company-1", billId: "pi_1" }
+      );
+      expect(result.lines.map((line) => [line.id, line.amount])).toEqual([
+        ["cost", 100]
+      ]);
+      expect(toTransactionCurrencyLines(result.lines, result)[0]?.amount).toBe(
+        110
+      );
+    }
+  );
   it.each(
     [
       [],
@@ -501,21 +511,24 @@ describe("original bill control provenance", () => {
         }
       ]
     ].map((rows) => [rows])
-  )("reports missing original posting metadata before numeric reconciliation", async (journalLine) => {
-    await expect(
-      loadBillCostingLines(
-        makeDb({
-          purchaseInvoice: { currencyCode: "USD", exchangeRate: 1 },
-          journalLine
-        }),
-        { companyId: "company-1", billId: "pi_1" }
-      )
-    ).rejects.toMatchObject({
-      failure: {
-        errorCode: "UNMAPPED_ACCOUNTS",
-        warning: true,
-        metadata: { billId: "pi_1" }
-      }
-    });
-  });
+  )(
+    "reports missing original posting metadata before numeric reconciliation",
+    async (journalLine) => {
+      await expect(
+        loadBillCostingLines(
+          makeDb({
+            purchaseInvoice: { currencyCode: "USD", exchangeRate: 1 },
+            journalLine
+          }),
+          { companyId: "company-1", billId: "pi_1" }
+        )
+      ).rejects.toMatchObject({
+        failure: {
+          errorCode: "UNMAPPED_ACCOUNTS",
+          warning: true,
+          metadata: { billId: "pi_1" }
+        }
+      });
+    }
+  );
 });

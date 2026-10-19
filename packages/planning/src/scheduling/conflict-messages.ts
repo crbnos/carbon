@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Cause-specific conflict messages for placements that finish after the job's
  * due date. The allocator knows WHY an operation is late (queued behind other
@@ -5,8 +9,7 @@
  * runway, outside turnaround) — these helpers turn that into a message a
  * scheduler can act on.
  *
- * Pure module (no provider/database imports) so it stays type-checkable under
- * `deno test lib/scheduling/`. Strings are stored in the DB
+ * Pure module (no provider/database imports). Strings are stored in the DB
  * (jobOperation.conflictReason) and shown verbatim on the schedule boards;
  * English by design, not i18n'd.
  */
@@ -48,7 +51,9 @@ export type LatePlacementCause =
   /** Nothing delayed it — there simply isn't enough time before the due date. */
   | { kind: "no-runway" }
   /** Outside processing turnaround runs past the due date. */
-  | { kind: "outside-processing" };
+  | { kind: "outside-processing" }
+  /** Runs in a released batch, whose window is shared with the other jobs in it. */
+  | { kind: "batch"; batchReadableId: string | null };
 
 /**
  * Classify why a placed operation finishes late. `waitedMs` is how long the
@@ -151,6 +156,7 @@ export function composePlacementNote(
         : "Starts after an earlier operation in this job finishes";
     case "no-runway":
     case "outside-processing":
+    case "batch":
       return null;
   }
 }
@@ -225,6 +231,10 @@ export function composeLateConflict(
       return `${late} — not enough time remains before the due date`;
     case "outside-processing":
       return `${late} — outside processing pushes it past the due date`;
+    case "batch":
+      return `${late} — it runs in ${
+        cause.batchReadableId ? `batch ${cause.batchReadableId}` : "a batch"
+      }, scheduled with the other jobs in it`;
   }
 }
 

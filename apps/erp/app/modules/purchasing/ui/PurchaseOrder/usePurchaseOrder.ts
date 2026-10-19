@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { toast } from "@carbon/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSubmit } from "react-router";
-import type { Receipt, Shipment } from "~/modules/inventory";
-import type { PurchaseInvoice } from "~/modules/invoicing";
-import type { PurchaseOrder } from "~/modules/purchasing";
+import type { Receipt, Shipment } from "~/modules/inventory/types";
+import type { PurchaseInvoice } from "~/modules/invoicing/types";
+import type { PurchaseOrder } from "~/modules/purchasing/types";
 import { path } from "~/utils/path";
 
 const MAX_RELATED_DOCS_RETRIES = 2;

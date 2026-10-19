@@ -1,17 +1,28 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateDownloadToken } from "@carbon/auth/download-token.server";
 import { flash } from "@carbon/auth/session.server";
-import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
-import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
-import type { Document } from "~/modules/documents";
 import {
-  DocumentsTable,
+  RecordOutlet,
+  ResizablePanel,
+  ResizablePanelGroup,
+  VStack
+} from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
+import { useResolved } from "~/hooks/useResolved";
+import {
   getDocumentExtensions,
   getDocumentLabels,
   getDocuments
-} from "~/modules/documents";
+} from "~/modules/documents/documents.service";
+import type { Document } from "~/modules/documents/types";
+import { DocumentsTable } from "~/modules/documents/ui";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -33,7 +44,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [documents, labels, extensions] = await Promise.all([
+  // Only the file-type filter needs this, so it streams rather than holding
+  // the page.
+  const extensions = getDocumentExtensions(client, companyId).then(
+    (result) => result.data?.map(({ extension }) => extension) ?? []
+  );
+
+  const [documents, labels] = await Promise.all([
     getDocuments(client, companyId, {
       search,
       favorite,
@@ -45,8 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getDocumentLabels(client, userId),
-    getDocumentExtensions(client)
+    getDocumentLabels(client, userId)
   ]);
 
   if (documents.error) {
@@ -76,17 +92,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     count: documents.count ?? 0,
     documents: documentsWithDownloadTokens,
     labels: labels.data ?? [],
-    extensions: extensions.data?.map(({ extension }) => extension) ?? []
+    extensions
   };
 }
 
 export default function DocumentsAllRoute() {
-  const { count, documents, labels, extensions } =
-    useLoaderData<typeof loader>();
+  const { count, documents, labels, ...data } = useLoaderData<typeof loader>();
+  const extensions = useResolved(data.extensions, []);
 
   return (
     <VStack spacing={0} className="h-full ">
-      <ResizablePanelGroup direction="horizontal">
+      <ResizablePanelGroup direction="horizontal" stackOnCompact>
         <ResizablePanel>
           <DocumentsTable
             data={documents}
@@ -95,7 +111,7 @@ export default function DocumentsAllRoute() {
             extensions={extensions}
           />
         </ResizablePanel>
-        <Outlet />
+        <RecordOutlet />
       </ResizablePanelGroup>
     </VStack>
   );

@@ -1,14 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
+import { projectValidator } from "~/modules/accounting/accounting.models";
 import {
   getProject,
-  projectValidator,
   upsertProject
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { ProjectForm } from "~/modules/accounting/ui/Projects";
 import { getParams, path } from "~/utils/path";
 
@@ -72,7 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditProjectRoute() {
   const { project } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: project?.id ?? undefined,
@@ -84,7 +90,7 @@ export default function EditProjectRoute() {
     <ProjectForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

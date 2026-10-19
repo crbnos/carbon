@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { activeJobStatuses } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -8,6 +13,7 @@ import {
   Button,
   Checkbox,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Modal,
@@ -23,7 +29,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import {
   LuAlignLeft,
   LuBuilding2,
@@ -36,7 +42,7 @@ import {
   LuTriangleAlert,
   LuUser
 } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
@@ -49,7 +55,7 @@ import {
   useUser
 } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { WorkCenter } from "~/modules/resources";
+import type { WorkCenter } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -129,6 +135,7 @@ const WorkCentersTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuLocateFixed />
           }
         },
@@ -150,6 +157,7 @@ const WorkCentersTable = memo(
             />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuRedoDot />,
             filter: {
               type: "static",
@@ -304,6 +312,7 @@ const WorkCentersTable = memo(
       (row) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.workCenter(row.id!)}?${params?.toString()}`);
             }}
@@ -439,15 +448,15 @@ function DeleteWorkCenterModal({
     }
   };
 
-  const fetcher = useFetcher<{}>();
-  const submitted = useRef(false);
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onSubmit?.();
-      submitted.current = false;
+  const fetcher = useAction<{}>({
+    onSettled: () => {
+      if (submitted.current) {
+        onSubmit?.();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state, onSubmit]);
-
+  });
+  const submitted = useRef(false);
   useMount(() => {
     getActiveOperations();
   });

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   trainingAssignmentStatusOptions,
   trainingFrequency
@@ -91,10 +95,11 @@ export type TrainingQuestion = NonNullable<
 
 export type TrainingAssignmentStatusItem = {
   trainingAssignmentId: string;
-  trainingId: string;
+  trainingId: string | null;
   trainingName: string;
   frequency: (typeof trainingFrequency)[number];
   trainingType: "Mandatory" | "Optional";
+  isExternal: boolean;
   employeeId: string;
   employeeName: string | null;
   avatarUrl: string | null;
@@ -103,13 +108,16 @@ export type TrainingAssignmentStatusItem = {
   currentPeriod: string | null;
   completionId: number | null;
   completedAt: string | null;
+  certificatePath: string | null;
   status: (typeof trainingAssignmentStatusOptions)[number];
 };
 
 export type TrainingAssignmentSummaryItem = {
-  trainingId: string;
+  trainingAssignmentId: string;
+  trainingId: string | null;
   trainingName: string;
   frequency: (typeof trainingFrequency)[number];
+  isExternal: boolean;
   currentPeriod: string | null;
   totalAssigned: number;
   completed: number;

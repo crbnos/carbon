@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -5,6 +10,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   toast,
@@ -12,7 +18,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuBookMarked,
@@ -25,10 +31,11 @@ import {
   LuTrash,
   LuUser
 } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
+import type { action as seedAction } from "~/routes/api+/quality.documents.seed";
 import { path } from "~/utils/path";
 import type { QualityDocuments } from "../../types";
 import QualityDocumentStatus from "./QualityDocumentStatus";
@@ -44,16 +51,9 @@ const QualityDocumentsTable = memo(
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
-    const seedFetcher = useFetcher<{ success: boolean; message: string }>();
-
-    useEffect(() => {
-      if (seedFetcher.data?.success === true) {
-        toast.success(seedFetcher.data.message);
-      }
-      if (seedFetcher.data?.success === false) {
-        toast.error(seedFetcher.data.message);
-      }
-    }, [seedFetcher.data]);
+    const seedFetcher = useAction<typeof seedAction>({
+      onSuccess: () => toast.success(t`Successfully seeded documents`)
+    });
 
     const deleteDisclosure = useDisclosure();
     const [selectedQualityDocument, setSelectedQualityDocument] =
@@ -75,6 +75,7 @@ const QualityDocumentsTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -86,6 +87,8 @@ const QualityDocumentsTable = memo(
             <QualityDocumentStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
+            mobilePill: true,
             icon: <LuCalendar />
           }
         },
@@ -96,6 +99,7 @@ const QualityDocumentsTable = memo(
             <EmployeeAvatar employeeId={row.original.assignee} />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuUser />
           }
         },
@@ -186,6 +190,7 @@ const QualityDocumentsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "quality")}
               onClick={() => {
                 navigate(`${path.to.qualityDocument(row.id!)}`);
@@ -195,6 +200,7 @@ const QualityDocumentsTable = memo(
               Edit Document
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "quality")}
               onClick={() => {

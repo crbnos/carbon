@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -9,15 +13,15 @@ import {
   DrawerTitle,
   Heading,
   HStack,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import type { z } from "zod";
 import { Hidden, Input, Item, Number, Submit } from "~/components/Form";
 import { useCompanyTimeZone, usePermissions } from "~/hooks";
-import { itemSerialSequenceValidator } from "~/modules/settings";
+import { itemSerialSequenceValidator } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
 import { interpolateSequenceDate } from "~/utils/string";
 
@@ -34,8 +38,8 @@ const ItemSerialSequenceForm = ({
 }: ItemSerialSequenceFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
 
   const isEditing = initialValues.id !== undefined;
 

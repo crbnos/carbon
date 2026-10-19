@@ -1,6 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it, vi } from "vitest";
 
 const requirePermissions = vi.hoisted(() => vi.fn());
+// The rule itself is pinned by `isIntegrationComingSoon`'s tests in
+// `@carbon/ee`; here only the route's answer to a withheld install is.
+const isIntegrationInstallWithheld = vi.hoisted(() => vi.fn(async () => false));
 // Role-aware, because the guard compares the incumbent row against the ids of
 // that ROLE. "brex" stands in for a second spend provider: with only Ramp
 // registered today a spend role conflict is unreachable, so the guard would
@@ -47,6 +54,9 @@ vi.mock("@carbon/ee", () => ({
   integrations: [RAMP],
   getIntegrationIdsByRole
 }));
+vi.mock("~/modules/settings/settings.service", () => ({
+  isIntegrationInstallWithheld
+}));
 
 import { loader } from "./integrations.$id.connect";
 
@@ -64,6 +74,7 @@ async function connect(mode: string | null, rows: Array<{ id: string }> = []) {
   requirePermissions.mockResolvedValue({
     userId: "user-1",
     companyId: "company-1",
+    email: "user@example.com",
     client: activeRows(rows)
   });
 
@@ -136,5 +147,13 @@ describe("integration connect route", () => {
     const response = await connect("push-only", [{ id: "ramp" }]);
 
     expect(response.headers.get("Location")).toContain("ramp.com");
+  });
+
+  it("refuses before consent when the install is withheld from this user", async () => {
+    isIntegrationInstallWithheld.mockResolvedValueOnce(true);
+    const response = await connect("push-only");
+
+    expect(response.headers.get("Location")).toContain("error=coming-soon");
+    expect(response.headers.get("Location")).not.toContain("ramp.com");
   });
 });

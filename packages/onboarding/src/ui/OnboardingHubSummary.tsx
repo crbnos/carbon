@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Card, cn, IconButton } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -7,6 +11,8 @@ type OnboardingHubSummaryProps = {
   label: string;
   done: number;
   total: number;
+  // Progress is still loading: hold the layout, leave the numbers out.
+  pending?: boolean;
   // The single next thing to do (drives the home-screen hand-holding).
   nextLabel?: string;
   // The CTA (app supplies a react-router <Link> wrapped in a Button for SPA nav).
@@ -21,15 +27,18 @@ export function OnboardingHubSummary({
   label,
   done,
   total,
+  pending = false,
   nextLabel,
   action,
   onDismiss
 }: OnboardingHubSummaryProps) {
   const { t } = useLingui();
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  // Phones: logo and progress share a row, the action wraps to its own
+  // full-width row below.
   return (
-    <Card className="relative flex-row items-center gap-5 p-6 pr-12 mb-6 bg-gradient-to-bl from-card from-50% to-background">
-      <div className="shrink-0 size-12 rounded-xl border flex items-center justify-center">
+    <Card className="relative flex-row flex-wrap items-center gap-5 p-6 pr-12 mb-6 bg-gradient-to-bl from-card from-50% to-background max-md:gap-x-3 max-md:gap-y-4 max-md:p-4 max-md:pr-10">
+      <div className="shrink-0 size-12 rounded-xl border flex items-center justify-center max-md:size-10">
         <img
           src="/carbon-mark-light.svg"
           alt="Carbon"
@@ -42,11 +51,13 @@ export function OnboardingHubSummary({
         />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-2">
           <h3 className="text-base font-semibold tracking-tight">{label}</h3>
-          <span className="text-sm text-muted-foreground tabular-nums">
-            {done}/{total} <Trans>steps</Trans>
-          </span>
+          {pending ? null : (
+            <span className="text-sm text-muted-foreground tabular-nums">
+              {done}/{total} <Trans>steps</Trans>
+            </span>
+          )}
         </div>
         <div className="mt-2 h-2 w-full max-w-md rounded-full bg-muted overflow-hidden">
           <div
@@ -57,14 +68,19 @@ export function OnboardingHubSummary({
             style={{ width: `${pct}%` }}
           />
         </div>
-        {nextLabel ? (
+        {pending ? (
+          // Same line box as the "Next:" line that replaces it.
+          <p className="mt-2 text-sm" aria-hidden>
+            &nbsp;
+          </p>
+        ) : nextLabel ? (
           <p className="mt-2 text-sm text-muted-foreground truncate">
             <Trans>Next:</Trans>{" "}
             <span className="text-foreground font-medium">{nextLabel}</span>
           </p>
         ) : null}
       </div>
-      <div className="shrink-0">{action}</div>
+      <div className="shrink-0 max-md:w-full max-md:[&>*]:w-full">{action}</div>
       {onDismiss ? (
         <IconButton
           aria-label={t`Hide`}

@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Input, Select, Submit, ValidatedForm } from "@carbon/form";
 import type { PrinterRoute } from "@carbon/printing";
 import { printerRouteValidator } from "@carbon/printing";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
@@ -16,6 +21,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -27,9 +33,8 @@ import {
 } from "@carbon/react";
 import { getLabelSizeLabel, labelSizes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { LuEllipsisVertical, LuPlay, LuPlus, LuTrash } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { Empty } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { path } from "~/utils/path";
@@ -45,14 +50,26 @@ export function PrintersCard({
   printerRoutes: PrinterRoute[];
 }) {
   const { t } = useLingui();
-  const routeFetcher = useFetcher<{ success: boolean; message: string }>();
+  const newPrinterDisclosure = useDisclosure();
+  const routeFetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if ("created" in data) {
+        toast.success(
+          data.created ? t`Printer route created` : t`Printer route updated`
+        );
+        newPrinterDisclosure.onClose();
+      } else {
+        toast.success(t`Test label sent to printer`);
+      }
+    }
+  });
 
   const formatOptions = [
     { value: "zpl", label: t`ZPL (Thermal Label)` },
     { value: "pdf", label: t`PDF (Document)` }
   ];
 
-  const newPrinterDisclosure = useDisclosure();
   const deletePrinterDisclosure = useDisclosure();
   const [printerToDelete, setPrinterToDelete] = useState<{
     id: string;
@@ -69,21 +86,10 @@ export function PrintersCard({
     [selectedFormat]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we don't need to re-run this effect when onClose changes
-  useEffect(() => {
-    if (routeFetcher.data?.success === true && routeFetcher.data?.message) {
-      toast.success(routeFetcher.data.message);
-      newPrinterDisclosure.onClose();
-    }
-    if (routeFetcher.data?.success === false && routeFetcher.data?.message) {
-      toast.error(routeFetcher.data.message);
-    }
-  }, [routeFetcher.data?.message, routeFetcher.data?.success]);
-
   return (
     <>
       <Card>
-        <HStack className="w-full justify-between items-start">
+        <HStack className="w-full justify-between items-start max-md:flex-col max-md:items-stretch max-md:gap-0">
           <CardHeader>
             <CardTitle>
               <Trans>Printers</Trans>
@@ -92,7 +98,7 @@ export function PrintersCard({
               <Trans>Physical printers available for assignment.</Trans>
             </CardDescription>
           </CardHeader>
-          <CardAction className="py-6">
+          <CardAction className="py-6 max-md:pt-0 max-md:pb-4 max-md:px-4">
             <Button
               leftIcon={<LuPlus />}
               onClick={() => {
@@ -148,6 +154,7 @@ export function PrintersCard({
                         <Trans>Test</Trans>
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
                         destructive
                         onSelect={() => {
                           setPrinterToDelete({

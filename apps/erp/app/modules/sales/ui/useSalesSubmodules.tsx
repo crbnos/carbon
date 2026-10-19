@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBan,
   LuGlobe,
+  LuKeyRound,
   LuList,
   LuPercent,
+  LuSection,
   LuShapes,
   LuShieldCheck,
   LuSquareUser,
@@ -26,7 +32,7 @@ export default function useSalesSubmodules() {
   const { addSavedViewsToRoutes } = useSavedViews();
   const salesRoutes: AuthenticatedRouteGroup[] = [
     {
-      name: t`Manage`,
+      name: t`Customers`,
       routes: [
         {
           name: t`Customers`,
@@ -34,6 +40,17 @@ export default function useSalesSubmodules() {
           icon: <LuSquareUser />,
           table: "customer"
         },
+        {
+          name: t`Portals`,
+          to: path.to.customerPortals,
+          role: "employee",
+          icon: <LuGlobe />
+        }
+      ]
+    },
+    {
+      name: t`Quoting`,
+      routes: [
         {
           name: t`RFQs`,
           to: path.to.salesRfqs,
@@ -45,9 +62,14 @@ export default function useSalesSubmodules() {
           to: path.to.quotes,
           icon: <RiProgress4Line />,
           table: "quote"
-        },
+        }
+      ]
+    },
+    {
+      name: t`Orders`,
+      routes: [
         {
-          name: t`Orders`,
+          name: t`Sales Orders`,
           to: path.to.salesOrders,
           icon: <RiProgress8Line />,
           table: "salesOrder"
@@ -61,14 +83,25 @@ export default function useSalesSubmodules() {
       ]
     },
     {
-      name: t`Configure`,
+      name: t`Agreements`,
       routes: [
         {
-          name: t`Portals`,
-          to: path.to.customerPortals,
-          role: "employee",
-          icon: <LuGlobe />
+          name: t`Service Contracts`,
+          to: path.to.contracts,
+          icon: <LuSection />,
+          table: "customerContract"
         },
+        {
+          name: t`Rental Agreements`,
+          to: path.to.rentalAgreements,
+          icon: <LuKeyRound />,
+          table: "rentalAgreement"
+        }
+      ]
+    },
+    {
+      name: t`Pricing`,
+      routes: [
         {
           name: t`Price Lists`,
           to: path.to.salesPriceList,
@@ -80,7 +113,12 @@ export default function useSalesSubmodules() {
           to: path.to.salesPricingRules,
           role: "employee",
           icon: <LuPercent />
-        },
+        }
+      ]
+    },
+    {
+      name: t`Configure`,
+      routes: [
         {
           name: t`Sales Rules`,
           to: path.to.salesRules,
@@ -99,7 +137,6 @@ export default function useSalesSubmodules() {
           role: "employee",
           icon: <LuUndo2 />
         },
-
         {
           name: t`Statuses`,
           to: path.to.customerStatuses,

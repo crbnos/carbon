@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { safeStorageFileName, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { Spinner, useCarbon } from "@carbon/react";
@@ -8,7 +12,7 @@ import { useFetcher } from "react-router";
 import { FileDropzone } from "~/components";
 import { useUser } from "~/hooks";
 import { useDocumentExtraction } from "~/hooks/useDocumentExtraction";
-import type { ExtractedDocumentData } from "~/modules/documents";
+import type { ExtractedDocumentData } from "~/modules/documents/documents.models";
 
 const logger = getLogger("erp", "pdfextractor");
 

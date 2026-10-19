@@ -1,4 +1,15 @@
-import { Badge, Button, HStack, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Badge,
+  Button,
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -16,7 +27,7 @@ import {
 import { Outlet, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { ApiKey } from "~/modules/settings";
+import type { ApiKey } from "~/modules/settings/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -64,6 +75,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
           <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuTag />
         }
       },
@@ -126,6 +138,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
           return <EmployeeAvatar employeeId={row.original.createdBy} />;
         },
         meta: {
+          mobile: "P3",
           icon: <LuUser />,
           filter: {
             type: "static",
@@ -159,6 +172,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           icon: <LuCalendar />
         }
       },
@@ -181,6 +195,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.apiKey(row.id!)}?${params?.toString()}`);
             }}
@@ -189,6 +204,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
             <Trans>Edit API Key</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             onClick={() => {
               navigate(

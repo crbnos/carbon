@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database, Json } from "@carbon/database";
 import type { periodCloseStatuses } from "./accounting.models";
 import type {
@@ -514,8 +518,13 @@ import type {
   getFixedAssetClass,
   getFixedAssetClasses,
   getFixedAssetDisposal,
+  getFixedAssetRelatedItems,
   getFixedAssets
 } from "./accounting.service";
+
+export type FixedAssetRelatedItems = Awaited<
+  ReturnType<typeof getFixedAssetRelatedItems>
+>;
 
 export type FixedAssetClass = NonNullable<
   Awaited<ReturnType<typeof getFixedAssetClass>>["data"]

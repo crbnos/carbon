@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Badge, HStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { Hyperlink, MethodIcon, MethodItemTypeIcon, Table } from "~/components";
-import { methodItemType, methodType } from "~/modules/shared";
+import { methodItemType, methodType } from "~/modules/shared/shared.models";
 import { useParts, useTools } from "~/stores";
 import type { MethodMaterial } from "../../types";
 import { getPathToMakeMethod } from "./utils";
@@ -30,26 +34,26 @@ const MethodMaterialsTable = memo(
             <HStack className="py-1">
               <Hyperlink
                 to={getPathToMakeMethod(
-                  // @ts-ignore
+                  // @ts-expect-error
                   row.original.makeMethod?.item?.type,
-                  // @ts-ignore
                   row.original.makeMethod?.item?.id,
-                  // @ts-ignore
+                  // @ts-expect-error
                   row.original.makeMethod?.id
                 )}
                 className="max-w-[260px] truncate"
               >
-                {/* @ts-ignore */}
                 {row.original.makeMethod?.item?.readableIdWithRevision}
               </Hyperlink>
             </HStack>
-          )
+          ),
+          meta: { mobile: "P1" }
         },
         {
           accessorKey: "itemReadableIdWithRevision",
           header: t`Material ID`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: items?.map((item) => ({
@@ -129,7 +133,8 @@ const MethodMaterialsTable = memo(
         {
           accessorKey: "quantity",
           header: t`Qty. per Parent`,
-          cell: (item) => item.getValue()
+          cell: (item) => item.getValue(),
+          meta: { mobile: "P2" }
         }
       ];
     }, [items, t]);

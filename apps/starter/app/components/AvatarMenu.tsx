@@ -1,16 +1,34 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAccountSettings } from "@carbon/account";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-  Switch,
-  useMode
+  useMode,
+  useModePreference
 } from "@carbon/react";
-import { useRef, useState } from "react";
-import { LuHouse, LuLogOut, LuMoon, LuSun, LuUser } from "react-icons/lu";
+import { modeValidator } from "@carbon/utils";
+import { useState } from "react";
+import {
+  LuHouse,
+  LuLaptop,
+  LuLogOut,
+  LuMoon,
+  LuSun,
+  LuUser
+} from "react-icons/lu";
 import { Form, Link, useFetcher } from "react-router";
 import { Avatar } from "~/components";
 import { useUser } from "~/hooks";
@@ -22,12 +40,20 @@ const AvatarMenu = () => {
   const name = `${user.firstName} ${user.lastName}`;
 
   const mode = useMode();
-
-  const nextMode = mode === "dark" ? "light" : "dark";
-  const modeSubmitRef = useRef<HTMLButtonElement>(null);
+  const modePreference = useModePreference();
 
   const fetcher = useFetcher<typeof action>();
   const [isOpen, setIsOpen] = useState(false);
+  const openAccountSettings = useAccountSettings((s) => s.open);
+
+  const onModeChange = (value: string) => {
+    const parsed = modeValidator.shape.mode.safeParse(value);
+    if (!parsed.success || parsed.data === modePreference) return;
+    document.body.removeAttribute("style");
+    const formData = new FormData();
+    formData.append("mode", parsed.data);
+    fetcher.submit(formData, { method: "post", action: path.to.root });
+  };
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -44,40 +70,45 @@ const AvatarMenu = () => {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to={path.to.accountSettings}>
-            <DropdownMenuIcon icon={<LuUser />} />
-            Account Settings
-          </Link>
+        <DropdownMenuItem onClick={() => openAccountSettings()}>
+          <DropdownMenuIcon icon={<LuUser />} />
+          Account Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center justify-start">
-              <DropdownMenuIcon
-                icon={mode === "dark" ? <LuMoon /> : <LuSun />}
-              />
-              Dark Mode
-            </div>
-            <div>
-              <Switch
-                checked={mode === "dark"}
-                onCheckedChange={() => modeSubmitRef.current?.click()}
-              />
-              <fetcher.Form
-                action={path.to.root}
-                method="post"
-                onSubmit={() => {
-                  document.body.removeAttribute("style");
-                }}
-                className="sr-only"
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <DropdownMenuIcon icon={mode === "dark" ? <LuMoon /> : <LuSun />} />
+            Appearance
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup
+              value={modePreference}
+              onValueChange={onModeChange}
+            >
+              <DropdownMenuRadioItem
+                value="light"
+                onSelect={(e) => e.preventDefault()}
               >
-                <input type="hidden" name="mode" value={nextMode} />
-                <button ref={modeSubmitRef} className="sr-only" type="submit" />
-              </fetcher.Form>
-            </div>
-          </div>
-        </DropdownMenuItem>
+                <DropdownMenuIcon icon={<LuSun />} />
+                Light
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem
+                value="dark"
+                onSelect={(e) => e.preventDefault()}
+              >
+                <DropdownMenuIcon icon={<LuMoon />} />
+                Dark
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem
+                value="system"
+                onSelect={(e) => e.preventDefault()}
+              >
+                <DropdownMenuIcon icon={<LuLaptop />} />
+                System
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
           <Form method="post" action={path.to.logout}>

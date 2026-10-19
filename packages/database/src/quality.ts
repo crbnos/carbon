@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Inspection execution engine — the transactional core of the quality
  * inspection system, shared by the ERP routes (`x+/inspection+/*`) and the MES
@@ -8,18 +12,17 @@
  * its own `getDatabaseClient()` singleton). Kysely bypasses RLS — the calling
  * route's `requirePermissions` is the auth gate.
  */
-import type { Transaction } from "kysely";
+import type { NotNull, Transaction } from "kysely";
 import { sql } from "kysely";
-
-import { getNextSequence } from "../supabase/functions/shared/get-next-sequence.ts";
+import type { Kysely, KyselyDatabase } from "./client.ts";
 import {
   computeLotStatus,
   deriveSampleStatus,
   valuateMeasurement
-} from "../supabase/functions/shared/inspection-verdict.ts";
-import type { Kysely, KyselyDatabase } from "./client.ts";
+} from "./inspection-verdict.ts";
 import type { SamplingPlanInput, SamplingStandard } from "./sampling.ts";
 import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
+import { getNextSequence } from "./sequence.ts";
 
 type Ok<T> = { data: T; error: null };
 type Err = { data: null; error: { message: string; blockers?: unknown } };
@@ -119,6 +122,29 @@ const INSPECTION_CLOSED_STATUSES = ["Passed", "Failed", "Partial"] as const;
 
 function isInspectionClosed(status: string): boolean {
   return (INSPECTION_CLOSED_STATUSES as readonly string[]).includes(status);
+}
+
+// A receipt lot is closed once its receipt is voided: the stock it inspects was
+// never received. Accepting it made the voided serials and batches Available
+// again, and rejecting an untracked lot wrote the reversed stock off a second
+// time. FOR SHARE waits for a void that is running, which locks the receipt.
+async function assertReceiptNotVoided(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  inspection: { sourceDocument: string; sourceDocumentId: string | null }
+): Promise<void> {
+  if (inspection.sourceDocument !== "Receipt" || !inspection.sourceDocumentId)
+    return;
+  const receipt = await trx
+    .selectFrom("receipt")
+    .select("status")
+    .where("id", "=", inspection.sourceDocumentId)
+    .where("companyId", "=", companyId)
+    .forShare()
+    .executeTakeFirst();
+  if (receipt?.status === "Voided") {
+    throw new Error("The receipt of this inspection was voided");
+  }
 }
 
 // A sample whose verdict already drove a production posting (MES verdict-driven
@@ -236,6 +262,7 @@ export async function upsertInspectionSample(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, sample.companyId, inspection);
 
       // Serial parts carry a tracked entity that may only be sampled once, so we
       // upsert by it. Anonymous (batch / inventory / non-inventory) columns have
@@ -413,6 +440,7 @@ export async function dispositionInspection(
       if (args.requireOpen && isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is already dispositioned");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
       const isReceiptSource = inspection.sourceDocument === "Receipt";
 
       const item = await trx
@@ -571,8 +599,8 @@ export async function dispositionInspection(
       // received quantity sits in itemLedger with no per-row status to exclude
       // it from on-hand. Rejecting the lot posts a compensating write-off —
       // itemLedger Negative Adjmt. + cost relief + GL — through the
-      // post-nonconformance edge function, which the route invokes AFTER this
-      // transaction commits (cost/GL logic is Deno-only). The `inspection.status
+      // post-nonconformance operation, which the route runs AFTER this
+      // transaction commits. The `inspection.status
       // !== "Failed"` guard is intentionally dropped: post-nonconformance is
       // idempotent per (documentType, documentId), so a re-reject / retry is
       // safe. Tracked items are handled by the status flip above; Non-Inventory
@@ -683,6 +711,7 @@ export async function upsertInspectionMeasurement(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const feature = await trx
         .selectFrom("inspectionFeature")
@@ -1010,7 +1039,7 @@ export async function changeInspectionDocument(
     const result = await db.transaction().execute(async (trx) => {
       const inspection = await trx
         .selectFrom("inspection")
-        .select(["id", "status"])
+        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
         .where("id", "=", args.inspectionId)
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
@@ -1018,6 +1047,7 @@ export async function changeInspectionDocument(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const measurement = await trx
         .selectFrom("inspectionMeasurement")
@@ -1053,6 +1083,178 @@ export async function changeInspectionDocument(
   } catch (err) {
     return errResult(
       err instanceof Error ? err.message : "Failed to change document"
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// 5b. recordInspectionGauge
+// -------------------------------------------------------------
+// Records (or clears) the gauge used to inspect one feature of a lot, on the
+// lot's per-feature plan row. When the feature names a gauge type, only a
+// gauge of that type is accepted. Inactive gauges are refused; calibration
+// status is shown to the inspector but does not block (the gauge's status is
+// the calibration program's call, not the inspector's).
+
+export async function recordInspectionGauge(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    inspectionId: string;
+    inspectionFeatureId: string;
+    gaugeId: string | null;
+    companyId: string;
+    userId: string;
+  }
+): Promise<Result<{ inspectionFeatureId: string; gaugeId: string | null }>> {
+  try {
+    const result = await db.transaction().execute(async (trx) => {
+      const inspection = await trx
+        .selectFrom("inspection")
+        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
+        .where("id", "=", args.inspectionId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (!inspection) throw new Error("Inspection not found");
+      if (isInspectionClosed(inspection.status)) {
+        throw new Error("Inspection is closed");
+      }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
+
+      const plan = await trx
+        .selectFrom("inspectionSamplingPlan")
+        .innerJoin("inspectionFeature", (join) =>
+          join
+            .onRef(
+              "inspectionFeature.id",
+              "=",
+              "inspectionSamplingPlan.inspectionFeatureId"
+            )
+            .onRef(
+              "inspectionFeature.companyId",
+              "=",
+              "inspectionSamplingPlan.companyId"
+            )
+        )
+        .select(["inspectionSamplingPlan.id", "inspectionFeature.gaugeTypeId"])
+        .where("inspectionSamplingPlan.inspectionId", "=", args.inspectionId)
+        .where(
+          "inspectionSamplingPlan.inspectionFeatureId",
+          "=",
+          args.inspectionFeatureId
+        )
+        .where("inspectionSamplingPlan.companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (!plan) throw new Error("Inspection feature not found");
+
+      if (args.gaugeId) {
+        const gauge = await trx
+          .selectFrom("gauge")
+          .select(["id", "gaugeTypeId", "gaugeStatus"])
+          .where("id", "=", args.gaugeId)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst();
+        if (!gauge) throw new Error("Gauge not found");
+        if (gauge.gaugeStatus === "Inactive") {
+          throw new Error("Gauge is inactive");
+        }
+        if (plan.gaugeTypeId && gauge.gaugeTypeId !== plan.gaugeTypeId) {
+          throw new Error("Gauge is not of the type this feature requires");
+        }
+      }
+
+      await trx
+        .updateTable("inspectionSamplingPlan")
+        .set({
+          gaugeId: args.gaugeId,
+          gaugeRecordedAt: args.gaugeId ? sql<string>`now()` : null,
+          updatedBy: args.userId,
+          updatedAt: sql<string>`now()`
+        })
+        .where("id", "=", plan.id)
+        .execute();
+
+      return {
+        inspectionFeatureId: args.inspectionFeatureId,
+        gaugeId: args.gaugeId
+      };
+    });
+
+    return { data: result, error: null };
+  } catch (err) {
+    return errResult(
+      err instanceof Error ? err.message : "Failed to record gauge"
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// 5c. getRecentInspectionGauges
+// -------------------------------------------------------------
+// The gauges most recently recorded on inspections at the same "station" as
+// this lot, newest first — the execution view lists them above the rest. A Job
+// Operation lot's station is its operation's work center; receipts are one
+// station of their own. A work-centerless operation has no history.
+
+export const RECENT_INSPECTION_GAUGE_LIMIT = 10;
+
+export async function getRecentInspectionGauges(
+  db: Kysely<KyselyDatabase>,
+  args: { inspectionId: string; companyId: string }
+): Promise<Result<string[]>> {
+  try {
+    // One round trip: `lot` is this inspection, `used` is the inspection the
+    // gauge was recorded on, and each is joined to its operation's work center
+    // (null for a receipt lot).
+    const rows = await db
+      .selectFrom("inspectionSamplingPlan")
+      .innerJoin("inspection as used", (join) =>
+        join
+          .onRef("used.id", "=", "inspectionSamplingPlan.inspectionId")
+          .onRef("used.companyId", "=", "inspectionSamplingPlan.companyId")
+      )
+      .innerJoin("inspection as lot", (join) =>
+        join
+          .onRef("lot.sourceDocument", "=", "used.sourceDocument")
+          .on("lot.id", "=", args.inspectionId)
+          .on("lot.companyId", "=", args.companyId)
+      )
+      .leftJoin("jobOperation as usedOperation", (join) =>
+        join
+          .onRef("usedOperation.id", "=", "used.sourceDocumentLineId")
+          .onRef("usedOperation.companyId", "=", "used.companyId")
+      )
+      .leftJoin("jobOperation as lotOperation", (join) =>
+        join
+          .onRef("lotOperation.id", "=", "lot.sourceDocumentLineId")
+          .onRef("lotOperation.companyId", "=", "lot.companyId")
+      )
+      .select("inspectionSamplingPlan.gaugeId")
+      .where("inspectionSamplingPlan.companyId", "=", args.companyId)
+      .where("inspectionSamplingPlan.gaugeId", "is not", null)
+      .where("inspectionSamplingPlan.gaugeRecordedAt", "is not", null)
+      .where((eb) =>
+        eb.or([
+          eb("lot.sourceDocument", "=", "Receipt"),
+          eb(
+            "usedOperation.workCenterId",
+            "=",
+            eb.ref("lotOperation.workCenterId")
+          )
+        ])
+      )
+      .groupBy("inspectionSamplingPlan.gaugeId")
+      .orderBy(
+        (eb) => eb.fn.max("inspectionSamplingPlan.gaugeRecordedAt"),
+        "desc"
+      )
+      .limit(RECENT_INSPECTION_GAUGE_LIMIT)
+      .$narrowType<{ gaugeId: NotNull }>()
+      .execute();
+
+    return { data: rows.map((row) => row.gaugeId), error: null };
+  } catch (err) {
+    return errResult(
+      err instanceof Error ? err.message : "Failed to load recent gauges"
     );
   }
 }

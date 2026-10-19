@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { posting } from "@carbon/api/postings.server";
 import {
   codeSelections,
   confirmSyncs,
@@ -142,11 +147,11 @@ async function buildBillLines(
 }
 
 /**
- * Claim only a Draft, then observe the stored outcome. The posting edge
+ * Claim only a Draft, then observe the stored outcome. The posting server
  * function owns rollback; an ambiguous response must never re-draft a posted
  * invoice or start a second invocation while the first is still Pending.
  */
-export async function postPurchaseInvoice(
+export async function postRampInvoice(
   ctx: RampSyncContext,
   invoiceRowId: string
 ): Promise<{ readableId: string } | { fail: string }> {
@@ -187,13 +192,18 @@ export async function postPurchaseInvoice(
 
   let postError: string | undefined;
   try {
-    const posted = await ctx.client.functions.invoke("post-purchase-invoice", {
-      body: {
-        invoiceId: invoiceRowId,
-        userId: "system",
-        companyId: ctx.companyId
+    const posted = await posting(
+      "post-purchase-invoice",
+      {
+        client: ctx.client,
+        db: ctx.db,
+        companyId: ctx.companyId,
+        userId: "system"
+      },
+      {
+        invoiceId: invoiceRowId
       }
-    });
+    );
     postError = posted.error?.message;
   } catch (error) {
     postError = error instanceof Error ? error.message : String(error);
@@ -408,7 +418,7 @@ async function syncBill(
           }
         : {})
     });
-    const posted = await postPurchaseInvoice(ctx, staged.invoiceRowId);
+    const posted = await postRampInvoice(ctx, staged.invoiceRowId);
     if ("fail" in posted) throw new Error(posted.fail);
     if (staged.status === "Draft") {
       await attachBillDocuments(ctx, {

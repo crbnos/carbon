@@ -1,4 +1,8 @@
-import { Badge, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { Badge, MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -20,8 +24,8 @@ import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useDateFormatter, usePermissions } from "~/hooks";
-import type { TrackedEntity } from "~/modules/inventory";
-import { trackedEntityStatus } from "~/modules/inventory";
+import { trackedEntityStatus } from "~/modules/inventory/inventory.models";
+import type { TrackedEntity } from "~/modules/inventory/types";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { Item } from "~/stores/items";
 import { useItems } from "~/stores/items";
@@ -84,6 +88,7 @@ const TrackedEntitiesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />,
 
             filter: {
@@ -106,6 +111,7 @@ const TrackedEntitiesTable = memo(
               </Badge>
             ) : null,
           meta: {
+            mobile: "P3",
             icon: <LuHash />
           }
         },
@@ -116,6 +122,7 @@ const TrackedEntitiesTable = memo(
             <span>{numberFormatter.format(row.original.quantity)}</span>
           ),
           meta: {
+            mobile: "P2",
             icon: <LuHash />,
             renderTotal: true
           }
@@ -127,6 +134,7 @@ const TrackedEntitiesTable = memo(
             <TrackedEntityStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCheck />,
             filter: {
               type: "static",
@@ -198,6 +206,9 @@ const TrackedEntitiesTable = memo(
             );
           },
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendarClock />
           }
         },
@@ -227,6 +238,7 @@ const TrackedEntitiesTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.view}
               disabled={!permissions.can("update", "inventory")}
               onClick={() => {
                 navigate(
@@ -238,6 +250,7 @@ const TrackedEntitiesTable = memo(
               <Trans>View Traceability Graph</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={
                 !permissions.can("update", "inventory") ||
                 row.status === "Consumed"
@@ -316,7 +329,7 @@ function SourceDocumentLink({
       const item = items.find((item) => item.id === data.sourceDocumentId);
       if (!item) return <Enumerable value={data.sourceDocument} />;
       return (
-        // @ts-ignore
+        // @ts-expect-error
         <Hyperlink to={getLinkToItemDetails(item.type, item.id)}>
           <Enumerable value={data.sourceDocument} />
         </Hyperlink>

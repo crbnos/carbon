@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database } from "@carbon/database";
 import type { z } from "zod";
 import type {
@@ -45,6 +49,33 @@ export type ApprovalRequestForViewCheck = {
 export type ApprovalRule = Database["public"]["Tables"]["approvalRule"]["Row"];
 
 export type ApprovalDecision = "Approved" | "Rejected";
+
+/** One document under approval; every `document.server` helper takes this. */
+export type ApprovalDocumentRef = {
+  documentType: ApprovalDocumentType;
+  documentId: string;
+  companyId: string;
+};
+
+/** Several documents of one type, for the bulk helpers. */
+export type ApprovalDocumentsRef = Omit<ApprovalDocumentRef, "documentId"> & {
+  documentIds: string[];
+};
+
+/** What a document page needs to render its approval controls. */
+export type DocumentApprovalState = {
+  pendingRequestId: string | null;
+  pendingRequestedBy: string | null;
+  /** Whether the user is an approver under the rule, pending request or not. */
+  canApprove: boolean;
+  isRequired: boolean;
+  lastDecision: {
+    status: ApprovalDecision;
+    decisionBy: string | null;
+    notes: string | null;
+    decisionAt: string | null;
+  } | null;
+};
 
 export type ApprovalStatus = Database["public"]["Enums"]["approvalStatus"];
 

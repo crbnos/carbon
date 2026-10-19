@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { Database } from "@carbon/database";
 import type {
   getApiKeys,
   getCompanies,
@@ -45,3 +50,26 @@ export type ItemSerialSequence = NonNullable<
 export type Webhook = NonNullable<
   Awaited<ReturnType<typeof getWebhooks>>["data"]
 >[number];
+
+/** An Active make method with a pulled, stocked line missing a Pull From. */
+export type MethodMissingPullFrom = {
+  makeMethodId: string;
+  itemId: string;
+  itemType: string;
+  readableId: string;
+  name: string;
+  version: number;
+  materials: string[];
+  /** The locations at least one of those materials has no Pull From at. */
+  locations: string[];
+};
+
+/** An open job whose next backflush strict backflush would refuse. */
+export type JobMissingStorageUnit = {
+  id: string;
+  jobId: string;
+  status: Database["public"]["Enums"]["jobStatus"];
+  readableId: string | null;
+  locationName: string | null;
+  materials: string[];
+};

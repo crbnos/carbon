@@ -1,6 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, storage } from "@carbon/files";
+import {
+  convertKbToString,
+  downloadUrl,
+  getDocumentType,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardAction,
@@ -14,6 +24,7 @@ import {
   File,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -27,13 +38,12 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
-import { useFetchers, useRevalidator, useSubmit } from "react-router";
+import { useFetchers, useSubmit } from "react-router";
 import { DateTime, DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useFileUpload, usePermissions, useUser } from "~/hooks";
-import type { ItemFile } from "~/modules/items";
-import type { OptimisticFileObject } from "~/modules/shared";
-import { getDocumentType } from "~/modules/shared";
+import type { ItemFile } from "~/modules/items/types";
+import type { OptimisticFileObject } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
@@ -100,16 +110,7 @@ const useSupplierInteractionLineDocuments = ({
     async (file: ItemFile) => {
       const url = path.to.file.previewFile(`private/${getPath(file)}`);
       try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });
@@ -273,7 +274,7 @@ const SupplierInteractionLineDocuments = ({
                             <DocumentPreview
                               bucket="private"
                               pathToFile={getPath(file)}
-                              // @ts-ignore
+                              // @ts-expect-error
                               type={type}
                             >
                               {file.name}
@@ -307,7 +308,10 @@ const SupplierInteractionLineDocuments = ({
                             />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => download(file)}>
+                            <DropdownMenuItem
+                              shortcut={MENU_ITEM_SHORTCUTS.download}
+                              onClick={() => download(file)}
+                            >
                               <Trans>Download</Trans>
                             </DropdownMenuItem>
                             <DropdownMenuItem

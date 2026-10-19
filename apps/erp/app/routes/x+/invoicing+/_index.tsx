@@ -1,18 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
-import type { AgingTotals, RecentPayment } from "~/modules/invoicing";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   getApAging,
   getApTieOut,
   getArAging,
   getArTieOut,
-  getPayments,
-  InvoicingDashboard
-} from "~/modules/invoicing";
-import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+  getPayments
+} from "~/modules/invoicing/invoicing.service";
+import type { AgingTotals, RecentPayment } from "~/modules/invoicing/ui";
+import { InvoicingDashboard } from "~/modules/invoicing/ui";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const meta: MetaFunction = () => {
@@ -68,20 +73,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     .toString();
   const { sorts, filters } = getGenericQueryFilters(new URLSearchParams());
 
-  // GL tie-outs only mean something when journals are being posted — skip
-  // them entirely when accounting is disabled.
+  // GL tie-outs only mean something once journals count — skip them
+  // entirely before the accounting cutover.
   const companySettings = await getCompanySettings(client, companyId);
-  const accountingEnabled =
-    (companySettings.data as { accountingEnabled?: boolean } | null)
-      ?.accountingEnabled ?? false;
+  const accountingSetUp = hasAccountingCutover(companySettings.data);
 
   const [arAging, apAging, arTieOut, apTieOut, payments] = await Promise.all([
     getArAging(client, companyId, asOfDate, { bucketDays: BUCKET_DAYS }),
     getApAging(client, companyId, asOfDate, { bucketDays: BUCKET_DAYS }),
-    accountingEnabled
+    accountingSetUp
       ? getArTieOut(client, companyId, asOfDate)
       : Promise.resolve({ data: null }),
-    accountingEnabled
+    accountingSetUp
       ? getApTieOut(client, companyId, asOfDate)
       : Promise.resolve({ data: null }),
     getPayments(client, companyId, {
@@ -100,7 +103,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     asOfDate,
     bucketDays: BUCKET_DAYS,
-    accountingEnabled,
+    accountingSetUp,
     ar: sumAging((arAging.data ?? []) as AgingRow[]),
     ap: sumAging((apAging.data ?? []) as AgingRow[]),
     arTieOut: arTieOut.data ?? null,
@@ -115,7 +118,7 @@ export default function InvoicingIndexRoute() {
     <InvoicingDashboard
       asOfDate={data.asOfDate}
       bucketDays={data.bucketDays}
-      accountingEnabled={data.accountingEnabled}
+      accountingSetUp={data.accountingSetUp}
       ar={data.ar}
       ap={data.ap}
       arTieOut={data.arTieOut}

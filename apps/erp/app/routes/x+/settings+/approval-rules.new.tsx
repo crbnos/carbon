@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -9,9 +13,10 @@ import {
 import { upsertApprovalRule } from "@carbon/ee/approvals.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
-import { ApprovalRuleForm } from "~/modules/settings";
+import { useLoaderData, useNavigate } from "react-router";
+import { ApprovalRuleForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -33,7 +38,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const documentType: ApprovalDocumentType | null =
     typeParam === "purchaseOrder" ||
     typeParam === "qualityDocument" ||
-    typeParam === "supplier"
+    typeParam === "supplier" ||
+    typeParam === "changeOrder"
       ? typeParam
       : null;
 

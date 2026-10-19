@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // import { ValidatedForm } from "@carbon/form";
 // import {
 //   Button,
@@ -14,6 +18,8 @@
 // import { useNavigate } from "react-router";
 // import { useState } from "react";
 import type { z } from "zod";
+import type { partnerValidator } from "~/modules/resources/resources.models";
+
 // import {
 //   CustomFormFields,
 //   Number,
@@ -22,8 +28,6 @@ import type { z } from "zod";
 //   SupplierLocation,
 // } from "~/components/Form";
 // import { usePermissions } from "~/hooks";
-import type { partnerValidator } from "~/modules/resources";
-
 // import { path } from "~/utils/path";
 
 type PartnerFormProps = {

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Fails when the committed manifest digest no longer matches what the service files
  * imply — i.e. somebody changed a validator or a service signature without running
@@ -19,7 +23,7 @@ import {
   formatDigestDiff,
   type ManifestDigest,
 } from "./lib/manifest-digest";
-import { buildAllToolMetadataWithValidators } from "./lib/service-metadata";
+import { buildManifest } from "./lib/service-fn-metadata";
 
 const ROOT = path.resolve(__dirname, "..");
 const DIGEST_FILE = path.join(
@@ -39,8 +43,7 @@ async function main(): Promise<void> {
     fs.readFileSync(DIGEST_FILE, "utf-8")
   ) as ManifestDigest;
 
-  const { tools, registryStats } = await buildAllToolMetadataWithValidators();
-  const fresh = buildManifestDigest(tools);
+  const fresh = buildManifestDigest(buildManifest());
 
   const diff = diffDigests(committed, fresh);
   const drifted =
@@ -50,14 +53,6 @@ async function main(): Promise<void> {
     console.log(
       `check-manifest: ok — ${fresh.totalTools} operations across ${fresh.modules} modules, digest current.`
     );
-    // A validator that silently fell back to source-text parsing publishes a lossy
-    // schema. The digest can be perfectly current and still be built that way, so
-    // report it separately rather than folding it into the pass/fail.
-    if (registryStats.moduleErrors.length > 0) {
-      console.warn(
-        `  ⚠ ${registryStats.moduleErrors.length} module(s) failed to load; their schemas came from the textual fallback.`
-      );
-    }
     return;
   }
 

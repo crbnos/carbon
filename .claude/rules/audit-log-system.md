@@ -93,14 +93,26 @@ Entity keys are **not** all bare table names — notably `salesQuote` (label "Qu
 `item`, `salesOrder`, `purchaseOrder`, `salesInvoice`, `purchaseInvoice`, `employee`, `nonConformance`, `gauge`,
 `shipment`, `receipt`, `warehouseTransfer`, `stockTransfer`, `inventoryCount` (root `inventoryCount` +
 child `inventoryCountLine`), `workCenter`, `maintenanceSchedule`,
-`maintenanceDispatch`, `pricingRule`, `priceOverride`, `priceOverrideBreak`, `fixedAsset`. (~27 entities; the
-old `quote`/`job`/`itemCost` entity keys are gone — `itemCost` is now an extension table of `item`.)
+`maintenanceDispatch`, `pricingRule`, `priceOverride`, `priceOverrideBreak`, `fixedAsset`, `accountingPeriod`,
+`rentalAgreement`, and the posting documents added for the `DocumentPage` Activity tab — `journalEntry`
+(`journal` + `journalLine`), `payment` / `memo` (each with `invoiceSettlement` as a child, keyed by
+`paymentId` / `memoId`), `reimbursement` (+ `reimbursementLine`), `pickingList` (+ `pickingListLine`),
+`depreciationRun` (+ `depreciationRunLine`), `revenueRecognitionRun` (+ `revenueRecognitionRunLine`);
+each table queues its changes through `events: true` in `packages/database/src/event-system/attachments.ts`
+(shipped by `20261006221901_posting-documents-audit-events.sql`). An audited table needs that entry.
+(~36 entities; the old `quote`/`job`/`itemCost` entity keys are gone — `itemCost` is now an extension
+table of `item`.) Every table logs INSERT, UPDATE and DELETE except an extension table's INSERT
+(created 1:1 with its parent). A child's `entityIdColumn` may be a list: the row is logged once per
+distinct non-null parent it names (`invoiceSettlement` under the payment that made it, the one a memo
+was applied through, and the prior credit it draws on). `journalLine` sets `createFields` (account
+snapshotted to number + name), so an added line shows what it is.
 
 Other config knobs:
 - `tableLabels` — friendly per-`tableName` labels for diff provenance (fallback: camelCase → Title Case).
 - `skipFields: ["updatedAt", "updatedBy", "embedding"]` — excluded from diffs (matched top-level and as nested `.suffix`).
 - `retentionDays: 30`
-- `archivePath: "audit-logs/{companyId}/{year}/{month}.jsonl.gz"` and `archiveBucket: "private"`.
+- `archivePath: "{companyId}/audit-logs/{year}/{month}.jsonl.gz"`. Archives live in the company's own
+  bucket (`getCompanyPrivateBucket(companyId)`); there is no `archiveBucket` setting.
 - `createFields` (allowlist of columns surfaced on INSERT) is declared per table.
 - `fkDisplayRegistry` — display columns per FK *target* table (e.g. `supplier: ["name"]`, `user: ["fullName"]`, ~64 targets). FK columns are discovered from the schema at runtime via the `get_foreign_key_map` RPC (reads `pg_constraint`; only FKs referencing the target's `id`; returns `targetHasCompanyId` so non-tenant targets like `user` skip the companyId filter). Any changed FK column whose target is in the registry gets its display values frozen into the diff automatically; targets missing from the registry degrade to showing the raw id. Per-column `snapshotFields` on a table config still exist as overrides and win over the registry — they're REQUIRED for columns with no FK constraint in the DB (e.g. `salesOrder.salesPersonId`, several line-level `locationId`s), which `get_foreign_key_map` cannot see. An override target's tenancy is inherited from any schema FK referencing the same table (so a `user` override is correctly unscoped).
 - `fkDisplayHops` — junction targets whose display value lives one hop away (`customerContact`/`supplierContact` → `contact.fullName`). The handler resolves these in two batched lookups (junction id → hop column → display row); hops win over the registry for the same target.
@@ -134,9 +146,11 @@ lookup per target table), and writes via `client.rpc("insert_audit_log_batch", {
 
 `auditArchiveFunction` in `packages/jobs/src/inngest/functions/scheduled/audit-archive.ts`
 (Inngest id `audit-log-archive`, cron `0 2 * * *`): per company, fetch rows older than `retentionDays`,
-gzip to JSONL, upload to the `private` bucket, record an `auditLogArchive` row, then delete the rows.
+gzip to JSONL, upload to the company's own bucket, record an `auditLogArchive` row, then delete the rows.
+`getArchiveDownloadUrl` reads the company bucket only. Archives written to the retired shared `private`
+bucket were moved there, and their `archivePath` rewritten, by `scripts/one-off/relocate-legacy-audit-archives.ts`.
 
-GOTCHA: the runtime path is `audit-logs/{companyId}/{year}/{month}/{YYYY-MM-DD}.jsonl.gz`, which does
+GOTCHA: the runtime path is `{companyId}/audit-logs/{year}/{month}/{YYYY-MM-DD}.jsonl.gz`, which does
 **not** match `auditConfig.archivePath` (`.../{month}.jsonl.gz`) — the job builds the path inline rather
 than from config.
 
@@ -150,7 +164,10 @@ than from config.
   Unknown prefixes render as plain text.
 - `.../AuditLog/AuditLogSettings.tsx` — enable/disable + archive download list.
 - `apps/erp/app/components/AuditLog/` — per-entity history `AuditLogDrawer.tsx` + `useAuditLog.tsx` hook,
-  fetching `api+/audit-log.ts` by `entityType`/`entityId`/`recordId`. `AuditLogDrawer.tsx` also exports
+  fetching `api+/audit-log.ts` by `entityType`/`entityId`/`recordId`. The body is `AuditLogFeed` (same
+  file), also rendered inline as the Activity tab of `components/DocumentPage/DocumentSidebar.tsx`. The
+  API requires `view: settings` and answers anyone else with a redirect — which a fetcher FOLLOWS — so the
+  feed never fetches without that permission and the sidebar hides the tab. `AuditLogDrawer.tsx` also exports
   `ChangeRow`, the snapshot-aware diff-row renderer (FK name from `diff[col].snapshot`, raw id on hover)
   used by BOTH the drawer and the global `AuditLogTable` expanded rows — don't render `change.old/new`
   raw or FKs regress to bare ids.
@@ -161,7 +178,7 @@ than from config.
 
 - `apps/erp/app/routes/x+/settings+/audit-logs.tsx` — settings (enable/disable, download), syncs subscriptions.
 - `apps/erp/app/routes/x+/settings+/audit-logs.details.tsx` — full-screen filtered table (`getGlobalAuditLog`).
-- `apps/erp/app/routes/api+/audit-log.ts` — entity-scoped entries endpoint.
+- `apps/erp/app/routes/api+/audit-log.ts` — entity-scoped entries endpoint (50 newest; `all=true` pages through every live entry, capped at 10,000 with `truncated: true` when the history is longer (the download warns), for the drawer's opt-in CSV Download — `useAuditLog({ downloadable, downloadName })`, built client-side by `components/AuditLog/useAuditLogDownload.ts` with the pure row builder `buildAuditLogCsvRows` in `components/AuditLog/utils.ts`; a failed `all=true` read answers 500).
 
 ## Key migrations (newest = truth)
 

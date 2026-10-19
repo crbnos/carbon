@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -50,7 +54,7 @@ vi.mock("~/modules/settings/integration-errors", () => ({
   integrationErrorSearch: (integration: string, error: string) =>
     `?integration=${integration}&error=${error}`
 }));
-vi.mock("~/modules/shared", () => ({
+vi.mock("~/modules/shared/shared.models", () => ({
   oAuthCallbackSchema: {
     safeParse(value: Record<string, unknown>) {
       return typeof value.code === "string" && typeof value.state === "string"
@@ -75,8 +79,7 @@ const credentials = {
   type: "oauth2",
   accessToken: "new-access",
   refreshToken: "new-refresh",
-  expiresAt: "2026-09-11T13:00:00.000Z",
-  environment: "production"
+  expiresAt: "2026-09-11T13:00:00.000Z"
 };
 
 async function callbackRequest(

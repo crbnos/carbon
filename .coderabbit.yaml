@@ -30,7 +30,6 @@ reviews:
     # Generated — regenerate, never hand-edit (AGENTS.md: "Never hand-edit
     # generated DB types").
     - "!packages/database/src/types.ts"
-    - "!packages/database/supabase/functions/lib/types.ts"
     - "!packages/database/src/swagger-docs-schema.ts"
     - "!packages/jobs/manifests/schema.json"
     - "!apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json"

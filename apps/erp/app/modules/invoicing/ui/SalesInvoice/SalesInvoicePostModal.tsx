@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -18,6 +22,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
@@ -32,17 +37,23 @@ import {
 } from "~/components/Form";
 import { useCompanyToday } from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
-import type { StripeCustomerResolution } from "~/modules/invoicing/stripe-customer.server";
+import type { StripeCustomerResolution } from "~/modules/invoicing/invoicing.service";
 import { path } from "~/utils/path";
 import { salesInvoicePostValidator } from "../../invoicing.models";
 import StripeCustomerPanel from "./StripeCustomerPanel";
 
+/** What the post action answers: the operation's result, or the violations. */
+export type SalesInvoicePostResult = {
+  data?: {
+    sentVia: "Email" | "Stripe" | null;
+    warning: string | null;
+  } | null;
+  error?: { message: string } | null;
+  violations?: unknown[];
+};
+
 type SalesInvoicePostModalProps = {
-  fetcher: FetcherWithComponents<{
-    success?: boolean;
-    message?: string;
-    violations?: unknown[];
-  }>;
+  fetcher: FetcherWithComponents<SalesInvoicePostResult>;
   isOpen: boolean;
   onClose: () => void;
   invoiceId: string;
@@ -76,7 +87,7 @@ const SalesInvoicePostModal = ({
   const canStripe = integrations.has("stripe-connect");
 
   // The invoice's own dateDue is a business date, so the "would this survive
-  // clampDueDate" check anchors on the company's calendar, not the browser's.
+  // stripeDueDate" check anchors on the company's calendar, not the browser's.
   const companyToday = parseDate(useCompanyToday());
   const minStripeDueDate = companyToday.add({ days: 1 });
   const maxStripeDueDate = companyToday.add({ years: 5 });
@@ -88,9 +99,9 @@ const SalesInvoicePostModal = ({
       return null;
     }
   })();
-  // Mirrors clampDueDate's server-side rule (missing, on/before today, or
+  // Mirrors stripeDueDate's server-side rule (missing, on/before today, or
   // more than 5 years out) — if the invoice's own date wouldn't survive that
-  // clamp, ask the user for one instead of silently sending with none.
+  // check, ask the user for one instead of silently sending with none.
   const needsStripeDueDate =
     !parsedDateDue ||
     parsedDateDue.compare(companyToday) <= 0 ||
@@ -119,19 +130,22 @@ const SalesInvoicePostModal = ({
     );
   }, [isStripe, contactId, invoiceId, committedEmail]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  // Errors are toasted and violations shown by the violation hook.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once per answer
   useEffect(() => {
-    if (fetcher.data?.success) {
-      if (fetcher.data?.message) toast.success(fetcher.data.message);
-      onClose();
-    } else if (
-      fetcher.data?.success === false &&
-      fetcher.data?.message &&
-      // Violations render in the shared ViolationModal; don't also toast them.
-      (fetcher.data?.violations ?? []).length === 0
-    ) {
-      toast.error(fetcher.data.message);
+    const posted = fetcher.data?.data;
+    if (!posted) return;
+    if (posted.warning) {
+      // Posted, but the PDF or the send failed: the header offers a resend.
+      toast.error(posted.warning);
+    } else {
+      toast.success(
+        posted.sentVia === "Stripe"
+          ? t`Invoice posted and sent via Stripe`
+          : t`Sales invoice confirmed`
+      );
     }
+    onClose();
   }, [fetcher.data]);
 
   const resolution = stripeCustomer.data ?? null;
@@ -205,7 +219,10 @@ const SalesInvoicePostModal = ({
                           <Td>
                             <VStack spacing={0}>
                               <span>{line.itemReadableId}</span>
-                              {line.description && (
+                              {distinctItemText(
+                                line.itemReadableId,
+                                line.description
+                              ) && (
                                 <span className="text-xs text-muted-foreground">
                                   {line.description}
                                 </span>

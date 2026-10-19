@@ -1,8 +1,12 @@
-import { assertIsPost, error } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
-import { getLogger } from "@carbon/logger";
+import { validator } from "@carbon/form";
 import {
   Button,
   Copy,
@@ -14,24 +18,21 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData, useNavigate } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
+import { useFetcher, useLoaderData, useNavigate } from "react-router";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "operators-reset-pin");
-
 /**
- * A PIN pins in as that person at any MES console, so resetting one hands over
- * their shop-floor identity. `users_update` covers console operators (PIN-only
- * accounts made for exactly this); anyone else — an admin included — also
- * needs `settings_update`, the permission that turns console mode on.
+ * The rule `users.operator.resetPin` enforces (see `resetConsoleOperatorPin`),
+ * checked here too so the modal never opens for a reset the action refuses.
  */
 async function requireResetPinPermission(request: Request, operatorId: string) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     update: "users"
   });
 
@@ -52,7 +53,7 @@ async function requireResetPinPermission(request: Request, operatorId: string) {
     await requirePermissions(request, { update: "settings" });
   }
 
-  return { companyId, userId, operator: user.data };
+  return { operator: user.data };
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -69,47 +70,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { operatorId } = params;
-  if (!operatorId) throw new Error("Operator ID is required");
-
-  const { companyId, userId } = await requireResetPinPermission(
-    request,
-    operatorId
-  );
-
-  // Generated on the server and stored only as a hash (the (employee, company)
-  // FK refuses an operator outside this company). Returned so the modal can
-  // show it once — it cannot be read back later.
-  const pin = generateConsolePin();
-  try {
-    await setEmployeePin(getDatabaseClient(), {
-      employeeId: operatorId,
-      companyId,
-      pin,
-      updatedBy: userId
-    });
-  } catch (err) {
-    logger.error("Failed to reset operator PIN", {
-      companyId,
-      operatorId,
-      error: err
-    });
-    return { success: false as const, message: "Failed to reset PIN" };
-  }
-
-  return { success: true as const, pin };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["operatorId"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.users.resetConsoleOperatorPin({
+    operatorId: input.params.operatorId
+  });
 }
 
 export default function ResetPinRoute() {
   const { operator } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<typeof action>();
-  const newPin =
-    formFetcher.data?.success === true ? formFetcher.data.pin : null;
-  const failure =
-    formFetcher.data?.success === false ? formFetcher.data.message : null;
+  const result =
+    formFetcher.data && "error" in formFetcher.data ? formFetcher.data : null;
+  const newPin = result?.data?.pin ?? null;
+  const failure = result?.error?.message ?? null;
 
   return (
     <Modal
@@ -117,7 +95,7 @@ export default function ResetPinRoute() {
       onOpenChange={(open) => {
         if (open) return;
         if (newPin) navigate(path.to.operators);
-        else navigate(-1);
+        else closeRoute();
       }}
     >
       <ModalOverlay />

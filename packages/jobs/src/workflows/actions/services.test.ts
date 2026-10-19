@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { createWorkflowCatalog, entityValue } from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -42,6 +46,7 @@ function services() {
     companyId: "co1",
     companyGroupId: "cg1",
     ownerId: "u1",
+    permissions: {},
     runId: "run1",
     workflowId: "wf1"
   });
@@ -96,7 +101,8 @@ describe("runAction routing", () => {
           client,
           companyId: "co1",
           companyGroupId: "cg1",
-          userId: "u1"
+          userId: "u1",
+          permissions: {}
         }
       })
     );

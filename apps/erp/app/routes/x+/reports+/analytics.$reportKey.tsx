@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -9,7 +13,8 @@ import { VStack } from "@carbon/react";
 import {
   computeReportPeriodBuckets,
   datetime,
-  defaultReportRange
+  defaultReportRange,
+  redirect
 } from "@carbon/utils";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -17,17 +22,20 @@ import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useFetcher, useLoaderData } from "react-router";
+import { data, useFetcher, useLoaderData } from "react-router";
 import { useUrlParams } from "~/hooks";
 import type {
   AnalyticsReportKey,
-  DimensionPivotLine,
   PivotState
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.models";
 import {
   analyticsReportKeys,
   analyticsReports,
   applyPivotDisplayParams,
+  pivotStateValidator,
+  reportViewValidator
+} from "~/modules/accounting/accounting.models";
+import {
   deleteReportView,
   getAccountsInScope,
   getActiveDimensionsWithValues,
@@ -35,10 +43,9 @@ import {
   getFiscalYearSettings,
   getReportViews,
   getScrapAccountIds,
-  pivotStateValidator,
-  reportViewValidator,
   upsertReportView
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
+import type { DimensionPivotLine } from "~/modules/accounting/types";
 import type { PivotCellCoordinates } from "~/modules/accounting/ui/Reports";
 import {
   getPeriodColumnLabel,
@@ -51,8 +58,8 @@ import {
   pivotToCsvRows,
   UNASSIGNED_COLUMN_KEY
 } from "~/modules/accounting/ui/Reports/pivotData";
-import { months } from "~/modules/shared";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { months } from "~/modules/shared/shared.models";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { revalidateIgnoringPivotDisplay } from "~/utils/revalidate";

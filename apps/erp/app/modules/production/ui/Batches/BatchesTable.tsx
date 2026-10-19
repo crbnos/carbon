@@ -1,15 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction } from "@carbon/query";
 import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Status,
   toast
 } from "@carbon/react";
 import { BATCH_STATUS_COLOR_MAP } from "@carbon/utils";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -30,9 +37,11 @@ import { DateTime, Hyperlink, ItemThumbnail, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import type { action as releaseBatchesAction } from "~/routes/x+/production+/batches.release";
 import { path } from "~/utils/path";
 import type { JobOperationBatch } from "../../types";
 import { BatchReleaseModal } from "./BatchReleaseModal";
+import { useBatchRelease } from "./useBatchRelease";
 
 type BatchesTableProps = {
   data: JobOperationBatch[];
@@ -68,54 +77,36 @@ export function BatchStatus({ status }: { status: string | null }) {
   );
 }
 
+// A function declaration on purpose: `plural()` nested in `t` inside a
+// `memo(…)` component compiles to the global i18n, which is never activated
+// (see .claude/rules/i18n-lingui-system.md).
+function useBatchCountMessages() {
+  const { t } = useLingui();
+  return useMemo(
+    () => ({
+      release: (count: number) =>
+        t`${plural(count, { one: "Release # batch", other: "Release # batches" })}`,
+      released: (count: number) =>
+        t`${plural(count, { one: "Released # batch", other: "Released # batches" })}`,
+      dissolve: (count: number) =>
+        t`${plural(count, { one: "Dissolve # batch", other: "Dissolve # batches" })}`,
+      dissolved: (count: number) =>
+        t`${plural(count, { one: "Dissolved # batch", other: "Dissolved # batches" })}`
+    }),
+    [t]
+  );
+}
+
 const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   const { t } = useLingui();
+  const countMessages = useBatchCountMessages();
   const permissions = usePermissions();
   const navigate = useNavigate();
   const canUpdate = permissions.can("update", "production");
 
   // Release (Planned → Active) / Unrelease (Active → Planned) post to the
-  // batching action; the server's refusal (no work center, production already
-  // recorded) comes back as { success: false, message } and lands in the toast.
-  const releaseFetcher = useFetcher<{
-    success?: boolean;
-    message?: string;
-  }>();
-  const wasReleasing = useRef(false);
-  useEffect(() => {
-    if (releaseFetcher.state !== "idle") {
-      wasReleasing.current = true;
-      return;
-    }
-    if (!wasReleasing.current) return;
-    wasReleasing.current = false;
-    const d = releaseFetcher.data;
-    if (d?.success === false && d.message) {
-      toast.error(d.message);
-    }
-  }, [releaseFetcher.state, releaseFetcher.data]);
-
-  const submitBatchIntent = useCallback(
-    (
-      intent: "release" | "unrelease",
-      batchId: string,
-      purchaseOrdersBySupplierId?: Record<string, string>
-    ) => {
-      releaseFetcher.submit(
-        {
-          intent,
-          batchId,
-          ...(purchaseOrdersBySupplierId && {
-            purchaseOrdersBySupplierId: JSON.stringify(
-              purchaseOrdersBySupplierId
-            )
-          })
-        },
-        { method: "post", action: path.to.priorityBatchingUpdate }
-      );
-    },
-    [releaseFetcher]
-  );
+  // batching action; a refusal lands in the toast.
+  const { submit: submitBatchIntent } = useBatchRelease();
   // The row action opens the Release dialog (member-job checks + PO choice)
   // instead of releasing straight away.
   const [releaseTarget, setReleaseTarget] = useState<{
@@ -123,12 +114,15 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
     readableId: string;
   } | null>(null);
 
-  // "Delete" is the edge fn's dissolve — offered while the batch is Planned or
+  // "Delete" is the server fn's dissolve — offered while the batch is Planned or
   // Active (a started batch must be completed; Completed batches are history).
   const renderContextMenu = useCallback(
     (row: JobOperationBatch) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.operationBatch(row.id))}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.view}
+          onClick={() => navigate(path.to.operationBatch(row.id))}
+        >
           <MenuIcon icon={<LuEye />} />
           {t`View Batch`}
         </MenuItem>
@@ -194,7 +188,9 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
       toast.error(d.message);
       return;
     }
-    if (d.dissolved) toast.success(t`Dissolved ${d.dissolved} batches`);
+    if (d.dissolved) {
+      toast.success(countMessages.dissolved(d.dissolved));
+    }
     if (d.failed?.length) {
       toast.error(
         t`Could not dissolve ${d.failed.length}: ${d.failed
@@ -202,41 +198,27 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           .join(", ")} — production already recorded`
       );
     }
-  }, [dissolveFetcher.state, dissolveFetcher.data, t]);
+  }, [dissolveFetcher.state, dissolveFetcher.data, t, countMessages]);
 
   // Bulk release for the selected rows — Planned batches only (release is the
   // Planned → Active flip; Active/Completing/Completed batches are already on or
   // off the floor). Posts the ids to the release action, which recalcs member
   // jobs, releases each, and notifies the scheduler; we toast the summary.
-  const releaseBatchesFetcher = useFetcher<{
-    success?: boolean;
-    message?: string;
-    released?: number;
-    failed?: { readableId: string; message: string }[];
-  }>();
-  const wasReleasingBatches = useRef(false);
-  useEffect(() => {
-    if (releaseBatchesFetcher.state !== "idle") {
-      wasReleasingBatches.current = true;
-      return;
+  const releaseBatchesFetcher = useAction<typeof releaseBatchesAction>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.released.length) {
+        toast.success(countMessages.released(data.released.length));
+      }
+      if (data.failed.length) {
+        toast.error(
+          t`Could not release ${data.failed.length}: ${data.failed
+            .map((f) => `${f.readableId} (${f.message})`)
+            .join(", ")}`
+        );
+      }
     }
-    if (!wasReleasingBatches.current) return;
-    wasReleasingBatches.current = false;
-    const d = releaseBatchesFetcher.data;
-    if (!d) return;
-    if (d.success === false && d.message) {
-      toast.error(d.message);
-      return;
-    }
-    if (d.released) toast.success(t`Released ${d.released} batches`);
-    if (d.failed?.length) {
-      toast.error(
-        t`Could not release ${d.failed.length}: ${d.failed
-          .map((f) => f.readableId)
-          .join(", ")}`
-      );
-    }
-  }, [releaseBatchesFetcher.state, releaseBatchesFetcher.data, t]);
+  });
 
   const renderActions = useCallback(
     (selectedRows: JobOperationBatch[]) => {
@@ -264,7 +246,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
             }
           >
             <DropdownMenuIcon icon={<LuCirclePlay />} />
-            {t`Release ${releasable.length} batches`}
+            {countMessages.release(releasable.length)}
           </DropdownMenuItem>
           <DropdownMenuItem
             destructive
@@ -281,12 +263,12 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
             }
           >
             <DropdownMenuIcon icon={<LuTrash />} />
-            {t`Dissolve ${dissolvable.length} batches`}
+            {countMessages.dissolve(dissolvable.length)}
           </DropdownMenuItem>
         </DropdownMenuContent>
       );
     },
-    [canUpdate, dissolveFetcher, releaseBatchesFetcher, t]
+    [canUpdate, dissolveFetcher, releaseBatchesFetcher, countMessages]
   );
 
   const customColumns =
@@ -300,6 +282,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           <Hyperlink to={row.original.id}>{row.original.readableId}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuLayers />
         }
       },
@@ -308,6 +291,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <BatchStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: BATCH_STATUSES.map((status) => ({
@@ -338,6 +322,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           <Enumerable value={row.original.workCenterName ?? null} />
         ),
         meta: {
+          mobile: "P3",
           icon: <LuFactory />,
           filterHeader: t`Work Center`,
           exportValue: (row: JobOperationBatch) => row.workCenterName ?? null
@@ -350,6 +335,8 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           <span className="tabular-nums">{row.original.memberCount ?? 0}</span>
         ),
         meta: {
+          mobile: "P2",
+          mobileLabel: true,
           icon: <LuUsers />
         }
       },

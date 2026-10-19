@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { flattenTree } from "~/components/TreeView";
-import type { BomItemAttributes } from "~/modules/items";
-import { getBomItemAttributes } from "~/modules/items";
-import type { JobOperation } from "~/modules/production";
-import { getJobMethodTree } from "~/modules/production";
+import type { BomItemAttributes } from "~/modules/items/items.service";
+import { getBomItemAttributes } from "~/modules/items/items.service";
+import { getJobMethodTree } from "~/modules/production/production.utils";
+import type { JobOperation } from "~/modules/production/types";
 import type { BomOperation } from "~/utils/bom";
 import {
   calculateMadePartCosts,

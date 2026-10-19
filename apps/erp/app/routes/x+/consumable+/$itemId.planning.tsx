@@ -1,20 +1,23 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
-import {
-  getItemPlanning,
-  itemPlanningValidator,
-  upsertItemPlanning
-} from "~/modules/items";
+import { itemPlanningValidator } from "~/modules/items/items.models";
+import { getItemPlanning } from "~/modules/items/items.service";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { getLocationsList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -83,44 +86,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "parts"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(itemPlanningValidator).request(args, {
+    params: ["itemId"]
   });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-  const validation = await validator(itemPlanningValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const updateConsumablePlanning = await upsertItemPlanning(client, {
-    ...validation.data,
+  if ("invalid" in input) return input.invalid;
+  const { itemId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.items.updateItemPlanning({
+    ...input.data,
     itemId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+    customFields: input.formData && setCustomFields(input.formData)
   });
-  if (updateConsumablePlanning.error) {
-    throw redirect(
-      path.to.consumable(itemId),
-      await flash(
-        request,
-        error(
-          updateConsumablePlanning.error,
-          "Failed to update consumable planning"
-        )
-      )
-    );
+  if (result.error?.category === "rule") {
+    return validationError({
+      fieldErrors: { responsibleEmployee: result.error.message }
+    });
   }
-
-  throw redirect(
-    path.to.consumablePlanningLocation(itemId, validation.data.locationId),
-    await flash(request, success("Updated consumable planning"))
+  return respond(args.request, result).redirect(
+    path.to.consumablePlanningLocation(itemId, input.data.locationId),
+    {
+      message: "Updated consumable planning",
+      onError: path.to.consumable(itemId)
+    }
   );
 }
 

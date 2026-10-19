@@ -1,4 +1,8 @@
-import { assertIsPost, safeRedirect } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import {
   Button,
@@ -8,22 +12,22 @@ import {
   CardTitle,
   cn,
   HStack,
+  PrefetchLink,
   RadioGroup,
   RadioGroupButton,
   useMode,
+  useModePreference,
   VStack
 } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
-import { themes } from "@carbon/utils";
+import { redirect, themes } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
-import { BiMoon, BiSun } from "react-icons/bi";
+import { BiLaptop, BiMoon, BiSun } from "react-icons/bi";
 import { RxCheck } from "react-icons/rx";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
-  Link,
-  redirect,
   useFetcher,
   useLoaderData,
   useNavigation,
@@ -31,8 +35,8 @@ import {
 } from "react-router";
 import { OnboardingCard, OnboardingCardContent } from "~/components";
 import { useOnboarding } from "~/hooks";
-import type { Theme as ThemeValue } from "~/modules/settings";
-import { themeValidator } from "~/modules/settings";
+import type { Theme as ThemeValue } from "~/modules/settings/settings.models";
+import { themeValidator } from "~/modules/settings/settings.models";
 import type { action as modeAction } from "~/root";
 import { getTheme, setTheme } from "~/services/theme.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
@@ -65,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { next, theme } = validation.data;
   if (!next) throw new Error("Fatal: next is required");
 
-  throw redirect(safeRedirect(next, path.to.onboarding.root), {
+  throw redirect(next || path.to.onboarding.root, {
     headers: { "Set-Cookie": setTheme(theme) }
   });
 }
@@ -75,6 +79,7 @@ export default function OnboardingTheme() {
   const { t } = useLingui();
 
   const mode = useMode();
+  const modePreference = useModePreference();
   const modeFetcher = useFetcher<typeof modeAction>();
 
   const [theme, setTheme] = useState<ThemeValue>(initialTheme as "zinc");
@@ -138,17 +143,17 @@ export default function OnboardingTheme() {
       <OnboardingCardContent>
         <VStack spacing={4}>
           <RadioGroup
-            value={mode === "dark" ? "dark" : "light"}
+            value={modePreference}
             onValueChange={onModeChange}
-            aria-label={t`Light or dark mode`}
+            aria-label={t`Appearance`}
             className="flex w-full gap-2"
           >
             <RadioGroupButton
               value="light"
-              autoFocus={mode !== "dark"}
+              autoFocus={modePreference === "light"}
               className={cn(
                 "flex-1",
-                mode == "light" && "border-2 border-primary"
+                modePreference === "light" && "border-2 border-primary"
               )}
             >
               <BiSun />
@@ -156,14 +161,25 @@ export default function OnboardingTheme() {
             </RadioGroupButton>
             <RadioGroupButton
               value="dark"
-              autoFocus={mode === "dark"}
+              autoFocus={modePreference === "dark"}
               className={cn(
                 "flex-1",
-                mode == "dark" && "border-2 border-primary"
+                modePreference === "dark" && "border-2 border-primary"
               )}
             >
               <BiMoon />
               <Trans>Dark</Trans>
+            </RadioGroupButton>
+            <RadioGroupButton
+              value="system"
+              autoFocus={modePreference === "system"}
+              className={cn(
+                "flex-1",
+                modePreference === "system" && "border-2 border-primary"
+              )}
+            >
+              <BiLaptop />
+              <Trans>System</Trans>
             </RadioGroupButton>
           </RadioGroup>
           <RadioGroup
@@ -220,9 +236,9 @@ export default function OnboardingTheme() {
               asChild
               tabIndex={-1}
             >
-              <Link to={previous} prefetch="intent">
+              <PrefetchLink to={previous}>
                 <Trans>Previous</Trans>
-              </Link>
+              </PrefetchLink>
             </Button>
           )}
 

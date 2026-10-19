@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database } from "@carbon/database";
 import {
   auditConfig,
@@ -384,18 +388,11 @@ export async function getArchiveDownloadUrl(
 
   const { archivePath } = archive as { archivePath: string };
 
-  // Generate signed URL (1 hour expiry). New archives live in the company's
-  // own private bucket (bucket id = companyId); pre-migration archives live in
-  // the legacy shared bucket (auditConfig.archiveBucket), so fall back.
-  let { data, error } = await client.storage
+  // Generate a signed URL (1 hour expiry). Archives live in the company's
+  // own private bucket (bucket id = companyId).
+  const { data, error } = await client.storage
     .from(companyId)
     .createSignedUrl(archivePath, 3600);
-
-  if (error || !data?.signedUrl) {
-    ({ data, error } = await client.storage
-      .from(auditConfig.archiveBucket)
-      .createSignedUrl(archivePath, 3600));
-  }
 
   if (error || !data?.signedUrl) {
     throw new Error(`Failed to generate download URL: ${error?.message}`);

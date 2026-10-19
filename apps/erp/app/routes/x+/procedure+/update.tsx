@@ -1,56 +1,34 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { getCompanyId, proceduresQuery } from "~/utils/react-query";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
-    update: "production"
-  });
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import type { ActionFunctionArgs } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import type { procedureStatus } from "~/modules/production/production.models";
 
-  const formData = await request.formData();
-  const ids = formData.getAll("ids");
-  const field = formData.get("field");
-  const value = formData.get("value");
+// The procedure properties panel: one field of one or more procedures.
+const updateForm = z.object({
+  ids: zfd.repeatableOfType(z.string()),
+  field: z.enum(["content", "name", "status", "processId", "tags"]),
+  value: zfd.repeatableOfType(z.string()).pipe(z.array(z.string()).min(1))
+});
 
-  if (typeof field !== "string" || typeof value !== "string") {
-    return { error: { message: "Invalid form data" }, data: null };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(updateForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { ids, field, value } = input.data;
+  const api = await carbon(args.request);
+  if (field === "tags") {
+    return api.production.setProcedureFields({ ids, tags: value });
   }
-
-  switch (field) {
-    case "content":
-    case "name":
-    case "status":
-    case "processId":
-      return await client
-        .from("procedure")
-        .update({
-          [field]: value,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .in("id", ids as string[]);
-    case "tags":
-      return await client
-        .from("procedure")
-        .update({
-          [field]: formData.getAll("value") as string[],
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .in("id", ids as string[]);
-
-    default:
-      return { error: { message: "Invalid field" }, data: null };
+  if (field === "status") {
+    return api.production.setProcedureFields({
+      ids,
+      status: value[0] as (typeof procedureStatus)[number]
+    });
   }
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    proceduresQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
+  return api.production.setProcedureFields({ ids, [field]: value[0] ?? "" });
 }

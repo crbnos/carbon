@@ -1,5 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   AIHighlight,
+  Color,
+  HighlightExtension,
   HorizontalRule,
   Placeholder,
   StarterKit,
@@ -229,6 +235,10 @@ export const defaultExtensions = [
   taskItem,
   horizontalRule,
   aiHighlight,
+  // The color menu (ColorSelector) calls setColor / setHighlight; without
+  // these two the commands do not exist and choosing a color does nothing.
+  Color,
+  HighlightExtension,
   TiptapUnderline,
   VideoEmbed,
   HTMLContent,

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -11,12 +16,14 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  ModalTitle
+  ModalTitle,
+  toast
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
-import { useEffect, useRef } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useRef } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { useFetcher, useNavigation, useParams } from "react-router";
+import { useNavigation, useParams } from "react-router";
+import type { action as voidAction } from "~/routes/x+/purchase-invoice+/$invoiceId.void";
 import { path } from "~/utils/path";
 
 const PurchaseInvoiceVoidModal = ({ onClose }: { onClose: () => void }) => {
@@ -24,15 +31,16 @@ const PurchaseInvoiceVoidModal = ({ onClose }: { onClose: () => void }) => {
   if (!invoiceId) throw new Error("invoiceId not found");
 
   const navigation = useNavigation();
-  const fetcher = useFetcher<{}>();
-  const submitted = useRef(false);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onClose();
+  const { t } = useLingui();
+  const fetcher = useAction<typeof voidAction>({
+    onSuccess: () => toast.success(t`Purchase invoice voided`),
+    onSettled: () => {
+      if (submitted.current) {
+        onClose();
+      }
     }
-  }, [fetcher.state]);
+  });
+  const submitted = useRef(false);
 
   return (
     <Modal

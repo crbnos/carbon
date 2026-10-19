@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { SelectControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -18,6 +22,7 @@ import {
   LuContainer,
   LuFile,
   LuHash,
+  LuLink,
   LuList,
   LuSquareUser,
   LuToggleLeft,
@@ -28,9 +33,10 @@ import { useParams } from "react-router";
 import type { z } from "zod";
 import { Array, Boolean, Hidden, Input, Submit, Tags } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { AttributeDataType } from "~/modules/people";
-import { customFieldValidator } from "~/modules/settings";
-import { DataType, tablesWithTags } from "~/modules/shared";
+import type { AttributeDataType } from "~/modules/people/types";
+import { customFieldValidator } from "~/modules/settings/settings.models";
+import { tablesWithTags } from "~/modules/shared/shared.models";
+import { DataType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 type CustomFieldFormProps = {
@@ -187,6 +193,8 @@ function CustomFieldDataTypeIcon({
       );
     case DataType.File:
       return <LuFile className={cn("w-4 h-4 text-indigo-600", className)} />;
+    case DataType.Link:
+      return <LuLink className={cn("w-4 h-4 text-sky-600", className)} />;
     default:
       return null;
   }

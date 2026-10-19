@@ -1,58 +1,19 @@
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "invoicing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const id = input.params.id;
+  const api = await carbon(args.request);
+  const result = await api.invoicing.voidCharge({ chargeId: id });
+  return respond(args.request, result).redirect(path.to.charge(id), {
+    message: "Charge voided"
   });
-  const { id } = params;
-  if (!id) {
-    return { success: false, message: "Missing charge id" };
-  }
-
-  const serviceRole = getCarbonServiceRole();
-  try {
-    const result = await serviceRole.functions.invoke("post-charge", {
-      body: {
-        type: "void",
-        chargeId: id,
-        userId,
-        companyId
-      }
-    });
-    if (result.error) {
-      // The edge function's own refusal ("Charge is already voided", "Cannot
-      // void a Draft charge") is the only useful thing to say here; the generic
-      // string is the last resort. Mirrors `reimbursements+/$reimbursementId.pay`.
-      const message =
-        (result.data as { message?: string } | undefined)?.message ??
-        result.error.message ??
-        "Failed to void charge";
-      throw redirect(
-        path.to.charge(id),
-        await flash(request, error(result.error, message))
-      );
-    }
-  } catch (err) {
-    // A redirect is control flow, not a failure — including the one thrown just
-    // above carrying the edge function's own message ("Charge is already
-    // voided"). Swallowing it replaced that with a generic string and handed a
-    // `Response` object to `error()` as the thing to log.
-    if (err instanceof Response) throw err;
-    throw redirect(
-      path.to.charge(id),
-      await flash(request, error(err, "Failed to void charge"))
-    );
-  }
-
-  throw redirect(
-    path.to.charge(id),
-    await flash(request, success("Charge voided"))
-  );
 }

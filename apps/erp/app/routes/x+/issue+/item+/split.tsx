@@ -1,11 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { isIssueLocked, splitIssueItemValidator } from "~/modules/quality";
-import { splitIssueItem } from "~/modules/quality/quality-disposition.server";
+import {
+  isIssueLocked,
+  splitIssueItemValidator
+} from "~/modules/quality/quality.models";
+import { splitIssueItem } from "~/modules/quality/quality.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -43,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
   if (lockedError) return lockedError;
 
-  const result = await splitIssueItem({
+  const result = await splitIssueItem(getDatabaseClient(), {
     id,
     companyId,
     userId,

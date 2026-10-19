@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../config/env", () => ({
+  AUTH_COOKIE_SUFFIX: undefined,
   CarbonEdition: "Community",
   DOMAIN: "localhost",
   SESSION_SECRET: "test-session-secret"

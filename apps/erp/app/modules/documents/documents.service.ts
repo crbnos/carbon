@@ -1,13 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { ServiceContext } from "@carbon/api/service-fn.server";
 import type { Database } from "@carbon/database";
-import { storage } from "@carbon/files";
+import {
+  getDocumentType,
+  imageTransformErrorMessage,
+  isUnsafeStoragePath,
+  storage
+} from "@carbon/files";
 import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
+import { datetime, searchFilter } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getDocumentType } from "../shared/shared.service";
 import type {
   documentLabelsValidator,
   documentSourceTypes,
@@ -24,30 +34,6 @@ export async function deleteDocument(
   id: string
 ) {
   return client.from("document").delete().eq("id", id);
-}
-
-export async function deleteDocumentFavorite(
-  client: SupabaseClient<Database>,
-  id: string,
-  userId: string
-) {
-  return client
-    .from("documentFavorite")
-    .delete()
-    .eq("documentId", id)
-    .eq("userId", userId);
-}
-
-export async function deleteDocumentLabel(
-  client: SupabaseClient<Database>,
-  id: string,
-  label: string
-) {
-  return client
-    .from("documentLabel")
-    .delete()
-    .eq("documentId", id)
-    .eq("label", label);
 }
 
 export async function getDocument(
@@ -71,15 +57,13 @@ export async function getDocuments(
   let query = client
     .from("documents")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("active", args.active);
 
   if (args?.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["name", "description"], args.search));
   }
 
   if (args?.favorite) {
@@ -97,8 +81,11 @@ export async function getDocuments(
   return query;
 }
 
-export async function getDocumentExtensions(client: SupabaseClient<Database>) {
-  return client.from("documentExtensions").select("extension");
+export async function getDocumentExtensions(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client.rpc("get_document_extensions", { company_id: companyId });
 }
 
 export async function getDocumentLabels(
@@ -106,26 +93,6 @@ export async function getDocumentLabels(
   userId: string
 ) {
   return client.from("documentLabels").select("*").eq("userId", userId);
-}
-
-export async function insertDocumentFavorite(
-  client: SupabaseClient<Database>,
-  id: string,
-  userId: string
-) {
-  return client.from("documentFavorite").insert({ documentId: id, userId });
-}
-
-export async function insertDocumentLabel(
-  client: SupabaseClient<Database>,
-  id: string,
-  label: string,
-  companyId: string,
-  userId: string
-) {
-  return client
-    .from("documentLabel")
-    .insert({ documentId: id, label, companyId, userId });
 }
 
 export async function moveDocumentToTrash(
@@ -138,7 +105,7 @@ export async function moveDocumentToTrash(
     .update({
       active: false,
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", id);
 }
@@ -153,7 +120,7 @@ export async function restoreDocument(
     .update({
       active: true,
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", id);
 }
@@ -182,22 +149,22 @@ export async function upsertDocument(
     return (
       client
         .from("document")
-        // @ts-ignore
+        // @ts-expect-error
         .insert({ ...document, type })
         .select("*")
         .single()
     );
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { extension, ...data } = document;
+  // Labels live in documentLabel, not on the document row.
+  const { extension: _extension, labels: _labels, ...data } = document;
   return client
     .from("document")
     .update(
       sanitize({
         ...data,
         type,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
     )
     .eq("id", document.id);
@@ -216,6 +183,8 @@ export async function upsertDocument(
  * bytes to JPEG at the real path. The caller's flow is unchanged: PUT to the
  * signed URL, register the returned `path`, receive a `.jpg` document row.
  * Abandoned staged uploads are swept nightly.
+ *       (packages/files/AGENTS.md): a non-browser caller mints a staged
+ *       upload URL, then insertUploadedDocument converts and lands it.
  */
 export async function createDocumentUploadUrl(
   client: SupabaseClient<Database>,
@@ -242,6 +211,8 @@ export async function createDocumentUploadUrl(
  * `document.size` column and the browser upload hooks. A path minted for a
  * HEIC name is a staged upload: the bytes are converted to JPEG and moved to
  * the real document path here, so the registered row is never HEIC.
+ *       (packages/files/AGENTS.md): a non-browser caller mints a staged
+ *       upload URL, then insertUploadedDocument converts and lands it.
  */
 export async function insertUploadedDocument(
   client: SupabaseClient<Database>,
@@ -279,7 +250,10 @@ export async function insertUploadedDocument(
       return {
         data: null,
         error: new Error(
-          "Failed to convert the staged image — is image transformation enabled on this stack? The staged upload was left in place; re-register to retry."
+          imageTransformErrorMessage(
+            converted.error,
+            "Failed to convert the staged image — is image transformation enabled on this stack? The staged upload was left in place; re-register to retry."
+          )
         )
       };
     }
@@ -363,7 +337,7 @@ export async function updateDocumentLabels(
     .eq("userId", document.userId)
     .then(() => {
       return client.from("documentLabel").insert(
-        // @ts-ignore
+        // @ts-expect-error
         document.labels.map((label) => ({
           documentId: document.documentId,
           label,
@@ -413,7 +387,7 @@ export async function insertDocumentExtraction(
         status: "failed",
         error: message,
         updatedBy: data.createdBy,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", result.data.id)
       .eq("companyId", result.data.companyId);
@@ -421,4 +395,30 @@ export async function insertDocumentExtraction(
   }
 
   return { data: result.data, error: null };
+}
+/** The model, read as the caller: a refusal unless it is the company's. */
+export async function findModel(ctx: ServiceContext, modelUploadId: string) {
+  const model = await ctx.asCaller.supabase
+    .from("modelUpload")
+    .select("id")
+    .eq("id", modelUploadId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (model.error) {
+    return ctx.error("internal", "Failed to read the model", model.error);
+  }
+  if (!model.data) return ctx.error("notFound", "Model not found");
+  return null;
+}
+
+/** A storage key the caller sent: refused unless it is a safe key in the company's folder. */
+export function refuseForeignPath(
+  ctx: ServiceContext,
+  path: string | undefined
+) {
+  if (path === undefined) return null;
+  if (path.startsWith(`${ctx.company.id}/`) && !isUnsafeStoragePath(path)) {
+    return null;
+  }
+  return ctx.error("validation", "The file must be in this company's storage");
 }

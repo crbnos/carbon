@@ -1,6 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Release checks shared by the job Release dialog and batch release, so a job
 // released as part of a batch is held to exactly the rules the job page applies.
 // Pure — no JSX/lingui — and unit-tested by apps/erp/test/job-release-logic.test.ts.
+
+import {
+  needsPullFrom,
+  summarizeList
+} from "@carbon/database/strict-backflush";
 
 export type ReleaseMaterial = {
   jobMaterialMakeMethodId: string | null;
@@ -81,4 +90,80 @@ export function resolveOperationSupplier(
     : [];
   if (candidates.length === 1) return { supplierProcess: candidates[0]! };
   return { missing: candidates.length === 0 ? "none" : "choose" };
+}
+
+// What stands between a job and release, in words. A release with no dialog to
+// settle these in (bulk job release, batch release) refuses the job and names
+// them; the job's own Release dialog is where they are fixed. A kanban scan
+// refuses the same way.
+export function jobReleaseProblems(job: {
+  manufacturingBlocked: boolean;
+  nothingToMake?: boolean;
+  makeToAssetError?: string | null;
+  missingAssemblies: { description: string }[];
+  outsideOperationsWithoutSupplier: {
+    description: string;
+    missing: "none" | "choose";
+  }[];
+  materialsWithoutStorageUnit: { description: string }[];
+}): string[] {
+  return [
+    ...(job.nothingToMake ? ["nothing to make"] : []),
+    ...(job.manufacturingBlocked ? ["manufacturing is blocked"] : []),
+    ...(job.makeToAssetError ? [job.makeToAssetError] : []),
+    ...(job.missingAssemblies.length > 0
+      ? [
+          `no operations on ${job.missingAssemblies
+            .map((m) => m.description)
+            .join(", ")}`
+        ]
+      : []),
+    // No per-operation supplier picker here: an ambiguous or missing supplier
+    // is settled on the job's own Release.
+    ...job.outsideOperationsWithoutSupplier.map((op) =>
+      op.missing === "choose"
+        ? `choose a supplier for ${op.description} on the job`
+        : `${op.description} has no supplier`
+    ),
+    ...(job.materialsWithoutStorageUnit.length > 0
+      ? [
+          `set a Pull From storage unit on ${summarizeList(
+            job.materialsWithoutStorageUnit.map((m) => m.description)
+          )}`
+        ]
+      : [])
+  ];
+}
+
+export type StorageUnitLine = {
+  id: string;
+  description: string;
+  methodType: string | null;
+  itemType: string | null;
+  storageUnitId: string | null;
+  item: {
+    itemTrackingType: string | null;
+    readableIdWithRevision: string | null;
+  } | null;
+};
+
+export function materialsWithoutStorageUnit(
+  lines: StorageUnitLine[]
+): { id: string; description: string }[] {
+  const byDescription = new Map<string, { id: string; description: string }>();
+  for (const line of lines) {
+    if (line.storageUnitId) continue;
+    if (
+      !needsPullFrom({
+        methodType: line.methodType,
+        itemType: line.itemType,
+        itemTrackingType: line.item?.itemTrackingType ?? null
+      })
+    )
+      continue;
+    const description = line.item?.readableIdWithRevision || line.description;
+    if (!byDescription.has(description))
+      byDescription.set(description, { id: line.id, description });
+  }
+  return [...byDescription.values()];
 }

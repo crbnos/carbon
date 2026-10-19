@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { JobTravelerMaterial } from "@carbon/documents/pdf";
@@ -29,17 +33,17 @@ import {
 import type { LoaderFunctionArgs } from "react-router";
 import {
   getJob,
-  getJobMethodTree,
   getJobOperationsByMethodId,
   getTrackedEntityByJobId
 } from "~/modules/production/production.service";
+import { getJobMethodTree } from "~/modules/production/production.utils";
 import {
   getCompany,
   getCompanySettings,
   getDocumentTemplate,
   resolveSections
-} from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+} from "~/modules/settings/settings.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 const logger = getLogger("erp", "job-traveler", "pdf");
 

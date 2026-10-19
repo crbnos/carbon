@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { round } from "@carbon/utils";
 import { z } from "zod";
 
@@ -379,16 +383,12 @@ export type RampSyncResult = z.infer<typeof RampSyncResultSchema>;
 // *                    Credentials                         *
 // \********************************************************/
 
-export const RampEnvironmentSchema = z.enum(["production", "sandbox"]);
-export type RampEnvironment = z.infer<typeof RampEnvironmentSchema>;
-
 export const RampCredentialsSchema = z.discriminatedUnion("type", [
   z
     .object({
       type: z.literal("client_credentials"),
       clientId: z.string(),
-      clientSecret: z.string(),
-      environment: RampEnvironmentSchema
+      clientSecret: z.string()
     })
     .passthrough(),
   z
@@ -396,8 +396,7 @@ export const RampCredentialsSchema = z.discriminatedUnion("type", [
       type: z.literal("oauth2"),
       accessToken: z.string(),
       refreshToken: z.string().optional(),
-      expiresAt: z.string().optional(),
-      environment: RampEnvironmentSchema
+      expiresAt: z.string().optional()
     })
     .passthrough()
 ]);

@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { IconButton, type JSONContent, useDebounce } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
 import { useCallback, useState } from "react";
 import { LuTrash2 } from "react-icons/lu";
 import { useFetcher } from "react-router";

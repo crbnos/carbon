@@ -1,44 +1,38 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
-import { datetime, round, toBaseAmount, toDocumentAmount } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
-import { getCurrencyByCode, getDefaultAccounts } from "~/modules/accounting";
 import {
-  computeEarlyPaymentDiscounts,
-  getOpenPurchaseInvoicesForSupplier,
-  getOpenSalesInvoicesForCustomer,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@carbon/react";
+import { datetime, redirect, toDocumentAmount } from "@carbon/utils";
+import { Trans } from "@lingui/react/macro";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
+import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
+import { paymentValidator } from "~/modules/invoicing/invoicing.models";
+import {
+  checkDepositDocument,
+  getDepositDocuments,
   getPaymentCurrencyConfiguration,
-  PaymentForm,
-  paymentValidator,
-  replaceInvoiceSettlements,
-  upsertPayment
-} from "~/modules/invoicing";
-import { getCompany, getNextSequence } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { getDatabaseClient } from "~/services/database.server";
+  getSeedableOpenInvoices,
+  getSeededDiscounts
+} from "~/modules/invoicing/invoicing.service";
+import { PaymentForm } from "~/modules/invoicing/ui";
+import { getCompany } from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-// Open invoices the apply table / seed logic can settle, keyed by id with the
-// fields needed to seed one application per invoice.
-async function getSeedableOpenInvoices(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  paymentType: "Receipt" | "Disbursement",
-  partyId: string
-) {
-  const res =
-    paymentType === "Receipt"
-      ? await getOpenSalesInvoicesForCustomer(client, companyId, partyId)
-      : await getOpenPurchaseInvoicesForSupplier(client, companyId, partyId);
-  if (res.error) throw new Error(res.error.message);
-  return res.data ?? [];
-}
 
 // Loader pre-fills the form. Query params:
 //   customerId  -> seeds counterparty + paymentType=Receipt
@@ -46,46 +40,7 @@ async function getSeedableOpenInvoices(
 //   invoiceId   -> one or more; their open balances are summed into the total
 //                  and (on submit) one application is seeded per invoice
 //   amount      -> fallback total when no invoiceId is supplied
-// Early-payment discount per invoice as of `asOfDate`, in the invoice's DOCUMENT
-// currency. It is computed from `remainingDocument` rather than `balance`
-// (which is company base) so it lines up with the payment's cash total, which
-// is a document-currency amount. Returns an all-zero map when the currency
-// can't be resolved, so a missing currency never blocks seeding.
-async function getSeededDiscounts(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  companyGroupId: string,
-  currencyCode: string,
-  asOfDate: string,
-  invoices: {
-    id?: string | null;
-    remainingDocument: number;
-    dateIssued?: string | null;
-    paymentTermId?: string | null;
-  }[]
-): Promise<Map<string, number>> {
-  const currency = await getCurrencyByCode(
-    client,
-    companyGroupId,
-    currencyCode
-  );
-  const currencyDecimals = currency.data?.decimalPlaces;
-  if (currencyDecimals == null) {
-    return new Map(invoices.map((inv) => [inv.id ?? "", 0]));
-  }
-  return computeEarlyPaymentDiscounts(client, {
-    companyId,
-    asOfDate,
-    currencyDecimals,
-    invoices: invoices.map((inv) => ({
-      id: inv.id ?? "",
-      balance: inv.remainingDocument,
-      dateIssued: inv.dateIssued ?? null,
-      paymentTermId: inv.paymentTermId ?? null
-    }))
-  });
-}
-
+//   salesOrderId / rentalAgreementId -> seeds the deposit document
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
     request,
@@ -97,15 +52,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const supplierId = url.searchParams.get("supplierId");
   const invoiceIds = url.searchParams.getAll("invoiceId");
   const amount = url.searchParams.get("amount");
+  const salesOrderId = url.searchParams.get("salesOrderId");
+  const rentalAgreementId = url.searchParams.get("rentalAgreementId");
 
   const paymentType: "Receipt" | "Disbursement" = supplierId
     ? "Disbursement"
     : "Receipt";
   const partyId = paymentType === "Receipt" ? customerId : supplierId;
 
-  const [company, defaults] = await Promise.all([
+  const [company, defaults, depositDocuments] = await Promise.all([
     getCompany(client, companyId),
-    getDefaultAccounts(client, companyId)
+    getDefaultAccounts(client, companyId),
+    getDepositDocuments(client, companyId, [salesOrderId])
   ]);
   const bankAccount = defaults.data?.bankCashAccount ?? "";
 
@@ -179,171 +137,79 @@ export async function loader({ request }: LoaderFunctionArgs) {
       totalAmount,
       bankAccount,
       reference: "",
-      memo: ""
+      memo: "",
+      salesOrderId: salesOrderId ?? "",
+      rentalAgreementId: rentalAgreementId ?? ""
     },
-    seedInvoiceIds: invoiceIds
+    seedInvoiceIds: invoiceIds,
+    depositDocuments
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, { create: "invoicing" });
-
-  const formData = await request.formData();
-  // Hidden field set by the loader so the action can seed applications without
-  // re-reading the URL.
-  const seedInvoiceIds = String(formData.get("seedInvoiceIds") ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  const validation = await validator(paymentValidator).validate(formData);
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  try {
-    await getPaymentCurrencyConfiguration(
-      client,
-      companyId,
-      validation.data.currencyCode
-    );
-  } catch (e) {
-    throw redirect(
-      path.to.paymentNew,
-      await flash(
-        request,
-        error(
-          e,
-          e instanceof Error ? e.message : "Invalid currency configuration"
-        )
-      )
-    );
-  }
-
-  let paymentId = validation.data.paymentId;
-  if (!paymentId) {
-    const next = await getNextSequence(client, "payment", companyId);
-    if (next.error || !next.data) {
-      throw redirect(
-        path.to.payments,
-        await flash(request, error(next.error, "Failed to allocate payment id"))
-      );
-    }
-    paymentId = next.data;
-  }
-
-  // The form posts a hidden `id` as "" which validates to null. The create
-  // branch must omit it so the table's xid() default generates the id.
-  const { id: _omitId, ...paymentData } = validation.data;
-
-  const insert = await upsertPayment(client, {
-    ...paymentData,
-    paymentId,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
+export async function action(args: ActionFunctionArgs) {
+  const { client, companyId } = await requirePermissions(args.request, {
+    create: "invoicing"
   });
-  if (insert.error || !insert.data) {
-    throw redirect(
-      path.to.payments,
-      await flash(request, error(insert.error, "Failed to create payment"))
-    );
-  }
-
-  // Seed one application per selected invoice for its full open balance. Each
-  // invoice's balance + rate are re-fetched server-side so the seed always
-  // reflects the current books. The user can still adjust via the apply table.
-  if (seedInvoiceIds.length > 0) {
-    const isReceipt = validation.data.paymentType === "Receipt";
-    const partyId = isReceipt
-      ? validation.data.customerId
-      : validation.data.supplierId;
-    try {
-      const open = partyId
-        ? await getSeedableOpenInvoices(
-            client,
-            companyId,
-            validation.data.paymentType,
-            partyId
-          )
-        : [];
-      const selected = open.filter(
-        (inv) =>
-          seedInvoiceIds.includes(inv.id ?? "") &&
-          inv.currencyCode === validation.data.currencyCode
-      );
-      if (selected.length > 0) {
-        // Recomputed here rather than reused from the loader: the user may have
-        // changed the payment date before submitting, which moves the discount
-        // window. `applied + discount` still settles the invoice in full.
-        const discounts = await getSeededDiscounts(
-          client,
-          companyId,
-          companyGroupId,
-          validation.data.currencyCode,
-          validation.data.paymentDate,
-          selected
-        );
-        await replaceInvoiceSettlements(getDatabaseClient(), {
-          paymentId: insert.data.id,
-          companyId,
-          createdBy: userId,
-          applications: selected.map((inv) => {
-            // The discount is a DOCUMENT amount (see getSeededDiscounts).
-            // `sourceAmount` is document principal; `appliedAmount` and
-            // `discountAmount` are company base, so the base half is converted
-            // at the invoice's own rate.
-            const discountDocument = discounts.get(inv.id ?? "") ?? 0;
-            const discountBase = discountDocument
-              ? toBaseAmount(discountDocument, Number(inv.exchangeRate))
-              : 0;
-            return {
-              targetSalesInvoiceId: isReceipt
-                ? (inv.id ?? undefined)
-                : undefined,
-              targetPurchaseInvoiceId: isReceipt
-                ? undefined
-                : (inv.id ?? undefined),
-              appliedAmount: round(Number(inv.balance ?? 0) - discountBase),
-              sourceAmount: round(inv.remainingDocument - discountDocument),
-              discountAmount: discountBase,
-              writeOffAmount: 0,
-              targetExchangeRate: Number(inv.exchangeRate),
-              sourceExchangeRate: Number(validation.data.exchangeRate),
-              appliedDate: validation.data.paymentDate
-            };
-          })
-        });
-      }
-    } catch (e) {
-      // The payment was created (a Draft with no applications is valid), but
-      // seeding failed. Send the user to the detail page to apply manually.
-      throw redirect(
-        path.to.payment(insert.data.id),
-        await flash(
-          request,
-          error(e, "Payment created, but applying it to the invoices failed")
-        )
-      );
-    }
-  }
-
-  throw redirect(
-    path.to.payment(insert.data.id),
-    await flash(request, success("Payment created"))
+  const input = await validator(paymentValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  // `createPayment` refuses the same deposit; checked here too so only that
+  // refusal lands on the "Deposit for" field, and every other one is a toast.
+  const depositError = await checkDepositDocument(
+    client,
+    companyId,
+    input.data
   );
+  if (depositError) {
+    return validationError({ fieldErrors: { depositDocument: depositError } });
+  }
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
+  const result = await api.invoicing.createPayment({
+    ...input.data,
+    customFields: setCustomFields(formData),
+    // Set by the loader, so the action can seed applications without
+    // reading the URL again.
+    seedInvoiceIds: String(formData.get("seedInvoiceIds") ?? "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean)
+  });
+  if (!result.data) {
+    return respond(args.request, result).redirect(path.to.paymentNew);
+  }
+  // The payment exists either way; a failed seed is applied by hand there.
+  const { id, warning } = result.data;
+  return respond(args.request, {
+    error: warning ? { message: warning } : null
+  }).redirect(path.to.payment(id), { message: "Payment created" });
 }
 
 export default function NewPaymentRoute() {
-  const { initialValues, seedInvoiceIds } = useLoaderData<typeof loader>();
+  const { initialValues, seedInvoiceIds, depositDocuments } =
+    useLoaderData<typeof loader>();
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <PaymentForm
-        initialValues={initialValues}
-        seedInvoiceIds={seedInvoiceIds}
-      />
-    </div>
+    <NewRecordPage>
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <Trans>New Payment</Trans>
+          </CardTitle>
+          <CardDescription>
+            <Trans>
+              Record a customer payment, supplier payment, refund, or employee
+              reimbursement. Applications to invoices, memos or reimbursements
+              are added after the payment is created.
+            </Trans>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="@container">
+          <PaymentForm
+            initialValues={initialValues}
+            seedInvoiceIds={seedInvoiceIds}
+            depositDocuments={depositDocuments}
+          />
+        </CardContent>
+      </Card>
+    </NewRecordPage>
   );
 }

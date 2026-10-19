@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   PostgrestClientOptions,
   PostgrestError,
@@ -19,6 +23,23 @@ export const activeJobStatuses = [
   "In Progress",
   "Paused"
 ] as const satisfies readonly Database["public"]["Enums"]["jobStatus"][];
+
+/**
+ * `journalLine.documentLineReference` values: which source line a posted
+ * journal line came from (`purchase-invoice:<id>`, `receipt:<id>`, …).
+ */
+export const journalReference = {
+  to: {
+    purchaseInvoice: (id: string) => `purchase-invoice:${id}`,
+    receipt: (id: string) => `receipt:${id}`,
+    salesInvoice: (id: string) => `sales-invoice:${id}`,
+    shipment: (id: string) => `shipment:${id}`,
+    job: (id: string) => `job:${id}`,
+    materialIssue: (id: string) => `material-issue:${id}`,
+    productionEvent: (id: string) => `production-event:${id}`,
+    maintenanceEvent: (id: string) => `maintenance-event:${id}`
+  }
+};
 
 /**
  * Either data-access handle a helper might receive: a Supabase client or a
@@ -56,12 +77,18 @@ export type PaginatedResult<T> =
       error: PostgrestError;
     };
 
-type PageQuery<T extends object> = PostgrestFilterBuilder<
-  PostgrestClientOptions,
-  Database["public"],
-  Record<string, unknown>,
-  T[]
->;
+/**
+ * What paging needs from a query: `.range()` resolving to a PostgREST result.
+ * Structural on purpose — naming `PostgrestFilterBuilder` here made the
+ * compiler compare an app's whole schema against it for every call, which no
+ * embed-heavy select or RPC survived ("excessively deep").
+ */
+type PageQuery<T extends object> = {
+  range(
+    from: number,
+    to: number
+  ): PromiseLike<{ data: T[] | null; error: PostgrestError | null }>;
+};
 
 /**
  * Fetches all records from a table by automatically handling pagination
@@ -69,8 +96,8 @@ type PageQuery<T extends object> = PostgrestFilterBuilder<
  *
  * Takes a FACTORY, not a query: supabase-js builders are mutable — `.range()`
  * sets `this.url.searchParams` and returns `this` — so concurrent awaits on one
- * builder would all fetch whichever range was set last. Mirrors the Deno sibling
- * `supabase/functions/lib/fetch-all.ts`.
+ * builder would all fetch whichever range was set last. `fetchAll`
+ * (`./fetch-all.ts`) is the serial, loosely typed variant.
  */
 export async function fetchAllRecords<T extends object>(
   buildQuery: () => PageQuery<T>
@@ -123,6 +150,31 @@ export async function fetchAllRecords<T extends object>(
       name: "PostgrestError"
     } as PostgrestError
   };
+}
+
+// Ids per request. `.in()` writes every id into the URL, and the gateway
+// rejects a request line it cannot buffer (HTTP 431); 100 ids is about 3 kB.
+const IN_FILTER_BATCH_SIZE = 100;
+
+/**
+ * Reads every row for an id list. Walks the ids in groups of 100, so each
+ * `.in()` fits in the request URL, and pages each group past the row cap with
+ * `fetchAllRecords`. The factory gets one group and must order its query, so
+ * the pages of a group are stable. A failed group fails the whole read: a
+ * partial list would read as "no rows" for the ids it dropped.
+ */
+export async function fetchAllByIds<T extends object>(
+  ids: readonly string[],
+  buildQuery: (batch: string[]) => PageQuery<T>
+): Promise<PaginatedResult<T>> {
+  const rows: T[] = [];
+  for (let start = 0; start < ids.length; start += IN_FILTER_BATCH_SIZE) {
+    const batch = ids.slice(start, start + IN_FILTER_BATCH_SIZE);
+    const result = await fetchAllRecords(() => buildQuery(batch));
+    if (result.error) return { data: null, count: null, error: result.error };
+    rows.push(...result.data);
+  }
+  return { data: rows, count: rows.length, error: null };
 }
 
 /**

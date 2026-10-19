@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildSalesDocumentComponents } from "../../../../core/sales-document-components";
 import { SyncFactory } from "../../../../core/sync";
@@ -46,6 +50,29 @@ describe("buildQboInvoiceLines (invoice mapping fixture)", () => {
         }
       }
     ]);
+  });
+
+  it("sends a discounted line at its NET unit price, so Qty × UnitPrice = Amount", () => {
+    const [line] = buildQboInvoiceLines(
+      lineArguments(
+        [
+          makeLine({
+            quantity: 4,
+            unitPrice: 25,
+            discountPercent: 0.2,
+            lineAmount: 80
+          })
+        ],
+        "77"
+      )
+    );
+    expect(line?.Amount).toBe(80);
+    expect(line?.SalesItemLineDetail?.Qty).toBe(4);
+    expect(line?.SalesItemLineDetail?.UnitPrice).toBe(20);
+    expect(
+      (line?.SalesItemLineDetail?.Qty ?? 0) *
+        (line?.SalesItemLineDetail?.UnitPrice ?? 0)
+    ).toBe(line?.Amount);
   });
 
   it("gives a line with no Carbon item the synthetic sales item", () => {
@@ -282,89 +309,91 @@ function setupInvoice(
 }
 afterEach(() => vi.restoreAllMocks());
 describe("QBO actual invoice component/tax preflight", () => {
-  it.each([
-    "US",
-    "GB"
-  ])("sends one native tax detail and shipping ItemRef with reciprocal FX for %s", async (country) => {
-    const test = setupInvoice({ country });
-    const payload = await test.map(fullInvoice());
-    expect(payload).toMatchObject({
-      CurrencyRef: { value: "EUR" },
-      ExchangeRate: 1.25,
-      TxnTaxDetail: { TotalTax: 10.4 }
-    });
-    expect(
-      payload.Line.map((line) => [
-        line.Amount,
-        line.SalesItemLineDetail?.ItemRef?.value
-      ])
-    ).toEqual([
-      // All three merchandise lines carry the SAME synthetic sales item —
-      // Carbon posts every merchandise line to one revenue account.
-      [80, "sales-item"],
-      [16, "sales-item"],
-      [2.4, "sales-item"],
-      [8, "shipping-item"],
-      [4, "shipping-item"]
-    ]);
-    expect(
-      payload.Line.every((line) => line.DetailType === "SalesItemLineDetail")
-    ).toBe(true);
-    expect(
-      payload.Line.reduce((sum, line) => sum + line.Amount, 0) +
-        payload.TxnTaxDetail!.TotalTax
-    ).toBeCloseTo(120.8, 8);
-    expect(
-      Qbo.InvoiceSchema.parse({ ...payload, Id: "remote", SyncToken: "1" })
-        .TxnTaxDetail?.TotalTax
-    ).toBe(10.4);
-    expect(test.ensureShippingItem).toHaveBeenCalledOnce();
-    expect(test.provider.getCompanyInfo).toHaveBeenCalledOnce();
-    expect(payload.GlobalTaxCalculation).toBe(
-      country === "US" ? undefined : "TaxExcluded"
-    );
-  });
-  it.each([
-    "missingShipping",
-    "missingTax"
-  ] as const)("refuses %s before dependencies/helpers/invoice writes", async (option) => {
-    const test = setupInvoice({ [option]: true });
-    await expect(test.map(fullInvoice())).rejects.toMatchObject({
-      failure: {
-        errorCode:
-          option === "missingTax" ? "UNMAPPED_TAX_CODES" : "UNMAPPED_ACCOUNTS",
-        warning: true
-      }
-    });
-    expect(test.ensureDependencySynced).not.toHaveBeenCalled();
-    expect(test.ensureShippingItem).not.toHaveBeenCalled();
-    expect(test.provider.createInvoice).not.toHaveBeenCalled();
-    expect(test.provider.updateInvoice).not.toHaveBeenCalled();
-  });
-  it.each([
-    "assetDisposal",
-    "missingSalesAccount"
-  ] as const)("refuses %s before the CUSTOMER is pushed to QuickBooks", async (option) => {
-    // Both of these refusals are PURE — they read the document and the local
-    // invoice only. Running them after `ensureDependencySynced("customer", …)`
-    // creates a QBO Customer in the customer's books for an invoice QBO will
-    // never receive: a counterparty they did not ask for, from a push that
-    // failed.
-    const source = fullInvoice();
-    if (option === "assetDisposal") {
-      source.lines[0]!.invoiceLineType = "Fixed Asset";
-    } else {
-      source.salesRevenueAccountId = null;
+  it.each(["US", "GB"])(
+    "sends one native tax detail and shipping ItemRef with reciprocal FX for %s",
+    async (country) => {
+      const test = setupInvoice({ country });
+      const payload = await test.map(fullInvoice());
+      expect(payload).toMatchObject({
+        CurrencyRef: { value: "EUR" },
+        ExchangeRate: 1.25,
+        TxnTaxDetail: { TotalTax: 10.4 }
+      });
+      expect(
+        payload.Line.map((line) => [
+          line.Amount,
+          line.SalesItemLineDetail?.ItemRef?.value
+        ])
+      ).toEqual([
+        // All three merchandise lines carry the SAME synthetic sales item —
+        // Carbon posts every merchandise line to one revenue account.
+        [80, "sales-item"],
+        [16, "sales-item"],
+        [2.4, "sales-item"],
+        [8, "shipping-item"],
+        [4, "shipping-item"]
+      ]);
+      expect(
+        payload.Line.every((line) => line.DetailType === "SalesItemLineDetail")
+      ).toBe(true);
+      expect(
+        payload.Line.reduce((sum, line) => sum + line.Amount, 0) +
+          payload.TxnTaxDetail!.TotalTax
+      ).toBeCloseTo(120.8, 8);
+      expect(
+        Qbo.InvoiceSchema.parse({ ...payload, Id: "remote", SyncToken: "1" })
+          .TxnTaxDetail?.TotalTax
+      ).toBe(10.4);
+      expect(test.ensureShippingItem).toHaveBeenCalledOnce();
+      expect(test.provider.getCompanyInfo).toHaveBeenCalledOnce();
+      expect(payload.GlobalTaxCalculation).toBe(
+        country === "US" ? undefined : "TaxExcluded"
+      );
     }
-    const test = setupInvoice();
+  );
+  it.each(["missingShipping", "missingTax"] as const)(
+    "refuses %s before dependencies/helpers/invoice writes",
+    async (option) => {
+      const test = setupInvoice({ [option]: true });
+      await expect(test.map(fullInvoice())).rejects.toMatchObject({
+        failure: {
+          errorCode:
+            option === "missingTax"
+              ? "UNMAPPED_TAX_CODES"
+              : "UNMAPPED_ACCOUNTS",
+          warning: true
+        }
+      });
+      expect(test.ensureDependencySynced).not.toHaveBeenCalled();
+      expect(test.ensureShippingItem).not.toHaveBeenCalled();
+      expect(test.provider.createInvoice).not.toHaveBeenCalled();
+      expect(test.provider.updateInvoice).not.toHaveBeenCalled();
+    }
+  );
+  it.each(["assetDisposal", "missingSalesAccount"] as const)(
+    "refuses %s before the CUSTOMER is pushed to QuickBooks",
+    async (option) => {
+      // Both of these refusals are PURE — they read the document and the local
+      // invoice only. Running them after `ensureDependencySynced("customer", …)`
+      // creates a QBO Customer in the customer's books for an invoice QBO will
+      // never receive: a counterparty they did not ask for, from a push that
+      // failed.
+      const source = fullInvoice();
+      if (option === "assetDisposal") {
+        source.lines[0]!.invoiceLineType = "Fixed Asset";
+      } else {
+        source.salesRevenueAccountId = null;
+      }
+      const test = setupInvoice();
 
-    await expect(test.map(source)).rejects.toMatchObject({
-      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
-    });
-    expect(test.ensureDependencySynced).not.toHaveBeenCalled();
-    expect(test.ensureSalesItem).not.toHaveBeenCalled();
-    expect(test.provider.createInvoice).not.toHaveBeenCalled();
-  });
+      await expect(test.map(source)).rejects.toMatchObject({
+        failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+      });
+      expect(test.ensureDependencySynced).not.toHaveBeenCalled();
+      expect(test.ensureSalesItem).not.toHaveBeenCalled();
+      expect(test.provider.createInvoice).not.toHaveBeenCalled();
+    }
+  );
   it("rejects a non-finite reciprocal FX rate before provisioning", async () => {
     const source = fullInvoice();
     source.exchangeRate = Number.MIN_VALUE;
@@ -397,7 +426,8 @@ function lineArguments(
 ) {
   const source = fullInvoice();
   const subtotal = lines.reduce(
-    (sum, line) => sum + line.quantity * line.unitPrice,
+    (sum, line) =>
+      sum + line.quantity * line.unitPrice * (1 - (line.discountPercent ?? 0)),
     0
   );
   const document = buildSalesDocumentComponents({

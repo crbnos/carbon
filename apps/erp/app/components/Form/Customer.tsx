@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
@@ -32,7 +36,11 @@ const Customer = (props: CustomerSelectProps) => {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(() => {
-    const all = customers.map((c) => ({ value: c.id, label: c.name }));
+    const all = customers.map((c) => ({
+      value: c.id,
+      label: <CustomerAvatar customerId={c.id} />,
+      keywords: c.name
+    }));
     return props.exclude?.length
       ? all.filter((o) => !props.exclude!.includes(o.value))
       : all;

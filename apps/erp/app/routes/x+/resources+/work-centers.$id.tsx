@@ -1,26 +1,24 @@
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
-import { notifyScheduleInputsChanged } from "~/modules/production";
-import {
-  getWorkCenter,
-  upsertWorkCenter,
-  WorkCenterForm,
-  workCenterValidator
-} from "~/modules/resources";
+import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
+import { getWorkCenterCapitalCost } from "~/modules/accounting/accounting.service";
+import { workCenterValidator } from "~/modules/resources/resources.models";
+import { getWorkCenter } from "~/modules/resources/resources.service";
+import { WorkCenterForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { getCompanyId, workCentersQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -28,7 +26,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("Invalid work center id");
 
-  const workCenter = await getWorkCenter(client, id);
+  const [workCenter, capitalCost] = await Promise.all([
+    getWorkCenter(client, id),
+    getWorkCenterCapitalCost(client, id, companyId)
+  ]);
   if (workCenter.error) {
     throw redirect(
       path.to.workCenters,
@@ -39,65 +40,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { workCenter: workCenter.data };
+  // The capital-cost panel is read-only context on the edit form: a failed
+  // read renders no panel rather than blocking the work center itself.
+  return {
+    workCenter: workCenter.data,
+    capitalCost: capitalCost.data ?? undefined
+  };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(workCenterValidator).request(args, {
+    params: ["id"]
   });
-
-  const formData = await request.formData();
-  const validation = await validator(workCenterValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...d } = validation.data;
-  if (!id) throw new Error("ID is was not found");
-
-  const updateWorkCenter = await upsertWorkCenter(client, {
-    id,
-    ...d,
-    companyId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.updateWorkCenter({
+    ...input.data,
+    id: input.params.id,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-  if (updateWorkCenter.error) {
-    throw redirect(
-      path.to.workCenters,
-      await flash(
-        request,
-        error(updateWorkCenter.error, "Failed to update work center")
-      )
-    );
-  }
-
-  await notifyScheduleInputsChanged(
-    companyId,
-    "work-center",
-    "Work center hours changed",
-    id
-  );
-
-  throw redirect(
-    path.to.workCenters,
-    await flash(request, success("Updated work center "))
-  );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    workCentersQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
+  return respond(args.request, result).redirect(path.to.workCenters, {
+    message: "Updated work center"
+  });
 }
 
 export default function WorkCenterRoute() {
-  const { workCenter } = useLoaderData<typeof loader>();
+  const { workCenter, capitalCost } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const onClose = () => navigate(path.to.workCenters);
 
@@ -124,6 +92,7 @@ export default function WorkCenterRoute() {
       key={initialValues.id}
       onClose={onClose}
       initialValues={initialValues}
+      capitalCost={capitalCost}
     />
   );
 }

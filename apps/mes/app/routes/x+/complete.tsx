@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -6,13 +10,17 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
+import { erpPosting } from "~/services/erp";
 import { nonScrapQuantityValidator } from "~/services/models";
 import {
   finishJobOperation,
   insertProductionQuantity
 } from "~/services/operations.service";
+import { checkStrictBackflush } from "~/services/quality.server";
+import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 const log = getLogger("mes");
@@ -96,6 +104,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // The page the operation was opened from; finishing returns there.
+  const origin = readOrigin(formData);
   const serviceRole = await getCarbonServiceRole();
 
   // Get current job operation and production quantities to check if operation will be finished
@@ -169,16 +179,32 @@ export async function action({ request }: ActionFunctionArgs) {
       0);
 
   if (validation.data.trackingType === "Serial") {
-    const response = await serviceRole.functions.invoke("issue", {
-      body: {
+    const response = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         type: "jobOperationSerialComplete",
         ...validation.data,
-        companyId,
-        userId
+        trackedEntityId: validation.data.trackedEntityId!
       }
-    });
+    );
 
-    const newTrackedEntityId = response.data?.newTrackedEntityId;
+    const newTrackedEntityId = response.data?.newTrackedEntityId as
+      | string
+      | undefined;
+    if (response.error) {
+      return data(
+        {},
+        await flash(request, {
+          ...error(
+            response.error,
+            response.error.message || "Failed to complete job operation"
+          ),
+          flash: "error"
+        })
+      );
+    }
+
     // Print the entity that was just completed (from form), not the new reserved one
     const completedEntityId = validation.data.trackedEntityId;
 
@@ -192,16 +218,6 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         userId
       });
-    }
-
-    if (response.error) {
-      return data(
-        {},
-        await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
-          flash: "error"
-        })
-      );
     }
 
     if (willBeFinished) {
@@ -222,7 +238,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       return redirect(
-        path.to.operations,
+        origin ?? path.to.operations,
         await flash(request, {
           ...success("Operation finished successfully"),
           flash: "success"
@@ -246,20 +262,24 @@ export async function action({ request }: ActionFunctionArgs) {
       })
     );
   } else if (validation.data.trackingType === "Batch") {
-    const response = await serviceRole.functions.invoke("issue", {
-      body: {
+    const response = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         type: "jobOperationBatchComplete",
         ...validation.data,
-        companyId,
-        userId
+        trackedEntityId: validation.data.trackedEntityId!
       }
-    });
+    );
 
     if (response.error) {
       return data(
         {},
         await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
+          ...error(
+            response.error,
+            response.error.message || "Failed to complete job operation"
+          ),
           flash: "error"
         })
       );
@@ -294,7 +314,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       return redirect(
-        path.to.operations,
+        origin ?? path.to.operations,
         await flash(request, {
           ...success("Operation finished successfully"),
           flash: "success"
@@ -302,10 +322,29 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    return redirect(`${path.to.operation(validation.data.jobOperationId)}`);
+    const operationPath = path.to.operation(validation.data.jobOperationId);
+    return redirect(withOrigin(operationPath, origin));
   } else {
     // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
     const { trackedEntityId, trackingType, ...d } = validation.data;
+
+    const check = await checkStrictBackflush({
+      jobOperationId: validation.data.jobOperationId,
+      quantity: validation.data.quantity,
+      companyId,
+      userId
+    });
+
+    if (check.error) {
+      return data(
+        {},
+        await flash(request, {
+          ...error(check.error, check.message!),
+          flash: "error"
+        })
+      );
+    }
+
     const insertProduction = await insertProductionQuantity(client, {
       ...d,
       companyId,
@@ -325,21 +364,24 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const issue = await serviceRole.functions.invoke("issue", {
-      body: {
+    const issued = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         id: validation.data.jobOperationId,
         type: "jobOperation",
-        quantity: validation.data.quantity,
-        companyId,
-        userId
+        quantity: validation.data.quantity
       }
-    });
+    );
 
-    if (issue.error) {
+    if (issued.error) {
       return data(
         {},
         await flash(request, {
-          ...error(issue.error, "Failed to issue materials"),
+          ...error(
+            issued.error,
+            `Units completed, but ${issued.error.message || "failed to issue materials"}`
+          ),
           flash: "error"
         })
       );
@@ -363,7 +405,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       return redirect(
-        path.to.operations,
+        origin ?? path.to.operations,
         await flash(request, {
           ...success("Operation finished successfully"),
           flash: "success"

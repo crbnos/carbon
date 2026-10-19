@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction } from "@carbon/query";
 import {
   Button,
   cn,
@@ -25,7 +30,6 @@ import {
   LuScale,
   LuTriangleAlert
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { Hyperlink, ItemThumbnail, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
@@ -38,7 +42,7 @@ import {
 import type {
   InventoryTieOutRow,
   InventoryValuationRow
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 
 type InventoryValuationWorkbenchProps = {
@@ -97,7 +101,8 @@ export function InventoryValuationWorkbench({
   const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
   const permissions = usePermissions();
-  const reconcileFetcher = useFetcher<object>();
+  // A refusal is toasted here; a draft journal redirects to the journals.
+  const reconcileFetcher = useAction();
   const unitOfMeasures = useUnitOfMeasure();
 
   const money = useCallback(
@@ -239,7 +244,7 @@ export function InventoryValuationWorkbench({
                     <button
                       type="button"
                       aria-label={isExpanded ? t`Collapse` : t`Expand`}
-                      className="text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground max-md:hit-area"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleExpand(r.id);
@@ -273,7 +278,9 @@ export function InventoryValuationWorkbench({
                     </Hyperlink>
                   </HStack>
                 ) : (
-                  <span className="font-semibold">{r.label}</span>
+                  <span className="font-semibold max-md:min-w-0 max-md:truncate">
+                    {r.label}
+                  </span>
                 )}
               </div>
             );
@@ -310,6 +317,7 @@ export function InventoryValuationWorkbench({
           );
         },
         meta: {
+          mobile: "P1",
           exportValue: (row: ValuationRow) =>
             row.kind === "group" ? row.label : detailLabel(row)
         }
@@ -660,6 +668,7 @@ export function InventoryValuationWorkbench({
       <div className="flex-1 w-full">
         <Table<ValuationRow>
           data={displayRows}
+          mobileLayout="table"
           columns={columns}
           count={displayRows.length}
           title={t`Inventory Valuation`}

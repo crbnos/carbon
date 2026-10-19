@@ -1,19 +1,29 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { getLogger } from "@carbon/logger";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
-import { getKanbans } from "~/modules/inventory";
+import { useLoaderData } from "react-router";
+import {
+  getKanbanProjectedQuantities,
+  getKanbans
+} from "~/modules/inventory/inventory.service";
 import KanbansTable from "~/modules/inventory/ui/Kanbans/KanbansTable";
-import { getLocationsList } from "~/modules/resources";
-import { getKanbanOutputSetting } from "~/modules/settings";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getKanbanOutputSetting } from "~/modules/settings/settings.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
+const logger = getLogger("erp", "kanbans");
 export const handle: Handle = {
   breadcrumb: msg`Kanbans`,
   to: path.to.kanbans,
@@ -82,16 +92,47 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  // One query for every armed Transfer kanban on the page. A failure only
+  // hides the Projected (To) column; the list still loads.
+  const armedKanbanIds = (kanbans.data ?? [])
+    .filter(
+      (kanban) =>
+        kanban.replenishmentSystem === "Transfer" &&
+        kanban.replenishmentLevel !== null &&
+        kanban.id
+    )
+    .map((kanban) => kanban.id!);
+
+  const projectedQuantities: Record<string, number> = {};
+  if (armedKanbanIds.length > 0) {
+    const projected = await getKanbanProjectedQuantities(
+      client,
+      companyId,
+      armedKanbanIds
+    );
+    if (projected.error) {
+      logger.error("Failed to load kanban projected quantities", {
+        companyId,
+        error: projected.error
+      });
+    } else {
+      for (const row of projected.data ?? []) {
+        projectedQuantities[row.kanbanId] = row.projectedQuantity;
+      }
+    }
+  }
+
   return {
     count: kanbans.count ?? 0,
     kanbans: kanbans.data ?? [],
     kanbanOutput: kanbanOutput.data?.kanbanOutput ?? "qrcode",
-    locationId
+    locationId,
+    projectedQuantities
   };
 }
 
 export default function KanbansRoute() {
-  const { count, kanbans, locationId, kanbanOutput } =
+  const { count, kanbans, locationId, kanbanOutput, projectedQuantities } =
     useLoaderData<typeof loader>();
 
   return (
@@ -101,8 +142,9 @@ export default function KanbansRoute() {
         count={count}
         locationId={locationId}
         kanbanOutput={kanbanOutput}
+        projectedQuantities={projectedQuantities}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

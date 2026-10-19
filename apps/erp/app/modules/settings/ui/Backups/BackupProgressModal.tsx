@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useRevalidator } from "@carbon/query";
 import {
   BarProgress,
   Button,
@@ -11,7 +16,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuCheck, LuLoaderCircle, LuTriangleAlert } from "react-icons/lu";
-import { useFetcher, useRevalidator } from "react-router";
+import { useFetcher } from "react-router";
 import { formatElapsed } from "./format";
 
 // The job reports progress as a stable phase KEY + done/total; these order the

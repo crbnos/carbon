@@ -1,7 +1,13 @@
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -24,9 +30,10 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -35,35 +42,25 @@ import {
   LuInfo,
   LuLock,
   LuLockOpen,
+  LuPlay,
   LuSkipForward,
   LuTriangleAlert,
   LuX
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { Link, useLoaderData, useNavigate } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { EmployeeAvatar } from "~/components";
-import type {
-  PeriodCloseStatus,
-  PeriodCloseTaskView
-} from "~/modules/accounting";
+import { useCurrencyFormatter } from "~/hooks";
+import type { PeriodCloseTaskView } from "~/modules/accounting/accounting.service";
 import {
-  closePeriodWithChecklist,
-  closeTaskCompleteValidator,
-  closeTaskSkipValidator,
-  completeCloseTask,
+  existingDraftRunId,
   getAccountingPeriods,
-  getPeriodCloseChecklist,
-  LOCK_PERIOD_TASK_NAME,
-  lockAccountingPeriod,
-  skipCloseTask,
-  unlockAccountingPeriod
-} from "~/modules/accounting";
+  getPeriodCloseChecklist
+} from "~/modules/accounting/accounting.service";
+import { LOCK_PERIOD_TASK_NAME } from "~/modules/accounting/accounting.utils";
+import type { PeriodCloseStatus } from "~/modules/accounting/types";
 import { PeriodCloseUnpostedDocumentsPopover } from "~/modules/accounting/ui/Periods";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
@@ -75,16 +72,22 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      view: "accounting",
+      role: "employee"
+    });
 
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");
 
   const [checklist, periods] = await Promise.all([
-    getPeriodCloseChecklist(client, companyId, periodId),
+    getPeriodCloseChecklist(client, getDatabaseClient(), {
+      companyId,
+      companyGroupId,
+      userId,
+      periodId
+    }),
     getAccountingPeriods(client, companyId)
   ]);
 
@@ -103,112 +106,68 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { checklist: checklist.data, period };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
+const closeForm = z.object({
+  intent: z.enum([
+    "completeTask",
+    "skipTask",
+    "lock",
+    "unlock",
+    "create-revenue-run",
+    "create-lease-run",
+    "create-depreciation-run",
+    "close"
+  ]),
+  taskId: z.string().optional(),
+  notes: zfd.text(z.string().optional()),
+  skippedReason: z.string().optional()
+});
+
+const RUN_OF_INTENT = {
+  "create-revenue-run": "Revenue Recognition",
+  "create-lease-run": "Lease",
+  "create-depreciation-run": "Depreciation"
+} as const;
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(closeForm).request(args, {
+    params: ["periodId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { periodId } = input.params;
+  const { intent, taskId = "", notes, skippedReason = "" } = input.data;
+  const api = await carbon(args.request);
 
-  const { periodId } = params;
-  if (!periodId) throw notFound("periodId not found");
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === "completeTask") {
-    const validation = await validator(closeTaskCompleteValidator).validate(
-      formData
-    );
-    if (validation.error) return validationError(validation.error);
-
-    const result = await completeCloseTask(client, {
-      taskId: validation.data.taskId,
-      notes: validation.data.notes,
-      companyId,
-      userId
-    });
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to complete task"))
+  switch (intent) {
+    case "completeTask":
+      return api.accounting.closeTaskComplete({ taskId, notes });
+    case "skipTask":
+      return api.accounting.closeTaskSkip({ taskId, skippedReason });
+    case "lock":
+      return api.accounting.lockPeriod({ periodId });
+    case "unlock":
+      return api.accounting.unlockPeriod({ periodId });
+    case "close": {
+      const result = await api.accounting.closePeriod({ periodId });
+      if (result.error) return result;
+      return respond(args.request, result).redirect(path.to.accountingPeriods, {
+        message: "Period closed"
+      });
+    }
+    default: {
+      const run = RUN_OF_INTENT[intent];
+      const result = await api.accounting.createRunForPeriod({ periodId, run });
+      // A Draft already holding the period opens instead, with the refusal.
+      const runId = result.data?.id ?? existingDraftRunId(result.error);
+      if (!runId) return result;
+      const isDepreciation = run === "Depreciation";
+      return respond(args.request, result).redirect(
+        isDepreciation
+          ? path.to.depreciationRun(runId)
+          : path.to.revenueRecognitionRun(runId),
+        { message: isDepreciation ? "Depreciation run created" : "Run created" }
       );
     }
-    return data({}, await flash(request, success("Task marked done")));
   }
-
-  if (intent === "skipTask") {
-    const validation = await validator(closeTaskSkipValidator).validate(
-      formData
-    );
-    if (validation.error) return validationError(validation.error);
-
-    const result = await skipCloseTask(client, {
-      taskId: validation.data.taskId,
-      skippedReason: validation.data.skippedReason,
-      companyId,
-      userId
-    });
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to skip task"))
-      );
-    }
-    return data({}, await flash(request, success("Task skipped")));
-  }
-
-  if (intent === "lock") {
-    const result = await lockAccountingPeriod(client, {
-      periodId,
-      companyId,
-      userId
-    });
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to lock period"))
-      );
-    }
-    return data({}, await flash(request, success("Period locked")));
-  }
-
-  if (intent === "unlock") {
-    const result = await unlockAccountingPeriod(client, {
-      periodId,
-      companyId,
-      userId
-    });
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to unlock period"))
-      );
-    }
-    return data({}, await flash(request, success("Period unlocked")));
-  }
-
-  if (intent === "close") {
-    const result = await closePeriodWithChecklist(client, getDatabaseClient(), {
-      companyId,
-      periodId,
-      userId
-    });
-    if (result.error) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(result.error, result.error.message ?? "Failed to close period")
-        )
-      );
-    }
-    throw redirect(
-      path.to.accountingPeriods,
-      await flash(request, success("Period closed"))
-    );
-  }
-
-  throw redirect(path.to.accountingPeriodClose(periodId));
 }
 
 const SEVERITY_COLOR = {
@@ -225,7 +184,7 @@ const STATUS_COLOR = {
 export default function AccountingPeriodCloseRoute() {
   const { checklist, period } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const closeFetcher = useFetcher<typeof action>();
+  const closeFetcher = useAction<typeof action>();
 
   const periodLabel =
     period && period.fiscalYear && period.periodNumber
@@ -289,6 +248,7 @@ export default function AccountingPeriodCloseRoute() {
                   key={task.id}
                   task={task}
                   closeStatus={period?.closeStatus}
+                  periodEnd={period?.endDate}
                 />
               ))}
             </Tbody>
@@ -314,13 +274,28 @@ export default function AccountingPeriodCloseRoute() {
 
 function PeriodCloseTaskRow({
   task,
-  closeStatus
+  closeStatus,
+  periodEnd
 }: {
   task: PeriodCloseTaskView;
   closeStatus?: PeriodCloseStatus;
+  periodEnd?: string;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if ("closeStatus" in data) {
+        toast.success(
+          data.closeStatus === "Locked" ? t`Period locked` : t`Period unlocked`
+        );
+      } else if ("status" in data) {
+        toast.success(
+          data.status === "Done" ? t`Task marked done` : t`Task skipped`
+        );
+      }
+    }
+  });
   const [skipping, setSkipping] = useState(false);
   const isBusy = fetcher.state !== "idle";
 
@@ -331,9 +306,13 @@ function PeriodCloseTaskRow({
       case "draft-journals":
         return t`Journal entries dated in this period that are still Draft must be posted, or re-dated into a later open period. Draft entries aren't part of the ledger, so their debits and credits would be missing from the close.`;
       case "draft-depreciation":
-        return t`Depreciation runs ending in this period that are still Draft should be posted so the period reflects the correct depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period.`;
+        return t`Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period.`;
       case "unmatched-ic":
         return t`Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities.`;
+      case "unposted-revenue-schedules":
+        return t`Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized.`;
+      case "unposted-lease-schedules":
+        return t`Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted.`;
       case "tb-balanced":
         return t`Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close.`;
     }
@@ -361,6 +340,24 @@ function PeriodCloseTaskRow({
     !isLockTask && task.taskType !== "Auto" && status === "Open";
   const canSkip =
     !isLockTask && task.severity !== "Blocker" && status === "Open";
+  // The two run checks offer to create the run that would clear them, unless
+  // the period already has a Draft run (recalculate that one instead).
+  const createRunIntent =
+    task.autoCheckKey === "unposted-revenue-schedules"
+      ? "create-revenue-run"
+      : task.autoCheckKey === "unposted-lease-schedules"
+        ? "create-lease-run"
+        : task.autoCheckKey === "draft-depreciation"
+          ? "create-depreciation-run"
+          : null;
+  const due = task.autoCheck?.due;
+  const canCreateRun =
+    createRunIntent !== null &&
+    status === "Open" &&
+    (due?.count ?? 0) > 0 &&
+    !(task.autoCheck?.draftRuns ?? []).some(
+      (run) => run.periodEnd === periodEnd
+    );
 
   return (
     <>
@@ -435,6 +432,47 @@ function PeriodCloseTaskRow({
                   </button>
                 </PeriodCloseUnpostedDocumentsPopover>
               )}
+            {status === "Open" && task.autoCheck?.failing && (
+              <>
+                {createRunIntent && due && (
+                  <PeriodRunDue
+                    due={due}
+                    draftRuns={task.autoCheck.draftRuns ?? []}
+                    runType={
+                      task.autoCheckKey === "draft-depreciation"
+                        ? "depreciation"
+                        : task.autoCheckKey === "unposted-lease-schedules"
+                          ? "lease"
+                          : "revenue"
+                    }
+                  />
+                )}
+                {task.autoCheckKey === "draft-depreciation" && (
+                  <Link
+                    to={path.to.depreciationRuns}
+                    className="w-fit text-xs font-normal text-primary hover:underline"
+                  >
+                    <Trans>Go to depreciation runs</Trans>
+                  </Link>
+                )}
+                {task.autoCheckKey === "unposted-lease-schedules" && (
+                  <Link
+                    to={path.to.leaseRuns}
+                    className="w-fit text-xs font-normal text-primary hover:underline"
+                  >
+                    <Trans>Go to lease runs</Trans>
+                  </Link>
+                )}
+                {task.autoCheckKey === "unposted-revenue-schedules" && (
+                  <Link
+                    to={path.to.revenueRecognitionRuns}
+                    className="w-fit text-xs font-normal text-primary hover:underline"
+                  >
+                    <Trans>Go to revenue recognition runs</Trans>
+                  </Link>
+                )}
+              </>
+            )}
           </div>
         </Td>
         <Td>{task.taskType}</Td>
@@ -477,6 +515,20 @@ function PeriodCloseTaskRow({
                   isLoading={isBusy}
                 >
                   <Trans>Unlock</Trans>
+                </Button>
+              </fetcher.Form>
+            )}
+            {canCreateRun && createRunIntent && (
+              <fetcher.Form method="post">
+                <input type="hidden" name="intent" value={createRunIntent} />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<LuPlay />}
+                  isLoading={isBusy}
+                >
+                  <Trans>Create Run</Trans>
                 </Button>
               </fetcher.Form>
             )}
@@ -553,5 +605,55 @@ function PeriodCloseTaskRow({
         </Tr>
       )}
     </>
+  );
+}
+
+/** What a run check is waiting on: what a new run would hold, and the
+ *  Draft runs to post. */
+function PeriodRunDue({
+  due,
+  draftRuns,
+  runType
+}: {
+  due: { count: number; amount: number; error: string | null };
+  draftRuns: { id: string; readableId: string; periodEnd: string }[];
+  runType: "revenue" | "lease" | "depreciation";
+}) {
+  const { t } = useLingui();
+  const currencyFormatter = useCurrencyFormatter();
+  const amount = currencyFormatter.format(due.amount);
+
+  return (
+    <div className="flex flex-col gap-0.5 text-xs font-normal">
+      {due.error && <span className="text-destructive">{due.error}</span>}
+      {due.count > 0 && (
+        <span className="text-muted-foreground">
+          {runType === "depreciation"
+            ? due.count === 1
+              ? t`1 asset to depreciate · ${amount}`
+              : t`${due.count} assets to depreciate · ${amount}`
+            : runType === "lease"
+              ? due.count === 1
+                ? t`1 entry to post · ${amount}`
+                : t`${due.count} entries to post · ${amount}`
+              : due.count === 1
+                ? t`1 entry to recognize · ${amount}`
+                : t`${due.count} entries to recognize · ${amount}`}
+        </span>
+      )}
+      {draftRuns.map((run) => (
+        <Link
+          key={run.id}
+          to={
+            runType === "depreciation"
+              ? path.to.depreciationRun(run.id)
+              : path.to.revenueRecognitionRun(run.id)
+          }
+          className="w-fit text-primary hover:underline"
+        >
+          <Trans>Post draft run {run.readableId}</Trans>
+        </Link>
+      ))}
+    </div>
   );
 }

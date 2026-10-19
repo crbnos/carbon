@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import {
   checkMaterialProperties,
@@ -10,7 +14,6 @@ import {
   resolveMaterialProperties,
   sentMaterialProperties
 } from "~/modules/items/material-properties";
-import toolMetadataJson from "../app/routes/api+/mcp+/lib/tool-metadata.json";
 
 // The properties panel's rules for material edits, which upsertMaterial,
 // updateMaterialProperties (MCP) and the panel's own route all apply.
@@ -222,31 +225,5 @@ describe("sentMaterialProperties", () => {
       dimensionId: null,
       materialFormId: "plate"
     });
-  });
-});
-
-describe("material tools over MCP", () => {
-  const tools = (
-    toolMetadataJson as unknown as {
-      tools: { name: string; injectAuth: string[]; serviceParams: string[] }[];
-    }
-  ).tools;
-  const tool = (name: string) => tools.find((t) => t.name === name);
-
-  it.each([
-    "items_upsertMaterialDimension",
-    "items_upsertMaterialFinish",
-    "items_upsertMaterialGrade",
-    "items_upsertMaterialType"
-  ])("%s stamps no audit columns its table lacks", (name) => {
-    expect(tool(name)?.injectAuth).toEqual(["companyId"]);
-  });
-
-  it("items_updateMaterialProperties is reachable with a database client", () => {
-    const update = tool("items_updateMaterialProperties");
-    expect(update?.serviceParams).toEqual(["client", "db", "material"]);
-    expect(update?.injectAuth).toEqual(
-      expect.arrayContaining(["companyId", "updatedBy"])
-    );
   });
 });

@@ -1,10 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { setChangeNoticeActionTasks } from "~/modules/items";
-import { requireEditableChangeNoticeRoute } from "~/modules/items/items.server";
+import {
+  requireEditableChangeNoticeRoute,
+  setChangeNoticeActionTasks
+} from "~/modules/items/items.service";
 
 // Reconcile a change notice's action tasks to the set chosen in the sidebar's
 // "Required Actions" multiselect (mirrors Quality's requiredActionIds field):

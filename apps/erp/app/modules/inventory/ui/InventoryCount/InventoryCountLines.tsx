@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Badge, HStack, Skeleton, Switch, toast, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
@@ -29,8 +33,8 @@ import { Enumerable } from "~/components/Enumerable";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
-import type { InventoryCountLine } from "~/modules/inventory";
-import { inventoryItemTypes } from "~/modules/inventory";
+import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
+import type { InventoryCountLine } from "~/modules/inventory/types";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -219,6 +223,7 @@ const InventoryCountLines = ({
           );
         },
         meta: {
+          mobile: "P1",
           icon: <LuPackage />,
           // Display column (no accessorKey) — without an exportValue it is
           // absent from the CSV entirely.
@@ -464,7 +469,7 @@ const InventoryCountLines = ({
           </span>
         );
       },
-      meta: { icon: <LuCalculator /> }
+      meta: { mobile: "P2", icon: <LuCalculator /> }
     });
 
     if (!hideSystem) {
@@ -672,6 +677,7 @@ const InventoryCountLines = ({
       )}
       <Table<InventoryCountLine>
         compact
+        mobileLayout="table"
         columns={columns}
         data={lines}
         count={count}

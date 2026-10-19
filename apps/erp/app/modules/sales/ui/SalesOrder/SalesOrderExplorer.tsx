@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Count,
@@ -12,18 +16,14 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
-  ShortcutKey,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure,
   useMount,
-  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
@@ -58,8 +58,8 @@ import {
   useUser
 } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { ItemType } from "~/modules/shared";
-import { itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
@@ -178,17 +178,6 @@ export default function SalesOrderExplorer() {
     deleteLineDisclosure.onClose();
   };
 
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useShortcutKeyMap([
-    {
-      shortcut: EXPLORER_SHORTCUTS.addLine,
-      action: (event: KeyboardEvent) => {
-        event.stopPropagation();
-        newButtonRef.current?.click();
-      }
-    }
-  ]);
-
   const lines = salesOrderData?.lines ?? [];
   const canReorder =
     !isDisabled && permissions.can("update", "sales") && lines.length > 1;
@@ -254,33 +243,16 @@ export default function SalesOrderExplorer() {
             />
           ) : (
             <>
-              <Tooltip>
-                <TooltipTrigger className="flex-1">
-                  <Button
-                    ref={newButtonRef}
-                    className="w-full"
-                    isDisabled={
-                      isDisabled || !permissions.can("update", "sales")
-                    }
-                    leftIcon={<LuCirclePlus />}
-                    variant="secondary"
-                    onClick={newSalesOrderLineDisclosure.onOpen}
-                  >
-                    <Trans>Add Line Item</Trans>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <HStack>
-                    <span>
-                      <Trans>New Line Item</Trans>
-                    </span>
-                    <ShortcutKey
-                      shortcut={EXPLORER_SHORTCUTS.addLine}
-                      variant="small"
-                    />
-                  </HStack>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                className="flex-1"
+                shortcut={EXPLORER_SHORTCUTS.addLine}
+                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                leftIcon={<LuCirclePlus />}
+                variant="secondary"
+                onClick={newSalesOrderLineDisclosure.onOpen}
+              >
+                <Trans>Add Line Item</Trans>
+              </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
                   aria-label="Reorder lines"
@@ -318,17 +290,19 @@ function SalesOrderLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
+  const readableId = getItemReadableId(items, line.itemId);
+  const description = distinctItemText(readableId, line.description);
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
         <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
         <VStack spacing={0} className="min-w-0">
-          <span className="font-semibold line-clamp-1">
-            {getItemReadableId(items, line.itemId)}
-          </span>
-          <span className="text-muted-foreground text-xs truncate line-clamp-1">
-            {line.description}
-          </span>
+          <span className="font-semibold line-clamp-1">{readableId}</span>
+          {description && (
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {description}
+            </span>
+          )}
         </VStack>
       </HStack>
     </ReorderableRow>
@@ -365,6 +339,14 @@ function SalesOrderLineItem({
   const isSelected =
     location.pathname === path.to.salesOrderLine(orderId, line.id!);
 
+  const secondaryText =
+    line.salesOrderLineType === "Fixed Asset"
+      ? (line as any).assetName || line.description
+      : distinctItemText(
+          getItemReadableId(items, line.itemId),
+          line.description
+        );
+
   const onLineClick = () => {
     if (location.pathname !== path.to.salesOrderLine(orderId, line.id!)) {
       navigate(path.to.salesOrderLine(orderId, line.id!));
@@ -392,11 +374,11 @@ function SalesOrderLineItem({
                 ? (line as any).assetReadableId || "Fixed Asset"
                 : getItemReadableId(items, line.itemId)}
             </span>
-            <span className="text-muted-foreground text-xs truncate line-clamp-1">
-              {line.salesOrderLineType === "Fixed Asset"
-                ? (line as any).assetName || line.description
-                : line.description}
-            </span>
+            {secondaryText && (
+              <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                {secondaryText}
+              </span>
+            )}
           </VStack>
         </HStack>
         <div className="absolute right-2">
@@ -404,7 +386,7 @@ function SalesOrderLineItem({
             <IconButton
               aria-label={disclosure.isOpen ? "Hide" : "Show"}
               className={cn(
-                "animate opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                "animate md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
                 disclosure.isOpen && "-rotate-180"
               )}
               icon={<LuChevronDown />}
@@ -419,7 +401,7 @@ function SalesOrderLineItem({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="More"
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   size="md"
                   variant="solid"
@@ -428,6 +410,7 @@ function SalesOrderLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={isDisabled || !permissions.can("update", "sales")}
                   onClick={(e) => {
@@ -441,6 +424,7 @@ function SalesOrderLineItem({
                 {/* @ts-expect-error */}
                 {itemType.includes(line?.salesOrderLineType ?? "") && (
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.view}
                     asChild
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -503,7 +487,7 @@ function RelatedItems({
       <Await resolve={salesOrderData?.relatedItems}>
         {(relatedItemsData) => {
           // Process the related items for this specific line
-          // @ts-ignore
+          // @ts-expect-error
           const relatedItems = getRelatedItems(relatedItemsData, lineId);
 
           return (

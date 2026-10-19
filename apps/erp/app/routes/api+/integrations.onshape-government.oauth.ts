@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { OnshapeGovernment } from "@carbon/ee";
 import type { LoaderFunctionArgs } from "react-router";
-import { completeOnshapeAuthorization } from "~/modules/settings/onshape-oauth.server";
+import { completeOnshapeAuthorization } from "~/modules/settings/settings.service";
 
 export const config = {
   runtime: "nodejs"

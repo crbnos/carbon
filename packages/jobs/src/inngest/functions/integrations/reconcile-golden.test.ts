@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * v5 golden decision matrix (spec Step A):
  * .ai/specs/2026-08-12-accounting-sync-reconciler-unification.md
@@ -831,50 +835,49 @@ describe("Rillet mapped void reconciliation", () => {
     ).toEqual(["nothing"]);
   });
 
-  it.each([
-    "invoice",
-    "bill",
-    "payment"
-  ] as const)("enqueues %s void after Completed creation until all native mappings are voided", (entityType) => {
-    const source = input({
-      entityType,
-      snapshot: { status: "Voided" },
-      hasUnvoidedPushMapping: true,
-      context: { ...baseContext, providerSupportsNativeVoid: true },
-      latestOperation: {
-        id: "op-post",
-        status: "Completed",
-        errorCode: null,
-        attemptCount: 1,
-        createdAt: "2026-09-09T10:00:00Z"
-      }
-    });
-    expect(kinds(computeReconcileDecision(source))).toEqual(["enqueue"]);
-    expect(
-      kinds(computeReconcileDecision({ ...source, hasLiveOperation: true }))
-    ).toEqual(["nothing"]);
-    expect(
-      kinds(
-        computeReconcileDecision({ ...source, hasUnvoidedPushMapping: false })
-      )
-    ).toEqual(["nothing"]);
-    expect(
-      kinds(
-        computeReconcileDecision({
-          ...source,
-          context: { ...source.context, providerSupportsNativeVoid: false }
-        })
-      )
-    ).toEqual(["nothing"]);
-    expect(
-      kinds(
-        computeReconcileDecision({
-          ...source,
-          latestOperation: { ...source.latestOperation!, status: "Failed" }
-        })
-      )
-    ).toEqual(["re-drive"]);
-  });
+  it.each(["invoice", "bill", "payment"] as const)(
+    "enqueues %s void after Completed creation until all native mappings are voided",
+    (entityType) => {
+      const source = input({
+        entityType,
+        snapshot: { status: "Voided" },
+        hasUnvoidedPushMapping: true,
+        context: { ...baseContext, providerSupportsNativeVoid: true },
+        latestOperation: {
+          id: "op-post",
+          status: "Completed",
+          errorCode: null,
+          attemptCount: 1,
+          createdAt: "2026-09-09T10:00:00Z"
+        }
+      });
+      expect(kinds(computeReconcileDecision(source))).toEqual(["enqueue"]);
+      expect(
+        kinds(computeReconcileDecision({ ...source, hasLiveOperation: true }))
+      ).toEqual(["nothing"]);
+      expect(
+        kinds(
+          computeReconcileDecision({ ...source, hasUnvoidedPushMapping: false })
+        )
+      ).toEqual(["nothing"]);
+      expect(
+        kinds(
+          computeReconcileDecision({
+            ...source,
+            context: { ...source.context, providerSupportsNativeVoid: false }
+          })
+        )
+      ).toEqual(["nothing"]);
+      expect(
+        kinds(
+          computeReconcileDecision({
+            ...source,
+            latestOperation: { ...source.latestOperation!, status: "Failed" }
+          })
+        )
+      ).toEqual(["re-drive"]);
+    }
+  );
 });
 
 // ── Credit memos / supplier credits ─────────────────────────────────────────

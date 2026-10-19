@@ -1,13 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  assemblyInstructionStepHiddenComponentsValidator,
-  updateAssemblyStepHiddenComponents
-} from "~/modules/production";
+import { assemblyInstructionStepHiddenComponentsValidator } from "~/modules/production/production.models";
+import { updateAssemblyStepHiddenComponents } from "~/modules/production/production.service";
 
 // Autosave target for the per-step hide controls; touches only the hidden list.
 export async function action({ request, params }: ActionFunctionArgs) {

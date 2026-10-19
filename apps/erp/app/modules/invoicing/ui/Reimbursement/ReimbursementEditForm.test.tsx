@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComponentProps, ReactNode } from "react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -26,10 +30,8 @@ vi.mock("@carbon/react", () => {
     CardContent: Box,
     CardHeader: Box,
     CardTitle: Box,
-    Heading: Box,
     HStack: Box,
     Status: Box,
-    VStack: Box,
     useMount: () => undefined,
     useRouteData: () => undefined
   };
@@ -87,7 +89,6 @@ vi.mock("~/components/DocumentLineEditor", () => ({
   DocumentLineEditor: ({ currencyCode }: { currencyCode: string }) =>
     createElement("div", { "data-lines-currency": currencyCode })
 }));
-vi.mock("~/components", () => ({ EmployeeAvatar: () => null }));
 vi.mock("@lingui/react/macro", () => ({
   Trans: ({ children }: { children: ReactNode }) => children,
   useLingui: () => ({
@@ -98,14 +99,22 @@ vi.mock("@lingui/react/macro", () => ({
       )
   })
 }));
+// The currency list is read through the query cache (`useCurrencies`).
+vi.mock("@carbon/query", () => ({
+  RefreshRate: { Never: Number.POSITIVE_INFINITY },
+  useLoaderQuery: () => ({
+    data: { data: harness.currencies },
+    isFetching: false
+  })
+}));
 vi.mock("react-router", () => ({
   Link: ({ children }: { children?: ReactNode }) =>
-    createElement("a", null, children),
-  useFetcher: () => ({ state: "idle", data: { data: harness.currencies } })
+    createElement("a", null, children)
 }));
 vi.mock("~/utils/path", () => ({
   path: {
     to: {
+      api: { currencies: "/api/accounting/currencies" },
       authenticatedRoot: "/x",
       reimbursement: (id: string) => `/x/reimbursements/${id}`
     }
@@ -142,8 +151,6 @@ function render(values: Props["initialValues"] = initialValues) {
   return renderToStaticMarkup(
     createElement(ReimbursementEditForm, {
       reimbursementId: "rmb_1",
-      displayId: "RMB000001",
-      employeeId: "emp_1",
       initialValues: values,
       initialLines: [],
       dimensions: []

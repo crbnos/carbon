@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(비활성)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -64,6 +67,10 @@ msgstr "{1} 중 {0} 완료됨"
 msgid "{0} queued"
 msgstr "{0} 대기열"
 
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} 등록됨"
+
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
 msgstr "{0} 실행 중"
@@ -86,12 +93,19 @@ msgstr "{completions}개의 통과 단위가 완료 처리될 예정입니다."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니다 — 작업 메뉴에서 해결하세요."
 
+msgid "{maxSizeMB}MB limit"
+msgstr "{maxSizeMB}MB 제한"
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 작업 지시"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} 더 보기"
+
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 안내: {0}에 계정이 erp.try.carbon.ms(으)로 이전됩니다"
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "이전 완료가 완료되지 않았습니다. 다시 시도하면 남은 단계가 재개되며 — 수량이 중복으로 계산되지 않습니다."
@@ -107,6 +121,12 @@ msgstr "로트 수락"
 
 msgid "Accept lot?"
 msgstr "로트를 수락하시겠습니까?"
+
+msgid "Account"
+msgstr "계정"
+
+msgid "Account settings"
+msgstr "계정 설정"
 
 msgid "Account Settings"
 msgstr "계정 설정"
@@ -133,8 +153,14 @@ msgstr "추가 및 출고"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
 
+msgid "Add Authenticator App"
+msgstr "인증 앱 추가"
+
 msgid "Add Inventory"
 msgstr "재고 추가"
+
+msgid "Add Passkey"
+msgstr "패스키 추가"
 
 msgid "Add Sample"
 msgstr "샘플 추가"
@@ -142,11 +168,17 @@ msgstr "샘플 추가"
 msgid "Add Spare Part"
 msgstr "예비 부품 추가"
 
+msgid "Added"
+msgstr "추가됨"
+
 msgid "All"
 msgstr "전체"
 
 msgid "All clear"
 msgstr "모두 정상"
+
+msgid "All gauges"
+msgstr "모든 계측기"
 
 msgid "All jobs"
 msgstr "모든 작업 지시"
@@ -161,11 +193,23 @@ msgstr "모두 재작업"
 msgid "All scrap"
 msgstr "모든 스크랩"
 
+msgid "All steps"
+msgstr "모든 단계"
+
 msgid "Allocate failed units"
 msgstr "실패한 단위 할당"
 
 msgid "Allocate units"
 msgstr "단위 할당"
+
+msgid "Appearance"
+msgstr "모양"
+
+msgid "Approvals"
+msgstr "승인"
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "이 패스키를 삭제하시겠습니까? 더 이상 이 패스키로 로그인할 수 없습니다."
 
 msgid "Are you sure you want to delete this step?"
 msgstr "이 단계를 삭제하시겠습니까?"
@@ -176,11 +220,11 @@ msgstr "이 근무기록을 삭제하시겠습니까? 이 작업은 되돌릴 �
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "모든 생산 이벤트를 종료하시겠습니까? 이 작업은 완료 처리 없이 모든 진행 중인 공정작업을 종료합니다."
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "이 공정작업을 완료하시겠습니까? 이 작업은 해당 공정작업의 모든 진행 중인 생산 이벤트를 종료합니다."
-
 msgid "Are you sure you want to leave this page?"
 msgstr "이 페이지를 나가시겠습니까?"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "이 공정작업을 완료로 표시하시겠습니까? 이 작업은 해당 공정작업의 모든 진행 중인 생산 이벤트를 종료합니다."
 
 msgid "Assembly steps"
 msgstr "조립 단계"
@@ -197,14 +241,39 @@ msgstr "담당자"
 msgid "Authentication Error"
 msgstr "인증 오류"
 
+msgid "Authenticator app"
+msgstr "인증 앱"
+
+msgid "Authenticator QR code"
+msgstr "인증 QR 코드"
+
 msgid "available"
 msgstr "가용"
 
 msgid "Available"
 msgstr "가용"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "아바타 옵션 {0}"
+
+msgid "Avatar style"
+msgstr "아바타 스타일"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "<0>{0}</0>의 아바타는 {1}이 만들었으며 <1>{2}</1> 라이선스로 제공됩니다."
+
+msgid "Back"
+msgstr "뒤로"
+
 msgid "Back to batch"
 msgstr "배치로 돌아가기"
+
+msgid "Background"
+msgstr "배경"
 
 msgid "Batch"
 msgstr "배치"
@@ -268,6 +337,18 @@ msgstr "Carbon 로고"
 msgid "Cards"
 msgstr "카드"
 
+msgid "Change"
+msgstr "변경"
+
+msgid "Changelog newsletter"
+msgstr "변경 로그 뉴스레터"
+
+msgid "Characteristic"
+msgstr "특성"
+
+msgid "Characteristics"
+msgstr "특성"
+
 msgid "Chat"
 msgstr "채팅"
 
@@ -277,11 +358,23 @@ msgstr "이메일을 확인하세요"
 msgid "Choose a job"
 msgstr "작업 지시 선택"
 
+msgid "Choose an option"
+msgstr "옵션을 선택하세요"
+
+msgid "Choose avatar"
+msgstr "아바타 선택"
+
+msgid "Choose how Carbon reaches you."
+msgstr "Carbon과의 소통 방식을 선택하세요."
+
 msgid "Clear"
 msgstr "지우기"
 
 msgid "Clear Filters"
 msgstr "필터 지우기"
+
+msgid "Clear gauge"
+msgstr "계측기 해제"
 
 msgid "Clear Search"
 msgstr "검색 지우기"
@@ -292,8 +385,14 @@ msgstr "스테이션 기본값 초기화"
 msgid "Clock In"
 msgstr "작업 시작"
 
+msgid "Clock out"
+msgstr "작업 종료"
+
 msgid "Clock Out"
 msgstr "작업 종료"
+
+msgid "Clocked in"
+msgstr "작업 중"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>부터 근무 중"
@@ -301,8 +400,11 @@ msgstr "<0/>부터 근무 중"
 msgid "Close"
 msgstr "닫기"
 
-msgid "Collapse features table"
-msgstr "기능 테이블 축소"
+msgid "Collapse characteristics table"
+msgstr "특성 표 축소"
+
+msgid "Collapse navigation"
+msgstr "탐색 접기"
 
 msgid "Collapse panel"
 msgstr "패널 축소"
@@ -327,11 +429,18 @@ msgstr "열: {0}"
 msgid "Columns"
 msgstr "열"
 
+msgid "Companies"
+msgstr "회사"
+
 msgid "Company"
 msgstr "회사"
 
 msgid "Complete"
 msgstr "완료"
+
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr "{0}를 완료 처리합니까?"
 
 msgid "Complete All"
 msgstr "모두 완료"
@@ -354,9 +463,6 @@ msgstr "완료 처리 중"
 msgid "Connecting"
 msgstr "연결 중"
 
-msgid "Console"
-msgstr "콘솔"
-
 msgid "Console Mode"
 msgstr "콘솔 모드"
 
@@ -369,12 +475,20 @@ msgstr "소모됨 만료됨"
 msgid "Continue"
 msgstr "계속"
 
+msgid "Copied!"
+msgstr "복사되었습니다!"
+
+msgid "Copy"
+msgstr "복사"
+
+msgid "Copy to clipboard"
+msgstr "클립보드에 복사"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "계획되지 않은 유지보수의 원가, 최근 {0}일"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0} 생성"
 
@@ -393,8 +507,8 @@ msgstr "현재 작업"
 msgid "Customer"
 msgstr "고객"
 
-msgid "Dark Mode"
-msgstr "다크 모드"
+msgid "Dark"
+msgstr "다크"
 
 msgid "Date"
 msgstr "날짜"
@@ -410,6 +524,12 @@ msgstr "기본 보관 단위"
 
 msgid "Delete"
 msgstr "삭제"
+
+msgid "Delete passkey"
+msgstr "패스키 삭제"
+
+msgid "Delete Passkey"
+msgstr "패스키 삭제"
 
 msgid "Delete Step"
 msgstr "단계 삭제"
@@ -428,6 +548,9 @@ msgstr "설명"
 
 msgid "Details"
 msgstr "상세 정보"
+
+msgid "Dismiss"
+msgstr "닫기"
 
 msgid "Dispatch not found"
 msgstr "유지보수 지시를 찾을 수 없습니다"
@@ -466,8 +589,8 @@ msgstr "초안"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "파일을 여기로 끌어다 놓거나 클릭하여 선택하세요"
 
-msgid "Drag to resize drawing and features"
-msgstr "그리기 및 기능 크기 조정하려면 드래그하세요"
+msgid "Drag to resize drawing and characteristics"
+msgstr "드래그하여 도면 및 특성 크기 조정"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -476,9 +599,9 @@ msgstr "{0} 드래그 취소됨."
 msgid "Due"
 msgstr "기한"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 msgid "Due {0}"
 msgstr "기한 {0}"
 
@@ -495,6 +618,9 @@ msgstr "오늘 예정됨?"
 msgid "Duplicate batch number"
 msgstr "중복된 배치 번호"
 
+msgid "Duplicate or copy"
+msgstr "복제 또는 복사"
+
 msgid "Duplicate serial number"
 msgstr "중복된 시리얼 번호"
 
@@ -507,11 +633,23 @@ msgstr "각 작업 지시의 산출물은 각자의 로트입니다 — 각 작�
 msgid "Edit"
 msgstr "편집"
 
+msgid "Edit Passkey"
+msgstr "패스키 편집"
+
 msgid "Elapsed"
 msgstr "경과 시간"
 
+msgid "email"
+msgstr "이메일"
+
+msgid "Email"
+msgstr "이메일"
+
 msgid "Email Address"
 msgstr "이메일 주소"
+
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "이메일 알림은 회사의 현재 요금제에 포함되지 않습니다. 활성화되면 이메일 기본 설정이 적용됩니다."
 
 msgid "Empty work centers"
 msgstr "빈 작업장"
@@ -544,8 +682,8 @@ msgstr "배치의 모든 작업 지시는 이러한 단계를 따릅니다. 모�
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "각 개는 판정을 가집니다: {passes}개 통과하고 {fails}개 불합격합니다. 로트는 각 개가 자신의 결과로 배정되면서 마감됩니다."
 
-msgid "Expand features table"
-msgstr "기능 테이블 확장"
+msgid "Expand characteristics table"
+msgstr "특성 표 확대"
 
 msgid "Expand panel"
 msgstr "패널 확대"
@@ -566,8 +704,8 @@ msgstr "먼저 만료되는 순"
 msgid "Failed"
 msgstr "실패"
 
-msgid "Failed features"
-msgstr "실패한 기능"
+msgid "Failed characteristics"
+msgstr "부적합 특성"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "재고 조정을 완료하지 못했습니다"
@@ -583,6 +721,15 @@ msgstr "진행 중인 공정작업을 불러오지 못했습니다"
 
 msgid "Failed to fetch storageUnits"
 msgstr "저장 단위를 불러오지 못했습니다"
+
+msgid "Failed to get options"
+msgstr "옵션을 불러올 수 없습니다."
+
+msgid "Failed to record gauge"
+msgstr "계측기 기록 실패"
+
+msgid "Failed to register passkey"
+msgstr "패스키 등록에 실패했습니다."
 
 msgid "Failed to save measurement"
 msgstr "측정값 저장 실패"
@@ -600,12 +747,6 @@ msgstr "파일을 업로드하지 못했습니다: {0}"
 
 msgid "Failed to upload image"
 msgstr "이미지를 업로드하지 못했습니다"
-
-msgid "Feature"
-msgstr "기능"
-
-msgid "Features"
-msgstr "기능"
 
 msgid "File size exceeds 10MB limit"
 msgstr "파일 크기가 10MB 제한을 초과했습니다"
@@ -625,13 +766,6 @@ msgstr "위치별 필터"
 msgid "Finish"
 msgstr "마감"
 
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "{0} 완료"
-
-msgid "Finish Anyways"
-msgstr "그래도 완료"
-
 msgid "Finish setting up your account"
 msgstr "계정 설정을 완료하세요"
 
@@ -642,11 +776,23 @@ msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
 msgid "First due {0}"
 msgstr "첫 번째 기한 {0}"
 
+msgid "First Name"
+msgstr "이름"
+
+msgid "Fit"
+msgstr "맞추기"
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "완료하기 전에 강조된 수량을 수정하세요."
 
 msgid "Forgot to Clock Out?"
 msgstr "작업 종료를 잊었나요?"
+
+msgid "Gauge"
+msgstr "계측기"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "특성 {characteristicLabel}에 대한 계측기: {currentGauge}"
 
 msgid "General"
 msgstr "일반"
@@ -657,8 +803,14 @@ msgstr "공정작업으로 돌아가기"
 msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
 
+msgid "Heading {level}"
+msgstr "{level} 제목"
+
 msgid "Hide description"
 msgstr "설명 숨기기"
+
+msgid "How Carbon looks in this browser."
+msgstr "이 브라우저에서 Carbon이 표시되는 방식입니다."
 
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
@@ -675,6 +827,9 @@ msgstr "아직 작업 중입니다"
 msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
+msgid "Idle"
+msgstr "유휴"
+
 msgid "Idle for"
 msgstr "유휴 상태"
 
@@ -688,8 +843,17 @@ msgstr "야드파운드법"
 msgid "in {0}"
 msgstr "{0} 후"
 
+msgid "In an open menu"
+msgstr "열린 메뉴에서"
+
 msgid "In Progress"
 msgstr "진행 중"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "앱 내 알림은 항상 전달됩니다. 이메일이나 Slack으로도 받을 주제를 선택하세요."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "앱 내 알림은 항상 전달됩니다. 이메일로도 받을 주제를 선택하세요."
 
 msgid "Inspect Item"
 msgstr "항목 검사"
@@ -702,6 +866,9 @@ msgstr "작업 지침"
 
 msgid "Insufficient quantity"
 msgstr "수량 부족"
+
+msgid "Inventory"
+msgstr "재고 관리"
 
 msgid "Inventory adjustment completed"
 msgstr "재고 조정이 완료되었습니다"
@@ -739,6 +906,9 @@ msgstr "품목"
 msgid "Item Master"
 msgstr "품목 마스터"
 
+msgid "Items"
+msgstr "품목"
+
 msgid "Job"
 msgstr "작업"
 
@@ -750,6 +920,9 @@ msgstr "작업 이동표"
 
 msgid "Jobs"
 msgstr "작업 지시"
+
+msgid "Keep navigation open"
+msgstr "탐색 열어 두기"
 
 msgid "Keep picking"
 msgstr "피킹을 계속하세요"
@@ -766,6 +939,12 @@ msgstr "노무"
 msgid "Last completed"
 msgstr "마지막 완료"
 
+msgid "Last Name"
+msgstr "성"
+
+msgid "Last used"
+msgstr "마지막 사용"
+
 msgid "Learn more"
 msgstr "자세히 알아보기"
 
@@ -775,8 +954,17 @@ msgstr "공정의 수량을 0으로 남겨두면 스킵됩니다 — 일정으�
 msgid "Leave this page"
 msgstr "이 페이지 나가기"
 
+msgid "Left to Right"
+msgstr "왼쪽에서 오른쪽으로"
+
 msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
+
+msgid "Light"
+msgstr "라이트"
+
+msgid "Light, dark, or follow your system setting."
+msgstr "밝음, 어두움 또는 시스템 설정 따르기"
 
 msgid "lines"
 msgstr "라인"
@@ -786,6 +974,9 @@ msgstr "목록 보기"
 
 msgid "Load list"
 msgstr "목록 불러오기"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "로드됨: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
@@ -841,6 +1032,9 @@ msgstr "기계"
 msgid "Machine down for maintenance now?"
 msgstr "기계가 지금 유지보수 중인가요?"
 
+msgid "Main"
+msgstr "메인"
+
 msgid "Maintenance"
 msgstr "유지보수"
 
@@ -853,11 +1047,24 @@ msgstr "유지보수 기한 초과"
 msgid "Make a replacement"
 msgstr "교체품 만들기"
 
+msgid "Manage how you sign in to Carbon."
+msgstr "Carbon 로그인 방식을 관리하세요."
+
 msgid "Manually add items to inventory"
 msgstr "재고에 품목을 수동으로 추가"
 
 msgid "Manually remove items from inventory"
 msgstr "재고에서 품목을 수동으로 제거"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "{0} 완료로 표시"
+
+msgid "Mark as Done"
+msgstr "완료로 표시"
+
+msgid "Mark as Done Anyways"
+msgstr "그래도 완료로 표시"
 
 msgid "Mark Short"
 msgstr "부족으로 표시"
@@ -880,8 +1087,14 @@ msgstr "최대 레코드 수에 도달했습니다"
 msgid "Metric"
 msgstr "미터법"
 
+msgid "Mode"
+msgstr "모드"
+
 msgid "Model"
 msgstr "모델"
+
+msgid "More"
+msgstr "더보기"
 
 msgid "More actions"
 msgstr "더 많은 작업"
@@ -962,6 +1175,9 @@ msgstr "당신에게 할당된 유지보수 지시가 없습니다"
 msgid "No files"
 msgstr "파일 없음"
 
+msgid "No gauges found."
+msgstr "계측기가 없습니다."
+
 msgid "No Impact"
 msgstr "영향 없음"
 
@@ -994,6 +1210,9 @@ msgstr "옵션이 없습니다."
 
 msgid "No options found."
 msgstr "옵션이 없습니다."
+
+msgid "No passkeys registered yet."
+msgstr "등록된 패스키가 없습니다."
 
 msgid "No picking lists assigned"
 msgstr "할당된 피킹 리스트가 없습니다"
@@ -1067,6 +1286,9 @@ msgstr "이 작업장에 예정된 작업이 없습니다"
 msgid "Nothing to scrap"
 msgstr "스크랩할 것이 없습니다"
 
+msgid "Notifications"
+msgstr "알림"
+
 msgid "OEE Impact"
 msgstr "OEE 영향"
 
@@ -1076,6 +1298,9 @@ msgstr "OEM 필요"
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "/{0}"
+
+msgid "Offline"
+msgstr "오프라인"
 
 msgid "Oldest first"
 msgstr "오래된순"
@@ -1108,8 +1333,21 @@ msgstr "이 배치에서 작업 지시 열기"
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR을 여세요"
 
+msgid "Open ERP"
+msgstr "ERP 열기"
+
 msgid "Open Jobs"
-msgstr "작업 지시 열기"
+msgstr "미결 작업 지시"
+
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+msgid "Open sub-assembly {0}: {1}"
+msgstr "하위 조립체 {0} 열기: {1}"
+
+#. placeholder {0}: formatDate( operation.operationDueDate )
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "공정 필요일: {0}"
 
 msgid "Operations"
 msgstr "공정작업"
@@ -1126,8 +1364,17 @@ msgstr "작업자 수행"
 msgid "Optional"
 msgstr "선택 사항"
 
+msgid "Options"
+msgstr "옵션"
+
 msgid "or"
 msgstr "또는"
+
+msgid "Or enter this secret manually:"
+msgstr "또는 이 비밀을 수동으로 입력하세요:"
+
+msgid "Out of calibration"
+msgstr "교정 기한 만료"
 
 msgid "Output lot"
 msgstr "출력 로트"
@@ -1156,11 +1403,29 @@ msgstr "검사 통과"
 msgid "Passed Inspection"
 msgstr "검사 통과"
 
+msgid "Passkey name"
+msgstr "패스키 이름"
+
 msgid "Passkey unlock failed"
 msgstr "패스키 잠금 해제 실패"
 
+msgid "Passkeys"
+msgstr "패스키"
+
+msgid "Passkeys are disabled"
+msgstr "패스키가 비활성화됨"
+
 msgid "Pause"
 msgstr "일시 중지"
+
+msgid "Pause timer"
+msgstr "타이머 일시 중지"
+
+msgid "Phone"
+msgstr "전화"
+
+msgid "Photo uploaded successfully"
+msgstr "사진이 성공적으로 업로드됨"
 
 msgid "Pick"
 msgstr "피킹"
@@ -1168,6 +1433,9 @@ msgstr "피킹"
 #. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "피킹 {0}"
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "스타일과 아바타를 선택하거나 새로운 것으로 섞으세요."
 
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
@@ -1196,6 +1464,9 @@ msgstr "{substitutedFrom} 대신 피킹, 작업의 품목"
 msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
 msgstr "{substitutedFrom} 대신 피킹, 작업의 품목, {substitutedAssemblies}개 조립"
 
+msgid "Pin or unpin"
+msgstr "고정 또는 고정 해제"
+
 msgid "Pin Out"
 msgstr "PIN 로그아웃"
 
@@ -1213,6 +1484,9 @@ msgstr "PM 일정 만료됨"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "어느 페이지에서나 ?를 누르세요. 필드에 입력하는 동안 단축키가 무시됩니다."
+
+msgid "Press '/' for commands"
+msgstr "'/'를 눌러 명령을 실행하세요"
 
 msgid "Prev"
 msgstr "이전"
@@ -1250,13 +1524,17 @@ msgstr "공정 파라미터"
 msgid "Processes"
 msgstr "공정"
 
+msgid "Profile"
+msgstr "프로필"
+
 msgid "Progress"
 msgstr "진행 상황"
 
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "예상. {0}"
+msgid "Purchasing"
+msgstr "구매"
+
+msgid "Quality"
+msgstr "품질"
 
 msgid "Quality Issue"
 msgstr "품질 이슈"
@@ -1273,11 +1551,17 @@ msgstr "수량은 0보다 커야 합니다"
 msgid "Queue empty"
 msgstr "대기열 비었음"
 
+msgid "Quotes"
+msgstr "견적서"
+
 msgid "Reason for rework"
 msgstr "재작업 사유"
 
 msgid "Recent"
 msgstr "최근"
+
+msgid "Recently used"
+msgstr "최근 사용"
 
 msgid "Record"
 msgstr "기록"
@@ -1299,6 +1583,9 @@ msgstr "부분 기록"
 msgid "Recorded"
 msgstr "기록됨"
 
+msgid "Registration failed"
+msgstr "등록 실패"
+
 msgid "Reject"
 msgstr "거부"
 
@@ -1311,6 +1598,9 @@ msgstr "릴리스됨"
 msgid "Remove"
 msgstr "제거"
 
+msgid "Remove authenticator app"
+msgstr "인증 앱 제거"
+
 msgid "Remove filter"
 msgstr "필터 제거"
 
@@ -1320,11 +1610,23 @@ msgstr "재고 제거"
 msgid "Remove part"
 msgstr "품목 제거"
 
+msgid "Remove two-factor authentication"
+msgstr "2단계 인증 제거"
+
+msgid "Rename"
+msgstr "이름 바꾸기"
+
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "로그인할 때 인증 앱에서 6자리 코드를 요구합니다."
+
 msgid "Required"
 msgstr "필수"
+
+msgid "Reset"
+msgstr "재설정"
 
 msgid "Result"
 msgstr "결과"
@@ -1343,6 +1645,9 @@ msgstr "재작업 수량"
 
 msgid "Running"
 msgstr "실행 중"
+
+msgid "Sales"
+msgstr "영업"
 
 msgid "Sales Order"
 msgstr "수주"
@@ -1377,6 +1682,9 @@ msgstr "시리얼 번호를 스캔하거나 검색하세요..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적 대상을 스캔하거나 선택하여 샘플 열로 추가한 다음 그리드에 결과를 기록하세요."
 
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "인증 앱(예: Google Authenticator 또는 1Password)으로 이 QR 코드를 스캔한 후 표시되는 6자리 코드를 입력하십시오."
+
 msgid "Schedule"
 msgstr "일정"
 
@@ -1410,14 +1718,26 @@ msgstr "선택한 일련번호 폐기"
 msgid "Search"
 msgstr "검색"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "{gaugeTypeName} 검색..."
+
 msgid "Search by job or item ID"
 msgstr "작업 또는 품목 ID로 검색"
+
+msgid "Search gauges..."
+msgstr "계측기 검색..."
 
 msgid "Search operators..."
 msgstr "작업자 검색..."
 
 msgid "Search..."
 msgstr "검색..."
+
+msgid "Secret copied to clipboard"
+msgstr "비밀이 클립보드에 복사됨"
+
+msgid "Security"
+msgstr "보안"
 
 msgid "Select"
 msgstr "선택"
@@ -1446,6 +1766,9 @@ msgstr "품목을 선택하세요..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "배치 {0} 선택"
+
+msgid "Select gauge"
+msgstr "계측기 선택"
 
 msgid "Select Printer"
 msgstr "프린터 선택"
@@ -1500,11 +1823,14 @@ msgstr "세션 잠김"
 msgid "Set Clock Out"
 msgstr "작업 종료 설정"
 
-msgid "Set clock-out time"
-msgstr "퇴근 시간 설정"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr "작업을 중단한 시간을 설정하거나 계속 작업 중임을 확인하세요."
 
 msgid "Set up in Carbon"
 msgstr "Carbon에서 설정하기"
+
+msgid "Set up two-factor authentication"
+msgstr "2단계 인증 설정"
 
 msgid "Set when the batch was planned."
 msgstr "배치가 계획되었을 때 설정됩니다."
@@ -1527,6 +1853,12 @@ msgstr "설명 표시"
 msgid "Show keyboard shortcuts"
 msgstr "키보드 바로가기 표시"
 
+msgid "Shuffle"
+msgstr "섞기"
+
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "매직 링크 대신 생체 인식으로 로그인하십시오. 패스키는 Face ID, Touch ID 또는 기기 PIN으로 보호됩니다."
+
 msgid "Sign in with Google"
 msgstr "Google로 로그인"
 
@@ -1548,8 +1880,14 @@ msgstr "대신 로그아웃"
 msgid "Signed in as {stationName}"
 msgstr "{stationName}(으)로 로그인됨"
 
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "로그인 시 더 이상 코드가 필요하지 않습니다. 확인하려면 인증 앱에서 현재 6자리 코드를 입력하십시오."
+
 msgid "Size"
 msgstr "사이즈"
+
+msgid "Slack"
+msgstr "Slack"
 
 msgid "Source"
 msgstr "소스"
@@ -1569,6 +1907,9 @@ msgstr "{0} 시작"
 
 msgid "Start or pause the operation"
 msgstr "공정을 시작하거나 일시 중지"
+
+msgid "Start timer"
+msgstr "타이머 시작"
 
 msgid "Station User"
 msgstr "스테이션 사용자"
@@ -1598,10 +1939,31 @@ msgstr "단계가 누락되었습니다"
 msgid "Storage Unit"
 msgstr "보관 단위"
 
+msgid "Style default"
+msgstr "기본 스타일"
+
+msgid "Sub-Assembly"
+msgstr "하위 조립체"
+
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+#. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
+msgid "Sub-Assembly {0} · {1}"
+msgstr "하위 조립체 {0} · {1}"
+
+#. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
+#. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
+msgid "Sub-Assembly {0} · {1} — shown on its own"
+msgstr "하위 조립체 {0} · {1} — 단독으로 표시됨"
+
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
 
 msgid "Suggestion"
+msgstr "제안"
+
+msgid "Suggestions"
 msgstr "제안"
 
 msgid "Support Required"
@@ -1610,8 +1972,17 @@ msgstr "지원 필요"
 msgid "Switch Operator"
 msgstr "작업자 전환"
 
+msgid "Synced"
+msgstr "동기화됨"
+
+msgid "System"
+msgstr "시스템"
+
 msgid "Tag"
 msgstr "태그"
+
+msgid "The accent color used across Carbon."
+msgstr "Carbon 전체에서 사용되는 강조 색상입니다."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
@@ -1632,6 +2003,9 @@ msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 �
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "타이머와 완료는 모든 {0} 작업 지시에 공유됩니다. 여기의 단계, 자재 및 파일은 이 작업 지시의 것입니다."
 
+msgid "Theme color"
+msgstr "테마 색상"
+
 msgid "then"
 msgstr "그 다음"
 
@@ -1647,8 +2021,14 @@ msgstr "이 항목들은 아직 선택할 재료가 있습니다. 지금 완료�
 msgid "This batch has no work instructions."
 msgstr "이 배치는 작업 표준서가 없습니다."
 
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "이 정보는 모든 사용자에게 표시되므로 공유 내용을 주의하십시오."
+
 msgid "This lot is expired and can't be picked."
 msgstr "로트가 만료되었으며 피킹할 수 없습니다."
+
+msgid "This marks the dispatch as completed."
+msgstr "이것은 유지보수 지시를 완료로 표시합니다."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "이 부품은 주문 제작되었습니다. 이를 스크랩하면 라우팅을 다시 열어서 대체 부품을 만들 수 있습니다."
@@ -1684,11 +2064,29 @@ msgstr "실행할"
 msgid "Today"
 msgstr "오늘"
 
+msgid "Toggle labor"
+msgstr "노무 전환"
+
+msgid "Toggle machine"
+msgstr "기계 전환"
+
+msgid "Toggle setup"
+msgstr "셋업 전환"
+
 msgid "Toggle the sidebar"
 msgstr "사이드바 전환"
 
 msgid "Tools"
 msgstr "공구"
+
+msgid "Top to Bottom"
+msgstr "위에서 아래로"
+
+msgid "Topic"
+msgstr "주제"
+
+msgid "Topics"
+msgstr "주제"
 
 msgid "Total"
 msgstr "총계"
@@ -1713,8 +2111,20 @@ msgstr "추적된 라인"
 msgid "Tracking"
 msgstr "추적"
 
+msgid "Training"
+msgstr "교육"
+
 msgid "Two-factor authentication"
 msgstr "2단계 인증"
+
+msgid "Two-factor authentication disabled"
+msgstr "2단계 인증 비활성화됨"
+
+msgid "Two-factor authentication enabled"
+msgstr "2단계 인증 활성화됨"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "2단계 인증이 활성화되지 않았습니다."
 
 msgid "Two-factor authentication required"
 msgstr "2단계 인증 필수"
@@ -1730,6 +2140,9 @@ msgstr "출고되지 않은 일련번호/배치 자재"
 
 msgid "Unknown"
 msgstr "알 수 없음"
+
+msgid "Unknown gauge"
+msgstr "알 수 없는 계측기"
 
 msgid "Unlock"
 msgstr "잠금 해제"
@@ -1767,13 +2180,23 @@ msgstr "업데이트"
 msgid "Updated {0}"
 msgstr "업데이트됨 {0}"
 
+msgid "Updated avatar"
+msgstr ""
+
 msgid "Updated successfully"
 msgstr "성공적으로 업데이트되었습니다"
+
+msgid "Upload"
+msgstr "업로드"
+
+msgid "Upload completed but no file path returned"
+msgstr "업로드가 완료되었지만 파일 경로가 반환되지 않았습니다."
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "업로드됨: {0}"
 
+#. placeholder {0}: avatarFile.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "{0} 업로드 중"
@@ -1784,14 +2207,25 @@ msgstr "다른 계정 사용"
 msgid "Used automatically at completion"
 msgstr "완료 시 자동으로 사용됨"
 
+#. placeholder {0}: subAssemblyNumber(headerId)
+#. placeholder {1}: subAssemblyTitle(headerId)
+msgid "Uses {0} · {1}"
+msgstr "사용 {0} · {1}"
+
 msgid "Value"
 msgstr "값"
+
+msgid "Verification failed"
+msgstr "검증 실패"
 
 msgid "Verify"
 msgstr "확인"
 
 msgid "View maintenance dispatch"
 msgstr "유지보수 지시 보기"
+
+msgid "View or open"
+msgstr "보기 또는 열기"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."
@@ -1814,11 +2248,11 @@ msgstr "작업장 화면"
 msgid "Work instructions"
 msgstr "작업 표준서"
 
+msgid "Write a note…"
+msgstr "메모 작성…"
+
 msgid "Yes"
 msgstr "예"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "<0/>에 근무를 시작했습니다. 아래에서 퇴근 시간을 편집하거나 현재 근무 중임을 확인할 수 있습니다."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 작업 중입니다. 작업 종료를 잊으셨나요?"
@@ -1828,6 +2262,9 @@ msgstr "아직 회사에 속하지 않은 계정입니다. Carbon ERP에서 온�
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."
+
+msgid "Your profile could not be loaded."
+msgstr "프로필을 로드할 수 없었습니다."
 
 msgid "Your session was locked after inactivity."
 msgstr "비활성 후 세션이 잠겼습니다."

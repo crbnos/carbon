@@ -1,27 +1,41 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
-import { pluckUnique } from "@carbon/utils";
+import {
+  RecordOutlet,
+  ResizablePanel,
+  ResizablePanelGroup,
+  VStack
+} from "@carbon/react";
+import { pluckUnique, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
-import type { InventoryItem } from "~/modules/inventory";
+import { useLoaderData } from "react-router";
 import {
   expandStorageUnitIdsWithDescendants,
   getInventoryItems,
   getStorageTypesList,
   getStorageUnitsList
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
+import type { InventoryItem } from "~/modules/inventory/types";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
 import {
   getMaterialFormsList,
   getMaterialSubstancesList
-} from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
-import { getUserDefaults } from "~/modules/users/users.server";
+} from "~/modules/items/items.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getTagsList } from "~/modules/shared/shared.service";
+import { getUserDefaults } from "~/modules/users/users.service";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+export const handle: Handle = {
+  realtime: ["itemStockQuantities"]
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -138,7 +152,7 @@ export default function QuantitiesRoute() {
 
   return (
     <VStack spacing={0} className="h-full ">
-      <ResizablePanelGroup direction="horizontal">
+      <ResizablePanelGroup direction="horizontal" stackOnCompact>
         <ResizablePanel
           defaultSize={50}
           maxSize={70}
@@ -156,7 +170,7 @@ export default function QuantitiesRoute() {
             storageUnits={storageUnits}
           />
         </ResizablePanel>
-        <Outlet />
+        <RecordOutlet />
       </ResizablePanelGroup>
     </VStack>
   );

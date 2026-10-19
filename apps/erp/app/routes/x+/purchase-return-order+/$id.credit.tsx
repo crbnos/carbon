@@ -1,16 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { purchaseReturnOrderCreditValidator } from "~/modules/purchasing/purchasing.models";
 import {
   createPurchaseReturnOrderCredit,
-  getCreditableQuantitiesForPurchaseReturn,
-  purchaseReturnOrderCreditValidator
-} from "~/modules/purchasing";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+  getCreditableQuantitiesForPurchaseReturn
+} from "~/modules/purchasing/purchasing.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

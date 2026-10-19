@@ -2,7 +2,7 @@
 
 Community-licensed (AGPLv3) Material Planning engines: **MRP** (Material
 Requirements Planning) and **finite scheduling** (the job scheduler). Both run
-**in-process in Node**, relocated from the Supabase edge runtime. This package
+**in-process in Node**, inside the ERP or the Inngest worker that calls them. This package
 was carved out of `@carbon/ee` so that Material Planning (Purchasing + Production
 planning screens) and the scheduler are free — no free user runs Enterprise code
 to plan materials.
@@ -15,9 +15,12 @@ to plan materials.
 - MUST be imported only from server contexts — route actions, `*.service.ts`,
   `*.server.ts`, or `@carbon/jobs` handlers. **Server-only**: it pulls in
   `pg`/Kysely, so it must never reach a browser bundle.
-- MUST reach shared edge-lib deps through `@carbon/database` subpath barrels
+- MUST reach shared DB logic through `@carbon/database` subpath barrels
   (types → `@carbon/database`, postgres → `@carbon/database/client`,
-  `explodeBom` → `@carbon/database/mrp-engine`).
+  `explodeBom` → `@carbon/database/mrp-engine`, plus `./methods`,
+  `./fetch-all`, `./supersession-pick`). Date/time math comes from
+  `@carbon/utils` (`datetime`); logging from `@carbon/logger`
+  (`getLogger("planning", "mrp" | "schedule")`).
 
 ## Never
 
@@ -38,11 +41,25 @@ Single subpath `@carbon/planning` (`./src/index.ts`):
 
 | Export | Provides |
 |--------|----------|
-| `runMrp(client, db, payload)` | Material Requirements Planning (`src/mrp/mrp.ts`; formerly the `mrp` edge function) |
+| `runMrp(client, db, payload)` | Material Requirements Planning (`src/mrp/mrp.ts`) |
 | `runLocationSchedule` / `runExpediteWhatIf` | Finite scheduling — regenerate a whole location, or a simulate-only expedite what-if (`src/scheduling/run-schedule.ts`) |
 | `runQuoteLeadTimeWhatIf(params)` | Capable-to-promise for a quote line — drives the pure `WorkCenterSelector` with synthetic ops (queued vs front-of-queue contexts) per quantity, returns `QuoteLeadTimeForecast`; persists nothing (`src/scheduling/quote-lead-time.ts`) |
 | `resolveLocationWindows` / `resolveWorkCenterWindows` / `subtractIntervals` | Machine/work-center availability window resolvers (`src/scheduling/`) |
 | types (`LadderShiftRow`, `MrpPayload`, `MrpResult`, `LocationScheduleResult`, `ExpediteWhatIfResult`, `NewlyLateJob`, …) | Engine type surface |
+
+Internal to the engine, not exported: `generatePlanningActions(client, db, { companyId, userId })`
+(`src/mrp/planning-actions.ts` — the planning action messages, Order / Make / Expedite / Defer /
+Increase / Decrease / Cancel, diff-written to `planningAction` in one transaction that holds a
+per-company `pg_advisory_xact_lock` across the read and the write; `runMrp` calls it after its
+Phase-7 commit), `loadResponsibleEmployeeResolver(db, companyId)` / `resolveResponsibleEmployee(rungs)`
+(`src/mrp/responsible-employee.ts` — who owns an item + location's actions: item → location item
+group → location → company default, first non-null wins), `consumeForecast` (`src/mrp/forecast-consumption.ts` —
+actual demand consumes the demand projection in its own week, then backward, then forward,
+per the company's consumption window; the consumed amount is persisted on
+`demandProjection.consumedQuantity`), and `purchaseOrderLineArrivalDate` / `jobCompletionDate`
+(`src/mrp/supply-date.ts` — when an open PO line arrives: promised date, else required
+date, else order date (today when unset) + lead time; when a job completes: due date, else
+today + 30 for No Deadline, else today — shared by the projection and the action generator).
 
 ## Consumers
 

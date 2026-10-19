@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it, vi } from "vitest";
 import type { Accounting } from "../../../../core/types";
 import type { Xero } from "../../models";
@@ -246,6 +250,22 @@ describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
     expect(payload.LineItems[0]?.LineAmount).toBe(80);
   });
 
+  it("pushes a discounted line's NET amount", async () => {
+    const source = fxInvoice();
+    // 2 × 50 base list, 20% off → 80 base merchandise, 64 EUR at 0.8.
+    const payload = await makeInvoiceSyncer(db()).mapToRemote({
+      ...source,
+      subtotal: 80,
+      totalAmount: 80,
+      balance: 80,
+      lines: [{ ...source.lines[0]!, discountPercent: 0.2, lineAmount: 80 }]
+    });
+    expect(payload.LineItems[0]?.UnitAmount).toBe(64);
+    expect(payload.LineItems[0]?.LineAmount).toBe(64);
+    expect(payload.LineItems[0]?.Description).toContain("2 × 32 EUR");
+    expect(payload.LineItems[0]).not.toHaveProperty("DiscountRate");
+  });
+
   it("passes CurrencyRate through unchanged (foreign per base, both sides)", async () => {
     const payload = await makeInvoiceSyncer(db()).mapToRemote(fxInvoice());
     // Xero wants EUR per USD, which is what Carbon already stores. Sending the
@@ -430,22 +450,25 @@ describe("Xero posted facts and monetary representation", () => {
     source.currencyCode = "EUR";
     expect((await reviewSyncer().mapToRemote(source)).CurrencyRate).toBe(1);
   });
-  it.each([
-    false,
-    true
-  ])("opts into supported unit precision at the actual invoice transport (batch=%s)", async (batch) => {
-    const syncer = reviewSyncer();
-    const requests: string[] = [];
-    (syncer as any).provider.request = async (_method: string, url: string) => {
-      requests.push(url);
-      return { data: { Invoices: [{ InvoiceID: "remote" }] } };
-    };
-    const payload = await syncer.mapToRemote(invoice());
-    if (batch)
-      await (syncer as any).upsertRemoteBatch([{ localId: "si_1", payload }]);
-    else await (syncer as any).upsertRemote(payload, "si_1");
-    expect(requests).toEqual(["/Invoices?unitdp=4"]);
-  });
+  it.each([false, true])(
+    "opts into supported unit precision at the actual invoice transport (batch=%s)",
+    async (batch) => {
+      const syncer = reviewSyncer();
+      const requests: string[] = [];
+      (syncer as any).provider.request = async (
+        _method: string,
+        url: string
+      ) => {
+        requests.push(url);
+        return { data: { Invoices: [{ InvoiceID: "remote" }] } };
+      };
+      const payload = await syncer.mapToRemote(invoice());
+      if (batch)
+        await (syncer as any).upsertRemoteBatch([{ localId: "si_1", payload }]);
+      else await (syncer as any).upsertRemote(payload, "si_1");
+      expect(requests).toEqual(["/Invoices?unitdp=4"]);
+    }
+  );
 });
 
 it("preserves an exact extended net when the source unit price has four decimals", async () => {

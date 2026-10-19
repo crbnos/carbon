@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -11,6 +16,7 @@ import {
   DrawerTitle,
   HStack,
   IconButton,
+  PrefetchLink,
   Status,
   Table,
   Tbody,
@@ -20,7 +26,8 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -31,13 +38,14 @@ import {
   LuChevronLeft,
   LuChevronRight,
   LuCircleSlash,
+  LuDownload,
   LuRefreshCw,
   LuRotateCw,
   LuScale,
   LuSend,
   LuTriangleAlert
 } from "react-icons/lu";
-import { Link, useFetcher, useRevalidator } from "react-router";
+import { Link } from "react-router";
 import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -111,6 +119,8 @@ export type SyncReconciliationReport = {
 type SyncActivityProps = {
   /** Shared tab bar, rendered at the top of this tab's body card. */
   tabs?: ReactNode;
+  /** The integration whose activity this is — scopes the CSV export. */
+  integrationId: string;
   operations: SyncActivityOperation[];
   /**
    * `entityType:entityId` -> the document number a human reads
@@ -208,7 +218,7 @@ const ENTITY_PATHS: Record<string, (id: string) => string> = {
   reimbursement: path.to.reimbursement
 };
 
-function getEntityLabel(entityType: string): string {
+export function getEntityLabel(entityType: string): string {
   return ENTITY_LABELS[entityType] ?? entityType;
 }
 
@@ -236,7 +246,7 @@ function getEntityReference(
   };
 }
 
-function formatTrigger(trigger: string): string {
+export function formatTrigger(trigger: string): string {
   return trigger.charAt(0).toUpperCase() + trigger.slice(1);
 }
 
@@ -262,6 +272,7 @@ function getAvailableTransitions(status: SyncOperationStatus): {
 
 export function SyncActivity({
   tabs,
+  integrationId,
   operations,
   readableIds,
   count,
@@ -278,7 +289,25 @@ export function SyncActivity({
   const [, setParams] = useUrlParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const fetcher = useFetcher();
+  const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      const { count, to } = data;
+      if (to === "Skipped") {
+        toast.success(
+          count === 1
+            ? t`Skipped sync operation`
+            : t`Skipped ${count} sync operations`
+        );
+      } else {
+        toast.success(
+          count === 1
+            ? t`Queued sync operation for sync`
+            : t`Queued ${count} sync operations for sync`
+        );
+      }
+    }
+  });
   const isTransitioning = fetcher.state !== "idle";
 
   // The tab's data (operations, tie-out, reconciliation) lives in the
@@ -382,6 +411,24 @@ export function SyncActivity({
                   <Trans>Retry all</Trans>
                 </Button>
               )}
+            {count > 0 && (
+              <Button
+                size="sm"
+                variant="secondary"
+                leftIcon={<LuDownload />}
+                asChild
+              >
+                <a
+                  href={path.to.api.integrationSyncActivityCsv(
+                    integrationId,
+                    status
+                  )}
+                  download
+                >
+                  <Trans>Export CSV</Trans>
+                </a>
+              </Button>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <IconButton
@@ -465,9 +512,8 @@ export function SyncActivity({
                             {getEntityLabel(operation.entityType)}
                           </span>
                           {entityReference.path ? (
-                            <Link
+                            <PrefetchLink
                               to={entityReference.path}
-                              prefetch="intent"
                               onClick={(e) => e.stopPropagation()}
                               title={operation.entityId}
                               className={cn(
@@ -476,7 +522,7 @@ export function SyncActivity({
                               )}
                             >
                               {entityReference.label}
-                            </Link>
+                            </PrefetchLink>
                           ) : (
                             <span
                               title={operation.entityId}
@@ -932,16 +978,15 @@ function SyncOperationDetailDrawer({
           <Detail label={t`Entity`}>
             <div className="flex flex-col gap-0.5">
               {entityReference.path ? (
-                <Link
+                <PrefetchLink
                   to={entityReference.path}
-                  prefetch="intent"
                   className={cn(
                     "break-all text-xs hover:underline",
                     !entityReference.isReadable && "font-mono"
                   )}
                 >
                   {entityReference.label}
-                </Link>
+                </PrefetchLink>
               ) : (
                 <span
                   className={cn(

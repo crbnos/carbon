@@ -67,6 +67,8 @@ services:
       PORT: "3000"
       TZ: UTC
       CARBON_EDITION: ${CARBON_EDITION:-community}
+      MAINTENANCE_MODE: ${MAINTENANCE_MODE:-}
+      SYSTEM_STATUS_URL: ${SYSTEM_STATUS_URL:-}
       AUTH_PROVIDERS: ${AUTH_PROVIDERS:-email,google,azure}
       DOMAIN: ${DOMAIN}
       ERP_URL: ${ERP_URL}
@@ -114,6 +116,8 @@ services:
       PORT: "3000"
       TZ: UTC
       CARBON_EDITION: ${CARBON_EDITION:-community}
+      MAINTENANCE_MODE: ${MAINTENANCE_MODE:-}
+      SYSTEM_STATUS_URL: ${SYSTEM_STATUS_URL:-}
       AUTH_PROVIDERS: ${AUTH_PROVIDERS:-email,google,azure}
       DOMAIN: ${DOMAIN}
       ERP_URL: ${ERP_URL}
@@ -529,17 +533,12 @@ services:
       SUPABASE_URL: http://kong:8000
       SUPABASE_ANON_KEY: __ANON_KEY__
       SUPABASE_SERVICE_ROLE_KEY: __SERVICE_ROLE_KEY__
-      SUPABASE_DB_URL: postgresql://postgres:__POSTGRES_PASSWORD__@postgres:5432/postgres
-      VERIFY_JWT: ${EDGE_VERIFY_JWT:-false}
+      VERIFY_JWT: ${EDGE_VERIFY_JWT:-true}
     volumes:
       - *shim
       - type: bind
         source: ${CARBON_REPO}/packages/database/supabase/functions
         target: /home/deno/functions
-        read_only: true
-      - type: bind
-        source: ${CARBON_REPO}/packages/database/src
-        target: /home/src
         read_only: true
       - type: bind
         source: ${CARBON_REPO}/packages/dev/docker/edge-main

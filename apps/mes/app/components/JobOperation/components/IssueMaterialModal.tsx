@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Number as FormNumberInput, Hidden, ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -126,7 +131,7 @@ export function IssueMaterialModal({
   workCenterId?: string;
   material?: JobMaterial;
   // Batch mode: the pick covers every member of this operation batch. The
-  // edge fn splits the picked lots pro-rata by remaining requirement and
+  // posting splits the picked lots pro-rata by remaining requirement and
   // records per-member consumption, so no parent entity is sent.
   batchId?: string;
   // Batch mode: the WHOLE batch's outstanding requirement for this item. The
@@ -1258,7 +1263,7 @@ export function IssueMaterialModal({
           trackingType === "Non-Inventory" ||
           trackingType === null ? (
             // Untracked item (Inventory or Non-Inventory, e.g. consumables and
-            // services) - use ValidatedForm; the issue edge function skips the
+            // services) - use ValidatedForm; the issue posting skips the
             // itemLedger for Non-Inventory items but still posts the WIP cost
             <ValidatedForm
               method="post"
@@ -2097,29 +2102,18 @@ export function IssueMaterialModal({
 }
 
 function useSerialNumbers(itemId?: string) {
-  const serialNumbersFetcher =
-    useFetcher<Awaited<ReturnType<typeof getSerialNumbersForItem>>>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
-  useEffect(() => {
-    if (itemId) {
-      serialNumbersFetcher.load(path.to.api.serialNumbers(itemId));
-    }
-  }, [itemId]);
+  const serialNumbersFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getSerialNumbersForItem>>
+  >(itemId ? path.to.api.serialNumbers(itemId) : null);
 
   return { data: serialNumbersFetcher.data };
 }
 
 // Hook for fetching batch numbers
 function useBatchNumbers(itemId?: string) {
-  const batchNumbersFetcher =
-    useFetcher<Awaited<ReturnType<typeof getBatchNumbersForItem>>>();
-
-  useEffect(() => {
-    if (itemId) {
-      batchNumbersFetcher.load(path.to.api.batchNumbers(itemId));
-    }
-  }, [itemId, batchNumbersFetcher.load]);
+  const batchNumbersFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getBatchNumbersForItem>>
+  >(itemId ? path.to.api.batchNumbers(itemId) : null);
 
   return { data: batchNumbersFetcher.data };
 }

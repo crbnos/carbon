@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { KyselyTx } from "@carbon/database/client";
 import {
   createMappingService,
@@ -344,7 +348,7 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
     if (!local.reasonAccount) {
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
-        message: `Cannot sync memo ${local.memoId}: it has no reason account. Post the memo (with accounting enabled), then retry.`,
+        message: `Cannot sync memo ${local.memoId}: it has no reason account. Post the memo, then retry.`,
         warning: true,
         metadata: { memoId: local.id }
       });

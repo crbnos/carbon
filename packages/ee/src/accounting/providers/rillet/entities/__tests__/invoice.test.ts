@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildSalesDocumentComponents } from "../../../../core/sales-document-components";
 import { SyncFactory } from "../../../../core/sync";
@@ -132,6 +136,30 @@ function mapArguments(source = charges()) {
   };
 }
 describe("Rillet revenue recognition native sales components", () => {
+  it("sends a discounted line's NET amount", () => {
+    const source = charges();
+    // 1 × 100 base list, 20% off → 80 base merchandise, 64 EUR at 0.8. Add-ons
+    // and shipping are not discounted; tax is on the discounted merchandise.
+    const payload = mapSalesInvoiceToRilletInvoice(
+      mapArguments({
+        ...source,
+        subtotal: 113,
+        totalTax: 11,
+        totalAmount: 129,
+        balance: 129,
+        lines: [{ ...source.lines[0]!, discountPercent: 0.2, lineAmount: 80 }]
+      })
+    );
+    expect(payload.items.map((line) => line.total_amount.amount)).toEqual([
+      "64.00",
+      "16.00",
+      "2.40",
+      "8.00",
+      "4.00"
+    ]);
+    expect(payload.tax_amount).toEqual({ amount: "8.80", currency: "EUR" });
+  });
+
   it("exports the document currency components with shipping revenue override and native header tax exactly once", () => {
     const payload = mapSalesInvoiceToRilletInvoice(mapArguments());
     expect(
@@ -182,20 +210,21 @@ describe("Rillet revenue recognition native sales components", () => {
       ).size
     ).toBe(5);
   });
-  it.each([
-    0, 3
-  ])("uses %i decimal serialization for document net/native tax", (decimals) => {
-    const source = charges();
-    source.currencyDecimalPlaces = decimals;
-    const payload = mapSalesInvoiceToRilletInvoice(mapArguments(source));
-    expect(payload.tax_amount?.amount).toBe(decimals === 0 ? "10" : "10.400");
-    // Merchandise converts to exactly 80 at rate 0.8, so largest-remainder
-    // leaves it alone; the JPY rounding unit goes to the non-taxable add-on,
-    // whose 2.4 is the only component carrying a fractional remainder.
-    expect(payload.items[0]?.total_amount.amount).toBe(
-      decimals === 0 ? "80" : "80.000"
-    );
-  });
+  it.each([0, 3])(
+    "uses %i decimal serialization for document net/native tax",
+    (decimals) => {
+      const source = charges();
+      source.currencyDecimalPlaces = decimals;
+      const payload = mapSalesInvoiceToRilletInvoice(mapArguments(source));
+      expect(payload.tax_amount?.amount).toBe(decimals === 0 ? "10" : "10.400");
+      // Merchandise converts to exactly 80 at rate 0.8, so largest-remainder
+      // leaves it alone; the JPY rounding unit goes to the non-taxable add-on,
+      // whose 2.4 is the only component carrying a fractional remainder.
+      expect(payload.items[0]?.total_amount.amount).toBe(
+        decimals === 0 ? "80" : "80.000"
+      );
+    }
+  );
   it("does not need an item on a merchandise line, and never falls back to the shipping product", () => {
     // A merchandise line used to REQUIRE `itemId` because it resolved a
     // per-item Rillet product. It no longer does — the synthetic sales product
@@ -322,30 +351,30 @@ describe("Rillet actual invoice preflight", () => {
     expect(test.ensureShippingProduct).not.toHaveBeenCalled();
     expect(test.provider.createInvoice).not.toHaveBeenCalled();
   });
-  it.each([
-    "assetDisposal",
-    "missingSalesAccount"
-  ] as const)("refuses %s before the CUSTOMER is pushed to Rillet", async (option) => {
-    // Both refusals are PURE — they read the document and the local invoice
-    // only. Running them after `ensureDependencySynced("customer", …)` creates
-    // a Rillet counterparty in the customer's books for an invoice Rillet will
-    // never receive. Xero already ordered it this way; QBO had the same defect
-    // and was fixed in the same change as this.
-    const source = charges();
-    if (option === "assetDisposal") {
-      source.lines[0]!.invoiceLineType = "Fixed Asset";
-    } else {
-      source.salesRevenueAccountId = null;
-    }
-    const test = setupInvoice();
+  it.each(["assetDisposal", "missingSalesAccount"] as const)(
+    "refuses %s before the CUSTOMER is pushed to Rillet",
+    async (option) => {
+      // Both refusals are PURE — they read the document and the local invoice
+      // only. Running them after `ensureDependencySynced("customer", …)` creates
+      // a Rillet counterparty in the customer's books for an invoice Rillet will
+      // never receive. Xero already ordered it this way; QBO had the same defect
+      // and was fixed in the same change as this.
+      const source = charges();
+      if (option === "assetDisposal") {
+        source.lines[0]!.invoiceLineType = "Fixed Asset";
+      } else {
+        source.salesRevenueAccountId = null;
+      }
+      const test = setupInvoice();
 
-    await expect(test.map(source)).rejects.toMatchObject({
-      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
-    });
-    expect(test.ensureDependencySynced).not.toHaveBeenCalled();
-    expect(test.ensureSalesProduct).not.toHaveBeenCalled();
-    expect(test.provider.createInvoice).not.toHaveBeenCalled();
-  });
+      await expect(test.map(source)).rejects.toMatchObject({
+        failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+      });
+      expect(test.ensureDependencySynced).not.toHaveBeenCalled();
+      expect(test.ensureSalesProduct).not.toHaveBeenCalled();
+      expect(test.provider.createInvoice).not.toHaveBeenCalled();
+    }
+  );
   it("provisions ONE sales product for the whole invoice, whatever the items", async () => {
     // The point of the change: three merchandise lines, one product call.
     const test = setupInvoice();

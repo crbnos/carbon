@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   BarProgress,
   Card,
@@ -13,15 +17,16 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Tooltip,
   TooltipContent,
   TooltipTrigger
 } from "@carbon/react";
 import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { parseDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
+import { memo } from "react";
 import { AiOutlinePartition } from "react-icons/ai";
 import {
   LuCalendarDays,
@@ -39,11 +44,16 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import { Link, useSubmit } from "react-router";
 import { Assignee, DateTime, EmployeeAvatarGroup } from "~/components";
+import { MoveToSubmenu } from "~/components/MoveToSubmenu";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { useCustomers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import JobStatus from "../../../Jobs/JobStatus";
-import { KANBAN_CARD_SHELL } from "../cardShell";
+import {
+  KANBAN_CARD_SHELL,
+  type SortableCardProps,
+  sortableCardProps
+} from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
 import {
   getDateOnly,
@@ -51,7 +61,6 @@ import {
   isDateColumnId
 } from "../date-utils";
 import type { JobItem } from "../types";
-import { useScheduleToday } from "../useScheduleToday";
 
 interface Progress {
   totalDuration: number;
@@ -95,41 +104,46 @@ type JobCardProps = {
   progressByItemId: Record<string, Progress>;
 };
 
-export function JobCard({
-  item,
-  locationId,
-  isOverlay,
-  progressByItemId
-}: JobCardProps) {
-  const { t } = useLingui();
-  const submit = useSubmit();
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { displaySettings, selectedGroup, setSelectedGroup, tags, columnIds } =
-    useKanban();
-  const {
-    setNodeRef,
-    attributes,
-    listeners,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({
-    id: item.id,
+export function JobCard(props: JobCardProps) {
+  const sortable = useSortable({
+    id: props.item.id,
     data: {
       type: "item",
-      item
+      item: props.item
     },
     attributes: {
       roleDescription: "item"
     }
   });
+  return <JobCardBody {...props} {...sortableCardProps(sortable)} />;
+}
+
+const JobCardBody = memo(function JobCardBody({
+  item,
+  locationId,
+  isOverlay,
+  progressByItemId,
+  setNodeRef,
+  attributes,
+  listeners,
+  transform,
+  transition,
+  isDragging
+}: JobCardProps & SortableCardProps) {
+  const { t } = useLingui();
+  const submit = useSubmit();
+  const {
+    displaySettings,
+    selectedGroup,
+    setSelectedGroup,
+    columnIds,
+    scheduleToday,
+    moveTo
+  } = useKanban();
 
   const isHighlighted = selectedGroup === item.jobReadableId;
 
-  const style = {
-    transition,
-    transform: CSS.Translate.toString(transform)
-  };
+  const style = { transition, transform };
 
   const status = progressByItemId[item.id]?.active
     ? "In Progress"
@@ -141,7 +155,6 @@ export function JobCard({
   const [customers] = useCustomers();
 
   const customer = customers.find((s) => s.id === item.customerId);
-  const scheduleToday = useScheduleToday();
   const dueDate = getDateOnly(item.dueDate);
   const isDueDateValid = Boolean(dueDate && isDateColumnId(dueDate));
   const dueDateValue = isDueDateValid && dueDate ? dueDate : null;
@@ -282,7 +295,7 @@ export function JobCard({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 {item.link && (
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
                     <Link to={item.link}>
                       <DropdownMenuIcon icon={<LuPencil />} />
                       Edit Job
@@ -304,6 +317,12 @@ export function JobCard({
                   />
                   {isHighlighted ? "Remove Highlight" : "Highlight Job"}
                 </DropdownMenuItem>
+                {moveTo && (
+                  <MoveToSubmenu
+                    getTargets={() => moveTo.targetsFor(item.id)}
+                    onMove={(columnId) => moveTo.onMove(item.id, columnId)}
+                  />
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>
@@ -440,4 +459,4 @@ export function JobCard({
       </CardFooter>
     </Card>
   );
-}
+});

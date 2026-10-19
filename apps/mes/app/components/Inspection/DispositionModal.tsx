@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Hidden,
   NumberControlled,
@@ -5,6 +9,7 @@ import {
   TextArea,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -35,6 +40,7 @@ import { useFetcher } from "react-router";
 import ScrapReason from "~/components/JobOperation/components/ScrapReason";
 import { inspectionDispositionValidator } from "~/services/models";
 import type { IssueTypeListItem } from "~/services/types";
+import { OriginInput } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 export type FailedFeatureSummary = {
@@ -108,7 +114,14 @@ const DispositionModal = ({
   onSubmit
 }: DispositionModalProps) => {
   const { t } = useLingui();
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction<{}>({
+    onSettled: () => {
+      if (submitted.current) {
+        onSubmit();
+        submitted.current = false;
+      }
+    }
+  });
   const targetsFetcher = useFetcher<{ operations: UpstreamOperation[] }>();
   const submitted = useRef(false);
   const loadedTargetsRef = useRef(false);
@@ -138,13 +151,6 @@ const DispositionModal = ({
     loadedTargetsRef.current = true;
     targetsFetcher.load(path.to.reworkTargets(operationId));
   }, [operationId, targetsFetcher.load]);
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onSubmit();
-      submitted.current = false;
-    }
-  }, [fetcher.state, onSubmit]);
 
   const targets = targetsFetcher.data?.operations ?? [];
   const hasIssueTypes = issueTypes.length > 0;
@@ -207,6 +213,7 @@ const DispositionModal = ({
           </ModalHeader>
           <ModalBody>
             <Hidden name="decision" value={decision} />
+            <OriginInput />
             <Hidden name="operationId" value={operationId} />
             {isSerial ? (
               <>
@@ -259,7 +266,7 @@ const DispositionModal = ({
               {failedFeatureSummary && failedFeatureSummary.length > 0 && (
                 <div className="w-full rounded-md border p-3">
                   <p className="mb-1 text-xs font-medium text-muted-foreground">
-                    <Trans>Failed features</Trans>
+                    <Trans>Failed characteristics</Trans>
                   </p>
                   <ul className="flex flex-col gap-0.5">
                     {failedFeatureSummary.map((feature) => (

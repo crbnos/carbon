@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { KyselyTx } from "@carbon/database/client";
 import { type Accounting, BaseEntitySyncer } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
@@ -20,6 +24,19 @@ type ItemRow = {
   unitCost: number | null;
   unitSalePrice: number | null;
 };
+
+/**
+ * The `Code` an item is pushed to Xero under. Any document line that names
+ * the item by `ItemCode` must use this too — Xero rejects a code it has no
+ * item for ("Item code 'X' is not valid"), so a revised item pushed as
+ * `PRT-1.A` cannot be referenced as `PRT-1`.
+ */
+export function xeroItemCode(item: {
+  readableId: string;
+  readableIdWithRevision: string | null;
+}): string {
+  return item.readableIdWithRevision ?? item.readableId;
+}
 
 export class ItemSyncer extends BaseEntitySyncer<
   Accounting.Item,
@@ -101,7 +118,7 @@ export class ItemSyncer extends BaseEntitySyncer<
 
       result.set(row.id, {
         id: row.id,
-        code: row.readableIdWithRevision ?? row.readableId,
+        code: xeroItemCode(row),
         name: row.name,
         description: row.description,
         companyId: row.companyId!,

@@ -1,6 +1,8 @@
-import { useStore as useValue } from "@nanostores/react";
-import { atom, computed } from "nanostores";
-import { useNanoStore } from "~/hooks";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { create } from "zustand";
 
 // Stock Transfer Wizard Store
 export type StockTransferWizardLine = {
@@ -32,26 +34,27 @@ export type StockTransferWizardState = {
   lines: StockTransferWizardLine[];
 };
 
-const $wizardStore = atom<StockTransferWizardState>({
+const useWizardStore = create<StockTransferWizardState>()(() => ({
   activeDestination: null,
   lines: []
-});
+}));
 
-const $wizardLinesCount = computed(
-  $wizardStore,
-  (wizard) => wizard.lines.filter((line) => (line.quantity ?? 0) > 0).length
-);
-
-const $wizardTotalQuantity = computed($wizardStore, (wizard) =>
-  wizard.lines.reduce((sum, line) => sum + (line.quantity ?? 0), 0)
-);
+const $wizardStore = {
+  get: useWizardStore.getState,
+  set: (wizard: StockTransferWizardState) =>
+    useWizardStore.setState(wizard, true)
+};
 
 export const useStockTransferWizard = () =>
-  useNanoStore<StockTransferWizardState>($wizardStore, "wizard");
+  [useWizardStore(), $wizardStore.set] as const;
 export const useStockTransferWizardLinesCount = () =>
-  useValue($wizardLinesCount);
+  useWizardStore(
+    (wizard) => wizard.lines.filter((line) => (line.quantity ?? 0) > 0).length
+  );
 export const useStockTransferWizardTotalQuantity = () =>
-  useValue($wizardTotalQuantity);
+  useWizardStore((wizard) =>
+    wizard.lines.reduce((sum, line) => sum + (line.quantity ?? 0), 0)
+  );
 
 // Stock Transfer Wizard actions
 

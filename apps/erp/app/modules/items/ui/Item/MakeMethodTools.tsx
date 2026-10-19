@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Number, SelectControlled, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertTitle,
@@ -21,6 +26,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   Menubar,
   MenubarItem,
   Modal,
@@ -30,6 +36,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  PrefetchLink,
   toast,
   useDisclosure,
   VStack
@@ -50,11 +57,13 @@ import {
   LuStar,
   LuTriangleAlert
 } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { Hidden, Item, useConfigurableItems } from "~/components/Form";
+import { createPortalSlot } from "~/components/Layout/Mobile/slots";
+import { RecordAction } from "~/components/Layout/RecordHeader";
 import { Confirm } from "~/components/Modals";
 import { usePermissions, useUser } from "~/hooks";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import {
   getMethodValidator,
@@ -75,17 +84,28 @@ type MakeMethodToolsProps = {
   type: ItemType;
   makeMethods: MakeMethod[];
   currentMethodId?: string;
+  /**
+   * Phones: show the version control where the page places
+   * `methodVersionSlot.Target` (above Bill of Process) instead of in the
+   * tools row.
+   */
+  versionInSlot?: boolean;
 };
+
+/** Phones: where a page shows the method version control (see versionInSlot). */
+export const methodVersionSlot = createPortalSlot();
 
 const MakeMethodTools = ({
   itemId,
   makeMethods,
   type,
-  currentMethodId
+  currentMethodId,
+  versionInSlot = false
 }: MakeMethodToolsProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
-  const fetcher = useFetcher<{ error: string | null }>();
+  // Get Method, Save Method and New Version; an error is toasted.
+  const fetcher = useAction();
   const params = useParams();
   const { methodId, makeMethodId } = params;
   const activeMethodId = currentMethodId ?? makeMethodId ?? methodId;
@@ -94,12 +114,6 @@ const MakeMethodTools = ({
     fetcher.state !== "idle" && fetcher.formAction === path.to.makeMethodGet;
   const isSaveMethodLoading =
     fetcher.state !== "idle" && fetcher.formAction === path.to.makeMethodSave;
-
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error);
-    }
-  }, [fetcher.data?.error]);
 
   const [includeInactive, setIncludeInactive] = useState<boolean>(true);
   const configurableItemIds = useConfigurableItems();
@@ -223,166 +237,184 @@ const MakeMethodTools = ({
     }
   };
 
+  const versionMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" rightIcon={<LuChevronDown />}>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">V{activeMethod.version}</Badge>
+            <MakeMethodVersionStatus status={activeMethod.status} />
+          </div>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {makeMethods && makeMethods.length > 0 && (
+          <>
+            {makeMethods
+              .sort((a, b) => b.version - a.version)
+              .map((makeMethod) => {
+                const isCurrent = makeMethod.id === activeMethodId;
+
+                return (
+                  <DropdownMenuSub key={makeMethod.id}>
+                    <DropdownMenuSubTrigger>
+                      <Link
+                        to={getPathToMakeMethod(type, itemId, makeMethod.id)}
+                        className="flex items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-2">
+                          <LuCheck className={cn(!isCurrent && "opacity-0")} />
+                          <span>Version {makeMethod.version}</span>
+                        </div>
+                        <MakeMethodVersionStatus
+                          status={makeMethod.status}
+                          isActive={
+                            makeMethod.status === "Active" ||
+                            makeMethods.length === 1
+                          }
+                        />
+                      </Link>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent>
+                        <ItemChangeNoticeLock
+                          changeNotices={openChangeNotices}
+                          isLocked={isChangeNoticeLocked}
+                        >
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.duplicate}
+                            disabled={isChangeNoticeLocked}
+                            onClick={() => {
+                              flushSync(() => {
+                                setSelectedVersion(makeMethod);
+                              });
+                              newVersionModal.onOpen();
+                            }}
+                          >
+                            <DropdownMenuIcon icon={<LuCopy />} />
+                            Duplicate Version
+                          </DropdownMenuItem>
+                        </ItemChangeNoticeLock>
+
+                        {/* <DropdownMenuItem
+                        destructive
+                        disabled={
+                          makeMethod.status === "Active" ||
+                          !permissions.can("delete", "parts")
+                        }
+                      >
+                        <DropdownMenuIcon icon={<LuTrash />} />
+                        Delete Version
+                      </DropdownMenuItem> */}
+                        <DropdownMenuSeparator />
+                        <ItemChangeNoticeLock
+                          changeNotices={openChangeNotices}
+                          isLocked={isChangeNoticeLocked}
+                        >
+                          <DropdownMenuItem
+                            disabled={
+                              makeMethod.status === "Active" ||
+                              isChangeNoticeLocked
+                            }
+                            onClick={() => {
+                              flushSync(() => {
+                                setSelectedVersion(makeMethod);
+                              });
+                              activeMethodModal.onOpen();
+                            }}
+                          >
+                            <DropdownMenuIcon icon={<LuStar />} />
+                            Set as Active Version
+                          </DropdownMenuItem>
+                        </ItemChangeNoticeLock>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
+                );
+              })}
+            <DropdownMenuSeparator />
+            {permissions.can("create", "production") && (
+              <ItemChangeNoticeLock
+                changeNotices={openChangeNotices}
+                isLocked={isChangeNoticeLocked}
+              >
+                <DropdownMenuItem
+                  disabled={isChangeNoticeLocked}
+                  onClick={newVersionModal.onOpen}
+                >
+                  <DropdownMenuIcon icon={<LuCirclePlus />} />
+                  New Version
+                </DropdownMenuItem>
+              </ItemChangeNoticeLock>
+            )}
+            {canCreateChangeNotice && (
+              <DropdownMenuItem onClick={changeNoticeModal.onOpen}>
+                <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
+                <Trans>New Change Notice</Trans>
+              </DropdownMenuItem>
+            )}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <Fragment key={itemId}>
-      <Menubar>
+      {versionInSlot ? (
+        <methodVersionSlot.Fill>{versionMenu}</methodVersionSlot.Fill>
+      ) : null}
+      <Menubar className={cn(versionInSlot && "max-md:hidden")}>
         <HStack className="w-full justify-between">
           <HStack spacing={0}>
-            <MenubarItem
-              isLoading={isGetMethodLoading}
-              isDisabled={
-                !permissions.can("update", "parts") ||
-                isGetMethodLoading ||
-                activeMethod.status !== "Draft" // Can only overwrite Draft versions
-              }
-              leftIcon={<LuGitBranch />}
-              onClick={getMethodModal.onOpen}
-            >
-              <Trans>Get Method</Trans>
-            </MenubarItem>
-            <MenubarItem
-              isDisabled={
-                !permissions.can("update", "parts") || isSaveMethodLoading
-              }
-              isLoading={isSaveMethodLoading}
-              leftIcon={<LuGitMerge />}
-              onClick={saveMethodModal.onOpen}
-            >
-              <Trans>Save Method</Trans>
-            </MenubarItem>
-            {itemLink && (
-              <MenubarItem leftIcon={<LuGitFork />} asChild>
-                <Link prefetch="intent" to={itemLink}>
-                  Item Master
-                </Link>
+            <RecordAction slot="overflow">
+              <MenubarItem
+                className="rounded-md"
+                isLoading={isGetMethodLoading}
+                isDisabled={
+                  !permissions.can("update", "parts") ||
+                  isGetMethodLoading ||
+                  activeMethod.status !== "Draft" // Can only overwrite Draft versions
+                }
+                leftIcon={<LuGitBranch />}
+                onClick={getMethodModal.onOpen}
+              >
+                <Trans>Get Method</Trans>
               </MenubarItem>
+            </RecordAction>
+            <RecordAction slot="overflow">
+              <MenubarItem
+                className="rounded-md"
+                isDisabled={
+                  !permissions.can("update", "parts") || isSaveMethodLoading
+                }
+                isLoading={isSaveMethodLoading}
+                leftIcon={<LuGitMerge />}
+                onClick={saveMethodModal.onOpen}
+              >
+                <Trans>Save Method</Trans>
+              </MenubarItem>
+            </RecordAction>
+            {itemLink && (
+              <RecordAction slot="overflow">
+                <MenubarItem
+                  className="rounded-md"
+                  leftIcon={<LuGitFork />}
+                  asChild
+                >
+                  <PrefetchLink to={itemLink}>
+                    <Trans>Item Master</Trans>
+                  </PrefetchLink>
+                </MenubarItem>
+              </RecordAction>
             )}
           </HStack>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" rightIcon={<LuChevronDown />}>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">V{activeMethod.version}</Badge>
-                  <MakeMethodVersionStatus status={activeMethod.status} />
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {makeMethods && makeMethods.length > 0 && (
-                <>
-                  {makeMethods
-                    .sort((a, b) => b.version - a.version)
-                    .map((makeMethod) => {
-                      const isCurrent = makeMethod.id === activeMethodId;
-
-                      return (
-                        <DropdownMenuSub key={makeMethod.id}>
-                          <DropdownMenuSubTrigger>
-                            <Link
-                              to={getPathToMakeMethod(
-                                type,
-                                itemId,
-                                makeMethod.id
-                              )}
-                              className="flex items-center justify-between gap-4"
-                            >
-                              <div className="flex items-center gap-2">
-                                <LuCheck
-                                  className={cn(!isCurrent && "opacity-0")}
-                                />
-                                <span>Version {makeMethod.version}</span>
-                              </div>
-                              <MakeMethodVersionStatus
-                                status={makeMethod.status}
-                                isActive={
-                                  makeMethod.status === "Active" ||
-                                  makeMethods.length === 1
-                                }
-                              />
-                            </Link>
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuPortal>
-                            <DropdownMenuSubContent>
-                              <ItemChangeNoticeLock
-                                changeNotices={openChangeNotices}
-                                isLocked={isChangeNoticeLocked}
-                              >
-                                <DropdownMenuItem
-                                  disabled={isChangeNoticeLocked}
-                                  onClick={() => {
-                                    flushSync(() => {
-                                      setSelectedVersion(makeMethod);
-                                    });
-                                    newVersionModal.onOpen();
-                                  }}
-                                >
-                                  <DropdownMenuIcon icon={<LuCopy />} />
-                                  Duplicate Version
-                                </DropdownMenuItem>
-                              </ItemChangeNoticeLock>
-
-                              {/* <DropdownMenuItem
-                                destructive
-                                disabled={
-                                  makeMethod.status === "Active" ||
-                                  !permissions.can("delete", "parts")
-                                }
-                              >
-                                <DropdownMenuIcon icon={<LuTrash />} />
-                                Delete Version
-                              </DropdownMenuItem> */}
-                              <DropdownMenuSeparator />
-                              <ItemChangeNoticeLock
-                                changeNotices={openChangeNotices}
-                                isLocked={isChangeNoticeLocked}
-                              >
-                                <DropdownMenuItem
-                                  disabled={
-                                    makeMethod.status === "Active" ||
-                                    isChangeNoticeLocked
-                                  }
-                                  onClick={() => {
-                                    flushSync(() => {
-                                      setSelectedVersion(makeMethod);
-                                    });
-                                    activeMethodModal.onOpen();
-                                  }}
-                                >
-                                  <DropdownMenuIcon icon={<LuStar />} />
-                                  Set as Active Version
-                                </DropdownMenuItem>
-                              </ItemChangeNoticeLock>
-                            </DropdownMenuSubContent>
-                          </DropdownMenuPortal>
-                        </DropdownMenuSub>
-                      );
-                    })}
-                  <DropdownMenuSeparator />
-                  {permissions.can("create", "production") && (
-                    <ItemChangeNoticeLock
-                      changeNotices={openChangeNotices}
-                      isLocked={isChangeNoticeLocked}
-                    >
-                      <DropdownMenuItem
-                        disabled={isChangeNoticeLocked}
-                        onClick={newVersionModal.onOpen}
-                      >
-                        <DropdownMenuIcon icon={<LuCirclePlus />} />
-                        New Version
-                      </DropdownMenuItem>
-                    </ItemChangeNoticeLock>
-                  )}
-                  {canCreateChangeNotice && (
-                    <DropdownMenuItem onClick={changeNoticeModal.onOpen}>
-                      <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
-                      <Trans>New Change Notice</Trans>
-                    </DropdownMenuItem>
-                  )}
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {versionInSlot ? (
+            <div className="max-md:hidden">{versionMenu}</div>
+          ) : (
+            versionMenu
+          )}
         </HStack>
       </Menubar>
 

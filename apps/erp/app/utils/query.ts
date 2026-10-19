@@ -1,11 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { badRequest } from "@carbon/auth";
+import { searchFilter } from "@carbon/utils";
 import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
-import type { GenericSchema } from "@supabase/supabase-js/dist/module/lib/types";
 import { getPageOffset, getPageSize } from "./pagination";
 
+type GenericSchema = {
+  Tables: Record<string, unknown>;
+  Views: Record<string, unknown>;
+  Functions: Record<string, unknown>;
+};
+
 /**
- * Count mode for the paged list endpoints backed by the big multi-join views
- * (`parts`, `materials`, `salesOrders`, `purchaseOrders`, the invoice views…).
+ * Count mode for every paged list endpoint — any query that goes through
+ * `setGenericQueryFilters`. Counts that drive logic rather than a pager
+ * (`head: true`, limits, "is this in use?") stay `exact`.
  *
  * PostgREST implements `exact` as `COUNT(*) OVER ()`, which makes Postgres
  * materialize the entire filtered result set purely to produce a total — so
@@ -16,7 +27,8 @@ import { getPageOffset, getPageSize } from "./pagination";
  * the estimate for result sets far larger than any page a user is reading. The
  * totals stay accurate at the sizes where being off by a few would be visible.
  *
- * These endpoints also pair it with an explicit `*_LIST_COLUMNS` constant rather
+ * The big multi-join views (`parts`, `materials`, `salesOrders`,
+ * `purchaseOrders`, the invoice views…) also pair it with an explicit `*_LIST_COLUMNS` constant rather
  * than `select("*")`, for the same reason: naming the columns lets Postgres
  * prune the views' unreferenced computed columns instead of materializing them
  * per row. Adding a column to one of those tables means adding it to the
@@ -81,6 +93,27 @@ export function getGenericQueryFilters(
   return { limit, offset, sorts, filters };
 }
 
+/**
+ * Value of a `between` filter: `from,to`, inclusive. Either side may be empty
+ * for an open-ended range (`2026-10-01,` is "on or after").
+ */
+export function parseRangeFilter(value: string): {
+  from: string | null;
+  to: string | null;
+} {
+  const [from, to] = value.split(",");
+  return { from: from || null, to: to || null };
+}
+
+/** Inverse of `parseRangeFilter`; null when neither bound is set. */
+export function formatRangeFilter(
+  from: string | null | undefined,
+  to: string | null | undefined
+): string | null {
+  if (!from && !to) return null;
+  return `${from ?? ""},${to ?? ""}`;
+}
+
 export function getGenericFilter<
   T extends GenericSchema,
   U extends Record<string, unknown>,
@@ -111,6 +144,12 @@ export function getGenericFilter<
       return query.ilike(column, `${value}%`);
     case "in":
       return query.in(column, value.split(",") as any);
+    case "between": {
+      const { from, to } = parseRangeFilter(value);
+      if (from) query = query.gte(column, getSafeNumber(from));
+      if (to) query = query.lte(column, getSafeNumber(to));
+      return query;
+    }
     default:
       throw badRequest(`Invalid filter operator: ${operator}`);
   }
@@ -165,9 +204,7 @@ export function setGenericQueryFilters<
 }
 
 export function getSearchTokens(search: string): string[] {
-  // Strip characters that are structural in a PostgREST `.or(...)` filter
-  // (comma separates conditions, parens group them) so the search value can't
-  // alter the filter shape.
+  // Commas and parentheses separate words, as spaces do ("Washer, Flat").
   return search
     .replace(/[,()\\]/g, " ")
     .split(/\s+/)
@@ -190,9 +227,7 @@ export function setSearchFilter<
   // Each token must match at least one column, and all tokens must match, so
   // "M8 washer" finds "Washer, Flat, M8". Chained `.or(...)` calls are ANDed.
   for (const token of getSearchTokens(search)) {
-    query = query.or(
-      columns.map((column) => `${column}.ilike.%${token}%`).join(",")
-    );
+    query = query.or(searchFilter(columns, token));
   }
 
   return query;
@@ -220,3 +255,44 @@ export const filterOperatorLabels = Object.entries(filterOperators).map(
     label: value
   })
 );
+
+// Array values sort by their first entry.
+export function pageInMemory<T extends Record<string, unknown>>(
+  rows: T[],
+  searchParams: URLSearchParams,
+  searchable: (row: T) => (string | null | undefined)[]
+): { rows: T[]; count: number } {
+  const search = searchParams.get("search")?.trim().toLowerCase() ?? "";
+  const { limit, offset, sorts } = getGenericQueryFilters(searchParams);
+
+  const matching = search
+    ? rows.filter((row) =>
+        searchable(row).some((value) =>
+          (value ?? "").toLowerCase().includes(search)
+        )
+      )
+    : [...rows];
+
+  const sortValue = (row: T, key: string) => {
+    const value = row[key];
+    return Array.isArray(value) ? value[0] : value;
+  };
+  for (const { sortBy, sortAsc } of [...(sorts ?? [])].reverse()) {
+    matching.sort((a, b) => {
+      const left = sortValue(a, sortBy);
+      const right = sortValue(b, sortBy);
+      const order =
+        typeof left === "number" && typeof right === "number"
+          ? left - right
+          : String(left ?? "").localeCompare(String(right ?? ""), undefined, {
+              numeric: true
+            });
+      return sortAsc ? order : -order;
+    });
+  }
+
+  return {
+    rows: matching.slice(offset, offset + limit),
+    count: matching.length
+  };
+}

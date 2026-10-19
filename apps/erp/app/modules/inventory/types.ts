@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type {
   getBatchProperties,
@@ -10,10 +14,8 @@ import type {
   getKanbans,
   getReceiptLines,
   getReceipts,
-  getReceiptTracking,
   getShipmentLines,
   getShipments,
-  getShipmentTracking,
   getShippingMethods,
   getStockMovements,
   getStockTransferLines,
@@ -22,6 +24,10 @@ import type {
   getWarehouseTransferLines,
   getWarehouseTransfers
 } from "./inventory.service";
+import type {
+  getReceiptTracking,
+  getShipmentTracking
+} from "./inventory.utils";
 
 export type BatchProperty = NonNullable<
   Awaited<ReturnType<typeof getBatchProperties>>["data"]
@@ -100,6 +106,30 @@ export type ShippingMethod = NonNullable<
 export type ShipmentSourceDocument =
   Database["public"]["Enums"]["shipmentSourceDocument"];
 
+export type RentalShipmentLine = {
+  id: string;
+  rentalAgreementLineId: string;
+  shipped: boolean;
+  meter: number | null;
+  unitName: string;
+  thumbnailPath: string | null;
+  itemType: Database["public"]["Enums"]["itemType"] | null;
+  assetReadableId: string | null;
+  serialNumber: string | null;
+  lineStatus: Database["public"]["Enums"]["rentalAgreementLineStatus"];
+};
+
+export type RentalReceiptLine = Omit<RentalShipmentLine, "shipped"> & {
+  received: boolean;
+  notes: string | null;
+  takeOutOfService: boolean;
+  outOfServiceReason: string | null;
+  residualDestination: "Fleet" | "Inventory" | null;
+  lessorClassification:
+    | Database["public"]["Enums"]["lessorClassification"]
+    | null;
+};
+
 export type StockTransfer = NonNullable<
   Awaited<ReturnType<typeof getStockTransfers>>["data"]
 >[number];
@@ -164,3 +194,35 @@ export interface GraphData {
   nodes: GraphNode[];
   links: GraphLink[];
 }
+
+export type StepRecord = {
+  id: string;
+  jobOperationStepId: string;
+  index: number;
+  type: string;
+  name: string;
+  value: string | null;
+  numericValue: number | null;
+  booleanValue: boolean | null;
+  userValue: string | null;
+  unitOfMeasureCode: string | null;
+  minValue: number | null;
+  maxValue: number | null;
+  operationId: string;
+  operationDescription: string | null;
+  itemId: string | null;
+  itemReadableId: string | null;
+  createdAt: string;
+  createdBy: string | null;
+};
+
+export type IssueContainmentStatus = "Contained" | "Uncontained";
+
+export type IssueContainment = {
+  id: string;
+  readableId: string | null;
+  containmentStatus: IssueContainmentStatus;
+  status: string;
+  priority: string | null;
+  trackedEntityId: string;
+};

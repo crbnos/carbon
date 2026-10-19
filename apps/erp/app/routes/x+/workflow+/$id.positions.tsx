@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { requireFeature } from "@carbon/ee/plan.server";
@@ -5,10 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import {
-  updateWorkflowNodePositions,
-  workflowNodePositionsValidator
-} from "~/modules/workflows";
+import { workflowNodePositionsValidator } from "~/modules/workflows/workflows.models";
+import { updateWorkflowNodePositions } from "~/modules/workflows/workflows.service";
 import { path } from "~/utils/path";
 
 const positionsSchema = z.record(

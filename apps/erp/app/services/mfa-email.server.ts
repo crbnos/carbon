@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { MfaEnabledEmail, MfaRequiredEmail } from "@carbon/documents/email";
 import { batchTrigger, trigger } from "@carbon/jobs";
@@ -5,7 +9,7 @@ import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
 import { render } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getUser } from "~/modules/users/users.server";
+import { getUser } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
 
 const logger = getLogger("erp", "mfa-email");
@@ -21,7 +25,7 @@ const EMAIL_BATCH_SIZE = 25;
 
 // No shared helper exists for "absolute URL from a path.to.* value" — inline
 // concatenation is the convention at every call site (~9 of this exact shape).
-const SECURITY_URL = `${ERP_URL}${path.to.accountSecurity}`;
+const SECURITY_URL = `${ERP_URL}${path.to.accountSettings("security")}`;
 
 /**
  * Announce a newly-turned-on two-factor requirement to every active employee of

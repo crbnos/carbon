@@ -1,4 +1,13 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -70,7 +79,14 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
   const renderContextMenu = useCallback(
     (row: MemoRow) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.memo(row.id))}>
+        <MenuItem
+          shortcut={
+            row.status === "Draft"
+              ? MENU_ITEM_SHORTCUTS.edit
+              : MENU_ITEM_SHORTCUTS.view
+          }
+          onClick={() => navigate(path.to.memo(row.id))}
+        >
           <MenuIcon icon={row.status === "Draft" ? <LuPencil /> : <LuEye />} />
           {row.status === "Draft" ? (
             <Trans>Edit Memo</Trans>
@@ -79,6 +95,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
           )}
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={
             row.status !== "Draft" || !permissions.can("delete", "invoicing")
@@ -106,13 +123,14 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
             {row.original.memoId}
           </Hyperlink>
         ),
-        meta: { icon: <LuHash /> }
+        meta: { icon: <LuHash />, mobile: "P1" }
       },
       {
         accessorKey: "direction",
         header: t`Direction`,
         cell: ({ row }) => <Enumerable value={row.original.direction} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -136,6 +154,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
             <CustomerAvatar customerId={row.original.customerId} />
           ) : null,
         meta: {
+          mobile: "P3",
           icon: <LuUser />,
           filter: {
             type: "static",
@@ -155,7 +174,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
         cell: (item) => (
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
-        meta: { icon: <LuCalendar /> }
+        meta: { filter: { type: "dateRange" }, icon: <LuCalendar /> }
       },
       {
         accessorKey: "amount",
@@ -166,6 +185,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
           </span>
         ),
         meta: {
+          mobile: "P2",
           icon: <LuCoins />,
           renderTotal: true,
           formatter: currencyFormatter.format
@@ -198,6 +218,7 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <MemoStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",

@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import { unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type z from "zod";
 import type { ActionTaskEntityType } from "../../lib/actionTaskEntity";
@@ -65,7 +70,7 @@ export async function linkActionToLinearIssue(
   // Update the task fields
   const result = await client
     .from(entity.table)
-    .update(updateData)
+    .update(unchecked(updateData))
     .eq("companyId", companyId)
     .eq("id", input.actionId)
     .select(entity.parentColumn);

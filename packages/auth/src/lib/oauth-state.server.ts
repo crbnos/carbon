@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Edition } from "@carbon/utils";
 import { createCookieSessionStorage } from "react-router";
 import { CarbonEdition, DOMAIN, SESSION_SECRET } from "../config/env";
-import { getCookieDomain } from "../utils/cookie";
+import { authCookieName, getCookieDomain } from "../utils/cookie";
 
 // Long enough to outlive an integrations page left open for a while: the state
 // is issued when the page loads, not when Connect is clicked. It is single-use
@@ -54,7 +58,7 @@ const cookieDomain = isTestEdition ? undefined : getCookieDomain(DOMAIN);
 
 const oauthStateStorage = createCookieSessionStorage({
   cookie: {
-    name: "carbon-oauth-state",
+    name: authCookieName("carbon-oauth-state"),
     httpOnly: true,
     path: "/",
     sameSite: isTestEdition ? "none" : "lax",

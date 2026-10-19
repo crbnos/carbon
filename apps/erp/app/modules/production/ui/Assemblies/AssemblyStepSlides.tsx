@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
@@ -7,7 +11,10 @@ import { useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
 import { useUser } from "~/hooks";
-import type { SlideAnnotation, SlideSize } from "~/modules/shared";
+import type {
+  SlideAnnotation,
+  SlideSize
+} from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 import type { AssemblyStepSlide } from "../../types";
 

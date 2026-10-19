@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -14,7 +18,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { Sequence } from "~/modules/settings";
+import type { Sequence } from "~/modules/settings/types";
 import { path } from "~/utils/path";
 
 type SequencesTableProps = {
@@ -37,6 +41,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
           <Hyperlink to={row.original.table}>{row.original.name}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuText />
         }
       },
@@ -45,6 +50,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
         header: t`Prefix`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P3",
           icon: <LuTextCursor />
         }
       },
@@ -53,6 +59,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
         header: t`Current`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P2",
           icon: <LuArrowRight />
         }
       },
@@ -88,6 +95,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "settings")}
             onClick={() => {
               navigate(

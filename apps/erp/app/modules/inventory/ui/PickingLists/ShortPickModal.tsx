@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Hidden, NumberControlled, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Modal,
@@ -11,7 +16,6 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
 import { pickQuantityValidator } from "../../inventory.models";
 
@@ -33,7 +37,7 @@ export function ShortPickModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{ success: boolean; message?: string }>();
+  const fetcher = useAction();
   const [quantity, setQuantity] = useState(
     quantityPicked > 0 ? quantityPicked : quantityToPick
   );

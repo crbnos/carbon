@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { unpublishWorkflow } from "~/modules/workflows/workflows.server";
+import { unpublishWorkflow } from "~/modules/workflows/workflows.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 // The one route both the list row menu and the builder button post to, so there is
@@ -26,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("id is not found");
 
-  const unpublished = await unpublishWorkflow(client, {
+  const unpublished = await unpublishWorkflow(client, getDatabaseClient(), {
     workflowId: id,
     companyId,
     userId

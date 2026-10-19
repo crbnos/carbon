@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { GanttEvent } from "~/components/Gantt";
 import type { TimelineNodeDetail } from "./timeline";
 
@@ -625,4 +629,36 @@ function makeRootEvent(
         conflictSegments.length > 0 ? conflictSegments : undefined
     }
   };
+}
+
+/**
+ * The compact layout of a resource timeline: one row per resource lane, its
+ * operations (and maintenance) drawn side by side on that row as `items`
+ * instead of one row each. Operator segments are dropped — the detailed tree
+ * shows who worked what. Pure: the input is left untouched, and every item
+ * keeps its id, so the same `detailsById` serves both layouts.
+ */
+export function collapseToLanes(events: GanttEvent[]): GanttEvent[] {
+  const byId = new Map(events.map((event) => [event.id, event]));
+  const lanes: GanttEvent[] = [];
+  let root: GanttEvent | undefined;
+
+  for (const event of events) {
+    if (event.level === 0) {
+      root = event;
+    } else if (event.level === 1) {
+      const items = event.children
+        .map((id) => byId.get(id))
+        .filter((child): child is GanttEvent => child !== undefined)
+        .map((child) => ({ ...child, children: [], hasChildren: false }));
+      lanes.push({
+        ...event,
+        children: [],
+        hasChildren: false,
+        data: { ...event.data, items }
+      });
+    }
+  }
+
+  return root ? [root, ...lanes] : lanes;
 }

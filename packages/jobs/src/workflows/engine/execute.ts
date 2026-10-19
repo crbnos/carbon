@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   batchCandidates,
   buildCatalogOverlay,
@@ -155,6 +159,7 @@ async function contextFor(args: NodeArgs): Promise<RuntimeContext> {
       companyId: payload.companyId,
       companyGroupId: args.companyGroupId,
       ownerId: payload.ownerId,
+      permissions: args.permissions,
       runId: payload.runId,
       workflowId: payload.workflowId
     })

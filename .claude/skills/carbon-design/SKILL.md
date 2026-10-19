@@ -92,6 +92,7 @@ screen will post to them. Canonical starting points:
 |---|---|
 | Module list | `routes/x+/sales+/rmas.tsx`, `modules/sales/ui/SalesReturnOrders/SalesReturnOrdersTable.tsx`, `modules/purchasing/ui/PurchaseOrder/PurchaseOrdersTable.tsx` |
 | Document workspace | `routes/x+/sales-return-order+/$id.tsx` + `modules/sales/ui/SalesReturnOrders/SalesReturnOrder{Header,Explorer,Properties}.tsx`; richer: `modules/sales/ui/Quotes/QuoteHeader.tsx` |
+| Agreement setup wizard (Draft contract / rental agreement / lease) | `routes/x+/rental-agreement+/{new,$id.setup*}.tsx` + `modules/sales/ui/Rentals/RentalSetupSteps.tsx`, `~/components/Setup` |
 | Config row CRUD | `routes/x+/sales+/customer-types.tsx` (+ `.new`, `.$customerTypeId`, `.delete.$customerTypeId`), `modules/sales/ui/CustomerTypes/CustomerTypeForm.tsx` |
 | Record form | `modules/sales/ui/Customer/CustomerForm.tsx` |
 | Line form | `modules/sales/ui/SalesOrder/SalesOrderLineForm.tsx` |
@@ -117,7 +118,7 @@ Keep it to ~15 lines. It is what you'll review against in Step 6.
 ```
 Design brief — <feature>
 - Users & context: <who, desk or floor, how often>
-- Archetype(s): <A–I / MES> — exemplar: <path(s)>
+- Archetype(s): <A–J / MES> — exemplar: <path(s)>
 - Layout & hierarchy: <what is identity, primary action, work, metadata; where each lives>
 - Actions: <primary per surface; secondary; what goes in ⋯ / row menu; destructive flow>
 - Create/edit: <where it opens; container; save model>
@@ -151,8 +152,10 @@ Content inside the 3-pane workspace lives in **resizable panes**, so its width h
 do with the viewport: at a 1024 px screen with Explorer and Properties open, the content pane
 is ~470 px. Size grids and row layouts inside panes with **container queries** (`@container`
 on the card/row, then `@md:` / `@xl:` / `@3xl:` — Tailwind v4 built-in, precedent
-`components/Gantt/Gantt.tsx`), not `md:`/`lg:` viewport breakpoints. Let status pills and
-badges wrap (`flex-wrap`) rather than clip.
+`components/Gantt/Gantt.tsx`), not `md:`/`lg:` viewport breakpoints. **Never `@2xl:`** —
+`packages/config/tailwind/theme.css` sets `--container-2xl: 1400px` (for the page `container`),
+so `@2xl:` only fires on a 1400 px container; write `@min-[42rem]:` for the 672 px step. Let
+status pills and badges wrap (`flex-wrap`) rather than clip.
 
 **Verify before you use — every time.** The most common way a Carbon-looking design breaks is
 an invented API. Before writing any of these, open the source and confirm it:

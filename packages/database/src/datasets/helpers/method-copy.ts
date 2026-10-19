@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   insertId,
   maybeOne,
@@ -10,7 +14,7 @@ import {
 import type { Ctx } from "../types.ts";
 
 /**
- * The seed's copy of the `get-method` edge function, which it cannot invoke from
+ * The seed's copy of the `get-method` operation, which it cannot call from
  * inside its one SQL transaction. Narrower on purpose: no configuration rules,
  * supersession redirect, assembly-instruction step expansion or method steps.
  */

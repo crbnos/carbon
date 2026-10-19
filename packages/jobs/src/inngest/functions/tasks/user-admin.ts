@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Result } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { deactivateUser } from "@carbon/auth/users.server";
@@ -131,7 +135,9 @@ export const userAdminFunction = inngest.createFunction(
       if (result.success) {
         logger.info(`Success ${payload.id}`);
       } else {
-        logger.error(`Admin action ${payload.type} failed for ${payload.id}`, {
+        logger.error("Admin action {payloadType} failed for {payloadId}", {
+          payloadType: payload.type,
+          payloadId: payload.id,
           message: result.message
         });
       }

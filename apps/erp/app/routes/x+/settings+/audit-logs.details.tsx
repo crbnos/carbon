@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getGlobalAuditLog } from "@carbon/ee/audit.server";
 import {
@@ -10,7 +14,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { AuditLogTable } from "~/modules/settings";
+import { AuditLogTable } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -65,7 +69,7 @@ export default function AuditLogDetailsRoute() {
             <Trans>All Audit Logs</Trans>
           </DrawerTitle>
         </DrawerHeader>
-        <DrawerBody className="p-0">
+        <DrawerBody className="p-0 max-md:p-0">
           <AuditLogTable entries={entries} count={count} />
         </DrawerBody>
       </DrawerContent>

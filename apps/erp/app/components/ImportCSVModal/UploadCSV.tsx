@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { downloadText, storage } from "@carbon/files";
 import {
@@ -22,7 +26,10 @@ import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
 import { LuDownload, LuFileSpreadsheet } from "react-icons/lu";
 import { useUser } from "~/hooks/useUser";
-import { fieldMappings, type importSchemas } from "~/modules/shared";
+import {
+  fieldMappings,
+  type importSchemas
+} from "~/modules/shared/imports.models";
 import { useCsvContext } from "./useCsvContext";
 
 export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {

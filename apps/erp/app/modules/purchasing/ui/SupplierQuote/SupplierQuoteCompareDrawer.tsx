@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import {
   Badge,
@@ -29,7 +33,7 @@ import {
   TruncatedTooltipText,
   VStack
 } from "@carbon/react";
-import { pluralize } from "@carbon/utils";
+import { distinctItemText, pluralize } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
 import { LuArrowLeft, LuImage, LuStar } from "react-icons/lu";
@@ -580,9 +584,14 @@ const ComparisonView = ({
                             <span className="font-medium">
                               {item.itemReadableId}
                             </span>
-                            <span className="text-xs text-muted-foreground truncate max-w-[140px]">
-                              {item.description}
-                            </span>
+                            {distinctItemText(
+                              item.itemReadableId,
+                              item.description
+                            ) && (
+                              <span className="text-xs text-muted-foreground truncate max-w-[140px]">
+                                {item.description}
+                              </span>
+                            )}
                           </VStack>
                         </Td>
                         {quotes.map((quote) => {
@@ -713,12 +722,14 @@ const LineSelectionView = ({
                   the card edge. min-w-0 is what lets truncate bite. */}
               <VStack spacing={0} className="flex-1 min-w-0">
                 <Heading className="min-w-0">{line.itemReadableId}</Heading>
-                <TruncatedTooltipText
-                  className="text-muted-foreground text-base truncate"
-                  tooltip={line.description}
-                >
-                  {line.description}
-                </TruncatedTooltipText>
+                {distinctItemText(line.itemReadableId, line.description) && (
+                  <TruncatedTooltipText
+                    className="text-muted-foreground text-base truncate"
+                    tooltip={line.description}
+                  >
+                    {line.description}
+                  </TruncatedTooltipText>
+                )}
               </VStack>
             </HStack>
 

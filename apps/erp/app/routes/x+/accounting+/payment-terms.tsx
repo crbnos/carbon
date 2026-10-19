@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
-import { getPaymentTerms } from "~/modules/accounting";
+import { useLoaderData } from "react-router";
+import { getPaymentTerms } from "~/modules/accounting/accounting.service";
 import { PaymentTermsTable } from "~/modules/accounting/ui/PaymentTerms";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -41,7 +45,7 @@ export default function PaymentTermsRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <PaymentTermsTable data={data ?? []} count={count ?? 0} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

@@ -1,14 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { isSalesReturnOrderLocked } from "~/modules/sales/sales.models";
 import {
   deleteSalesReturnOrderLine,
   getSalesReturnOrder,
-  getSalesReturnOrderLine,
-  isSalesReturnOrderLocked
-} from "~/modules/sales";
+  getSalesReturnOrderLine
+} from "~/modules/sales/sales.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 

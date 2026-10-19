@@ -1,6 +1,5 @@
 paths:
-  - "packages/database/supabase/functions/shared/precision.ts"
-  - "packages/utils/src/precision.ts"
+  - "packages/database/src/precision.ts"
   - "packages/utils/src/format.ts"
   - "packages/checks/src/conformance/no-derived-percent-column.ts"
   - "packages/checks/src/conformance/no-raw-rounding.ts"
@@ -14,15 +13,15 @@ paths:
 # Numeric Precision & Formatting
 
 The numeric standard for every price, rate, quantity, and amount in Carbon.
-Source of truth: `packages/database/supabase/functions/shared/precision.ts`
-(Deno-side because the edge runtime only mounts `supabase/functions/`;
-`packages/utils/src/precision.ts` re-exports it for Node/browser — that relative
-import is BY DESIGN, not an import to "fix").
+Source of truth: `packages/database/src/precision.ts` (`@carbon/database/precision`),
+re-exported from the `@carbon/utils` index. It lives in `@carbon/database` because
+`@carbon/utils` depends on `@carbon/database`, never the reverse — the posting
+builders there need it too.
 
 ## Accounting currency boundaries
 
 Document `exchangeRate` is foreign units per company base unit. Use
-`shared/accounting-currency.ts` (`@carbon/utils` re-export):
+`@carbon/database/accounting-currency` (re-exported by `@carbon/utils`):
 `toBaseAmount(document, rate)` divides and rounds to internal precision;
 `toDocumentAmount(base, rate, currency.decimalPlaces)` multiplies and rounds to
 settlement precision. Identity currency still rounds at its configured decimals.
@@ -183,15 +182,13 @@ counts, pagination, lead-time buckets, AQL ladders, geometry) live in the
 
 ## Runtime type decoding (NUMERIC and DATE)
 
-Both Postgres drivers are configured so runtime matches the generated types:
-node-postgres via `setTypeParser`, deno-postgres (v0.19.x, aliased `"pg"` in
-`functions/deno.json`) via `controls.decoders` — both in
-`functions/lib/postgres/index.ts`, and they MUST stay in step or Node and the
-edge runtime decode the same column differently.
+node-postgres is configured so runtime matches the generated types:
+`packages/database/src/client.ts` registers `setTypeParser` overrides once at
+module load (node-postgres keeps them in a process-global registry).
 
 - **NUMERIC (1700) → `Number`.** Existing `Number(...)` coercions are harmless
   no-ops; float8 columns still arrive as strings.
-- **DATE (1082) → the raw `YYYY-MM-DD` string.** The drivers otherwise parse it
+- **DATE (1082) → the raw `YYYY-MM-DD` string.** node-postgres otherwise parses it
   into a JS `Date` at LOCAL midnight (`postgres-date`: "Force YYYY-MM-DD dates to
   be parsed as local time") while `KyselyDatabase` declares `string`. Typecheck
   cannot see that gap — assigning the `Date` into a field already declared

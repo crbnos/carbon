@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SYNC_CONFIG, ProviderID } from "../../../core/models";
 import type {
@@ -713,25 +717,28 @@ describe("Rillet native void deletion", () => {
       "/invoices/inv-1/payments/pay-1"
     ],
     ["deleteBillPayment", ["bill-1", "pay-1"], "/bills/bill-1/payments/pay-1"]
-  ] as const)("%s uses the native endpoint and tolerates only an already absent record", async (method, ids, path) => {
-    const provider = makeProvider();
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
-    await (provider[method] as (...ids: string[]) => Promise<void>)(...ids);
-    expect(requestUrl(0)).toBe(`https://api.rillet.com${path}`);
-    expect(requestInit(0)?.method).toBe("DELETE");
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({ message: "Not found" }, 404)
-    );
-    await expect(
-      (provider[method] as (...ids: string[]) => Promise<void>)(...ids)
-    ).resolves.toBeUndefined();
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({ message: "Payment is cleared" }, 400)
-    );
-    await expect(
-      (provider[method] as (...ids: string[]) => Promise<void>)(...ids)
-    ).rejects.toThrow();
-  });
+  ] as const)(
+    "%s uses the native endpoint and tolerates only an already absent record",
+    async (method, ids, path) => {
+      const provider = makeProvider();
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+      await (provider[method] as (...ids: string[]) => Promise<void>)(...ids);
+      expect(requestUrl(0)).toBe(`https://api.rillet.com${path}`);
+      expect(requestInit(0)?.method).toBe("DELETE");
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ message: "Not found" }, 404)
+      );
+      await expect(
+        (provider[method] as (...ids: string[]) => Promise<void>)(...ids)
+      ).resolves.toBeUndefined();
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ message: "Payment is cleared" }, 400)
+      );
+      await expect(
+        (provider[method] as (...ids: string[]) => Promise<void>)(...ids)
+      ).rejects.toThrow();
+    }
+  );
 });
 
 describe("RilletProvider counterpart candidates", () => {

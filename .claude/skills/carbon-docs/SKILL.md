@@ -67,7 +67,7 @@ The **holy source of truth is the actual source code + the LATEST database migra
 
 - **Verify before you write.** Every entity, status enum *value*, and transition named in docs must exist
   in real code. Confirm exact strings (`"To Ship and Invoice"`, `"Fully Depreciated"`), the actions that
-  drive them (service fns, routes, edge functions in `packages/database/supabase/functions/`), and what
+  drive them (service fns, routes, postings in the ERP modules' service files), and what
   posts/gates (e.g. `companySettings.accountingEnabled`).
 - **Read the newest migration, not the first.** Timestamps order them; a 2026 refactor may have rebuilt a
   subsystem the cache still describes the old way.
@@ -95,7 +95,7 @@ Guide for the story. (Guide chapters were given 12 cross-flow links — interlin
 
 1. **Research (grounded) → a fact sheet.** Dispatch a research subagent per feature. It must return a
    structured **fact sheet**, not prose: entities/tables/columns; exact status strings and which entity
-   owns each; transitions with the action that drives them (service fn / route / edge function) as
+   owns each; transitions with the action that drives them (service fn / route / posting) as
    `file:line`; gates and settings (`companySettings.*`, plan features); the real UI labels for every
    where-to-click; the gotchas a generic description would get wrong; and an explicit "could not verify"
    list — a gap on that list is more research work, never a writing improvisation. The writer then works
@@ -171,7 +171,7 @@ flowIndex: 1          # order of the flow in the subnav (0 = first)
 - `<Divider />` — closes a chapter before its wrap-up line.
 - `<Term>make to order</Term>` — inline glossary term: dotted-underline; click/tap opens a popover with a
   grounded one-line definition + an optional "Learn more" link. Same component on both surfaces; definitions
-  live in `@carbon/glossary` (`packages/glossary/src/terms.ts`), rendered by
+  live in `@carbon/content/glossary` (`docs/content/src/glossary/terms.ts`), rendered by
   `docs/components/editorial/glossary.tsx`. See "Interlinking & the glossary" below.
 
 Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–5 `##` sections.
@@ -224,8 +224,8 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
     ERP** (never guessed), then pass it. Use it ONLY for a **linear** lifecycle — a 2-axis comparison matrix
     (e.g. invoices sales-vs-purchase) or a small enum list stays a markdown table.
   - `<AgentContext>…</AgentContext>` — renders **nothing** on the site; its content ships only to the
-    in-app agent's knowledge base (`pnpm run generate:agent-kb` → `apps/erp/app/modules/agent/kb/`,
-    regenerated automatically by check-and-commit). Put troubleshooting/FAQ, exact error strings, and
+    in-app agent's knowledge base (`@carbon/content/agent-kb`, bundled into the ERP at build time).
+    Put troubleshooting/FAQ, exact error strings, and
     internal mechanics (table names, routes, enum internals) here — reader-facing prose stays free of
     them. Never write a reader-visible "Troubleshooting" section. About half the Reference pages still
     have no `<AgentContext>`: when your fact sheet surfaced exact error strings for a page you're
@@ -339,7 +339,7 @@ a page that links out *and* glosses its jargon is worth more than the same prose
   - `<Term>make to order</Term>` slugifies the text to find the entry; `<Term id="make-to-order">made</Term>`
     when the display text differs from the slug.
   - **First occurrence per page only** — not every instance. Underlining every "order" is noise.
-  - Definitions are a single source of truth: `@carbon/glossary` (`packages/glossary/src/terms.ts`),
+  - Definitions are a single source of truth: `@carbon/content/glossary` (`docs/content/src/glossary/terms.ts`),
     where each entry is `slug → { term, definition }` with `term`/`definition` as Lingui `msg` descriptors
     (rendered by `docs/components/editorial/glossary.tsx`).
     Add the entry there *before* you use a new term, and **ground the definition in source** (the prime

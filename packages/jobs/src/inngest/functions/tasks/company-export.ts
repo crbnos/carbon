@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { getCompanyPrivateBucket } from "@carbon/files";
@@ -25,7 +29,6 @@ import {
   mapWithConcurrency,
   type ScopeExclusions,
   type ScopeViolation,
-  STORAGE_BUCKET,
   selectExportableTables,
   serializeTable,
   writeBackupManifest
@@ -243,21 +246,11 @@ export async function buildCompanyBackup(
 
   if (includeStorage === "all") {
     let totalBytes = 0;
-    // Assets live in the company's own bucket; files uploaded before the
-    // per-company bucket migration still live in the legacy shared bucket.
-    // Union both listings (same keys), preferring the company bucket's copy.
-    const [companyPaths, legacyPaths] = await Promise.all([
-      listBucketFilesRecursive(
-        client,
-        getCompanyPrivateBucket(companyId),
-        companyId
-      ),
-      listBucketFilesRecursive(client, STORAGE_BUCKET, companyId)
-    ]);
-    const byPath = new Map<string, { path: string; size: number }>();
-    for (const file of legacyPaths) byPath.set(file.path, file);
-    for (const file of companyPaths) byPath.set(file.path, file);
-    const paths = Array.from(byPath.values());
+    const paths = await listBucketFilesRecursive(
+      client,
+      getCompanyPrivateBucket(companyId),
+      companyId
+    );
     for (const file of paths) {
       const included = totalBytes + file.size <= MAX_STORAGE_TOTAL_BYTES;
       if (included) {
@@ -371,7 +364,7 @@ export const companyExportFunction = inngest.createFunction(
 
     return await step.run("export-company", async () => {
       const client = getCarbonServiceRole();
-      const db = getJobDatabaseClient(TABLE_CONCURRENCY);
+      const db = getJobDatabaseClient();
 
       // Live-progress marker (cleared on success, flipped to "failed" on error).
       // Throttled so a fast parallel dump doesn't hammer the row.
@@ -419,6 +412,7 @@ export const companyExportFunction = inngest.createFunction(
         const assets = await copyAssetsToBackup(
           client,
           {
+            companyId,
             sourcePaths: assetSourcePaths,
             destBucket: companyId,
             destPrefix: backupAssetsDir(name)

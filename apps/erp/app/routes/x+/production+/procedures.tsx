@@ -1,11 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
-import { getProcedures } from "~/modules/production";
+import { useLoaderData } from "react-router";
+import { getProcedures } from "~/modules/production/production.service";
 import ProceduresTable from "~/modules/production/ui/Procedures/ProceduresTable";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -51,7 +55,7 @@ export default function ProceduresRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <ProceduresTable data={procedures} tags={tags} count={count} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

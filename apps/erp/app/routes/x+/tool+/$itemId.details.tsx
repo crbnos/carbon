@@ -1,31 +1,35 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { Menubar, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Await, redirect, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items";
 import {
-  getItemChangeNoticeData,
+  itemManufacturingValidator,
+  toolValidator
+} from "~/modules/items/items.models";
+import {
+  getItemChangeNoticeDataOnce,
   getItemManufacturing,
-  getMakeMethodById,
-  getMakeMethods,
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
-  itemManufacturingValidator,
-  toolValidator,
-  upsertItemManufacturing,
-  upsertTool
-} from "~/modules/items";
-import { getRevisionLock } from "~/modules/items/items.server";
+  getRevisionLock
+} from "~/modules/items/items.service";
+import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items/types";
 import {
   ChangeNoticeDraftLockReason,
   getChangeNoticeDraftLock,
@@ -42,12 +46,10 @@ import {
   MakeMethodTools
 } from "~/modules/items/ui/Item";
 import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm";
-import type { MethodItemType, MethodType } from "~/modules/shared";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "itemid-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -62,10 +64,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const requestedMethodId = url.searchParams.get("methodId");
 
   const [makeMethods, revisionLock, changeNoticeData] = await Promise.all([
-    getMakeMethods(client, itemId, companyId),
+    getMakeMethodsOnce(client, itemId, companyId),
     getRevisionLock(client, { itemId, companyId }),
     // Tool → CO traceability (4b): CO history for this tool + type labels.
-    getItemChangeNoticeData(client, itemId, companyId)
+    getItemChangeNoticeDataOnce(client, itemId, companyId)
   ]);
   const revisionStatus = revisionLock.revisionStatus;
   const releaseControl = revisionLock.releaseControl;
@@ -90,7 +92,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   }
 
-  const fullMethod = await getMakeMethodById(client, makeMethod.id, companyId);
+  const fullMethod = await getMakeMethodByIdOnce(
+    client,
+    makeMethod.id,
+    companyId
+  );
   if (fullMethod.error || !fullMethod.data) {
     return {
       methodData: null,
@@ -136,77 +142,44 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+// The details form, and the manufacturing card (`intent=manufacturing`).
+const intentForm = z.object({ intent: zfd.text(z.string().optional()) });
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(intentForm).request(args, {
+    params: ["itemId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { itemId } = input.params;
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
 
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === "manufacturing") {
+  if (input.data.intent === "manufacturing") {
     const validation = await validator(itemManufacturingValidator).validate(
       formData
     );
-
-    if (validation.error) {
-      logger.error(validation.error);
-      return validationError(validation.error);
-    }
-
-    const updateToolManufacturing = await upsertItemManufacturing(client, {
+    if (validation.error) return validationError(validation.error);
+    const result = await api.items.updateItemManufacturing({
       ...validation.data,
       itemId,
-      updatedBy: userId,
       customFields: setCustomFields(formData)
     });
-    if (updateToolManufacturing.error) {
-      throw redirect(
-        path.to.tool(itemId),
-        await flash(
-          request,
-          error(
-            updateToolManufacturing.error,
-            "Failed to update tool manufacturing"
-          )
-        )
-      );
-    }
-
-    throw redirect(
-      path.to.toolDetails(itemId),
-      await flash(request, success("Updated tool manufacturing"))
-    );
+    return respond(args.request, result).redirect(path.to.toolDetails(itemId), {
+      message: "Updated tool manufacturing",
+      onError: path.to.tool(itemId)
+    });
   }
 
   const validation = await validator(toolValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const updateTool = await upsertTool(client, {
+  if (validation.error) return validationError(validation.error);
+  const result = await api.items.updateTool({
     ...validation.data,
     id: itemId,
-    companyId,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
+    customFields: setCustomFields(formData)
   });
-  if (updateTool.error) {
-    throw redirect(
-      path.to.tool(itemId),
-      await flash(request, error(updateTool.error, "Failed to update tool"))
-    );
-  }
-
-  throw redirect(
-    path.to.tool(itemId),
-    await flash(request, success("Updated tool"))
-  );
+  return respond(args.request, result).redirect(path.to.tool(itemId), {
+    message: "Updated tool"
+  });
 }
 
 export default function ToolDetailsRoute() {
@@ -281,7 +254,6 @@ export default function ToolDetailsRoute() {
               {manufacturingInitialValues && (
                 <ItemManufacturingForm
                   key={itemId}
-                  // @ts-ignore
                   initialValues={manufacturingInitialValues}
                   withConfiguration={false}
                 />
@@ -301,9 +273,8 @@ export default function ToolDetailsRoute() {
               <BillOfProcess
                 key={`bop:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations ?? []}
-                // @ts-ignore
                 materials={methodData.methodMaterials ?? []}
                 tags={tags}
                 revisionStatus={revisionStatus}
@@ -314,9 +285,9 @@ export default function ToolDetailsRoute() {
               <BillOfMaterial
                 key={`bom:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 materials={methodData.methodMaterials ?? []}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations}
                 replenishmentSystem={toolData.toolSummary?.replenishmentSystem}
                 revisionStatus={revisionStatus}

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -6,11 +10,14 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { maintenanceDispatchValidator } from "~/services/models";
-import { endProductionEventsByWorkCenter } from "~/services/operations.service";
+import {
+  endProductionEventsByWorkCenter,
+  postEndedProductionEvents
+} from "~/services/operations.service";
 import { path } from "~/utils/path";
 
 const log = getLogger("mes");
@@ -141,13 +148,27 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // End all production events for the work center if oeeImpact is Down
+  // End all production events for the work center if oeeImpact is Down,
+  // and post them as any ended event posts.
   if (validation.data.oeeImpact === "Down") {
-    await endProductionEventsByWorkCenter(serviceRole, {
+    const ended = await endProductionEventsByWorkCenter(serviceRole, {
       workCenterId: validation.data.workCenterId,
       companyId,
       endTime: datetime.timestamp()
     });
+    if (ended.error) {
+      log.error("Failed to end the work center's production events", {
+        companyId,
+        workCenterId: validation.data.workCenterId,
+        error: ended.error
+      });
+    } else {
+      await postEndedProductionEvents(serviceRole, {
+        companyId,
+        userId,
+        ids: ended.data.map((event) => event.id)
+      });
+    }
   }
 
   // Send notification based on failure mode type

@@ -1,24 +1,31 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { Spinner, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Await, redirect, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { DeferredFiles, Documents } from "~/components";
 import { useRouteData } from "~/hooks";
-import type { IssueAssociationNode } from "~/modules/quality";
+import {
+  isIssueLocked,
+  issueValidator
+} from "~/modules/quality/quality.models";
 import {
   getIssue,
   getIssueActionTasks,
   getIssueReviewers,
-  isIssueLocked,
-  issueValidator,
   updateIssue
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
+import type { IssueAssociationNode } from "~/modules/quality/types";
 import {
   ActionTasksList,
   AssociatedItemsList,
@@ -59,7 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -95,6 +102,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const result = await updateIssue(client, {
     id,
+    companyId,
     nonConformanceId,
     name: validation.data.name,
     priority: validation.data.priority,
@@ -145,7 +153,7 @@ export default function IssueDetailsRoute() {
   if (!routeData) throw new Error("Could not find issue data");
 
   return (
-    <VStack spacing={2}>
+    <VStack spacing={4}>
       <IssueContent
         key={id}
         id={id}

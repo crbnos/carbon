@@ -1,20 +1,25 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import {
-  Button,
-  Heading,
-  Input,
-  SidebarTrigger,
-  useIsMobile
-} from "@carbon/react";
+import { Button, Input, useViewport } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LuSearch, LuTriangleAlert } from "react-icons/lu";
+import { LuSearch } from "react-icons/lu";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { OperationsList } from "~/components";
+import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
+import { MesEmptyState } from "~/components/MesEmptyState";
 import { getActiveJobOperationsByEmployee } from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
+import type { Handle } from "~/utils/handle";
+
+export const handle: Handle = {
+  realtime: ["jobOperation", "productionEvent"]
+};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
@@ -37,11 +42,11 @@ export default function ActiveRoute() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const panelRef = useRef<ImperativePanelHandle>(null);
-  const isMobile = useIsMobile();
+  const { isPhone: isMobile } = useViewport();
   const { operationId } = useParams();
 
   useEffect(() => {
-    if (isMobile && !!operationId) {
+    if (isMobile && operationId) {
       panelRef.current?.collapse();
     } else {
       panelRef.current?.expand();
@@ -61,18 +66,12 @@ export default function ActiveRoute() {
   }, [operations, searchTerm]);
 
   return (
-    <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-card">
-        <div className="flex items-center gap-2 px-2">
-          <SidebarTrigger />
-          <Heading size="h4">
-            <Trans>Active</Trans>
-          </Heading>
-        </div>
-      </header>
+    <div className="flex flex-col flex-1 min-h-0">
+      <MesAppBar title={<Trans>Active</Trans>} />
+      <MesQueueHeader title={<Trans>Active</Trans>} />
 
       <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
-        <div className="w-full p-4 h-[var(--header-height)]">
+        <div className="w-full p-4 h-[var(--header-height)] max-md:h-auto max-md:pb-0">
           <div className="relative">
             <div className="flex justify-between gap-4">
               <div className="flex flex-grow">
@@ -88,30 +87,24 @@ export default function ActiveRoute() {
           </div>
         </div>
         {filteredOperations.length > 0 ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4 max-md:pt-3">
             <OperationsList key="active" operations={filteredOperations} />
           </div>
         ) : searchTerm ? (
-          <div className="flex flex-col flex-1 w-full h-[calc(100%-var(--header-height)*2)] items-center justify-center gap-4">
-            <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-              <LuTriangleAlert className="h-6 w-6" />
-            </div>
-            <span className="text-xs font-mono font-light text-foreground uppercase">
-              <Trans>No results exist</Trans>
-            </span>
-            <Button onClick={() => setSearchTerm("")}>
-              <Trans>Clear Search</Trans>
-            </Button>
-          </div>
+          <MesEmptyState
+            className="flex-1 w-full h-[calc(100%-var(--header-height)*2)]"
+            title={<Trans>No results exist</Trans>}
+            action={
+              <Button onClick={() => setSearchTerm("")}>
+                <Trans>Clear Search</Trans>
+              </Button>
+            }
+          />
         ) : (
-          <div className="flex flex-col flex-1 w-full h-[calc(100%-var(--header-height)*2)] items-center justify-center gap-4">
-            <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-              <LuTriangleAlert className="h-6 w-6" />
-            </div>
-            <span className="text-xs font-mono font-light text-foreground uppercase">
-              <Trans>No active operations</Trans>
-            </span>
-          </div>
+          <MesEmptyState
+            className="flex-1 w-full h-[calc(100%-var(--header-height)*2)]"
+            title={<Trans>No active operations</Trans>}
+          />
         )}
       </main>
     </div>

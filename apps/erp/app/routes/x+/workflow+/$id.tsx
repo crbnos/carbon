@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { readWorkflowVersion } from "@carbon/ee/workflows";
@@ -8,6 +12,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -18,14 +23,8 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunctionArgs
 } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { usePermissions } from "~/hooks";
-import {
-  getWorkflow,
-  getWorkflowVersion,
-  getWorkflowVersions,
-  workflowCanvasStateSchema
-} from "~/modules/workflows";
 import { Autosave } from "~/modules/workflows/ui/Builder/Autosave";
 import { BuilderHeader } from "~/modules/workflows/ui/Builder/BuilderHeader";
 import { WorkflowBuilderProvider } from "~/modules/workflows/ui/Builder/context";
@@ -36,6 +35,12 @@ import { LiveValidation } from "~/modules/workflows/ui/Builder/LiveValidation";
 import { TestRunDialog } from "~/modules/workflows/ui/Builder/TestRun/TestRunDialog";
 import { WorkflowBuilder } from "~/modules/workflows/ui/Builder/WorkflowBuilder";
 import WorkflowLockModal from "~/modules/workflows/ui/WorkflowLockModal";
+import { workflowCanvasStateSchema } from "~/modules/workflows/workflows.models";
+import {
+  getWorkflow,
+  getWorkflowVersion,
+  getWorkflowVersions
+} from "~/modules/workflows/workflows.service";
 import type { Handle } from "~/utils/handle";
 import { detailBreadcrumb } from "~/utils/handle";
 import { path } from "~/utils/path";

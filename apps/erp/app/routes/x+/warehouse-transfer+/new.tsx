@@ -1,15 +1,18 @@
-import { assertIsPost, error } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
+import { Card, CardContent, CardHeader, Heading } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUser } from "~/hooks";
-import {
-  insertWarehouseTransfer,
-  warehouseTransferValidator
-} from "~/modules/inventory";
+import { warehouseTransferValidator } from "~/modules/inventory/inventory.models";
 import { WarehouseTransferForm } from "~/modules/inventory/ui/WarehouseTransfers";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -28,43 +31,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return null;
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(warehouseTransferValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id: _, transferId, ...transfer } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.inventory.insertWarehouseTransfer({
+    ...transfer,
+    transferId: transferId || undefined,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  const formData = await request.formData();
-  const validation = await validator(warehouseTransferValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
+  if (result.error) {
+    return respond(args.request, result).redirect(path.to.warehouseTransfers);
   }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, transferId: providedTransferId, ...d } = validation.data;
-
-  const createTransfer = await insertWarehouseTransfer(client, {
-    ...d,
-    transferId: providedTransferId || undefined,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
-
-  if (createTransfer.error || !createTransfer.data) {
-    throw redirect(
-      path.to.warehouseTransfers,
-      await flash(
-        request,
-        error(createTransfer.error, "Failed to create warehouse transfer")
-      )
-    );
-  }
-
-  throw redirect(path.to.warehouseTransferDetails(createTransfer.data.id));
+  throw redirect(path.to.warehouseTransferDetails(result.data!.id));
 }
 
 export default function WarehouseTransferNewRoute() {
@@ -75,7 +55,6 @@ export default function WarehouseTransferNewRoute() {
     transferId: "",
     fromLocationId: defaults?.locationId ?? "",
     toLocationId: "",
-    status: "Draft" as const,
     transferDate: "",
     expectedReceiptDate: "",
     notes: "",
@@ -83,8 +62,18 @@ export default function WarehouseTransferNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <WarehouseTransferForm initialValues={initialValues} />
-    </div>
+    <NewRecordPage>
+      <Card>
+        <CardHeader>
+          <Heading as="h1" size="h3" className="font-sans">
+            <Trans>New Warehouse Transfer</Trans>
+          </Heading>
+        </CardHeader>
+        {/* The form's field grid follows its container's width. */}
+        <CardContent className="@container">
+          <WarehouseTransferForm initialValues={initialValues} />
+        </CardContent>
+      </Card>
+    </NewRecordPage>
   );
 }

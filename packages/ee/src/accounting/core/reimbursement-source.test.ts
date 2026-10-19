@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import {
   employeeVendorName,
@@ -99,17 +103,17 @@ describe("resolveReimbursementSyncGate", () => {
     ).toBe(true);
   });
 
-  it.each([
-    "Draft",
-    "Voided"
-  ] as const)("skips a %s reimbursement WITH a reason, so its journal keeps pushing", (status) => {
-    const gate = resolveReimbursementSyncGate({
-      reimbursementId: "REIMB-1",
-      status
-    });
-    expect(gate).not.toBe(true);
-    expect(gate).toMatch(/must be posted/i);
-  });
+  it.each(["Draft", "Voided"] as const)(
+    "skips a %s reimbursement WITH a reason, so its journal keeps pushing",
+    (status) => {
+      const gate = resolveReimbursementSyncGate({
+        reimbursementId: "REIMB-1",
+        status
+      });
+      expect(gate).not.toBe(true);
+      expect(gate).toMatch(/must be posted/i);
+    }
+  );
 });
 
 describe("validateReimbursementAccountMapping", () => {

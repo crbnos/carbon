@@ -1,4 +1,8 @@
-import { assertIsPost, safeRedirect } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
@@ -7,15 +11,12 @@ import {
   CardHeader,
   CardTitle,
   HStack,
+  PrefetchLink,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
-import {
-  type ActionFunctionArgs,
-  Link,
-  redirect,
-  useLoaderData
-} from "react-router";
+import { type ActionFunctionArgs, useLoaderData } from "react-router";
 import {
   OnboardingCard,
   OnboardingCardContent,
@@ -30,11 +31,12 @@ import {
   Timezone
 } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
-import { addressValidator, getCompany } from "~/modules/settings";
+import { addressValidator } from "~/modules/settings/settings.models";
+import { getCompany } from "~/modules/settings/settings.service";
 import {
   getOnboardingDraft,
   setOnboardingDraft
-} from "~/services/onboarding-draft.server";
+} from "~/modules/shared/shared.service";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 
@@ -74,7 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
     company: companyData
   });
 
-  throw redirect(safeRedirect(next, path.to.onboarding.root), {
+  throw redirect(next || path.to.onboarding.root, {
     headers: [["Set-Cookie", draftCookie]]
   });
 }
@@ -131,9 +133,7 @@ export default function OnboardingCompany() {
               asChild
               tabIndex={-1}
             >
-              <Link to={previous} prefetch="intent">
-                Previous
-              </Link>
+              <PrefetchLink to={previous}>Previous</PrefetchLink>
             </Button>
             <Submit shortcut={ONBOARDING_SHORTCUTS.continue}>Next</Submit>
           </HStack>

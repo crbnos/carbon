@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import Papa from "papaparse";
 
 export const CSV_CONTENT_TYPE = "text/csv;charset=utf-8";
@@ -16,8 +20,10 @@ export function stripCsvFormulaPrefix(value: string): string {
   return value.replace(/^[ \t\r]*[=+\-@\t\r]+/g, "");
 }
 
-function sanitizeCell(value: unknown): unknown {
-  if (typeof value === "string") return stripCsvFormulaPrefix(value);
+function sanitizeCell(value: unknown, formulaSafe = true): unknown {
+  if (typeof value === "string") {
+    return formulaSafe ? stripCsvFormulaPrefix(value) : value;
+  }
   if (value instanceof Date) return value.toISOString();
   // Never ship `[object Object]` or explode a nested object into stray columns.
   if (value != null && typeof value === "object" && !Array.isArray(value)) {
@@ -31,6 +37,18 @@ export type EncodeCsvOptions = {
   fields?: string[];
   /** Value emitted for null/undefined cells. Default "". */
   emptyFieldValue?: string;
+  /**
+   * Emit the header row. Default true. Pass false for every page after the
+   * first when streaming one file in pages; the pages join with "\r\n".
+   */
+  header?: boolean;
+  /**
+   * Strip formula-leading characters from string cells (`stripCsvFormulaPrefix`).
+   * Default true. Pass false only when the CSV is read by a program, never
+   * opened in a spreadsheet: the MCP server's tool results, where stripping
+   * would change the data an agent reads ("+1 555 0100" → "1 555 0100").
+   */
+  formulaSafe?: boolean;
 };
 
 /**
@@ -46,21 +64,28 @@ export function encodeCsv(
     ...new Set(rows.flatMap((row) => Object.keys(row)))
   ];
   const empty = options.emptyFieldValue ?? "";
+  const formulaSafe = options.formulaSafe ?? true;
   const data = rows.map((row) =>
     fields.map((field) => {
       const value = row[field];
-      return value == null ? empty : sanitizeCell(value);
+      return value == null ? empty : sanitizeCell(value, formulaSafe);
     })
   );
   // Headers are cells too — import-error re-exports echo uploaded headers.
-  return Papa.unparse({ fields: fields.map(stripCsvFormulaPrefix), data });
+  return Papa.unparse(
+    {
+      fields: formulaSafe ? fields.map(stripCsvFormulaPrefix) : fields,
+      data
+    },
+    { header: options.header ?? true }
+  );
 }
 
 /** Header row + tabular cells → CSV text (for templates and error re-exports). */
 export function encodeCsvTable(fields: string[], data: unknown[][]): string {
   return Papa.unparse({
     fields: fields.map(stripCsvFormulaPrefix),
-    data: data.map((row) => row.map(sanitizeCell))
+    data: data.map((row) => row.map((cell) => sanitizeCell(cell)))
   });
 }
 
@@ -88,6 +113,43 @@ export function parseCsv<Row extends Record<string, unknown>>(
     fields: result.meta.fields ?? [],
     errors: result.errors
   };
+}
+
+/** One record of a CSV file and the line it starts on (the first line is 1). */
+export type CsvLine = { line: number; cells: string[] };
+
+/**
+ * CSV text → its records, each with the line it starts on, for messages that
+ * name a line. The header is the first record. Records whose cells are all
+ * blank (an empty line, or only delimiters, which spreadsheets write) are
+ * left out, but still count toward the lines of the records after them.
+ */
+export function parseCsvLines(text: string): {
+  lines: CsvLine[];
+  errors: Papa.ParseError[];
+} {
+  const source = text.replace(/^\uFEFF/, "");
+  const lines: CsvLine[] = [];
+  const errors: Papa.ParseError[] = [];
+  let line = 1;
+  let consumed = 0;
+  Papa.parse<string[]>(source, {
+    header: false,
+    skipEmptyLines: false,
+    step: (record) => {
+      const start = line;
+      // The cursor is past this record and its line break, so this counts
+      // the line breaks inside quoted cells too.
+      for (let i = consumed; i < record.meta.cursor; i++) {
+        if (source[i] === "\n") line++;
+      }
+      consumed = record.meta.cursor;
+      errors.push(...record.errors);
+      const cells = record.data.map((cell) => cell.trim());
+      if (cells.some((cell) => cell !== "")) lines.push({ line: start, cells });
+    }
+  });
+  return { lines, errors };
 }
 
 /**

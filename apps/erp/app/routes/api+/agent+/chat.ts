@@ -1,77 +1,35 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { companyHasFeature } from "@carbon/ee/plan.server";
-import type { UIMessage } from "ai";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  assertAgentRateLimit,
-  chatRequest,
-  createThread,
-  saveUserMessage,
-  streamChat
-} from "~/modules/agent";
+import { chatRequest } from "~/modules/agent/agent.models";
+import { startAgentTurn } from "~/modules/agent/agent.server";
+import { streamChat } from "~/modules/agent/agent.service";
+import { serviceContext } from "~/modules/service-context.server";
+import { getDatabaseClient } from "~/services/database.server";
 
-function extractText(message: unknown): string {
-  const m = message as
-    | { content?: unknown; parts?: Array<{ type?: string; text?: string }> }
-    | undefined;
-  if (!m) return "";
-  if (typeof m.content === "string") return m.content;
-  const parts = Array.isArray(m.parts)
-    ? m.parts
-    : Array.isArray(m.content)
-      ? (m.content as Array<{ type?: string; text?: string }>)
-      : [];
-  return parts
-    .filter((p) => p?.type === "text")
-    .map((p) => p.text ?? "")
-    .join("");
-}
-
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {});
-
-  const allowed = await companyHasFeature(client, companyId, {
-    feature: "AI_AGENT"
-  });
-  if (!allowed) {
-    throw new Response("Upgrade required", { status: 402 });
+// `useChat` reads a refusal from the status; the answer streams back.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(chatRequest).request(args);
+  if ("invalid" in input) {
+    throw new Response("Invalid request", { status: 400 });
+  }
+  const auth = await requirePermissions(args.request, {});
+  const turn = await startAgentTurn(serviceContext(auth), input.data);
+  if (turn.error) {
+    throw new Response(turn.error.message, { status: turn.error.status });
   }
 
-  await assertAgentRateLimit(userId, companyId);
-
-  const parsed = chatRequest.parse(await request.json());
-
-  let threadId = parsed.threadId;
-  if (!threadId) {
-    const created = await createThread(client, {
-      companyId,
-      userId,
-      context: parsed.context
-    });
-    if (created.error || !created.data) {
-      throw new Response("Failed to create thread", { status: 500 });
-    }
-    threadId = created.data.id;
-  }
-
-  const text = extractText(parsed.messages[parsed.messages.length - 1]);
-  if (text) {
-    await saveUserMessage(client, {
-      threadId,
-      companyId,
-      userId,
-      text,
-      context: parsed.context
-    });
-  }
-
-  return streamChat(client, {
-    companyId,
-    companyGroupId,
-    userId,
-    threadId,
-    messages: parsed.messages as UIMessage[],
-    context: parsed.context
+  return streamChat(auth.client, getDatabaseClient(), {
+    companyId: auth.companyId,
+    userId: auth.userId,
+    threadId: input.data.threadId,
+    history: turn.data.history,
+    context: input.data.context,
+    isNewQuestion: turn.data.isNewQuestion,
+    abortSignal: args.request.signal
   });
 }

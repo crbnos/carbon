@@ -1,4 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { posting } from "@carbon/api/postings.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
 export const postTransactionFunction = inngest.createFunction(
@@ -19,39 +25,37 @@ export const postTransactionFunction = inngest.createFunction(
       switch (payload.type) {
         case "receipt":
           logger.info("Posting receipt", { payload });
-          const postReceipt = await serviceRole.functions.invoke(
+          const postReceipt = await posting(
             "post-receipt",
             {
-              body: {
-                receiptId: payload.documentId,
-                userId: payload.userId,
-                companyId: payload.companyId
-              }
-            }
+              db: getJobDatabaseClient(),
+              companyId: payload.companyId,
+              userId: payload.userId
+            },
+            { receiptId: payload.documentId }
           );
 
           result = {
             success: postReceipt.error === null,
-            message: postReceipt.error?.message
+            message: postReceipt.error?.message ?? ""
           };
 
           break;
         case "purchase-invoice":
           logger.info("Posting purchase invoice", { payload });
-          const postPurchaseInvoice = await serviceRole.functions.invoke(
+          const postPurchaseInvoice = await posting(
             "post-purchase-invoice",
             {
-              body: {
-                invoiceId: payload.documentId,
-                userId: payload.userId,
-                companyId: payload.companyId
-              }
-            }
+              db: getJobDatabaseClient(),
+              companyId: payload.companyId,
+              userId: payload.userId
+            },
+            { invoiceId: payload.documentId }
           );
 
           result = {
             success: postPurchaseInvoice.error === null,
-            message: postPurchaseInvoice.error?.message
+            message: postPurchaseInvoice.error?.message ?? ""
           };
 
           if (result.success) {
@@ -71,21 +75,22 @@ export const postTransactionFunction = inngest.createFunction(
                 documentId: payload.documentId
               });
 
-              const priceUpdate = await serviceRole.functions.invoke(
+              const priceUpdate = await posting(
                 "update-purchased-prices",
                 {
-                  body: {
-                    invoiceId: payload.documentId,
-                    companyId: payload.companyId,
-                    userId: payload.userId,
-                    source: "purchaseInvoice"
-                  }
+                  db: getJobDatabaseClient(),
+                  companyId: payload.companyId,
+                  userId: payload.userId
+                },
+                {
+                  invoiceId: payload.documentId,
+                  source: "purchaseInvoice"
                 }
               );
 
               result = {
                 success: priceUpdate.error === null,
-                message: priceUpdate.error?.message
+                message: priceUpdate.error?.message ?? ""
               };
             }
           }
@@ -94,20 +99,22 @@ export const postTransactionFunction = inngest.createFunction(
         case "shipment":
           logger.info("Posting shipment", { payload });
 
-          const postShipment = await serviceRole.functions.invoke(
+          const postShipment = await posting(
             "post-shipment",
             {
-              body: {
-                shipmentId: payload.documentId,
-                userId: payload.userId,
-                companyId: payload.companyId
-              }
+              db: getJobDatabaseClient(),
+              companyId: payload.companyId,
+              userId: payload.userId
+            },
+            {
+              type: "post",
+              shipmentId: payload.documentId
             }
           );
 
           result = {
             success: postShipment.error === null,
-            message: postShipment.error?.message
+            message: postShipment.error?.message ?? ""
           };
 
           break;

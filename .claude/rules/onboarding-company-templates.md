@@ -45,7 +45,7 @@ await applyDataset(pgClient, { companyId, userId, dataset, timeZone, tiers?, log
 ```
 
 It resolves today in the company's timezone, builds the context, opens ONE transaction,
-sets `app.sync_in_progress`, ensures sequences, runs the selected tiers in order, and
+sets `app.sync_in_progress` and `app.dataset_apply`, ensures sequences, runs the selected tiers in order, and
 commits — or rolls the whole thing back. A half-seeded company is not a possible outcome.
 
 `wipeFirst` clears the company's existing business data inside that same transaction,
@@ -91,7 +91,8 @@ around its generic FK-null + topological delete, all inside the apply transactio
    type (invoices, payments, memos, receipts, shipments, `Inventory Adjustment`) whose
    lines — or `payment`/`memo.journalId` — point at a row it is about to delete gets a
    negated Posted `VOID …` entry dated today, the original left Posted, as the posting
-   functions void.
+   functions void. The select takes `status = 'Posted'` only: a `Provisional` journal of a
+   company with no cutover yet is neither voided nor deleted (`journal` is preserved).
 1. **Non-Draft `salesInvoice` / `purchaseInvoice` rows are set back to `Draft`.** The
    `prevent_posted_{sales,purchase}_invoice_deletion` sync interceptors refuse deleting any
    other status and run even under `app.sync_in_progress`. This is a re-seed clear, not an
@@ -101,7 +102,11 @@ around its generic FK-null + topological delete, all inside the apply transactio
    customer-XOR-supplier CHECK the FK-nulling pass would violate.
 3. The existing header-first deletes (invoices, orders, quotes, RFQs), MRP output, and
    the four model-only step-slide tables (`MODEL_SLIDE_TABLES`) — their
-   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass.
+   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. Any other
+   seeded table with a CHECK that needs one of several nullable FKs set goes in
+   `PARENT_CHECK_TABLES` (today `customerContractInvoiceLine`: an invoice OR a credit
+   memo). Missing one fails every re-apply with "new row … violates check constraint",
+   while a first apply onto an empty company still works.
 4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier
    type groups are removed** — the partner interceptors mint one `group` per partner and
    type, and `group` is preserved, so without this every re-apply left the previous
@@ -187,7 +192,7 @@ error message per step.
   written as `metadata.planningError` (a new apply resets it to `null`); marker status is
   never changed. On the `snapshot: false` path the marker is already cleared, so the
   failure is only logged (re-writing it would resurrect the marker as `running`). The
-  3-hourly MRP cron is the backstop — for MRP only.
+  scheduled MRP run (every 3 hours, or the company's daily time) is the backstop — for MRP only.
 - **Dev CLI** — the spawned `plan:company` script (above). `plan-company.ts` loads
   `demo-planning.ts` through `createRequire` so tsx compiles the graph as CJS; as ESM,
   `@carbon/planning`'s named imports from `@carbon/database` fail to link. It exits 0 even
@@ -305,7 +310,7 @@ Never use JavaScript `Date` here, and never `CURRENT_DATE` in a tier's SQL — t
 the company's day, the database session's is UTC, and the two disagree for a slice of every
 day. The pure validator checks offset VALUES (planning horizon, period floors, document
 chronology) but nothing scans for `Date` / `CURRENT_DATE` usage: `@carbon/checks` covers
-`apps/mes/app/services`, `packages/jobs/src`, `packages/database/supabase/functions` and
+`apps/mes/app/services`, `packages/jobs/src` and
 the ERP module/route files, none of which is `packages/database/src/**`. That part is
 convention only.
 
@@ -325,6 +330,40 @@ No other person is ever created (no new global `user` rows) — the applying use
 employee every people screen shows. Volume: `validate.ts` requires `MIN_JOBS` (18) jobs per
 dataset, every open job due within `OPEN_JOB_DUE_WINDOW` (−3…+21 days), open operations on
 every plant work center and running work on several.
+
+## The company has an accounting cutover
+
+Tier 01 sets `companySettings.accountingCutoverDate` to the first day of the earliest seeded
+period (`monthBack(anchor, SEEDED_PERIOD_MONTHS - 1)`), `accountingActivatedAt` to the
+timestamp of the anchor day at `00:00:00Z` (`resolveTimestamp(anchor, 0, "00:00:00")`), and
+`accountingActivatedBy` to the applying user. So every seeded journal is on or after the
+cutover and none is `Provisional`: the document journals are `Posted`, and the authored manual
+entries include a `Draft` one (`JE-SEED-001`) and a `Reversed` one (`JE-SEED-004`, with its
+Posted reversal). The validator's `journalStatus` coverage set is the enum minus
+`Provisional` and `Superseded`. Every document the user posts afterwards writes a `Posted`
+journal (see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cutover).
+
+It writes the three columns on every apply with an UPSERT (`ON CONFLICT ("id") DO UPDATE`,
+no `WHERE`), even when the company already has a cutover.
+`seed-company` leaves a new company without one (it stays Provisional until activation), so
+tier 01 usually writes the first; an app-created company applied through Settings → Demo
+Data may already have its own. Kept, a later date would put up to eleven months of
+seeded Posted journals before the cutover, where a void is refused and the readers above
+assume none exist. The cutover is otherwise one-way: the `BEFORE UPDATE` trigger
+`companySettings_accounting_config_locked` (created in `20261009004448_accounting-cutover.sql`)
+runs `check_accounting_config_locked()` (redefined in
+`20261009145057_accounting-cutover-guards.sql`), which refuses a change of
+`accountingCutoverDate`, `accountingActivatedAt` or `accountingActivatedBy` once the OLD row's
+`accountingActivatedAt` is set, unless the transaction has set `app.dataset_apply` and the
+role is not an API role (`anon` / `authenticated`). `applyDatasetTiers` sets it with
+`SET LOCAL`, next to `app.sync_in_progress`, so the bypass ends with the apply's
+transaction and covers the cutover columns only — the base currency and fiscal year locks
+still hold. Pinned by `packages/database/supabase/tests/accounting-cutover-guards.test.sql`.
+
+Demo-template companies that predate the cutover got theirs from section 7 of
+`20261009004448_accounting-cutover.sql`, which selects them by their `JE-SEED-%` journal (the
+same test the accounting reset used to spare them), not by `accountingEnabled`. The
+`accountingEnabled` column is not seeded; no code reads it.
 
 ## Make methods stay Draft
 
@@ -347,7 +386,7 @@ make parts. Keep it that way when authoring a new notice or a new dataset.
 
 Posted receipts and shipments, completed returns / transfers / picking lists / counts,
 Paid and Partially Paid invoices, disposed assets and Posted journals are all seeded. The
-posting edge functions cannot run inside the one seed transaction (and a post-commit call
+postings cannot run inside the one seed transaction (and a post-commit call
 would break all-or-nothing apply and the drift check's rollback), so each posted state is
 **hand-authored together with the rows its posting path would have written** —
 `itemLedger`, `invoiceSettlement`, tracked entities/activities, receipt/shipment lines —
@@ -363,14 +402,13 @@ in the same tier. Conventions, each mirroring the real code path:
   shipments and scrapped lots carry GL and `costLedger` rows (below); other inventory
   postings (RMA receipts, returns, jobs, adjustments, opening stock) carry none — opening
   stock value sits in the authored Opening Balance entry.
-- **Posted documents carry their journal, as with accounting enabled** — tier 09
+- **Posted documents carry their journal** — tier 09
   (`helpers/post-documents.ts`) journals every non-Draft sales/purchase invoice (plus a
   `VOID` entry for a Voided one), Posted memo, Posted payment (`payment.journalId` /
   `memo.journalId` set), posted PO receipt (plus its FIFO `costLedger` layer) and SO
   shipment (a `costLedger` draw on those layers, else `itemCost.unitCost` = the item's
   `standardCost`) and scrapped lot (post-inventory-adjustment's `Inventory Adjustment`
-  shape, CR inventory / DR `scrapAccount`), whether or not `accountingEnabled` is on,
-  through the edge functions'
+  shape, CR inventory / DR `scrapAccount`), all `Posted`, through the postings'
   own builders (`buildSalesPostingLines`, `buildPaymentJournal`, `buildMemoJournal`) or
   copies of their inline shapes (`helpers/posting-journals.ts`). Ids come from the
   `journalEntry` sequence, which the wipe never rewinds. Payments stay USD at rate 1,
@@ -433,13 +471,31 @@ hand-editing, and never re-bake a model without re-deriving them — `nodeId` is
 tessellation, so ANY change to the mesh (including a different `linearDeflection`) invalidates
 every id in the dataset.
 
-The `.glb` files are baked ONCE by running the upstream STEP through a locally-built
-`apps/assembler` (`POST /v1/convert` at `linearDeflection: 2.0`, `angularDeflection: 1.0` — the
-default 0.1 produces a 30 MB GLB where the coarse setting produces 2.7 MB, with no visible
-difference at demo scale). The STEP sources are deliberately NOT committed. Both the recipe and
-the upstream licenses live in `assets/ATTRIBUTION.md` and
-`.ai/plans/2026-08-20-demo-cad-models.md` — three of the four models are CC BY or CC0 and legally
-REQUIRE that attribution to survive redistribution, so that file is not optional documentation.
+The `.glb` files are original models generated in CadQuery (one per dataset, product tree
+mirroring its top-level BOM) and baked ONCE through a locally-built `apps/assembler`
+(`POST /v1/convert` at `linearDeflection: 0.5`, `angularDeflection: 0.3`, 0.8–2.3 MB each).
+The STEP sources and generator scripts are deliberately NOT committed; `assets/ATTRIBUTION.md`
+lists the models, and no third-party CAD remains, so no attribution is owed.
+
+Every dataset assembly seeds **sub-assemblies**, each shaped to its product (satellite: three
+benches → two parents → integration; robotics: wide, the link assembly uses both joint drives and the
+controller joins the main build unused; precision: three levels deep, one step fits two
+sub-assemblies; motor: a chain).
+`AssemblyStepSpec` takes `key`, `isSubAssembly` (a header row), `parent` (the header a member
+belongs to) and `usedIn` (headers only: the later step that fits the finished unit).
+Steps also carry planner-baked motion — `motion`, `view` (the camera's plan hint) and
+`blockedBy` (written as `warnings.flagged`, so the player fades the step in) — produced by the
+geometry service in fixed-sequence mode, the app's re-motion request, run once per build (the
+main build and each sub-assembly on its own, meshed at the bake's 0.5/0.3 so node ids match)
+and mapped back to steps with `buildAssemblyStepGroups`. One motion moves all of a step's parts,
+so a step fitting parts from opposite sides cannot move; those were split per side. A step with
+no `motion` and no `blockedBy` is a build's first step: the player synthesizes its path. Like
+the STEP sources, the scripts that bake these are not committed — re-derive them whenever a
+step's parts or order change.
+`seedAssembly` inserts the rows in play order and sets `parentStepId` / `usedInStepId` in a
+second pass; the validator restates the viewer's `validateSubAssemblies` rules (members directly
+before their header, no nesting, `usedIn` points forward at a non-header step that is not one of
+its own members) because `@carbon/database` cannot depend on `@carbon/viewer`.
 
 Two things needed no change and should stay that way: `wipe.ts` discovers tables by their
 `companyId` column rather than a hard-coded list, so `modelUpload` and every `assembly*` table are
@@ -523,6 +579,14 @@ which is exactly what lets one caller commit and the other roll back.
 
 The scratch company is attributed to the `system` user, never a real developer's.
 
+After the coverage check it applies the dataset AGAIN over the seeded scratch company with
+`wipeFirst: true` — the Settings → Demo Data path on a company that already has data. That
+is the only way to exercise the wipe against real rows: a new CHECK the FK-nulling pass
+cannot survive fails here as "re-applying over the seeded company failed (datasets/wipe.ts)".
+Before that pass it dates the seeded locations one second after the bootstrap one, because
+`buildCtx` keeps the OLDEST location and inside one transaction `NOW()` gives every row the
+same `createdAt`.
+
 After the tiers and before the rollback, `findCoverageShortfalls` (`verify.ts`) counts every
 table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 255 tables, measured across all four
 datasets: floor = the smallest count any dataset produced, ×0.8 for volume tables) in one
@@ -536,7 +600,7 @@ the floor in the same change; adding a table means measuring and adding it.
 Tier `ctx.log` lines are buffered per dataset and printed (the last 12) only when that
 dataset fails, so the error is placed inside the tier sequence without drowning a green run.
 
-It runs from `.husky/pre-commit` whenever a staged file is under `packages/database/`
+It runs from `scripts/git-hooks/pre-commit` whenever a staged file is under `packages/database/`
 (a few seconds for all four); `CARBON_SKIP_DATASET_CHECK=1` skips both layers. Layer 2 exits
 0 with a warning when the database is unreachable, has no `user` table, or has no users — a
 hook that fails for reasons you cannot fix is a hook you learn to bypass, and every one of
@@ -582,14 +646,13 @@ answers "does every screen have rows".
 ## What is NOT how this works
 
 There is no archive, no `.carbon.json.gz`, no `company-templates` storage bucket in this
-path — that was an earlier unfinished design. `packages/database/supabase/backups/` is
-unused; its README lists the dormant code left behind. Backup export/restore for real
-customer companies is a separate feature and is unaffected.
+path — that was an earlier unfinished design, and `packages/database/supabase/backups/`
+was deleted with it. Backup export/restore for real customer companies is a separate
+feature and is unaffected.
 
 ## Local development note
 
 The dev CLI path needs only Postgres, so it works whenever your local database is up. The
-browser onboarding flow additionally calls the `seed-company` **edge function** (for the
-chart of accounts and other reference data) before the template step ever runs — so if the
-local edge runtime is unhealthy, onboarding fails before reaching any of this, and the CLI
-remains the way to exercise a dataset.
+browser onboarding flow additionally runs `seedCompany` (`settings.service.ts`, ported
+from the `seed-company` server function, for the chart of accounts and other reference data)
+before the template step ever runs, in-process in the ERP.

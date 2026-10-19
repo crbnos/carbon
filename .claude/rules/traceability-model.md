@@ -1,8 +1,8 @@
 ---
 paths:
   - "packages/database/supabase/migrations/*tracked*.sql"
-  - "packages/database/supabase/functions/shared/{batch-split,batch-merge,entity-drain,pick-guards}.ts"
-  - "apps/erp/app/modules/inventory/{lineage.server,inventory.service,types}.ts"
+  - "packages/utils/src/{batch-split,batch-merge,entity-drain,pick-guards}.ts"
+  - "apps/erp/app/modules/inventory/{inventory.server,inventory.service,types}.ts"
   - "apps/erp/app/routes/x+/traceability+/**"
   - "apps/mes/app/services/operations.service.ts"
 ---
@@ -63,7 +63,7 @@ RLS: SELECT/INSERT gated on `get_companies_with_employee_role()`; UPDATE/DELETE 
 
 ## How genealogy edges are written
 
-Edges are created in **Supabase edge functions** (`packages/database/supabase/functions/`)
+Edges are created in **postings** (the ERP modules' service files)
 and MES services — NOT a single `post-production`:
 
 - `post-picking`, `post-receipt`, `post-shipment`, `post-stock-transfer`, `issue`,
@@ -74,7 +74,7 @@ and MES services — NOT a single `post-production`:
   `jobOperationScrap` scraps the serial being made — `type: 'Scrap'` activity,
   entity → `Scrapped`, then **spawns the next serial** (same `getNextSerialNumbers`
   path as `jobOperationSerialComplete`) and reopens the make method's Done ops
-  (`issue/scrap-replacement.ts`) so the replacement runs the full routing. `issue`
+  (`applyScrapReplacement`, `inventory.service.ts`) so the replacement runs the full routing. `issue`
   case `scrapTrackedEntity` scraps a subcomponent, branching on entity **state**:
   an `Available` part posts a `Scrap` (`Negative Adjmt.`) `itemLedger` at its
   on-hand bin (`quantityIssued` untouched); a `Consumed` part posts Dr scrap /
@@ -103,7 +103,7 @@ Non-strict variants exist but include same-activity siblings — prefer strict.
 
 - Graph route: `apps/erp/app/routes/x+/traceability+/graph.tsx` → calls
   `fetchLineageSubgraph` / `fetchJobScopedLineage` in
-  `apps/erp/app/modules/inventory/lineage.server.ts` (BFS over the batch RPCs).
+  `apps/erp/app/modules/inventory/inventory.service.ts` (BFS over the batch RPCs).
 - Graph types `GraphNode` / `GraphLink` / `GraphData` live in
   `apps/erp/app/modules/inventory/types.ts` (link `type` is `"input" | "output"`).
 - ERP service `inventory.service.ts`: `getTrackedEntities`, `getTrackedEntity`,
@@ -129,7 +129,7 @@ members' quantities summed. Members are reached only through the sidebar's list 
 cluster nodes carry no expand toggles, since expanding a 50-member group would
 fetch 50 lineages. Clusters travel from the graph to the sidebar (its sibling in
 the route) through `ui/Traceability/store.ts`. Because clustering absorbs serial
-fans, `MAX_ENTITIES` in `lineage.server.ts` is **500**; the BFS must stay complete
+fans, `MAX_ENTITIES` in `inventory.service.ts` is **500**; the BFS must stay complete
 up to it, since a truncated frontier would split a group in two.
 
 ## Picking / availability (shelf → storageUnit rename)
@@ -154,16 +154,16 @@ survivor self-loop), and the ledger gets exactly **two** net-zero `Batch Split` 
 (−`q` parent, +`q` child) at the parent's `resolveTrackedEntityBin` bin. The legacy pre-flip
 convention (original departs, `"Split Entity ID"` tagged on the survivor) still exists on
 historical rows — filters that isolate the live root entity exclude BOTH pointer keys. The
-shared record builder is `functions/shared/batch-split.ts` (`buildBatchSplitRecords` /
+shared record builder is `@carbon/utils` `batch-split.ts` (`buildBatchSplitRecords` /
 `buildMergeRecords`), used by every writer: `post-picking` (batch), `issue`
 (`trackedEntitiesToOperation` + `maintenanceDispatchTrackedEntities`), `post-stock-transfer`
 (batch), `post-shipment` (SO + PO — PO posts genealogy only, no ledger), and ERP
-`quality-disposition.subdivideBatchEntity`. Serial paths never split. Exception: the
+`subdivideBatchEntity` (`quality.service.ts`). Serial paths never split. Exception: the
 PO-sourced `post-shipment` split posts no `itemLedger` (matches pre-flip behavior).
 
 **Lot merge (the deliberate inverse; spec `.ai/specs/2026-09-16-batch-materials-and-output-lots.md`):**
 `issue` case `mergeTrackedEntities` combines N **same-item, Available** entities into ONE
-new entity via `buildBatchMergeRecords` (`functions/shared/batch-merge.ts`, the mirror of
+new entity via `buildBatchMergeRecords` (`@carbon/utils` `batch-merge.ts`, the mirror of
 `buildBatchSplitRecords`). Parents keep their quantity as a historical record and flip
 `Consumed`; the merged entity gets a fresh id, the SUMMED quantity, the **earliest** parent
 `expirationDate`, and only those `attributes` every parent agrees on, plus
@@ -187,7 +187,8 @@ the entity — the CONSUMED portion becomes the NEW `child` (`status: 'Consumed'
 keeps its id at lineside. Consumption/split rows are booked against the entity's actual on-hand
 bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. The **return** of the un-consumed
 remainder runs via `post-picking`'s sweep cases `returnJobRemainders` (at job complete — both
-policies) / `returnOperationRemainders` (at operation Done, only when
+policies — and at job cancel, with `cancelling: true`, before the status flips) / `returnOperationRemainders` (at operation Done: the whole job's remainder when
+that operation completed the job, otherwise only when
 `companySettings.returnPickedMaterialTiming = 'operation'`): the tracked path walks the picked
 entity's split lineage and, for each lineage entity with lineside on-hand, **merges** it back
 into its `"Split From Entity ID"` parent when the parent is Available/same-lot/same-bin (a
@@ -209,10 +210,9 @@ UI and behaves like 0.02 nowhere. Four rules follow, and they are shared code
 rather than convention because inlining them is how they drifted apart.
 
 **1. Round at the persist boundary.** Every write that moves a quantity rounds
-at internal scale (`round` from `functions/shared/precision.ts`, re-exported
-through `@carbon/utils` for Node). The whole settle is
-`settleQuantity({ quantity, status, refusal? })` in
-`functions/shared/entity-drain.ts` — round, refuse a negative result, then apply
+at internal scale (`round` from `@carbon/utils`). The whole settle is
+`settleQuantity({ quantity, status, refusal? })` in `@carbon/utils`
+`entity-drain.ts` — round, refuse a negative result, then apply
 rule 2 — and it takes the SETTLED figure, not a delta, so one signature serves
 the count path (snapshot delta) and the adjustment/unpick paths alike.
 `resolveCountedEntity` (post-inventory-count) is a thin wrapper that supplies
@@ -230,7 +230,7 @@ is an open question, not an oversight — see
 `.ai/plans/2026-09-22-tracked-entity-quantity-integrity.md`.
 
 **3. One split gate.** `isFullDraw(entityQuantity, drawQuantity)` in
-`functions/shared/batch-split.ts` (`equals` on both rounded values) is how every
+`@carbon/utils` `batch-split.ts` (`equals` on both rounded values) is how every
 writer decides split-or-take-whole, so a caller's decision and
 `buildBatchSplitRecords`' own refusals (`draw <= 0`, `draw >= parentQty`) can
 never disagree. A raw `===`/`<` on two stored floats can: a residue lot drawn for its
@@ -245,21 +245,20 @@ own rounded quantity, not the requested figure — the entity is flipped
 with the lot it just emptied.
 
 **4. A pick accumulates under a lock.** `resolvePick` in
-`functions/shared/pick-guards.ts` returns the NEW running total (never a
+`@carbon/utils` `pick-guards.ts` returns the NEW running total (never a
 replacement) or throws a typed `PickGuardError` — `already-picked`,
-`over-pick`, or `empty-pick` (a quantity that rounds to zero). The caller turns
-it into a **400**, never a 500, and both apps read the reason out of the
-response BODY (`getEdgeFunctionErrorMessage` in the ERP,
-`getPostPickingErrorMessage` in MES) because supabase-js's own
-`FunctionsHttpError.message` is always the fixed "Edge Function returned a
-non-2xx status code". It is only correct under a row lock: `post-picking` locks
+`over-pick`, or `empty-pick` (a quantity that rounds to zero). Its `status = 400`
+survives the postings' error mapping (`toServerFnError`, `@carbon/api/errors`), so the caller gets a **400**, never a
+500. In the ERP, the pick operations turn it into a refusal with `pickRefusal`
+(`inventory.service.ts`), and the page's `useAction` fetcher toasts its message;
+the MES shows it with `getErrorMessage(error, fallback)` (`@carbon/utils`). It is only correct under a row lock: `post-picking` locks
 the `pickingListLine` in every handler and the source lot in the batch pick,
 `post-stock-transfer` locks the line plus the entity (and, in the serial case,
 the entity BEFORE its repeat-scan guard — two concurrent scans would otherwise
 both read "not on this transfer" and both post a Transfer pair).
 `resolveStockTransferPickForward` (`inventory.models.ts`) is the route-side
 pre-check that mirrors the same rounding so the two cannot disagree; the lock
-is what makes the edge function authoritative.
+is what makes the posting authoritative.
 
 **The drain rule is not only a TypeScript concern.** `update_receipt_line_batch_tracking`
 upserted a receipt lot with `ON CONFLICT … DO UPDATE SET "quantity" = EXCLUDED."quantity"`

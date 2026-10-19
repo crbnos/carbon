@@ -1,13 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   getFailureModesList,
   getLocationsList,
   getMaintenanceDispatchesByLocation
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service";
 import MaintenanceDispatchesTable from "~/modules/resources/ui/Maintenance/MaintenanceDispatchesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -83,7 +87,7 @@ export default function MaintenanceRoute() {
         locations={locations}
         locationId={locationId}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

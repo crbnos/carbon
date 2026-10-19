@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { createGzip } from "node:zlib";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { pack as tarPack } from "tar-stream";
-import { canManageBackups } from "~/modules/settings/backups.server";
+import { canManageBackups } from "~/modules/settings/settings.service";
 
 /** List every object under a storage prefix, returning paths relative to it. */
 async function listRelative(
@@ -52,8 +57,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Invalid backup", { status: 400 });
   }
   const dir = `exports/${name}`;
+  // Backup objects are service-role only; the checks above gate this route.
+  const serviceRole = getCarbonServiceRole();
 
-  const relPaths = await listRelative(client, companyId, dir);
+  const relPaths = await listRelative(serviceRole, companyId, dir);
   if (relPaths.length === 0) {
     throw new Response("Backup not found", { status: 404 });
   }
@@ -67,7 +74,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
 
   const downloadAt = (i: number): Promise<Buffer | null> =>
-    client.storage
+    serviceRole.storage
       .from(companyId)
       .download(`${dir}/${relPaths[i]}`)
       .then((f) =>

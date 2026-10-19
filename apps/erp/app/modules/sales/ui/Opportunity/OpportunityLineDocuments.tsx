@@ -1,6 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, storage } from "@carbon/files";
+import {
+  convertKbToString,
+  downloadUrl,
+  getDocumentType,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardAction,
@@ -19,6 +29,7 @@ import {
   File,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -34,7 +45,7 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
-import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
+import { Link, useFetchers, useSubmit } from "react-router";
 import {
   DateTime,
   DocumentPreview,
@@ -45,8 +56,7 @@ import {
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import { useFileUpload, usePermissions, useUser } from "~/hooks";
-import type { OptimisticFileObject } from "~/modules/shared";
-import { getDocumentType } from "~/modules/shared";
+import type { OptimisticFileObject } from "~/modules/shared/types";
 import type { ModelUpload } from "~/types";
 import { downloadModelFile } from "~/utils/download";
 import { path } from "~/utils/path";
@@ -189,16 +199,7 @@ const useOpportunityLineDocuments = ({
         `private/${getPath(file, bucket as "opportunity-line" | "parts")}`
       );
       try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Failed to process file operation", { error });
@@ -498,12 +499,16 @@ const OpportunityLineDocuments = ({
                             />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem asChild>
+                            <DropdownMenuItem
+                              shortcut={MENU_ITEM_SHORTCUTS.view}
+                              asChild
+                            >
                               <Link to={getModelPath(modelUpload)}>
                                 <Trans>View</Trans>
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              shortcut={MENU_ITEM_SHORTCUTS.download}
                               onClick={() => downloadModel(modelUpload)}
                             >
                               <Trans>Download</Trans>
@@ -559,7 +564,7 @@ const OpportunityLineDocuments = ({
                                   ? "parts"
                                   : "opportunity-line"
                               )}
-                              // @ts-ignore
+                              // @ts-expect-error
                               type={type}
                             >
                               {file.name}
@@ -602,7 +607,10 @@ const OpportunityLineDocuments = ({
                             />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => download(file)}>
+                            <DropdownMenuItem
+                              shortcut={MENU_ITEM_SHORTCUTS.download}
+                              onClick={() => download(file)}
+                            >
                               <Trans>Download</Trans>
                             </DropdownMenuItem>
                             {itemId && (

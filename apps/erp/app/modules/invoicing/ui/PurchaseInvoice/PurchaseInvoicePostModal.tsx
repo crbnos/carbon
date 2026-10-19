@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -16,17 +21,16 @@ import {
   Th,
   Thead,
   Tr,
-  toast,
   VStack
 } from "@carbon/react";
 
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
+import type { action as postAction } from "~/routes/x+/purchase-invoice+/$invoiceId.post";
 import { useItems } from "~/stores";
-import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
 type PurchaseInvoicePostModalProps = {
@@ -60,19 +64,14 @@ const PurchaseInvoicePostModal = ({
     });
   }, [linesToReceive, items]);
 
-  const fetcher = useFetcher<Result & { receiptId?: string }>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      if (fetcher.data.receiptId) {
-        navigate(path.to.receipt(fetcher.data.receiptId));
-      }
+  // A failed post is toasted by useAction.
+  const fetcher = useAction<typeof postAction>({
+    onSuccess: ({ data }) => {
+      // A tracked item's receipt is created unposted: open it.
+      if (data?.receiptId) navigate(path.to.receipt(data.receiptId));
       onClose();
-    } else if (fetcher.data?.success === false && fetcher.data?.message) {
-      toast.error(fetcher.data.message);
     }
-  }, [fetcher.data?.success]);
+  });
 
   return (
     <Modal
@@ -131,7 +130,10 @@ const PurchaseInvoicePostModal = ({
                           <span>
                             {getItemReadableId(items, line.itemId) ?? ""}
                           </span>
-                          {line.description && (
+                          {distinctItemText(
+                            getItemReadableId(items, line.itemId) ?? "",
+                            line.description
+                          ) && (
                             <span className="text-xs text-muted-foreground">
                               {line.description}
                             </span>

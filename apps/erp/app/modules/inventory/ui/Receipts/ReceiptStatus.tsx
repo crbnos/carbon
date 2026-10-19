@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Status } from "@carbon/react";
 import { RECEIPT_STATUS_COLOR_MAP } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
-import type { receiptStatusType } from "~/modules/inventory";
+import type { receiptStatusType } from "~/modules/inventory/inventory.models";
 
 type ReceiptStatusProps = {
   status?: (typeof receiptStatusType)[number] | null;

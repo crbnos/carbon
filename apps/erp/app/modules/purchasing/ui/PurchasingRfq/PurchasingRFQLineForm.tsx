@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
@@ -10,6 +14,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   ModalCard,
   ModalCardBody,
   ModalCardContent,
@@ -22,12 +27,14 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuTrash } from "react-icons/lu";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import type { z } from "zod";
+import { MethodItemTypeIcon } from "~/components";
 import {
   ArrayNumeric,
   ConversionFactor,
@@ -39,6 +46,9 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { itemType as itemTypes } from "~/modules/shared/shared.models";
 import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import {
@@ -79,6 +89,7 @@ const PurchasingRFQLineForm = ({
   const isEditing = initialValues.id !== undefined;
 
   const [itemType, setItemType] = useState<ItemType>(initialValues.itemType);
+  const isService = itemType === "Service";
   const [itemData, setItemData] = useState<{
     itemId: string;
     itemReadableId: string;
@@ -110,13 +121,19 @@ const PurchasingRFQLineForm = ({
       return;
     }
 
+    // A service is always bought and "stocked" in EA, 1:1.
+    const isServiceItem = item.data?.type === "Service";
     const newItemData = {
       ...itemData,
       itemId,
       itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
-      inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
-      purchaseUom: item.data?.unitOfMeasureCode ?? "EA",
+      inventoryUom: isServiceItem
+        ? EACH_UNIT_OF_MEASURE_CODE
+        : (item.data?.unitOfMeasureCode ?? "EA"),
+      purchaseUom: isServiceItem
+        ? EACH_UNIT_OF_MEASURE_CODE
+        : (item.data?.unitOfMeasureCode ?? "EA"),
       conversionFactor: 1
     };
 
@@ -127,6 +144,8 @@ const PurchasingRFQLineForm = ({
   };
 
   const deleteDisclosure = useDisclosure();
+  const canDelete = !isLocked && permissions.can("update", "purchasing");
+  const canViewItem = !!itemData.itemId && itemTypes.includes(itemType);
 
   return (
     <>
@@ -162,7 +181,10 @@ const PurchasingRFQLineForm = ({
                   <ModalCardDescription>
                     {isEditing ? (
                       <div className="flex flex-col items-start gap-1">
-                        <span>{itemData?.description}</span>
+                        {distinctItemText(
+                          itemData?.itemReadableId || "RFQ Line",
+                          itemData?.description
+                        ) && <span>{itemData?.description}</span>}
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">
                             {initialValues?.quantity?.join(", ")}
@@ -174,27 +196,49 @@ const PurchasingRFQLineForm = ({
                     )}
                   </ModalCardDescription>
                 </ModalCardHeader>
-                {isEditing &&
-                  !isLocked &&
-                  permissions.can("update", "purchasing") && (
-                    <CardAction className="pr-12">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <IconButton
-                            icon={<BsThreeDotsVertical />}
-                            aria-label={t`More`}
-                            variant="ghost"
-                          />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={deleteDisclosure.onOpen}>
+                {isEditing && (canDelete || canViewItem) && (
+                  <CardAction className="pr-12">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <IconButton
+                          icon={<BsThreeDotsVertical />}
+                          aria-label={t`More`}
+                          variant="ghost"
+                        />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {canDelete && (
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.delete}
+                            destructive
+                            onClick={deleteDisclosure.onOpen}
+                          >
                             <DropdownMenuIcon icon={<LuTrash />} />
                             <Trans>Delete Line</Trans>
                           </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </CardAction>
-                  )}
+                        )}
+                        {canViewItem && (
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.view}
+                            asChild
+                          >
+                            <Link
+                              to={getLinkToItemDetails(
+                                itemType,
+                                itemData.itemId
+                              )}
+                            >
+                              <DropdownMenuIcon
+                                icon={<MethodItemTypeIcon type={itemType} />}
+                              />
+                              <Trans>View Item Master</Trans>
+                            </Link>
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </CardAction>
+                )}
               </HStack>
               <ModalCardBody>
                 <Hidden name="id" />
@@ -203,12 +247,25 @@ const PurchasingRFQLineForm = ({
                 <Hidden
                   name="inventoryUnitOfMeasureCode"
                   value={
-                    itemData?.inventoryUom || itemData?.purchaseUom || "EA"
+                    isService
+                      ? EACH_UNIT_OF_MEASURE_CODE
+                      : itemData?.inventoryUom || itemData?.purchaseUom || "EA"
                   }
                 />
+                {/* A service is always bought in EA, so no unit of measure
+                    or conversion factor is asked for. */}
+                {isService && (
+                  <>
+                    <Hidden
+                      name="purchaseUnitOfMeasureCode"
+                      value={EACH_UNIT_OF_MEASURE_CODE}
+                    />
+                    <Hidden name="conversionFactor" value={1} />
+                  </>
+                )}
                 <VStack>
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                    <div className="col-span-2 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
+                    <div className="col-span-2 max-md:col-span-full grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
                       <Item
                         autoFocus
                         name="itemId"
@@ -240,31 +297,35 @@ const PurchasingRFQLineForm = ({
                         value={itemData.description}
                         isReadOnly={!!itemData.itemId}
                       />
-                      <UnitOfMeasure
-                        name="purchaseUnitOfMeasureCode"
-                        label={t`Purchase Unit of Measure`}
-                        termId="item-purchasing-uom"
-                        value={itemData.purchaseUom}
-                        onChange={(newValue) =>
-                          setItemData((d) => ({
-                            ...d,
-                            purchaseUom: newValue?.value ?? "EA"
-                          }))
-                        }
-                      />
-                      <ConversionFactor
-                        name="conversionFactor"
-                        termId="conversion-factor"
-                        purchasingCode={itemData.purchaseUom}
-                        inventoryCode={itemData.inventoryUom}
-                        value={itemData.conversionFactor}
-                        onChange={(value) => {
-                          setItemData((d) => ({
-                            ...d,
-                            conversionFactor: value
-                          }));
-                        }}
-                      />
+                      {!isService && (
+                        <>
+                          <UnitOfMeasure
+                            name="purchaseUnitOfMeasureCode"
+                            label={t`Purchase Unit of Measure`}
+                            termId="item-purchasing-uom"
+                            value={itemData.purchaseUom}
+                            onChange={(newValue) =>
+                              setItemData((d) => ({
+                                ...d,
+                                purchaseUom: newValue?.value ?? "EA"
+                              }))
+                            }
+                          />
+                          <ConversionFactor
+                            name="conversionFactor"
+                            termId="conversion-factor"
+                            purchasingCode={itemData.purchaseUom}
+                            inventoryCode={itemData.inventoryUom}
+                            value={itemData.conversionFactor}
+                            onChange={(value) => {
+                              setItemData((d) => ({
+                                ...d,
+                                conversionFactor: value
+                              }));
+                            }}
+                          />
+                        </>
+                      )}
 
                       <CustomFormFields table="purchasingRfqLine" />
                     </div>

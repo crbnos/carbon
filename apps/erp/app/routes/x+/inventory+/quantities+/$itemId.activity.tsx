@@ -1,22 +1,33 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, notFound, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Button, Heading } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { LuChevronUp } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import InfiniteScroll from "~/components/InfiniteScroll";
-import type { CollapsedItemLedger, ItemLedger } from "~/modules/inventory";
+import { getItemLedgerBalance } from "~/modules/inventory/inventory.service";
+import { getItemLedgerActivity } from "~/modules/inventory/inventory.utils";
+import type { ItemLedger } from "~/modules/inventory/types";
+import type {
+  BalanceAnchor,
+  CollapsedItemLedger
+} from "~/modules/inventory/ui";
 import {
   collapseTransferPairs,
-  getItemLedgerActivity,
-  InventoryActivity
-} from "~/modules/inventory";
-import { getItem } from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+  InventoryActivity,
+  withRunningBalance
+} from "~/modules/inventory/ui";
+import { getItem } from "~/modules/items/items.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -77,8 +88,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // The activity page and the "is there anything newer than the anchor?"
   // existence check both depend only on `anchorEntryNumber`, not on each other —
-  // run them in parallel to save a roundtrip on highlight navigations.
-  const [itemLedgerRecords, newer, item] = await Promise.all([
+  // run them in parallel to save a roundtrip on highlight navigations. So does
+  // the on-hand balance when the page is anchored, since the anchor entry is
+  // then the page's newest row.
+  const [itemLedgerRecords, newer, item, anchoredBalance] = await Promise.all([
     getItemLedgerActivity(client, {
       itemId,
       companyId,
@@ -97,7 +110,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .gt("entryNumber", anchorEntryNumber)
           .limit(1)
       : Promise.resolve({ data: [] as { id: string }[] }),
-    getItem(client, itemId)
+    getItem(client, itemId),
+    anchorEntryNumber !== null
+      ? getItemLedgerBalance(client, {
+          itemId,
+          companyId,
+          locationId,
+          entryNumber: anchorEntryNumber
+        })
+      : null
   ]);
   if (itemLedgerRecords.error) {
     throw redirect(
@@ -112,6 +133,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Only offer "Load newer" when entries actually exist above the anchor.
   const hasNewer = (newer.data?.length ?? 0) > 0;
 
+  // One balance prices the whole feed: the on-hand right after the newest row
+  // loaded. The client walks every page out from it. Unanchored, the newest
+  // row is only known now — measuring "on hand now" in parallel instead would
+  // misprice the feed whenever an entry landed between the two queries.
+  const newestEntryNumber = itemLedgerRecords.data[0]?.entryNumber;
+  const balance =
+    newestEntryNumber === undefined
+      ? null
+      : (anchoredBalance ??
+        (await getItemLedgerBalance(client, {
+          itemId,
+          companyId,
+          locationId,
+          entryNumber: newestEntryNumber
+        })));
+  // A failed balance read costs only the before → after column, not the feed.
+  const balanceAnchor: BalanceAnchor | null =
+    newestEntryNumber !== undefined && balance && !balance.error
+      ? { entryNumber: newestEntryNumber, balanceAfter: Number(balance.data) }
+      : null;
+
   return {
     initialItemLedgers: itemLedgerRecords.data,
     itemId,
@@ -120,11 +162,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     highlightId,
     hasOlder: itemLedgerRecords.hasMore,
     hasNewer,
+    balanceAnchor,
     itemTrackingType: item.data?.itemTrackingType ?? null
   };
 }
 
+// The feed keeps the pages it has loaded in state, seeded from the loader. A
+// reload for another location or highlight is a new feed: without the key it
+// kept showing the first one, with the new one's paging cursors. An entry
+// posted while the feed is open is deliberately not a new feed: remounting
+// would drop the older pages already loaded and the scroll position.
 export default function ItemInventoryActivityRoute() {
+  const { itemId, locationId, highlightId } = useLoaderData<typeof loader>();
+  return (
+    <ItemInventoryActivity key={`${itemId}:${locationId}:${highlightId}`} />
+  );
+}
+
+function ItemInventoryActivity() {
   const {
     initialItemLedgers,
     itemId,
@@ -133,6 +188,7 @@ export default function ItemInventoryActivityRoute() {
     highlightId,
     hasOlder: initialHasOlder,
     hasNewer: initialHasNewer,
+    balanceAnchor: initialBalanceAnchor,
     itemTrackingType
   } = useLoaderData<typeof loader>();
 
@@ -140,11 +196,14 @@ export default function ItemInventoryActivityRoute() {
 
   const [itemLedgers, setItemLedgers] =
     useState<ItemLedger[]>(initialItemLedgers);
-  // A stock transfer writes an outbound and an inbound ledger row; collapse
-  // each pair so one move reads as one activity entry.
+  // Held alongside the rows it was measured against, so the two never drift.
+  const [balanceAnchor] = useState(initialBalanceAnchor);
+  // Price every row from the one anchored balance BEFORE collapsing: a stock
+  // transfer writes an outbound and an inbound ledger row, and collapsing each
+  // pair (so one move reads as one entry) must not lose either half's quantity.
   const activityItems = useMemo(
-    () => collapseTransferPairs(itemLedgers),
-    [itemLedgers]
+    () => collapseTransferPairs(withRunningBalance(itemLedgers, balanceAnchor)),
+    [itemLedgers, balanceAnchor]
   );
   // InfiniteScroll only forwards { item, highlightId } — close over the item's
   // tracking type so rows label their tracked entity from the item, not a
@@ -234,7 +293,7 @@ export default function ItemInventoryActivityRoute() {
   }, [carbon, itemId, companyId, locationId]);
 
   return (
-    <div className="w-full space-y-4 pt-6 px-4">
+    <div className="w-full space-y-4 pt-6 px-4 max-md:p-0">
       <Heading size="h2" className="mb-4">
         <Trans>Activity</Trans>
       </Heading>

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 /**
  * One resolved answer to "what is this company's integration landscape?".
  *
@@ -19,7 +23,7 @@ import {
 } from "./capabilities";
 
 /** An integration's behavioural role. Mirrors `IntegrationConfig.providerRole`. */
-export type ProviderRole = "accounting" | "spend";
+export type ProviderRole = "accounting" | "spend" | "oee";
 
 /**
  * The registry slice this core needs, INJECTED rather than imported.

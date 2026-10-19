@@ -1,11 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import { generateHTML, useDebounce } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
-import { useFetcher, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
 import type { loader } from "~/routes/x+/quality-document+/$id";
 import type { action } from "~/routes/x+/quality-document+/update";
@@ -45,7 +50,7 @@ export default function QualityDocumentEditor() {
     true
   );
 
-  const nameFetcher = useFetcher<typeof action>();
+  const nameFetcher = useAction<typeof action>();
   const setLiveTitle = useDocumentStore((s) => s.setLiveTitle);
 
   const updateName = useDebounce(
@@ -102,7 +107,7 @@ export default function QualityDocumentEditor() {
           }}
         />
       ) : (
-        <div className="flex flex-col gap-6 w-full h-full p-8">
+        <div className="flex flex-col gap-6 w-full h-full p-8 max-md:p-4">
           <h1 className="md:text-3xl text-2xl font-semibold leading-tight tracking-tight text-foreground">
             {documentName}
           </h1>

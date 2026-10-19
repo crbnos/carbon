@@ -1,13 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, VStack } from "@carbon/react";
+import { Button, RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCirclePlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
+import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
-import { getFixedAssetClasses } from "~/modules/accounting";
+import { getFixedAssetClasses } from "~/modules/accounting/accounting.service";
 import { AssetClassesTable } from "~/modules/accounting/ui/FixedAssets";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -51,6 +57,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function AssetClassesRoute() {
   const { data, count, taxDepreciationEnabled } =
     useLoaderData<typeof loader>();
+  const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
 
@@ -62,17 +69,19 @@ export default function AssetClassesRoute() {
         taxDepreciationEnabled={taxDepreciationEnabled}
         primaryAction={
           permissions.can("create", "accounting") && (
-            <Button
-              leftIcon={<LuCirclePlus />}
-              variant="primary"
-              onClick={() => navigate(path.to.newAssetClass)}
-            >
-              Add Asset Class
-            </Button>
+            <NewAction label={t`Add Asset Class`} to={path.to.newAssetClass}>
+              <Button
+                leftIcon={<LuCirclePlus />}
+                variant="primary"
+                onClick={() => navigate(path.to.newAssetClass)}
+              >
+                <Trans>Add Asset Class</Trans>
+              </Button>
+            </NewAction>
           )
         }
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

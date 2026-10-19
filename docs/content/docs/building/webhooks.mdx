@@ -4,11 +4,11 @@ plan: Business
 description: Get an HTTP callback when a Carbon record is created, changed, or deleted.
 ---
 
-A **webhook** sends an HTTP `POST` to a URL you choose whenever a record in a subscribed table is inserted, updated, or deleted. It's the lightest way to react to Carbon in your own systems without polling the API.
+A **webhook** sends an HTTP `POST` to a configured URL when a record in a subscribed table is inserted, updated, or deleted. Use webhooks to react to changes without polling the API.
 
 ## Subscribable tables
 
-You subscribe a webhook to exactly one table. The tables you can watch, by module:
+Each webhook subscribes to one table. The following tables support subscriptions:
 
 | Module | Tables |
 | --- | --- |
@@ -17,14 +17,14 @@ You subscribe a webhook to exactly one table. The tables you can watch, by modul
 | Invoicing | `salesInvoice`, `purchaseInvoice` |
 | Production | `job` |
 | Inventory | `receipt` |
-| Items | `item` |
+| Items | `item`, `makeMethod`, `methodMaterial`, `methodOperation`, `modelUpload`, `changeOrder`, `changeOrderAffectedItem` |
 | Users | `employee` |
 
-For each webhook you choose which operations fire it (**insert**, **update**, **delete**), and at least one must be selected.
+Select at least one trigger operation: **insert**, **update**, or **delete**.
 
 ## The payload
 
-Carbon `POST`s a JSON body to your URL. `type` is the operation, `record` is the affected row, and `old` carries the previous row on updates.
+Carbon sends a JSON body to the configured URL. `type` identifies the operation, `record` contains the affected row, and `old` contains the previous row for updates.
 
 ```json
 {
@@ -37,9 +37,11 @@ Carbon `POST`s a JSON body to your URL. `type` is the operation, `record` is the
 }
 ```
 
-`old` appears only on updates. On a delete, `record` is the row as it last existed and there is no `old`. The only request header is `Content-Type: application/json`.
+`old` appears only for updates. For deletes, `record` contains the last state of the deleted row. Carbon sets `Content-Type: application/json` and a `Carbon-Signature` header (see [Verifying deliveries](#verifying-deliveries)).
 
-`eventId` identifies the individual change. It stays the same across retries of that change and differs between changes — including two separate edits to the same record — which makes it the field to de-duplicate on (see below).
+A bill of material or routing change arrives as a change to `methodMaterial` or `methodOperation`, with the `makeMethodId` of the version it belongs to. A version's status (Draft, Active, Archived) is on `makeMethod`. A change notice's release is an update of `changeOrder` from `Implementation` to `Done`.
+
+`eventId` identifies one change. It remains stable across delivery retries and differs for each new change, including repeated updates to the same record. Use it as the idempotency key.
 
 ## Configuration
 
@@ -50,22 +52,66 @@ Create and manage webhooks under **Settings → Webhooks**. A webhook has:
 - **URL:** where the `POST` is sent; must be a valid URL.
 - **Triggers:** any of insert, update, delete (at least one).
 - **Active:** webhooks are on by default; switch off to pause delivery.
+- **Signing secret:** reveal or roll it from the webhook's edit drawer (see below).
 
-Carbon tracks a success and error count per webhook, with the timestamp of the last of each, so you can see at a glance whether your endpoint is healthy.
+Carbon tracks success and error counts and the latest timestamp for each outcome.
 
 ## Delivery & reliability
 
-Webhooks are queued rather than sent inline with the database write, so a `POST` normally lands a few seconds after the change. A brief delay is expected; it is not a sign your endpoint was skipped.
+Webhook delivery is asynchronous and normally occurs a few seconds after the database change.
 
-Delivery is **at-least-once**. If your endpoint doesn't return a success status, Carbon retries the same change a few times with exponential backoff before giving up. Two consequences to design for:
+Delivery is **at least once**. If the endpoint does not return a success status within 30 seconds, Carbon retries with exponential backoff before marking the change as failed. Design for these conditions:
 
-- **Handle duplicates.** A delivery that times out or errors after you've already processed it will arrive again. De-duplicate on `eventId`, which is stable across retries of a change. Don't key on `type` + `record.id` — every update to a given record shares those, so you would discard genuine later changes.
-- **A sustained outage still loses events.** Once retries are exhausted the change is dropped and counted as an error. Reconcile against the API when completeness matters.
+- **Handle duplicates.** A request can be retried after your service has processed it. De-duplicate on `eventId`, not `type` and `record.id`, because separate changes to the same record share the latter values.
+- **Reconcile after outages.** After retries are exhausted, Carbon drops the change and increments the error count. Query the API when complete event processing is required.
 
 The success and error counters record one outcome per change, not per attempt, so a retried-then-delivered event counts once as a success.
 
-<Callout type="warn">
-Carbon does **not** sign webhook payloads. There is no shared secret or signature header to verify against. Treat the webhook URL itself as the secret: serve it over HTTPS and include an unguessable token in the path or query so you can reject anything that doesn't carry it.
+## Verifying deliveries
+
+Each webhook has its own **signing secret** (`whsec_…`). Every delivery carries a `Carbon-Signature` header. With the secret `whsec_example`, a body of `{}` sent at `1760000000` is signed:
+
+```
+Carbon-Signature: t=1760000000,v1=703d2abadc91281113b98bbc26dd6ec6ebd63072172c44b3635b575b1f1313f1
+```
+
+`t` is the time of the attempt in Unix seconds. `v1` is the hex HMAC-SHA256 of `` `${t}.${body}` ``, keyed by the whole secret string, where `body` is the raw request body. To verify a delivery:
+
+1. Read the raw body before you parse it. Parsing and re-serialising JSON changes the bytes.
+2. Compute the HMAC and compare it with `v1` in constant time.
+3. Reject a `t` more than five minutes from your clock, so a captured request cannot be replayed. Each retry is signed again with a new `t`.
+
+```ts
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+export function verifyCarbonSignature(
+  rawBody: string,
+  header: string,
+  secret: string,
+  toleranceSeconds = 300
+) {
+  const parts = Object.fromEntries(
+    header.split(",").map((part) => part.split("=", 2) as [string, string])
+  );
+  const timestamp = Number(parts.t);
+  if (!Number.isFinite(timestamp)) return false;
+  if (Math.abs(Date.now() / 1000 - timestamp) > toleranceSeconds) return false;
+
+  const expected = createHmac("sha256", secret)
+    .update(`${timestamp}.${rawBody}`)
+    .digest("hex");
+  const received = parts.v1 ?? "";
+  return (
+    received.length === expected.length &&
+    timingSafeEqual(Buffer.from(received), Buffer.from(expected))
+  );
+}
+```
+
+Reveal the secret in the webhook's edit drawer under **Settings → Webhooks**. **Roll secret** replaces it, and the next delivery is signed with the new one, so update your endpoint at the same time. Revealing or rolling the secret requires permission to update settings.
+
+<Callout type="info">
+A delivery tells you a record changed. Treat its body as a notification, and fetch the record with an [API key](/docs/building/api-keys) before you act on it.
 </Callout>
 
 ## Related

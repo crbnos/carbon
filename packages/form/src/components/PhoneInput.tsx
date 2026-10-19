@@ -1,4 +1,8 @@
-import type { TermId } from "@carbon/glossary";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
 import type { InputProps } from "@carbon/react";
 import {
   Button,
@@ -56,7 +60,7 @@ const PhoneInput: ForwardRefExoticComponent<PhoneInputProps> = forwardRef<
 
   const onChange = (value: string) => {
     setValue(value);
-    // @ts-ignore
+    // @ts-expect-error
     props.onChange?.(value);
   };
 
@@ -89,7 +93,7 @@ const PhoneInput: ForwardRefExoticComponent<PhoneInputProps> = forwardRef<
          *
          * @param {E164Number | undefined} value - The entered value
          */
-        // @ts-ignore
+        // @ts-expect-error
         onChange={onChange}
         {...props}
       />
@@ -138,8 +142,10 @@ const CountrySelect = ({
         <Button
           type="button"
           variant={"ghost"}
+          // The input's height, from the row: `h-full` needs a parent with a
+          // definite height, which a form field sized to its content is not.
           className={cn(
-            "py-1 border flex gap-1 h-full rounded-e-none rounded-s-lg pr-1 pl-3"
+            "py-1 border flex gap-1 h-auto self-stretch rounded-e-none rounded-s-lg pr-1 pl-3"
           )}
           disabled={disabled}
         >

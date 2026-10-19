@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -9,11 +13,12 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
-import { getAttributeCategoryWithValues } from "~/modules/account";
-import { UserAttributesForm } from "~/modules/account/ui/UserAttributes";
+import { useLoaderData } from "react-router";
+import { UserAttributesForm } from "~/modules/users/ui/UserAttributes";
+import { getAttributeCategoryWithValues } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

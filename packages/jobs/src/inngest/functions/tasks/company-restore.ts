@@ -1,4 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  CHANGE_LOGGED_TABLES,
+  REALTIME_TABLES
+} from "@carbon/database/realtime-tables";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
@@ -228,6 +236,38 @@ export async function wipeAndLoad(
         });
       }
     }
+
+    // Every list an open client keeps a copy of has just been replaced. With
+    // triggers off nothing logged that, so say it here: a null row id tells
+    // the client to read the whole table again.
+    await trx
+      .insertInto("tableChange")
+      .values(
+        CHANGE_LOGGED_TABLES.map((table) => ({ companyId, table, rowId: null }))
+      )
+      .execute();
+
+    // The log only answers a client that asks, and an open tab asks when a
+    // broadcast tells it to. With triggers off none was sent: after a template
+    // was reverted, a tab kept the reverted parts in its pickers for up to an
+    // hour, and creating a job with one of them failed. Say on every table's
+    // topic that it changed in bulk (null ids): a list reads the log again and
+    // a page reloads. Sent with the transaction, so nothing hears of a restore
+    // that rolled back.
+    const realtime = await sql<{ present: boolean }>`
+      SELECT to_regprocedure('realtime.send(jsonb,text,text,boolean)') IS NOT NULL AS present
+    `.execute(trx);
+    if (realtime.rows[0]?.present) {
+      await sql`
+        SELECT realtime.send(
+          jsonb_build_object('table', t, 'op', 'UPDATE', 'ids', NULL, 'parents', NULL),
+          'UPDATE',
+          'company:' || ${companyId} || ':' || t,
+          true
+        )
+        FROM unnest(${[...REALTIME_TABLES]}::text[]) AS t
+      `.execute(trx);
+    }
   });
 
   return { rows: inserted, idRewrite };
@@ -421,7 +461,7 @@ export const companyRestoreFunction = inngest.createFunction(
 
     return await step.run("restore-company", async () => {
       const client = getCarbonServiceRole();
-      const db = getJobDatabaseClient(1);
+      const db = getJobDatabaseClient();
 
       // Idempotency — a retry after the run already reached a terminal state
       // must not wipe again.
@@ -692,7 +732,7 @@ export const companyRestoreRevertFunction = inngest.createFunction(
     // mid-restore. The lock is on companyRestoreFunction (the start).
     return await step.run("revert-restore", async () => {
       const client = getCarbonServiceRole();
-      const db = getJobDatabaseClient(1);
+      const db = getJobDatabaseClient();
 
       const marker = await readRestoreMarker(client, companyId, restoreRunId);
       const snapshotPath = marker?.metadata.snapshotPath;

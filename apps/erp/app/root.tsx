@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import "./zod.client";
 import { CONTROLLED_ENVIRONMENT, error, getBrowserEnv } from "@carbon/auth";
 import { flashClientMiddleware } from "@carbon/auth/middleware/flash.client";
@@ -6,30 +10,37 @@ import {
   flashMiddleware,
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
+import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
+import { maintenanceMiddleware } from "@carbon/auth/middleware/maintenance.server";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
-import {
-  requestContextMiddleware,
-  requestIdMiddleware
-} from "@carbon/logger/middleware.server";
+import { requestMiddleware } from "@carbon/logger/middleware.server";
+import { timedMiddleware } from "@carbon/logger/tracing.server";
+import { createInvalidationMiddleware } from "@carbon/query/cache";
 import {
   OperatingSystemContextProvider,
   Toaster,
   TooltipProvider,
-  useMode
+  useMode,
+  ViewportProvider
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
 import {
+  colorSchemeHintScript,
   getPreferenceHeaders,
+  getViewportHint,
   isSearchParamOnlyNavigation,
   modeValidator,
+  prefetchCacheMiddleware,
+  themeColorValidator,
   themes
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
 import { useContext, useState } from "react";
@@ -48,7 +59,9 @@ import {
   Scripts,
   ScrollRestoration,
   UNSAFE_FrameworkContext,
-  useLoaderData
+  useLoaderData,
+  useLocation,
+  useMatches
 } from "react-router";
 import SonnerStyle from "sonner/dist/styles.css?url";
 import { preloadCatalog, useCatalog } from "~/services/lingui";
@@ -56,18 +69,30 @@ import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
+import type { Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
 import "@carbon/lib/shims";
+import { MotionConfig } from "motion/react";
 import type { Route } from "./+types/root";
-import { getTheme } from "./services/theme.server";
+import { getTheme, setTheme } from "./services/theme.server";
 
-export const middleware = [
-  // First: publishes the request context so server code can reach it via ALS.
-  requestContextMiddleware,
-  requestIdMiddleware,
-  securityMiddleware,
-  flashMiddleware
+export const middleware = timedMiddleware({
+  // First: the request scope (context, request id, access log).
+  request: requestMiddleware,
+  security: securityMiddleware,
+  // After security, so the 503 still carries the nonce and security headers.
+  maintenance: maintenanceMiddleware,
+  formBody: formBodyMiddleware,
+  flash: flashMiddleware,
+  prefetchCache: prefetchCacheMiddleware
+});
+export const clientMiddleware = [
+  flashClientMiddleware,
+  createInvalidationMiddleware({
+    getCache: () => window.clientCache,
+    skipPaths: [path.to.refreshSession]
+  })
 ];
-export const clientMiddleware = [flashClientMiddleware];
 
 export const links: LinksFunction = () => {
   return [
@@ -107,6 +132,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     MES_URL,
     NODE_ENV,
     ONSHAPE_CLIENT_ID,
+    ONSHAPE_V2_CLIENT_ID,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     QUICKBOOKS_CLIENT_ID,
@@ -140,6 +166,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         MES_URL,
         NODE_ENV,
         ONSHAPE_CLIENT_ID,
+        ONSHAPE_V2_CLIENT_ID,
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         QUICKBOOKS_CLIENT_ID,
@@ -151,7 +178,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         VERCEL_URL,
         XERO_CLIENT_ID
       },
-      mode: getMode(request),
+      ...getMode(request),
+      viewport: getViewportHint(request),
       preferences: getPreferenceHeaders(request),
       result: context.get(flashResultContext),
       theme: getTheme(request)
@@ -171,9 +199,26 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid content type" }, { status: 400 });
   }
 
-  const validation = await validator(modeValidator).validate(
-    await request.formData()
-  );
+  const formData = await request.formData();
+
+  // The account settings Appearance pane posts its theme color here too.
+  if (formData.has("theme")) {
+    const themeValidation =
+      await validator(themeColorValidator).validate(formData);
+    if (themeValidation.error) {
+      return data(error(themeValidation.error, "Invalid theme"), {
+        status: 400
+      });
+    }
+    return data(
+      {},
+      {
+        headers: { "Set-Cookie": setTheme(themeValidation.data.theme) }
+      }
+    );
+  }
+
+  const validation = await validator(modeValidator).validate(formData);
 
   if (validation.error) {
     return data(error(validation.error, "Invalid mode"), {
@@ -241,7 +286,14 @@ export function Document({
         <meta charSet="utf-8" />
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        {/* Before any paint: records the OS color scheme for a `system` user
+            and reloads once if the server rendered the wrong mode. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: colorSchemeHintScript }}
         />
         <Meta />
         <Links />
@@ -278,7 +330,12 @@ export default function App() {
   const prefs = loaderData?.preferences;
   const appLanguage = resolveLanguage(prefs.locale);
   const catalog = useCatalog(appLanguage);
-  const mode = useMode();
+  const userMode = useMode();
+  const { search } = useLocation();
+  const hostMode = useMatches()
+    .map((match) => (match.handle as Handle | undefined)?.hostMode)
+    .find((value) => value !== undefined);
+  const mode = hostMode ? hostMode(new URLSearchParams(search)) : userMode;
 
   // One client for both consumers: the imperative `window.clientCache`
   // read-through convention (clientLoader/cachedApiQuery) and hook-based
@@ -307,15 +364,26 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <OperatingSystemContextProvider platform={prefs.platform}>
-        <LocaleProvider locale={appLanguage} catalog={catalog}>
-          <I18nProvider locale={prefs.locale}>
-            <TooltipProvider delayDuration={200}>
-              <Document mode={mode} theme={theme} lang={appLanguage} env={env}>
-                <Outlet />
-              </Document>
-            </TooltipProvider>
-          </I18nProvider>
-        </LocaleProvider>
+        <ViewportProvider initialViewport={loaderData?.viewport ?? "desktop"}>
+          <LocaleProvider locale={appLanguage} catalog={catalog}>
+            <I18nProvider locale={prefs.locale}>
+              <TooltipProvider>
+                <MotionConfig reducedMotion="user">
+                  <Document
+                    mode={mode}
+                    theme={theme}
+                    lang={appLanguage}
+                    env={env}
+                  >
+                    <Outlet />
+                    {/* Renders nothing outside development; the package strips itself. */}
+                    <ReactQueryDevtools buttonPosition="bottom-right" />
+                  </Document>
+                </MotionConfig>
+              </TooltipProvider>
+            </I18nProvider>
+          </LocaleProvider>
+        </ViewportProvider>
       </OperatingSystemContextProvider>
     </QueryClientProvider>
   );

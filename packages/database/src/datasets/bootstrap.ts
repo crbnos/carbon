@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import process from "node:process";
 import { createClient } from "@supabase/supabase-js";
 import type { PoolClient } from "pg";
@@ -24,7 +28,7 @@ import {
   scrapReasons,
   sequences,
   unitOfMeasures
-} from "../../supabase/functions/lib/seed.data.ts";
+} from "../seed-data.ts";
 import type { Database } from "../types.ts";
 import type { Resolved } from "./types.ts";
 
@@ -95,14 +99,8 @@ export async function bootstrap(
       userId,
       companyName: DEV_COMPANY_NAME
     });
-    // Dev/test convenience: enable accounting so posting flows create GL
-    // journals out of the box. Production keeps the column default (false) —
-    // this is the dev-seed bootstrap path only, not seedCompanyReferenceData,
-    // which onboarding and the drift checker also run.
-    await client.query(
-      `UPDATE "companySettings" SET "accountingEnabled" = true WHERE id = $1`,
-      [companyId]
-    );
+    // The dataset's tier 01 gives the company its accounting cutover, so its
+    // posting flows write Posted journals (spec 2026-10-08-accounting-cutover).
     await client.query("COMMIT");
     return { companyId, userId };
   } catch (err) {
@@ -347,7 +345,7 @@ export async function seedCompanyReferenceData(
   }
 
   // Columns derive from the shared accountDefaults object so this insert
-  // can't drift from seed.data.ts when new defaults are added.
+  // can't drift from seed-data.ts when new defaults are added.
   const accountDefaultEntries = Object.entries(accountDefaults);
   const accountDefaultColumns = [
     ...accountDefaultEntries.map(([column]) => `"${column}"`),
@@ -377,8 +375,8 @@ export async function seedCompanyReferenceData(
         "assetAccountId", "accumulatedDepreciationAccountId",
         "depreciationExpenseAccountId", "writeOffAccountId",
         "writeDownAccountId", "gainOnDisposalAccountId", "lossOnDisposalAccountId",
-        "companyId", "createdBy"
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'system')`,
+        "isConstructionInProgress", "companyId", "createdBy"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'system')`,
       [
         fac.name,
         fac.depreciationMethod,
@@ -391,6 +389,7 @@ export async function seedCompanyReferenceData(
         accountIdByKey[fac.writeDownAccount],
         accountIdByKey[fac.gainOnDisposalAccount],
         accountIdByKey[fac.lossOnDisposalAccount],
+        fac.isConstructionInProgress,
         companyId
       ]
     );

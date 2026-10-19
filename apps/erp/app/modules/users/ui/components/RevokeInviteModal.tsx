@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -7,12 +12,12 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  ModalTitle
+  ModalTitle,
+  toast
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
-import { useFetcher } from "react-router";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { UserSelect } from "~/components/Selectors";
-import { revokeInviteValidator } from "~/modules/users";
+import { revokeInviteValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 type RevokeInviteModalProps = {
@@ -26,7 +31,13 @@ const RevokeInviteModal = ({
   isOpen,
   onClose
 }: RevokeInviteModalProps) => {
-  const fetcher = useFetcher<{}>();
+  const { t } = useLingui();
+  // The modal stays open until the action answers: it unmounts when it
+  // closes, and the result is read here.
+  const fetcher = useAction({
+    onSuccess: (data) => toast.success(t`Successfully revoked invites`),
+    onSettled: () => onClose()
+  });
   const isSingleUser = userIds.length === 1;
 
   return (
@@ -70,7 +81,6 @@ const RevokeInviteModal = ({
               method="post"
               action={path.to.revokeInvite}
               validator={revokeInviteValidator}
-              onSubmit={onClose}
               fetcher={fetcher}
             >
               {userIds.map((id, index) => (
@@ -81,7 +91,11 @@ const RevokeInviteModal = ({
                   value={id}
                 />
               ))}
-              <Button variant="destructive" type="submit">
+              <Button
+                variant="destructive"
+                type="submit"
+                isLoading={fetcher.isPending}
+              >
                 <Trans>Revoke</Trans>
               </Button>
             </ValidatedForm>

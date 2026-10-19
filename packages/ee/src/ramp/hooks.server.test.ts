@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getBusiness = vi.hoisted(() => vi.fn());
@@ -35,8 +39,7 @@ import { rampOnInstall, rampOnUpdate } from "./hooks.server";
 
 const credentials = {
   type: "oauth2" as const,
-  accessToken: "access-token",
-  environment: "production" as const
+  accessToken: "access-token"
 };
 
 function integration(metadata: Record<string, unknown>) {

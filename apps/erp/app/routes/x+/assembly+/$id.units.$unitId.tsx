@@ -1,13 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  assemblyUnitValidator,
-  upsertAssemblyUnit
-} from "~/modules/production";
+import { assemblyUnitValidator } from "~/modules/production/production.models";
+import { upsertAssemblyUnit } from "~/modules/production/production.service";
 
 // Edit an authored subassembly unit in place — rename and/or change which parts
 // it groups. Membership feeds the motion planner, so applying a change requires
@@ -28,7 +30,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (validation.error) {
     return data(
       { success: false },
-      await flash(request, error(validation.error, "Failed to update unit"))
+      await flash(
+        request,
+        error(validation.error, "Failed to update component group")
+      )
     );
   }
 
@@ -45,7 +50,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (update.error) {
     return data(
       { success: false },
-      await flash(request, error(update.error, "Failed to update unit"))
+      await flash(
+        request,
+        error(update.error, "Failed to update component group")
+      )
     );
   }
 

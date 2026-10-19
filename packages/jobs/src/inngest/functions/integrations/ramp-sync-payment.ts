@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { posting } from "@carbon/api/postings.server";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
@@ -189,19 +194,17 @@ export async function createOrResumeRampPayment(
   return ensureRampPaymentPosted({
     stage: () => stageRampPaymentDraft(db, args),
     post: async (paymentRowId) => {
-      const response = await client.functions.invoke("post-payment", {
-        body: {
+      const response = await posting(
+        "post-payment",
+        { client, db, companyId: args.companyId, userId: args.actorId },
+        {
           type: "post",
-          paymentId: paymentRowId,
-          userId: args.actorId,
-          companyId: args.companyId
+          paymentId: paymentRowId
         }
-      });
+      );
       return {
         error: Boolean(response.error),
-        message:
-          (response.data as { message?: string } | undefined)?.message ??
-          response.error?.message
+        message: response.error?.message
       };
     },
     readStatus: async (paymentRowId) => {

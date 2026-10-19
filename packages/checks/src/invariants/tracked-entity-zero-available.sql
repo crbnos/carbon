@@ -1,7 +1,7 @@
 -- invariant: a lot with no quantity left is Consumed, never a live status
 -- returns rows that VIOLATE the rule (none = healthy)
 --
--- The drain rule (functions/shared/entity-drain.ts `settleQuantity` /
+-- The drain rule (@carbon/utils entity-drain.ts `settleQuantity` /
 -- `statusAfterQuantityChange`): a tracked entity whose quantity rounds to zero
 -- is Consumed, not a zero-quantity husk that still reads Available and clutters
 -- every on-hand list. `Scrapped` and `Rejected` are deliberately EXCLUDED — both

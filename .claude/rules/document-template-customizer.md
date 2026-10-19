@@ -70,7 +70,7 @@ with a live-record preview combobox), `context.tsx` (state/actions), plus
   `settings.models.ts`) and calls `upsertDocumentTemplate`.
 - `x+/templates+/$type.preview.tsx` — POST renders the draft layout via
   `DOCUMENT_PDFS` (optionally against a real record via `previewId`;
-  `documentPreview.server.ts`).
+  `buildPreviewProps` in `settings.service.ts`).
 - File routes `file+/<doc>+/$id[.]pdf.tsx` — canonical consume path:
   `getDocumentTemplate` → `toDocumentTemplate` → `resolveTemplate` →
   `resolveSections(collectSectionIds(...))` → `ensureFont(...)` →
@@ -112,4 +112,4 @@ The built-in `terms` block carries optional rich-text `content`; renderers call
 present, else the company `terms` table setting (`salesTerms`/`purchasingTerms`),
 which routes still pass as the seed/fallback.
 
-<!-- UNVERIFIED: logo-resizer edge function (^GFA mono-PNG) for ZPL label logos — described in the old cache doc but not re-confirmed against current code in this pass -->
+ZPL/B&W label logos: `resolveLabelLogo` (`@carbon/documents/labels`) crops, thresholds and resizes the company logo with `renderLabelLogo` (`@carbon/files/media`) into a mono PNG data URL and a `^GFA` field.

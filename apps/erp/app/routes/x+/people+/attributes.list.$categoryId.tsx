@@ -1,19 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { data, useLoaderData, useNavigate } from "react-router";
 import { useUrlParams } from "~/hooks";
 import {
   getAttributeCategory,
   updateAttributeSortOrder
-} from "~/modules/people";
+} from "~/modules/people/people.service";
 import { AttributeCategoryDetail } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
@@ -87,7 +87,7 @@ export default function AttributeCategoryListRoute() {
         attributeCategory={attributeCategory}
         onClose={onClose}
       />
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

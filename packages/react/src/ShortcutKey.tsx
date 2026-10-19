@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Fragment } from "react";
 import type { IconType } from "react-icons";
 import {
@@ -68,7 +72,14 @@ export const ShortcutKey = ({
   );
 
   return (
-    <span className={cn(shortcutKeyVariants[variant], className)}>
+    <span
+      className={cn(
+        shortcutKeyVariants[variant],
+        // Phones have no keyboard shortcuts to hint at.
+        "max-md:hidden",
+        className
+      )}
+    >
       <span className="sr-only">{readableShortcut}</span>
       <span aria-hidden="true" className="contents">
         {modifiers.map((k) => (

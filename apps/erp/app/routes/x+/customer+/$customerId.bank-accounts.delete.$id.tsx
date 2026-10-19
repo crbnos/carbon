@@ -1,13 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
-import type { CustomerBankAccount } from "~/modules/sales";
-import { deleteCustomerBankAccount } from "~/modules/sales";
+import { deleteCustomerBankAccount } from "~/modules/sales/sales.service";
+import type { CustomerBankAccount } from "~/modules/sales/types";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -36,7 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function DeleteCustomerBankAccountRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const { t } = useLingui();
   const { customerId, id } = useParams();
   if (!customerId) throw new Error("Could not find customerId");
@@ -57,7 +63,7 @@ export default function DeleteCustomerBankAccountRoute() {
       isOpen
       name={bankAccount.name}
       text={t`Are you sure you want to permanently delete this bank account?`}
-      onCancel={() => navigate(-1)}
+      onCancel={() => closeRoute()}
     />
   );
 }

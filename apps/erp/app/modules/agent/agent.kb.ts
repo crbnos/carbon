@@ -1,67 +1,94 @@
-import manifest from "./kb/manifest.json";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-type DocEntry = {
-  slug: string;
-  title: string;
-  description: string;
-  keywords: string[];
-  headings: string[];
-};
+import { type AgentDoc, agentDocs } from "@carbon/content/agent-kb";
+import { DOCS_URL, docUrl } from "@carbon/content/links";
+import { createDocSearch } from "@carbon/ee/mcp";
 
-const docs = (manifest as { docs: DocEntry[] }).docs;
+// The docs site mirrors the corpus slug structure, except that an index page is served at
+// its folder (`docs/integrations`, not `docs/integrations/index`). NEVER surface the raw
+// slug / file path to the user — always the public URL.
+const pagePath = (slug: string) => slug.replace(/(^|\/)index$/, "");
+const byPath = new Map(agentDocs.map((d) => [pagePath(d.slug), d]));
+const docSearch = createDocSearch(agentDocs);
 
-// The docs site mirrors the kb slug structure 1:1, so the public URL is just the base
-// + slug. NEVER surface the raw slug / file path to the user — always this URL.
-const DOCS_BASE = "https://docs.carbon.ms";
-const docUrl = (slug: string) => `${DOCS_BASE}/${slug}`;
+// Every tool result lands in the model's context and is re-sent on each later step, so
+// both tools return bounded text: search_docs a snippet per section, read_doc one section,
+// a short page whole, or a long page's intro plus its section links.
+const SNIPPET_CHARS = 280;
+const FULL_PAGE_CHARS = 12_000;
 
-// Bundle every generated .md into the server build so reads work in the container
-// (no fs / docs-app dependency). Keyed by e.g. "./kb/docs/reference/jobs.md".
-const files = import.meta.glob("./kb/**/*.md", {
-  query: "?raw",
-  import: "default",
-  eager: true
-}) as Record<string, string>;
+const sectionUrl = (doc: AgentDoc, anchor: string | null) =>
+  `${docUrl(pagePath(doc.slug))}${anchor ? `#${anchor}` : ""}`;
 
-/** Keyword search over each doc's metadata AND full body; returns the best matches. */
-export function searchDocs({
+function snippet(markdown: string): string {
+  const text = markdown
+    .replace(/^#{2,3}\s+[^\n]*\n?/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > SNIPPET_CHARS
+    ? `${text.slice(0, SNIPPET_CHARS)}…`
+    : text;
+}
+
+/** Ranked search over every doc section (the MCP catalog's engine and aliases). */
+export async function searchDocs({
   query,
   limit = 5
 }: {
   query: string;
   limit?: number;
 }) {
-  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
-  if (terms.length === 0) return [];
-  return docs
-    .map((d) => {
-      const meta =
-        `${d.title} ${d.description} ${d.keywords.join(" ")} ${d.headings.join(" ")}`.toLowerCase();
-      const body = (files[`./kb/${d.slug}.md`] ?? "").toLowerCase();
-      // Metadata hits weigh more than body hits, but a body-only term still counts.
-      const score = terms.reduce(
-        (s, t) => s + (meta.includes(t) ? 2 : body.includes(t) ? 1 : 0),
-        0
-      );
-      return { d, score };
-    })
-    .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map(({ d }) => ({
-      title: d.title,
-      description: d.description,
-      url: docUrl(d.slug)
-    }));
+  const hits = await docSearch(query, limit);
+  return hits.map(({ doc, section }) => ({
+    title: doc.title,
+    ...(section.heading ? { section: section.heading } : {}),
+    url: sectionUrl(doc, section.anchor),
+    snippet: snippet(section.markdown)
+  }));
 }
 
-/** Read the full markdown for a doc by its public URL (as returned by search_docs). */
+/**
+ * Read a doc by its public URL (as returned by search_docs). A `#section` URL returns that
+ * section; a page URL returns the page, or for a long page its intro and section links.
+ */
 export function readDoc({ url }: { url: string }) {
-  const slug = url
-    .replace(`${DOCS_BASE}/`, "")
+  const [location = "", anchor] = url
+    .replace(`${DOCS_URL}/`, "")
     .replace(/^https?:\/\/[^/]+\//, "")
-    .replace(/^\/+/, "");
-  const content = files[`./kb/${slug}.md`];
-  if (!content) return { error: `Doc not found: ${url}` };
-  return { url: docUrl(slug), content };
+    .split("#");
+  const path = pagePath(
+    location.replace(/\?.*$/, "").replace(/^\/+|\/+$/g, "")
+  );
+  const doc = byPath.get(path);
+  if (!doc) return { error: `Doc not found: ${url}` };
+
+  const header = `# ${doc.title}\n\n${
+    doc.description ? `> ${doc.description}\n\n` : ""
+  }`;
+
+  const section = anchor
+    ? doc.sections.find((s) => s.anchor === anchor)
+    : undefined;
+  if (section) {
+    return {
+      url: sectionUrl(doc, section.anchor),
+      content: `${header}${section.markdown}\n`
+    };
+  }
+
+  if (doc.markdown.length <= FULL_PAGE_CHARS) {
+    return { url: docUrl(path), content: `${header}${doc.markdown}\n` };
+  }
+
+  const intro = doc.sections.find((s) => s.heading === null)?.markdown;
+  const contents = doc.sections
+    .filter((s) => s.anchor)
+    .map((s) => `- ${s.heading}: ${sectionUrl(doc, s.anchor)}`)
+    .join("\n");
+  return {
+    url: docUrl(path),
+    content: `${header}${intro ? `${intro}\n\n` : ""}This page is long. Read the section you need with read_doc and its URL:\n\n${contents}\n`
+  };
 }

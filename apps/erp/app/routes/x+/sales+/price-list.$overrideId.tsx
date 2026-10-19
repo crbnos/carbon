@@ -1,18 +1,26 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
+import {
+  priceOverrideBreaksValidator,
+  priceOverrideValidator
+} from "~/modules/sales/sales.models";
 import {
   getCustomerItemPriceOverrideById,
-  priceOverrideBreaksValidator,
-  priceOverrideValidator,
   upsertCustomerItemPriceOverride
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import PriceOverrideForm from "~/modules/sales/ui/Pricing/PriceOverrideForm";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
@@ -134,7 +142,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditPriceOverrideRoute() {
   const { override } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   if (!override) return null;
 
@@ -162,7 +170,7 @@ export default function EditPriceOverrideRoute() {
             }[])
           : []
       }
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

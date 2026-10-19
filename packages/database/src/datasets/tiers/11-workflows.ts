@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { resolveDate } from "../dates.ts";
 import { insertId, insertRow, need, one } from "../sql.ts";
 import type { Ctx, Node, WorkflowRunSpec } from "../types.ts";

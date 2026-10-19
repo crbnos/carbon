@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { ManifestEntry } from "@carbon/api";
 import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
@@ -8,7 +12,7 @@ const logger = getLogger("erp", "mcp");
 
 /** The minimum an MCP request context must carry for the engine — the caller
  *  (the app route) passes its full `AuthedContext`, which is a superset. The
- *  engine is generic over the concrete context (see `createMcpServer`), so the
+ *  engine is generic over the concrete context (see `serveMcpRequest`), so the
  *  app's dispatch (`deps.callOperation`) receives the real context unchanged;
  *  the engine itself only reads `client`/`companyId` (for the entitlement gate). */
 export type McpContext = {
@@ -26,8 +30,7 @@ export type McpCallResult =
 
 /** Everything the MCP engine needs from the APP side, injected by the route.
  *  The dispatch (`callOperation`), its manifest (`operationsByName` /
- *  `isListOperation`), the blocked-tool predicate and the generated tool
- *  metadata all derive from `apps/erp`'s `~/modules/*` and cannot move into a
+ *  `isListOperation`) and the generated tool metadata all derive from `apps/erp`'s `~/modules/*` and cannot move into a
  *  package — so they are passed in rather than imported. */
 export interface McpServerDeps<Ctx> {
   callOperation: (
@@ -35,9 +38,10 @@ export interface McpServerDeps<Ctx> {
     ctx: Ctx,
     args?: string | Record<string, unknown>
   ) => Promise<McpCallResult>;
+  /** Includes deprecated aliases, keyed by the OLD name and mapped to the
+   *  replacement's entry — so `get(name).name !== name` marks an alias. */
   operationsByName: Map<string, ManifestEntry>;
   isListOperation: (meta: ManifestEntry) => boolean;
-  isMcpBlockedTool: (name: string) => boolean;
   /** Built once at module scope by the route from `tool-metadata.json`. */
   catalogSearch: CatalogSearch;
   /** The generated catalog summary the instructions + search footer read. */

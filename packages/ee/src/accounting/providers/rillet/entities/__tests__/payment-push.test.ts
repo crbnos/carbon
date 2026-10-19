@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RilletPaymentSyncer } from "../payment";
 
@@ -5,10 +9,8 @@ import { RilletPaymentSyncer } from "../payment";
 // Rillet as a payment document; a provider-recorded (pulled) payment is skipped
 // by the mapping-exists guard. The pull path is covered in payment.test.ts.
 
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({ functions: { invoke: vi.fn() } })
-}));
-
+// Posting imports the post-payment operation lazily; stub it so these tests
+// never reach the database or server env.
 // The mapping link runs inside withTriggersDisabled (a real Kysely transaction
 // with a `SET LOCAL` statement). Stub it to invoke the callback with a capturing
 // tx so the link's insert is observable without a live DB — `txLinkSink` records
@@ -486,43 +488,44 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
 });
 
 describe("RilletPaymentSyncer push — void routing", () => {
-  it.each([
-    "ar",
-    "ap"
-  ])("voids every Carbon-originated %s settlement and retains idempotent tombstones", async (family) => {
-    const remote = (n: number) =>
-      `${family === "ap" ? "bill:" : ""}doc-${n}:pay-${n}`;
-    const mappings = [1, 2].map((n) => ({
-      entityId: `pay_1:doc-${n}`,
-      externalId: remote(n),
-      metadata: { origin: "carbon", other: "preserved" }
-    }));
-    const { syncer, deleteInvoicePayment, deleteBillPayment } = makeSyncer({
-      db: makePushDb({
-        payment: { ...apPayment, status: "Voided" },
-        settlements: [apSettlement],
-        mappings,
-        linkSink: []
-      })
-    });
-    expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
-      status: "success",
-      action: "deleted"
-    });
-    const deletion = family === "ar" ? deleteInvoicePayment : deleteBillPayment;
-    expect(deletion.mock.calls).toEqual([
-      ["doc-1", "pay-1"],
-      ["doc-2", "pay-2"]
-    ]);
-    expect(txLinkSink).toHaveLength(2);
-    expect(
-      txLinkSink.every(
-        (row) =>
-          (row.metadata as any)?.voided === true &&
-          (row.metadata as any)?.other === "preserved"
-      )
-    ).toBe(true);
-  });
+  it.each(["ar", "ap"])(
+    "voids every Carbon-originated %s settlement and retains idempotent tombstones",
+    async (family) => {
+      const remote = (n: number) =>
+        `${family === "ap" ? "bill:" : ""}doc-${n}:pay-${n}`;
+      const mappings = [1, 2].map((n) => ({
+        entityId: `pay_1:doc-${n}`,
+        externalId: remote(n),
+        metadata: { origin: "carbon", other: "preserved" }
+      }));
+      const { syncer, deleteInvoicePayment, deleteBillPayment } = makeSyncer({
+        db: makePushDb({
+          payment: { ...apPayment, status: "Voided" },
+          settlements: [apSettlement],
+          mappings,
+          linkSink: []
+        })
+      });
+      expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
+        status: "success",
+        action: "deleted"
+      });
+      const deletion =
+        family === "ar" ? deleteInvoicePayment : deleteBillPayment;
+      expect(deletion.mock.calls).toEqual([
+        ["doc-1", "pay-1"],
+        ["doc-2", "pay-2"]
+      ]);
+      expect(txLinkSink).toHaveLength(2);
+      expect(
+        txLinkSink.every(
+          (row) =>
+            (row.metadata as any)?.voided === true &&
+            (row.metadata as any)?.other === "preserved"
+        )
+      ).toBe(true);
+    }
+  );
 
   it("retains all mappings on partial delete failure so retry is safe", async () => {
     const deletion = vi

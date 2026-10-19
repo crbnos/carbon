@@ -1,13 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Company-private storage.
  *
  * Private files live in one bucket PER COMPANY (bucket id = companyId).
- * Object keys keep the legacy `${companyId}/...` first segment so paths
- * stored in the database stay valid and the legacy→company copy is same-key.
- *
- * The legacy shared `private` bucket is a read-only fallback until the copy
- * script has run everywhere; every fallback lives in this file so removing
- * it later is a one-file change.
+ * Object keys keep the `${companyId}/...` first segment, so a stored path
+ * names its own bucket.
  *
  *   const { data, error } = await storage(client).company(companyId).download(path);
  *   await storage(client).company(companyId).upload(path, file, { upsert: true });
@@ -16,13 +16,20 @@
 
 import {
   type DownloadResult,
-  type SearchOptions,
+  type FileObject,
+  type SearchV2Result,
   type StorageClient,
   StorageError,
   type TransformOptions
 } from "@supabase/storage-js";
 
-export const LEGACY_PRIVATE_BUCKET = "private";
+/**
+ * The URL segment `/file/preview/private/<path>` — a stored link format
+ * (rich text, inspection documents) that the preview routes serve from the
+ * caller's own company bucket. The shared `private` bucket it once named is
+ * no longer read.
+ */
+export const PRIVATE_PREVIEW_ALIAS = "private";
 // Ephemeral staging for uploads too big for a company bucket's per-object cap
 // (raw CAD, backup archives). 2.5 GB cap; stale objects are pruned by the
 // scheduled cleanup job. Object keys start with the companyId segment.
@@ -120,16 +127,17 @@ export function safeStorageFileName(name: string): string | null {
 type Bucket = ReturnType<StorageClient["from"]>;
 
 /**
- * A company's private bucket with the supabase `StorageFileApi` shape. Writes
- * go to the company bucket only; reads fall back to the legacy bucket; `list`
- * unions both and `remove` deletes from both. Every key must sit under
- * `${companyId}/` — under a service-role client that prefix is the only
- * tenant boundary on the shared legacy bucket, and a company bucket must never
- * hold a key that `getPrivateUrl` would resolve to another company's bucket.
+ * A company's private bucket with the supabase `StorageFileApi` shape. Every
+ * key must sit under `${companyId}/`: a company bucket must never hold a key
+ * that `getPrivateUrl` would resolve to another company's bucket.
  *
- * Deliberately absent: `getPublicUrl` (private bucket), `createSignedUrls`
- * and `listV2` (batch shapes with no single fallback answer). Use `.from()`
- * if one is ever needed.
+ * `list(folder)` returns EVERY entry directly inside the folder, sorted by
+ * name, in the shape the old list endpoint used (a sub-folder is an entry with
+ * a null `id`). It takes no options — it reads the cursor-paged list endpoint
+ * to the end, so there is no limit or offset to pass.
+ *
+ * Deliberately absent: `getPublicUrl` (private bucket) and `createSignedUrls`.
+ * Use `.from()` if one is ever needed.
  */
 export type CompanyBucket = {
   upload: Bucket["upload"];
@@ -145,8 +153,8 @@ export type CompanyBucket = {
     options?: { transform?: TransformOptions }
   ): Promise<DownloadResult<Blob>>;
   createSignedUrl: Bucket["createSignedUrl"];
-  list(prefix: string, options?: SearchOptions): ReturnType<Bucket["list"]>;
-  remove: Bucket["remove"];
+  list(folder: string): ReturnType<Bucket["list"]>;
+  remove(paths: string[]): ReturnType<Bucket["remove"]>;
 };
 
 export type CarbonStorage = {
@@ -154,6 +162,23 @@ export type CarbonStorage = {
   from(bucket: string): Bucket;
   company(companyId: string): CompanyBucket;
 };
+
+/**
+ * What to say when a storage image transform fails. Storage hands transforms
+ * to imgproxy, and when that service is not running the failure names it
+ * (`getaddrinfo ENOTFOUND imgproxy`) — a stack problem, not a bad image, and
+ * the local dev stack leaves imgproxy off by default. Anything else gets the
+ * caller's own message.
+ */
+export function imageTransformErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  const message = (error as { message?: unknown } | null)?.message;
+  return typeof message === "string" && /imgproxy/i.test(message)
+    ? "Image transformation is unavailable: storage cannot reach imgproxy. On the local dev stack, start it with `crbn reload imgproxy` or boot with `crbn up --full`."
+    : fallback;
+}
 
 /**
  * The HTTP status behind a storage error. `download()` skips reading the
@@ -196,6 +221,66 @@ export async function isStorageNotFound(error: unknown): Promise<boolean> {
   return body?.statusCode === "404";
 }
 
+const lastSegment = (path: string) =>
+  path.replace(/\/+$/, "").split("/").pop() ?? "";
+
+// What the old endpoint returned for a folder, and every caller checks:
+// the paged endpoint gives a folder only its name and key.
+const FOLDER_FIELDS = {
+  id: null,
+  updated_at: null,
+  created_at: null,
+  last_accessed_at: null,
+  metadata: null
+};
+
+type ListedEntry =
+  | (SearchV2Result["folders"][number] & typeof FOLDER_FIELDS)
+  | SearchV2Result["objects"][number];
+
+/**
+ * The cursor-paged endpoint names an entry by its full key; callers expect the
+ * old endpoint's shape, where `name` is the entry's own name inside the folder.
+ */
+function toFileObjects(entries: ListedEntry[]): FileObject[] {
+  return entries.map((entry) => ({
+    ...entry,
+    name: lastSegment(entry.key ?? entry.name)
+  })) as unknown as FileObject[];
+}
+
+/** Everything directly inside `prefix`, read to the last page. */
+async function listFolder(bucket: Bucket, prefix: string) {
+  const entries: ListedEntry[] = [];
+  let cursor: string | undefined;
+  do {
+    const { data, error } = await bucket.listV2({
+      prefix,
+      with_delimiter: true,
+      cursor
+    });
+    if (error) return { data: null, error };
+    entries.push(
+      ...data.folders.map((folder) => ({ ...FOLDER_FIELDS, ...folder })),
+      ...data.objects
+    );
+    if (!data.hasNext) break;
+    // More pages promised with no way to reach them: a repeated cursor would
+    // loop forever, a missing one would pass a partial list off as complete.
+    if (!data.nextCursor || data.nextCursor === cursor) {
+      return {
+        data: null,
+        error: new StorageError(`Listing "${prefix}" did not advance`)
+      };
+    }
+    cursor = data.nextCursor;
+  } while (cursor);
+  const files = toFileObjects(entries).sort((a, b) =>
+    a.name < b.name ? -1 : a.name > b.name ? 1 : 0
+  );
+  return { data: files, error: null };
+}
+
 export function storage(client: { storage: StorageClient }): CarbonStorage {
   return {
     from: (bucket) => client.storage.from(bucket),
@@ -209,7 +294,6 @@ function companyBucket(
 ): CompanyBucket {
   const id = getCompanyPrivateBucket(companyId);
   const own = storage.from(id);
-  const legacy = storage.from(LEGACY_PRIVATE_BUCKET);
 
   // The prefix is only a boundary if the key cannot climb out of it. Storage
   // uses the key only up to the first `?` / `#` (the URL parser ends the path
@@ -232,17 +316,6 @@ function companyBucket(
       )
     });
 
-  // Company bucket first, legacy second; when both miss, the company bucket's
-  // error is the one reported since that is where the file belongs.
-  const withFallback = async <R extends { error: unknown }>(
-    read: (bucket: Bucket) => PromiseLike<R>
-  ) => {
-    const primary = await read(own);
-    if (!primary.error) return primary;
-    const fallback = await read(legacy);
-    return fallback.error ? primary : fallback;
-  };
-
   return {
     upload: (path, ...rest) =>
       owns(path) ? own.upload(path, ...rest) : refuse(path),
@@ -250,21 +323,8 @@ function companyBucket(
       owns(path) ? own.update(path, ...rest) : refuse(path),
     uploadToSignedUrl: (path, ...rest) =>
       owns(path) ? own.uploadToSignedUrl(path, ...rest) : refuse(path),
-    // A file uploaded before the per-company copy ran still lives only in the
-    // legacy bucket, so a move within the company bucket finds nothing. Retry
-    // it as a cross-bucket move OUT of legacy: `/object/move` takes a
-    // `destinationBucket`, so this stays one server-side operation rather than
-    // a download/upload/remove dance. Honours an explicit destinationBucket.
-    move: async (from, to, options) => {
-      if (!owns(from, to)) return refuse(from, to);
-      const primary = await own.move(from, to, options);
-      if (!primary.error) return primary;
-      const fallback = await legacy.move(from, to, {
-        ...options,
-        destinationBucket: options?.destinationBucket ?? id
-      });
-      return fallback.error ? primary : fallback;
-    },
+    move: (from, to, options) =>
+      owns(from, to) ? own.move(from, to, options) : refuse(from, to),
     copy: (from, to, options) =>
       owns(from, to) ? own.copy(from, to, options) : refuse(from, to),
     createSignedUploadUrl: (path, options) =>
@@ -272,45 +332,22 @@ function companyBucket(
 
     exists: (path) =>
       owns(path)
-        ? withFallback((b) => b.exists(path))
+        ? own.exists(path)
         : refuse(path).then(({ error }) => ({ data: false, error })),
-    info: (path) =>
-      owns(path) ? withFallback((b) => b.info(path)) : refuse(path),
+    info: (path) => (owns(path) ? own.info(path) : refuse(path)),
     download: (path, options) =>
-      owns(path)
-        ? withFallback((b) => b.download(path, options))
-        : refuse(path),
+      owns(path) ? own.download(path, options) : refuse(path),
     createSignedUrl: (path, expiresIn, options) =>
-      owns(path)
-        ? withFallback((b) => b.createSignedUrl(path, expiresIn, options))
-        : refuse(path),
+      owns(path) ? own.createSignedUrl(path, expiresIn, options) : refuse(path),
 
-    list: async (prefix, options) => {
-      if (!owns(prefix)) return refuse(prefix);
-      const [primary, fallback] = await Promise.all([
-        own.list(prefix, options),
-        legacy.list(prefix, options)
-      ]);
-      if (primary.error && fallback.error) return primary;
-      // Union by name with the company copy winning: during the fallback
-      // window a file sits in either bucket, after the copy script in both.
-      const byName = new Map((fallback.data ?? []).map((f) => [f.name, f]));
-      for (const f of primary.data ?? []) byName.set(f.name, f);
-      return { data: [...byName.values()], error: null };
-    },
+    list: (folder) =>
+      owns(folder)
+        ? // The endpoint matches a plain key prefix, so without the trailing
+          // slash it would answer with the folder itself rather than what is
+          // inside it.
+          listFolder(own, `${folder.replace(/\/+$/, "")}/`)
+        : refuse(folder),
 
-    remove: async (paths) => {
-      if (!owns(...paths)) return refuse(...paths);
-      const [primary, fallback] = await Promise.all([
-        own.remove(paths),
-        legacy.remove(paths)
-      ]);
-      // A miss is not an error (supabase returns an empty array), so any
-      // error is a real failure — and a file left behind in the legacy bucket
-      // would still be readable through the fallback.
-      if (primary.error) return primary;
-      if (fallback.error) return fallback;
-      return { data: [...primary.data, ...fallback.data], error: null };
-    }
+    remove: (paths) => (owns(...paths) ? own.remove(paths) : refuse(...paths))
   };
 }

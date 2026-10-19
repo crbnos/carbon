@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Trans } from "@lingui/react/macro";
 import { LuWebhook } from "react-icons/lu";
 import {
@@ -11,7 +15,7 @@ import {
   UpgradeOverlayTitle,
   UpgradeOverlayUpgradeButton
 } from "~/components/UpgradeOverlay";
-import type { Webhook } from "~/modules/settings";
+import type { Webhook } from "~/modules/settings/types";
 import WebhooksTable from "./WebhooksTable";
 
 const mockWebhooks: Webhook[] = [

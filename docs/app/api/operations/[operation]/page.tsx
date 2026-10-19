@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/components/api/breadcrumb";
 import { CodeBlock } from "@/components/api/code-block";
-import { DocPage, H2, P } from "@/components/api/doc";
+import { DocPage, H2, Prose } from "@/components/api/doc";
 import { OperationPanel } from "@/components/api/operation-panel";
 import {
   type JsonSchemaNode,
@@ -33,12 +37,14 @@ export function generateStaticParams() {
 export async function generateMetadata(props: Params): Promise<Metadata> {
   const { operation } = await props.params;
   const found = getTool(operation);
-  // The full, callable name stays in the page title — that is the string a reader
-  // pastes into a search box — while the heading drops the module prefix the
-  // breadcrumb already carries.
+  // "Purchasing - finalizePurchaseOrder": the underscored name is one unbreakable
+  // word, which a link preview clips at both ends.
+  const name = found
+    ? `${found.module.name} - ${operationLabel(found.tool.name, found.module.slug)}`
+    : "Carbon API";
   return pageSeo({
-    title: found ? `${found.tool.name} — Carbon API` : "Carbon API",
-    ogTitle: found?.tool.name ?? "Carbon API",
+    title: found ? `${name} | Carbon API` : name,
+    ogTitle: name,
     description: found?.tool.description,
     path: `/api/operations/${operation}`,
     eyebrow: found ? `Carbon API · ${found.module.name}` : "Carbon API"
@@ -151,8 +157,8 @@ export default async function OperationPage(props: Params) {
   if (!found) notFound();
   const { module: mod, tool: t } = found;
 
-  const samples = buildOperationSamples(t.name, mod.slug, t.schema);
-  const httpPath = operationPath(t.name, mod.slug);
+  const samples = buildOperationSamples(t.name, mod.slug, t.schema, t.path);
+  const httpPath = operationPath(t.name, mod.slug, t.path);
   const schemaJson = JSON.stringify(t.schema, null, 2);
 
   const responseJson = responseBody(t.responseSchema);
@@ -187,7 +193,11 @@ export default async function OperationPage(props: Params) {
           {t.classification}
         </span>
       </div>
-      {description && <P>{description}.</P>}
+      {description && (
+        <Prose
+          text={/[.!?:]$/.test(description) ? description : `${description}.`}
+        />
+      )}
 
       {/* The request sample runs full width: in a half column the Python and
           JavaScript samples had to wrap so hard they broke mid-token. Below it the

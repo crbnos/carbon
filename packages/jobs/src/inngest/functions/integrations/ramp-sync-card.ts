@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { posting } from "@carbon/api/postings.server";
 import type { Database } from "@carbon/database";
 import {
   codeSelections,
@@ -283,14 +288,19 @@ export async function createAndPostTransaction(
 
   let postError: unknown;
   if (staged.status === "Draft") {
-    const posted = await ctx.client.functions.invoke("post-charge", {
-      body: {
+    const posted = await posting(
+      "post-charge",
+      {
+        client: ctx.client,
+        db: ctx.db,
+        companyId: ctx.companyId,
+        userId: "system"
+      },
+      {
         type: "post",
-        chargeId: staged.chargeId,
-        userId: "system",
-        companyId: ctx.companyId
+        chargeId: staged.chargeId
       }
-    });
+    );
     postError = posted.error;
   }
 

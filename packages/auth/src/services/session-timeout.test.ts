@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Isolation mocks — session.server's siblings pull in supabase/env at module
@@ -15,6 +19,7 @@ const IDLE_MS = 15 * 60 * 1000;
 const ABSOLUTE_MS = 12 * 60 * 60 * 1000;
 
 vi.mock("../config/env", () => ({
+  AUTH_COOKIE_SUFFIX: undefined,
   DOMAIN: "localhost",
   CarbonEdition: "Community",
   CONTROLLED_ENVIRONMENT: false,
@@ -50,10 +55,14 @@ vi.mock("./users", () => ({
 
 import type { AuthSession } from "../types";
 import { refreshAccessToken } from "./auth.server";
+import { userHasVerifiedTotpFactor } from "./mfa.server";
 import {
+  flash,
+  getSessionFlash,
   isSessionExpiredAbsolute,
   isSessionIdleLocked,
   refreshAuthSession,
+  requireAuthSession,
   setAuthSession
 } from "./session.server";
 
@@ -168,5 +177,120 @@ describe("refreshAuthSession preserves session-age clocks", () => {
     // Sanity: a session 8h old is not yet absolute-expired, and 2min idle is not locked.
     expect(isSessionExpiredAbsolute(refreshed)).toBe(false);
     expect(isSessionIdleLocked(refreshed)).toBe(false);
+  });
+});
+
+// A request that has to leave for a token refresh, login or MFA challenge must
+// come back to the URL it asked for, query string included. A notification
+// email links to `/api/link?event=…&documentId=…`, and returning to the bare
+// path lands on the home page.
+describe("requireAuthSession returns to the requested URL", () => {
+  const EMAIL_LINK =
+    "/api/link?event=approval-requested&documentId=po_1&companyId=co_1&documentType=purchaseOrder";
+  const ORIGIN = "http://localhost:3000";
+
+  const redirectOf = async (request: Request) => {
+    try {
+      await requireAuthSession(request);
+    } catch (thrown) {
+      return thrown as Response;
+    }
+    throw new Error("requireAuthSession did not redirect");
+  };
+
+  const redirectToOf = (response: Response) =>
+    new URL(response.headers.get("Location") ?? "", ORIGIN).searchParams.get(
+      "redirectTo"
+    );
+
+  const sessionCookie = async (overrides: Partial<AuthSession> = {}) =>
+    setAuthSession(new Request(`${ORIGIN}/x`), {
+      authSession: makeSession(overrides)
+    });
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-17T12:00:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+    vi.mocked(userHasVerifiedTotpFactor).mockResolvedValue(false);
+  });
+
+  it("after a token refresh", async () => {
+    // Thirty seconds left, inside the refresh threshold.
+    const cookie = await sessionCookie({
+      expiresAt: Math.floor(Date.now() / 1000) + 30
+    });
+    vi.mocked(refreshAccessToken).mockResolvedValue(makeSession());
+
+    const response = await redirectOf(
+      requestWithCookie(cookie, {
+        method: "GET",
+        url: `${ORIGIN}${EMAIL_LINK}`
+      })
+    );
+
+    expect(response.headers.get("Location")).toBe(EMAIL_LINK);
+    expect(response.headers.get("Set-Cookie")).toContain("carbon=");
+  });
+
+  it("after a login, when there is no session", async () => {
+    const response = await redirectOf(new Request(`${ORIGIN}${EMAIL_LINK}`));
+
+    expect(response.headers.get("Location")).toMatch(/^\/login\?/);
+    expect(redirectToOf(response)).toBe(EMAIL_LINK);
+  });
+
+  it("after an MFA challenge", async () => {
+    const cookie = await sessionCookie();
+    vi.mocked(userHasVerifiedTotpFactor).mockResolvedValue(true);
+
+    const response = await redirectOf(
+      requestWithCookie(cookie, {
+        method: "GET",
+        url: `${ORIGIN}${EMAIL_LINK}`
+      })
+    );
+
+    expect(response.headers.get("Location")).toMatch(/^\/mfa\?/);
+    expect(redirectToOf(response)).toBe(EMAIL_LINK);
+  });
+});
+
+describe("a flash keeps the signed-in session's expiry", () => {
+  // The toast is stored in the session cookie, so writing or reading it
+  // re-issues that cookie. Without a max age it became a cookie that ends
+  // when the browser closes, signing the user out.
+  // A Set-Cookie header as the browser would send it back.
+  const cookiePair = (setCookie: string) => setCookie.split(";")[0] ?? "";
+  const signedIn = async () =>
+    cookiePair(
+      await setAuthSession(new Request("http://localhost:3000/x"), {
+        authSession: makeSession()
+      })
+    );
+
+  it("when the flash is written", async () => {
+    const { headers } = await flash(requestWithCookie(await signedIn()), {
+      success: true,
+      message: "Saved"
+    });
+
+    expect(headers["Set-Cookie"]).toContain("Max-Age=604800");
+  });
+
+  it("when the flash is read", async () => {
+    const written = await flash(requestWithCookie(await signedIn()), {
+      success: true,
+      message: "Saved"
+    });
+    const read = await getSessionFlash(
+      requestWithCookie(cookiePair(written.headers["Set-Cookie"]))
+    );
+
+    expect(read?.headers["Set-Cookie"]).toContain("Max-Age=604800");
   });
 });

@@ -1,11 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 
 /**
  * Job statuses whose reservations hold finite capacity. Mirrors
- * `activeJobStatuses` in packages/database/src/utils.ts (not importable
- * here — Deno can't resolve that module's npm type imports); `satisfies`
- * binds both to the same enum so drift is a compile error. Draft/Planned
- * jobs can carry reservations (method edits trigger a scheduling run) but
+ * `activeJobStatuses` in packages/database/src/utils.ts; `satisfies` binds
+ * both to the same enum so drift is a compile error. Draft/Planned jobs can
+ * carry reservations (method edits trigger a scheduling run) but
  * are invisible on the boards and skipped by replan waves — capacity
  * commitment starts at release.
  */
@@ -59,13 +62,6 @@ export type BaseOperation = {
    * set on job operations, so live scheduling is unchanged.
    */
   materialReadyAt?: number;
-  /**
-   * Manufacturing lead time (in business days) of the make method's item that
-   * this operation belongs to. Applied only at assembly boundaries so a
-   * subassembly is scheduled to finish this many days before its parent
-   * consumes it. Populated by the engine from itemReplenishment.leadTime.
-   */
-  assemblyLeadTime?: number;
   priority?: number;
   processId: string | null;
   setupTime?: number;
@@ -265,4 +261,5 @@ export type OperationWithJobInfo = {
   workCenterId: string | null;
   durationHours?: number | null;
   createdAt?: string | null;
+  projectedCompletionAt?: string | null;
 };

@@ -1,11 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { OwnerPermissions } from "../engine/owner";
 
 export interface DispatchContext {
   client: SupabaseClient<Database>;
   companyId: string;
   companyGroupId: string;
   userId: string;
+  /** The owner's permissions, read for this run. The API gate checks the
+   *  operation's own permission against them. */
+  permissions: OwnerPermissions;
 }
 
 // Deliberately loose: the dispatcher widens `success` to boolean, so a narrower

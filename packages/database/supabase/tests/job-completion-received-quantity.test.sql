@@ -113,6 +113,25 @@ BEGIN
     VALUES ('Plant', '1 Test Way', 'Testville', '00000', v_company_id, 'system', 'UTC') RETURNING id INTO v_location_id;
   INSERT INTO "unitOfMeasure" (code, name, "companyId", "createdBy")
     VALUES ('EA', 'Each', v_company_id, 'system') ON CONFLICT DO NOTHING;
+  -- Every completion journals (Provisional before a cutover): the settings row
+  -- the posting reads, the journal sequence, the accounts and the defaults.
+  INSERT INTO "companySettings" (id) VALUES (v_company_id) ON CONFLICT (id) DO NOTHING;
+  INSERT INTO "sequence" ("table", name, prefix, "companyId", "updatedBy")
+    VALUES ('journalEntry', 'Journal entries', 'JE-', v_company_id, 'system') ON CONFLICT DO NOTHING;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('WIP', 'Asset', 'Bank', 'Balance Sheet', v_group_id, 'system') RETURNING id INTO v_wip_account;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('Finished goods', 'Asset', 'Bank', 'Balance Sheet', v_group_id, 'system') RETURNING id INTO v_finished_account;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('Labor absorption', 'Expense', 'Expense', 'Income Statement', v_group_id, 'system') RETURNING id INTO v_labor_account;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('Other', 'Expense', 'Expense', 'Income Statement', v_group_id, 'system') RETURNING id INTO v_other_account;
+  SELECT jsonb_object_agg(attname, to_jsonb(v_other_account)) INTO v_defaults
+    FROM pg_attribute WHERE attrelid = '"accountDefault"'::regclass AND attnum > 0 AND NOT attisdropped AND attnotnull AND attname <> 'companyId';
+  INSERT INTO "accountDefault" SELECT (jsonb_populate_record(NULL::"accountDefault", v_defaults || jsonb_build_object(
+    'companyId', v_company_id, 'workInProgressAccount', v_wip_account, 'finishedGoodsAccount', v_finished_account,
+    'laborAbsorptionAccount', v_labor_account))).*;
+
   INSERT INTO item ("readableId", name, type, "replenishmentSystem", "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
     VALUES ('T-SERIAL', 'Serial machine', 'Part', 'Make', 'Serial', 'EA', v_company_id, 'system') RETURNING id INTO v_serial_item;
   INSERT INTO item ("readableId", name, type, "replenishmentSystem", "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
@@ -174,6 +193,21 @@ BEGIN
   v_error := pg_temp.try_complete(v_job, 1);
   ASSERT v_error IS NULL, 'Scrap job at 1 failed: ' || COALESCE(v_error, '');
   ASSERT pg_temp.serials(v_job) = 'XJ-01:Scrapped:0,XJ-02:Available:1', 'A scrapped unit must not be received: ' || pg_temp.serials(v_job);
+
+  -- A finished unit another job consumed before this job was received is still
+  -- received: its consumption already took it out of stock, so the receipt
+  -- nets its on-hand to zero, and it stays Consumed.
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'CJ', 3);
+  UPDATE "trackedEntity" SET status = 'Available' WHERE "readableId" = 'CJ-02' AND "companyId" = v_company_id;
+  UPDATE "trackedEntity" SET status = 'Consumed' WHERE "readableId" = 'CJ-01' AND "companyId" = v_company_id;
+  INSERT INTO "itemLedger" ("entryType", "documentType", "documentId", "companyId", "itemId", quantity, "locationId", "trackedEntityId", "createdBy")
+    SELECT 'Consumption', 'Job Consumption', 'parent-job', v_company_id, v_serial_item, -1, v_location_id, id, 'system'
+    FROM "trackedEntity" WHERE "readableId" = 'CJ-01' AND "companyId" = v_company_id;
+  v_error := pg_temp.try_complete(v_job, 3);
+  ASSERT v_error IS NULL, 'A job with a consumed unit must complete, got: ' || COALESCE(v_error, '');
+  ASSERT pg_temp.serials(v_job) = 'CJ-01:Consumed:1,CJ-02:Available:1,CJ-03:Available:1', 'The consumed unit must be received and stay Consumed: ' || pg_temp.serials(v_job);
+  ASSERT (SELECT sum(il.quantity) FROM "itemLedger" il JOIN "trackedEntity" te ON te.id = il."trackedEntityId"
+    WHERE te."readableId" = 'CJ-01' AND te."companyId" = v_company_id) = 0, 'The consumed unit must net to zero on hand';
 
   -- An item with no serial sequence keeps one seed entity covering every unit.
   -- It is received as a whole, so marking the last operation Done never raises
@@ -237,29 +271,9 @@ BEGIN
   ASSERT v_error IS NULL, 'Non-Inventory job at 0 must be allowed, got: ' || COALESCE(v_error, '');
   ASSERT (SELECT status FROM job WHERE id = v_job) = 'Completed', 'Non-Inventory job must complete';
 
-  -- Accounting enabled: labor logged after a completion stays in WIP when the job
-  -- is re-completed at the received quantity, and is discharged with the next
-  -- receipt. Before, the zero-quantity re-completion divided that WIP by zero.
-  UPDATE "companySettings" SET "accountingEnabled" = true WHERE id = v_company_id;
-  IF NOT FOUND THEN
-    INSERT INTO "companySettings" (id, "accountingEnabled") VALUES (v_company_id, true);
-  END IF;
-  INSERT INTO "sequence" ("table", name, prefix, "companyId", "updatedBy")
-    VALUES ('journalEntry', 'Journal entries', 'JE-', v_company_id, 'system') ON CONFLICT DO NOTHING;
-  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
-    VALUES ('WIP', 'Asset', 'Bank', 'Balance Sheet', v_group_id, 'system') RETURNING id INTO v_wip_account;
-  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
-    VALUES ('Finished goods', 'Asset', 'Bank', 'Balance Sheet', v_group_id, 'system') RETURNING id INTO v_finished_account;
-  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
-    VALUES ('Labor absorption', 'Expense', 'Expense', 'Income Statement', v_group_id, 'system') RETURNING id INTO v_labor_account;
-  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
-    VALUES ('Other', 'Expense', 'Expense', 'Income Statement', v_group_id, 'system') RETURNING id INTO v_other_account;
-  SELECT jsonb_object_agg(attname, to_jsonb(v_other_account)) INTO v_defaults
-    FROM pg_attribute WHERE attrelid = '"accountDefault"'::regclass AND attnum > 0 AND NOT attisdropped AND attnotnull AND attname <> 'companyId';
-  INSERT INTO "accountDefault" SELECT (jsonb_populate_record(NULL::"accountDefault", v_defaults || jsonb_build_object(
-    'companyId', v_company_id, 'workInProgressAccount', v_wip_account, 'finishedGoodsAccount', v_finished_account,
-    'laborAbsorptionAccount', v_labor_account))).*;
-
+  -- Labor logged after a completion stays in WIP when the job is re-completed
+  -- at the received quantity, and is discharged with the next receipt. Before,
+  -- the zero-quantity re-completion divided that WIP by zero.
   v_job := pg_temp.make_job(v_company_id, v_location_id, v_stocked_item, v_part, 'AJ', 2);
   INSERT INTO "jobOperation" ("jobId", "jobMakeMethodId", "processId", "workCenterId", "operationQuantity", status, "companyId", "createdBy")
     SELECT v_job, m.id, v_process, v_work_center, 2, 'In Progress', v_company_id, 'system'
@@ -291,7 +305,7 @@ BEGIN
   ASSERT pg_temp.wip(v_job, v_wip_account) = 0, 'The next receipt must discharge the WIP: ' || pg_temp.wip(v_job, v_wip_account);
   ASSERT (SELECT count(*) FROM "costLedger" WHERE "documentId" = v_job AND quantity = 1 AND cost = 50) = 1, 'The next receipt must carry the WIP into one cost layer';
 
-  RAISE NOTICE 'ALL JOB COMPLETION CASES PASSED (zero/fraction/lower refusal, partial and full serial receipt, re-completion, shop-floor-first, scrapped, too few units, unsplit placeholders, inventory lower/re-completion, reopened last operation, non-inventory, accounting zero-delta with catch-up WIP)';
+  RAISE NOTICE 'ALL JOB COMPLETION CASES PASSED (zero/fraction/lower refusal, partial and full serial receipt, re-completion, shop-floor-first, scrapped, too few units, consumed before receipt, unsplit placeholders, inventory lower/re-completion, reopened last operation, non-inventory, accounting zero-delta with catch-up WIP)';
 END;
 $cases$;
 ROLLBACK;

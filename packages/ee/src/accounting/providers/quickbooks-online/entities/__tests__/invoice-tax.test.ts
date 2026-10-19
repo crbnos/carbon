@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it, vi } from "vitest";
 import type { SalesDocumentComponents } from "../../../../core/sales-document-components";
 import type { Qbo } from "../../models";
@@ -268,30 +272,33 @@ describe("QuickBooks native invoice tax", () => {
     "compound",
     "tax-on-tax",
     "dated"
-  ])("rejects %s tax setup without inventing an account/code or rate", (kind) => {
-    const remote = catalog();
-    if (kind === "missing") remote.taxRates = [];
-    if (kind === "duplicate")
-      remote.taxCodes.push({ ...remote.taxCodes[0]!, Id: "duplicate" });
-    if (kind === "inactive") remote.taxRates[0]!.Active = false;
-    if (kind === "purchase-only") {
-      remote.taxCodes[0]!.PurchaseTaxRateList =
-        remote.taxCodes[0]!.SalesTaxRateList;
-      delete remote.taxCodes[0]!.SalesTaxRateList;
+  ])(
+    "rejects %s tax setup without inventing an account/code or rate",
+    (kind) => {
+      const remote = catalog();
+      if (kind === "missing") remote.taxRates = [];
+      if (kind === "duplicate")
+        remote.taxCodes.push({ ...remote.taxCodes[0]!, Id: "duplicate" });
+      if (kind === "inactive") remote.taxRates[0]!.Active = false;
+      if (kind === "purchase-only") {
+        remote.taxCodes[0]!.PurchaseTaxRateList =
+          remote.taxCodes[0]!.SalesTaxRateList;
+        delete remote.taxCodes[0]!.SalesTaxRateList;
+      }
+      if (kind === "compound")
+        remote.taxCodes[0]!.SalesTaxRateList!.TaxRateDetail.push({
+          TaxRateRef: { value: "rate-zero" }
+        });
+      if (kind === "tax-on-tax")
+        remote.taxCodes[0]!.SalesTaxRateList!
+          .TaxRateDetail[0]!.TaxTypeApplicable = "TaxOnTax";
+      if (kind === "dated")
+        remote.taxRates[0]!.EffectiveTaxRate = [
+          { EffectiveDate: "2026-01-01", RateValue: 10 }
+        ];
+      expectWarning(document(), remote);
     }
-    if (kind === "compound")
-      remote.taxCodes[0]!.SalesTaxRateList!.TaxRateDetail.push({
-        TaxRateRef: { value: "rate-zero" }
-      });
-    if (kind === "tax-on-tax")
-      remote.taxCodes[0]!.SalesTaxRateList!
-        .TaxRateDetail[0]!.TaxTypeApplicable = "TaxOnTax";
-    if (kind === "dated")
-      remote.taxRates[0]!.EffectiveTaxRate = [
-        { EffectiveDate: "2026-01-01", RateValue: 10 }
-      ];
-    expectWarning(document(), remote);
-  });
+  );
   it("fails rather than guessing jurisdiction", () => {
     expectWarning(document(), { ...catalog(), country: "" });
   });

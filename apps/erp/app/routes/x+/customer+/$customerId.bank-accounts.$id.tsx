@@ -1,15 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { CustomerBankAccount } from "~/modules/sales";
-import {
-  customerBankAccountValidator,
-  upsertCustomerBankAccount
-} from "~/modules/sales";
+import { customerBankAccountValidator } from "~/modules/sales/sales.models";
+import { upsertCustomerBankAccount } from "~/modules/sales/sales.service";
+import type { CustomerBankAccount } from "~/modules/sales/types";
 import CustomerBankAccountForm from "~/modules/sales/ui/Customer/CustomerBankAccountForm";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";

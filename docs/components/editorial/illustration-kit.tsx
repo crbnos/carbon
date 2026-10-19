@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /* Shared primitives for the on-brand editorial SVGs — warm paper palette, Archivo
  * (inherited), #00B0FF accent, made=blue / bought=amber tags matching the content
  * badges. Both the static `illustrations.tsx` registry and the data-driven

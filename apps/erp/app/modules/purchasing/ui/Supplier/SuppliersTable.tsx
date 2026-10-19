@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -41,11 +46,11 @@ import { useSupplierTypes } from "~/components/Form/SupplierType";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCompanySettings, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import { supplierStatusType } from "~/modules/purchasing/purchasing.models";
 import type {
   Supplier,
   SupplierReportContactsBySupplierId
-} from "~/modules/purchasing";
-import { supplierStatusType } from "~/modules/purchasing";
+} from "~/modules/purchasing/types";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -130,6 +135,7 @@ const SuppliersTable = memo(function SuppliersTable({
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -141,6 +147,7 @@ const SuppliersTable = memo(function SuppliersTable({
           <SupplierStatusIndicator status={item.getValue<string>()} />
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: supplierStatusType.map((status) => ({
@@ -156,6 +163,7 @@ const SuppliersTable = memo(function SuppliersTable({
         header: t`Type`,
         cell: ({ row }) => <Enumerable value={row.original.type ?? ""} />,
         meta: {
+          mobile: "P2",
           icon: <LuShapes />,
           sortBy: "type",
           exportValue: (row) => row.type,
@@ -412,11 +420,15 @@ const SuppliersTable = memo(function SuppliersTable({
   const renderContextMenu = useMemo(
     () => (row: Supplier) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.supplier(row.id!))}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
+          onClick={() => navigate(path.to.supplier(row.id!))}
+        >
           <MenuIcon icon={<LuPencil />} />
           <Trans>Edit Supplier</Trans>
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={!permissions.can("delete", "purchasing")}
           onClick={() => {
@@ -475,7 +487,12 @@ const SuppliersTable = memo(function SuppliersTable({
         primaryAction={
           permissions.can("create", "purchasing") && (
             <div className="flex items-center gap-2">
-              <Button variant="secondary" leftIcon={<LuShapes />} asChild>
+              <Button
+                className="max-md:hidden"
+                variant="secondary"
+                leftIcon={<LuShapes />}
+                asChild
+              >
                 <Link to={path.to.supplierTypes}>
                   <Trans>Supplier Types</Trans>
                 </Link>

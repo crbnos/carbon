@@ -1,6 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 import { useCarbon } from "@carbon/auth";
+import { needsPullFrom } from "@carbon/database/strict-backflush";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -18,38 +24,31 @@ import {
   HStack,
   IconButton,
   Label,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   toast,
   useDebounce,
   useDisclosure,
-  VStack
+  useViewport
 } from "@carbon/react";
 import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   LuArrowLeft,
   LuChevronDown,
   LuChevronRight,
-  LuExternalLink,
   LuGitPullRequest,
   LuGitPullRequestCreate,
   LuGitPullRequestCreateArrow,
-  LuRedoDot
+  LuPackage,
+  LuRedoDot,
+  LuTrash
 } from "react-icons/lu";
-import { Link, useFetcher, useFetchers, useParams } from "react-router";
+import { useFetchers, useParams } from "react-router";
 import type { z } from "zod";
-import {
-  ItemLifecycleBadge,
-  MethodIcon,
-  MethodItemTypeIcon,
-  TrackingTypeIcon
-} from "~/components";
+import { MethodIcon } from "~/components";
 import {
   DefaultMethodType,
   Hidden,
@@ -73,6 +72,7 @@ import {
   SortableListItemPanel,
   SortableListItemToggle
 } from "~/components/SortableList";
+import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import {
   useCurrencyDecimals,
   usePermissions,
@@ -80,9 +80,15 @@ import {
   useUrlParams,
   useUser
 } from "~/hooks";
-import { ItemTrackingType } from "~/modules/items";
-import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { MethodItemType, MethodType } from "~/modules/shared";
+import { usePullFromLocationIds } from "~/hooks/usePullFromLocationIds";
+import { ItemTrackingType } from "~/modules/items/items.models";
+import {
+  MaterialRowDetails,
+  MaterialRowTitle
+} from "~/modules/items/ui/Item/MethodRow";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
+import type { action as updateMaterialAction } from "~/routes/x+/job+/methods+/$jobId.material.$id";
+import type { action as createMaterialAction } from "~/routes/x+/job+/methods+/$jobId.material.new";
 import type { Item as ItemType } from "~/stores";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -96,8 +102,10 @@ import type { Job } from "../../types";
 type Material = z.infer<typeof jobMaterialValidator> & {
   requiresBatchTracking: boolean;
   requiresSerialTracking: boolean;
+  quantityIssued?: number | null;
   item?: {
     replenishmentSystem: string | null;
+    itemTrackingType?: string | null;
   } | null;
 };
 
@@ -133,14 +141,21 @@ function makeItems(
   items: ItemType[],
   materials: Material[],
   orderState: OrderState,
-  checkedState: CheckedState
+  checkedState: CheckedState,
+  missingPullFrom?: (material: Material) => boolean
 ): ItemWithData[] {
   return materials.map((material) => {
     const order = material.id
       ? (orderState[material.id] ?? material.order)
       : material.order;
     const checked = material.id ? (checkedState[material.id] ?? false) : false;
-    return makeItem(items, material, order, checked);
+    return makeItem(
+      items,
+      material,
+      order,
+      checked,
+      missingPullFrom?.(material) ?? false
+    );
   });
 }
 
@@ -148,98 +163,39 @@ function makeItem(
   items: ItemType[],
   material: Material,
   order: number,
-  checked: boolean
+  checked: boolean,
+  missingPullFrom = false
 ): ItemWithData {
   const itemReadableId = getItemReadableId(items, material.itemId);
   return {
     id: material.id!,
     title: (
-      <VStack spacing={0} className="py-1 cursor-pointer">
-        <div className="flex w-full min-w-0 items-center gap-2 group">
-          <h3 className="font-semibold min-w-0 truncate">
-            {itemReadableId ?? ""}
-          </h3>
-          <ItemLifecycleBadge
-            mode={items.find((i) => i.id === material.itemId)?.supersessionMode}
-          />
-          {material.itemId && material.itemType && (
-            <Link
-              to={getLinkToItemDetails(material.itemType, material.itemId)}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100" />
-            </Link>
-          )}
-        </div>
-        {material?.description && (
-          <span className="text-xs text-muted-foreground">
-            {material.description}{" "}
-          </span>
-        )}
-      </VStack>
+      <MaterialRowTitle
+        readableId={itemReadableId}
+        description={material?.description}
+        itemId={material.itemId}
+        itemType={material.itemType}
+        supersessionMode={
+          items.find((i) => i.id === material.itemId)?.supersessionMode
+        }
+        missingPullFrom={missingPullFrom}
+      />
     ),
     checked: checked,
     details: (
-      <HStack spacing={2}>
-        {material.requiresBatchTracking ? (
-          <Tooltip>
-            <TooltipTrigger>
-              <Badge variant="secondary">
-                <TrackingTypeIcon type="Batch" />
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <Trans>Batch Tracking</Trans>
-            </TooltipContent>
-          </Tooltip>
-        ) : material.requiresSerialTracking ? (
-          <Tooltip>
-            <TooltipTrigger>
-              <Badge variant="secondary">
-                <TrackingTypeIcon type="Serial" />
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <Trans>Serial Tracking</Trans>
-            </TooltipContent>
-          </Tooltip>
-        ) : null}
-
-        <Tooltip>
-          <TooltipTrigger>
-            <Badge variant="secondary">
-              <MethodIcon type={material.methodType} isKit={material.kit} />
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            {material.methodType === "Purchase to Order" ? (
-              <Trans>Purchase to Order</Trans>
-            ) : material.methodType === "Pull from Inventory" ? (
-              <Trans>Pull from Inventory</Trans>
-            ) : (
-              <Trans>Make to Order</Trans>
-            )}
-          </TooltipContent>
-        </Tooltip>
-        <Badge variant="secondary">{material.quantity}</Badge>
-
-        <Tooltip>
-          <TooltipTrigger>
-            <Badge variant="secondary">
-              <MethodItemTypeIcon type={material.itemType} />
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            {material.itemType === "Consumable" ? (
-              <Trans>Consumable</Trans>
-            ) : material.itemType === "Material" ? (
-              <Trans>Material</Trans>
-            ) : (
-              <Trans>Part</Trans>
-            )}
-          </TooltipContent>
-        </Tooltip>
-      </HStack>
+      <MaterialRowDetails
+        trackingType={
+          material.requiresBatchTracking
+            ? "Batch"
+            : material.requiresSerialTracking
+              ? "Serial"
+              : null
+        }
+        methodType={material.methodType}
+        isKit={material.kit}
+        quantity={material.quantity}
+        itemType={material.itemType}
+      />
     ),
     data: {
       ...material,
@@ -252,7 +208,7 @@ const initialMethodMaterial: Omit<Material, "jobMakeMethodId" | "order"> & {
   description: string;
 } = {
   itemId: "",
-  // @ts-ignore
+  // @ts-expect-error
   itemType: "Item" as const,
   methodType: "Purchase to Order" as const,
   description: "",
@@ -298,20 +254,19 @@ const JobBillOfMaterial = ({
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
 
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction();
   const permissions = usePermissions();
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
+  const { isPhone } = useViewport();
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
   const [checkedState, setCheckedState] = useState<CheckedState>({});
-  const [orderState, setOrderState] = useState<OrderState>(() => {
-    return initialMaterials.reduce((acc, material) => {
-      acc[material.id!] = material.order;
-      return acc;
-    }, {} as OrderState);
-  });
+  // Only the rows this session has reordered. Every other row takes its order
+  // from the loaded data: a copy of all of them taken at mount hid a reorder
+  // made anywhere else until the page was reloaded.
+  const [orderState, setOrderState] = useState<OrderState>({});
 
   const materialsById = new Map<string, Material>();
 
@@ -343,17 +298,30 @@ const JobBillOfMaterial = ({
   });
 
   const [storeItems] = useItems();
+  const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
+  const pullFromLocationIds = usePullFromLocationIds();
+  const jobLocationId = jobData?.job?.locationId;
+  const missingPullFrom = (material: Material) =>
+    pullFromLocationIds !== null &&
+    !!jobLocationId &&
+    pullFromLocationIds.includes(jobLocationId) &&
+    !material.storageUnitId &&
+    needsPullFrom({
+      methodType: material.methodType ?? null,
+      itemType: material.itemType ?? null,
+      itemTrackingType: material.item?.itemTrackingType ?? null
+    });
   const items = makeItems(
     storeItems,
     Array.from(materialsById.values()),
     orderState,
-    checkedState
+    checkedState,
+    missingPullFrom
   ).sort((a, b) => a.data.order - b.data.order);
-
-  const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const isDisabled = ["Completed", "Cancelled"].includes(
     jobData?.job?.status ?? ""
   );
+  const isReadOnly = isDisabled || !permissions.can("update", "production");
 
   const onToggleItem = (id: string) => {
     if (!permissions.can("update", "production") || isDisabled) return;
@@ -392,28 +360,41 @@ const JobBillOfMaterial = ({
     }));
   };
 
-  const onRemoveItem = async (id: string) => {
+  // One request for every saved row, so "Delete Selected" removes the checked
+  // rows together rather than racing one fetcher submit per row.
+  const onRemoveItems = (ids: string[]) => {
     if (!permissions.can("update", "production") || isDisabled) return;
 
-    // Check if this is a temporary item (exists in temporaryItems state)
-    if (temporaryItems[id]) {
-      setTemporaryItems((prev) => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      fetcher.submit(new FormData(), {
+    const without = <T,>(state: Record<string, T>) =>
+      Object.fromEntries(
+        Object.entries(state).filter(([id]) => !ids.includes(id))
+      );
+
+    // Temporary rows were never saved: dropping them from state is enough.
+    setTemporaryItems(without);
+    const savedIds = ids.filter((id) => !temporaryItems[id]);
+    if (savedIds.length > 0) {
+      const formData = new FormData();
+      for (const id of savedIds) formData.append("id", id);
+      fetcher.submit(formData, {
         method: "post",
-        action: path.to.deleteJobMaterial(jobId, id)
+        action: path.to.deleteJobMaterials(jobId)
       });
     }
 
     setSelectedItemId(null);
-    setOrderState((prev) => {
-      const { [id]: _, ...rest } = prev;
-      return rest;
-    });
+    setOrderState(without);
+    setCheckedState(without);
   };
+
+  const onRemoveItem = (id: string) => onRemoveItems([id]);
+  const checkedIds = items
+    .filter((item) => item.checked)
+    .map((item) => item.id);
+  // Material already issued to the job has stock movements against it.
+  const hasIssuedChecked = items.some(
+    (item) => item.checked && (item.data.quantityIssued ?? 0) > 0
+  );
 
   const onReorder = (items: ItemWithData[]) => {
     if (!permissions.can("update", "production") || isDisabled) return;
@@ -486,6 +467,7 @@ const JobBillOfMaterial = ({
 
     return (
       <SortableListItem<Material>
+        isReadOnly={isReadOnly}
         item={item}
         items={items}
         order={order}
@@ -561,23 +543,59 @@ const JobBillOfMaterial = ({
         </CardHeader>
 
         <CardAction>
-          <Button
-            ref={addItemButtonRef}
-            variant="secondary"
-            isDisabled={isDisabled || !permissions.can("update", "production")}
-            onClick={onAddItem}
-          >
-            <Trans>Add Item</Trans>
-          </Button>
+          <div className="flex items-center gap-2">
+            {checkedIds.length > 1 && (
+              <Button
+                variant="destructive"
+                leftIcon={<LuTrash />}
+                isDisabled={isReadOnly || hasIssuedChecked}
+                onClick={() => onRemoveItems(checkedIds)}
+              >
+                <Trans>Delete Selected</Trans>
+              </Button>
+            )}
+            <Button
+              ref={addItemButtonRef}
+              variant="secondary"
+              isDisabled={
+                isDisabled || !permissions.can("update", "production")
+              }
+              onClick={onAddItem}
+            >
+              <Trans>Add Item</Trans>
+            </Button>
+          </div>
         </CardAction>
       </HStack>
       <CardContent>
         <SortableList
+          isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
           onToggleItem={onToggleItem}
           onRemoveItem={onRemoveItem}
           renderItem={renderListItem}
+          emptyState={
+            isPhone ? (
+              <CompactEmpty
+                className="py-10"
+                icon={<LuPackage />}
+                heading={<Trans>No materials yet</Trans>}
+                description={<Trans>Add the materials this job uses.</Trans>}
+                primaryAction={
+                  <Button
+                    variant="secondary"
+                    isDisabled={
+                      isDisabled || !permissions.can("update", "production")
+                    }
+                    onClick={onAddItem}
+                  >
+                    <Trans>Add Item</Trans>
+                  </Button>
+                }
+              />
+            ) : undefined
+          }
         />
       </CardContent>
     </Card>
@@ -618,32 +636,25 @@ function MaterialForm({
   }>(path.to.job(jobId));
 
   const { carbon } = useCarbon();
-  const methodMaterialFetcher = useFetcher<{
-    id: string;
-    success: boolean;
-    message: string;
-  }>();
+  const isNew = !!temporaryItems[item.id];
+  const methodMaterialFetcher = useAction<
+    typeof createMaterialAction | typeof updateMaterialAction
+  >({
+    onSuccess: () => {
+      // The saved row replaces the temporary one when the page reloads.
+      setTemporaryItems((prev) => {
+        const { [item.id]: _, ...rest } = prev;
+        return rest;
+      });
+      toast.success(isNew ? t`Material created` : t`Material updated`);
+      onSubmit();
+    }
+  });
   const params = useParams();
   const { company } = useUser();
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
-
-  useEffect(() => {
-    // Remove from temporary items after successful submission
-    if (methodMaterialFetcher.data && methodMaterialFetcher.data.id) {
-      // Clear temporary item after successful save
-      setTemporaryItems((prev) => {
-        const { [item.id]: _, ...rest } = prev;
-        return rest;
-      });
-
-      if (methodMaterialFetcher.data?.success) {
-        toast.success(methodMaterialFetcher.data.message);
-      }
-      onSubmit();
-    }
-  }, [item.id, methodMaterialFetcher.data, setTemporaryItems, onSubmit]);
 
   const [itemType, setItemType] = useState<MethodItemType>(item.data.itemType);
   const [itemData, setItemData] = useState<{
@@ -699,6 +710,11 @@ function MaterialForm({
     });
   };
 
+  const [changedItemTracking, setChangedItemTracking] = useState<{
+    itemId: string;
+    itemTrackingType: string | null;
+  } | null>(null);
+
   const onItemChange = async (itemId: string) => {
     if (!carbon) return;
     if (itemId === params.itemId) {
@@ -744,6 +760,10 @@ function MaterialForm({
       storageUnitId: pickMethod.data?.defaultStorageUnitId ?? "",
       itemReplenishmentSystem: item.data?.replenishmentSystem ?? "Buy"
     }));
+    setChangedItemTracking({
+      itemId,
+      itemTrackingType: item.data?.itemTrackingType ?? null
+    });
 
     if (item.data?.type) {
       setItemType(item.data.type as MethodItemType);
@@ -759,6 +779,21 @@ function MaterialForm({
   });
   const locationId = routeData?.job?.locationId ?? undefined;
   const storageUnits = useStorageUnits(locationId);
+
+  const pullFromLocationIds = usePullFromLocationIds();
+  const itemTrackingType =
+    changedItemTracking?.itemId === itemData.itemId
+      ? changedItemTracking.itemTrackingType
+      : (item.data.item?.itemTrackingType ?? null);
+  const requiresPullFrom =
+    pullFromLocationIds !== null &&
+    !!locationId &&
+    pullFromLocationIds.includes(locationId) &&
+    needsPullFrom({
+      methodType: itemData.methodType,
+      itemType,
+      itemTrackingType
+    });
 
   const isTracked =
     itemData.requiresBatchTracking || itemData.requiresSerialTracking;
@@ -833,7 +868,7 @@ function MaterialForm({
           onChange={(newValue) => {
             setItemData((d) => ({ ...d, description: newValue }));
           }}
-          className="col-span-2"
+          className="col-span-2 max-md:col-span-full"
         />
         {itemData.methodType !== "Make to Order" && (
           <NumberControlled
@@ -848,7 +883,7 @@ function MaterialForm({
 
       <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
         <HStack
-          className="w-full justify-between cursor-pointer"
+          className="w-full justify-between cursor-pointer max-md:flex-wrap max-md:gap-y-2"
           onClick={sourceDisclosure.onToggle}
         >
           <HStack>
@@ -868,7 +903,7 @@ function MaterialForm({
               </>
             )}
           </HStack>
-          <HStack>
+          <HStack className="max-md:flex-wrap max-md:gap-y-1">
             <Badge variant="secondary">
               <MethodIcon type={itemData.methodType} className="size-3 mr-1" />
               {itemData.methodType === "Purchase to Order"
@@ -884,15 +919,22 @@ function MaterialForm({
                   : ""
               )}
             />
-            <Badge variant="secondary">
-              <LuGitPullRequest className="size-3 mr-1" />
-              {storageUnits.options?.find(
-                (s) => s.value === itemData.storageUnitId
-              )?.label ??
-                (itemData.methodType === "Make to Order"
-                  ? t`WIP`
-                  : t`Default Storage Unit`)}
-            </Badge>
+            {requiresPullFrom && !itemData.storageUnitId ? (
+              <Badge variant="red">
+                <LuGitPullRequest className="size-3 mr-1" />
+                <Trans>No storage unit</Trans>
+              </Badge>
+            ) : (
+              <Badge variant="secondary">
+                <LuGitPullRequest className="size-3 mr-1" />
+                {storageUnits.options?.find(
+                  (s) => s.value === itemData.storageUnitId
+                )?.label ??
+                  (itemData.methodType === "Make to Order"
+                    ? t`WIP`
+                    : t`Default Storage Unit`)}
+              </Badge>
+            )}
             <IconButton
               icon={<LuChevronRight />}
               aria-label={
@@ -939,6 +981,7 @@ function MaterialForm({
             }}
             locationId={locationId}
             itemId={itemData.itemId}
+            isOptional={!requiresPullFrom}
           />
         </div>
       </div>
@@ -1018,7 +1061,7 @@ function MaterialForm({
         transition={{
           type: "spring",
           bounce: 0,
-          duration: 0.55
+          duration: 0.25
         }}
       >
         <motion.div

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import { buildMcpManifest, MCP_META_KEY, MCP_SERVER_NAME } from "./manifest";
 import toolMetadataJson from "./tool-metadata.json";
@@ -62,7 +66,8 @@ describe("buildMcpManifest", () => {
     expect(meta.tools.map((tool) => tool.name)).toEqual([
       "search_tools",
       "describe_tool",
-      "call_tool"
+      "call_tool",
+      "call_destructive_tool"
     ]);
     for (const tool of meta.tools) {
       expect(tool.description.length, tool.name).toBeGreaterThan(40);

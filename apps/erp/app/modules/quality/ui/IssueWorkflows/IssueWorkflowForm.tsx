@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { MultiSelect, Select, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -13,7 +17,7 @@ import {
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Reorder, useDragControls } from "framer-motion";
+import { Reorder, useDragControls } from "motion/react";
 import { useEffect, useState } from "react";
 import { LuGripVertical, LuX } from "react-icons/lu";
 import type { z } from "zod";
@@ -144,7 +148,7 @@ const IssueWorkflowForm = ({
       />
       <VStack
         spacing={4}
-        className="py-12 px-4 max-w-[50rem] h-full mx-auto gap-2"
+        className="py-12 px-4 max-w-[50rem] h-full mx-auto gap-2 max-md:pt-4"
       >
         <HStack className="w-full justify-between">
           <VStack spacing={0}>
@@ -167,7 +171,7 @@ const IssueWorkflowForm = ({
             </p>
           </VStack>
         </HStack>
-        <Input name="name" label={t`Name`} />
+        <Input name="name" label={t`Name`} autoFocus={!isEditing} />
         <VStack spacing={2}>
           <label
             htmlFor="content"
@@ -268,7 +272,7 @@ const IssueWorkflowForm = ({
                     key={action.id}
                     type="button"
                     onClick={() => handleAddAction(action.id)}
-                    className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left text-sm"
+                    className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left text-sm max-md:min-h-11"
                   >
                     <Checkbox
                       onClick={(e) => e.preventDefault()}

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { cn, Popover, PopoverContent, PopoverTrigger } from "@carbon/react";
 import { LuPlus } from "react-icons/lu";
 import type { DraftModule } from "./useNavigationEditMode";
@@ -34,7 +38,7 @@ export function HiddenModulesPopover({
             className={cn(
               "min-w-[128px] text-sm",
               "absolute left-7 group-data-[state=expanded]:left-12",
-              "opacity-0 group-data-[state=expanded]:opacity-100"
+              "md:opacity-0 group-data-[state=expanded]:opacity-100"
             )}
           >
             Add module

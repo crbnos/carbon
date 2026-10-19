@@ -12,6 +12,7 @@ Check `.ai/specs/` before modifying any module. Create or update specs when the 
 ## Ask First
 
 - Ask before moving a spec to `implemented/` if deployment/completion evidence is incomplete.
+- Ask before archiving a spec that still owns live scope — add a scope note instead.
 - Ask before changing the spec directory structure or naming convention.
 
 ## Never
@@ -27,9 +28,19 @@ Check `.ai/specs/` before modifying any module. Create or update specs when the 
 3. Spec written in .ai/specs/{YYYY-MM-DD}-{title}.md with resolutions baked in
    (questions surfaced while writing go back to step 2 before the spec is final)
 4. Implementation proceeds phase-by-phase
-5. Completed spec moves to .ai/specs/implemented/
+5. Completed spec moves to .ai/specs/implemented/ (with its /explain .html, if any)
 6. PR links back to spec via "Tracking spec:" line
+7. A spec superseded before implementation moves to .ai/specs/archived/ with a
+   "> Superseded by:" line (partially superseded specs stay live with a scope note)
 ```
+
+## Directories
+
+| Directory | Holds |
+|-----------|-------|
+| `.ai/specs/` | Live designs (draft / in-progress) |
+| `.ai/specs/implemented/` | Shipped designs, kept implementation-accurate |
+| `.ai/specs/archived/` | Superseded-before-implementation designs; history only, never precedent (see its README) |
 
 ## File Naming Convention
 
@@ -52,6 +63,12 @@ Examples:
 | Cross-module behavior change | Create spec |
 | Small bug fix or typo | Skip spec |
 | One-file refactor, no behavior change | Skip spec |
+
+## HTML explainers
+
+A spec may have a sibling `{same-name}.html` made by `/explain`. The `.md` is
+the source of truth. After you edit a spec, find the stale pages with the
+loop in `/explain` → "Keeping pages fresh", and regenerate each one.
 
 ## Spec Template
 

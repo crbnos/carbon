@@ -1,20 +1,25 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Await, redirect, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { getBatchProperties } from "~/modules/inventory";
+import { getBatchProperties } from "~/modules/inventory/inventory.service";
 import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
-import type { SupplierPart } from "~/modules/items";
+import { itemPurchasingValidator } from "~/modules/items/items.models";
 import {
   getItemReplenishment,
-  itemPurchasingValidator,
   upsertItemPurchasing
-} from "~/modules/items";
+} from "~/modules/items/items.service";
+import type { SupplierPart } from "~/modules/items/types";
 import { ItemPurchasingForm, SupplierParts } from "~/modules/items/ui/Item";
 import { path } from "~/utils/path";
 

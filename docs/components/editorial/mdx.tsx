@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { type ArchitectureDiagramKey, architectureDiagrams } from "./architecture-diagrams";
 import { Field, FieldTable } from "./field-table";
@@ -156,8 +160,8 @@ export function Divider() {
 }
 
 /** Agent-only context. Renders nothing on the site — the wrapped MDX is invisible to
- *  human readers — but `scripts/generate-agent-kb.ts` unwraps it into the in-app agent's
- *  knowledge base (`apps/erp/app/modules/agent/kb/<slug>.md`). Use it to give the agent
+ *  human readers — but `@carbon/content/agent-kb` unwraps it into the in-app agent's
+ *  knowledge base (via the shared `@carbon/content/corpus` stripper). Use it to give the agent
  *  extra detail about the underlying code/behavior that shouldn't ship to readers. */
 export function AgentContext(_props: { children?: ReactNode }) {
   return null;

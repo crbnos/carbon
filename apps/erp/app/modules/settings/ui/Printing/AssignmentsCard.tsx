@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   ContextAssignment,
   LocationAssignment,
@@ -5,6 +9,7 @@ import type {
   PrinterRoute,
   PrintingSettings
 } from "@carbon/printing";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -12,12 +17,13 @@ import {
   CardHeader,
   CardTitle,
   Combobox,
+  cn,
   Switch,
   toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   LuBlocks,
   LuHandCoins,
@@ -25,7 +31,6 @@ import {
   LuMapPin,
   LuTruck
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 
 type AssignmentUpdate = {
   locationId: string;
@@ -51,7 +56,9 @@ export function AssignmentsCard({
   }[];
 }) {
   const { t } = useLingui();
-  const assignmentFetcher = useFetcher<{ success: boolean; message: string }>();
+  const assignmentFetcher = useAction({
+    onSuccess: () => toast.success(t`Assignment updated`)
+  });
 
   const printerRouteOptions = useMemo(
     () => [
@@ -79,21 +86,6 @@ export function AssignmentsCard({
     }
     return map;
   }, [workCenters]);
-
-  useEffect(() => {
-    if (
-      assignmentFetcher.data?.success === true &&
-      assignmentFetcher.data?.message
-    ) {
-      toast.success(assignmentFetcher.data.message);
-    }
-    if (
-      assignmentFetcher.data?.success === false &&
-      assignmentFetcher.data?.message
-    ) {
-      toast.error(assignmentFetcher.data.message);
-    }
-  }, [assignmentFetcher.data?.message, assignmentFetcher.data?.success]);
 
   const submitAssignment = useCallback(
     (data: AssignmentUpdate) => {
@@ -298,9 +290,13 @@ function AssignmentRow({
 
   return (
     <div
-      className={`flex items-center justify-between py-2.5 ${isIndented ? "pl-7" : ""} ${!isBold ? "border-t border-border/50" : ""}`}
+      className={cn(
+        "flex items-center justify-between py-2.5 max-md:flex-col max-md:items-stretch max-md:gap-2",
+        isIndented && "pl-7",
+        !isBold && "border-t border-border/50"
+      )}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 max-md:min-w-0">
         <div className="size-7 bg-muted rounded-lg flex items-center justify-center shrink-0">
           <span className="size-4 text-muted-foreground">{icon}</span>
         </div>
@@ -311,8 +307,8 @@ function AssignmentRow({
         </span>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="w-[320px]">
+      <div className="flex items-center gap-4 max-md:w-full max-md:justify-between">
+        <div className="w-[320px] max-md:w-auto max-md:flex-1 max-md:min-w-0">
           <Combobox
             size="sm"
             value={printerRouteId ?? ""}
@@ -323,7 +319,7 @@ function AssignmentRow({
           />
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 max-md:shrink-0">
           <Switch
             variant="small"
             checked={autoPrint}

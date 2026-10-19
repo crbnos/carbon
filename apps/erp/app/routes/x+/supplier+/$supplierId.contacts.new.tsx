@@ -1,22 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { data, redirect, useNavigate, useParams } from "react-router";
-import {
-  insertSupplierContact,
-  supplierContactValidator
-} from "~/modules/purchasing";
+import { isUniqueViolation, redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+import { data, useNavigate, useParams } from "react-router";
+import { supplierContactValidator } from "~/modules/purchasing/purchasing.models";
+import { insertSupplierContact } from "~/modules/purchasing/purchasing.service";
 import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { supplierContactsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -66,7 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createSupplierContact.error) {
     let errorMessage = "Failed to create supplier contact";
-    if (createSupplierContact.error?.message?.includes("duplicate key value")) {
+    if (isUniqueViolation(createSupplierContact.error)) {
       const contact = await client
         .from("contact")
         .select("id")
@@ -118,20 +117,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         path.to.supplierContacts(supplierId),
         await flash(request, success("Supplier contact created"))
       );
-}
-
-export async function clientAction({
-  serverAction,
-  params
-}: ClientActionFunctionArgs) {
-  const { supplierId } = params;
-  if (supplierId) {
-    window.clientCache?.setQueryData(
-      supplierContactsQuery(supplierId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }
 
 export default function SupplierContactsNewRoute() {

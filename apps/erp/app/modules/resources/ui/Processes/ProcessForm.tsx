@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useControlField, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -9,6 +13,7 @@ import {
   HStack,
   IconButton,
   LabelWithHelp,
+  MENU_ITEM_SHORTCUTS,
   ModalDrawer,
   ModalDrawerBody,
   ModalDrawerContent,
@@ -46,9 +51,8 @@ import { useSupplierProcesses } from "~/components/Form/SupplierProcess";
 import WorkCenters from "~/components/Form/WorkCenters";
 import { usePermissions } from "~/hooks";
 import { SupplierProcessForm } from "~/modules/purchasing/ui/Supplier";
-
-import { processValidator } from "~/modules/resources";
-import { operationTypes } from "~/modules/shared";
+import { processValidator } from "~/modules/resources/resources.models";
+import { operationTypes } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
 type ProcessFormProps = {
@@ -358,6 +362,7 @@ function SupplierProcesses({ processId }: { processId?: string }) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.edit}
                       onClick={() =>
                         navigate(
                           path.to.supplierProcess(sp.supplierId!, sp.id!)
@@ -369,6 +374,7 @@ function SupplierProcesses({ processId }: { processId?: string }) {
                       <Trans>Edit Process</Trans>
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.delete}
                       onClick={() =>
                         navigate(
                           path.to.deleteSupplierProcess(sp.supplierId!, sp.id!)

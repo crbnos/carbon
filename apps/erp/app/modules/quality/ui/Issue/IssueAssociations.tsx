@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Combobox, Hidden, Number, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Count,
@@ -14,6 +19,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -29,7 +35,7 @@ import {
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { flushSync } from "react-dom";
 import { AiOutlinePartition } from "react-icons/ai";
 import {
@@ -51,13 +57,13 @@ import {
   LuUndo2
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { Customer, Item, Supplier } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
 import { ChangeNoticeStatus } from "~/modules/items/ui/ChangeNotice";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import type { action as associationAction } from "~/routes/x+/issue+/$id.association.new";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -274,11 +280,12 @@ export function IssueAssociationItem({
                         icon={<LuEllipsisVertical />}
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1 flex-shrink-0 opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+                        className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
                       />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
                         destructive
                         onSelect={() => {
                           onDelete(child);
@@ -353,7 +360,6 @@ function NewItemAssociation() {
       <Item
         name="id"
         label={itemType}
-        // @ts-ignore
         type={itemType}
         onTypeChange={onTypeChange}
       />
@@ -1196,17 +1202,7 @@ function NewAssociationModal({
   const { id } = useParams();
   if (!id) throw new Error("No issue ID found");
 
-  const fetcher = useFetcher<typeof associationAction>();
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
-    }
-
-    if (fetcher.data?.success === false && fetcher.data?.message) {
-      toast.error(fetcher?.data?.message);
-    }
-  }, [fetcher.data?.message, fetcher.data?.success, onClose]);
+  const fetcher = useAction<typeof associationAction>({ onSuccess: onClose });
 
   function renderFields(type: IssueAssociationKey) {
     switch (type) {

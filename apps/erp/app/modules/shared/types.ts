@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ColumnPinningState } from "@tanstack/react-table";
 import type { z } from "zod";
 import type { ModelUpload, StorageItem } from "~/types";
@@ -46,7 +50,8 @@ export enum DataType {
   User = 6,
   Customer = 7,
   Supplier = 8,
-  File = 9
+  File = 9,
+  Link = 10
 }
 
 export type MethodItemType = (typeof methodItemType)[number];
@@ -99,8 +104,13 @@ export type OperationParameter = z.infer<typeof operationParameterValidator> & {
 };
 export type OptimisticFileObject = Omit<
   StorageItem,
-  "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
->;
+  | "owner"
+  | "updated_at"
+  | "created_at"
+  | "last_accessed_at"
+  | "buckets"
+  | "metadata"
+> & { metadata: { size: number; mimetype: string } };
 
 export type QuantityEffect = (quantity: number) => number;
 

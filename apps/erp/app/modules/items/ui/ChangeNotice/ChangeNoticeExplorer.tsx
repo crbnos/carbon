@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   cn,
@@ -8,6 +12,8 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -16,14 +22,14 @@ import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import { useRouteData } from "~/hooks";
-import { canEditChangeNoticeEngineering } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { ChangeNotice } from "../../types";
 import AffectedItemForm from "./AffectedItemForm";
 import type { AffectedItemDraft } from "./affectedItem.types";
+import { useChangeNoticeEngineeringLock } from "./lock-ui";
 
 // Explorer (left panel) of the change-order workspace — deliberately the same
 // layout as the Purchase Order explorer (PurchaseOrderExplorer /
@@ -43,9 +49,7 @@ export default function ChangeNoticeExplorer() {
   }>(path.to.changeNotice(id));
 
   const affectedItems = routeData?.affectedItems ?? [];
-  const isDisabled = !canEditChangeNoticeEngineering(
-    routeData?.changeNotice?.status
-  );
+  const { isDisabled } = useChangeNoticeEngineeringLock(id);
 
   const disclosure = useDisclosure();
 
@@ -137,9 +141,8 @@ function AffectedItemRow({
 
   return (
     <VStack spacing={0} className="border-b">
-      <Link
+      <PrefetchLink
         to={path.to.changeNoticeAffectedItem(changeOrderId, item.id)}
-        prefetch="intent"
         className="w-full"
       >
         <HStack
@@ -177,7 +180,7 @@ function AffectedItemRow({
                 <DropdownMenuTrigger asChild>
                   <IconButton
                     aria-label={t`More`}
-                    className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                    className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                     icon={<LuEllipsisVertical />}
                     variant="solid"
                     onClick={(e) => e.stopPropagation()}
@@ -203,7 +206,7 @@ function AffectedItemRow({
                     <DropdownMenuIcon icon={<LuTrash />} />
                     <Trans>Delete</Trans>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
                     <Link to={getLinkToItemDetails(type, item.itemId)}>
                       <DropdownMenuIcon
                         icon={<MethodItemTypeIcon type={type} />}
@@ -216,7 +219,7 @@ function AffectedItemRow({
             </div>
           )}
         </HStack>
-      </Link>
+      </PrefetchLink>
     </VStack>
   );
 }

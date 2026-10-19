@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SYNC_CONFIG } from "../../core/models";
 import { AccountingApiError } from "../../core/utils";
@@ -294,28 +298,25 @@ describe("buildXeroSyncConfig — payment force-enable (two-way)", () => {
 });
 
 describe("buildXeroSyncConfig — Carbon-owned master + documents", () => {
-  it.each([
-    "customer",
-    "vendor",
-    "item",
-    "invoice",
-    "bill"
-  ] as const)("forces `%s` to push-only + owner carbon regardless of the stored config", (entityType) => {
-    const stored = structuredClone(DEFAULT_SYNC_CONFIG);
-    // Pretend the company had previously set this entity accounting-owned
-    // two-way (the old Source of Truth default) — the force must override it.
-    stored.entities[entityType] = {
-      enabled: true,
-      direction: "two-way",
-      owner: "accounting"
-    };
+  it.each(["customer", "vendor", "item", "invoice", "bill"] as const)(
+    "forces `%s` to push-only + owner carbon regardless of the stored config",
+    (entityType) => {
+      const stored = structuredClone(DEFAULT_SYNC_CONFIG);
+      // Pretend the company had previously set this entity accounting-owned
+      // two-way (the old Source of Truth default) — the force must override it.
+      stored.entities[entityType] = {
+        enabled: true,
+        direction: "two-way",
+        owner: "accounting"
+      };
 
-    expect(buildXeroSyncConfig(stored).entities[entityType]).toEqual({
-      enabled: true,
-      direction: "push-to-accounting",
-      owner: "carbon"
-    });
-  });
+      expect(buildXeroSyncConfig(stored).entities[entityType]).toEqual({
+        enabled: true,
+        direction: "push-to-accounting",
+        owner: "carbon"
+      });
+    }
+  );
 
   it("preserves the per-company `enabled` flag while forcing ownership", () => {
     const stored = structuredClone(DEFAULT_SYNC_CONFIG);

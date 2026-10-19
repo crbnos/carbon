@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -11,7 +15,7 @@ import {
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { UserSelect } from "~/components/Selectors";
-import { deactivateUsersValidator } from "~/modules/users";
+import { deactivateUsersValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 type DeactivateUsersModalProps = {

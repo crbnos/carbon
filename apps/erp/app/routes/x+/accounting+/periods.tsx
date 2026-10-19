@@ -1,14 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Button, VStack } from "@carbon/react";
+import { Button, RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuCalendarPlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { usePermissions } from "~/hooks";
-import { getAccountingPeriods } from "~/modules/accounting";
+import { getAccountingPeriods } from "~/modules/accounting/accounting.service";
 import { PeriodsTable } from "~/modules/accounting/ui/Periods";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -60,7 +65,7 @@ export default function AccountingPeriodsRoute() {
           ) : undefined
         }
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

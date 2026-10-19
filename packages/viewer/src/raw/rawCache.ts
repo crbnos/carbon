@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // IndexedDB cache for parsed raw-model meshes. The occt-import-js STEP parse
 // is ~40s of WASM for a real assembly and its output is deterministic for a
 // given raw, so parse once and replay from disk on every later visit. Keyed by

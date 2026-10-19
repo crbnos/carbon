@@ -1,138 +1,75 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
-import { Ratelimit, redis } from "@carbon/kv";
+import { getCompanyTimeZone } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { agentChatModel, agentTitleModel } from "@carbon/utils";
+import {
+  agentChatModel,
+  agentProvider,
+  agentTitleModel,
+  datetime
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  consumeStream,
   convertToModelMessages,
+  createIdGenerator,
+  createUIMessageStreamResponse,
   generateText,
-  getToolName,
-  isToolUIPart,
+  hasToolCall,
+  isStepCount,
   type ModelMessage,
-  stepCountIs,
   streamText,
+  toUIMessageStream,
   type UIMessage
 } from "ai";
-import { isEphemeralTool, isUiBlockTool } from "./agent.blocks";
+import { UI_BLOCK_TOOLS } from "./agent.blocks";
+import {
+  buildModelHistory,
+  type StoredPart,
+  toDisplayMessages,
+  toStoredParts
+} from "./agent.history";
 import { buildSystemPrompt } from "./agent.prompt";
 import { agentModel } from "./agent.provider";
 import { createAgentTools } from "./agent.tools";
 import type { BrowsingContext } from "./types";
 
-const log = getLogger("erp", "agent");
-
-const MAX_STEPS = 20;
-
-// Sliding window: send the model only the most recent messages whose combined size stays
-// under this character budget (a rough token proxy — ~4 chars/token), dropping the oldest.
-// Keeps the conversation from growing unbounded toward the context window. Whole messages
-// are kept/dropped so tool-call/result pairs stay intact.
-const HISTORY_CHAR_BUDGET = 100_000; // ~25k tokens of history
-
-function messageSize(m: UIMessage): number {
-  let n = 0;
-  for (const part of m.parts) {
-    if (part.type === "text") n += part.text.length;
-    else if (isToolUIPart(part)) {
-      n +=
-        JSON.stringify(part.input ?? "").length +
-        JSON.stringify(part.output ?? "").length;
-    }
-  }
-  return n;
-}
-
-function windowByChars(messages: UIMessage[], budget: number): UIMessage[] {
-  const kept: UIMessage[] = [];
-  let total = 0;
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const size = messageSize(messages[i]);
-    // Always keep the most recent message, even if it alone exceeds the budget.
-    if (kept.length > 0 && total + size > budget) break;
-    kept.unshift(messages[i]);
-    total += size;
-  }
-  // Anthropic requires the first message to be a user message; dropping the oldest
-  // turns can leave an assistant at the front, so trim any leading non-user messages.
-  while (kept.length > 1 && kept[0].role !== "user") kept.shift();
-  return kept;
-}
-
-const agentRatelimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(30, "5 m")
-});
-
-/** Throws a 429 Response when the per-user/company message rate is exceeded. */
-export async function assertAgentRateLimit(userId: string, companyId: string) {
-  const { success } = await agentRatelimit.limit(
-    `agent:${companyId}:${userId}`
-  );
-  if (!success) {
-    throw new Response("Rate limit exceeded. Please wait a moment.", {
-      status: 429
-    });
-  }
-}
+// Reads run on the caller's RLS client, which already limits the agent tables to the
+// caller's own threads; the explicit filters say so in the query. The two message writes
+// use Kysely (one transaction each), which bypasses RLS: the chat route checks the thread
+// with getThread before calling them.
 
 export async function createThread(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; context?: BrowsingContext | null }
+  args: { companyId: string; userId: string }
 ) {
   return client
     .from("agentThread")
     .insert({
       companyId: args.companyId,
       userId: args.userId,
-      createdBy: args.userId,
-      lastContext: args.context ?? null
+      createdBy: args.userId
     })
     .select("id")
     .single();
 }
 
-export async function saveUserMessage(
+/** The caller's own thread, or null. Every read or write of a thread checks this first. */
+export async function getThread(
   client: SupabaseClient<Database>,
-  args: {
-    threadId: string;
-    companyId: string;
-    userId: string;
-    text: string;
-    context?: BrowsingContext | null;
-  }
+  args: { threadId: string; companyId: string; userId: string }
 ) {
-  const { data: message, error } = await client
-    .from("agentMessage")
-    .insert({
-      threadId: args.threadId,
-      companyId: args.companyId,
-      role: "user",
-      context: args.context ?? null,
-      createdBy: args.userId
-    })
+  return client
+    .from("agentThread")
     .select("id")
-    .single();
-  if (error || !message) return { data: message, error };
-
-  const { error: partError } = await client.from("agentMessagePart").insert({
-    messageId: message.id,
-    companyId: args.companyId,
-    orderIndex: 0,
-    type: "text",
-    textContent: args.text,
-    createdBy: args.userId
-  });
-  // supabase-js has no multi-statement transaction; compensate by deleting the parent
-  // so a failed part insert never leaves an empty, unrecoverable message bubble.
-  if (partError) {
-    await client
-      .from("agentMessage")
-      .delete()
-      .eq("id", message.id)
-      .eq("companyId", args.companyId);
-    return { data: null, error: partError };
-  }
-  return { data: message, error: null };
+    .eq("id", args.threadId)
+    .eq("companyId", args.companyId)
+    .eq("userId", args.userId)
+    .maybeSingle();
 }
 
 export async function getThreads(
@@ -147,6 +84,7 @@ export async function getThreads(
     .order("createdAt", { ascending: false });
 }
 
+/** Hard delete: messages and parts cascade. */
 export async function deleteThread(
   client: SupabaseClient<Database>,
   args: { threadId: string; companyId: string; userId: string }
@@ -159,194 +97,333 @@ export async function deleteThread(
     .eq("userId", args.userId);
 }
 
-export async function getMessages(
+export async function setThreadTitle(
+  client: SupabaseClient<Database>,
+  args: { threadId: string; companyId: string; title: string }
+) {
+  return client
+    .from("agentThread")
+    .update({ title: args.title })
+    .eq("id", args.threadId)
+    .eq("companyId", args.companyId);
+}
+
+// A thread is read newest-first and capped, so a long thread costs the same per request
+// as a short one. The model's history is trimmed further by its character budget.
+export const MAX_THREAD_MESSAGES = 200;
+
+const newestFirst = <T>(rows: T[] | null) => (rows ?? []).slice().reverse();
+
+/** The stored thread as the panel shows it (see `toDisplayMessages`). */
+export async function getDisplayMessages(
   client: SupabaseClient<Database>,
   args: { threadId: string; companyId: string }
 ) {
-  return client
+  const { data, error } = await client
     .from("agentMessage")
-    .select("*, parts:agentMessagePart(*)")
+    .select(
+      "id, role, parts:agentMessagePart(orderIndex, type, textContent, toolName, toolCallId, toolInput, toolOutput)"
+    )
     .eq("threadId", args.threadId)
     .eq("companyId", args.companyId)
-    .order("createdAt", { ascending: true });
+    // Only what the panel shows: read-tool outputs are the bulk of a thread's bytes.
+    .or(`type.eq.text,toolName.in.(${UI_BLOCK_TOOLS.join(",")})`, {
+      referencedTable: "parts"
+    })
+    .order("createdAt", { ascending: false })
+    .limit(MAX_THREAD_MESSAGES);
+  if (error) return { data: null, error };
+  return { data: toDisplayMessages(newestFirst(data)), error: null };
+}
+
+/** The stored thread as the model sees it (see `buildModelHistory`). */
+export async function getModelHistory(
+  client: SupabaseClient<Database>,
+  args: { threadId: string; companyId: string }
+) {
+  const { data, error } = await client
+    .from("agentMessage")
+    .select(
+      "id, role, parts:agentMessagePart(orderIndex, type, textContent, toolName, toolInput)"
+    )
+    .eq("threadId", args.threadId)
+    .eq("companyId", args.companyId)
+    // Text, plus offered choices (see buildModelHistory); never read-tool output.
+    .or("type.eq.text,toolName.eq.present_choice", { referencedTable: "parts" })
+    .order("createdAt", { ascending: false })
+    .limit(MAX_THREAD_MESSAGES);
+  if (error) return { data: null, error };
+  return { data: buildModelHistory(newestFirst(data)), error: null };
 }
 
 export async function setFeedback(
   client: SupabaseClient<Database>,
   args: {
-    threadId: string;
+    messageId: string;
     companyId: string;
     feedback: "up" | "down";
     note?: string;
   }
 ) {
-  const { data: latest } = await client
-    .from("agentMessage")
-    .select("id")
-    .eq("threadId", args.threadId)
-    .eq("companyId", args.companyId)
-    .eq("role", "assistant")
-    .order("createdAt", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!latest) return { data: null, error: null };
   return client
     .from("agentMessage")
     .update({ feedback: args.feedback, feedbackNote: args.note ?? null })
-    .eq("id", latest.id)
-    .eq("companyId", args.companyId);
+    .eq("id", args.messageId)
+    .eq("companyId", args.companyId)
+    .eq("role", "assistant")
+    .select("id")
+    .maybeSingle();
 }
 
+/** Save the user's question and its text part in one transaction. */
+export async function saveUserMessage(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    threadId: string;
+    companyId: string;
+    userId: string;
+    text: string;
+    context?: BrowsingContext | null;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    const message = await trx
+      .insertInto("agentMessage")
+      .values({
+        threadId: args.threadId,
+        companyId: args.companyId,
+        role: "user",
+        context: args.context ? JSON.stringify(args.context) : null,
+        createdBy: args.userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await trx
+      .insertInto("agentMessagePart")
+      .values({
+        messageId: message.id,
+        companyId: args.companyId,
+        orderIndex: 0,
+        type: "text",
+        textContent: args.text,
+        createdBy: args.userId
+      })
+      .execute();
+    return message.id;
+  });
+}
+
+/** Save an answer and its parts in one transaction, under the id the browser already has. */
+export async function saveAssistantMessage(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    id: string;
+    threadId: string;
+    companyId: string;
+    userId: string;
+    parts: StoredPart[];
+    inputTokens: number;
+    outputTokens: number;
+    finishReason: string;
+  }
+) {
+  await db.transaction().execute(async (trx) => {
+    await trx
+      .insertInto("agentMessage")
+      .values({
+        id: args.id,
+        threadId: args.threadId,
+        companyId: args.companyId,
+        role: "assistant",
+        finishReason: args.finishReason,
+        inputTokens: args.inputTokens,
+        outputTokens: args.outputTokens,
+        createdBy: args.userId
+      })
+      .execute();
+    await trx
+      .insertInto("agentMessagePart")
+      .values(
+        args.parts.map((part, orderIndex) => ({
+          ...part,
+          messageId: args.id,
+          companyId: args.companyId,
+          orderIndex,
+          createdBy: args.userId
+        }))
+      )
+      .execute();
+  });
+}
+const log = getLogger("erp", "agent");
+
+// Every step re-sends the whole context. A docs answer is search → read → answer, with a
+// read or two more at most, so a few steps cover it and bound the worst-case cost.
+const MAX_STEPS = 6;
+
+// The assistant message id is minted here and becomes the row's id, so the browser's
+// copy of an answer and its database row share one id (feedback targets it).
+const newAssistantMessageId = createIdGenerator({
+  prefix: "agm",
+  separator: "_",
+  size: 20
+});
+
+// What the browser sees when a turn fails; the real error is logged, never streamed.
+const TURN_FAILED_MESSAGE =
+  "The assistant couldn't answer that. Please try again.";
+
 /** Append the browsing context to the latest user message so it travels with the turn. */
-function injectContext(
+function withContext(
   messages: ModelMessage[],
   context?: BrowsingContext | null
 ): ModelMessage[] {
   if (!context) return messages;
   const note = `\n\n[Current page: ${context.label}${context.route ? ` — ${context.route}` : ""}]`;
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i];
-    if (m.role !== "user") continue;
-    if (typeof m.content === "string") {
-      m.content += note;
-    } else if (Array.isArray(m.content)) {
-      m.content.push({ type: "text", text: note });
-    }
-    break;
+  const last = messages.findLast((m) => m.role === "user");
+  if (typeof last?.content === "string") {
+    last.content += note;
+  } else if (Array.isArray(last?.content)) {
+    last.content.push({ type: "text", text: note });
   }
   return messages;
 }
 
 /**
- * Core streaming turn. Returns the AI SDK UI-message SSE Response for `useChat`.
- * Persists the assistant message + parts on finish, using the SAME normalized
- * UIMessage shape the client (and history load) speak — so read and write stay
- * inverse transforms of one shape rather than two divergent ones.
+ * One turn: answer the last question in `history` (the stored thread, ending with the
+ * question) and stream it as the AI SDK UI-message Response `useChat` reads. The answer
+ * is saved when the stream ends; a failed turn saves nothing, so Retry answers the same
+ * stored question.
  */
-export function streamChat(
+export async function streamChat(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     companyId: string;
-    companyGroupId: string;
     userId: string;
     threadId: string;
-    messages: UIMessage[];
+    history: UIMessage[];
     context?: BrowsingContext | null;
+    /** A new question (not a retry): the thread may need a title. */
+    isNewQuestion: boolean;
+    abortSignal?: AbortSignal;
   }
 ) {
-  const ctx = {
-    client,
-    companyId: args.companyId,
-    companyGroupId: args.companyGroupId,
-    userId: args.userId,
-    // Already authorized by the chat route's requirePermissions; the per-operation
-    // scope gate applies to API keys only.
-    authKind: "session" as const,
-    scopes: {}
-  };
+  const { companyId, userId, threadId, history } = args;
 
-  const modelMessages = injectContext(
-    convertToModelMessages(windowByChars(args.messages, HISTORY_CHAR_BUDGET)),
-    args.context
-  );
+  // Titling needs only the questions, so it runs alongside the answer instead of
+  // holding the stream open for another model round trip at the end.
+  const titling = args.isNewQuestion
+    ? titleThread(client, { threadId, companyId, history }).catch((error) => {
+        log.error("Failed to title thread", { error, threadId });
+      })
+    : Promise.resolve();
 
-  // Token usage / finish reason live on the streamText event (typed), the
-  // normalized message parts live on the UI-message stream — capture the former
-  // to persist alongside the latter.
-  let inputTokens = 0;
-  let outputTokens = 0;
-  let finishReason = "stop";
+  const [messages, timeZone] = await Promise.all([
+    convertToModelMessages(history),
+    getCompanyTimeZone(client, companyId)
+  ]);
 
+  // Usage and finish reason come from the model stream, the message parts from the UI
+  // stream; both end callbacks fire, the model stream's first.
+  let usage = { inputTokens: 0, outputTokens: 0, finishReason: "stop" };
+  let failed = false;
+
+  const tools = createAgentTools();
   const result = streamText({
     model: agentModel(agentChatModel),
-    system: buildSystemPrompt(),
-    messages: modelMessages,
-    tools: createAgentTools(ctx),
-    stopWhen: stepCountIs(MAX_STEPS),
+    instructions: buildSystemPrompt({
+      today: datetime.today(timeZone).toString()
+    }),
+    messages: withContext(messages, args.context),
+    tools,
+    abortSignal: args.abortSignal,
+    // present_choice hands the turn back to the user, so the answer ends there.
+    stopWhen: [isStepCount(MAX_STEPS), hasToolCall("present_choice")],
     // On the final allowed step, forbid tools so the model must write an answer with what
     // it has — instead of ending on a dangling tool call and returning no text.
     prepareStep: ({ stepNumber }) =>
       stepNumber >= MAX_STEPS - 1 ? { toolChoice: "none" } : undefined,
-    onFinish: (event) => {
-      inputTokens = event.totalUsage.inputTokens ?? 0;
-      outputTokens = event.totalUsage.outputTokens ?? 0;
-      finishReason = event.finishReason;
+    // One key for every turn: the system prompt and tool definitions are the same
+    // prefix each time, and OpenAI bills a cached prefix at a fraction of the price.
+    ...(agentProvider === "openai"
+      ? { providerOptions: { openai: { promptCacheKey: "carbon-agent" } } }
+      : {}),
+    onError: ({ error }) => {
+      failed = true;
+      log.error("Agent model call failed", { error, threadId });
+    },
+    onEnd: (event) => {
+      usage = {
+        inputTokens: event.usage.inputTokens ?? 0,
+        outputTokens: event.usage.outputTokens ?? 0,
+        finishReason: event.finishReason
+      };
+      log.info("Agent turn", {
+        threadId,
+        model: agentChatModel,
+        steps: event.steps.length,
+        cachedInputTokens: event.usage.inputTokenDetails.cacheReadTokens ?? 0,
+        ...usage
+      });
     }
   });
 
-  return result.toUIMessageStreamResponse({
-    onFinish: async ({ responseMessage }) => {
-      // This callback runs after the stream is handed to the client, so a throw here is
-      // otherwise swallowed silently — log both steps so a persistence failure is diagnosable.
-      try {
-        await persistAssistantTurn(client, {
-          threadId: args.threadId,
-          companyId: args.companyId,
-          userId: args.userId,
-          message: responseMessage,
-          inputTokens,
-          outputTokens,
-          finishReason
-        });
-      } catch (error) {
-        log.error("Failed to persist assistant turn", {
-          error,
-          threadId: args.threadId
-        });
+  const stream = toUIMessageStream({
+    stream: result.stream,
+    tools,
+    // Needed for the SDK to use generateMessageId for the answer.
+    originalMessages: history,
+    generateMessageId: newAssistantMessageId,
+    onError: () => TURN_FAILED_MESSAGE,
+    onEnd: async ({ responseMessage, isAborted }) => {
+      const parts = toStoredParts(responseMessage);
+      if (!failed && parts.length > 0) {
+        try {
+          await saveAssistantMessage(db, {
+            id: responseMessage.id,
+            threadId,
+            companyId,
+            userId,
+            parts,
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            finishReason: isAborted ? "aborted" : usage.finishReason
+          });
+        } catch (error) {
+          log.error("Failed to save agent answer", { error, threadId });
+        }
       }
-      try {
-        await maybeTitleThread(client, {
-          threadId: args.threadId,
-          companyId: args.companyId
-        });
-      } catch (error) {
-        log.error("Failed to title thread", {
-          error,
-          threadId: args.threadId
-        });
-      }
+      await titling;
     }
+  });
+
+  return createUIMessageStreamResponse({
+    stream,
+    // Keep reading the model stream if the browser disconnects, so onEnd still runs.
+    consumeSseStream: consumeStream
   });
 }
 
 /**
- * Auto-name the thread with a cheap model. Titles after the 1st user message (so it's
- * named immediately), then re-titles once more after the 3rd — by which point a real
- * topic has emerged past the opening "hi"/"hello".
+ * Auto-name the thread with a cheap model: after the 1st question (so it's named
+ * immediately), and once more after the 3rd, by which point a real topic has emerged
+ * past an opening "hi".
  */
-async function maybeTitleThread(
+async function titleThread(
   client: SupabaseClient<Database>,
-  args: { threadId: string; companyId: string }
+  args: { threadId: string; companyId: string; history: UIMessage[] }
 ) {
-  const { count } = await client
-    .from("agentMessage")
-    .select("id", { count: "exact", head: true })
-    .eq("threadId", args.threadId)
-    .eq("companyId", args.companyId)
-    .eq("role", "user");
-  if (count !== 1 && count !== 3) return;
+  const questions = args.history.filter((m) => m.role === "user").length;
+  if (questions !== 1 && questions !== 3) return;
 
-  const { data: msgs } = await client
-    .from("agentMessage")
-    .select("role, agentMessagePart(orderIndex, type, textContent)")
-    .eq("threadId", args.threadId)
-    .eq("companyId", args.companyId)
-    .order("createdAt", { ascending: true })
-    .limit(8);
-  if (!msgs) return;
-
-  const transcript = msgs
-    .map((m) => {
-      const text = (m.agentMessagePart ?? [])
-        .filter((p) => p.type === "text" && p.textContent)
-        .sort((a, b) => a.orderIndex - b.orderIndex)
-        .map((p) => p.textContent)
-        .join(" ");
-      return text ? `${m.role}: ${text}` : "";
-    })
-    .filter(Boolean)
+  const transcript = args.history
+    .slice(0, 8)
+    .map(
+      (m) =>
+        `${m.role}: ${m.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ")}`
+    )
     .join("\n");
-  if (!transcript) return;
 
   const { text } = await generateText({
     model: agentModel(agentTitleModel),
@@ -358,86 +435,10 @@ async function maybeTitleThread(
     .slice(0, 80);
   if (!title) return;
 
-  await client
-    .from("agentThread")
-    .update({ title })
-    .eq("id", args.threadId)
-    .eq("companyId", args.companyId);
-}
-
-async function persistAssistantTurn(
-  client: SupabaseClient<Database>,
-  args: {
-    threadId: string;
-    companyId: string;
-    userId: string;
-    message: UIMessage;
-    inputTokens: number;
-    outputTokens: number;
-    finishReason: string;
-  }
-) {
-  const { data: message } = await client
-    .from("agentMessage")
-    .insert({
-      threadId: args.threadId,
-      companyId: args.companyId,
-      role: "assistant",
-      finishReason: args.finishReason,
-      inputTokens: args.inputTokens,
-      outputTokens: args.outputTokens,
-      createdBy: args.userId
-    })
-    .select("id")
-    .single();
-  if (!message) return;
-
-  const parts: Database["public"]["Tables"]["agentMessagePart"]["Insert"][] =
-    [];
-  let order = 0;
-  for (const part of args.message.parts) {
-    if (part.type === "text" && part.text) {
-      parts.push({
-        messageId: message.id,
-        companyId: args.companyId,
-        orderIndex: order++,
-        type: "text",
-        textContent: part.text,
-        createdBy: args.userId
-      });
-    } else if (isToolUIPart(part)) {
-      const name = getToolName(part);
-      if (isEphemeralTool(name)) continue; // e.g. navigate — never persisted, never replayed
-      parts.push({
-        messageId: message.id,
-        companyId: args.companyId,
-        orderIndex: order++,
-        type: "tool",
-        toolName: name,
-        toolClassification: isUiBlockTool(name) ? null : "READ",
-        toolCallId: part.toolCallId,
-        toolInput: (part.input ?? null) as never,
-        toolOutput: (part.state === "output-error"
-          ? { error: part.errorText }
-          : (part.output ?? null)) as never,
-        toolState: part.state === "output-available" ? "success" : "error",
-        createdBy: args.userId
-      });
-    }
-  }
-  if (parts.length > 0) {
-    const { error: partsError } = await client
-      .from("agentMessagePart")
-      .insert(parts);
-    // No multi-statement transaction in supabase-js: roll back the parent message so a
-    // failed parts insert never persists an empty assistant bubble with no recoverable content.
-    if (partsError) {
-      await client
-        .from("agentMessage")
-        .delete()
-        .eq("id", message.id)
-        .eq("companyId", args.companyId);
-      throw partsError;
-    }
-  }
+  const { error } = await setThreadTitle(client, {
+    threadId: args.threadId,
+    companyId: args.companyId,
+    title
+  });
+  if (error) throw error;
 }

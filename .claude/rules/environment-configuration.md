@@ -23,12 +23,23 @@ both resolve here. Prefer importing the exported constant over reading
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from "@carbon/auth";
 ```
 
-`getEnv(name, { isRequired = true, isSecret = true })` is the accessor:
-- Throws `${name} is not set` when a required var is missing (validation happens
-  at module load, so a missing required var crashes app boot).
-- When `isSecret` and running in the browser, returns `""` (secrets never reach
-  client code).
-- Server reads `process.env`; browser reads `window.env`.
+Every variable is declared once in `packages/env/src/schema.ts`: group, one-line
+description, optional zod `type`, `secret`, `browser`, `required` and `aliases`.
+`getEnv(name)` reads one — its own name first, then its deprecated aliases
+(`APP_URL` ← `VERCEL_URL`, `APP_ENV` ← `VERCEL_ENV`, `DATABASE_URL` ←
+`SUPABASE_DB_URL`, `AI_API_KEY` ← `OPENAI_API_KEY`).
+- Server reads `process.env`; browser reads `window.env`, and a `secret`
+  variable reads as `""` there.
+- `validateEnv` (`validate.ts`) runs once at module load on the server and
+  `formatReport` prints every problem together, grouped as Required, Invalid and
+  half-configured features, plus the features that are off. A secret's value is
+  never printed.
+- `required: "error"` throws that report. `required: "warn"`, an invalid type and
+  a half-configured feature (some of a group's `needed` variables set, not all)
+  are only printed for now and become errors in the next release.
+- Not validated under Vitest or with `SKIP_ENV_VALIDATION` set.
+- `src/deployments.test.ts` reads what `sst.config.ts` and `crbn up` set and
+  fails when either would hit a startup error.
 
 `window.env` is populated by `getBrowserEnv()`, injected via an inline script in
 each app's `root.tsx` (`apps/erp/app/root.tsx`, `apps/mes/app/root.tsx`). Only the
@@ -68,7 +79,9 @@ secret), `SUPABASE_JWT_SECRET` (optional), plus
 `INNGEST_SERVE_HOST`, `INNGEST_TLS_HOST`.
 
 **Auth / session** — `SESSION_SECRET` (required; also signs the short-lived,
-single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`), `AUTH_PROVIDERS`
+single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`),
+`AUTH_COOKIE_SUFFIX` (optional; suffixes the auth cookie names when another deployment
+shares `DOMAIN` — EU sets `eu`, see `authentication-system.md`), `AUTH_PROVIDERS`
 (`email,google,azure,passkey,sso`; gate via `isAuthProviderEnabled`),
 `CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`. `IS_VERCEL` reads
 Vercel's own `VERCEL=1`. `BOT_PROTECTION` (`botid` | `turnstile`, unset = BotID for
@@ -92,12 +105,35 @@ default 587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (default
 Optional `RESEND_API_KEY` (marketing contacts; also a legacy SMTP fallback via
 smtp.resend.com when `SMTP_*` is unset) and `RESEND_AUDIENCE_ID`.
 
+**Push** — no env vars. `getVapidDetails()` (`@carbon/env/push.server`,
+server-only because it imports `node:crypto`) derives the VAPID pair from
+`SESSION_SECRET` with HKDF-SHA256 (salt `carbon`, info `web-push-vapid/<n>`,
+the first `n` whose 32 bytes are a valid P-256 scalar) and memoizes it. The
+subject is `getAppUrl()` when it is https, else `mailto:` + `SUPPORT_EMAIL`.
+Every browser subscription is bound to the public key, so the pair must be
+stable: never generate it at build time (images are published per commit, which
+would rotate it and ship the private key). Rotating `SESSION_SECRET` rotates the
+pair — each browser re-subscribes on its next visit
+(`useRestoreBrowserNotifications`); until then, a push to an old-key row gets
+401 (WNS) or 403 (FCM), and `send-push` logs a warning and keeps the row. It
+never deletes on those codes: Apple answers 403 for a token it refuses, which
+would remove every Safari row. The hash, salt and info label are frozen —
+`push.server.test.ts` pins a known answer.
+`isPushConfigured()` is false only without `SESSION_SECRET` (a
+`SKIP_ENV_VALIDATION` script). The public key reaches the browser through the
+account notifications loader and the app shell loader (`pushPublicKey`), not
+`getBrowserEnv()`.
+
 **Integrations (all optional)** — Ramp (`RAMP_CLIENT_ID`, public and exposed by
 `getBrowserEnv()` for the authorize URL; `RAMP_CLIENT_SECRET`, server-only for code
 exchange/token refresh), Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
 `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`, `SLACK_STATE_SECRET`,
-`SLACK_OAUTH_REDIRECT_URL`), OnShape (`ONSHAPE_CLIENT_ID/SECRET`,
-`ONSHAPE_OAUTH_REDIRECT_URL`), Xero, QuickBooks, Jira (each `*_CLIENT_ID/SECRET`,
+`SLACK_OAUTH_REDIRECT_URL`), Onshape (two Onshape apps, no shared variable:
+`ONSHAPE_CLIENT_ID/SECRET` + `ONSHAPE_OAUTH_REDIRECT_URL` for the `onshape` sync
+integration, `ONSHAPE_V2_CLIENT_ID/SECRET` + `ONSHAPE_V2_OAUTH_REDIRECT_URL` for the
+`onshape-v2` panel. `crbn up` writes `ONSHAPE_V2_OAUTH_REDIRECT_URL`
+into `.env.local` from the stack's `ERP_URL`, so each worktree host must be registered
+on the panel's Onshape app, or pinned in `.env` with `#force`), Xero, QuickBooks, Jira (each `*_CLIENT_ID/SECRET`,
 plus webhook/redirect/state secrets), `EXCHANGE_RATES_API_KEY`,
 `GOOGLE_PLACES_API_KEY`, AI keys `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`.
 
@@ -118,12 +154,39 @@ checked against the caller's company and user). Managed deployment propagates bo
 vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 
 **Analytics / config** — `POSTHOG_API_HOST`, `POSTHOG_PROJECT_PUBLIC_KEY`
-(required, public), `CARBON_EDITION` (`community|cloud|enterprise|test` →
+(optional, public), `CARBON_EDITION` (`community|cloud|enterprise|test` →
 `CarbonEdition`), `CONTROLLED_ENVIRONMENT` (ITAR flag), `DEFAULT_LANGUAGE`
 (default `en`), `GTM_URL`, `GTM_EVENTS_API_SECRET_KEY`.
 
-**Deployment** — `VERCEL_URL` (required at module load; value unused off-Vercel,
-set to `production` in prod compose), `VERCEL_ENV`, `NODE_ENV`. `ERP_URL` /
+**Maintenance and status (both optional, server-only)** — `MAINTENANCE_MODE=true`
+makes `maintenanceMiddleware` (`@carbon/auth/middleware/maintenance.server`, in
+every app's root `middleware`, after `security`) answer every request with a 503:
+a page renders the root ErrorBoundary's 503 screen, an open tab gets the same
+screen on its next navigation, and a resource route (API, MCP, webhooks,
+`/api/inngest`) returns a bare 503 with `Retry-After: 300` so the caller retries.
+`/health` answers 200 `{ status: "maintenance" }` without probing the database,
+so the load balancer keeps the tasks. The flag is read at start: changing it
+needs a restart or redeploy. `SYSTEM_STATUS_URL` is a JSON document the app
+reads for `{ latestVersion?, announcement? }` (`systemStatusValidator`,
+`@carbon/lib/system-status`); unset means no request is made, on any edition.
+`getSystemStatus()` caches it in Redis for 5 minutes (a failure for 1), each
+app serves it at `api+/system-status`, and the shell shows the announcement
+with `AnnouncementBar` (`@carbon/react`). `latestVersion` is returned but not
+shown — Carbon has no version to compare it with. Neither variable is on the
+`workspaces` row, so `ci/src/deploy.ts` does not set them; `sst.config.ts`
+forwards them from the deploying process's environment.
+
+**Tracing (all optional)** — the standard OpenTelemetry variables, read raw by
+the OTel SDK (not `@carbon/env`): `OTEL_EXPORTER_OTLP_ENDPOINT` (or
+`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`) turns server tracing on,
+`OTEL_EXPORTER_OTLP_HEADERS` carries the backend's auth, and
+`OTEL_SERVICE_NAME` / `OTEL_TRACES_SAMPLER` / `OTEL_TRACES_SAMPLER_ARG` tune it.
+Unset = no tracing. See `packages/logger/AGENTS.md` → Tracing. The Rust assembler
+reads the same variables (`apps/assembler/AGENTS.md` → Tracing).
+
+**Deployment** — `APP_URL` (this app's own origin, optional; `VERCEL_URL` is its
+deprecated alias), `APP_ENV` (`production | preview | development`; alias
+`VERCEL_ENV`, defaults to `NODE_ENV`), `NODE_ENV`. `ERP_URL` /
 `MES_URL` drive `getAppUrl()` / `getMESUrl()`.
 
 ## URL resolution
@@ -134,16 +197,26 @@ set to `production` in prod compose), `VERCEL_ENV`, `NODE_ENV`. `ERP_URL` /
 `VERCEL_URL`. In dev, honor the `ERP_URL`/`MES_URL` that `crbn up` wrote into
 `.env.local` (portless `*.dev` hostnames), else `localhost:3000`/`3001`.
 
+MES posts to the ERP over HTTP (`erpPostingUrl`, `apps/mes/app/services/erp.ts`)
+and does not use `getAppUrl()` for it: on a preview that is MES itself. It takes
+`ERP_URL`; without it, `localhost:3000` in local dev and `app.carbon.ms` /
+`itar.carbon.ms` on Carbon Cloud production (`CARBON_EDITION=cloud`, not a
+preview). Anywhere else a posting fails with a configuration error, so a
+self-hosted or preview MES needs `ERP_URL`.
+
 ## Gotchas
 
-- Required-var validation runs at **module load** — a missing `SUPABASE_URL`,
-  `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `REDIS_URL`, `SESSION_SECRET`,
-  `POSTHOG_*`, or `VERCEL_URL` crashes boot, not lazily at first use.
+- Validation runs at **module load**. Missing `SUPABASE_SERVICE_ROLE_KEY`,
+  `DATABASE_URL` (or `SUPABASE_DB_URL`), `REDIS_URL`, `SESSION_SECRET`, or the
+  Inngest keys without `INNGEST_DEV`, stops boot. Missing `SUPABASE_URL`,
+  `SUPABASE_ANON_KEY`, and outside Cloud in production `ERP_URL`, `MES_URL` and
+  `SMTP_FROM`, is a warning for now. `POSTHOG_*` and `APP_URL` are optional.
 - Email is deliberately lazy: `packages/lib/src/email.server.ts` builds the
   SMTP transport on first send, never at import, so a deployment with no mail
   config boots fine and `sendEmail` no-ops.
 - Only keys in `getBrowserEnv()` reach the client; adding a public var means
-  adding it there AND to the `Window.env` interface declaration.
+  `browser: true` in the schema, adding it there (typecheck enforces this), AND
+  adding it to each app's root-loader `env` object.
 - Don't put ports/URLs/Supabase/Redis/Inngest dev values in `.env` — `crbn up`
   owns them via `.env.local`, which overrides `.env`.
 

@@ -1,6 +1,6 @@
 // GENERATED FILE — do not edit. Run `pnpm run generate:workflow-catalog`.
 
-import type { TermId } from "@carbon/glossary";
+import type { TermId } from "@carbon/content/glossary";
 
 export const WORKFLOW_FIELD_HELP: Record<string, TermId> = {
   "action.customer.update.input.accountManagerId": "customer-account-manager",

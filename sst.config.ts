@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /// <reference path="./.sst/platform/config.d.ts" />
 
 
@@ -11,6 +15,10 @@ export default $config({
     };
   },
   async run() {
+    // Where build-images.yml publishes; unset, the account's own private ECR.
+    const imageRegistry =
+      process.env.IMAGE_REGISTRY ||
+      `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.${process.env.AWS_REGION}.amazonaws.com`;
     const vpc = new sst.aws.Vpc("CarbonVpc2");
     const cluster = new sst.aws.Cluster("CarbonCluster", {
       vpc,
@@ -19,7 +27,7 @@ export default $config({
     const erp = cluster.addService("CarbonERPService", {
       cpu: "2 vCPU",
       memory: "4 GB",
-      image: `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.${process.env.AWS_REGION}.amazonaws.com/carbon/erp:${process.env.IMAGE_TAG}`,
+      image: `${imageRegistry}/carbon/erp:${process.env.IMAGE_TAG}`,
       loadBalancer: {
         domain: {
           name: process.env.URL_ERP ?? "itar.carbon.ms",
@@ -59,6 +67,8 @@ export default $config({
           process.env.CLOUDFLARE_TURNSTILE_SITE_KEY,
         CONTROLLED_ENVIRONMENT: process.env.CONTROLLED_ENVIRONMENT,
         DOMAIN: process.env.DOMAIN ?? "carbon.ms",
+        MAINTENANCE_MODE: process.env.MAINTENANCE_MODE,
+        SYSTEM_STATUS_URL: process.env.SYSTEM_STATUS_URL,
         ERP_URL: process.env.URL_ERP ? `https://${process.env.URL_ERP}` : "https://itar.carbon.ms",
         EXCHANGE_RATES_API_KEY: process.env.EXCHANGE_RATES_API_KEY,
         GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY,
@@ -76,6 +86,9 @@ export default $config({
         ONSHAPE_CLIENT_ID: process.env.ONSHAPE_CLIENT_ID,
         ONSHAPE_CLIENT_SECRET: process.env.ONSHAPE_CLIENT_SECRET,
         ONSHAPE_OAUTH_REDIRECT_URL: process.env.ONSHAPE_OAUTH_REDIRECT_URL,
+        ONSHAPE_V2_CLIENT_ID: process.env.ONSHAPE_V2_CLIENT_ID,
+        ONSHAPE_V2_CLIENT_SECRET: process.env.ONSHAPE_V2_CLIENT_SECRET,
+        ONSHAPE_V2_OAUTH_REDIRECT_URL: process.env.ONSHAPE_V2_OAUTH_REDIRECT_URL,
         POSTHOG_API_HOST: process.env.POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY: process.env.POSTHOG_PROJECT_PUBLIC_KEY,
         QUICKBOOKS_CLIENT_ID: process.env.QUICKBOOKS_CLIENT_ID,
@@ -131,7 +144,7 @@ export default $config({
     const mes = cluster.addService("CarbonMESService", {
       cpu: "2 vCPU",
       memory: "4 GB",
-      image: `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.${process.env.AWS_REGION}.amazonaws.com/carbon/mes:${process.env.IMAGE_TAG}`,
+      image: `${imageRegistry}/carbon/mes:${process.env.IMAGE_TAG}`,
       loadBalancer: {
         domain: {
           name: process.env.URL_MES ?? "mes.itar.carbon.ms",
@@ -172,6 +185,8 @@ export default $config({
           process.env.CLOUDFLARE_TURNSTILE_SITE_KEY,
         CONTROLLED_ENVIRONMENT: process.env.CONTROLLED_ENVIRONMENT,
         DOMAIN: process.env.DOMAIN ?? "carbon.ms",
+        MAINTENANCE_MODE: process.env.MAINTENANCE_MODE,
+        SYSTEM_STATUS_URL: process.env.SYSTEM_STATUS_URL,
         ERP_URL: process.env.URL_ERP ? `https://${process.env.URL_ERP}` : "https://itar.carbon.ms",
         EXCHANGE_RATES_API_KEY: process.env.EXCHANGE_RATES_API_KEY,
         INNGEST_BASE_URL: process.env.INNGEST_BASE_URL,
@@ -183,6 +198,7 @@ export default $config({
         ONSHAPE_CLIENT_ID: process.env.ONSHAPE_CLIENT_ID,
         ONSHAPE_CLIENT_SECRET: process.env.ONSHAPE_CLIENT_SECRET,
         ONSHAPE_OAUTH_REDIRECT_URL: process.env.ONSHAPE_OAUTH_REDIRECT_URL,
+        ONSHAPE_V2_OAUTH_REDIRECT_URL: process.env.ONSHAPE_V2_OAUTH_REDIRECT_URL,
         OPENAI_API_KEY: process.env.OPENAI_API_KEY,
         POSTHOG_API_HOST: process.env.POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY: process.env.POSTHOG_PROJECT_PUBLIC_KEY,
@@ -240,6 +256,20 @@ export default $config({
         managedRuleGroupStatement: {
           name: "AWSManagedRulesCommonRuleSet",
           vendorName: "AWS",
+          // SizeRestrictions_BODY blocks any request body over 8 KB with a 403
+          // at the WAF, before it reaches the app (so it never shows in app
+          // logs). Carbon legitimately posts larger bodies: bulk account-mapping
+          // saves ship the whole chart of accounts in one POST, and some
+          // /api/inngest steps and /api/webhook/stripe exceed 8 KB too. Count
+          // instead of Block so these are still inspected/counted but not rejected.
+          ruleActionOverrides: [
+            {
+              name: "SizeRestrictions_BODY",
+              actionToUse: {
+                count: {},
+              },
+            },
+          ],
         },
       },
       priority: 2,

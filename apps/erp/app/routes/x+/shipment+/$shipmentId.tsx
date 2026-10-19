@@ -1,20 +1,37 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import { useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
+  getRentalShipmentLines,
   getShipment,
   getShipmentLines,
-  getShipmentRelatedItems,
-  getShipmentTracking
-} from "~/modules/inventory";
+  getShipmentRelatedItems
+} from "~/modules/inventory/inventory.service";
+import { getShipmentTracking } from "~/modules/inventory/inventory.utils";
+import type { RentalShipmentLine } from "~/modules/inventory/types";
+import {
+  ShipmentDocuments,
+  ShipmentHeader
+} from "~/modules/inventory/ui/Shipments";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "shipment", column: "id", param: "shipmentId" },
+    { table: "shipmentLine", column: "shipmentId", param: "shipmentId" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Shipments`, to: path.to.shipments },
     (data) => data?.shipment?.shipmentId
@@ -66,7 +83,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         "id, salesOrderLineId, shipped, serialNumber, salesOrderLine:salesOrderLineId(assetId, description, fixedAsset:assetId(name, fixedAssetId, serialNumber))"
       )
       .eq("shipmentId", shipmentId)
-      .eq("companyId", companyId);
+      .eq("companyId", companyId)
+      .not("salesOrderLineId", "is", null);
 
     fixedAssetLines = (faLineRecords.data ?? [])
       .filter((row) => {
@@ -88,10 +106,58 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
   }
 
+  let rentalLines: RentalShipmentLine[] = [];
+
+  if (shipment.data.sourceDocument === "Rental Agreement") {
+    // Service role: rentalAgreementLine needs sales_view, which an inventory
+    // user may not hold.
+    const rentalLineRecords = await getRentalShipmentLines(
+      getCarbonServiceRole(),
+      shipmentId,
+      companyId
+    );
+    if (rentalLineRecords.error) {
+      throw redirect(
+        path.to.shipments,
+        await flash(
+          request,
+          error(rentalLineRecords.error, "Failed to load the rental units")
+        )
+      );
+    }
+
+    rentalLines = (rentalLineRecords.data ?? []).map((row) => {
+      // The read filters out rows with no rental line.
+      const line = row.rentalAgreementLine!;
+      return {
+        id: row.id,
+        rentalAgreementLineId: row.rentalAgreementLineId!,
+        shipped: row.shipped,
+        meter: row.meter === null ? null : Number(row.meter),
+        unitName: line.fixedAsset?.name ?? line.item?.name ?? "Rental unit",
+        thumbnailPath: line.item?.thumbnailPath ?? null,
+        itemType: line.item?.type ?? null,
+        assetReadableId: line.fixedAsset?.fixedAssetId ?? null,
+        serialNumber:
+          line.fixedAsset?.serialNumber ??
+          line.trackedEntity?.readableId ??
+          null,
+        lineStatus: line.status
+      };
+    });
+    // By unit, like ordinary lines by part number, so the list holds still.
+    rentalLines.sort((a, b) =>
+      (a.assetReadableId ?? a.unitName).localeCompare(
+        b.assetReadableId ?? b.unitName
+      )
+    );
+  }
+
   return {
     shipment: shipment.data,
     shipmentLines: shipmentLines.data ?? [],
     fixedAssetLines,
+    rentalLines,
     shipmentLineTracking: shipmentLineTracking.data ?? [],
     relatedItems: getShipmentRelatedItems(
       client,
@@ -102,17 +168,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ShipmentRoute() {
-  const params = useParams();
-  const { shipmentId } = params;
-  if (!shipmentId) throw new Error("Could not find shipmentId");
+  const { shipment } = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-      <div className="h-full p-4 w-full max-w-5xl mx-auto">
-        <div className="flex flex-col gap-4 pb-16 w-full">
-          <Outlet />
-        </div>
-      </div>
-    </div>
+    <DocumentPage
+      header={<ShipmentHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<ShipmentDocuments />}
+          activity={{
+            entityType: "shipment",
+            entityId: shipment.id,
+            refreshKey: `${shipment.updatedAt ?? ""}:${shipment.status}`
+          }}
+        />
+      }
+    >
+      <RecordOutlet />
+    </DocumentPage>
   );
 }

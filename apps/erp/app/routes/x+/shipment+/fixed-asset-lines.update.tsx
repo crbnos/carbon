@@ -1,39 +1,17 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
+import { shipmentFixedAssetLineUpdateValidator } from "~/modules/inventory/inventory.models";
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    update: "inventory"
-  });
-
-  const formData = await request.formData();
-  const id = formData.get("id") as string;
-  const field = formData.get("field") as string;
-  const value = formData.get("value") as string | null;
-
-  if (!id || !field) {
-    return { error: { message: "Invalid form data" }, data: null };
-  }
-
-  if (field !== "shipped" && field !== "serialNumber") {
-    return { error: { message: `Invalid field: ${field}` }, data: null };
-  }
-
-  const serviceRole = getCarbonServiceRole();
-
-  const updateData: Record<string, unknown> = {};
-  if (field === "shipped") {
-    updateData.shipped = value === "true";
-  } else if (field === "serialNumber") {
-    updateData.serialNumber = value || null;
-  }
-
-  const update = await serviceRole
-    .from("shipmentFixedAssetLine")
-    .update(updateData)
-    .eq("id", id)
-    .eq("companyId", companyId);
-
-  return update;
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(shipmentFixedAssetLineUpdateValidator).request(
+    args
+  );
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.inventory.updateShipmentFixedAssetLine(input.data);
 }

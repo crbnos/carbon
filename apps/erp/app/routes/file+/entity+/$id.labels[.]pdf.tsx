@@ -1,15 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ProductLabelPDF } from "@carbon/documents/pdf";
 import { getLogger } from "@carbon/logger";
-import { labelSizes } from "@carbon/utils";
+import { labelSizes, redirect } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import { getCompany, getDocumentTemplateConfig } from "~/modules/settings";
 import {
+  getCompany,
   getCompanyLogoForLabel,
+  getDocumentTemplateConfig,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
+} from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 import { getEntityLabelData } from "./labels.server";
 

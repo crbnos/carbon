@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
   assertCurrencyDecimals,
@@ -11,6 +15,7 @@ import { loadJournalLineDimensions } from "./dimension-mapping";
 import {
   JournalEntrySyncError,
   type JournalLineDimensionRef,
+  noPostedJournalMessage,
   toDebitSignedAmount,
   toPostingDateString
 } from "./posting";
@@ -33,7 +38,7 @@ type Db = Kysely<KyselyDatabase> | KyselyTx;
 
 /** The Carbon-native prefix stamped on `journalLine.documentLineReference`
  * for purchase-invoice lines — `purchase-invoice:<purchaseOrderLineId>`
- * (see `functions/lib/utils.ts` journalReference.to.purchaseInvoice). Direct
+ * (see `journalReference.to.purchaseInvoice` in @carbon/database). Direct
  * no-PO invoice lines carry NULL, so they never resolve to a source item. */
 const PURCHASE_INVOICE_LINE_REFERENCE_PREFIX = "purchase-invoice:";
 
@@ -204,7 +209,11 @@ export async function loadBillCostingLines(
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
       message: !rows.length
-        ? "Cannot sync bill: no posted Purchase Invoice journal found. Post the invoice with accounting enabled, then retry."
+        ? noPostedJournalMessage({
+            subject: "bill",
+            journal: "Purchase Invoice",
+            document: "invoice"
+          })
         : "Cannot sync bill: its original posted payables control account is missing. Correct the posting, then retry.",
       metadata: {
         billId: args.billId,
@@ -409,8 +418,11 @@ export async function loadChargeCostingLines(
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
-      message:
-        "Cannot sync card charge: no posted Charge journal found. Post the charge with accounting enabled, then retry.",
+      message: noPostedJournalMessage({
+        subject: "card charge",
+        journal: "Charge",
+        document: "charge"
+      }),
       metadata: { chargeId: args.chargeId }
     });
   }

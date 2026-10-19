@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -5,8 +9,9 @@ import { flash } from "@carbon/auth/session.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { erpPosting } from "~/services/erp";
 import { issueValidator } from "~/services/models";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -95,24 +100,27 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: {
+  const issued = await erpPosting(
+    "issue",
+    { companyId, userId },
+    {
       id: jobOperationId,
       type: "partToOperation",
       itemId,
       materialId,
       jobOperationStepId,
       quantity,
-      adjustmentType,
-      companyId,
-      userId
+      adjustmentType
     }
-  });
+  );
 
-  if (issue.error) {
+  if (issued.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.operations,
-      await flash(request, error(issue.error, "Failed to issue material"))
+      await flash(
+        request,
+        error(issued.error, issued.error.message || "Failed to issue material")
+      )
     );
   }
 

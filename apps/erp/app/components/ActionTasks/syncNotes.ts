@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -47,7 +51,8 @@ export async function syncActionTaskNotes(
       : null;
 
     if (!result?.success) {
-      logger.error(`Failed to sync notes to ${target}`, {
+      logger.error("Failed to sync notes to {target}", {
+        target,
         actionId,
         entityType,
         status: response.status,
@@ -55,7 +60,8 @@ export async function syncActionTaskNotes(
       });
     }
   } catch (e) {
-    logger.error(`Failed to sync notes to ${target}`, {
+    logger.error("Failed to sync notes to {target}", {
+      target,
       actionId,
       entityType,
       error: e

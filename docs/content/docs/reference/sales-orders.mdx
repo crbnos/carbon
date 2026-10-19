@@ -3,9 +3,9 @@ title: Sales orders
 description: "A confirmed customer commitment: what to ship and invoice, tracked line by line."
 ---
 
-A **sales order** is a confirmed commitment to deliver items to a customer. It may begin as a <Term>quote</Term>, or be entered directly; either way it's the document the rest of fulfillment keys off: <Term id="shipment">shipments</Term>, <Term id="invoice">invoices</Term>, and any make-to-order jobs all trace back to its lines.
+A **sales order** is a confirmed commitment to deliver items to a customer. It can be created directly or from a <Term>quote</Term>. <Term id="shipment">Shipments</Term>, <Term id="invoice">invoices</Term>, and make-to-order jobs reference its lines.
 
-The order line is where fulfillment is scored. Each line tracks how much was sold against how much has shipped and how much has been invoiced, and it stays open until both are complete, which is what lets one order be delivered and billed in batches without losing the remainder.
+Each line tracks ordered, shipped, and invoiced quantities independently. It remains open until shipping and invoicing are complete, allowing partial fulfillment and billing.
 
 ## Line fields
 
@@ -63,5 +63,5 @@ Same lock as above, hit from the line editor. Reopen the order to Draft before a
 The convert-lines-to-jobs action found no eligible lines — none of the selected lines is fulfilled by making (Make method). Check each line's method; *Pull from Inventory* and *Purchase to Order* lines never produce jobs.
 
 ### "Failed to insert job"
-Converting a line to a job failed. Usual causes: the item has no active make method, or no valid location is set. Check the item's method status and the order's location, then retry.
+The item has no active make method, or the order has no valid location. Check both values, then retry.
 </AgentContext>

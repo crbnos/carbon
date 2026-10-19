@@ -1,11 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ReactNode } from "react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-// `@carbon/glossary`'s terms.ts evaluates Lingui `msg` macros at module load,
+// `@carbon/content/glossary`'s terms.ts evaluates Lingui `msg` macros at module load,
 // which vitest does not transform, and the `@carbon/react` barrel pulls it in.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
   getTermText: () => "",

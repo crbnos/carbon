@@ -17,6 +17,16 @@ and every file whose name contains `.ee`** (e.g. `ApprovalRuleForm.ee.tsx`). Eve
 else is community-licensed. This is the same model as Twenty CRM (their marker is a
 `/* @license Enterprise */` header; ours is the `packages/ee` package + the `.ee` infix).
 
+Each source file also states its license in a leading SPDX header, so the boundary is
+readable per file: commercial files open with
+`// SPDX-License-Identifier: LicenseRef-Carbon-Commercial`, everything else with
+`// SPDX-License-Identifier: AGPL-3.0-only`. The `spdx-license-header` check
+(`@carbon/checks`) enforces it, and the fixer (`pnpm --filter @carbon/checks
+license-headers`) writes it — the fixer is the source of truth for the full text, so do
+not hand-type it. Location decides the license: a file moved into or out of
+`packages/ee`, or renamed to gain or lose `.ee.`, must have its header swapped — rerun
+the fixer.
+
 ## The bar this pattern hits (be honest about it)
 
 You cannot make a machine refuse to run code its operator has edited. What the pattern
@@ -96,17 +106,19 @@ UI stays `.ee.tsx` in `apps/erp/app/modules/<module>/ui/` (coupled to `~/compone
    `<feature>.server.ts`). Fix `~/` deps: `sanitize` → `@carbon/utils`; redefine any
    `~/utils/query` types locally; keep `trigger()`/notification calls in the ROUTE, not the
    ee function (`@carbon/ee` does not depend on `@carbon/jobs`/`@carbon/notifications`).
+   Moved files change license — rerun `pnpm --filter @carbon/checks license-headers` to
+   swap their AGPL header for the commercial one (same for UI renamed to `.ee.tsx`).
 3. **Embed `requireEntitlement(client, companyId, "X")` at the top of every authoring
    function.** Runtime functions that must degrade use `companyHasFeature` instead.
 4. Move the feature's validators/derived types with it; add the package exports.
 5. Repoint every call site from `~/modules/...` to `@carbon/ee/<feature>` / `.server`.
-   Remove the moved code from the community module + its barrel.
+   Remove the moved code from the community module's `.service.ts` / `.server.ts`.
 6. UI → `.ee.tsx`. Route → keep `requireFeature` for the UX redirect + catch
    `EntitlementError`.
 7. Verify: `pnpm --filter @carbon/ee typecheck`, `pnpm exec turbo run typecheck --filter=erp`,
-   Biome, and if service functions leave `*.service.ts` note the MCP digest changes
-   (`pnpm run generate:mcp`) — moving a function out of a scanned `*.service.ts` removes it
-   as an MCP tool, which is usually correct (an ungated MCP path would bypass the gate).
+   Biome, and if an `@mcp` service function leaves `<module>.server.ts` note the MCP digest
+   changes (`pnpm run generate:mcp`) — moving it out of the router removes it as an MCP
+   tool, which is usually correct (an ungated MCP path would bypass the gate).
 
 ## Rollout status (starter-only → new pattern)
 
@@ -130,7 +142,9 @@ Refactor one at a time; each PR should leave the tree green.
 - ✅ **API keys** — `upsertApiKey`/`deleteApiKey` in `packages/ee/src/api-keys.server.ts`,
   `requireEntitlement("API_KEYS")`; routes gate with `requireFeature`.
 - ✅ **Webhooks** — authoring in `packages/ee/src/webhooks.server.ts`
-  (`requireEntitlement("WEBHOOKS")`); delivery degrades at runtime via `companyHasFeature`.
+  (`requireEntitlement("WEBHOOKS")`, including `revealWebhookSigningSecret` /
+  `rotateWebhookSigningSecret`); delivery degrades at runtime via `companyHasFeature` and
+  signs with the ungated `getWebhookSigningSecret`.
 - ✅ **Two-factor** — the `requireMfa` company policy in `packages/ee/src/two-factor.server.ts`,
   `requireEntitlement("TWO_FACTOR")` scoped to ENABLING only (a downgrade can still disable).
 - ✅ **Forecast** — `upsert/deleteDemandForecasts` + `upsert/deleteDemandProjections` in
@@ -170,12 +184,11 @@ Refactor one at a time; each PR should leave the tree green.
   edge would be a `lib → ee → lib` cycle. (The job-side executors in
   `packages/jobs/src/workflows/` stay in jobs — Inngest-coupled, like backups.)
 - ✅ **MCP** — protocol engine moved to `packages/ee/src/mcp/` (`@carbon/ee/mcp`
-  pure logic; `@carbon/ee/mcp.server` = `server.ts`). `createMcpServer` embeds
+  pure logic; `@carbon/ee/mcp.server` = `server.ts`). `serveMcpRequest` embeds
   `requireEntitlement("MCP")` (route catches `EntitlementError` → 402), replacing
   the former deletable in-route `companyHasFeature`. The dispatch, tool manifest and
   generated `tool-metadata.json` STAY in the app (derive from `~/modules/*`) and are
-  INJECTED as `deps`. Note: `server.ts` is `@ts-nocheck`, so the live endpoint needs a
-  smoke test before merge (typecheck can't cover its body).
+  INJECTED as `deps`.
 - Note (context): Planning was NOT a gated feature — MRP + scheduling are now the
   community `@carbon/planning` package.
 - ⬜ Still on `requirePlan`/`companyHasPlan`, pending an architecture/policy decision
@@ -196,12 +209,12 @@ build does) pull the server file into the client:
    the client barrel transitively reaches `service.ts`. **Fix:** derive those types from
    `@carbon/database` directly (`Database["public"]["Tables"|"Views"][…]["Row"]`), so
    `types.ts` never imports `service.ts`.
-2. **A `.service.ts` importing `@carbon/ee/<feature>.server`.** Module `*.service.ts`
-   files are re-exported through the module barrel that client components import, so they
-   are browser-bundled — importing a `.server` module there reaches the client graph.
-   **Fix:** move that server-only helper into a `*.server.ts` (not barrel-exported) and
-   import it from the route directly. (Routes MAY import `.server` — RR strips it from the
-   client build; `*.service.ts` may NOT.)
+2. **A client file importing a module's `.service.ts` or `.server.ts`.** Both are
+   server-only, so they MAY import `@carbon/ee/<feature>.server`. A component, hook,
+   `ui/`, models, utils or types file that value-imports one pulls that graph into the
+   client. **Fix:** move the helper the component needs into `<module>.utils.ts`. The
+   `no-server-code-in-client` check (`@carbon/checks`) fails the import. (Routes MAY
+   import `.server` — RR strips it from the client build.)
 
 ## Anti-patterns
 

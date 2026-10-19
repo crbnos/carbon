@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -22,8 +26,8 @@ import {
   SupplierLocation
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { supplierShippingValidator } from "~/modules/purchasing";
-import { incoterms } from "~/modules/shared";
+import { supplierShippingValidator } from "~/modules/purchasing/purchasing.models";
+import { incoterms } from "~/modules/shared/shared.models";
 
 type SupplierShippingFormProps = {
   initialValues: z.infer<typeof supplierShippingValidator>;
@@ -102,7 +106,7 @@ const SupplierShippingForm = ({ initialValues }: SupplierShippingFormProps) => {
             <CustomFormFields table="supplierShipping" />
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="max-md:[&>*]:flex-1 max-md:[&>div>*]:flex-1 max-md:[&_button]:h-11">
           <HStack>
             <Submit isDisabled={isDisabled}>
               <Trans>Save</Trans>

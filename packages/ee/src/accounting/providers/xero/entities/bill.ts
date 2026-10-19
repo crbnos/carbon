@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { KyselyTx } from "@carbon/database/client";
 import { assertExchangeRate, toBaseAmount } from "@carbon/utils";
 import { sql } from "kysely";
@@ -9,7 +13,10 @@ import {
   toTransactionCurrencyLines
 } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
-import { JournalEntrySyncError } from "../../../core/posting";
+import {
+  JournalEntrySyncError,
+  noPostedJournalMessage
+} from "../../../core/posting";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -137,7 +144,11 @@ export function buildXeroBillLineItems(args: {
   if (args.costingLines.length === 0) {
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
-      message: `Cannot sync bill ${bill.invoiceId}: no posted Purchase Invoice journal found — the bill's G/L costing comes from its posting journal. Post the invoice (with accounting enabled), then retry.`,
+      message: noPostedJournalMessage({
+        subject: `bill ${bill.invoiceId}`,
+        journal: "Purchase Invoice",
+        document: "invoice"
+      }),
       warning: true,
       metadata: { billId: bill.id }
     });

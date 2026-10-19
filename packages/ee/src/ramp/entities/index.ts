@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 /**
  * Ramp's syncer registry.
  *
@@ -18,6 +22,6 @@ export const rampSyncerRegistry: SyncerRegistry = {
 
 SyncFactory.register(SpendProviderID.RAMP, rampSyncerRegistry);
 
-export { RampBillSyncer, RampPurchaseOrderSyncer };
 export type { RampBillRemote } from "./bill";
 export type { RampPurchaseOrderRemote } from "./purchase-order";
+export { RampBillSyncer, RampPurchaseOrderSyncer };

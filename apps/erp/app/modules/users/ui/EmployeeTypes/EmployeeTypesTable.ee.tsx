@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -8,7 +12,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { EmployeeType } from "~/modules/users";
+import type { EmployeeType } from "~/modules/users/types";
 import { path } from "~/utils/path";
 
 type EmployeeTypesTableProps = {
@@ -34,6 +38,7 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
         ),
 
         meta: {
+          mobile: "P1",
           icon: <LuUsers />
         }
       }
@@ -45,6 +50,7 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.view}
             onClick={() => {
               navigate(
                 `${path.to.employeeAccounts}?filter=employeeTypeId:eq:${row.id}`
@@ -55,6 +61,7 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
             <Trans>View Employees</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "users")}
             onClick={() => {
               navigate(`${path.to.employeeType(row.id)}?${params.toString()}`);
@@ -64,6 +71,7 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
             <Trans>Edit Employee Type</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={row.protected || !permissions.can("delete", "users")}
             onClick={() => {

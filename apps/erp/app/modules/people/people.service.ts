@@ -1,15 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { ServiceContext } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { datetime } from "@carbon/utils";
+import { datetime, searchFilter } from "@carbon/utils";
 import { getDayOfWeek, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
-import type { DataType } from "~/modules/shared";
-import type { Employee } from "~/modules/users";
+import type { DataType } from "~/modules/shared/types";
+import type { Employee } from "~/modules/users/types";
 import { getEmployees } from "~/modules/users/users.service";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   departmentValidator,
@@ -102,7 +107,7 @@ export async function getAttributeCategories(
   let query = client
     .from("userAttributeCategory")
     .select("*, userAttribute(id, name, attributeDataType(id))", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("active", true)
@@ -162,7 +167,7 @@ export async function getDepartments(
   let query = client
     .from("department")
     .select(`*, department(id, name)`, {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -242,7 +247,7 @@ export async function getHolidays(
   let query = client
     .from("holiday")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -312,42 +317,37 @@ export async function getPeople(
       attributeCategories.data.reduce<PersonAttributes>((acc, category) => {
         if (!category.userAttribute || !Array.isArray(category.userAttribute))
           return acc;
-        category.userAttribute.forEach(
-          // @ts-ignore
-          (attribute) => {
-            if (
-              attribute.userAttributeValue &&
-              Array.isArray(attribute.userAttributeValue) &&
-              !Array.isArray(attribute.attributeDataType)
-            ) {
-              const userAttributeId = attribute.id;
-              const userAttributeValue = attribute.userAttributeValue.find(
-                // @ts-ignore
-                (attributeValue) => attributeValue.userId === userId
-              );
-              const value =
-                typeof userAttributeValue?.valueBoolean === "boolean"
-                  ? userAttributeValue.valueBoolean
-                  : userAttributeValue?.valueDate ||
-                    userAttributeValue?.valueNumeric ||
-                    userAttributeValue?.valueText ||
-                    userAttributeValue?.valueUser ||
-                    userAttributeValue?.valueFile;
+        category.userAttribute.forEach((attribute) => {
+          if (
+            attribute.userAttributeValue &&
+            Array.isArray(attribute.userAttributeValue) &&
+            !Array.isArray(attribute.attributeDataType)
+          ) {
+            const userAttributeId = attribute.id;
+            const userAttributeValue = attribute.userAttributeValue.find(
+              (attributeValue) => attributeValue.userId === userId
+            );
+            const value =
+              typeof userAttributeValue?.valueBoolean === "boolean"
+                ? userAttributeValue.valueBoolean
+                : userAttributeValue?.valueDate ||
+                  userAttributeValue?.valueNumeric ||
+                  userAttributeValue?.valueText ||
+                  userAttributeValue?.valueUser ||
+                  userAttributeValue?.valueFile;
 
-              if (value && userAttributeValue?.id) {
-                acc[userAttributeId] = {
-                  userAttributeValueId: userAttributeValue.id,
-                  // @ts-ignore
-                  dataType: attribute.attributeDataType?.id as DataType,
-                  value,
-                  user: !Array.isArray(userAttributeValue.user)
-                    ? userAttributeValue.user
-                    : undefined
-                };
-              }
+            if (value && userAttributeValue?.id) {
+              acc[userAttributeId] = {
+                userAttributeValueId: userAttributeValue.id,
+                dataType: attribute.attributeDataType?.id as DataType,
+                value,
+                user: !Array.isArray(userAttributeValue.user)
+                  ? userAttributeValue.user
+                  : undefined
+              };
             }
           }
-        );
+        });
         return acc;
       }, {});
 
@@ -373,12 +373,12 @@ export async function getContacts(
 ) {
   let query = client
     .from("contact")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.or(
-      `firstName.ilike.%${args.search}%,lastName.ilike.%${args.search}%,email.ilike.%${args.search}%`
+      searchFilter(["firstName", "lastName", "email"], args.search)
     );
   }
 
@@ -416,7 +416,7 @@ export async function getShifts(
   let query = client
     .from("shifts")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -597,6 +597,7 @@ export async function updateAttributeSortOrder(
   return Promise.all(updatePromises);
 }
 
+/** People's job updates go through `updatePersonJob`, which also reschedules. */
 export async function updateEmployeeJob(
   db: Kysely<KyselyDatabase>,
   employeeId: string,
@@ -609,7 +610,7 @@ export async function updateEmployeeJob(
   // One Kysely transaction: the employeeJob update and the employeeShift
   // sync commit or roll back together. Kysely also bypasses RLS, so the
   // sync no longer silently no-ops for users without people_create/
-  // people_delete — the route's people_update check is the auth gate.
+  // people_delete — `updatePersonJob`'s people update gate is the auth gate.
   try {
     // sanitize() turns any absent field into null, and locationId is NOT NULL,
     // so a caller that omits it (the API/MCP tool leaves it optional) would
@@ -773,6 +774,7 @@ export async function upsertHoliday(
   return client.from("holiday").update(sanitize(holiday)).eq("id", holiday.id);
 }
 
+/** Shifts are saved through `people_createShift` / `people_updateShift`. */
 export async function upsertShift(
   client: SupabaseClient<Database>,
   shift:
@@ -783,6 +785,7 @@ export async function upsertShift(
       })
     | (Omit<z.infer<typeof shiftValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -790,9 +793,19 @@ export async function upsertShift(
   if ("createdBy" in shift) {
     return client.from("shift").insert([shift]).select("*").single();
   }
-  return client.from("shift").update(sanitize(shift)).eq("id", shift.id);
+  const { companyId, ...update } = shift;
+  // No row back means the shift is not this company's or the caller may not
+  // update it: RLS filters an UPDATE silently.
+  return client
+    .from("shift")
+    .update(sanitize(update))
+    .eq("id", shift.id)
+    .eq("companyId", companyId)
+    .select("id")
+    .maybeSingle();
 }
 
+/** Clocking in goes through `clockInPerson` / `clockInSelf`. */
 export async function clockIn(
   client: SupabaseClient<Database>,
   args: {
@@ -817,6 +830,7 @@ export async function clockIn(
   });
 }
 
+/** Clocking out goes through `clockOutPerson` / `clockOutSelf`. */
 export async function clockOut(
   client: SupabaseClient<Database>,
   args: {
@@ -836,10 +850,10 @@ export async function clockOut(
     .from("timeCardEntry")
     .update(
       sanitize({
-        clockOut: args.clockOut ?? new Date().toISOString(),
+        clockOut: args.clockOut ?? datetime.timestamp(),
         note: args.note,
         updatedBy: args.updatedBy,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
     )
     .eq("id", open.data.id);
@@ -896,31 +910,29 @@ export async function getOpenClockEntry(
     .maybeSingle();
 }
 
-export async function getRecentTimecards(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("timeCardEntries")
-    .select("*")
-    .eq("companyId", companyId)
-    .order("clockIn", { ascending: false })
-    .limit(100);
-}
-
 export async function getScheduledEmployeesToday(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  const { data } = await client
-    .from("employeeJob")
-    .select(
-      "id, shiftId, shift:shift(id, name, startTime, endTime, sunday, monday, tuesday, wednesday, thursday, friday, saturday)"
-    )
-    .eq("companyId", companyId)
-    .not("shiftId", "is", null);
+  // Deactivation keeps the employeeJob row (and its shift), so the roster is
+  // narrowed to active employees. employeeJob has no FK to employee to embed.
+  const [{ data }, { data: activeEmployees }] = await Promise.all([
+    client
+      .from("employeeJob")
+      .select(
+        "id, shiftId, shift:shift(id, name, startTime, endTime, sunday, monday, tuesday, wednesday, thursday, friday, saturday)"
+      )
+      .eq("companyId", companyId)
+      .not("shiftId", "is", null),
+    client
+      .from("employee")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("active", true)
+  ]);
 
-  if (!data) return [];
+  if (!data || !activeEmployees) return [];
+  const activeIds = new Set(activeEmployees.map((e) => e.id));
 
   const dayNames = [
     "sunday",
@@ -938,7 +950,7 @@ export async function getScheduledEmployeesToday(
 
   return data.filter((ej) => {
     const shift = ej.shift as Record<string, unknown> | null;
-    return shift && shift[dayName] === true;
+    return activeIds.has(ej.id) && shift && shift[dayName] === true;
   });
 }
 
@@ -982,13 +994,11 @@ export async function getTimecardEntries(
 ) {
   let query = client
     .from("timeCardEntries")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
-    query = query.or(
-      `firstName.ilike.%${args.search}%,lastName.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["firstName", "lastName"], args.search));
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -1045,8 +1055,21 @@ export async function updateTimeCardEntry(
         clockOut: args.clockOut,
         note: args.note,
         updatedBy: args.updatedBy,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
     )
     .eq("id", args.entryId);
+}
+/**
+ * A time card helper's refusal ("Already clocked in") carries no database
+ * code; a database error does.
+ */
+export function timeCardError(
+  ctx: ServiceContext,
+  error: { message: string; code?: string },
+  message: string
+) {
+  return "code" in error
+    ? ctx.error("internal", message, error)
+    : ctx.error("rule", error.message);
 }

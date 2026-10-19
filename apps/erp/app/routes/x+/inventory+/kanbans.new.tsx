@@ -1,11 +1,16 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useNavigate, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { useUser } from "~/hooks";
-import { KanbanForm, kanbanValidator, upsertKanban } from "~/modules/inventory";
+import { kanbanValidator } from "~/modules/inventory/inventory.models";
+import { KanbanForm } from "~/modules/inventory/ui";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -16,44 +21,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return null;
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "inventory"
-  });
-
-  const formData = await request.formData();
-
-  const validation = await validator(kanbanValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const createKanban = await upsertKanban(client, {
-    ...d,
-    companyId,
-    createdBy: userId
-  });
-
-  if (createKanban.error) {
-    return data(
-      {},
-      await flash(request, error(createKanban.error, "Failed to insert kanban"))
-    );
-  }
-
-  throw redirect(
-    `${path.to.kanbans}?${getParams(request)}`,
-    await flash(request, success("Kanban created"))
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(kanbanValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id: _, ...kanban } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.inventory.createKanban(kanban);
+  const { pathname, search } = new URL(args.request.url);
+  return respond(args.request, result).redirect(
+    `${path.to.kanbans}?${getParams(args.request)}`,
+    { message: "Kanban created", onError: `${pathname}${search}` }
   );
 }
 
 export default function NewKanbanRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const [searchParams] = useSearchParams();
   const { defaults } = useUser();
   const locationId =
@@ -74,7 +56,7 @@ export default function NewKanbanRoute() {
     <KanbanForm
       initialValues={initialValues}
       locationId={locationId}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

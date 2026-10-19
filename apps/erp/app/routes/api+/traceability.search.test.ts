@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { describe, expect, it, vi } from "vitest";
 import { loader } from "./traceability.search";
@@ -45,7 +49,7 @@ describe("traceability search loader", () => {
     expect(body.entities[0]).not.toHaveProperty("jobReadableId");
     expect(from).not.toHaveBeenCalledWith("job");
     expect(entityQuery.or).toHaveBeenCalledWith(
-      "id.ilike.%TRK%,sourceDocumentReadableId.ilike.%TRK%,readableId.ilike.%TRK%"
+      'id.ilike."%TRK%",sourceDocumentReadableId.ilike."%TRK%",readableId.ilike."%TRK%"'
     );
   });
 });

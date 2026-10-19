@@ -1,17 +1,25 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { upsertDemandProjections } from "@carbon/ee/forecast.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
+import { useCloseRoute } from "@carbon/react";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { demandProjectionValidator } from "~/modules/production/production.models";
 import { getDemandProjections } from "~/modules/production/production.service";
 import DemandProjectionsForm from "~/modules/production/ui/DemandProjection/DemandProjectionForm";
-import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  getOrCreatePeriods
+} from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const WEEKS_TO_PROJECT = 52;
@@ -28,6 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const periods = await getOrCreatePeriods(
+    getDatabaseClient(),
     datetime.today(await getLocationTimeZone(client, locationId, companyId)),
     WEEKS_TO_PROJECT
   );
@@ -51,6 +60,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
+  // Map MRP-written consumed quantities to week indexes (display-only)
+  const consumedValues: Record<number, number> = {};
+  periods.forEach((period, index) => {
+    const row = existingProjections.data?.find((f) => f.periodId === period.id);
+    if (row?.consumedQuantity && row.consumedQuantity > 0) {
+      consumedValues[index] = row.consumedQuantity;
+    }
+  });
+
   const initialValues = {
     itemId,
     locationId,
@@ -59,7 +77,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     periods,
-    initialValues
+    initialValues,
+    consumedValues
   };
 }
 
@@ -134,15 +153,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function EditProjectionRoute() {
-  const { initialValues } = useLoaderData<typeof loader>();
+  const { initialValues, consumedValues } = useLoaderData<typeof loader>();
 
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   return (
     <DemandProjectionsForm
       initialValues={initialValues}
+      consumedValues={consumedValues}
       isEditing
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

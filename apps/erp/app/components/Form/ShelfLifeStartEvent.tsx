@@ -1,17 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
 import { useControlField } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
+import { useLoaderQuery } from "@carbon/query";
 import {
   ChoiceCardGroup,
   FormControl,
   FormHelperText,
   FormLabel,
-  LabelWithHelp,
-  useMount
+  LabelWithHelp
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { LuCalendarArrowDown, LuCalendarArrowUp } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
 import Process, { useProcesses } from "./Process";
 
@@ -126,15 +129,11 @@ export const ShelfLifeStartTiming = ({
 // Returns the processIds referenced by the item's active recipe, or
 // `undefined` while loading. Empty array = item has no recipe operations.
 function useItemRecipeProcessIds(itemId: string | undefined) {
-  const fetcher = useFetcher<{ data: string[]; error: unknown }>();
-
-  useMount(() => {
-    if (itemId) {
-      fetcher.load(path.to.api.itemRecipeProcesses(itemId));
-    }
-  });
+  const fetcher = useLoaderQuery<{ data: string[]; error: unknown }>(
+    itemId ? path.to.api.itemRecipeProcesses(itemId) : null
+  );
 
   if (!itemId) return [] as string[];
-  if (fetcher.state !== "idle" || !fetcher.data) return undefined;
+  if (fetcher.isFetching || !fetcher.data) return undefined;
   return fetcher.data.data ?? [];
 }

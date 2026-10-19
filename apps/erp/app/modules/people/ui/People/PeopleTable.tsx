@@ -1,4 +1,15 @@
-import { Badge, Checkbox, HStack, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Badge,
+  Checkbox,
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -25,8 +36,8 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { DataType } from "~/modules/shared";
-import type { EmployeeType } from "~/modules/users";
+import { DataType } from "~/modules/shared/types";
+import type { EmployeeType } from "~/modules/users/types";
 import { path } from "~/utils/path";
 import type { AttributeCategory, Person } from "../../types";
 
@@ -123,6 +134,7 @@ const PeopleTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuUsers />
           }
         },
@@ -148,6 +160,7 @@ const PeopleTable = memo(
           header: t`Email`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P3",
             icon: <LuMail />
           }
         },
@@ -217,6 +230,7 @@ const PeopleTable = memo(
             return <Badge variant="secondary">{t`Inactive`}</Badge>;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: [
@@ -273,6 +287,7 @@ const PeopleTable = memo(
         ? (row: (typeof data)[number]) => {
             return (
               <MenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
                 onClick={() =>
                   navigate(
                     `${path.to.personDetails(row.id!)}?${params.toString()}`

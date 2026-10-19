@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -9,13 +13,14 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import type { AccountLabelKey, BankCodeLabelKey } from "@carbon/utils";
 import { getBankFieldConfig } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { useFetcher, useNavigate, useParams } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
 import {
   Currency,
@@ -27,7 +32,7 @@ import {
 } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import { usePermissions } from "~/hooks";
-import { customerBankAccountValidator } from "~/modules/sales";
+import { customerBankAccountValidator } from "~/modules/sales/sales.models";
 import { path } from "~/utils/path";
 
 type CustomerBankAccountFormProps = {
@@ -46,7 +51,7 @@ const CustomerBankAccountForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
 
@@ -89,7 +94,7 @@ const CustomerBankAccountForm = ({
             if (type === "modal") {
               onClose?.();
             } else {
-              navigate(-1);
+              closeRoute();
             }
           }
         }}

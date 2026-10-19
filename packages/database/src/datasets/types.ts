@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CalendarDate } from "@internationalized/date";
 import type { PoolClient } from "pg";
 import { maybeOne, one } from "./sql.ts";
@@ -285,6 +289,11 @@ export type ItemSpec = {
   active?: boolean;
   revisionStatus?: "Design" | "Prototype" | "Production" | "Obsolete";
   material?: MaterialClassificationSpec;
+  /**
+   * The bundled thumbnail's file name (no `.svg`) when it is not the
+   * readableId — a service's readableId is its name, which is no file name.
+   */
+  thumbnail?: string;
 };
 
 export type MethodType =
@@ -378,7 +387,8 @@ export type PricingRuleSpec = {
   name: string;
   ruleType: "Discount" | "Markup";
   amountType: "Percentage" | "Fixed";
-  /** Percent (0–100] for Percentage; a per-unit amount for Fixed. */
+  /** Percent (0–100] for Percentage — tier 02 stores it as the fraction the
+   *  pricing engine expects; a per-unit amount for Fixed. */
   amount: number;
   customer?: string;
   customerType?: string;
@@ -404,11 +414,23 @@ export type ConfigurationRuleSpec = {
   code: string;
 };
 
+/** A surcharge one parameter adds to the configured item's price. `value` is
+ *  the list option, or "true" for a boolean; omitted, the amount is per unit
+ *  of a numeric parameter's value. */
+export type ConfigurationPriceSpec = {
+  key: string;
+  value?: string;
+  amount: number;
+};
+
 export type ConfigurationSpec = {
   item: string;
   group: string;
   parameters: ConfigurationParameterSpec[];
   rules: ConfigurationRuleSpec[];
+  /** Seeded as the item's Configuration pricing rule ("<item> Configuration"),
+   *  so quotes and orders of a configured line price the chosen options. */
+  prices?: ConfigurationPriceSpec[];
 };
 
 export type RuleOperator =
@@ -845,12 +867,49 @@ export type BankAccountSpec = {
   isPrimary: boolean;
 };
 
+/**
+ * A customer contract, seeded Active and confirmed. Tier 04 plans its invoice
+ * schedule with `planInvoiceSchedule` through `horizon`; every planned invoice
+ * dated on or before the anchor is `Billed Externally` (so tier 09 has nothing
+ * to journal) and `billedThrough` is the last such row's period end.
+ * Percentages are written as people write them (5 = 5%); the tier divides by 100.
+ */
+export type ContractSpec = {
+  /** Registered in ctx.refs.documents as `con:<key>`. */
+  key: string;
+  name: string;
+  customer: string;
+  startOffset: DayOffset;
+  /** null = open-ended. */
+  termMonths: number | null;
+  renewal: "Renew" | "End";
+  renewalUpliftPercent: number;
+  billingFrequency: "Week" | "Month" | "Quarter" | "Year";
+  billingAlignment: "Anniversary" | "Calendar";
+  billingTiming: "Advance" | "Arrears";
+  lines: {
+    revenueType: "One-time" | "Recurring";
+    /** A Service item of this dataset. */
+    item: string;
+    description: string;
+    quantity: number;
+    rate: number;
+    /** Required for Recurring, omitted for One-time. */
+    rateUnit?: "Day" | "Week" | "Month" | "Quarter" | "Year";
+    discountPercent?: number;
+    startOffset: DayOffset;
+    endOffset?: DayOffset;
+    revenueMethod: "Daily" | "Even Period";
+  }[];
+};
+
 export type SalesData = {
   opportunities: SalesOpportunitySpec[];
   statusOrders: SalesStatusOrderSpec[];
   // Written AFTER the status orders — salesOrder readable ids depend on it.
   releasedOrders: SalesOpportunitySpec[];
   salesReturns: SalesReturnSpec[];
+  contracts: ContractSpec[];
   /** Customers with a portal (externalLink documentType Customer), as the portal form writes it. */
   customerPortals: string[];
   customerBankAccounts: (BankAccountSpec & { customer: string })[];
@@ -1193,7 +1252,33 @@ export type AssemblyStepSpec = {
   componentNodeIds: string[];
   materials?: { item: string; quantity: number }[];
   tools?: { item: string; quantity: number }[];
+  /** Needed when another step names this one in `parent` / `usedIn`. Unique per assembly. */
+  key?: string;
+  /** A sub-assembly header row: names no node ids, materials or tools. */
+  isSubAssembly?: boolean;
+  /** Key of the header this step is a member of. Members sit directly before their header. */
+  parent?: string;
+  /** Headers only: key of the later step that fits this finished sub-assembly. */
+  usedIn?: string;
+  /**
+   * Planner-baked insertion, what the app's order-preserving re-motion would
+   * write: planned per build (the main build and each sub-assembly on its own),
+   * moving the step's parts plus any finished sub-assembly it fits. Absent =
+   * motion "none" (the player fades the parts in).
+   */
+  motion?: AssemblyStepMotionSpec;
+  /** Planner's view direction for the step (the camera's `{ source: "plan" }` hint). */
+  view?: [number, number, number];
+  /** Parts the planner found blocking every insertion: the step fades in, no path is invented. */
+  blockedBy?: string[];
 };
+
+type Vec3Spec = [number, number, number];
+
+/** The `Motion` shapes the planner bakes (`@carbon/viewer` types.ts). */
+export type AssemblyStepMotionSpec =
+  | { type: "linear"; direction: Vec3Spec; distance: number }
+  | { type: "L"; segments: { direction: Vec3Spec; distance: number }[] };
 
 export type AssemblyComponentMappingSpec = {
   geometryHash: string;
@@ -1214,6 +1299,12 @@ export type AssemblySpec = {
   componentCount: number;
   /** 1-based BOP position of the item's "Assembly" operation. */
   operation: number;
+  /**
+   * `assemblyStructureFingerprint` of the steps the baked `motion` / `view` /
+   * `blockedBy` were planned for. The validator fails when the steps' parts or
+   * structure change after baking.
+   */
+  motionsBakedFor?: string;
   steps: AssemblyStepSpec[];
   componentMappings: AssemblyComponentMappingSpec[];
 };
@@ -1280,7 +1371,7 @@ export type NonConformanceTaskStatus =
   | "Completed"
   | "Skipped";
 
-/** Mirrors the `create` edge function's nonConformanceTasks case; In Progress goes to the applying user. */
+/** Mirrors the `create` server function's nonConformanceTasks case; In Progress goes to the applying user. */
 export type NonConformanceActionTaskSpec = {
   action: string;
   status: NonConformanceTaskStatus;
@@ -1358,7 +1449,7 @@ export type NonConformanceSpec = {
   };
   /** In `requiredActionIds` order. */
   actionTasks?: NonConformanceActionTaskSpec[];
-  /** One approval task plus Engineering and Quality reviewers, as the edge function seeds. */
+  /** One approval task plus Engineering and Quality reviewers, as the server function seeds. */
   mrb?: {
     status: NonConformanceTaskStatus;
     dueDateOffset?: DayOffset;
@@ -1907,12 +1998,6 @@ export type TimecardSpec = {
   note?: string;
 };
 
-export type OpenTimecardSpec = {
-  /** UTC "HH:MM:SS" today; no later than the earliest running production event. */
-  clockIn: string;
-  note?: string;
-};
-
 /** Never today: a today row pre-filters the MES schedule to that one work center. */
 export type PeopleAssignmentSpec = {
   dayOffset: DayOffset;
@@ -2029,7 +2114,6 @@ export type OpsData = {
   replacementParts: ReplacementPartSpec[];
   trainings: TrainingSpec[];
   timecards: TimecardSpec[];
-  openTimecard: OpenTimecardSpec;
   peopleAssignments: PeopleAssignmentSpec[];
   peopleAbsences: PeopleAbsenceSpec[];
   suggestions: SuggestionSpec[];
