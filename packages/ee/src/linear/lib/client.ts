@@ -96,7 +96,7 @@ export class LinearClient {
 
   async listIssues(companyId: string, input: string) {
     try {
-      const query = `query SearchIssues($term : String!) { searchIssues(term: $term, first: 5, orderBy: updatedAt) { nodes { id identifier title description state { name type color } url assignee { email } team { id } } } }`;
+      const query = `query SearchIssues($term : String!) { searchIssues(term: $term, first: 5, orderBy: updatedAt) { nodes { id identifier title priority description state { name type color } url assignee { email } team { id } } } }`;
 
       const response = await this.instance.request<{
         data: { searchIssues: { nodes: LinearIssue[] } };
@@ -120,7 +120,7 @@ export class LinearClient {
 
   async getIssueById(companyId: string, issueId: string) {
     try {
-      const query = `query SearchIssues($filter: IssueFilter!) { issues( filter: $filter first: 1 orderBy: updatedAt ) { nodes { id identifier title dueDate description state { name type color } url assignee { email } team { id } } } }`;
+      const query = `query SearchIssues($filter: IssueFilter!) { issues( filter: $filter first: 1 orderBy: updatedAt ) { nodes { id identifier title dueDate priority description state { name type color } url assignee { email } team { id } } } }`;
 
       const response = await this.instance.request<{
         data: { issues: { nodes: LinearIssue[] } };
@@ -193,7 +193,7 @@ export class LinearClient {
       assigneeId?: string | null;
     }
   ) {
-    const query = `mutation IssueCreate($input: IssueCreateInput!) { issueCreate(input: $input) { issue { id identifier title dueDate description state { name type color } url assignee { email } team { id } } } }`;
+    const query = `mutation IssueCreate($input: IssueCreateInput!) { issueCreate(input: $input) { issue { id identifier title dueDate priority description state { name type color } url assignee { email } team { id } } } }`;
 
     const response = await this.instance.request<{
       data: {
@@ -242,6 +242,8 @@ export class LinearClient {
       description?: string;
       assigneeId?: string | null;
       stateId?: string;
+      priority?: number;
+      dueDate?: string | null;
     }
   ) {
     try {
@@ -269,6 +271,7 @@ export class LinearClient {
       return response.data.data.issueUpdate.issue;
     } catch (error) {
       logger.error("Error updating Linear issue", { error });
+      return null;
     }
   }
 
@@ -342,6 +345,30 @@ export class LinearClient {
     } catch (error) {
       logger.error("Error listing Linear attachments", { error });
       return [];
+    }
+  }
+
+  /** Remove the Carbon back-link (an attachment with this URL) from one issue. */
+  async removeIssueLink(companyId: string, issueId: string, url: string) {
+    try {
+      const query = `query IssueAttachments($id: String!, $filter: AttachmentFilter) { issue(id: $id) { attachments(filter: $filter) { nodes { id } } } }`;
+
+      const res = await this.instance.request<{
+        data: { issue: { attachments: { nodes: Array<{ id: string }> } } };
+      }>({
+        method: "POST",
+        headers: await this.getAuthHeaders(companyId),
+        data: {
+          query,
+          variables: { id: issueId, filter: { url: { eq: url } } }
+        }
+      });
+
+      for (const node of res.data.data.issue?.attachments.nodes ?? []) {
+        await this.removeAttachment(companyId, node.id);
+      }
+    } catch (error) {
+      logger.error("Error removing the Linear back-link", { error });
     }
   }
 

@@ -17,6 +17,7 @@ export const LinearIssueSchema = z.object({
   }),
   identifier: z.string(),
   dueDate: z.string().nullish(),
+  priority: z.number().nullish(),
   assignee: z
     .object({
       email: z.string()
