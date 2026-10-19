@@ -28,6 +28,8 @@ import {
   embeddingFunction,
   embeddingQueueFunction,
   eventQueueFunction,
+  issueSyncFunction,
+  issueSyncPushFunction,
   searchFunction,
   syncFunction,
   webhookFunction,
@@ -132,6 +134,8 @@ export const functions = [
   workflowFunction,
   embeddingFunction,
   embeddingQueueFunction,
+  issueSyncFunction,
+  issueSyncPushFunction,
   // Workflows
   workflowMomentFunction,
   workflowRunFunction,

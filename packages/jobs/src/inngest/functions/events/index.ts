@@ -4,6 +4,7 @@
 
 export { auditFunction } from "./audit";
 export { embeddingFunction, embeddingQueueFunction } from "./embedding";
+export { issueSyncFunction, issueSyncPushFunction } from "./issue-sync";
 export { eventQueueFunction } from "./queue";
 export { searchFunction } from "./search";
 export { syncFunction } from "./sync";
