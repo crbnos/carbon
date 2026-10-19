@@ -683,7 +683,7 @@ describe("createRevision", () => {
     expect(result).toEqual({ data: { id: "item-b" }, error: null });
     expect(rpc).toHaveBeenCalledWith("assert_company_access", {
       p_company_id: "c1",
-      p_permission: "parts_create"
+      p_permission: "parts.parts_create"
     });
 
     // The item first (its interceptor creates the rows the updates land on),
@@ -771,9 +771,15 @@ describe("createRevision", () => {
 });
 
 describe("deleteItem", () => {
+  // The caller's supabase client: the item's type, then the gate on its page.
   function gateClient(gate: { error: { message: string } | null }) {
     const rpc = vi.fn().mockResolvedValue({ data: null, ...gate });
-    return { client: { rpc } as never, rpc };
+    const builder = {
+      select: () => builder,
+      in: () => builder,
+      eq: () => Promise.resolve({ data: [{ type: "Part" }], error: null })
+    };
+    return { client: { rpc, from: () => builder } as never, rpc };
   }
 
   it("deletes the item's price breaks and the item in one transaction", async () => {
@@ -785,7 +791,7 @@ describe("deleteItem", () => {
     expect(result).toEqual({ data: null, error: null });
     expect(rpc).toHaveBeenCalledWith("assert_company_access", {
       p_company_id: "c1",
-      p_permission: "parts_delete"
+      p_permission: "parts.parts_delete"
     });
     // A price break restricts the delete of its supplier part, which the item
     // delete cascades to, so the price breaks go first.
@@ -829,15 +835,25 @@ describe("deleteItem", () => {
 });
 
 describe("removeChangeNoticeAffectedItem", () => {
-  // The caller's supabase client: reads the affected row, vouches for the
-  // delete, and removes the affected row at the end.
+  // The caller's supabase client: reads the affected row, the draft items'
+  // types (a Version draft's through its method), vouches for the delete, and
+  // removes the affected row at the end.
   function affectedItemClient(row: Record<string, unknown>) {
     const deleted: string[] = [];
+    const reads: Record<string, unknown> = {
+      item: [{ type: "Part" }],
+      makeMethod: [{ itemId: "item-a" }]
+    };
     const client = {
       rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
       from: (table: string) => {
+        let listed = false;
         const builder = {
           select: () => builder,
+          in: () => {
+            listed = true;
+            return builder;
+          },
           eq: () => builder,
           maybeSingle: () => Promise.resolve({ data: row, error: null }),
           delete: () => {
@@ -845,7 +861,10 @@ describe("removeChangeNoticeAffectedItem", () => {
             return builder;
           },
           then: (onF: (v: unknown) => unknown) =>
-            Promise.resolve({ data: null, error: null }).then(onF)
+            Promise.resolve({
+              data: listed ? (reads[table] ?? []) : null,
+              error: null
+            }).then(onF)
         };
         return builder;
       }

@@ -23,6 +23,7 @@ import {
   fetchAllRecords,
   getCompanyTimeZone
 } from "@carbon/database";
+import { type Action, ITEM_TYPE_PAGES } from "@carbon/database/access";
 import type {
   ExpressionBuilder,
   Kysely,
@@ -295,6 +296,39 @@ async function requireCompanyPermission(
   return { error: gate.error };
 }
 
+/**
+ * The item policies key on the page of each item's type, so a write that
+ * skips RLS asks that page's key for every type the items have: one read of
+ * the types, then one check per page (at most five). A type no page owns
+ * (Fixture) is refused, as its policy refuses it.
+ */
+async function requireItemPagePermission(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemIds: string[],
+  action: Action
+): Promise<{ error: ServiceError | null }> {
+  if (itemIds.length === 0) return { error: null };
+  const items = await client
+    .from("item")
+    .select("type")
+    .in("id", [...new Set(itemIds)])
+    .eq("companyId", companyId);
+  if (items.error) return { error: items.error };
+  const pages = new Set<string>();
+  for (const { type } of items.data) {
+    const page = ITEM_TYPE_PAGES[type];
+    if (!page) return { error: { message: `${type} items cannot be changed` } };
+    pages.add(page);
+  }
+  const checks = await Promise.all(
+    [...pages].map((page) =>
+      requireCompanyPermission(client, companyId, `${page}_${action}`)
+    )
+  );
+  return { error: checks.find((check) => check.error)?.error ?? null };
+}
+
 // What a new revision inherits from the revision it was copied from, beyond the
 // item row and the method: replenishment (batch size, scrap percent, lead time,
 // the preferred supplier and its purchasing unit), each location's reorder
@@ -509,11 +543,18 @@ export async function createRevision(
   }
 
   // The revision is written with Kysely: the item INSERT policy asks for
-  // parts_create in the item's company.
+  // create on the page of the item's type.
+  const page = ITEM_TYPE_PAGES[item.type];
+  if (!page) {
+    return {
+      data: null,
+      error: { message: `${item.type} items cannot have revisions` }
+    };
+  }
   const permitted = await requireCompanyPermission(
     client,
     companyId,
-    "parts_create"
+    `${page}_create`
   );
   if (permitted.error) return { data: null, error: permitted.error };
 
@@ -704,11 +745,12 @@ export async function deleteItem(
   id: string,
   companyId: string
 ): Promise<{ data: null; error: ServiceError | null }> {
-  // The item DELETE policy asks for parts_delete in the item's company.
-  const permitted = await requireCompanyPermission(
+  // The item DELETE policy asks for delete on the page of the item's type.
+  const permitted = await requireItemPagePermission(
     client,
     companyId,
-    "parts_delete"
+    [id],
+    "delete"
   );
   if (permitted.error) return { data: null, error: permitted.error };
 
@@ -7127,11 +7169,21 @@ async function discardChangeNoticeDrafts(
     return { error: null };
   }
 
-  // The item and makeMethod DELETE policies both ask for parts_delete.
-  const permitted = await requireCompanyPermission(
+  // The item and makeMethod DELETE policies both ask for delete on the page
+  // of the item's type; a Version draft is a method of its item.
+  const methods = makeMethodIds.length
+    ? await client
+        .from("makeMethod")
+        .select("itemId")
+        .in("id", makeMethodIds)
+        .eq("companyId", companyId)
+    : { data: [], error: null };
+  if (methods.error) return { error: methods.error };
+  const permitted = await requireItemPagePermission(
     client,
     companyId,
-    "parts_delete"
+    [...itemIds, ...methods.data.map((method) => method.itemId)],
+    "delete"
   );
   if (permitted.error) return permitted;
 
@@ -7361,12 +7413,14 @@ export async function updateChangeNoticeAffectedItemChangeType(
     return { data: { id }, error: null };
   }
 
-  // The current Draft is deleted at the end, which takes parts_delete. Refuse
-  // now rather than after the swap, when the old draft could only be orphaned.
-  const canDiscard = await requireCompanyPermission(
+  // The current Draft is deleted at the end, which takes delete on the page of
+  // its item's type (a draft item has its source's type). Refuse now rather
+  // than after the swap, when the old draft could only be orphaned.
+  const canDiscard = await requireItemPagePermission(
     client,
     companyId,
-    "parts_delete"
+    [affected.data.newItemId ?? affected.data.itemId],
+    "delete"
   );
   if (canDiscard.error) return { data: null, error: canDiscard.error };
 
