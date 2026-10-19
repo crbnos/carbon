@@ -67,7 +67,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return page.data;
+  // The element's Linear and Jira links (issue-sync), for the header dialogs.
+  const links = await client
+    .from("externalIntegrationMapping")
+    .select("integration, metadata")
+    .eq("companyId", companyId)
+    .eq("entityType", "projectElement")
+    .eq("entityId", elementId)
+    .in("integration", ["linear", "jira"]);
+  const linkOf = (integration: string) =>
+    links.data?.find((link) => link.integration === integration)?.metadata ??
+    null;
+
+  return {
+    ...page.data,
+    linearIssue: linkOf("linear"),
+    jiraIssue: linkOf("jira")
+  };
 }
 
 /**

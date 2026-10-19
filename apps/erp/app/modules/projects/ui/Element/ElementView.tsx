@@ -28,9 +28,12 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigate, useSearchParams } from "react-router";
+import { JiraIssueDialog } from "~/components/ActionTasks/Jira/IssueDialog";
+import { LinearIssueDialog } from "~/components/ActionTasks/Linear/IssueDialog";
 import { AuditLogFeed } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useIntegrations } from "~/hooks/useIntegrations";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useResolved } from "~/hooks/useResolved";
 import { PROJECT_SHORTCUTS } from "~/shortcuts";
@@ -71,6 +74,9 @@ type ElementViewProps = ProjectElementPage & {
   milestones: ProjectMilestone[];
   /** The open change request (`?cr=`), when the page shows one. */
   changeRequest?: { status: string } | null;
+  /** The element's Linear and Jira links (`externalIntegrationMapping.metadata`). */
+  linearIssue?: unknown;
+  jiraIssue?: unknown;
 };
 
 /**
@@ -100,10 +106,13 @@ export function ElementView({
   states,
   labels,
   milestones,
-  changeRequest
+  changeRequest,
+  linearIssue,
+  jiraIssue
 }: ElementViewProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const integrations = useIntegrations();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const changeRequestId = useActiveChangeRequestId();
@@ -271,6 +280,20 @@ export function ElementView({
         </nav>
         <div className="flex shrink-0 items-center gap-2">
           <Copy text={element.readableId} />
+          {canUpdate && integrations.has("linear") && (
+            <LinearIssueDialog
+              entityType="projectElement"
+              taskId={element.id}
+              linkedIssue={linearIssue}
+            />
+          )}
+          {canUpdate && integrations.has("jira") && (
+            <JiraIssueDialog
+              entityType="projectElement"
+              taskId={element.id}
+              linkedIssue={jiraIssue}
+            />
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
