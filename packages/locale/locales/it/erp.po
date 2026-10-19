@@ -17409,6 +17409,10 @@ msgstr "Normale"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Non è una tabella ma un saldo della contabilità generale: il costo si accumula man mano che i materiali dell'ordine di produzione vengono emessi e si azzera quando l'ordine viene ricevuto in magazzino."
 
+#. placeholder {0}: refused.reason
+msgid "Not applied: {0}"
+msgstr ""
+
 msgid "Not certified"
 msgstr "Non certificato"
 

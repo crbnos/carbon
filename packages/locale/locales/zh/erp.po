@@ -17409,6 +17409,10 @@ msgstr "正常"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "不是表，而是总账余额：成本随着工单物料的领料而累积，工单收到库存时清空。"
 
+#. placeholder {0}: refused.reason
+msgid "Not applied: {0}"
+msgstr ""
+
 msgid "Not certified"
 msgstr "未认证"
 

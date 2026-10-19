@@ -17409,6 +17409,10 @@ msgstr "सामान्य"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "एक तालिका नहीं बल्कि एक सामान्य खाता बही शेष: लागत जमा होती है जब जॉब सामग्री जारी की जाती है और साफ़ होती है जब जॉब स्टॉक में प्राप्त होता है।"
 
+#. placeholder {0}: refused.reason
+msgid "Not applied: {0}"
+msgstr ""
+
 msgid "Not certified"
 msgstr "प्रमाणित नहीं"
 

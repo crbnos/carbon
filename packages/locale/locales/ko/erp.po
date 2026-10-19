@@ -17409,6 +17409,10 @@ msgstr "일반"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "표가 아니라 총계정원장 잔액입니다: 작업 지시 자재가 지급될 때 원가가 누적되고 작업 지시가 재고로 입고될 때 원가가 소거됩니다."
 
+#. placeholder {0}: refused.reason
+msgid "Not applied: {0}"
+msgstr ""
+
 msgid "Not certified"
 msgstr "인증되지 않음"
 

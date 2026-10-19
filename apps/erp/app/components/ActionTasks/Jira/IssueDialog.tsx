@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { SyncedEntityType } from "@carbon/ee/issue-sync";
+import { LinkSyncSchema, type SyncedEntityType } from "@carbon/ee/issue-sync";
 import { JiraIssueMappingSchema } from "@carbon/ee/jira";
 import { useRevalidator } from "@carbon/query";
 import {
@@ -25,7 +25,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuExternalLink } from "react-icons/lu";
+import { LuExternalLink, LuTriangleAlert } from "react-icons/lu";
 import { PiLinkBreak } from "react-icons/pi";
 import { Link } from "react-router";
 import { JiraIcon, JiraIssueStatusBadge } from "~/components/Icons";
@@ -53,6 +53,10 @@ export const JiraIssueDialog = ({ entityType, taskId, linkedIssue }: Props) => {
   });
 
   const { data: linked } = JiraIssueMappingSchema.safeParse(linkedIssue);
+  // An inbound change a lock refused (the link's sync snapshot)
+  const refused =
+    LinkSyncSchema.safeParse((linkedIssue as { sync?: unknown } | null)?.sync)
+      .data?.refused ?? null;
   const fetcher = useAsyncFetcher();
 
   const onUnlink = async () => {
@@ -82,6 +86,9 @@ export const JiraIssueDialog = ({ entityType, taskId, linkedIssue }: Props) => {
             aria-label={t`Update Jira issue`}
           >
             {linked.key}
+            {refused && (
+              <LuTriangleAlert className="size-3.5 text-destructive" />
+            )}
           </Button>
         ) : (
           <IconButton
@@ -165,6 +172,11 @@ export const JiraIssueDialog = ({ entityType, taskId, linkedIssue }: Props) => {
                         <Trans>Unlink</Trans>
                       </Button>
                     </div>
+                    {refused && (
+                      <p className="mt-2 text-sm text-destructive">
+                        <Trans>Not applied: {refused.reason}</Trans>
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
