@@ -3929,3 +3929,13 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** A request a timer or event sends on its own (not one the user started) must not be able to fail into a boundary: skip it while `navigator.onLine` is false and retry on `online`. Both error boundaries treat `isNetworkError` as a lost connection and revalidate when the connection or the tab comes back; a successful revalidation clears `state.errors`.
 
 **Applies to:** every `useFetcher` used from a layout or provider, every background timer that submits or loads, `packages/react/src/ErrorBoundary/`.
+
+## A field edited in a plain textarea must not read its text as Markdown
+
+**Context:** MCP rich-text inputs (notes, work instructions) are read as Markdown through `toTiptapDoc` / `markdownToTiptap`. Contract notes share that input, but the app edits them in a plain `TextArea` (`ContractDetailsForm`, `ContractProperties`) and shows the saved document with `tiptapToText`.
+
+**Problem:** `tiptapToText` drops what Markdown turned into structure. "1. Ship" became an ordered list and read back as "Ship"; "a*b*c" read back as "abc". The textarea showed the stripped text at once, and the next save stored it.
+
+**Rule:** A rich-text field whose UI is a plain textarea read back with `tiptapToText` stores text as typed: `optionalPlainTextDoc` / `textToTiptap`, not `optionalTiptapDoc` / `markdownToTiptap`. Markdown is for fields a rich editor shows, where the formatting survives.
+
+**Applies to:** `apps/erp/app/modules/shared/shared.models.ts` (`toTiptapDoc`, `optionalTiptapDoc`, `optionalPlainTextDoc`), contract notes (`customerContractValidator`, `setContractTerm`), any new textarea over a `json` column.

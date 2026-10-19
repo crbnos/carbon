@@ -25,6 +25,7 @@ import {
   methodOperationOrders,
   methodType,
   operationTypes,
+  optionalPlainTextDoc,
   optionalTiptapDoc,
   standardFactorType,
   taxExemptionReasons
@@ -1110,8 +1111,8 @@ export const salesRfqValidator = z.object({
   customerId: z.string().min(1, { message: "Customer is required" }),
   customerReference: zfd.text(z.string().optional()),
   expirationDate: zfd.text(z.string().optional()),
-  externalNotes: zfd.text(z.string().optional()),
-  internalNotes: zfd.text(z.string().optional()),
+  externalNotes: optionalTiptapDoc,
+  internalNotes: optionalTiptapDoc,
   locationId: zfd.text(z.string().optional()),
   rfqDate: z.string().min(1, { message: "Order Date is required" }),
   status: z.enum(salesRFQStatusType).optional(),
@@ -1845,7 +1846,7 @@ export const customerContractValidator = z
     paymentTermId: zfd.text(z.string().optional()),
     currencyCode: z.string().min(1, { message: "Currency is required" }),
     exchangeRate: zfd.numeric(z.number().optional()),
-    notes: optionalTiptapDoc
+    notes: optionalPlainTextDoc
   })
   .refine((data) => (data.duration === "custom" ? !!data.endDate : true), {
     message: "End date is required",

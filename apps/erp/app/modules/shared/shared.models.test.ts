@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { tiptapToText } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import {
   normalizeOperationSourceIds,
+  optionalPlainTextDoc,
   optionalTiptapDoc,
   toTiptapDoc
 } from "./shared.models";
@@ -24,12 +26,56 @@ describe("toTiptapDoc", () => {
     expect(toTiptapDoc("hi")).toEqual(doc);
   });
 
-  it("keeps line breaks as paragraphs", () => {
+  it("keeps a line break inside the paragraph, as Markdown does", () => {
     expect(toTiptapDoc("a\nb")).toEqual({
       type: "doc",
       content: [
-        { type: "paragraph", content: [{ type: "text", text: "a" }] },
-        { type: "paragraph", content: [{ type: "text", text: "b" }] }
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "a" },
+            { type: "hardBreak" },
+            { type: "text", text: "b" }
+          ]
+        }
+      ]
+    });
+  });
+
+  it("reads text as Markdown", () => {
+    expect(toTiptapDoc("## Setup\n\n- [Spec](https://x.test)")).toEqual({
+      type: "doc",
+      content: [
+        {
+          type: "heading",
+          attrs: { level: 2 },
+          content: [{ type: "text", text: "Setup" }]
+        },
+        {
+          type: "bulletList",
+          content: [
+            {
+              type: "listItem",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [
+                    {
+                      type: "text",
+                      text: "Spec",
+                      marks: [
+                        {
+                          type: "link",
+                          attrs: { href: "https://x.test", title: null }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
       ]
     });
   });
@@ -82,6 +128,19 @@ describe("optionalTiptapDoc", () => {
     expect(optionalTiptapDoc.safeParse(42).success).toBe(false);
     expect(optionalTiptapDoc.safeParse(["x"]).success).toBe(false);
     expect(optionalTiptapDoc.safeParse(null).success).toBe(false);
+  });
+});
+
+describe("optionalPlainTextDoc", () => {
+  // Contract notes are a textarea read back with `tiptapToText`: a Markdown
+  // list there came back without its numbers, and the next save kept that.
+  it("stores text as typed, so it reads back unchanged", () => {
+    const text = "1. Ship\n2. Install a*b*c";
+    expect(tiptapToText(optionalPlainTextDoc.parse(text))).toBe(text);
+  });
+
+  it("still accepts a document object", () => {
+    expect(optionalPlainTextDoc.parse(doc)).toEqual(doc);
   });
 });
 

@@ -119,6 +119,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { Signals } from "@carbon/onboarding";
 import { detectImplementationSignals } from "@carbon/onboarding/server";
 import type { PrinterRoute } from "@carbon/printing";
+import { markdownToTiptap } from "@carbon/tiptap/markdown";
 import type { SalesPostingAccount } from "@carbon/utils";
 import {
   assertBalanced,
@@ -138,8 +139,7 @@ import {
   resolveTrackedEntityBins,
   round,
   settleQuantity,
-  type TrackedEntityBin,
-  textToTiptap
+  type TrackedEntityBin
 } from "@carbon/utils";
 import {
   type CalendarDate,
@@ -184,7 +184,7 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
-import type { assignableTables } from "./shared.models";
+import type { assignableTables, NoteField, NoteTable } from "./shared.models";
 import type { ItemModelUpload } from "./types";
 
 const logger = getLogger("erp", "shared");
@@ -814,16 +814,47 @@ export async function assign(
 }
 
 /**
- * The stored work instruction for plain text. Empty text is `{}`, as the
- * editor stores it: the column is NOT NULL, so `null` refused every clear.
+ * Replaces one notes field of a record, as the caller: row-level security
+ * decides what they may change. Markdown text becomes the editor's document;
+ * empty text clears it to `{}`, as the editor does.
  */
-export function workInstructionFromText(text: string) {
-  return text.trim() ? textToTiptap(text) : {};
+export async function setRecordNotes(
+  client: SupabaseClient<Database>,
+  args: {
+    table: NoteTable;
+    id: string;
+    field: NoteField;
+    text: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { table, id, field, text, companyId, userId } = args;
+  // Every notes table has `id`, `companyId` and the audit columns; one stands
+  // in for the union, and `noteFields` pins the field to a column of the table.
+  return client
+    .from(table as "job")
+    .update({
+      [field]: text.trim() ? markdownToTiptap(text) : {},
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    } as never)
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id");
 }
 
 /**
- * Replaces one operation's work instruction, as the caller. The text becomes
- * the editor's document (`textToTiptap`); empty text clears it. An id the
+ * The stored work instruction for Markdown text. Empty text is `{}`, as the
+ * editor stores it: the column is NOT NULL, so `null` refused every clear.
+ */
+export function workInstructionFromText(text: string) {
+  return text.trim() ? markdownToTiptap(text) : {};
+}
+
+/**
+ * Replaces one operation's work instruction, as the caller. The text is
+ * Markdown, stored as the editor's document; empty text clears it. An id the
  * caller cannot see, or of another company, is `notFound`.
  */
 export async function setOperationWorkInstruction(

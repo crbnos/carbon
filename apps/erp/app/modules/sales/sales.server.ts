@@ -47,6 +47,7 @@ import {
   getCompanySettings,
   getNextSequence as getNextSequenceNumber
 } from "~/modules/settings/settings.service";
+import { optionalTiptapDoc } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
@@ -3364,8 +3365,8 @@ export const updateQuoteOperation = defineServiceFn({
  * the line's price are unchanged.
  *
  * @param id - The quote operation's id.
- * @param text - The work instruction as plain text: each line is a paragraph,
- *   `**text**` is bold. Empty text clears it.
+ * @param text - The work instruction as Markdown: headings, **bold**,
+ *   _italic_, lists, links, quotes and code. Empty text clears it.
  *
  * @mcp
  */
@@ -3710,6 +3711,8 @@ export const setContractTerm = defineServiceFn({
       return ctx.error("notFound", "Contract not found");
     }
     const contract = current.data;
+    // Notes are a plain textarea read back with `tiptapToText`, so they are
+    // stored as typed: Markdown would not survive the round trip.
     const notesDoc = value ? textToTiptap(value) : null;
 
     if (contract.status !== "Draft") {
@@ -8642,8 +8645,8 @@ export const createSalesRFQ = defineServiceFn({
     customerId: z.string().min(1),
     customerReference: z.string().optional(),
     expirationDate: z.string().optional(),
-    externalNotes: z.string().optional(),
-    internalNotes: z.string().optional(),
+    externalNotes: optionalTiptapDoc,
+    internalNotes: optionalTiptapDoc,
     locationId: z.string().optional(),
     rfqDate: z.string().min(1),
     status: z.enum(["Draft", "Ready for Quote", "Quoted", "Closed"]).optional(),
@@ -8684,8 +8687,8 @@ export const updateSalesRFQ = defineServiceFn({
       customerId: z.string().min(1),
       customerReference: z.string().optional(),
       expirationDate: z.string().optional(),
-      externalNotes: z.string().optional(),
-      internalNotes: z.string().optional(),
+      externalNotes: optionalTiptapDoc,
+      internalNotes: optionalTiptapDoc,
       locationId: z.string().optional(),
       rfqDate: z.string().min(1),
       status: z

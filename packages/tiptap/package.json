@@ -52,7 +52,8 @@
     "vitest": "catalog:"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./markdown": "./src/markdown.ts"
   },
   "peerDependencies": {
     "@internationalized/date": "catalog:",

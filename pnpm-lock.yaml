@@ -756,6 +756,9 @@ importers:
       '@carbon/stripe':
         specifier: workspace:*
         version: link:../../packages/stripe
+      '@carbon/tiptap':
+        specifier: workspace:*
+        version: link:../../packages/tiptap
       '@carbon/utils':
         specifier: workspace:*
         version: link:../../packages/utils

@@ -2,12 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import type {
   BuyPriceBreak,
   CurrencyRate,
   SupplierPriceBreak,
   SupplierPriceMap
 } from "@carbon/database/supplier-part-price";
+import { markdownToTiptap } from "@carbon/tiptap/markdown";
 import { textToTiptap } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -227,8 +229,9 @@ export const oAuthCallbackSchema = z.object({
 
 /**
  * Coerces whatever a caller sent for a rich-text column into a tiptap document
- * object. Accepts plain text, a JSON-encoded document (a form post), or the
- * document itself (an MCP / API JSON body).
+ * object. Accepts Markdown text, a JSON-encoded document (a form post), or the
+ * document itself (an MCP / API JSON body). `read` turns text into a document:
+ * Markdown by default, `textToTiptap` for text stored as typed.
  *
  * Rich-text columns (`internalNotes`, `externalNotes`, step descriptions) are
  * `json`, and they MUST hold an object. A JSON string scalar stored there is
@@ -242,7 +245,10 @@ export const oAuthCallbackSchema = z.object({
  * Returns `any`: the doc is consumed both as a DB Json value and as editor
  * JSONContent, and a narrower type breaks one of the two call sites.
  */
-export function toTiptapDoc(value: unknown): any {
+export function toTiptapDoc(
+  value: unknown,
+  read: (text: string) => object = markdownToTiptap
+): any {
   if (typeof value === "string") {
     let parsed: unknown = value;
     try {
@@ -253,13 +259,13 @@ export function toTiptapDoc(value: unknown): any {
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       return parsed;
     }
-    // Anything else the caller typed is literal text — including text that
-    // happens to parse as JSON (`"quoted"`, `123`, `[1,2]`). Wrap the ORIGINAL
-    // value so no characters are lost to the parse.
-    return textToTiptap(value);
+    // Anything else the caller typed is text — including text that happens
+    // to parse as JSON (`"quoted"`, `123`, `[1,2]`). Read the ORIGINAL value
+    // so no characters are lost to the parse.
+    return read(value);
   }
   if (value && typeof value === "object" && !Array.isArray(value)) return value;
-  return textToTiptap(String(value));
+  return read(String(value));
 }
 
 /**
@@ -269,13 +275,26 @@ export function toTiptapDoc(value: unknown): any {
  * INPUT schema) tells a caller both shapes are accepted, instead of the bare
  * `{}` a `z.any()` produced.
  */
-export const optionalTiptapDoc = z
-  .union([z.string(), z.record(z.string(), z.unknown())])
-  .transform((value): any => (value === "" ? undefined : toTiptapDoc(value)))
-  // `.optional()` LAST so the inferred key is optional (`notes?:`) — placing it
-  // before the transform makes zod infer a required key and every caller that
-  // omits `notes` stops compiling.
-  .optional();
+const tiptapDocInput = (read?: (text: string) => object) =>
+  z
+    .union([z.string(), z.record(z.string(), z.unknown())])
+    .transform((value): any =>
+      value === "" ? undefined : toTiptapDoc(value, read)
+    )
+    // `.optional()` LAST so the inferred key is optional (`notes?:`) — placing
+    // it before the transform makes zod infer a required key and every caller
+    // that omits `notes` stops compiling.
+    .optional();
+
+/** Text read as Markdown. */
+export const optionalTiptapDoc = tiptapDocInput();
+
+/**
+ * Text stored as typed, for a field edited in a plain textarea that reads it
+ * back with `tiptapToText`: Markdown markers would not survive that round trip
+ * (`1. Ship` would come back as `Ship`).
+ */
+export const optionalPlainTextDoc = tiptapDocInput(textToTiptap);
 
 export const operationStepValidator = z
   .object({
@@ -464,6 +483,48 @@ export type SupplierPartPricing = {
   supplierUnitPrice: number | null;
   currency: CurrencyRate;
 };
+
+export type NoteField = "internalNotes" | "externalNotes" | "notes";
+type PublicTables = Database["public"]["Tables"];
+
+/**
+ * The notes fields a person edits in the app, per table: what `setNotes` may
+ * set. Each one is a column of its table (checked below).
+ */
+export const noteFields = {
+  salesRfq: ["internalNotes", "externalNotes"],
+  salesRfqLine: ["internalNotes", "externalNotes"],
+  quote: ["internalNotes", "externalNotes"],
+  quoteLine: ["internalNotes", "externalNotes"],
+  salesOrder: ["internalNotes", "externalNotes"],
+  salesOrderLine: ["internalNotes", "externalNotes"],
+  salesInvoice: ["internalNotes", "externalNotes"],
+  salesInvoiceLine: ["internalNotes", "externalNotes"],
+  purchasingRfq: ["internalNotes"],
+  purchasingRfqLine: ["internalNotes", "externalNotes"],
+  supplierQuote: ["internalNotes", "externalNotes"],
+  supplierQuoteLine: ["internalNotes", "externalNotes"],
+  purchaseOrder: ["internalNotes", "externalNotes"],
+  purchaseOrderLine: ["internalNotes", "externalNotes"],
+  purchaseInvoice: ["internalNotes"],
+  purchaseInvoiceLine: ["internalNotes"],
+  receipt: ["internalNotes"],
+  shipment: ["internalNotes", "externalNotes"],
+  job: ["notes"],
+  item: ["notes"],
+  fixedAsset: ["notes"],
+  pickingList: ["notes"],
+  stockTransfer: ["notes"]
+} as const satisfies {
+  readonly [T in keyof PublicTables]?: readonly (keyof PublicTables[T]["Row"] &
+    NoteField)[];
+};
+
+export type NoteTable = keyof typeof noteFields;
+export const noteTables = Object.keys(noteFields) as [
+  NoteTable,
+  ...NoteTable[]
+];
 
 /** The tables with an `assignee` column: what `assignRecord` may assign. */
 export const assignableTables = [

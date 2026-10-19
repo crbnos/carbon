@@ -2574,8 +2574,8 @@ export const updateJobOperation = defineServiceFn({
  * the job's editor is.
  *
  * @param id - The job operation's id.
- * @param text - The work instruction as plain text: each line is a paragraph,
- *   `**text**` is bold. Empty text clears it.
+ * @param text - The work instruction as Markdown: headings, **bold**,
+ *   _italic_, lists, links, quotes and code. Empty text clears it.
  *
  * @mcp
  */
