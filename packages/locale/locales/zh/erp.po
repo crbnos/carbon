@@ -17411,7 +17411,7 @@ msgstr "不是表，而是总账余额：成本随着工单物料的领料而累
 
 #. placeholder {0}: refused.reason
 msgid "Not applied: {0}"
-msgstr ""
+msgstr "未应用：{0}"
 
 msgid "Not certified"
 msgstr "未认证"

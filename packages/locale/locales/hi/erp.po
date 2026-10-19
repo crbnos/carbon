@@ -17411,7 +17411,7 @@ msgstr "एक तालिका नहीं बल्कि एक साम�
 
 #. placeholder {0}: refused.reason
 msgid "Not applied: {0}"
-msgstr ""
+msgstr "लागू नहीं किया गया: {0}"
 
 msgid "Not certified"
 msgstr "प्रमाणित नहीं"

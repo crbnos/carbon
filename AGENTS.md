@@ -138,8 +138,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Docs content, glossary, in-app agent knowledge base | `.claude/rules/agent-knowledge-base.md` + `docs/content/AGENTS.md` |
 | **Integrations** | |
 | Ramp integration (charges, accounting-provider sync) | `.claude/rules/ramp-integration.md` |
-| Jira integration | `.claude/rules/jira-integration.md` |
-| Linear integration | `.claude/rules/linear-integration.md` |
+| Jira integration | `.claude/rules/jira-integration.md` + `.claude/rules/issue-sync.md` |
+| Linear integration | `.claude/rules/linear-integration.md` + `.claude/rules/issue-sync.md` |
 | Xero API / webhooks | `.claude/rules/xero-api-contact-structure.md` + `.claude/rules/xero-webhooks.md` |
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |
 | Client cache (`cachedClientLoader`, `useLoaderQuery`, `useAction`) | `.claude/rules/clientAction-patterns.md` + `packages/query/AGENTS.md` |

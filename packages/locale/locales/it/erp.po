@@ -17411,7 +17411,7 @@ msgstr "Non è una tabella ma un saldo della contabilità generale: il costo si 
 
 #. placeholder {0}: refused.reason
 msgid "Not applied: {0}"
-msgstr ""
+msgstr "Non applicato: {0}"
 
 msgid "Not certified"
 msgstr "Non certificato"

@@ -17411,7 +17411,7 @@ msgstr "No es una tabla, sino un saldo del mayor general: el costo se acumula cu
 
 #. placeholder {0}: refused.reason
 msgid "Not applied: {0}"
-msgstr ""
+msgstr "No aplicado: {0}"
 
 msgid "Not certified"
 msgstr "No certificado"

@@ -17411,7 +17411,7 @@ msgstr "To nie jest tabela, lecz saldo konta głównego: koszt gromadzi się gdy
 
 #. placeholder {0}: refused.reason
 msgid "Not applied: {0}"
-msgstr ""
+msgstr "Nie zastosowano: {0}"
 
 msgid "Not certified"
 msgstr "Nie certyfikowany"

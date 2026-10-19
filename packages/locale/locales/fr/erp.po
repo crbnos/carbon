@@ -17411,7 +17411,7 @@ msgstr "Pas une table mais un solde du grand livre : le coût s'accumule à mesu
 
 #. placeholder {0}: refused.reason
 msgid "Not applied: {0}"
-msgstr ""
+msgstr "Non appliqué : {0}"
 
 msgid "Not certified"
 msgstr "Non certifié"

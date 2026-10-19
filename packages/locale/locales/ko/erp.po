@@ -17411,7 +17411,7 @@ msgstr "표가 아니라 총계정원장 잔액입니다: 작업 지시 자재�
 
 #. placeholder {0}: refused.reason
 msgid "Not applied: {0}"
-msgstr ""
+msgstr "적용되지 않음: {0}"
 
 msgid "Not certified"
 msgstr "인증되지 않음"

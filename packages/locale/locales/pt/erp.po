@@ -17411,7 +17411,7 @@ msgstr "Não é uma tabela, mas um saldo da razão: o custo se acumula conforme 
 
 #. placeholder {0}: refused.reason
 msgid "Not applied: {0}"
-msgstr ""
+msgstr "Não aplicado: {0}"
 
 msgid "Not certified"
 msgstr "Não certificado"

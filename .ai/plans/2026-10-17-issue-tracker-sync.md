@@ -16,18 +16,18 @@
 - [x] Task 6: Phase 0 gate and commit
 
 **Phase 1 — sync engine for action tasks (PR 2)**
-- [ ] Task 7: Migration — add `ISSUE_SYNC` to the handler type CHECK
-- [ ] Task 8: Event system — suppress `ISSUE_SYNC` during sync, attach `projectElement`
-- [ ] Task 9: Add `ISSUE_SYNC` to the queue and the event types
-- [ ] Task 10: Create the pure `issue-sync` core (types, registry, maps, diff, locks)
-- [ ] Task 11: Extend the Linear and Jira clients
-- [ ] Task 12: Create `ensureIssueSyncSubscriptions` and the install hooks
-- [ ] Task 13: Create the server engine (`pushRecords`, `applyIssue`, `writeLink`)
-- [ ] Task 14: Create the `issue-sync` and `issue-sync-push` Inngest functions
-- [ ] Task 15: Rewrite the inbound jobs on `applyIssue`; accept remote deletes
-- [ ] Task 16: Move the link and create routes onto the engine
-- [ ] Task 17: Remove the old outbound path
-- [ ] Task 18: Show the refusal in the issue dialogs
+- [x] Task 7: Migration — add `ISSUE_SYNC` to the handler type CHECK
+- [x] Task 8: Event system — suppress `ISSUE_SYNC` during sync, attach `projectElement`
+- [x] Task 9: Add `ISSUE_SYNC` to the queue and the event types
+- [x] Task 10: Create the pure `issue-sync` core (types, registry, maps, diff, locks)
+- [x] Task 11: Extend the Linear and Jira clients
+- [x] Task 12: Create `ensureIssueSyncSubscriptions` and the install hooks
+- [x] Task 13: Create the server engine (`pushRecords`, `applyIssue`, `writeLink`)
+- [x] Task 14: Create the `issue-sync` and `issue-sync-push` Inngest functions
+- [x] Task 15: Rewrite the inbound jobs on `applyIssue`; accept remote deletes
+- [x] Task 16: Move the link and create routes onto the engine
+- [x] Task 17: Remove the old outbound path
+- [x] Task 18: Show the refusal in the issue dialogs
 - [ ] Task 19: Phase 1 docs, gate and commit
 
 **Phase 2 — project elements (PR 3)**

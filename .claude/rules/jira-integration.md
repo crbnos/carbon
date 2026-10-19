@@ -3,15 +3,15 @@ paths:
   - packages/ee/src/jira/**
   - packages/jobs/src/inngest/functions/integrations/jira.ts
   - apps/erp/app/routes/api+/integrations.jira.*.ts
-  - apps/erp/app/modules/quality/ui/Issue/Jira/**
+  - apps/erp/app/components/ActionTasks/Jira/**
 ---
 
 # Jira Integration
 
-Two-way sync between Carbon Quality action tasks (`nonConformanceActionTask`) and
-Jira Cloud issues, via the Atlassian REST API v3 + OAuth 2.0 (3LO). Sibling of the
-Linear integration (`linear-integration.md`); they share the
-`externalIntegrationMapping` table and the Quality Issue UI.
+The Jira Cloud client (Atlassian REST API v3 + OAuth 2.0 (3LO)), config and webhook.
+Sibling of the Linear integration (`linear-integration.md`). The two-way sync of a
+record and its issue (what syncs, the snapshot, the push, locks) is the shared engine
+in `issue-sync.md`.
 
 ## Package (`@carbon/ee/jira` + `@carbon/ee/jira.server`)
 
@@ -33,11 +33,13 @@ Code lives in `packages/ee/src/jira/`. Two export subpaths (see `packages/ee/pac
   refreshes the access token when within a 5-min expiry buffer and persists the new
   credentials. Methods: `searchIssues`, `getIssue`, `createIssue`, `updateIssue`,
   `getTransitions`/`transitionIssue`, `createRemoteLink`/`getRemoteLinks`/`deleteRemoteLink`,
-  `listProjects`, `getIssueTypes`, `listProjectUsers`, `findUserByEmail`, `healthcheck`.
+  `listProjects`, `getIssueTypes`, `listProjectUsers`, `findUserByEmail`,
+  `listPriorities`, `healthcheck`. `updateIssue` (summary, description, assignee,
+  priority, duedate) returns whether it succeeded.
   Also module-level OAuth helpers `exchangeCodeForTokens`, `refreshAccessToken`,
   `getAccessibleResources` (used to resolve `cloudId`).
 - `lib/service.ts` — DB logic: `getJiraIntegration`, `updateJiraCredentials`,
-  `linkActionToJiraIssue`, `unlinkActionFromJiraIssue`, `getJiraIssueFromExternalId`,
+  `unlinkActionFromJiraIssue`, `getJiraIssueFromExternalId`,
   `updateJiraIssueMapping`, `getCompanyEmployees`, `issueToMapping`.
 - `lib/utils.ts` — status mapping (`mapJiraStatusToCarbonStatus` /
   `mapCarbonStatusToJiraCategory`).
@@ -55,32 +57,29 @@ OAuth creds live in `companyIntegration.metadata.credentials`
 
 ## Storage of the link (`externalIntegrationMapping`)
 
-A linked task is a row: `entityType='nonConformanceActionTask'`, `integration='jira'`,
-`externalId=<Jira issue id>`, `metadata=<JiraIssueMapping JSON>`, plus `companyId`.
-No `externalId` column on the task table — query the mapping table (or the read in
-`quality.service.ts`, which loads `jiraMappings` and exposes `task.jiraIssue`).
+A link is a row with `integration='jira'`, `externalId=<Jira issue id>` and
+`metadata=<JiraIssueMapping JSON + the sync snapshot>` (`issue-sync.md`). No
+`externalId` column on the task table.
 
 **RLS gotcha:** `externalIntegrationMapping` has only `SELECT` and `INSERT` policies
 (migration `20260204001831_external-integration-mapping-rls.sql`) — **no UPDATE/DELETE**.
-Any delete must use `getCarbonServiceRole()`. `linkActionToJiraIssue` and
-`unlinkActionFromJiraIssue` both delete the old mapping via the service-role client for
-this reason.
+Every write and delete uses `getCarbonServiceRole()` (`writeLinks`,
+`unlinkActionFromJiraIssue`).
 
 ## Routes (`apps/erp/app/routes/api+/`)
 
 - `integrations.jira.oauth.ts` — OAuth callback: exchanges code → tokens, calls
   `getAccessibleResources` for `cloudId`/`siteUrl` (uses the first resource),
-  `upsertCompanyIntegration({ id:"jira", active:true, ... })`, then `config.onInstall`.
-- `integrations.jira.issue.link.ts` — POST links an existing issue (syncs assignee by
-  email→`user`, pushes the task's notes as the Jira description, creates a Carbon
+  `upsertCompanyIntegration({ id:"jira", active:true, ... })`, then the server
+  `onInstall` hook (converges the `jira-issue-sync` subscriptions), else `config.onInstall`.
+- `integrations.jira.issue.link.ts` — POST links an existing issue (`linkExistingIssue`:
+  pulls the issue's fields, pushes the task's notes as the description, then a Carbon
   remote link); DELETE unlinks (Carbon DB first, then best-effort remote-link cleanup —
   finds the Carbon link by `application.name === "Carbon"` or
   `globalId.startsWith("carbon-")`, not by reconstructing the URL); GET searches issues.
 - `integrations.jira.issue.create.ts` — POST creates a new issue (notes→ADF description)
-  then links it; GET lists projects, and for a `projectKey` returns issue types +
+  then links it (`linkNewIssue`); GET lists projects, and for a `projectKey` returns issue types +
   assignable users filtered to Carbon employees.
-- `integrations.jira.issue.sync-notes.ts` — POST pushes Tiptap notes → ADF onto the
-  linked issue's description (no-op if the task isn't linked).
 - `webhook.jira.$companyId.ts` — inbound webhook. Reads the raw body once, validates
   the company's `jira` integration is active, verifies the signature (below), parses
   with `syncIssueFromJiraSchema` (`@carbon/jobs`), then
@@ -109,16 +108,15 @@ required without breaking existing installs. The route reads the secret with
 ## Inbound webhook job (Inngest, NOT Trigger.dev)
 
 `packages/jobs/src/inngest/functions/integrations/jira.ts` — `jiraSyncFunction`
-(Inngest id `sync-issue-from-jira`, event `carbon/jira-sync`). Ignores everything but
-`jira:issue_updated` / `issue_updated`. Looks up the action via the mapping table by
-`externalId`, refetches the full issue, resolves assignee email→employee, and calls
-`linkActionToJiraIssue(..., { syncNotes: true })` to update status/assignee/dueDate/notes.
-Schema: `syncIssueFromJiraSchema` in `packages/jobs/src/schemas.ts`.
+(Inngest id `sync-issue-from-jira`, event `carbon/jira-sync`). Handles
+`jira:issue_updated` / `issue_updated` with `applyIssue` and `jira:issue_deleted` /
+`issue_deleted` with `unlinkDeletedIssue`; ignores everything else. Schema:
+`syncIssueFromJiraSchema` in `packages/jobs/src/schemas.ts`.
 
 Assignee: an unassigned issue clears the Carbon assignee. An assignee with a hidden
 email, or one who matches no employee, leaves it unchanged (`resolveInboundAssignee`).
 `getCompanyEmployees` selects `user!inner(email)`. A task on a Done or Cancelled change
-notice is skipped (`isChangeNoticeLocked`).
+notice refuses inbound changes (`lockedFields`).
 
 ## Status mapping
 
@@ -127,13 +125,13 @@ Jira statusCategory → Carbon `nonConformanceTaskStatus`: `new`→Pending,
 In Progress→`indeterminate`, Completed/Skipped→`done`. Jira changes status via
 **transitions**, so `transitionIssue` finds a transition whose target category matches.
 
-## UI (`apps/erp/app/modules/quality/ui/Issue/Jira/`)
+## UI (`apps/erp/app/components/ActionTasks/Jira/`)
 
 `IssueDialog.tsx` (tabbed Link/Create — resets tab to "link" on close, closes after
-unlink), `LinkIssue.tsx`, `CreateIssue.tsx`. Rendered from
-`IssueTask.tsx` only when `integrations.has("jira")`; it reads `task.jiraIssue` to show
-the linked badge and triggers note sync on save for linked action tasks. Only **action**
-tasks can be linked.
+unlink), `LinkIssue.tsx`, `CreateIssue.tsx`, shared by `IssueTask.tsx` and
+`ChangeNoticeActions.tsx`, rendered only when `integrations.has("jira")`. The dialog
+reads the record's `jiraIssue` (the link's `metadata`) and shows a refusal from
+`metadata.sync.refused`.
 
 ## Notes
 

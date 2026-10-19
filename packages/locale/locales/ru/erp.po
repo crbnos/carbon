@@ -17411,7 +17411,7 @@ msgstr "Это не таблица, а остаток главной книги:
 
 #. placeholder {0}: refused.reason
 msgid "Not applied: {0}"
-msgstr ""
+msgstr "Не применено: {0}"
 
 msgid "Not certified"
 msgstr "Не сертифицировано"

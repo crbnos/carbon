@@ -1,6 +1,6 @@
 # Issue Tracker Sync: Quality Tasks, Change Notice Tasks and Project Elements
 
-> Status: draft
+> Status: in-progress
 > Author: barbinbrad
 > Date: 2026-10-17
 > Research: `.ai/research/issue-tracker-sync.md`
@@ -111,16 +111,16 @@ leaves the Carbon assignee unchanged. Only an unassigned issue clears it.
 #### The registry
 
 `packages/ee/src/lib/actionTaskEntity.ts` becomes the synced-record registry,
-`packages/ee/src/issue-sync/entities.ts` (`@carbon/ee/issue-sync`). It keeps the
-current fields (`table`, `parentColumn`, `detailPath`, permissions) and adds one
-adapter per record type:
+`syncedEntities` in `packages/ee/src/issue-sync/entities.ts` (`@carbon/ee/issue-sync`).
+Each entry names the table, the parent, the text, assignee and due-date columns, the
+synced `fields`, the permission and `detailPath`. Pure functions do the rest:
 
-| Adapter member | Purpose |
-|---|---|
-| `fields` | the synced fields and their direction (see the field map) |
-| `toCanonical(row)` | the Carbon row as tracker-neutral values (`status`, `assignee`, `dueDate`, `priority`, `title`, and `description` as a hash of its Tiptap JSON) |
-| `fromTracker(issue, row, ctx)` | the row patch for the changed fields, after the lock check |
-| `lockFor(row, ctx)` | the fields a lock protects now, and the reason, or none |
+| Function | File | Purpose |
+|---|---|---|
+| `carbonValues(type, row)` | `canonical.ts` | the Carbon row as snapshot values (`description` is a hash of its Tiptap JSON) |
+| `linearValues(issue)`, `jiraValues(issue)` | `canonical.ts` | the issue as snapshot values |
+| `changedOutbound`, `changedInbound`, `nextSync` | `diff.ts` | the echo guard |
+| `lockedFields(type, ctx)` | `locks.ts` | the fields a lock protects now, and the reason |
 
 Phase 1 moves every caller of the old names (`actionTaskEntities`,
 `ActionTaskEntityType`, `actionTaskPermissions`, `actionTaskParentId`) to the new
@@ -487,5 +487,6 @@ Questions found while writing the spec:
 
 ## Changelog
 
+- 2026-10-19: Phases 0 and 1 implemented. Engine in `packages/ee/src/issue-sync/`; rule `.claude/rules/issue-sync.md`. Link and create go through `linkExistingIssue` / `linkNewIssue`; a linked record's existing description goes to the issue on link.
 - 2026-10-17: Planning corrections. Defects 8 and 9 added. Outbound defects 2, 3 and 5 move to Phase 1. The element dialog triggers move to the header row (the sibling's `headerExtras`). `pickStateForGroup` replaces `defaultStateOfGroup`. Description snapshots are hashes. Link pulls first; create pushes first.
 - 2026-10-17: Created. Research in `.ai/research/issue-tracker-sync.md`. The user resolved Q1–Q10. Q9 and Q10 came up while writing the spec.

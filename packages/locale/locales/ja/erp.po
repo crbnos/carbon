@@ -17411,7 +17411,7 @@ msgstr "テーブルではなく総勘定元帳の残高です。指図材料が
 
 #. placeholder {0}: refused.reason
 msgid "Not applied: {0}"
-msgstr ""
+msgstr "未適用: {0}"
 
 msgid "Not certified"
 msgstr "認定されていない"

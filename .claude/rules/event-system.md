@@ -91,6 +91,7 @@ Zod schemas + helpers. `QueueMessage` = `{ subscriptionId, triggerType: ROW|STAT
 | `SEARCH` | `carbon/event-search` | `search.ts` | upsert/delete `search_index` per entity config (`search-config.ts`): last event per record wins, one read per related table for the whole batch, then one delete and one upsert statement over Kysely. A failed read or write throws so the step retries; the one exception is a missing search table whose company no longer exists (deleting a company drops the table while its events may still be queued), which is skipped with a warning |
 | `AUDIT` | `carbon/event-audit` | `audit.ts` | writes per-company audit log (uses `actorId`, `audit.config`) |
 | `EMBEDDING` | `carbon/event-embedding` | `embedding.ts` | `embedRecords` for `item/customer/supplier` name/description changes (vectors from the `embedding` edge fn, written with one UPDATE per table) |
+| `ISSUE_SYNC` | `carbon/event-issue-sync` | `issue-sync.ts` | Linear and Jira push of synced records (action tasks); fans out per company to `carbon/issue-sync.push` (`issueSyncPushFunction`, per-company concurrency). Subscriptions `${tracker}-issue-sync` are converged in code (`ensureIssueSyncSubscriptions`). Suppressed, like `SYNC`/`WEBHOOK`/`WORKFLOW`, while `app.sync_in_progress` is set. See `issue-sync.md` |
 
 All handlers (incl. `eventQueueFunction`) are exported from `events/index.ts` and registered in `packages/jobs/src/inngest/index.ts`. Inngest client comes from `@carbon/lib/inngest`.
 

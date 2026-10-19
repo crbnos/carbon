@@ -17411,7 +17411,7 @@ msgstr "Bir tablo değil, büyük defter bakiyesi: iş emri malzemeleri çıktı
 
 #. placeholder {0}: refused.reason
 msgid "Not applied: {0}"
-msgstr ""
+msgstr "Uygulanmadı: {0}"
 
 msgid "Not certified"
 msgstr "Sertifikalı değil"

@@ -17411,7 +17411,7 @@ msgstr "Nicht eine Tabelle, sondern ein Hauptbuch-Saldo: Kosten sammeln sich, we
 
 #. placeholder {0}: refused.reason
 msgid "Not applied: {0}"
-msgstr ""
+msgstr "Nicht übernommen: {0}"
 
 msgid "Not certified"
 msgstr "Nicht zertifiziert"
