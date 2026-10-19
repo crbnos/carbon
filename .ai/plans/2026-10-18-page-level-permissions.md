@@ -30,11 +30,11 @@ Phases 1 and 2 — grants, resolver, editors (one release)
 
 Phase 3 — every module to page keys (one deploy)
 - [x] Task 17: Define the pages of all 14 modules in the registry
-- [ ] Task 18: Render RLS rules with page keys from the registry
-- [ ] Task 19: Move service function permissions to pages and levels
-- [ ] Task 20: Move ERP and MES route gates to pages and levels
-- [ ] Task 21: Move client permission checks to pages and levels
-- [ ] Task 22: Drive the sidebar and the nav from page views
+- [x] Task 18: Render RLS rules with page keys from the registry
+- [x] Task 19: Move service function permissions to pages and levels
+- [x] Task 20: Move ERP and MES route gates to pages and levels
+- [x] Task 21: Move client permission checks to pages and levels
+- [x] Task 22: Drive the sidebar and the nav from page views
 - [ ] Task 23: Move workflow event permissions and the MCP manifest to page keys
 - [ ] Task 24: Add the module-key conformance check
 - [ ] Task 25: Verify every page in the browser
@@ -716,6 +716,14 @@ pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -
 ```
 
 **Out of scope:** the `"employee"` and portal actors. They do not change.
+
+**As built (Tasks 18 to 22, 2026-10-19):**
+1. Task 18 converts every rule, not only rules that name the page's module. The page that owns the table decides. The 5 pending tables went to `settings.company` (`tag` and the 3 Implementation Hub tables) or to the service role (`warehouse`).
+2. Printing grants move to the Settings page Printing (`20261018205305_printing-grants-to-settings-page.sql`).
+3. Bank Accounts is a 159th page with no sidebar entry. It owns `supplierBankAccount` and `customerBankAccount` (`20261019042439_bank-accounts-permission.sql`). The user chose it, so bank details keep needing Accounting.
+4. A gate on a shared table can read the row: `{ row }` picks the page from the item's type, the memo's party or the run's type, and `{ anyOf }` admits any of the pages for a list. Built by `rowRule` and `anyOfRule` (`@carbon/api/permissions`).
+5. `authorize(request, gate, options)` takes a page gate or a list of gates (any one passes). `role`, `bypassRls` and `allowPortalAccounts` moved to `options`.
+6. MES batches gate on `production.batches`, not `production.jobs`: the `batch-operations` posting requires Batches.
 
 ## Task 19: Move service function permissions to pages and levels
 

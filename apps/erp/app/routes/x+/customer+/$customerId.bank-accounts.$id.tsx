@@ -21,7 +21,7 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await authorize(request, {
-    "sales.customers": "Edit"
+    "accounting.bankAccounts": "Edit"
   });
 
   const { customerId } = params;

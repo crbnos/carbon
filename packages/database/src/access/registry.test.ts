@@ -11,7 +11,7 @@ import { MODULES, moduleOf, PAGES } from "./registry";
 
 /** The spec's page table (`.ai/specs/2026-10-18-page-level-permissions.md`, "The pages"). */
 const SPEC_PAGE_COUNTS: Record<string, number> = {
-  accounting: 19,
+  accounting: 20,
   documents: 1,
   inventory: 15,
   invoicing: 9,
@@ -183,14 +183,14 @@ describe("PAGES", () => {
     expect(ids.length - new Set(ids).size).toBe(0);
   });
 
-  it("has the spec's pages in each module, 158 in all", () => {
+  it("has the spec's pages in each module, 159 in all", () => {
     const counts: Record<string, number> = {};
     for (const page of PAGES) {
       const module = moduleOf(page.id);
       counts[module] = (counts[module] ?? 0) + 1;
     }
     expect(counts).toEqual(SPEC_PAGE_COUNTS);
-    expect(PAGES.length).toBe(158);
+    expect(PAGES.length).toBe(159);
   });
 
   it("lists the modules in sidebar order, each with its pages", () => {

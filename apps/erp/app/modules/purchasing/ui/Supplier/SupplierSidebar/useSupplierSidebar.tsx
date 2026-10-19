@@ -111,8 +111,8 @@ export function useSupplierSidebar({ contacts, locations, parts }: Props) {
       name: t`Bank Accounts`,
       to: path.to.supplierBankAccounts(supplierId),
       role: ["employee"],
-      // Bank accounts sit on the Suppliers page.
-      gate: { "purchasing.suppliers": "View" } as Gate,
+      // Bank details need Accounting, not the partner page.
+      gate: { "accounting.bankAccounts": "View" } as Gate,
       icon: <LuLandmark />
     },
     {

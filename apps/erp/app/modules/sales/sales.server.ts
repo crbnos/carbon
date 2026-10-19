@@ -5087,7 +5087,7 @@ export const deleteCustomer = defineServiceFn({
  */
 export const deleteCustomerBankAccount = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "sales.customers": "Full" },
+  permission: { "accounting.bankAccounts": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5106,7 +5106,7 @@ export const deleteCustomerBankAccount = defineServiceFn({
  */
 export const getCustomerBankAccounts = defineServiceFn({
   input: z.looseObject({ customerId: z.string() }),
-  permission: { "sales.customers": "View" },
+  permission: { "accounting.bankAccounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -5145,7 +5145,7 @@ export const createCustomerBankAccount = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { "sales.customers": "Create" },
+  permission: { "accounting.bankAccounts": "Create" },
   async run(ctx, input) {
     return await service.upsertCustomerBankAccount(
       ctx.asSystem.pg,
@@ -5183,7 +5183,7 @@ export const updateCustomerBankAccount = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { "sales.customers": "Edit" },
+  permission: { "accounting.bankAccounts": "Edit" },
   async run(ctx, input) {
     return await service.upsertCustomerBankAccount(
       ctx.asSystem.pg,

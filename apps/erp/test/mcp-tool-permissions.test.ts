@@ -56,34 +56,37 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     module: "inventory",
     actions: ["view", "create", "update", "delete"]
   },
-  // Bank accounts are on the Suppliers and Customers pages (was accounting).
+  // Bank details need Accounting → Bank Accounts, not the partner page.
   purchasing_getSupplierBankAccounts: {
-    module: "purchasing",
+    module: "accounting",
     actions: ["view"]
   },
   purchasing_createSupplierBankAccount: {
-    module: "purchasing",
+    module: "accounting",
     actions: ["view", "create"]
   },
   purchasing_updateSupplierBankAccount: {
-    module: "purchasing",
+    module: "accounting",
     actions: ["view", "create", "update"]
   },
   purchasing_deleteSupplierBankAccount: {
-    module: "purchasing",
+    module: "accounting",
     actions: ["view", "create", "update", "delete"]
   },
-  sales_getCustomerBankAccounts: { module: "sales", actions: ["view"] },
+  sales_getCustomerBankAccounts: {
+    module: "accounting",
+    actions: ["view"]
+  },
   sales_createCustomerBankAccount: {
-    module: "sales",
+    module: "accounting",
     actions: ["view", "create"]
   },
   sales_updateCustomerBankAccount: {
-    module: "sales",
+    module: "accounting",
     actions: ["view", "create", "update"]
   },
   sales_deleteCustomerBankAccount: {
-    module: "sales",
+    module: "accounting",
     actions: ["view", "create", "update", "delete"]
   },
   // Batch properties hang off an item: the page of the item's type (was

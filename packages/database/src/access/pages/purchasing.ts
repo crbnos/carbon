@@ -12,7 +12,6 @@ export const PURCHASING_PAGES = [
     tables: [
       "supplier",
       "supplierAccount",
-      "supplierBankAccount",
       "supplierContact",
       "supplierLocation",
       "supplierPayment",

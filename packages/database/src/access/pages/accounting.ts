@@ -155,6 +155,17 @@ export const ACCOUNTING_PAGES = [
     paths: ["/x/accounting/payment-terms"]
   },
   {
+    // No sidebar entry: the bank-account tabs of supplier and customer records.
+    id: "accounting.bankAccounts",
+    label: "Bank Accounts",
+    maxLevel: "Full",
+    tables: ["supplierBankAccount", "customerBankAccount"],
+    paths: [
+      "/x/supplier/$supplierId/bank-accounts",
+      "/x/customer/$customerId/bank-accounts"
+    ]
+  },
+  {
     id: "accounting.projects",
     label: "Projects",
     maxLevel: "Full",

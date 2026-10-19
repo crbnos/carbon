@@ -96,7 +96,7 @@ entries that share a path are filters of one list and form one page.
 
 | Module | Pages |
 |---|---|
-| Accounting (19) | Reporting, Sync Tie-Out, Journal Entries, Intercompany, Accounting Periods, Depreciation, Leases, Revenue Recognition, Assets, Fleet, Asset Classes, Chart of Accounts, Cost Centers, Default Accounts, Dimensions, Exchange Rates, Fiscal Year, Payment Terms, Projects |
+| Accounting (20) | Reporting, Sync Tie-Out, Journal Entries, Intercompany, Accounting Periods, Depreciation, Leases, Revenue Recognition, Assets, Fleet, Asset Classes, Chart of Accounts, Cost Centers, Default Accounts, Dimensions, Exchange Rates, Fiscal Year, Payment Terms, Bank Accounts, Projects |
 | Documents (1) | Documents (All, My, Recent, Pinned and Trash share one path) |
 | Inventory (15) | Quantities, Movements, Inventory Count, Kanbans, Receipts, Shipments, Picking Lists, Stock Transfers, Warehouse Transfers, Tracked Entities, Traceability, Storage Units, Storage Types, Storage Rules, Shipping Methods |
 | Invoicing (9) | Payables, Purchase Invoices, Supplier Credits, Charges, Reimbursements, Receivables, Sales Invoices, Credit Memos, Payments |
@@ -111,6 +111,11 @@ entries that share a path are filters of one list and form one page.
 | Users (4) | Accounts, Operators, Groups, Employee Types |
 | Workflows (2) | Workflows, Runs |
 
+- A page is a permission: a role holds one level per page. Most pages are
+  sidebar entries. Bank Accounts is not: it owns `supplierBankAccount` and
+  `customerBankAccount` and the bank-account tabs of supplier and customer
+  records. Bank details have always needed Accounting, so they do not follow
+  the Suppliers or Customers page.
 - The Items module's permission name stays `parts` (`useModules.tsx`), so its
   keys are `parts.<page>`.
 - The `module` enum values `messaging` and `items` gate nothing today and get

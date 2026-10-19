@@ -14,7 +14,6 @@ export const SALES_PAGES = [
     tables: [
       "customer",
       "customerAccount",
-      "customerBankAccount",
       "customerContact",
       "customerLocation",
       "customerPayment",

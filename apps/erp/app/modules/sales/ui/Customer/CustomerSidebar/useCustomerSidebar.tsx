@@ -70,8 +70,8 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       name: t`Bank Accounts`,
       to: path.to.customerBankAccounts(customerId),
       role: ["employee"],
-      // Bank accounts sit on the Customers page.
-      gate: { "sales.customers": "View" } as Gate,
+      // Bank details need Accounting, not the partner page.
+      gate: { "accounting.bankAccounts": "View" } as Gate,
       icon: <LuLandmark />
     },
     {

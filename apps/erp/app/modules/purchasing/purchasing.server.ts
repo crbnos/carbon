@@ -3822,7 +3822,7 @@ export const deleteSupplierLocation = defineServiceFn({
  */
 export const deleteSupplierBankAccount = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "purchasing.suppliers": "Full" },
+  permission: { "accounting.bankAccounts": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3841,7 +3841,7 @@ export const deleteSupplierBankAccount = defineServiceFn({
  */
 export const getSupplierBankAccounts = defineServiceFn({
   input: z.looseObject({ supplierId: z.string() }),
-  permission: { "purchasing.suppliers": "View" },
+  permission: { "accounting.bankAccounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -3880,7 +3880,7 @@ export const createSupplierBankAccount = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { "purchasing.suppliers": "Create" },
+  permission: { "accounting.bankAccounts": "Create" },
   async run(ctx, input) {
     return await service.upsertSupplierBankAccount(
       ctx.asSystem.pg,
@@ -3918,7 +3918,7 @@ export const updateSupplierBankAccount = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { "purchasing.suppliers": "Edit" },
+  permission: { "accounting.bankAccounts": "Edit" },
   async run(ctx, input) {
     return await service.upsertSupplierBankAccount(
       ctx.asSystem.pg,
