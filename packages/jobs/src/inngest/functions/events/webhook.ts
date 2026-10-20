@@ -6,18 +6,19 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getWebhookSigningSecret } from "@carbon/ee/webhooks.server";
 import axios from "axios";
+import { NonRetriableError } from "inngest";
 import { getJobDatabaseClient } from "../../../db.ts";
+import { checkWebhookUrl } from "../../../workflows/actions/url-guard.ts";
 import { inngest } from "../../client.ts";
 import {
   signWebhookBody,
   toWebhookBody,
   WEBHOOK_SIGNATURE_HEADER,
-  webhookPayloadSchema
+  webhookPayloadSchema,
+  webhookTransport
 } from "./webhook-body.ts";
 
 const RETRIES = 3;
-// A documented part of the webhook contract (docs: building/webhooks).
-const WEBHOOK_TIMEOUT_MS = 30_000;
 
 export const webhookFunction = inngest.createFunction(
   {
@@ -84,6 +85,23 @@ export const webhookFunction = inngest.createFunction(
         );
         return;
       }
+
+      // A webhook may not reach into Carbon's own network (loopback, private
+      // ranges, cloud metadata). A retry would be refused the same way, so a
+      // refusal counts one failure and stops.
+      const verdict = await checkWebhookUrl(payload.url);
+      if (!verdict.ok) {
+        logger.warn(
+          `Webhook ${webhookId ?? "<unknown>"} refused: ${verdict.reason}`
+        );
+        if (webhookId) {
+          await getCarbonServiceRole().rpc("increment_webhook_error", {
+            webhook_id: webhookId
+          });
+        }
+        throw new NonRetriableError(verdict.reason);
+      }
+
       const timestamp = Math.floor(Date.now() / 1000);
 
       try {
@@ -93,7 +111,7 @@ export const webhookFunction = inngest.createFunction(
             ...payload.config.headers,
             [WEBHOOK_SIGNATURE_HEADER]: signWebhookBody(secret, raw, timestamp)
           },
-          timeout: WEBHOOK_TIMEOUT_MS
+          ...webhookTransport
         });
       } catch (err) {
         // Count one failure per event, not per attempt — otherwise retries

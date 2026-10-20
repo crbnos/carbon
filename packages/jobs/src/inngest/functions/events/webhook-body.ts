@@ -4,6 +4,10 @@
 
 import { createHmac } from "node:crypto";
 import { z } from "zod";
+import {
+  outboundHttpAgent,
+  outboundHttpsAgent
+} from "../../../workflows/actions/url-guard.ts";
 
 // Separate from webhook.ts so the contract below is testable — the handler
 // imports client.server, which validates the server env at module load.
@@ -83,6 +87,19 @@ export function toWebhookBody(
  * docs/content/docs/building/webhooks.mdx.
  */
 export const WEBHOOK_SIGNATURE_HEADER = "Carbon-Signature";
+
+/**
+ * The axios options every delivery uses. The agents run the SSRF guard at
+ * connect time, so the address `checkWebhookUrl` approved is the address
+ * dialled. Redirects are off: following one would leave the guard behind, so a
+ * 3xx fails the attempt. The timeout is PUBLIC contract (30 s, see the docs).
+ */
+export const webhookTransport = {
+  timeout: 30_000,
+  maxRedirects: 0,
+  httpAgent: outboundHttpAgent,
+  httpsAgent: outboundHttpsAgent
+};
 
 /**
  * Sign a delivery: `t=<unix seconds>,v1=<hex HMAC-SHA256>`, where the HMAC is
