@@ -87,29 +87,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
   const { projectId } = order.data;
 
-  const [page, node, project, states, labels, employeeJob, issueLinks] =
-    await Promise.all([
-      getProjectElementPage(client, {
-        companyId,
-        projectId,
-        elementId,
-        userId
-      }),
-      getServiceNode(client, { projectId, elementId, companyId }),
-      getProject(client, companyId, projectId),
-      getProjectStates(client, companyId),
-      getProjectLabels(client, companyId),
-      client
-        .from("employeeJob")
-        .select(
-          "defaultStorageUnitId, storageUnit:storageUnit!employeeJob_defaultStorageUnit_fkey(id, locationId)"
-        )
-        .eq("id", userId)
-        .eq("companyId", companyId)
-        .maybeSingle(),
-      // The task's Linear and Jira links (issue-sync), for the issue dialogs.
-      getRecordIssueLinks(client, "projectElement", elementId, companyId)
-    ]);
+  const [page, node, project, states, labels, issueLinks] = await Promise.all([
+    getProjectElementPage(client, {
+      companyId,
+      projectId,
+      elementId,
+      userId
+    }),
+    getServiceNode(client, { projectId, elementId, companyId }),
+    getProject(client, companyId, projectId),
+    getProjectStates(client, companyId),
+    getProjectLabels(client, companyId),
+    // The task's Linear and Jira links (issue-sync), for the issue dialogs.
+    getRecordIssueLinks(client, "projectElement", elementId, companyId)
+  ]);
   if (page.error || !page.data || node.error || !node.data || project.error) {
     logger.error("Failed to load a service element", {
       companyId,
@@ -126,7 +117,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const van = employeeJob.data?.storageUnit;
   return {
     ...page.data,
     ...issueLinks,
@@ -136,8 +126,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     serviceOrder: order.data,
     charges: node.data.charges,
     fixedPrice: node.data.element.fixedPrice,
-    lastServiceDate: node.data.lastServiceDate,
-    van: van ? { storageUnitId: van.id, locationId: van.locationId } : null
+    lastServiceDate: node.data.lastServiceDate
   };
 }
 
@@ -212,7 +201,6 @@ export default function ServiceOrderElementRoute() {
     charges,
     fixedPrice,
     lastServiceDate,
-    van,
     ...page
   } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
@@ -231,7 +219,6 @@ export default function ServiceOrderElementRoute() {
     chargeAction,
     laborCategories: page.laborCategories,
     defaultLaborCategoryId: page.defaultLaborCategoryId,
-    van,
     canCharge,
     canIssue: permissions.can("update", "inventory")
   });

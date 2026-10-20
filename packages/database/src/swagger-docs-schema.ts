@@ -135937,7 +135937,6 @@ export default {
         },
         type: {
           enum: [
-            "Folder",
             "System",
             "Requirement",
             "Function",

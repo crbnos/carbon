@@ -9,7 +9,6 @@ import {
   LuBox,
   LuClipboardCheck,
   LuFlaskConical,
-  LuFolder,
   LuSigma,
   LuSquareCheck,
   LuSquareFunction
@@ -17,7 +16,6 @@ import {
 import type { ProjectElementType } from "../../projects.models";
 
 const icons: Record<ProjectElementType, IconType> = {
-  Folder: LuFolder,
   System: LuBox,
   Requirement: LuClipboardCheck,
   Function: LuSquareFunction,
@@ -33,7 +31,6 @@ const iconColors: Record<ProjectElementType, string> = {
   "Test Case": "text-teal-500",
   Function: "text-violet-500",
   Parameter: "text-emerald-500",
-  Folder: "text-muted-foreground",
   Task: "text-muted-foreground"
 };
 
@@ -57,7 +54,6 @@ export function ElementTypeIcon({
 export function useElementTypeLabels(): Record<ProjectElementType, string> {
   const { t } = useLingui();
   return {
-    Folder: t`Folder`,
     System: t`System`,
     Requirement: t`Requirement`,
     Function: t`Function`,

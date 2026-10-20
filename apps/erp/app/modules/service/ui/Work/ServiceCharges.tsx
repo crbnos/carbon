@@ -91,7 +91,6 @@ export function useServiceChargeActions({
   chargeAction,
   laborCategories,
   defaultLaborCategoryId,
-  van,
   serviceVisitId,
   canCharge,
   canIssue
@@ -102,8 +101,6 @@ export function useServiceChargeActions({
   chargeAction: string;
   laborCategories: { id: string; name: string }[];
   defaultLaborCategoryId: string | null;
-  /** The signed-in user's van: where a part is issued from first. */
-  van: { storageUnitId: string; locationId: string } | null;
   /** The visit the charges belong to, when there is one. */
   serviceVisitId?: string | null;
   canCharge: boolean;
@@ -158,8 +155,6 @@ export function useServiceChargeActions({
         <IssueMaterialModal
           projectId={projectId}
           element={element}
-          defaultLocationId={van?.locationId}
-          defaultStorageUnitId={van?.storageUnitId}
           action={chargeAction}
           hiddenFields={hiddenFields("part")}
           variant="service"

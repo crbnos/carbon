@@ -11,6 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   IconButton,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   useShortcutKeyMap
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -85,7 +89,7 @@ type ElementViewProps = ProjectElementPage & {
    */
   chargeActions?: ReactNode | null;
   /**
-   * The element's charges in place of Time & materials (a service order's);
+   * The element's charges in the Actual tab (a service order's);
    * null while it has none.
    */
   charges?: ReactNode | null;
@@ -96,7 +100,8 @@ type ElementViewProps = ProjectElementPage & {
 /**
  * The element's own page, as a Linear issue: a breadcrumb row with the ⋯
  * menu, then a readable main column (the title, the description, Children,
- * Plan, Links, Time & materials, Activity — each only when it has something)
+ * Costs (Estimated and Actual tabs), Links, Activity — each only when it
+ * has something)
  * beside the properties column.
  */
 export function ElementView({
@@ -141,6 +146,7 @@ export function ElementView({
   const [deleting, setDeleting] = useState(false);
   const [loggingTime, setLoggingTime] = useState(false);
   const [issuing, setIssuing] = useState(false);
+  const [costView, setCostView] = useState<CostView | null>(null);
 
   const isClosed = project?.status === "Closed";
   const canUpdate = permissions.can("update", routes.module) && !isClosed;
@@ -225,10 +231,11 @@ export function ElementView({
     planLines.labor.length +
     planLines.costs.length;
   // An element that can have plan lines (every type but a Parameter) shows
-  // Plan with its "Add line" to a user who can edit, even with no lines.
+  // the plan with its "Add line" to a user who can edit, even with no lines.
   const showPlan =
     planLineCount > 0 || (canUpdate && element.type !== "Parameter");
-  // The Linear and Jira issue buttons sit beside "Add line" (issue-sync).
+  // The Linear and Jira issue buttons sit at the right of the readable id
+  // (issue-sync).
   const issueButtons =
     canUpdate && (integrations.has("linear") || integrations.has("jira")) ? (
       <>
@@ -254,6 +261,14 @@ export function ElementView({
   // A page with charges of its own shows them instead (null: none yet).
   const showTime =
     charges === undefined && (ledger.length > 0 || openTime.length > 0);
+  // Costs: what the element is estimated to cost, and what has actually
+  // been charged to it. Before the project is released there is nothing
+  // actual yet, so it opens on the estimate; afterwards on the actuals.
+  const showCosts =
+    element.type !== "Parameter" || planLineCount > 0 || showTime;
+  const selectedCostView =
+    costView ??
+    (!project || project.status === "Draft" ? "estimated" : "actual");
 
   // The Plan page with the layout and filters the element came from.
   const query = searchParams.toString();
@@ -326,8 +341,6 @@ export function ElementView({
         </nav>
         <div className="flex shrink-0 items-center gap-2">
           <Copy text={element.readableId} />
-          {/* An element with no Plan section (a Parameter) keeps them here. */}
-          {!showPlan && issueButtons}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
@@ -408,10 +421,17 @@ export function ElementView({
           <main className="min-w-0 flex-1 @min-[56rem]:overflow-y-auto">
             <div className="mx-auto flex w-full max-w-[800px] flex-col gap-8 px-8 py-8">
               <div className="flex flex-col gap-2">
-                <span className="flex items-center gap-2 text-sm text-muted-foreground tabular-nums">
-                  <ElementTypeIcon type={element.type} className="size-3.5" />
-                  {element.readableId}
-                </span>
+                <div className="flex min-h-8 items-center justify-between gap-2">
+                  <span className="flex items-center gap-2 text-sm text-muted-foreground tabular-nums">
+                    <ElementTypeIcon type={element.type} className="size-3.5" />
+                    {element.readableId}
+                  </span>
+                  {issueButtons && (
+                    <div className="flex shrink-0 items-center gap-1">
+                      {issueButtons}
+                    </div>
+                  )}
+                </div>
                 <ElementName
                   key={`${element.id}:${element.name}`}
                   projectId={projectId}
@@ -449,20 +469,63 @@ export function ElementView({
                 </Section>
               )}
 
-              {showPlan && (
-                <Section title={t`Plan`} count={planLineCount}>
-                  <ElementPlanLines
-                    projectId={projectId}
-                    elementId={element.id}
-                    planLines={planLines}
-                    laborCategories={laborCategories}
-                    defaultLocationId={project?.locationId}
-                    isDisabled={!canUpdate}
-                    canSupply={isProject}
-                    addDisabledReason={planLockMessage}
-                    toolbarExtras={issueButtons}
-                  />
-                </Section>
+              {showCosts && (
+                <section className="flex w-full flex-col gap-3">
+                  <Tabs
+                    value={selectedCostView}
+                    onValueChange={(next) => setCostView(next as CostView)}
+                    className="flex w-full flex-col gap-3"
+                  >
+                    <TabsList aria-label={t`Costs`} className="self-start">
+                      <TabsTrigger value="estimated">
+                        <Trans>Estimated</Trans>
+                      </TabsTrigger>
+                      <TabsTrigger value="actual">
+                        <Trans>Actual</Trans>
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="estimated">
+                      {showPlan ? (
+                        <ElementPlanLines
+                          projectId={projectId}
+                          elementId={element.id}
+                          planLines={planLines}
+                          laborCategories={laborCategories}
+                          defaultLocationId={project?.locationId}
+                          isDisabled={!canUpdate}
+                          canSupply={isProject}
+                          addDisabledReason={planLockMessage}
+                        />
+                      ) : (
+                        <EmptyCosts>
+                          <Trans>No estimated costs.</Trans>
+                        </EmptyCosts>
+                      )}
+                    </TabsContent>
+                    <TabsContent value="actual">
+                      {charges !== undefined ? (
+                        (charges ?? (
+                          <EmptyCosts>
+                            <Trans>Nothing has been charged yet.</Trans>
+                          </EmptyCosts>
+                        ))
+                      ) : showTime ? (
+                        <ElementTimeAndMaterials
+                          ledger={ledger}
+                          openTime={openTime}
+                        />
+                      ) : (
+                        <EmptyCosts>
+                          <Trans>
+                            Nothing has been charged yet. Log time, issue
+                            material, or charge a job or purchase order to this
+                            element.
+                          </Trans>
+                        </EmptyCosts>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </section>
               )}
 
               {showLinks && (
@@ -475,17 +538,6 @@ export function ElementView({
                     isDisabled={!canUpdate}
                     isAdding={addingLink}
                     onAddingChange={setAddingLink}
-                  />
-                </Section>
-              )}
-
-              {charges && <Section title={t`Charges`}>{charges}</Section>}
-
-              {showTime && (
-                <Section title={t`Time & materials`}>
-                  <ElementTimeAndMaterials
-                    ledger={ledger}
-                    openTime={openTime}
                   />
                 </Section>
               )}
@@ -560,6 +612,13 @@ export function ElementView({
       )}
     </div>
   );
+}
+
+type CostView = "estimated" | "actual";
+
+/** The muted line a cost tab shows while it has nothing to list. */
+function EmptyCosts({ children }: { children: ReactNode }) {
+  return <p className="text-sm text-muted-foreground">{children}</p>;
 }
 
 /** The name as a large inline editable title. It saves on blur and Enter. */

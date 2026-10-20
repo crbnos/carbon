@@ -943,7 +943,7 @@ export type CustomerAssetSpec = {
 export type ServiceTemplateNodeSpec = {
   key: string;
   name: string;
-  type: "System" | "Task" | "Folder";
+  type: "System" | "Task";
   parentKey?: string;
   /** Labor plan lines; the category is one of `accounting.laborCategories`. */
   labor?: { laborCategory: string; hours: number }[];

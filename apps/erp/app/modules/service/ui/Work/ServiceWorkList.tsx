@@ -159,8 +159,7 @@ export function ServiceWorkList({
   // name is edited on the element's page.
   const newNames: Partial<Record<ProjectElementType, string>> = {
     System: t`New System`,
-    Task: t`New Task`,
-    Folder: t`New Folder`
+    Task: t`New Task`
   };
   const [createdId, setCreatedId] = useState<string | null>(null);
   const createFetcher = useAction<{
@@ -214,6 +213,7 @@ export function ServiceWorkList({
           canDelete={!isDisabled}
           isFiltered={isFiltered}
           highlightId={createdId}
+          types={serviceNodeTypes}
           onNew={createElement}
         />
       </div>

@@ -4,8 +4,17 @@
 
 import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
-import { cn, toast, VStack } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  cn,
+  toast,
+  VStack
+} from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
+import { LuChevronRight } from "react-icons/lu";
 import { useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -26,17 +35,21 @@ import {
   PropertyDate,
   PropertyField,
   PropertyGroup,
+  PropertyLayoutProvider,
   PropertyNumber,
+  PropertyRow,
   PropertySaveProvider,
   PropertySelect,
   PropertySwitch,
-  PropertyText
+  PropertyText,
+  usePropertyFieldLabel
 } from "../Element/PropertyFields";
 import {
   ElementPriorityIcon,
   usePriorityLabels
 } from "../Elements/ElementProperties";
 import { useCipClasses, usePlanningGroups } from "../Projects/ProjectForm";
+import ProjectStatus from "../Projects/ProjectStatus";
 import { useGovernmentContracting } from "../useGovernmentContracting";
 import ProjectControlSettings from "./ProjectControlSettings.ee";
 
@@ -97,6 +110,7 @@ export function ProjectProperties() {
     Boolean(routeData?.hasPlanningGroups && project?.projectStock)
   );
   const accounts = useAccounts();
+  const [showMore, setShowMore] = useState(false);
 
   if (!project) return null;
 
@@ -106,179 +120,198 @@ export function ProjectProperties() {
 
   return (
     <PropertySaveProvider value={useProjectFieldSave}>
-      <VStack spacing={8} className={cn("w-full text-sm", hideOptionalTags)}>
-        <PropertyGroup>
-          <PropertyText
-            {...common}
-            field="name"
-            label={t`Name`}
-            value={project.name}
-          />
-          <PropertyField label={t`Identifier`}>
-            <span className="whitespace-nowrap">{project.identifier}</span>
-          </PropertyField>
-          <ProjectCustomerField {...common} customerId={project.customerId} />
-          <ProjectOwnerField {...common} ownerId={project.ownerId} />
-          <ProjectLocationField {...common} locationId={project.locationId} />
-          <PropertySelect
-            {...common}
-            field="priority"
-            label={t`Priority`}
-            value={project.priority ?? null}
-            options={projectElementPriorities.map((priority) => ({
-              value: priority,
-              label: (
-                <span className="flex items-center gap-2">
-                  <ElementPriorityIcon priority={priority} />
-                  <span>{priorityLabels[priority]}</span>
-                </span>
-              )
-            }))}
-          />
-          <PropertyDate
-            {...common}
-            field="startDate"
-            label={t`Start date`}
-            value={project.startDate}
-          />
-          <PropertyDate
-            {...common}
-            field="endDate"
-            label={t`End date`}
-            value={project.endDate}
-          />
-        </PropertyGroup>
-
-        <PropertyGroup title={t`Accounting`}>
-          <PropertySelect
-            {...common}
-            field="costTreatment"
-            label={t`Cost treatment`}
-            termId="cost-treatment"
-            value={project.costTreatment}
-            isOptional={false}
-            options={projectCostTreatments.map((treatment) => ({
-              value: treatment,
-              label: treatment
-            }))}
-          />
-          {project.costTreatment === "Capitalize" ? (
+      <PropertyLayoutProvider value="row">
+        <VStack spacing={4} className={cn("w-full text-sm", hideOptionalTags)}>
+          <PropertyGroup>
+            <PropertyField label={t`Status`}>
+              <ProjectStatus status={project.status} />
+            </PropertyField>
+            <PropertyText
+              {...common}
+              field="name"
+              label={t`Name`}
+              value={project.name}
+            />
+            <ProjectOwnerField {...common} ownerId={project.ownerId} />
+            <ProjectCustomerField {...common} customerId={project.customerId} />
+            <ProjectLocationField {...common} locationId={project.locationId} />
             <PropertySelect
               {...common}
-              field="fixedAssetClassId"
-              label={t`CIP class`}
-              value={project.fixedAssetClassId}
-              options={cipClasses.map((assetClass) => ({
-                value: assetClass.id,
-                label: assetClass.name
+              field="priority"
+              label={t`Priority`}
+              value={project.priority ?? null}
+              options={projectElementPriorities.map((priority) => ({
+                value: priority,
+                label: (
+                  <span className="flex items-center gap-2">
+                    <ElementPriorityIcon priority={priority} />
+                    <span>{priorityLabels[priority]}</span>
+                  </span>
+                )
               }))}
             />
-          ) : (
-            <PropertyCombobox
+            <PropertyDate
               {...common}
-              field="costAccountId"
-              label={t`Cost account`}
-              value={project.costAccountId}
-              options={accounts.map((account) => ({
-                value: account.id,
-                label: `${account.number} ${account.name}`
-              }))}
+              field="startDate"
+              label={t`Start`}
+              value={project.startDate}
             />
-          )}
-          {isGovernmentContracting && (
-            <PropertySelect
+            <PropertyDate
               {...common}
-              field="costObjective"
-              label={t`Cost objective`}
-              termId="cost-objective"
-              value={project.costObjective}
-              options={costObjectivesForTreatment(project.costTreatment).map(
-                (objective) => ({ value: objective, label: objective })
-              )}
-            />
-          )}
-        </PropertyGroup>
-
-        <PropertyGroup title={t`Stock and planning`}>
-          <PropertySwitch
-            {...common}
-            field="projectStock"
-            label={t`Project stock`}
-            termId="project-stock"
-            value={project.projectStock}
-            isDisabled={isDisabled || project.status !== "Draft"}
-          />
-          {project.projectStock && (
-            <>
-              <PropertySwitch
-                {...common}
-                field="chargeAtReceipt"
-                label={t`Charge at receipt`}
-                value={project.chargeAtReceipt}
-              />
-              <PropertySwitch
-                {...common}
-                field="governmentFurnished"
-                label={t`Government-furnished`}
-                value={project.governmentFurnished}
-              />
-            </>
-          )}
-          {routeData?.hasPlanningGroups && project.projectStock && (
-            <>
-              <PropertySelect
-                {...common}
-                field="planningGroupId"
-                label={t`Planning group`}
-                termId="planning-group"
-                value={project.planningGroupId}
-                options={planningGroups.map((group) => ({
-                  value: group.id,
-                  label: group.name
-                }))}
-              />
-              <PropertyNumber
-                {...common}
-                field="planningPriority"
-                label={t`Planning priority`}
-                value={project.planningPriority}
-                minValue={0}
-              />
-            </>
-          )}
-        </PropertyGroup>
-
-        {isGovernmentContracting && (
-          <PropertyGroup title={t`Charging`}>
-            <PropertySwitch
-              {...common}
-              field="restrictCharging"
-              label={t`Restrict charging to members`}
-              value={project.restrictCharging}
+              field="endDate"
+              label={t`Due`}
+              value={project.endDate}
             />
           </PropertyGroup>
-        )}
 
-        <ProjectControlSettings
-          project={project}
-          action={path.to.projectSettings(projectId)}
-          isDisabled={isDisabled}
-        />
+          {/* The rest is set once and rarely changed: folded away. */}
+          <Collapsible open={showMore} onOpenChange={setShowMore}>
+            <CollapsibleTrigger className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <LuChevronRight
+                className={cn(
+                  "size-4 transition-transform duration-150",
+                  showMore && "rotate-90"
+                )}
+              />
+              <Trans>More</Trans>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="flex flex-col gap-6 pt-4">
+              <PropertyGroup title={t`Accounting`}>
+                <PropertySelect
+                  {...common}
+                  field="costTreatment"
+                  label={t`Cost treatment`}
+                  termId="cost-treatment"
+                  value={project.costTreatment}
+                  isOptional={false}
+                  options={projectCostTreatments.map((treatment) => ({
+                    value: treatment,
+                    label: treatment
+                  }))}
+                />
+                {project.costTreatment === "Capitalize" ? (
+                  <PropertySelect
+                    {...common}
+                    field="fixedAssetClassId"
+                    label={t`CIP class`}
+                    value={project.fixedAssetClassId}
+                    options={cipClasses.map((assetClass) => ({
+                      value: assetClass.id,
+                      label: assetClass.name
+                    }))}
+                  />
+                ) : (
+                  <PropertyCombobox
+                    {...common}
+                    field="costAccountId"
+                    label={t`Cost account`}
+                    value={project.costAccountId}
+                    options={accounts.map((account) => ({
+                      value: account.id,
+                      label: `${account.number} ${account.name}`
+                    }))}
+                  />
+                )}
+                {isGovernmentContracting && (
+                  <PropertySelect
+                    {...common}
+                    field="costObjective"
+                    label={t`Cost objective`}
+                    termId="cost-objective"
+                    value={project.costObjective}
+                    options={costObjectivesForTreatment(
+                      project.costTreatment
+                    ).map((objective) => ({
+                      value: objective,
+                      label: objective
+                    }))}
+                  />
+                )}
+              </PropertyGroup>
 
-        <PropertyGroup title={t`Plan lock`}>
-          <PropertySelect
-            {...common}
-            field="lockPlanAfterMilestoneId"
-            label={t`Lock plan after milestone`}
-            termId="milestone"
-            value={project.lockPlanAfterMilestoneId}
-            options={(routeData?.milestones ?? []).map((milestone) => ({
-              value: milestone.id,
-              label: milestone.name
-            }))}
-          />
-        </PropertyGroup>
-      </VStack>
+              <PropertyGroup title={t`Stock and planning`}>
+                <PropertySwitch
+                  {...common}
+                  field="projectStock"
+                  label={t`Project stock`}
+                  termId="project-stock"
+                  value={project.projectStock}
+                  isDisabled={isDisabled || project.status !== "Draft"}
+                />
+                {project.projectStock && (
+                  <>
+                    <PropertySwitch
+                      {...common}
+                      field="chargeAtReceipt"
+                      label={t`Charge at receipt`}
+                      value={project.chargeAtReceipt}
+                    />
+                    <PropertySwitch
+                      {...common}
+                      field="governmentFurnished"
+                      label={t`Government-furnished`}
+                      value={project.governmentFurnished}
+                    />
+                  </>
+                )}
+                {routeData?.hasPlanningGroups && project.projectStock && (
+                  <>
+                    <PropertySelect
+                      {...common}
+                      field="planningGroupId"
+                      label={t`Planning group`}
+                      termId="planning-group"
+                      value={project.planningGroupId}
+                      options={planningGroups.map((group) => ({
+                        value: group.id,
+                        label: group.name
+                      }))}
+                    />
+                    <PropertyNumber
+                      {...common}
+                      field="planningPriority"
+                      label={t`Planning priority`}
+                      value={project.planningPriority}
+                      minValue={0}
+                    />
+                  </>
+                )}
+              </PropertyGroup>
+
+              {isGovernmentContracting && (
+                <PropertyGroup title={t`Charging`}>
+                  <PropertySwitch
+                    {...common}
+                    field="restrictCharging"
+                    label={t`Restrict charging to members`}
+                    value={project.restrictCharging}
+                  />
+                </PropertyGroup>
+              )}
+
+              <ProjectControlSettings
+                project={project}
+                action={path.to.projectSettings(projectId)}
+                isDisabled={isDisabled}
+              />
+
+              <PropertyGroup title={t`Plan lock`}>
+                <PropertySelect
+                  {...common}
+                  field="lockPlanAfterMilestoneId"
+                  label={t`Lock plan after milestone`}
+                  termId="milestone"
+                  value={project.lockPlanAfterMilestoneId}
+                  options={(routeData?.milestones ?? []).map((milestone) => ({
+                    value: milestone.id,
+                    label: milestone.name
+                  }))}
+                />
+              </PropertyGroup>
+            </CollapsibleContent>
+          </Collapsible>
+        </VStack>
+      </PropertyLayoutProvider>
     </PropertySaveProvider>
   );
 }
@@ -298,24 +331,26 @@ function ProjectCustomerField({
   const { t } = useLingui();
   const { submit } = useProjectFieldSave(projectId, "", "customerId");
   return (
-    <ValidatedForm
-      key={`customerId:${customerId ?? ""}`}
-      defaultValues={{ customerId: customerId ?? "" }}
-      validator={z.object({ customerId: zfd.text(z.string().optional()) })}
-      className="w-full"
-    >
-      <Customer
-        name="customerId"
-        label={t`Customer`}
-        inline
-        isOptional
-        isReadOnly={isDisabled}
-        onChange={(option) => {
-          const next = option?.value || null;
-          if (next !== customerId) submit(next);
-        }}
-      />
-    </ValidatedForm>
+    <PropertyRow label={t`Customer`}>
+      <ValidatedForm
+        key={`customerId:${customerId ?? ""}`}
+        defaultValues={{ customerId: customerId ?? "" }}
+        validator={z.object({ customerId: zfd.text(z.string().optional()) })}
+        className="w-full"
+      >
+        <Customer
+          name="customerId"
+          label={usePropertyFieldLabel(t`Customer`)}
+          inline
+          isOptional
+          isReadOnly={isDisabled}
+          onChange={(option) => {
+            const next = option?.value || null;
+            if (next !== customerId) submit(next);
+          }}
+        />
+      </ValidatedForm>
+    </PropertyRow>
   );
 }
 
@@ -328,24 +363,26 @@ function ProjectOwnerField({
   const { t } = useLingui();
   const { submit } = useProjectFieldSave(projectId, "", "ownerId");
   return (
-    <ValidatedForm
-      key={`ownerId:${ownerId ?? ""}`}
-      defaultValues={{ ownerId: ownerId ?? "" }}
-      validator={z.object({ ownerId: zfd.text(z.string().optional()) })}
-      className="w-full"
-    >
-      <Employee
-        name="ownerId"
-        label={t`Owner`}
-        inline
-        isOptional
-        isReadOnly={isDisabled}
-        onChange={(option) => {
-          const next = option?.value || null;
-          if (next !== ownerId) submit(next);
-        }}
-      />
-    </ValidatedForm>
+    <PropertyRow label={t`Owner`}>
+      <ValidatedForm
+        key={`ownerId:${ownerId ?? ""}`}
+        defaultValues={{ ownerId: ownerId ?? "" }}
+        validator={z.object({ ownerId: zfd.text(z.string().optional()) })}
+        className="w-full"
+      >
+        <Employee
+          name="ownerId"
+          label={usePropertyFieldLabel(t`Owner`)}
+          inline
+          isOptional
+          isReadOnly={isDisabled}
+          onChange={(option) => {
+            const next = option?.value || null;
+            if (next !== ownerId) submit(next);
+          }}
+        />
+      </ValidatedForm>
+    </PropertyRow>
   );
 }
 
@@ -358,24 +395,26 @@ function ProjectLocationField({
   const { t } = useLingui();
   const { submit } = useProjectFieldSave(projectId, "", "locationId");
   return (
-    <ValidatedForm
-      key={`locationId:${locationId ?? ""}`}
-      defaultValues={{ locationId: locationId ?? "" }}
-      validator={z.object({ locationId: zfd.text(z.string().optional()) })}
-      className="w-full"
-    >
-      <Location
-        name="locationId"
-        label={t`Location`}
-        inline
-        isOptional
-        isReadOnly={isDisabled}
-        onChange={(option) => {
-          const next = option?.value || null;
-          if (next !== locationId) submit(next);
-        }}
-      />
-    </ValidatedForm>
+    <PropertyRow label={t`Location`}>
+      <ValidatedForm
+        key={`locationId:${locationId ?? ""}`}
+        defaultValues={{ locationId: locationId ?? "" }}
+        validator={z.object({ locationId: zfd.text(z.string().optional()) })}
+        className="w-full"
+      >
+        <Location
+          name="locationId"
+          label={usePropertyFieldLabel(t`Location`)}
+          inline
+          isOptional
+          isReadOnly={isDisabled}
+          onChange={(option) => {
+            const next = option?.value || null;
+            if (next !== locationId) submit(next);
+          }}
+        />
+      </ValidatedForm>
+    </PropertyRow>
   );
 }
 

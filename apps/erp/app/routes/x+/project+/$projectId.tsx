@@ -37,16 +37,28 @@ import type { ProjectTreeElement } from "~/modules/projects/ui/Project/ProjectEl
 import ProjectHeader from "~/modules/projects/ui/Project/ProjectHeader";
 import { ProjectSidebar } from "~/modules/projects/ui/Project/ProjectSidebar";
 import { getDatabaseClient } from "~/services/database.server";
-import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project");
 
 export const handle: Handle = {
-  breadcrumb: detailBreadcrumb(
+  // The project's crumb links to its Plan, as the element page's own
+  // "<identifier>" link does, so it returns there from an element.
+  breadcrumb: (
+    params: { projectId?: string },
+    data: { project?: { identifier?: string | null } } | undefined
+  ): BreadcrumbSegment[] => [
     { breadcrumb: msg`Projects`, to: path.to.projects },
-    (data) => data?.project?.identifier
-  ),
+    ...(data?.project?.identifier && params.projectId
+      ? [
+          {
+            breadcrumb: data.project.identifier,
+            to: path.to.projectElements(params.projectId)
+          }
+        ]
+      : [])
+  ],
   module: "projects"
 };
 

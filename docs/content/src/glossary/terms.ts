@@ -2326,7 +2326,7 @@ export const terms = {
   },
   element: {
     term: msg`Element`,
-    definition: msg`One item of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number.`,
+    definition: msg`One item of a project's tree, typed System, Requirement, Function, Task, Test Case or Parameter, with a readable id such as ST-12: the project identifier and a sequence number.`,
     href: "/docs/reference/projects#elements"
   },
   milestone: {

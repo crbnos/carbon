@@ -31,7 +31,6 @@ import { getCompany } from "~/modules/settings";
 const logger = getLogger("erp", "project-reader", "pdf");
 
 const TYPE_LABELS: Record<ProjectElementType, string> = {
-  Folder: "Folder",
   System: "System",
   Requirement: "Requirement",
   Function: "Function",

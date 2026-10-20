@@ -5,7 +5,7 @@
 
 CREATE TYPE "projectStatus" AS ENUM ('Draft', 'Released', 'On Hold', 'Technically Complete', 'Closed');
 CREATE TYPE "projectCostTreatment" AS ENUM ('Statistical', 'Expense', 'Capitalize', 'Contract');
-CREATE TYPE "projectElementType" AS ENUM ('Folder', 'System', 'Requirement', 'Function', 'Task', 'Test Case', 'Parameter');
+CREATE TYPE "projectElementType" AS ENUM ('System', 'Requirement', 'Function', 'Task', 'Test Case', 'Parameter');
 CREATE TYPE "projectStateGroup" AS ENUM ('Backlog', 'Unstarted', 'Started', 'Completed', 'Cancelled');
 CREATE TYPE "projectElementPriority" AS ENUM ('Urgent', 'High', 'Medium', 'Low', 'None');
 

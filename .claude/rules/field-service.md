@@ -95,10 +95,10 @@ page). The asset page is its own folder,
 - **The work is the project Plan page** (Brad, 2026-10-19: "the service ui should be
   similar to the projects ui"). The order's Work tab and the template page render
   `ServiceWorkList`: the Plan page's `ElementsHeader` (List only, New Element offers
-  System / Task / Folder, Build from part in its menu on an order; Print estimate in the
+  System / Task, Build from part in its menu on an order; Print estimate in the
   ⋯ menu) and `ElementList` (grouped by state, with the state / owner / date pills and
   the row menu). An element opens as a full page, the project `ElementView`: on an order
-  (`$id_.work.$elementId.tsx`) its charges show in place of Time & materials
+  (`$id_.work.$elementId.tsx`) its charges show in the Actual costs tab
   (`ServiceCharges`: Override coverage and Reverse in the row menu), Log time, Issue part
   and Add expense are its ⋯ menu's charge actions (`useServiceChargeActions`, posting to
   `$id.charge.tsx`), and Fixed price and Last service sit in the sidebar's Work group.
@@ -396,8 +396,8 @@ closes the order (`serviceOrder.salesInvoiceId`). Tax is 0.
 - **The visit page**: status buttons, the unit and its last 3 orders, the element picker
   (`NodePicker`),
   `WorkTimer` (the clock is per device in `localStorage`; Stop Work opens Log Time with the
-  elapsed hours), Issue Part (defaults to the van, `employeeJob.defaultStorageUnitId`),
-  Add Expense, notes, photos under `${companyId}/service/${orderId}/${visitId}/`, the
+  elapsed hours), Issue Part (the user's default location; there is no per-person van
+  setting, Brad 2026-10-20), Add Expense, notes, photos under `${companyId}/service/${orderId}/${visitId}/`, the
   signature (`$id.visits.$visitId.signature.tsx` uploads `signature.png` and saves the
   path and name), and Complete with **Work complete?**.
 - Visit RLS lets the technician update their own visit (owner rule on `technicianId`);

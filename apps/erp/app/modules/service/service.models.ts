@@ -458,7 +458,7 @@ export function serviceTemplateIdentifier(projectId: string): string {
 // --- Work --------------------------------------------------------------------
 
 /** The node types a service order's work tree offers (no engineering types). */
-export const serviceNodeTypes = ["System", "Task", "Folder"] as const;
+export const serviceNodeTypes = ["System", "Task"] as const;
 export type ServiceNodeType = (typeof serviceNodeTypes)[number];
 
 /** An expense charged to a node: mileage, a meal, a part bought on a card. */

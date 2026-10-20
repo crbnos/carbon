@@ -85,6 +85,10 @@ msgstr "{0, plural, one {# dzień luzu} few {# dni luzu} many {# dni luzu} other
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# dzień za krótko} few {# dni za krótko} many {# dni za krótko} other {# dni za krótko}}"
 
+#. placeholder {0}: -daysLeft
+msgid "{0, plural, one {# day} other {# days}} past {due}"
+msgstr ""
+
 #. placeholder {0}: groups.length
 msgid "{0, plural, one {# element changed} other {# elements changed}}"
 msgstr "{0, plural, one {# element się zmienił} other {# elementy się zmieniły}}"
@@ -113,6 +117,10 @@ msgstr "{0, plural, one {# odnośnik} other {# odnośniki}}"
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operacja nie ma standardów czasu} few {# operacje nie mają standardów czasu} many {# operacji nie ma standardów czasu} other {# operacji nie ma standardów czasu}}"
+
+#. placeholder {0}: progress.overdue
+msgid "{0, plural, one {# overdue} other {# overdue}}"
+msgstr ""
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
@@ -347,6 +355,10 @@ msgstr "{0} z {maxSlots} slotów dostawcy jest w użyciu"
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} z {memberCount} zleceń produkcyjnych nie zostały jeszcze zakończone — ich wyjście pozostaje poza zapasem, dopóki każde zlecenie produkcyjne nie zostanie zakończone."
 
+#. placeholder {0}: progress.done
+msgid "{0} of {whole} done"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operacji · {totalQuantity} części"
@@ -452,6 +464,10 @@ msgstr "{0} wartości"
 msgid "{0} values missing"
 msgstr "{0} brakujących wartości"
 
+#. placeholder {0}: itemOf(entry.itemId)
+msgid "{0} was issued to {element}"
+msgstr ""
+
 #. placeholder {0}: warning.readableId
 #. placeholder {1}: warning.message
 msgid "{0} was released with a problem: {1}"
@@ -519,6 +535,10 @@ msgstr "{account} ma zaksięgowaną historię, dlatego nie można go usunąć."
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} części pominięto — już mają otwarte zlecenia produkcyjne"
+
+#. placeholder {0}: entry.costType
+msgid "{amount} of {0} posted to {element}"
+msgstr ""
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% zobowiązań"
@@ -589,6 +609,9 @@ msgstr "{created} utworzono, {updated} zaktualizowano."
 
 msgid "{days}d"
 msgstr "{days}d"
+
+msgid "{daysLeft, plural, one {# day} other {# days}} until {due}"
+msgstr ""
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "${delegatedTo} wysyła to do Twojej księgi, więc Carbon tego nie wysyła. Twój zapisany wybór jest zachowywany na wypadek zmian."
@@ -818,6 +841,15 @@ msgstr "{value, plural, one {# dzień} few {# dni} many {# dni} other {# dni}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# pozycja różni się od oczekiwanej ilości} other {# pozycje różnią się od oczekiwanej ilości}}"
+
+msgid "{who} commented on {element}"
+msgstr ""
+
+msgid "{who} logged {quantity} on {element}"
+msgstr ""
+
+msgid "{who} reversed {amount} on {element}"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}r"
@@ -1371,6 +1403,9 @@ msgstr "Zadanie niezgodności, które naprawia potwierdzoną przyczynę źródł
 
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "Zadanie niezgodności, które uniemożliwia powtarzanie się problemu gdzie indziej — różne od poprawy naprawczej i zabezpieczenia."
+
+msgid "A part"
+msgstr ""
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "Część zawiera informacje o konkretnym artykule, który można kupić lub wyprodukować."
@@ -2117,9 +2152,6 @@ msgstr "Aktywność"
 
 msgid "Actual"
 msgstr "Rzeczywista"
-
-msgid "Actual {actualText} · Committed {committedText}"
-msgstr "Rzeczywiste {actualText} · Zobowiązane {committedText}"
 
 #. placeholder {0}: duration(actual.total)
 msgid "Actual <0>{0}</0>"
@@ -6024,6 +6056,9 @@ msgstr "Połącz produkty w jedną partię"
 msgid "Coming soon"
 msgstr "Wkrótce"
 
+msgid "Coming up"
+msgstr ""
+
 msgid "comma-separated values"
 msgstr "wartości oddzielone przecinkami"
 
@@ -9376,9 +9411,6 @@ msgstr "termin {0}"
 msgid "Due {0}"
 msgstr "Termin {0}"
 
-msgid "Due {due}"
-msgstr "Termin {due}"
-
 msgid "Due <0/>"
 msgstr "Termin <0/>"
 
@@ -10069,9 +10101,6 @@ msgstr "Elementy"
 
 msgid "Elements completed"
 msgstr "Elementy ukończone"
-
-msgid "Elements done"
-msgstr "Elementy gotowe"
 
 msgid "Eliminated"
 msgstr "Wyeliminowane"
@@ -11773,9 +11802,6 @@ msgstr ""
 msgid "Focus on {label}"
 msgstr "Skoncentruj się na {label}"
 
-msgid "Folder"
-msgstr "Folder"
-
 msgid "Follows"
 msgstr "Następuje"
 
@@ -13327,6 +13353,10 @@ msgstr "Użytek wewnętrzny"
 
 msgid "Into"
 msgstr "Do"
+
+#. placeholder {0}: newParent.name
+msgid "Into {0}"
+msgstr ""
 
 msgid "inv"
 msgstr "inv"
@@ -15999,9 +16029,6 @@ msgstr "Nowe pole"
 msgid "New Fixed Asset"
 msgstr "Nowy Środek Trwały"
 
-msgid "New Folder"
-msgstr "Nowy folder"
-
 msgid "New Function"
 msgstr "Nowa funkcja"
 
@@ -16230,9 +16257,6 @@ msgstr "Nowy Sposób wysyłki"
 msgid "New Size"
 msgstr "Nowy rozmiar"
 
-msgid "New state"
-msgstr "Nowy stan"
-
 msgid "New Storage Type"
 msgstr "Nowy typ magazynu"
 
@@ -16362,9 +16386,6 @@ msgstr "Następna faktura {date} jest tworzona automatycznie, a następnie zaksi
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "Następna faktura {date} jest tworzona automatycznie, a następnie zaksięgowana."
 
-msgid "Next milestone"
-msgstr "Następny punkt etapowy"
-
 msgid "Next page"
 msgstr "Następna strona"
 
@@ -16446,6 +16467,9 @@ msgstr "Brak aktywnego planu"
 msgid "No Active Quotes"
 msgstr "Brak aktywnych ofert"
 
+msgid "No activity yet."
+msgstr ""
+
 msgid "No addresses found"
 msgstr "Nie znaleziono adresów"
 
@@ -16513,8 +16537,8 @@ msgstr "Brak okresów rozliczeniowych."
 msgid "No BOM input has a shelf-life policy"
 msgstr "Żadne wejście BOM nie ma polityki przydatności do spożycia"
 
-msgid "No budget set on the plan."
-msgstr "Brak budżetu ustawionego w planie."
+msgid "No budget set on the plan. Actual {actualText} · Committed {committedText}"
+msgstr ""
 
 msgid "No CAD model to preview."
 msgstr "Brak modelu CAD do podglądu."
@@ -16720,6 +16744,9 @@ msgstr "Nie znaleziono pracowników"
 msgid "No end"
 msgstr "Brak końca"
 
+msgid "No estimated costs."
+msgstr ""
+
 msgid "No events found."
 msgstr "Nie znaleziono zdarzeń."
 
@@ -16897,6 +16924,9 @@ msgstr "Brak kamienia milowego"
 msgid "No milestones yet"
 msgstr "Brak kamieni milowych"
 
+msgid "No milestones yet."
+msgstr ""
+
 msgid "No modules found"
 msgstr "Nie znaleziono modułów"
 
@@ -16947,6 +16977,9 @@ msgstr "Brak otwartych zwrotów kosztów"
 
 msgid "No open sales order lines"
 msgstr "Brak otwartych pozycji zamówienia sprzedaży"
+
+msgid "No open work has a target date."
+msgstr ""
 
 msgid "No operations found."
 msgstr "Nie znaleziono operacji."
@@ -17306,9 +17339,6 @@ msgstr "Brak niezaksięgowanych dokumentów datowanych przed datą przejścia"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Brak nierozpoczętych, niezagregowanych operacji na tym procesie w tej lokalizacji."
 
-msgid "No upcoming milestone"
-msgstr "Brak nadchodzącego kamienia milowego"
-
 msgid "No value"
 msgstr "Brak wartości"
 
@@ -17347,6 +17377,9 @@ msgstr "Nie istnieją stanowiska robocze"
 
 msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
 msgstr "Brak pakietów pracy jeszcze. Przypisz elementowi podlegającemu opłacie poniżej konta kontrolnego technikę wartości zarobionej."
+
+msgid "No work yet. <0>Plan the project</0>"
+msgstr ""
 
 msgid "No, More Work"
 msgstr "Nie, Więcej pracy"
@@ -17521,6 +17554,12 @@ msgstr "W MES nic jeszcze nie ukończono"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "W tym miejscu nic innego nie ma zapasów do pobrania."
 
+msgid "Nothing has been charged yet."
+msgstr ""
+
+msgid "Nothing has been charged yet. Log time, issue material, or charge a job or purchase order to this element."
+msgstr ""
+
 msgid "Nothing here matches your search and filters."
 msgstr "Nic tutaj nie odpowiada Twojemu wyszukiwaniu i filtrom."
 
@@ -17541,9 +17580,6 @@ msgstr "Nic nie jest synchronizowane, dopóki nie włączysz synchronizacji. Ka�
 
 msgid "Nothing lent"
 msgstr "Nic nie pożyczone"
-
-msgid "Nothing needs attention"
-msgstr "Nic nie wymaga uwagi"
 
 msgid "Nothing owed"
 msgstr "Nic się nie należy"
@@ -17810,8 +17846,8 @@ msgstr "Jeden plik CSV na harmonogram poniesionych kosztów. Harmonogramy D, F, 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Jedno wykonanie przepływu pracy, zarejestrowane krok po kroku z wartościami, które każdy krok użył i wygenerował, działając z uprawnieniami właściciela przepływu pracy."
 
-msgid "One item of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
-msgstr "Jeden artykuł drzewa projektu, typu System, Wymaganie, Funkcja, Zadanie, Przypadek testowy, Folder lub Parametr, z czytelnym identyfikatorem takim jak ST-12: identyfikator projektu i numer sekwencji."
+msgid "One item of a project's tree, typed System, Requirement, Function, Task, Test Case or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
+msgstr ""
 
 msgid "One or more quantities cannot meet this date"
 msgstr "Jedna lub więcej ilości nie może spełnić tego terminu"
@@ -18007,6 +18043,9 @@ msgstr "Otwarte Zlecenia produkcyjne"
 
 msgid "Open menu"
 msgstr "Otwórz menu"
+
+msgid "Open My Time"
+msgstr ""
 
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "Otwórz jeden, aby zmienić plan w wersji roboczej, którą recenzenci zatwierdzają przed zastosowaniem."
@@ -20757,6 +20796,9 @@ msgstr "Lokalizacja przyjęcia"
 
 msgid "Recent"
 msgstr "Ostatnie"
+
+msgid "Recent activity"
+msgstr ""
 
 msgid "Recent payments"
 msgstr "Ostatnie płatności"
@@ -23967,6 +24009,9 @@ msgstr "Niektóre rekordy nie wrócą. Wpisz <0>{CONFIRM_WORD}</0> aby kontynuow
 msgid "Some Shifts"
 msgstr "Niektóre zmiany"
 
+msgid "Someone"
+msgstr ""
+
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Osoba, która może aktualizować księgowość, musi wpisać, ile kosztowało to wytworzenie, zanim będzie można to skapitalizować."
 
@@ -24217,9 +24262,6 @@ msgstr "Uruchamianie…"
 msgid "Starts"
 msgstr "Rozpoczyna się"
 
-msgid "Starts {start}"
-msgstr "Zaczyna się {start}"
-
 msgid "State"
 msgstr "Stan"
 
@@ -24413,8 +24455,8 @@ msgstr "Wstrzymaj Pracę"
 msgid "Stop-work order"
 msgstr "Nakaz wstrzymania pracy"
 
-msgid "Stop-work order since {stopWorkStart}, ends {stopWorkEndDate}"
-msgstr "Nakaz wstrzymania pracy od {stopWorkStart}, kończy się {stopWorkEndDate}"
+msgid "Stop-work order since {start}, ends {end}"
+msgstr ""
 
 msgid "Stop-Work Orders"
 msgstr "Polecenia Wstrzymania Pracy"
@@ -24588,6 +24630,12 @@ msgstr "Prześlij kontrolę"
 
 msgid "Submit week"
 msgstr "Prześlij tydzień"
+
+msgid "Submits all your draft time of this week for approval."
+msgstr ""
+
+msgid "Submits and posts all your draft time of this week."
+msgstr ""
 
 msgid "Submitted"
 msgstr "Przesłane"
@@ -26143,6 +26191,9 @@ msgstr "Procesy, które może wykonać to stanowisko robocze; pojawia się w sel
 msgid "The progress behind each project contract line in this run."
 msgstr "Postęp za każdą pozycją umowy projektowej w tym przebiegu."
 
+msgid "the project"
+msgstr ""
+
 msgid "The project element a Time & Materials or Cost Plus contract line bills. The line bills the work charged to it and to every element below it."
 msgstr "Element projektu, który linia umowy Time & Materials lub Cost Plus rozlicza. Linia rozlicza pracę przypisaną do niej i do każdego elementu poniżej niej."
 
@@ -27123,9 +27174,6 @@ msgstr "Obostrzona"
 msgid "Time"
 msgstr "Czas"
 
-msgid "Time & materials"
-msgstr "Czas i materiały"
-
 msgid "Time & Materials"
 msgstr "Czas i materiały"
 
@@ -27248,6 +27296,9 @@ msgstr "Do dostawcy"
 
 msgid "To test whether it is a sale, <0>give the agreement a fixed term</0>."
 msgstr "Aby sprawdzić, czy jest to sprzedaż, <0>nadaj umowie ustalony okres</0>."
+
+msgid "To the top level"
+msgstr ""
 
 msgid "To:"
 msgstr "Do:"
@@ -28420,9 +28471,6 @@ msgstr "Wartości stosują dzisiejsze koszty jednostkowe do historycznych ilośc
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Wartości w tym przebiegu zostały podsumowane. Pełne szczegóły są przechowywane przez 7 dni."
 
-msgid "Van"
-msgstr ""
-
 msgid "Variable lease cost"
 msgstr "Zmienny koszt leasingu"
 
@@ -28610,6 +28658,9 @@ msgstr "Wyświetl Główny Katalog Pozycji"
 msgid "View Journal Entry"
 msgstr "Wyświetl zapis księgowy"
 
+msgid "View list"
+msgstr ""
+
 msgid "View Lists"
 msgstr "Wyświetl listy"
 
@@ -28705,6 +28756,9 @@ msgstr "Wyświetl zlecenie zwrotu"
 
 msgid "View Run"
 msgstr "Wyświetl uruchomienie"
+
+msgid "View schedule"
+msgstr ""
 
 msgid "View Scheduled"
 msgstr "Wyświetl zaplanowane"
@@ -29319,9 +29373,6 @@ msgstr "Gdzie towary tej linii lądują w zapasach przy odbiorze; jeśli puste, 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "Gdzie pochodzi to żądanie utrzymania ruchu — zgłoszone przez operatora, zaplanowane, wyzwalacz monitorowania stanu, kontrola po zleceniu produkcyjnym; napędza podział źródeł w raportach utrzymania ruchu."
 
-msgid "Where this person's service parts are issued from first"
-msgstr "Skąd najpierw są wydawane części serwisowe tej osoby"
-
 msgid "Where you are today"
 msgstr "Gdzie jesteś dzisiaj"
 
@@ -29675,6 +29726,9 @@ msgstr "Tak, Aktualizuj identyfikatory"
 
 msgid "Yes, Work Complete"
 msgstr "Tak, prace ukończone"
+
+msgid "Yesterday"
+msgstr ""
 
 msgid "You"
 msgstr "Ty"

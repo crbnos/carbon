@@ -58,7 +58,6 @@ export type VisitPageProps = {
   photos: { name: string; path: string }[];
   laborCategories: { id: string; name: string }[];
   defaultLaborCategoryId: string | null;
-  van: { storageUnitId: string; locationId: string } | null;
   /** May work this visit: its technician, or a user who updates service. */
   mayWork: boolean;
   /** May move this visit's status. */
@@ -80,7 +79,6 @@ export default function VisitPage({
   photos,
   laborCategories,
   defaultLaborCategoryId,
-  van,
   mayWork,
   mayMove,
   canIssue
@@ -350,8 +348,6 @@ export default function VisitPage({
         <IssueMaterialModal
           projectId={order.projectId}
           element={selectedNode}
-          defaultLocationId={van?.locationId}
-          defaultStorageUnitId={van?.storageUnitId}
           action={chargeAction}
           hiddenFields={{ intent: "part", serviceVisitId: visit.id }}
           variant="service"

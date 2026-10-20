@@ -5,7 +5,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
 import { DetailSidebar } from "~/components/Layout";
-import { useOptimisticLocation, useRouteData } from "~/hooks";
+import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import type { ProjectTreeElement } from "~/modules/projects/ui/Project/ProjectElementTree";
 import { ProjectElementTree } from "~/modules/projects/ui/Project/ProjectElementTree";
 import { path } from "~/utils/path";
@@ -27,7 +27,14 @@ export function ServiceOrderSidebar() {
     treeElements: ProjectTreeElement[];
   }>(path.to.serviceOrder(id));
 
+  const permissions = usePermissions();
+
   const isWorkPage = location.pathname.startsWith(path.to.serviceOrderWork(id));
+  // The work routes refuse a Closed project: a Closed or Cancelled order.
+  const canMoveElements =
+    permissions.can("update", "service") &&
+    !!data &&
+    !["Closed", "Cancelled"].includes(data.serviceOrder.status ?? "");
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2 p-2">
@@ -38,6 +45,7 @@ export function ServiceOrderSidebar() {
         <ProjectElementTree
           projectId={data.serviceOrder.projectId}
           elements={data.treeElements}
+          canMove={canMoveElements}
           className="flex-1 border-t border-border pt-2"
         />
       )}

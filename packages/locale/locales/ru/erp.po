@@ -85,6 +85,10 @@ msgstr "{0, plural, one {# день страхового запаса} few {# д
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# день недостатка} few {# дня недостатка} many {# дней недостатка} other {# дней недостатка}}"
 
+#. placeholder {0}: -daysLeft
+msgid "{0, plural, one {# day} other {# days}} past {due}"
+msgstr ""
+
 #. placeholder {0}: groups.length
 msgid "{0, plural, one {# element changed} other {# elements changed}}"
 msgstr "{0, plural, one {# элемент изменён} few {# элемента изменены} other {# элементов изменено}}"
@@ -113,6 +117,10 @@ msgstr "{0, plural, one {# связь} few {# связи} other {# связей}
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# операция не имеет временных нормативов} few {# операции не имеют временных нормативов} many {# операций не имеют временных нормативов} other {# операций не имеют временных нормативов}}"
+
+#. placeholder {0}: progress.overdue
+msgid "{0, plural, one {# overdue} other {# overdue}}"
+msgstr ""
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
@@ -347,6 +355,10 @@ msgstr "{0} из {maxSlots} слотов провайдера используе
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} из {memberCount} производственных заказов еще не завершены — их выпуск остается вне запаса до завершения каждого производственного заказа."
 
+#. placeholder {0}: progress.done
+msgid "{0} of {whole} done"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} операций · {totalQuantity} деталей"
@@ -452,6 +464,10 @@ msgstr "{0} значений"
 msgid "{0} values missing"
 msgstr "{0} значений отсутствует"
 
+#. placeholder {0}: itemOf(entry.itemId)
+msgid "{0} was issued to {element}"
+msgstr ""
+
 #. placeholder {0}: warning.readableId
 #. placeholder {1}: warning.message
 msgid "{0} was released with a problem: {1}"
@@ -519,6 +535,10 @@ msgstr "{account} имеет проведенную историю, поэтом
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} деталей пропущено — у них уже есть открытые производственные заказы"
+
+#. placeholder {0}: entry.costType
+msgid "{amount} of {0} posted to {element}"
+msgstr ""
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% кредиторской задолженности"
@@ -589,6 +609,9 @@ msgstr "{created} создано, {updated} обновлено."
 
 msgid "{days}d"
 msgstr "{days}д"
+
+msgid "{daysLeft, plural, one {# day} other {# days}} until {due}"
+msgstr ""
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "${delegatedTo} отправляет это в вашу бухгалтерскую книгу, поэтому Carbon не отправляет это. Ваш сохраненный выбор сохраняется на случай, если это изменится."
@@ -818,6 +841,15 @@ msgstr "{value, plural, one {# день} few {# дня} many {# дней} other 
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# строка отличается от ожидаемого количества} other {# строк отличаются от ожидаемого количества}}"
+
+msgid "{who} commented on {element}"
+msgstr ""
+
+msgid "{who} logged {quantity} on {element}"
+msgstr ""
+
+msgid "{who} reversed {amount} on {element}"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}год"
@@ -1371,6 +1403,9 @@ msgstr "Задача несоответствия, которая устраня
 
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "Задача несоответствия, которая предотвращает повторение проблемы в других местах — отличающаяся от исправления и локализации."
+
+msgid "A part"
+msgstr ""
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "Деталь содержит информацию о конкретном товаре, который можно приобрести или изготовить."
@@ -2117,9 +2152,6 @@ msgstr "Активность"
 
 msgid "Actual"
 msgstr "Фактическое"
-
-msgid "Actual {actualText} · Committed {committedText}"
-msgstr "Фактический {actualText} · Обязанный {committedText}"
 
 #. placeholder {0}: duration(actual.total)
 msgid "Actual <0>{0}</0>"
@@ -6024,6 +6056,9 @@ msgstr "Объединить выход в одну партию"
 msgid "Coming soon"
 msgstr "Скоро"
 
+msgid "Coming up"
+msgstr ""
+
 msgid "comma-separated values"
 msgstr "значения, разделённые запятыми"
 
@@ -9376,9 +9411,6 @@ msgstr "срок {0}"
 msgid "Due {0}"
 msgstr "Срок {0}"
 
-msgid "Due {due}"
-msgstr "Должно быть {due}"
-
 msgid "Due <0/>"
 msgstr "До <0/>"
 
@@ -10069,9 +10101,6 @@ msgstr "Элементы"
 
 msgid "Elements completed"
 msgstr "Элементы завершены"
-
-msgid "Elements done"
-msgstr "Элементы готовы"
 
 msgid "Eliminated"
 msgstr "Исключено"
@@ -11773,9 +11802,6 @@ msgstr ""
 msgid "Focus on {label}"
 msgstr "Сосредоточиться на {label}"
 
-msgid "Folder"
-msgstr "Папка"
-
 msgid "Follows"
 msgstr "Следует"
 
@@ -13327,6 +13353,10 @@ msgstr "Внутреннее использование"
 
 msgid "Into"
 msgstr "В"
+
+#. placeholder {0}: newParent.name
+msgid "Into {0}"
+msgstr ""
 
 msgid "inv"
 msgstr "инв"
@@ -15999,9 +16029,6 @@ msgstr "Новое поле"
 msgid "New Fixed Asset"
 msgstr "Новое основное средство"
 
-msgid "New Folder"
-msgstr "Новая папка"
-
 msgid "New Function"
 msgstr "Новая функция"
 
@@ -16230,9 +16257,6 @@ msgstr "Новый способ доставки"
 msgid "New Size"
 msgstr "Новый размер"
 
-msgid "New state"
-msgstr "Новое состояние"
-
 msgid "New Storage Type"
 msgstr "Новый тип хранилища"
 
@@ -16362,9 +16386,6 @@ msgstr "Следующая счет-фактура на {date} создаетс�
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "Следующий счет-фактура {date} создается автоматически, затем проводится."
 
-msgid "Next milestone"
-msgstr "Следующая веха"
-
 msgid "Next page"
 msgstr "Следующая страница"
 
@@ -16446,6 +16467,9 @@ msgstr "Нет активного плана"
 msgid "No Active Quotes"
 msgstr "Нет активных предложений"
 
+msgid "No activity yet."
+msgstr ""
+
 msgid "No addresses found"
 msgstr "Адреса не найдены"
 
@@ -16513,8 +16537,8 @@ msgstr "Нет периодов выставления счетов."
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ни один вход BOM не имеет политики срока хранения"
 
-msgid "No budget set on the plan."
-msgstr "На плане не установлен бюджет."
+msgid "No budget set on the plan. Actual {actualText} · Committed {committedText}"
+msgstr ""
 
 msgid "No CAD model to preview."
 msgstr "Нет модели CAD для предпросмотра."
@@ -16720,6 +16744,9 @@ msgstr "Сотрудники не найдены"
 msgid "No end"
 msgstr "Нет конца"
 
+msgid "No estimated costs."
+msgstr ""
+
 msgid "No events found."
 msgstr "События не найдены."
 
@@ -16897,6 +16924,9 @@ msgstr "Нет вехи"
 msgid "No milestones yet"
 msgstr "Нет вех"
 
+msgid "No milestones yet."
+msgstr ""
+
 msgid "No modules found"
 msgstr "Модули не найдены"
 
@@ -16947,6 +16977,9 @@ msgstr "Нет открытых возмещений"
 
 msgid "No open sales order lines"
 msgstr "Нет открытых строк заказов покупателя"
+
+msgid "No open work has a target date."
+msgstr ""
 
 msgid "No operations found."
 msgstr "Операции не найдены."
@@ -17306,9 +17339,6 @@ msgstr "Нет непроведенных документов, датирова
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "На этом процессе в этом месте нет неначатых, необработанных операций."
 
-msgid "No upcoming milestone"
-msgstr "Нет предстоящей вехи"
-
 msgid "No value"
 msgstr "Нет значения"
 
@@ -17347,6 +17377,9 @@ msgstr "Рабочих центров не существует"
 
 msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
 msgstr "Пакетов работ еще нет. Назначьте рассчитываемому элементу ниже счета контроля метод заработанного значения."
+
+msgid "No work yet. <0>Plan the project</0>"
+msgstr ""
 
 msgid "No, More Work"
 msgstr "Нет, еще работа"
@@ -17521,6 +17554,12 @@ msgstr "В MES пока ничего не завершено"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
 
+msgid "Nothing has been charged yet."
+msgstr ""
+
+msgid "Nothing has been charged yet. Log time, issue material, or charge a job or purchase order to this element."
+msgstr ""
+
 msgid "Nothing here matches your search and filters."
 msgstr "Здесь нет ничего, соответствующего вашему поиску и фильтрам."
 
@@ -17541,9 +17580,6 @@ msgstr "Ничего не синхронизируется, пока вы не �
 
 msgid "Nothing lent"
 msgstr "Ничего не ссужено"
-
-msgid "Nothing needs attention"
-msgstr "Ничего не требует внимания"
 
 msgid "Nothing owed"
 msgstr "Нечего платить"
@@ -17810,8 +17846,8 @@ msgstr "Один CSV на каждый список понесенных зат�
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Одно выполнение рабочего процесса, записанное пошагово со значениями, использованными и созданными каждым шагом, выполняющееся с правами доступа владельца рабочего процесса."
 
-msgid "One item of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
-msgstr "Одна номенклатура проектного дерева, типа Система, Требование, Функция, Задача, Тестовый случай, Папка или Параметр, с читаемым идентификатором, таким как ST-12: идентификатор проекта и номер нумерации."
+msgid "One item of a project's tree, typed System, Requirement, Function, Task, Test Case or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
+msgstr ""
 
 msgid "One or more quantities cannot meet this date"
 msgstr "Одно или несколько количеств не могут соответствовать этой дате"
@@ -18007,6 +18043,9 @@ msgstr "Открытые производственные заказы"
 
 msgid "Open menu"
 msgstr "Открыть меню"
+
+msgid "Open My Time"
+msgstr ""
 
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "Откройте один, чтобы изменить план в черновике, который рецензенты утверждают перед применением."
@@ -20757,6 +20796,9 @@ msgstr "Площадка приемки"
 
 msgid "Recent"
 msgstr "Недавние"
+
+msgid "Recent activity"
+msgstr ""
 
 msgid "Recent payments"
 msgstr "Недавние платежи"
@@ -23967,6 +24009,9 @@ msgstr "Некоторые записи не вернутся. Введите <0
 msgid "Some Shifts"
 msgstr "Некоторые смены"
 
+msgid "Someone"
+msgstr ""
+
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Пользователь, имеющий права на обновление бухгалтерии, должен ввести себестоимость производства перед тем, как она может быть капитализирована."
 
@@ -24217,9 +24262,6 @@ msgstr "Начинаю…"
 msgid "Starts"
 msgstr "Начинается"
 
-msgid "Starts {start}"
-msgstr "Начинается {start}"
-
 msgid "State"
 msgstr "Состояние"
 
@@ -24413,8 +24455,8 @@ msgstr "Остановить работу"
 msgid "Stop-work order"
 msgstr "Приказ об остановке работ"
 
-msgid "Stop-work order since {stopWorkStart}, ends {stopWorkEndDate}"
-msgstr "Приказ об остановке работ с {stopWorkStart}, заканчивается {stopWorkEndDate}"
+msgid "Stop-work order since {start}, ends {end}"
+msgstr ""
 
 msgid "Stop-Work Orders"
 msgstr "Приказы об остановке работы"
@@ -24588,6 +24630,12 @@ msgstr "Отправить контроль"
 
 msgid "Submit week"
 msgstr "Отправить неделю"
+
+msgid "Submits all your draft time of this week for approval."
+msgstr ""
+
+msgid "Submits and posts all your draft time of this week."
+msgstr ""
 
 msgid "Submitted"
 msgstr "Отправлено"
@@ -26143,6 +26191,9 @@ msgstr "Процессы, которые может выполнять этот 
 msgid "The progress behind each project contract line in this run."
 msgstr "Прогресс по каждой строке контракта проекта в этом запуске."
 
+msgid "the project"
+msgstr ""
+
 msgid "The project element a Time & Materials or Cost Plus contract line bills. The line bills the work charged to it and to every element below it."
 msgstr "Элемент проекта, который счет Time & Materials или Cost Plus счет строки. Строка выставляет счет за работу, начисленную на него и на все элементы ниже."
 
@@ -27123,9 +27174,6 @@ msgstr "Усиленный"
 msgid "Time"
 msgstr "Время"
 
-msgid "Time & materials"
-msgstr "Время и материалы"
-
 msgid "Time & Materials"
 msgstr "Время и материалы"
 
@@ -27248,6 +27296,9 @@ msgstr "Поставщику"
 
 msgid "To test whether it is a sale, <0>give the agreement a fixed term</0>."
 msgstr "Чтобы проверить, является ли это продажей, <0>установите соглашению фиксированный срок</0>."
+
+msgid "To the top level"
+msgstr ""
 
 msgid "To:"
 msgstr "По:"
@@ -28420,9 +28471,6 @@ msgstr "Значения применяют сегодняшние себест�
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Значения в этом запуске были сведены. Полные детали хранятся 7 дней."
 
-msgid "Van"
-msgstr ""
-
 msgid "Variable lease cost"
 msgstr "Переменная стоимость лизинга"
 
@@ -28610,6 +28658,9 @@ msgstr "Просмотр основных данных товара"
 msgid "View Journal Entry"
 msgstr "Просмотр Проводки"
 
+msgid "View list"
+msgstr ""
+
 msgid "View Lists"
 msgstr "Просмотр списков"
 
@@ -28705,6 +28756,9 @@ msgstr "Просмотр заказа возврата"
 
 msgid "View Run"
 msgstr "Просмотр запуска"
+
+msgid "View schedule"
+msgstr ""
 
 msgid "View Scheduled"
 msgstr "Просмотреть запланированные"
@@ -29319,9 +29373,6 @@ msgstr "Где товары этой строки попадают в инвен
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "Откуда пришел этот запрос на техобслуживание — сообщено оператором, запланировано, триггер мониторинга состояния, контроль после работы; определяет разбор источников в отчетах по техобслуживанию."
 
-msgid "Where this person's service parts are issued from first"
-msgstr "Откуда в первую очередь выдаются запасные части для этого лица"
-
 msgid "Where you are today"
 msgstr "Где вы находитесь сегодня"
 
@@ -29675,6 +29726,9 @@ msgstr "Да, обновить ID"
 
 msgid "Yes, Work Complete"
 msgstr "Да, работа завершена"
+
+msgid "Yesterday"
+msgstr ""
 
 msgid "You"
 msgstr "Вы"

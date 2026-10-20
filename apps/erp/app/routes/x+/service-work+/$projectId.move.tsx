@@ -18,10 +18,29 @@ import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "service-work-move");
 
+/** The `updates` field: a JSON list of `{ id, sortOrder }`; null when invalid. */
+function readOrderUpdates(
+  formData: FormData
+): { id: string; sortOrder: number }[] | null {
+  try {
+    const parsed = JSON.parse(String(formData.get("updates") ?? "[]"));
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (u): u is { id: string; sortOrder: number } =>
+          typeof u?.id === "string" && Number.isFinite(Number(u?.sortOrder))
+      )
+      .map((u) => ({ id: u.id, sortOrder: Number(u.sortOrder) }));
+  } catch {
+    return null;
+  }
+}
+
 /**
  * The service twin of the project's `elements.move`:
  * - `move`: puts `elementId` under `parentId` (empty for the top level),
- *   after its new last sibling.
+ *   after its new last sibling; with `updates`, then saves the new siblings'
+ *   order (a drop between two rows of the sidebar tree).
  * - `order`: saves the sort order of siblings (`updates`, a JSON list of
  *   `{ id, sortOrder }`).
  */
@@ -52,12 +71,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
     const parentId =
       typeof parentValue === "string" && parentValue ? parentValue : null;
+    const order = readOrderUpdates(formData);
+    if (order === null) return refuse(null, "Invalid order");
 
     try {
       await requireServiceWork(client, {
         companyId,
         projectId,
-        elementIds: parentId ? [elementId, parentId] : [elementId]
+        elementIds: [
+          ...new Set([
+            elementId,
+            ...(parentId ? [parentId] : []),
+            ...order.map((u) => u.id)
+          ])
+        ]
       });
       const siblings = client
         .from("projectElement")
@@ -79,6 +106,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
         parentId,
         sortOrder: Number(last.data?.sortOrder ?? 0) + 1
       });
+      if (order.length > 0) {
+        await updateProjectElementOrder(
+          getDatabaseClient(),
+          companyId,
+          userId,
+          projectId,
+          order
+        );
+      }
     } catch (err) {
       return failed(
         err,
@@ -89,20 +125,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (intent === "order") {
-    let updates: { id: string; sortOrder: number }[] = [];
-    try {
-      const parsed = JSON.parse(String(formData.get("updates") ?? "[]"));
-      if (Array.isArray(parsed)) {
-        updates = parsed
-          .filter(
-            (u): u is { id: string; sortOrder: number } =>
-              typeof u?.id === "string" && Number.isFinite(Number(u?.sortOrder))
-          )
-          .map((u) => ({ id: u.id, sortOrder: Number(u.sortOrder) }));
-      }
-    } catch {
-      return refuse(null, "Invalid order");
-    }
+    const updates = readOrderUpdates(formData);
+    if (updates === null) return refuse(null, "Invalid order");
     if (updates.length === 0) return data({ success: true });
 
     try {

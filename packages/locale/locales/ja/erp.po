@@ -85,6 +85,10 @@ msgstr "{0, plural, one {# 日のスラック} other {# 日のスラック}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 日の不足} other {# 日の不足}}"
 
+#. placeholder {0}: -daysLeft
+msgid "{0, plural, one {# day} other {# days}} past {due}"
+msgstr ""
+
 #. placeholder {0}: groups.length
 msgid "{0, plural, one {# element changed} other {# elements changed}}"
 msgstr "{0, plural, one {# 要素が変更されました} other {# 要素が変更されました}}"
@@ -113,6 +117,10 @@ msgstr "{0, plural, one {# リンク} other {# リンク}}"
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 工程に標準時間がない} other {# 工程に標準時間がない}}"
+
+#. placeholder {0}: progress.overdue
+msgid "{0, plural, one {# overdue} other {# overdue}}"
+msgstr ""
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
@@ -347,6 +355,10 @@ msgstr "{0}個の{maxSlots}プロバイダースロットが使用されてい�
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{memberCount}個の製造指図のうち{0}件がまだ完了していません。各製造指図が完了するまで、それらの出力は在庫に入りません。"
 
+#. placeholder {0}: progress.done
+msgid "{0} of {whole} done"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} 工程 · {totalQuantity} 部品"
@@ -452,6 +464,10 @@ msgstr "{0}個の値"
 msgid "{0} values missing"
 msgstr "{0}個の値が見つかりません"
 
+#. placeholder {0}: itemOf(entry.itemId)
+msgid "{0} was issued to {element}"
+msgstr ""
+
 #. placeholder {0}: warning.readableId
 #. placeholder {1}: warning.message
 msgid "{0} was released with a problem: {1}"
@@ -519,6 +535,10 @@ msgstr "{account} は転記済の履歴があるため、削除できません�
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}個の部品はスキップ済 — 既に進行中の製造指図があります"
+
+#. placeholder {0}: entry.costType
+msgid "{amount} of {0} posted to {element}"
+msgstr ""
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}%の買掛金"
@@ -589,6 +609,9 @@ msgstr "{created} 件作成、{updated} 件更新されました。"
 
 msgid "{days}d"
 msgstr "{days}日"
+
+msgid "{daysLeft, plural, one {# day} other {# days}} until {due}"
+msgstr ""
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}がこれをあなたの台帳に転記するため、Carbonはそれをプッシュしません。変更があった場合に備えて、保存された選択肢は保持されます。"
@@ -818,6 +841,15 @@ msgstr "{value, plural, one {# 日} other {# 日}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 行が予想数量と異なります} other {# 行が予想数量と異なります}}"
+
+msgid "{who} commented on {element}"
+msgstr ""
+
+msgid "{who} logged {quantity} on {element}"
+msgstr ""
+
+msgid "{who} reversed {amount} on {element}"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}年"
@@ -1371,6 +1403,9 @@ msgstr "確定済の根本原因を修正する不適合タスク — 予防措�
 
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "問題が他の場所で再発するのを防ぐ不適合タスク—是正措置と封じ込めとは異なります。"
+
+msgid "A part"
+msgstr ""
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "パーツには、購入または製造できる特定の品目に関する情報が含まれています。"
@@ -2117,9 +2152,6 @@ msgstr "アクティビティ"
 
 msgid "Actual"
 msgstr "実際"
-
-msgid "Actual {actualText} · Committed {committedText}"
-msgstr "実績 {actualText} · コミット {committedText}"
 
 #. placeholder {0}: duration(actual.total)
 msgid "Actual <0>{0}</0>"
@@ -6024,6 +6056,9 @@ msgstr "出力を1つのロットに統合"
 msgid "Coming soon"
 msgstr "近日公開予定"
 
+msgid "Coming up"
+msgstr ""
+
 msgid "comma-separated values"
 msgstr "カンマ区切りの値"
 
@@ -9376,9 +9411,6 @@ msgstr "納期 {0}"
 msgid "Due {0}"
 msgstr "期限 {0}"
 
-msgid "Due {due}"
-msgstr "期限 {due}"
-
 msgid "Due <0/>"
 msgstr "予定日<0/>"
 
@@ -10068,9 +10100,6 @@ msgid "Elements"
 msgstr "要素"
 
 msgid "Elements completed"
-msgstr "完了した要素"
-
-msgid "Elements done"
 msgstr "完了した要素"
 
 msgid "Eliminated"
@@ -11773,9 +11802,6 @@ msgstr ""
 msgid "Focus on {label}"
 msgstr "{label}に焦点を当てる"
 
-msgid "Folder"
-msgstr "フォルダ"
-
 msgid "Follows"
 msgstr "フォロー"
 
@@ -13327,6 +13353,10 @@ msgstr "社内使用"
 
 msgid "Into"
 msgstr "へ"
+
+#. placeholder {0}: newParent.name
+msgid "Into {0}"
+msgstr ""
 
 msgid "inv"
 msgstr "在庫"
@@ -15999,9 +16029,6 @@ msgstr "新しいフィールド"
 msgid "New Fixed Asset"
 msgstr "新しい固定資産"
 
-msgid "New Folder"
-msgstr "新規フォルダー"
-
 msgid "New Function"
 msgstr "新規機能"
 
@@ -16230,9 +16257,6 @@ msgstr "新規出荷方法"
 msgid "New Size"
 msgstr "新しいサイズ"
 
-msgid "New state"
-msgstr "新規状態"
-
 msgid "New Storage Type"
 msgstr "新しい保管タイプ"
 
@@ -16362,9 +16386,6 @@ msgstr "次の請求書は{date}に自動的に作成され、その後転記さ
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "次の請求書 {date} は自動的に作成され、その後転記済になります。"
 
-msgid "Next milestone"
-msgstr "次のマイルストーン"
-
 msgid "Next page"
 msgstr "次のページ"
 
@@ -16446,6 +16467,9 @@ msgstr "アクティブなプランなし"
 msgid "No Active Quotes"
 msgstr "アクティブな見積がありません"
 
+msgid "No activity yet."
+msgstr ""
+
 msgid "No addresses found"
 msgstr "住所が見つかりません"
 
@@ -16513,8 +16537,8 @@ msgstr "請求期間がありません。"
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOMインプットに棚卸資産有効期限ポリシーがありません"
 
-msgid "No budget set on the plan."
-msgstr "計画に設定された予算がありません。"
+msgid "No budget set on the plan. Actual {actualText} · Committed {committedText}"
+msgstr ""
 
 msgid "No CAD model to preview."
 msgstr "プレビューするCADモデルがありません。"
@@ -16720,6 +16744,9 @@ msgstr "従業員が見つかりません"
 msgid "No end"
 msgstr "終了日なし"
 
+msgid "No estimated costs."
+msgstr ""
+
 msgid "No events found."
 msgstr "イベントが見つかりません。"
 
@@ -16897,6 +16924,9 @@ msgstr "マイルストーンなし"
 msgid "No milestones yet"
 msgstr "マイルストーンがまだありません"
 
+msgid "No milestones yet."
+msgstr ""
+
 msgid "No modules found"
 msgstr "モジュールが見つかりません"
 
@@ -16947,6 +16977,9 @@ msgstr "オープンな払戻がありません"
 
 msgid "No open sales order lines"
 msgstr "オープン受注明細がありません"
+
+msgid "No open work has a target date."
+msgstr ""
 
 msgid "No operations found."
 msgstr "工程が見つかりません。"
@@ -17306,9 +17339,6 @@ msgstr "カットオーバーの前の日付の未転記文書がありません
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "この拠点のこの工法で未開始で未バッチの工程がありません"
 
-msgid "No upcoming milestone"
-msgstr "今後のマイルストーンがありません"
-
 msgid "No value"
 msgstr "値がありません"
 
@@ -17347,6 +17377,9 @@ msgstr "作業区がありません"
 
 msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
 msgstr "まだワークパッケージがありません。コントロールアカウント下の請求可能な要素に獲得価値技術を付与してください。"
+
+msgid "No work yet. <0>Plan the project</0>"
+msgstr ""
 
 msgid "No, More Work"
 msgstr "いいえ、他の作業"
@@ -17521,6 +17554,12 @@ msgstr "MESでまだ何も完了していません"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"
 
+msgid "Nothing has been charged yet."
+msgstr ""
+
+msgid "Nothing has been charged yet. Log time, issue material, or charge a job or purchase order to this element."
+msgstr ""
+
 msgid "Nothing here matches your search and filters."
 msgstr "検索と絞り込み条件に一致するものがありません"
 
@@ -17541,9 +17580,6 @@ msgstr "同期をオンにするまで、何も同期されません。必要な
 
 msgid "Nothing lent"
 msgstr "何も貸していません"
-
-msgid "Nothing needs attention"
-msgstr "注意が必要な項目はありません"
 
 msgid "Nothing owed"
 msgstr "何も負っていません"
@@ -17810,8 +17846,8 @@ msgstr "発生コストスケジュールごとに1つのCSV。スケジュー�
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "ワークフローの1回の実行。各ステップが使用および生成した値を含めてステップバイステップで記録され、全体を通じてワークフロー責任者の権限で実行されます。"
 
-msgid "One item of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
-msgstr "プロジェクトのツリーの1つの項目（システム、要件、機能、タスク、テストケース、フォルダまたはパラメータとして型付けされた、ST-12などの読める ID：プロジェクト識別子とシーケンス番号付き）。"
+msgid "One item of a project's tree, typed System, Requirement, Function, Task, Test Case or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
+msgstr ""
 
 msgid "One or more quantities cannot meet this date"
 msgstr "1つ以上の数量がこの日付に対応できません"
@@ -18007,6 +18043,9 @@ msgstr "オープン製造指図"
 
 msgid "Open menu"
 msgstr "メニューを開く"
+
+msgid "Open My Time"
+msgstr ""
 
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "レビュアーが承認してから適用される下書きで計画を変更するために1つ開いてください。"
@@ -20757,6 +20796,9 @@ msgstr "入荷拠点"
 
 msgid "Recent"
 msgstr "最近"
+
+msgid "Recent activity"
+msgstr ""
 
 msgid "Recent payments"
 msgstr "最近の支払い"
@@ -23967,6 +24009,9 @@ msgstr "いくつかのレコードは戻りません。続行するには<0>{CO
 msgid "Some Shifts"
 msgstr "一部のシフト"
 
+msgid "Someone"
+msgstr ""
+
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "会計を更新できるユーザーが製造にかかった原価を入力してからでなければ、資本化できません。"
 
@@ -24217,9 +24262,6 @@ msgstr "開始中…"
 msgid "Starts"
 msgstr "開始"
 
-msgid "Starts {start}"
-msgstr "{start} から開始"
-
 msgid "State"
 msgstr "状態"
 
@@ -24413,8 +24455,8 @@ msgstr "作業停止"
 msgid "Stop-work order"
 msgstr "中止オーダー"
 
-msgid "Stop-work order since {stopWorkStart}, ends {stopWorkEndDate}"
-msgstr "{stopWorkStart} からの中止オーダー、{stopWorkEndDate} で終了"
+msgid "Stop-work order since {start}, ends {end}"
+msgstr ""
 
 msgid "Stop-Work Orders"
 msgstr "停止指示"
@@ -24588,6 +24630,12 @@ msgstr "検査を提出"
 
 msgid "Submit week"
 msgstr "週を提出"
+
+msgid "Submits all your draft time of this week for approval."
+msgstr ""
+
+msgid "Submits and posts all your draft time of this week."
+msgstr ""
 
 msgid "Submitted"
 msgstr "提出済み"
@@ -26143,6 +26191,9 @@ msgstr "この作業区が実行できる工法。工程のスケジュール時
 msgid "The progress behind each project contract line in this run."
 msgstr "この実行での各プロジェクト契約明細の背後の進捗。"
 
+msgid "the project"
+msgstr ""
+
 msgid "The project element a Time & Materials or Cost Plus contract line bills. The line bills the work charged to it and to every element below it."
 msgstr "タイム & マテリアルまたはコストプラスコントラクト明細が請求するプロジェクトエレメント。明細は、それと以下のすべてのエレメントに課金された作業を請求します。"
 
@@ -27123,9 +27174,6 @@ msgstr "きつい検査"
 msgid "Time"
 msgstr "時間"
 
-msgid "Time & materials"
-msgstr "時間&材料"
-
 msgid "Time & Materials"
 msgstr "時間&材料"
 
@@ -27248,6 +27296,9 @@ msgstr "仕入先へ"
 
 msgid "To test whether it is a sale, <0>give the agreement a fixed term</0>."
 msgstr "販売かどうかをテストするために、<0>アグリーメントに固定条件を与えてください</0>。"
+
+msgid "To the top level"
+msgstr ""
 
 msgid "To:"
 msgstr "宛:"
@@ -28420,9 +28471,6 @@ msgstr "値は本日の単位原価を過去の数量に適用します。"
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "このランの値が要約されました。詳細は7日間保持されます。"
 
-msgid "Van"
-msgstr ""
-
 msgid "Variable lease cost"
 msgstr "変動リースコスト"
 
@@ -28610,6 +28658,9 @@ msgstr "アイテムマスターを表示"
 msgid "View Journal Entry"
 msgstr "仕訳行を表示"
 
+msgid "View list"
+msgstr ""
+
 msgid "View Lists"
 msgstr "リストを表示"
 
@@ -28705,6 +28756,9 @@ msgstr "返品注文を表示"
 
 msgid "View Run"
 msgstr "実行を表示"
+
+msgid "View schedule"
+msgstr ""
 
 msgid "View Scheduled"
 msgstr "スケジュール済みを表示"
@@ -29319,9 +29373,6 @@ msgstr "この明細の商品が入荷時に在庫として格納される場所
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "この保全リクエストの発生元—作業者報告、スケジュール、状態監視トリガー、作業後検査。保全レポートのソース内訳を決定します。"
 
-msgid "Where this person's service parts are issued from first"
-msgstr "このユーザーの外注サービス部品が最初に発行される場所"
-
 msgid "Where you are today"
 msgstr "今日のあなたの状況"
 
@@ -29675,6 +29726,9 @@ msgstr "はい、IDを更新"
 
 msgid "Yes, Work Complete"
 msgstr "はい、作業完了"
+
+msgid "Yesterday"
+msgstr ""
 
 msgid "You"
 msgstr "あなた"

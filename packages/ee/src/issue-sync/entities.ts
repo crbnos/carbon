@@ -59,7 +59,7 @@ export const syncedEntities: Record<SyncedEntityType, SyncedEntity> = {
     permissions: { update: "parts" },
     detailPath: (parentId) => `/x/items/change-notice/${parentId}/details`
   },
-  // Every element type links (Folder and Parameter included). Name and
+  // Every element type links (Parameter included). Name and
   // description are plan-layer fields: a locked plan refuses them inbound.
   projectElement: {
     table: "projectElement",

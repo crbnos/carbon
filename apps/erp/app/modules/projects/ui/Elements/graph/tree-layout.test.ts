@@ -13,14 +13,14 @@ import {
 } from "./tree-layout";
 
 const elements: TreeElement[] = [
-  { id: "P", parentId: null, type: "Folder", name: "Vehicle" },
+  { id: "P", parentId: null, type: "System", name: "Vehicle" },
   { id: "S1", parentId: "P", type: "System", name: "Powertrain" },
   { id: "R1", parentId: "S1", type: "Requirement", name: "R1" },
   { id: "R2", parentId: "S1", type: "Requirement", name: "R2" },
   { id: "S2", parentId: "S1", type: "System", name: "Motor" },
   { id: "R3", parentId: "S2", type: "Requirement", name: "R3" },
   { id: "T1", parentId: "P", type: "Test Case", name: "T1" },
-  { id: "F2", parentId: null, type: "Folder", name: "F2" },
+  { id: "F2", parentId: null, type: "System", name: "F2" },
   { id: "O1", parentId: "missing", type: "Requirement", name: "O1" }
 ];
 

@@ -52,9 +52,19 @@ opens in layers. Each layer shows the least that a user needs.
 - **Project workspace** (`project+/$projectId.tsx`). The left project sidebar
   (`ProjectSidebar`) starts with the change request picker and a Baselines (history)
   button. Then the page links (`useProjectSidebarLinks`): Overview, Plan, Schedule, Costs
-  and Time. There is no Settings page (Brad, 2026-10-19): the Overview is two columns, as an
-  element page, with the summary (description, budget, next milestone, needs attention,
-  members) beside `ProjectProperties`, the project's fields each saved as it changes. A field
+  and Time. There is no Settings page (Brad, 2026-10-19). The Overview (`ProjectOverview`) is a
+  dashboard of light cards in two columns. The left column has About (the description), Progress,
+  Coming up, Budget and Needs attention. Progress shows the share of work elements done (whole
+  percent, rounded down; Cancelled work is left out), the days to the due date, the overdue count
+  and a bar per state. Coming up lists open elements with a target date. The right column has
+  Details, Milestones, Members (only with `restrictCharging`) and Recent activity. Recent activity
+  is the latest element comments and `projectLedger` postings, not the audit log, which reads one
+  record at a time and is a gated feature. The `$projectId._index.tsx` loader computes all of it;
+  Progress counts the work elements: every element but a Parameter that has no children
+  but Parameters, so a System grouping five Tasks counts five. Coming up lists every open
+  element but a Parameter. Details is `ProjectProperties` in the row layout
+  (`PropertyLayoutProvider value="row"`: label left, value right), with the core fields first and
+  the rest under **More**. Each field saves as it changes. A field
   posts `intent=field` to `$projectId.details.tsx`, which fills in the rest from the stored
   project and runs the same validation and rules as the old form; Project Control is a
   group of that column (`ProjectControlSettings.ee`). `$projectId.settings.tsx` keeps only
@@ -493,6 +503,14 @@ Each entry also carries a work location and a research role (R&D tax, Phase 5d);
 `save-timesheet-entry` defaults them from the job location and the labor category, and
 both are part of a cell's key (`government-contracting.md` → *R&D tax*).
 
+**Time not posted yet** (the project Time page and the element page's Actual tab) gives
+each row its next step (`OpenTimeAction`, `ui/Element/OpenTimeAction.tsx`): the employee's
+own Draft → **Submit week** (posts to `timesheet.submit.tsx` with `redirectTo`, so it
+returns to the page; the whole week is submitted, as on My Time); a Submitted entry →
+**Approve** (**Post** with approval off), the Approvals action, for `update: projects`; the
+employee's own DCAA Draft, Rejected or Pending Employee Review entry → **Open My Time** on
+its week (the certification and the review stay there). Another employee's Draft has none.
+
 **My Time** is personal and lives at `x+/timesheet` (`path.to.timesheet`), outside
 the Projects layout; `x+/projects+/timesheet.tsx` redirects there. A Service row is
 read-only there: service time posts from Draft at Stop Work or Add Time on the order,
@@ -616,13 +634,17 @@ plan, job, purchase order line, comment and delete action routes stay under it),
 layout hides the project header and the project sidebar on the page. The page has one header
 row: back, the project and the ancestors, a copy button for the readable id, and one ⋯ menu (Log
 time, Issue material, Add child, Add link, Delete). Below it are a main column of at most 800 px
-(title, description, then Children, Plan, Links and Time & materials, each only when it applies,
-then Activity) and a 300 px properties column (`ElementSidebar`, inline fields from
+(the readable id with the Linear and Jira issue buttons at its right, title, description, then
+Children, Costs, Links, each only when it applies, then Activity) and a 300 px properties
+column (`ElementSidebar`, inline fields from
 `ui/Element/PropertyFields.tsx`: the properties, the type's fields from `ElementTypeBlock`, Work,
 Costs with children, and the Government contracting group, shown only with DCAA timekeeping).
-Plan always applies for a user who can edit an element that is not a Parameter, so an empty Task
-shows the "Plan" heading and its Add line button. The earned value form posts to the page
-route's action.
+Costs is one block with two tabs: **Estimated** (the plan grid, `ElementPlanLines`) and
+**Actual** (`ElementTimeAndMaterials`: the ledger rows and the open time; on a service order
+the `charges` prop instead). It opens on Estimated while the project is Draft (or has no
+project row) and on Actual after; the user's choice holds until the page remounts. Every
+type but a Parameter shows it, so an empty Task shows Estimated with its Add line button.
+The earned value form posts to the page route's action.
 
 On a Contract project the Work group has a **Billing element** switch for every type but
 Parameter. It posts `field=isBilling` to the element update route
@@ -631,7 +653,9 @@ Parameter. It posts `field=isBilling` to the element update route
 one branch (an element and its ancestor), a Parameter, and turning the flag off while a contract
 line bills the element. It is a live write, not a plan-layer field.
 
-All plan lines are ONE grid (`ElementPlanLines`: Type, Line, Quantity, Amount). The row ⋯ menu's
+All plan lines are ONE grid (`ElementPlanLines`: Type, Line, Quantity, Unit Cost, Amount), the
+**Estimated** tab. A material's Unit Cost edits in place (Amount is quantity × unit
+cost); a labor line's shows its category's cost rate, read-only. The row ⋯ menu's
 **Edit** opens `PlanLineModal` for the whole line. A cell posts the whole line with `quiet=true`
 to the plan route (the service template element route answers the same), and a draft row from
 "Add line" (a ghost split button: Material by default, Labor and Cost in its menu) saves once its
@@ -801,8 +825,8 @@ line, an element's asset, `isFinalAsset`, the cost treatment) stay out.
 
 ## Linear and Jira
 
-Any element (every type) links to one Linear or Jira issue from the element page
-header. Name, description, state (by state group), owner, priority and target date
+Any element (every type) links to one Linear or Jira issue from the element page:
+the buttons sit at the right of the readable id, above the title. Name, description, state (by state group), owner, priority and target date
 sync both ways through the issue-sync engine (`issue-sync.md`). A locked plan refuses
 an inbound name or description; a Closed project refuses every field.
 

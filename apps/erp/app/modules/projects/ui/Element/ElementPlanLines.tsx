@@ -9,6 +9,10 @@ import {
   Alert,
   AlertDescription,
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
@@ -21,7 +25,6 @@ import {
   ModalOverlay,
   ModalTitle,
   Spinner,
-  SplitButton,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -30,9 +33,9 @@ import {
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  LuChevronDown,
   LuFactory,
   LuPencil,
   LuPlus,
@@ -225,8 +228,7 @@ export function ElementPlanLines({
   action: actionOverride,
   canSupply = true,
   addRequest,
-  addDisabledReason,
-  toolbarExtras
+  addDisabledReason
 }: {
   projectId: string;
   elementId: string;
@@ -245,12 +247,11 @@ export function ElementPlanLines({
   addRequest?: number;
   /** Why "Add line" is off (a locked plan); shown as its tooltip. */
   addDisabledReason?: string | null;
-  /** Controls shown beside "Add line" (the Linear and Jira issue buttons). */
-  toolbarExtras?: ReactNode;
 }) {
   const { t } = useLingui();
   const save = useCellSave();
   const formatMoney = useCurrencyFormatter();
+  const formatRate = useCurrencyFormatter({ rate: true });
   const formatQuantity = useQuantityFormatter();
   const { company } = useUser();
   const currency = company.baseCurrencyCode;
@@ -377,7 +378,7 @@ export function ElementPlanLines({
           methodType: null,
           quantity: Number(line.hours),
           unitOfMeasureCode: null,
-          unitCost: null,
+          unitCost: costRateById.get(line.laborCategoryId) ?? null,
           amount: laborAmount(
             Number(line.hours),
             costRateById.get(line.laborCategoryId) ?? null
@@ -457,10 +458,8 @@ export function ElementPlanLines({
         next.amount = materialAmount(next.quantity, next.unitCost);
       }
       if (row.type === "labor") {
-        next.amount = laborAmount(
-          next.quantity,
-          costRateById.get(String(next.line)) ?? null
-        );
+        next.unitCost = costRateById.get(String(next.line)) ?? null;
+        next.amount = laborAmount(next.quantity, next.unitCost);
       }
       if (!row.draft) {
         const changesItem = accessorKey === "line" && row.type === "material";
@@ -520,6 +519,11 @@ export function ElementPlanLines({
           formatOptions: INPUT_FORMAT.quantity,
           step: INPUT_STEP.quantity
         }),
+        unitCost: EditableNumber<PlanRow>(edit, {
+          minValue: 0,
+          formatOptions: INPUT_FORMAT.rate(currency, decimals),
+          step: INPUT_STEP.rate
+        }),
         amount: EditableNumber<PlanRow>(edit, {
           formatOptions: INPUT_FORMAT.money(currency, decimals),
           step: INPUT_STEP.money(decimals)
@@ -569,6 +573,19 @@ export function ElementPlanLines({
         (row) => (row.type === "cost" ? null : stable.quantity),
         none
       ),
+      // A material's unit cost is typed; a labor line's is its category's
+      // cost rate, read-only; a cost line has none.
+      unitCost: EditableByRow<PlanRow>(
+        (row) => (row.type === "material" ? stable.unitCost : null),
+        ({ row }) =>
+          row.unitCost === null ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <span className="tabular-nums">
+              {formatRate.format(row.unitCost)}
+            </span>
+          )
+      ),
       amount: EditableByRow<PlanRow>(
         (row) => (row.type === "cost" ? stable.amount : null),
         ({ row }) =>
@@ -581,7 +598,7 @@ export function ElementPlanLines({
           )
       )
     };
-  }, [lists, stable, formatMoney]);
+  }, [lists, stable, formatMoney, formatRate]);
 
   const columns = useMemo<ColumnDef<PlanRow>[]>(
     () => [
@@ -614,8 +631,13 @@ export function ElementPlanLines({
             const item = itemsById.get(line);
             const material = row.original.material;
             const purchaseOrder = material?.purchaseOrderLine?.purchaseOrder;
+            // Capped, so a long item name truncates instead of pushing
+            // Amount and the row menu past the grid's edge.
             return (
-              <span className="flex min-w-0 items-center gap-2">
+              <span
+                className="flex min-w-0 max-w-56 items-center gap-2"
+                title={item?.name ?? material?.item?.name}
+              >
                 <span className="shrink-0 whitespace-nowrap">
                   {item?.readableIdWithRevision ??
                     material?.item?.readableIdWithRevision}
@@ -645,7 +667,7 @@ export function ElementPlanLines({
             );
           }
           return (
-            <span className="block truncate">
+            <span className="block max-w-56 truncate">
               {type === "labor" ? (categoriesById.get(line) ?? line) : line}
             </span>
           );
@@ -669,6 +691,18 @@ export function ElementPlanLines({
           )
       },
       {
+        accessorKey: "unitCost",
+        header: t`Unit Cost`,
+        cell: ({ row }) =>
+          row.original.unitCost === null ? (
+            dash
+          ) : (
+            <span className="tabular-nums">
+              {formatRate.format(row.original.unitCost)}
+            </span>
+          )
+      },
+      {
         accessorKey: "amount",
         header: t`Amount`,
         cell: ({ row }) =>
@@ -681,7 +715,15 @@ export function ElementPlanLines({
           )
       }
     ],
-    [t, typeLabels, itemsById, categoriesById, formatQuantity, formatMoney]
+    [
+      t,
+      typeLabels,
+      itemsById,
+      categoriesById,
+      formatQuantity,
+      formatMoney,
+      formatRate
+    ]
   );
 
   const renderMenu = useCallback(
@@ -750,20 +792,27 @@ export function ElementPlanLines({
   );
 
   const addLine = (
-    <SplitButton
-      variant="ghost"
-      size="sm"
-      leftIcon={<LuPlus />}
-      className="self-start"
-      isDisabled={Boolean(addDisabledReason)}
-      onClick={() => addDraft("material")}
-      dropdownItems={(["material", "labor", "cost"] as const).map((type) => ({
-        label: typeLabels[type],
-        onClick: () => addDraft(type)
-      }))}
-    >
-      <Trans>Add line</Trans>
-    </SplitButton>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          leftIcon={<LuPlus />}
+          rightIcon={<LuChevronDown />}
+          className="self-start"
+          isDisabled={Boolean(addDisabledReason)}
+        >
+          <Trans>Add line</Trans>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {(["material", "labor", "cost"] as const).map((type) => (
+          <DropdownMenuItem key={type} onClick={() => addDraft(type)}>
+            {typeLabels[type]}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 
   const deletingName =
@@ -799,27 +848,22 @@ export function ElementPlanLines({
           />
         </div>
       )}
-      {(!isDisabled || toolbarExtras) && (
-        <div className="flex items-center gap-1 self-start">
-          {!isDisabled &&
-            (addDisabledReason ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  {/* A disabled button fires no pointer events: the span does. */}
-                  <span tabIndex={0} className="self-start">
-                    {addLine}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-72">
-                  {addDisabledReason}
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              addLine
-            ))}
-          {toolbarExtras}
-        </div>
-      )}
+      {!isDisabled &&
+        (addDisabledReason ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* A disabled button fires no pointer events: the span does. */}
+              <span tabIndex={0} className="self-start">
+                {addLine}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-72">
+              {addDisabledReason}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          addLine
+        ))}
 
       {editing && (
         <PlanLineModal

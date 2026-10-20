@@ -28,16 +28,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 
-  // Project time and field service add fields to a job, shown only once the
-  // company uses them: a labor category, a service order.
-  const [job, laborCategories, serviceOrders] = await Promise.all([
+  // Project time adds fields to a job, shown only once the company uses it:
+  // it has a labor category.
+  const [job, laborCategories] = await Promise.all([
     getEmployeeJob(client, personId, companyId),
     client
       .from("laborCategory")
-      .select("id", { count: "exact", head: true })
-      .eq("companyId", companyId),
-    client
-      .from("serviceOrder")
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId)
   ]);
@@ -50,8 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     job: job.data,
-    usesProjectTime: (laborCategories.count ?? 0) > 0,
-    usesFieldService: (serviceOrders.count ?? 0) > 0
+    usesProjectTime: (laborCategories.count ?? 0) > 0
   };
 }
 
@@ -101,8 +96,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PersonJobRoute() {
-  const { job, usesProjectTime, usesFieldService } =
-    useLoaderData<typeof loader>();
+  const { job, usesProjectTime } = useLoaderData<typeof loader>();
   const { personId } = useParams();
 
   const initialValues = {
@@ -113,7 +107,6 @@ export default function PersonJobRoute() {
     departmentId: job.departmentId ?? "",
     managerId: job.managerId ?? "",
     laborCategoryId: job.laborCategoryId ?? "",
-    defaultStorageUnitId: job.defaultStorageUnitId ?? "",
     flsaStatus: job.flsaStatus ?? undefined,
     isOfficer: job.isOfficer ?? false,
     timesheetRequired: job.timesheetRequired ?? true,
@@ -125,7 +118,6 @@ export default function PersonJobRoute() {
       key={personId}
       initialValues={initialValues}
       usesProjectTime={usesProjectTime}
-      usesFieldService={usesFieldService}
     />
   );
 }

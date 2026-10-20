@@ -10,7 +10,7 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
   (`projectStatusTransitions`, `canChangeProjectStatus`). Closed has no way back. The UI
   labels Technically Complete "Work Complete" (the enum value stays).
 - **Element** — `projectElement`, typed System / Requirement / Function / Task / Test Case /
-  Folder / Parameter. `readableId` is `<identifier>-<sequence>` from
+  Parameter. `readableId` is `<identifier>-<sequence>` from
   `project.nextElementSequence`; a move never changes it. A Parameter's children are
   Parameters. Any other element can link a part (`itemId`) and one serial of it
   (`trackedEntityId`).
@@ -266,7 +266,9 @@ plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
 - `ui/Project/` — the workspace: `ProjectHeader` (switcher, status, ⋯ menu with the status
   transitions; no primary button), `ProjectSidebar` + `useProjectSidebarLinks`
   (`useProjectNavigation.tsx`), `ProjectElementTree` (the sidebar tree and the Plan page's
-  only search), `ProjectOverview` + `ProjectProperties` (the Overview's two columns),
+  only search), `ProjectOverview` (the Overview's card dashboard; the
+  `$projectId._index.tsx` loader computes progress, coming up and activity) +
+  `ProjectProperties` (its Details card, in the row layout),
   `ProjectMembers`, `ProjectControlSettings.ee` (a properties group),
   `StopWorkModal.ee`.
 - `ui/Elements/` — the Plan page: `ElementsHeader` (layout switch, Filter, New Element),

@@ -18,6 +18,7 @@ import {
   getProjectOpenTimesheetEntries
 } from "~/modules/projects";
 import ProjectLedgerTable from "~/modules/projects/ui/Costs/ProjectLedgerTable";
+import { OpenTimeAction } from "~/modules/projects/ui/Element/OpenTimeAction";
 import { TimesheetEntryStatus } from "~/modules/projects/ui/Element/TimesheetEntryStatus";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -157,6 +158,15 @@ export default function ProjectTimeRoute() {
         id: "status",
         header: t`Status`,
         cell: ({ row }) => <TimesheetEntryStatus status={row.original.status} />
+      },
+      {
+        id: "nextStep",
+        header: () => (
+          <span className="sr-only">
+            <Trans>Next step</Trans>
+          </span>
+        ),
+        cell: ({ row }) => <OpenTimeAction entry={row.original} />
       }
     ],
     [t, formatDate, formatQuantity]

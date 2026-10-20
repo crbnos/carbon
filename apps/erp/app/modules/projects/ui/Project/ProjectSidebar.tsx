@@ -9,6 +9,7 @@ import { Link, useParams } from "react-router";
 import { DetailSidebar } from "~/components/Layout";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
+import { isProjectPlanLocked } from "../../projects.models";
 import type { Project } from "../../types";
 import type { ActiveChangeRequest } from "../ChangeRequests/ChangeRequestBanner";
 import { ChangeRequestPicker } from "../ChangeRequests/ChangeRequestPicker";
@@ -20,6 +21,7 @@ import { useProjectSidebarLinks } from "./useProjectNavigation";
 export type ProjectSidebarData = {
   project: Project;
   treeElements: ProjectTreeElement[];
+  milestones: { id: string; completedAt: string | null }[];
   openChangeRequests: ActiveChangeRequest[];
   activeChangeRequest: ActiveChangeRequest | null;
   hasBillingLines: boolean;
@@ -52,6 +54,17 @@ export function ProjectSidebar() {
   const isPlanPage =
     location.pathname.startsWith(path.to.projectElements(projectId)) ||
     location.pathname.startsWith(`${path.to.project(projectId)}/element/`);
+  // A move is a plan-layer write: a Draft change request takes it, and a
+  // locked plan takes it only that way (the move route's own check).
+  const lockMilestone = data.milestones.find(
+    (milestone) => milestone.id === project.lockPlanAfterMilestoneId
+  );
+  const canMoveElements =
+    permissions.can("update", "projects") &&
+    !isClosed &&
+    (data.activeChangeRequest
+      ? data.activeChangeRequest.status === "Draft"
+      : !isProjectPlanLocked({ lockMilestone }));
   const isBaselines = location.pathname.startsWith(
     path.to.projectBaselines(projectId)
   );
@@ -91,6 +104,7 @@ export function ProjectSidebar() {
         <ProjectElementTree
           projectId={projectId}
           elements={data.treeElements}
+          canMove={canMoveElements}
           className="flex-1 border-t border-border pt-2"
         />
       )}

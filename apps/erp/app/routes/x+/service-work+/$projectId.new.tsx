@@ -38,7 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id: _id, ...element } = validation.data;
   if (!(serviceNodeTypes as readonly string[]).includes(element.type)) {
     return data(
-      { error: { message: "Add a System, Task or Folder" } },
+      { error: { message: "Add a System or a Task" } },
       { status: 400 }
     );
   }

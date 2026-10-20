@@ -105712,7 +105712,6 @@ export type Database = {
         | "feeds"
       projectElementPriority: "Urgent" | "High" | "Medium" | "Low" | "None"
       projectElementType:
-        | "Folder"
         | "System"
         | "Requirement"
         | "Function"
@@ -107488,7 +107487,6 @@ export const Constants = {
       ],
       projectElementPriority: ["Urgent", "High", "Medium", "Low", "None"],
       projectElementType: [
-        "Folder",
         "System",
         "Requirement",
         "Function",

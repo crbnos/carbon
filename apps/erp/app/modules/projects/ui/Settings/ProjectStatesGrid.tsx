@@ -17,7 +17,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo } from "react";
-import { LuCheck, LuTrash } from "react-icons/lu";
+import { LuCheck } from "react-icons/lu";
 import {
   EditableList,
   EditableText,
@@ -32,12 +32,13 @@ import { projectStateGroups } from "../../projects.models";
 import type { ProjectState } from "../../types";
 import { sortStates } from "../Elements/ElementProperties";
 import { StateIcon } from "../Project/StateIcon";
-import { ColorCell, nextName } from "./ColorCell";
+import { ColorCell } from "./ColorCell";
 
 /**
  * The company's project states, in board order: name, group and colour edit
- * in the grid; the row menu makes a state its group's default or deletes it.
- * Every project and service order uses these states.
+ * in the grid; the row menu makes a state its group's default. The set of
+ * states is fixed — rows are neither added nor deleted here. Every project and
+ * service order uses these states.
  */
 export function ProjectStatesGrid({ states }: { states: ProjectState[] }) {
   const { t } = useLingui();
@@ -147,19 +148,6 @@ export function ProjectStatesGrid({ states }: { states: ProjectState[] }) {
                 <MenuIcon icon={<LuCheck />} />
                 <Trans>Make default</Trans>
               </MenuItem>
-              <MenuItem
-                destructive
-                disabled={!canEdit}
-                onClick={() =>
-                  fetcher.submit(
-                    { intent: "deleteState", id: row.original.id },
-                    { method: "post", action }
-                  )
-                }
-              >
-                <MenuIcon icon={<LuTrash />} />
-                <Trans>Delete</Trans>
-              </MenuItem>
             </ActionMenu>
           </div>
         )
@@ -188,23 +176,6 @@ export function ProjectStatesGrid({ states }: { states: ProjectState[] }) {
           canEdit={canEdit}
           editableComponents={editableComponents}
           withSimpleSorting={false}
-          onNewRow={
-            canEdit
-              ? () =>
-                  fetcher.submit(
-                    {
-                      intent: "upsertState",
-                      name: nextName(
-                        t`New state`,
-                        states.map((s) => s.name)
-                      ),
-                      group: "Unstarted",
-                      color: "#60646C"
-                    },
-                    { method: "post", action }
-                  )
-              : undefined
-          }
         />
       </CardContent>
     </Card>

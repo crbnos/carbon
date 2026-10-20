@@ -23,7 +23,8 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
  * Submits the signed-in user's Draft entries of one week through the
  * `submit-timesheet-week` server function, which also certifies the week in
  * DCAA mode. With approvals off they post at once; with approvals on they
- * wait in Approvals. Each warning (the timecard check) is flashed.
+ * wait in Approvals. Each warning (the timecard check) is flashed. It returns
+ * to My Time, or to `redirectTo` (the open time list a row submitted from).
  */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -36,7 +37,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const to = String(formData.get("to") ?? "");
   const week = String(formData.get("week") ?? "0");
   const certificationText = formData.get("certificationText");
-  const back = `${path.to.timesheet}?week=${encodeURIComponent(week)}`;
+  // A row of "Time not posted yet" submits from its own page and returns
+  // there. `redirect` stays on this origin, whatever the value.
+  const redirectTo = formData.get("redirectTo");
+  const back =
+    typeof redirectTo === "string" && redirectTo
+      ? redirectTo
+      : `${path.to.timesheet}?week=${encodeURIComponent(week)}`;
 
   if (!DATE_PATTERN.test(from) || !DATE_PATTERN.test(to)) {
     throw redirect(

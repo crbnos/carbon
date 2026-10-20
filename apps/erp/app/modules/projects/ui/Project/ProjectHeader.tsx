@@ -332,7 +332,7 @@ function ProjectSwitcher({
           role="combobox"
           aria-expanded={open}
           aria-label={t`Switch project`}
-          className="-mx-1.5 flex h-8 min-w-0 items-center gap-2 rounded-md px-1.5 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="-mx-1.5 flex h-8 min-w-0 items-center gap-2 rounded-md px-1.5 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span className="shrink-0 whitespace-nowrap">
             {project.identifier}

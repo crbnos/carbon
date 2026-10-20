@@ -26,6 +26,7 @@ import type {
   ElementLedgerRow,
   ElementOpenTimeRow
 } from "../../projects.server";
+import { OpenTimeAction } from "./OpenTimeAction";
 import { TimesheetEntryStatus } from "./TimesheetEntryStatus";
 
 /**
@@ -60,9 +61,6 @@ export function ElementTimeAndMaterials({
     <VStack spacing={4} className="w-full">
       {ledger.length > 0 && (
         <div className="w-full">
-          <span className="mb-1 block text-xs font-medium text-muted-foreground">
-            <Trans>Costs posted</Trans>
-          </span>
           <div className="w-full overflow-x-auto rounded-md border border-border">
             <TableBase full>
               <Thead>
@@ -141,6 +139,11 @@ export function ElementTimeAndMaterials({
                   <Th>
                     <Trans>Status</Trans>
                   </Th>
+                  <Th>
+                    <span className="sr-only">
+                      <Trans>Next step</Trans>
+                    </span>
+                  </Th>
                 </Tr>
               </Thead>
               <Tbody>
@@ -159,6 +162,9 @@ export function ElementTimeAndMaterials({
                       <TimesheetEntryStatus
                         status={row.status as TimesheetEntryStatusType}
                       />
+                    </Td>
+                    <Td className="text-right">
+                      <OpenTimeAction entry={row} />
                     </Td>
                   </Tr>
                 ))}

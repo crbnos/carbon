@@ -90,10 +90,10 @@ A Capitalize project builds fixed assets. When you release it, Carbon creates on
 
 An element is one item of the project tree. It has a type, a state, an owner, a priority, labels, dates, a milestone, an hours estimate and a budget.
 
-- **Types:** `System`, `Requirement`, `Function`, `Task`, `Test Case`, `Folder` and `Parameter`. A Parameter's children must be Parameters.
+- **Types:** `System`, `Requirement`, `Function`, `Task`, `Test Case` and `Parameter`. A Parameter's children must be Parameters.
 - **Linked part:** any element except a Parameter can link an item and, for a serial-tracked item, one serial of it. **Issue material** then offers the part's bill of materials first.
 - **Readable id:** the project identifier and a sequence number, such as `ST-12`. The id stays the same when you move the element.
-- **Chargeable:** on for a new element, except a Folder or a Parameter. A Parameter can never take charges.
+- **Chargeable:** on for a new element, except a Parameter, which can never take charges. Turn it off on an element that only groups others.
 
 Deleting an element also deletes every element below it. Carbon refuses the delete if that branch has costs, time, a job or a purchase order line.
 
@@ -119,11 +119,11 @@ The **Plan** page shows the elements in one of three layouts. Pick it in the too
 
 Click an element in any layout or in the sidebar tree to open its page. Its header has **Back**, the project and the parent elements, a copy button and a **⋯** menu: **Log time**, **Issue material**, **Add child**, **Add link**, **Add plan line** and **Delete**.
 
-The main column has the name and the description, then **Children**, **Plan**, **Links**, **Time & materials** and **Activity**. The first four show only once they have content. **Time & materials** lists the costs and the open time charged to the element. **Activity** holds the comments, and the change history when the audit log is on.
+The main column has the readable id, the name and the description, then **Children**, the costs, **Links** and **Activity**. Children and Links show only once they have content. With Linear or Jira connected, **Sync** sits to the right of the readable id. The costs have two tabs: **Estimated** holds the plan lines, and **Actual** lists the costs and the open time charged to the element. The page opens on Estimated while the project is Draft, and on Actual once it is released. **Activity** holds the comments, and the change history when the audit log is on.
 
 The properties column on the right edits the state, owner, priority, labels, milestone and dates in place. The **Work** group holds **Chargeable**, the budget, the hours estimate and the linked part. **Costs, with children** shows plan, committed, actual and remaining, and **View costs** opens the element on the Costs page.
 
-**Plan** is one grid of plan lines, with a **Type** column. Type in a cell to change a line, and use **Edit** in a row's menu to see the whole line:
+**Estimated** is one grid of plan lines, with **Type**, **Line**, **Quantity**, **Unit Cost** and **Amount** columns. A material's amount is its quantity times its unit cost; a labor line's unit cost is its category's cost rate. Type in a cell to change a line, and use **Edit** in a row's menu to see the whole line:
 
 - **Material:** an item, a method (Pull from Inventory, Purchase to Order or Make to Order), a quantity, a unit cost and a required date. **Create Job** on a Make to Order line and **Create PO Line** on a Purchase to Order line, both in the row's menu, make the job or purchase order line with the element's charge number.
 - **Labor:** a <Term>labor category</Term>, hours and dates.
@@ -241,6 +241,8 @@ Employees record hours against a charge number and a labor category. Each hour c
 - **My Time** in the MES shows the same grid for operators on the shop floor.
 
 A <Term>timesheet</Term> entry moves through **"Draft"**, **"Submitted"**, **"Approved"** and **"Posted"**. A **"Rejected"** entry is editable again.
+
+Time that is not posted yet lists on the project's **Time** page and on an element's **Actual** tab, each row with its next step: **Submit week** on your own draft time, **Approve** on submitted time (**Post** when approval is off), or **Open My Time** when the weekly certification or a review must handle it.
 
 <Callout type="warn" title="You correct posted time. You do not edit it.">
 A Posted entry is locked. On **My Time** in the ERP, open the row's menu and choose **Correct** for that day, then give the new hours and a reason. Carbon reverses the posted hours and charges the new hours instead.
@@ -454,7 +456,7 @@ New time, issues and other new charges need a Released project. Release the proj
 Move the element to an Unstarted or Started state. A Completed element still accepts postings against existing commitments (receipts, invoices, job completions, reversals), but no new charges.
 
 ### "Element XX-12 of project XX does not take charges."
-The element's Chargeable property is off. Folder and Parameter elements start with it off. A Parameter can never be chargeable ("A Parameter cannot take charges").
+The element's Chargeable property is off. A Parameter can never be chargeable ("A Parameter cannot take charges").
 
 ### "Set Project Expense in Account Defaults before you charge an Expense project" / "Set Project Work in Progress in Account Defaults before you charge a Contract project"
 The project has no Cost Account and the account default is empty. Set it at Accounting → Default Accounts. The UI label for Project Work in Progress is "Project WIP".

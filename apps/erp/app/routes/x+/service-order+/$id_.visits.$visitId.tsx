@@ -77,9 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       getLaborCategoriesList(client, companyId),
       client
         .from("employeeJob")
-        .select(
-          "laborCategoryId, defaultStorageUnitId, storageUnit:storageUnit!employeeJob_defaultStorageUnit_fkey(id, locationId)"
-        )
+        .select("laborCategoryId")
         .eq("id", userId)
         .eq("companyId", companyId)
         .maybeSingle(),
@@ -108,7 +106,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  const van = employeeJob.data?.storageUnit;
   return {
     visit: visit.data,
     nodes: work.elements,
@@ -121,8 +118,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         path: `${companyId}/service/${id}/${visitId}/${file.name}`
       })),
     laborCategories: laborCategories.data ?? [],
-    defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null,
-    van: van ? { storageUnitId: van.id, locationId: van.locationId } : null
+    defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null
   };
 }
 

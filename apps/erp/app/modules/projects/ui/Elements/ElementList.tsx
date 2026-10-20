@@ -34,7 +34,11 @@ import type {
   ProjectElementType,
   RequirementStatus
 } from "../../projects.models";
-import { buildElementTree, type ElementWbsCode } from "../../projects.models";
+import {
+  buildElementTree,
+  type ElementWbsCode,
+  projectElementTypes
+} from "../../projects.models";
 import type { ProjectElementListItem } from "../../projects.service";
 import type { ProjectLabel, ProjectState } from "../../types";
 import {
@@ -50,7 +54,7 @@ import {
   sortStates
 } from "./ElementProperties";
 import { useElementRoutes } from "./ElementRoutes";
-import { ElementTypeIcon } from "./ElementTypeIcon";
+import { ElementTypeIcon, useElementTypeLabels } from "./ElementTypeIcon";
 import { MoveElementModal } from "./MoveElementModal";
 import { VerificationIcon } from "./VerificationStatus";
 import { WbsCode } from "./WbsCode";
@@ -74,6 +78,8 @@ type ElementListProps = {
   isFiltered: boolean;
   /** The element New Element just made: its row is highlighted. */
   highlightId: string | null;
+  /** The types the empty list's New element offers; every type by default. */
+  types?: readonly ProjectElementType[];
   /** Creates an element; with `parentId` under it, with `stateId` in it. */
   onNew: (
     type?: ProjectElementType,
@@ -99,9 +105,11 @@ export function ElementList({
   canDelete,
   isFiltered,
   highlightId,
+  types = projectElementTypes,
   onNew
 }: ElementListProps) {
   const { t } = useLingui();
+  const typeLabels = useElementTypeLabels();
   const { search } = useLocation();
   const routes = useElementRoutes(projectId);
   const changeRequestId = useActiveChangeRequestId();
@@ -174,9 +182,26 @@ export function ElementList({
             <>
               <Trans>No elements yet.</Trans>
               {canCreate && (
-                <Button variant="link" onClick={() => onNew()}>
-                  <Trans>New element</Trans>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="link">
+                      <Trans>New element</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {types.map((value) => (
+                      <DropdownMenuItem
+                        key={value}
+                        onClick={() => onNew(value)}
+                      >
+                        <DropdownMenuIcon
+                          icon={<ElementTypeIcon type={value} />}
+                        />
+                        {typeLabels[value]}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </>
           )}

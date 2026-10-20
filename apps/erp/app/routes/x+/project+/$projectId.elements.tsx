@@ -415,7 +415,6 @@ export default function ProjectElementsRoute() {
   // the new row; the other layouts open its page, since they have no row to
   // show.
   const newNames: Record<ProjectElementType, string> = {
-    Folder: t`New Folder`,
     System: t`New System`,
     Requirement: t`New Requirement`,
     Function: t`New Function`,

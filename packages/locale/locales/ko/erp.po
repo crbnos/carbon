@@ -85,6 +85,10 @@ msgstr "{0, plural, one {여유 # 일} other {여유 # 일}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 일 부족} other {# 일 부족}}"
 
+#. placeholder {0}: -daysLeft
+msgid "{0, plural, one {# day} other {# days}} past {due}"
+msgstr ""
+
 #. placeholder {0}: groups.length
 msgid "{0, plural, one {# element changed} other {# elements changed}}"
 msgstr "{0, plural, one {# 요소 변경됨} other {# 요소들 변경됨}}"
@@ -113,6 +117,10 @@ msgstr "{0, plural, one {# 링크} other {# 링크}}"
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 공정에 표준시간이 없습니다} other {# 공정에 표준시간이 없습니다}}"
+
+#. placeholder {0}: progress.overdue
+msgid "{0, plural, one {# overdue} other {# overdue}}"
+msgstr ""
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
@@ -347,6 +355,10 @@ msgstr "{0}개 중 {maxSlots}개 제공자 슬롯 사용됨"
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{memberCount}개의 작업 지시 중 {0}개가 아직 완료되지 않았습니다 — 각 작업 지시가 완료될 때까지 산출물은 재고로 집계되지 않습니다."
 
+#. placeholder {0}: progress.done
+msgid "{0} of {whole} done"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0}개 공정 · {totalQuantity}개 부품"
@@ -452,6 +464,10 @@ msgstr "{0}개 값"
 msgid "{0} values missing"
 msgstr "{0}개 값 누락"
 
+#. placeholder {0}: itemOf(entry.itemId)
+msgid "{0} was issued to {element}"
+msgstr ""
+
 #. placeholder {0}: warning.readableId
 #. placeholder {1}: warning.message
 msgid "{0} was released with a problem: {1}"
@@ -519,6 +535,10 @@ msgstr "{account}은(는) 전기된 이력이 있으므로 제거할 수 없습�
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}개 부품 건너뜀 — 이미 미결 작업 지시가 있음"
+
+#. placeholder {0}: entry.costType
+msgid "{amount} of {0} posted to {element}"
+msgstr ""
 
 msgid "{apOverduePct}% of payables"
 msgstr "매입채무의 {apOverduePct}%"
@@ -589,6 +609,9 @@ msgstr "{created} 생성됨, {updated} 업데이트됨."
 
 msgid "{days}d"
 msgstr "{days}일"
+
+msgid "{daysLeft, plural, one {# day} other {# days}} until {due}"
+msgstr ""
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}가(이) 이를 귀사의 원장에 게시하므로 Carbon은 이를 푸시하지 않습니다. 변경되는 경우에 대비하여 저장된 선택 사항이 유지됩니다."
@@ -818,6 +841,15 @@ msgstr "{value, plural, one {# 일} other {# 일}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 라인이 예상 수량과 다릅니다} other {# 라인이 예상 수량과 다릅니다}}"
+
+msgid "{who} commented on {element}"
+msgstr ""
+
+msgid "{who} logged {quantity} on {element}"
+msgstr ""
+
+msgid "{who} reversed {amount} on {element}"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}년"
@@ -1371,6 +1403,9 @@ msgstr "확정된 근본 원인을 해결하는 부적합 작업 — 예방 또�
 
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "부적합 작업으로 다른 곳에서 문제 재발을 방지합니다 — 시정 수정 및 격리와는 구별됩니다."
+
+msgid "A part"
+msgstr ""
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "품목(Part)은 구매하거나 제조할 수 있는 특정 아이템에 대한 정보를 담고 있습니다."
@@ -2117,9 +2152,6 @@ msgstr "활동"
 
 msgid "Actual"
 msgstr "실제"
-
-msgid "Actual {actualText} · Committed {committedText}"
-msgstr "실제 {actualText} · 약속됨 {committedText}"
 
 #. placeholder {0}: duration(actual.total)
 msgid "Actual <0>{0}</0>"
@@ -6024,6 +6056,9 @@ msgstr "산출물을 한 로트로 병합"
 msgid "Coming soon"
 msgstr "출시 예정"
 
+msgid "Coming up"
+msgstr ""
+
 msgid "comma-separated values"
 msgstr "쉼표로 구분된 값"
 
@@ -9376,9 +9411,6 @@ msgstr "{0} 예정"
 msgid "Due {0}"
 msgstr "기한 {0}"
 
-msgid "Due {due}"
-msgstr "기한 {due}"
-
 msgid "Due <0/>"
 msgstr "기한 <0/>"
 
@@ -10068,9 +10100,6 @@ msgid "Elements"
 msgstr "요소"
 
 msgid "Elements completed"
-msgstr "완료된 요소"
-
-msgid "Elements done"
 msgstr "완료된 요소"
 
 msgid "Eliminated"
@@ -11773,9 +11802,6 @@ msgstr ""
 msgid "Focus on {label}"
 msgstr "{label}에 초점 맞추기"
 
-msgid "Folder"
-msgstr "폴더"
-
 msgid "Follows"
 msgstr "따름"
 
@@ -13327,6 +13353,10 @@ msgstr "내부 사용"
 
 msgid "Into"
 msgstr "로"
+
+#. placeholder {0}: newParent.name
+msgid "Into {0}"
+msgstr ""
 
 msgid "inv"
 msgstr "재고"
@@ -15999,9 +16029,6 @@ msgstr "신규 필드"
 msgid "New Fixed Asset"
 msgstr "신규 고정자산"
 
-msgid "New Folder"
-msgstr "새 폴더"
-
 msgid "New Function"
 msgstr "새 함수"
 
@@ -16230,9 +16257,6 @@ msgstr "새 배송 방법"
 msgid "New Size"
 msgstr "새 사이즈"
 
-msgid "New state"
-msgstr "새 상태"
-
 msgid "New Storage Type"
 msgstr "새 저장 유형"
 
@@ -16362,9 +16386,6 @@ msgstr "다음 송장은 {date}에 자동으로 생성되고 전기되며 Stripe
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "다음 송장 {date}는 자동으로 생성된 후 전기됩니다."
 
-msgid "Next milestone"
-msgstr "다음 마일스톤"
-
 msgid "Next page"
 msgstr "다음 페이지"
 
@@ -16446,6 +16467,9 @@ msgstr "활성 요금제 없음"
 msgid "No Active Quotes"
 msgstr "활성 견적 없음"
 
+msgid "No activity yet."
+msgstr ""
+
 msgid "No addresses found"
 msgstr "주소가 없습니다"
 
@@ -16513,8 +16537,8 @@ msgstr "청구 기간이 없습니다."
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOM 투입 항목 중 유효기간 정책이 설정된 항목이 없습니다"
 
-msgid "No budget set on the plan."
-msgstr "계획에 예산이 설정되지 않았습니다."
+msgid "No budget set on the plan. Actual {actualText} · Committed {committedText}"
+msgstr ""
 
 msgid "No CAD model to preview."
 msgstr "미리 볼 수 있는 CAD 모델이 없습니다."
@@ -16720,6 +16744,9 @@ msgstr "직원이 없습니다"
 msgid "No end"
 msgstr "종료 없음"
 
+msgid "No estimated costs."
+msgstr ""
+
 msgid "No events found."
 msgstr "이벤트를 찾을 수 없습니다."
 
@@ -16897,6 +16924,9 @@ msgstr "마일스톤 없음"
 msgid "No milestones yet"
 msgstr "아직 마일스톤이 없습니다"
 
+msgid "No milestones yet."
+msgstr ""
+
 msgid "No modules found"
 msgstr "모듈이 없습니다"
 
@@ -16947,6 +16977,9 @@ msgstr "미결 환급금 없음"
 
 msgid "No open sales order lines"
 msgstr "미결 수주 라인이 없습니다."
+
+msgid "No open work has a target date."
+msgstr ""
 
 msgid "No operations found."
 msgstr "공정을 찾을 수 없습니다."
@@ -17306,9 +17339,6 @@ msgstr "정산일 이전 날짜의 전기되지 않은 문서가 없습니다."
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "이 위치의 이 공정에서 시작되지 않은 배치 처리되지 않은 작업이 없습니다."
 
-msgid "No upcoming milestone"
-msgstr "예정된 마일스톤 없음"
-
 msgid "No value"
 msgstr "값 없음"
 
@@ -17347,6 +17377,9 @@ msgstr "존재하는 작업장이 없습니다"
 
 msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
 msgstr "아직 작업 패키지가 없습니다. 통제 계정 아래의 청구 가능한 요소에 획득가치 기법을 부여하세요."
+
+msgid "No work yet. <0>Plan the project</0>"
+msgstr ""
 
 msgid "No, More Work"
 msgstr "아니오, 더 많은 작업"
@@ -17521,6 +17554,12 @@ msgstr "MES에서 아직 완료된 항목이 없습니다"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 
+msgid "Nothing has been charged yet."
+msgstr ""
+
+msgid "Nothing has been charged yet. Log time, issue material, or charge a job or purchase order to this element."
+msgstr ""
+
 msgid "Nothing here matches your search and filters."
 msgstr "검색 및 필터와 일치하는 항목이 없습니다."
 
@@ -17541,9 +17580,6 @@ msgstr "동기화를 켜야 동기화됩니다. 필요한 모든 계정이 매�
 
 msgid "Nothing lent"
 msgstr "대여된 것 없음"
-
-msgid "Nothing needs attention"
-msgstr "주의가 필요한 것이 없습니다"
 
 msgid "Nothing owed"
 msgstr "빚진 것 없음"
@@ -17810,8 +17846,8 @@ msgstr "발생 비용 일정당 하나의 CSV. 일정 D, F, J, M, N 및 O는 Car
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "워크플로의 한 번 실행으로, 각 단계가 사용하고 생성한 값을 단계별로 기록하며 워크플로 책임자의 권한으로 전체적으로 작동합니다."
 
-msgid "One item of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
-msgstr "프로젝트 트리의 하나 항목, 유형 System, Requirement, Function, Task, Test Case, Folder 또는 Parameter, ST-12와 같은 표시 ID 포함: 프로젝트 식별자 및 채번 규칙 번호."
+msgid "One item of a project's tree, typed System, Requirement, Function, Task, Test Case or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
+msgstr ""
 
 msgid "One or more quantities cannot meet this date"
 msgstr "하나 이상의 수량이 이 날짜를 충족할 수 없습니다"
@@ -18007,6 +18043,9 @@ msgstr "미결 작업 지시"
 
 msgid "Open menu"
 msgstr "메뉴 열기"
+
+msgid "Open My Time"
+msgstr ""
 
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "검토자가 승인한 초안에서 계획을 변경하기 위해 하나를 여세요."
@@ -20757,6 +20796,9 @@ msgstr "입고 사업장"
 
 msgid "Recent"
 msgstr "최근"
+
+msgid "Recent activity"
+msgstr ""
 
 msgid "Recent payments"
 msgstr "최근 지불"
@@ -23967,6 +24009,9 @@ msgstr "일부 레코드는 돌아오지 않습니다. 계속하려면 <0>{CONFI
 msgid "Some Shifts"
 msgstr "일부 교대조"
 
+msgid "Someone"
+msgstr ""
+
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "회계를 업데이트할 수 있는 사용자가 자산을 자본화하기 전에 사내 생산 원가를 입력해야 합니다."
 
@@ -24217,9 +24262,6 @@ msgstr "시작 중…"
 msgid "Starts"
 msgstr "시작"
 
-msgid "Starts {start}"
-msgstr "{start}에서 시작"
-
 msgid "State"
 msgstr "상태"
 
@@ -24413,8 +24455,8 @@ msgstr "작업 중지"
 msgid "Stop-work order"
 msgstr "작업 중지 명령"
 
-msgid "Stop-work order since {stopWorkStart}, ends {stopWorkEndDate}"
-msgstr "{stopWorkStart} 이후 작업 중지 명령, {stopWorkEndDate}에 종료"
+msgid "Stop-work order since {start}, ends {end}"
+msgstr ""
 
 msgid "Stop-Work Orders"
 msgstr "작업 중지 명령"
@@ -24588,6 +24630,12 @@ msgstr "검사 제출"
 
 msgid "Submit week"
 msgstr "주간 제출"
+
+msgid "Submits all your draft time of this week for approval."
+msgstr ""
+
+msgid "Submits and posts all your draft time of this week."
+msgstr ""
 
 msgid "Submitted"
 msgstr "제출됨"
@@ -26143,6 +26191,9 @@ msgstr "이 작업장이 실행할 수 있는 공법으로, 공정 일정 시 �
 msgid "The progress behind each project contract line in this run."
 msgstr "이 실행에서 각 프로젝트 계약 라인 뒤의 진행 상황입니다."
 
+msgid "the project"
+msgstr ""
+
 msgid "The project element a Time & Materials or Cost Plus contract line bills. The line bills the work charged to it and to every element below it."
 msgstr "시간 및 자재 또는 Cost Plus 계약 라인이 청구하는 프로젝트 요소. 라인은 자신에게 청구된 작업과 자신 아래의 모든 요소에 청구합니다."
 
@@ -27123,9 +27174,6 @@ msgstr "까다로운 검사"
 msgid "Time"
 msgstr "시간"
 
-msgid "Time & materials"
-msgstr "시간 및 자재"
-
 msgid "Time & Materials"
 msgstr "시간 및 자재"
 
@@ -27248,6 +27296,9 @@ msgstr "공급업체로"
 
 msgid "To test whether it is a sale, <0>give the agreement a fixed term</0>."
 msgstr "판매인지 테스트하려면 <0>계약에 고정 약관을 제공하세요</0>."
+
+msgid "To the top level"
+msgstr ""
 
 msgid "To:"
 msgstr "대상:"
@@ -28420,9 +28471,6 @@ msgstr "값은 과거 수량에 오늘의 단위 원가를 적용합니다."
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "이 실행의 값이 요약되었습니다. 전체 세부정보는 7일간 유지됩니다."
 
-msgid "Van"
-msgstr ""
-
 msgid "Variable lease cost"
 msgstr "변동 임차 원가"
 
@@ -28610,6 +28658,9 @@ msgstr "품목 마스터 보기"
 msgid "View Journal Entry"
 msgstr "분개 보기"
 
+msgid "View list"
+msgstr ""
+
 msgid "View Lists"
 msgstr "목록 보기"
 
@@ -28705,6 +28756,9 @@ msgstr "반품 주문 보기"
 
 msgid "View Run"
 msgstr "실행 보기"
+
+msgid "View schedule"
+msgstr ""
 
 msgid "View Scheduled"
 msgstr "예정 정비 보기"
@@ -29319,9 +29373,6 @@ msgstr "입고 시 라인의 물품이 입고되는 재고 위치; 공란인 경
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "이 유지보수 요청의 출처 — 작업자 보고, 예약, 상태 모니터링 트리거, 작업 후 검사 — 로, 유지보수 보고서의 출처별 분류에 사용됩니다."
 
-msgid "Where this person's service parts are issued from first"
-msgstr "이 개인의 서비스 부품이 먼저 발급되는 곳"
-
 msgid "Where you are today"
 msgstr "현재 상황"
 
@@ -29675,6 +29726,9 @@ msgstr "예, ID 업데이트"
 
 msgid "Yes, Work Complete"
 msgstr "예, 작업 완료"
+
+msgid "Yesterday"
+msgstr ""
 
 msgid "You"
 msgstr "나"

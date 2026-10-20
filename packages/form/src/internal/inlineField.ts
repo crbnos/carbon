@@ -4,6 +4,16 @@
 
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
+import { createContext, useContext } from "react";
+
+const InlineLabelsContext = createContext(true);
+
+/**
+ * `value={false}`: no field inside draws its label, because the layout around
+ * it already names the field (a properties panel's label column). The label
+ * still words the empty field's "Add …" placeholder.
+ */
+export const InlineLabelsProvider = InlineLabelsContext.Provider;
 
 /**
  * An inline field, as Linear's properties: an empty field the user can edit
@@ -23,7 +33,8 @@ export function useInlineField({
   isReadOnly?: boolean;
 }) {
   const { t, i18n } = useLingui();
-  const showLabel = !inline || !isEmpty || !!isReadOnly;
+  const labelsShown = useContext(InlineLabelsContext);
+  const showLabel = labelsShown && (!inline || !isEmpty || !!isReadOnly);
 
   let placeholder: ReactNode;
   if (isReadOnly) {

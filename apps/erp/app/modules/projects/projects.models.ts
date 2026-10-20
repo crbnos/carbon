@@ -98,7 +98,6 @@ export const COST_OBJECTIVE_REQUIRED =
   "Set a cost objective. DCAA timekeeping requires one";
 
 export const projectElementTypes = [
-  "Folder",
   "System",
   "Requirement",
   "Function",
@@ -147,7 +146,6 @@ export const timesheetEntryStatuses = [
 
 /** Whether a new element of each type takes charges when the user does not say. */
 export const chargeableByDefault: Record<ProjectElementType, boolean> = {
-  Folder: false,
   System: true,
   Requirement: true,
   Function: true,
@@ -1176,6 +1174,97 @@ export function buildElementTree<
 
   walk(null, 0);
   return result;
+}
+
+/** Where a dragged element lands against the row it is dropped on. */
+export type ElementDropPosition = "before" | "after" | "inside";
+
+export type ElementDropPlan<T> = {
+  /** The new parent; null for the top level. */
+  parentId: string | null;
+  /** True when the parent changes (a `move`), false for a reorder. */
+  isMove: boolean;
+  /** The new parent's children, numbered 1… in their new order. */
+  order: { id: string; sortOrder: number }[];
+  /** The elements as they will be after the drop, for an optimistic tree. */
+  elements: T[];
+};
+
+/**
+ * Plans a drag-and-drop of `elementId` onto `targetId`: `before` or `after`
+ * makes it the target's sibling, `inside` its last child. Returns null for a
+ * drop the move route would refuse (onto itself or a descendant, a
+ * non-Parameter under a Parameter) and for one that changes nothing. A parent
+ * missing from the input counts as the top level, as in `buildElementTree`.
+ */
+export function planElementDrop<
+  T extends {
+    id: string;
+    parentId: string | null;
+    sortOrder: number;
+    type: ProjectElementType;
+  }
+>(
+  elements: T[],
+  args: { elementId: string; targetId: string; position: ElementDropPosition }
+): ElementDropPlan<T> | null {
+  const { elementId, targetId, position } = args;
+  if (elementId === targetId) return null;
+  const byId = new Map(elements.map((e) => [e.id, e]));
+  const dragged = byId.get(elementId);
+  const target = byId.get(targetId);
+  if (!dragged || !target) return null;
+  const parentOf = (e: T) =>
+    e.parentId && byId.has(e.parentId) ? e.parentId : null;
+
+  // The target may not sit in the dragged element's subtree.
+  for (let id: string | null = targetId; id; ) {
+    if (id === elementId) return null;
+    const current = byId.get(id);
+    id = current ? parentOf(current) : null;
+  }
+
+  const parentId = position === "inside" ? targetId : parentOf(target);
+  const parent = parentId ? byId.get(parentId) : undefined;
+  if (parent?.type === "Parameter" && dragged.type !== "Parameter") {
+    return null;
+  }
+
+  const siblings = elements
+    .filter((e) => e.id !== elementId && parentOf(e) === parentId)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const targetIndex = siblings.findIndex((e) => e.id === targetId);
+  const index =
+    position === "inside"
+      ? siblings.length
+      : position === "before"
+        ? targetIndex
+        : targetIndex + 1;
+  const next = [...siblings.slice(0, index), dragged, ...siblings.slice(index)];
+
+  const isMove = parentOf(dragged) !== parentId;
+  if (!isMove) {
+    const current = elements
+      .filter((e) => parentOf(e) === parentId)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((e) => e.id);
+    if (current.every((id, i) => next[i]?.id === id)) return null;
+  }
+
+  const order = next.map((e, i) => ({ id: e.id, sortOrder: i + 1 }));
+  const sortOrders = new Map(order.map((o) => [o.id, o.sortOrder]));
+  return {
+    parentId,
+    isMove,
+    order,
+    elements: elements.map((e) =>
+      e.id === elementId
+        ? { ...e, parentId, sortOrder: sortOrders.get(e.id)! }
+        : sortOrders.has(e.id)
+          ? { ...e, sortOrder: sortOrders.get(e.id)! }
+          : e
+    )
+  };
 }
 
 /**

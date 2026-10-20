@@ -4,7 +4,12 @@
 
 import {
   Button,
-  SplitButton,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -15,7 +20,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { LuBoxes, LuFileText, LuPlus } from "react-icons/lu";
+import { LuBoxes, LuChevronDown, LuFileText, LuPlus } from "react-icons/lu";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useUrlParams } from "~/hooks";
@@ -88,30 +93,35 @@ export function ElementsHeader({
   const hasFilters = params.getAll("filter").filter(Boolean).length > 0;
 
   const newElement = (
-    <SplitButton
-      leftIcon={<LuPlus />}
-      onClick={() => onNew()}
-      isDisabled={!canCreate}
-      isLoading={isCreating}
-      dropdownItems={[
-        ...types.map((value) => ({
-          label: typeLabels[value],
-          icon: <ElementTypeIcon type={value} />,
-          onClick: () => onNew(value)
-        })),
-        ...(onBuildFromPart
-          ? [
-              {
-                label: <Trans>Build from part</Trans>,
-                icon: <LuBoxes />,
-                onClick: onBuildFromPart
-              }
-            ]
-          : [])
-      ]}
-    >
-      <Trans>New Element</Trans>
-    </SplitButton>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          leftIcon={<LuPlus />}
+          rightIcon={<LuChevronDown />}
+          isDisabled={!canCreate}
+          isLoading={isCreating}
+        >
+          <Trans>New Element</Trans>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {types.map((value) => (
+          <DropdownMenuItem key={value} onClick={() => onNew(value)}>
+            <DropdownMenuIcon icon={<ElementTypeIcon type={value} />} />
+            {typeLabels[value]}
+          </DropdownMenuItem>
+        ))}
+        {onBuildFromPart && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onBuildFromPart}>
+              <DropdownMenuIcon icon={<LuBoxes />} />
+              <Trans>Build from part</Trans>
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 
   return (

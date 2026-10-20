@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { TermId } from "@carbon/content/glossary";
-import { ValidatedForm } from "@carbon/form";
+import { InlineLabelsProvider, ValidatedForm } from "@carbon/form";
 import { LabelWithHelp, VStack } from "@carbon/react";
 import type { ReactNode } from "react";
 import { createContext, useContext } from "react";
@@ -49,6 +49,61 @@ const PropertySaveContext = createContext<UsePropertySave | null>(null);
  */
 export const PropertySaveProvider = PropertySaveContext.Provider;
 
+/**
+ * `row` lays a property out as a label beside its value (a Details card);
+ * `stack`, the default, puts the label above (the element page's sidebar).
+ */
+const PropertyLayoutContext = createContext<"stack" | "row">("stack");
+
+/**
+ * In a row, no form field draws its own label (a domain field such as
+ * `Employee` or `Location` falls back to a default one): the row's label
+ * column names it.
+ */
+export function PropertyLayoutProvider({
+  value,
+  children
+}: {
+  value: "stack" | "row";
+  children: ReactNode;
+}) {
+  return (
+    <PropertyLayoutContext.Provider value={value}>
+      <InlineLabelsProvider value={value !== "row"}>
+        {children}
+      </InlineLabelsProvider>
+    </PropertyLayoutContext.Provider>
+  );
+}
+
+/** The form field's own label: none in a row, where the row shows it. */
+export function usePropertyFieldLabel(label: string) {
+  return useContext(PropertyLayoutContext) === "row" ? undefined : label;
+}
+
+/** In a row layout, the muted label beside the value; else the value. */
+export function PropertyRow({
+  label,
+  termId,
+  children
+}: {
+  label: string;
+  termId?: TermId;
+  children: ReactNode;
+}) {
+  if (useContext(PropertyLayoutContext) !== "row") return <>{children}</>;
+  return (
+    <div className="grid min-h-8 w-full grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-3">
+      <span className="truncate text-sm text-muted-foreground">
+        <LabelWithHelp termId={termId} variant="inline">
+          {label}
+        </LabelWithHelp>
+      </span>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
 /** The save in effect: the provider's, else the element field route. */
 function usePropertySave(projectId: string, elementId: string, field: string) {
   const useSave = useContext(PropertySaveContext) ?? useElementFieldSave;
@@ -93,6 +148,14 @@ export function PropertyField({
   termId?: TermId;
   children: ReactNode;
 }) {
+  const isRow = useContext(PropertyLayoutContext) === "row";
+  if (isRow) {
+    return (
+      <PropertyRow label={label} termId={termId}>
+        <div className="text-sm">{children}</div>
+      </PropertyRow>
+    );
+  }
   return (
     <VStack spacing={2}>
       <h3 className="text-xs text-muted-foreground">
@@ -115,8 +178,9 @@ export function PropertyGroup({
   termId?: TermId;
   children: ReactNode;
 }) {
+  const isRow = useContext(PropertyLayoutContext) === "row";
   return (
-    <VStack spacing={4}>
+    <VStack spacing={isRow ? 1 : 4}>
       {title && (
         <h2 className="text-sm font-medium">
           <LabelWithHelp termId={termId} variant="inline">
@@ -152,37 +216,40 @@ export function PropertySelect({
 }) {
   const { pending, submit } = usePropertySave(projectId, elementId, field);
   const current = pending === undefined ? value : pending;
+  const fieldLabel = usePropertyFieldLabel(label);
   return (
-    <ValidatedForm
-      key={`${field}:${value ?? ""}`}
-      defaultValues={{ [field]: value ?? "" }}
-      validator={z.object({
-        [field]: isOptional
-          ? zfd.text(z.string().optional())
-          : z.string().min(1)
-      })}
-      className="w-full"
-    >
-      <Select
-        name={field}
-        label={label}
-        termId={termId}
-        options={options}
-        isOptional={isOptional}
-        isReadOnly={isDisabled}
-        inline={(next, opts) =>
-          renderValue?.(next) ?? (
-            <span>{opts.find((o) => o.value === next)?.label ?? next}</span>
-          )
-        }
-        onChange={(option) => {
-          const next = option?.value || null;
-          if (next === current) return;
-          submit(next);
-          onChange?.(next);
-        }}
-      />
-    </ValidatedForm>
+    <PropertyRow label={label} termId={termId}>
+      <ValidatedForm
+        key={`${field}:${value ?? ""}`}
+        defaultValues={{ [field]: value ?? "" }}
+        validator={z.object({
+          [field]: isOptional
+            ? zfd.text(z.string().optional())
+            : z.string().min(1)
+        })}
+        className="w-full"
+      >
+        <Select
+          name={field}
+          label={fieldLabel}
+          termId={termId}
+          options={options}
+          isOptional={isOptional}
+          isReadOnly={isDisabled}
+          inline={(next, opts) =>
+            renderValue?.(next) ?? (
+              <span>{opts.find((o) => o.value === next)?.label ?? next}</span>
+            )
+          }
+          onChange={(option) => {
+            const next = option?.value || null;
+            if (next === current) return;
+            submit(next);
+            onChange?.(next);
+          }}
+        />
+      </ValidatedForm>
+    </PropertyRow>
   );
 }
 
@@ -204,31 +271,34 @@ export function PropertyCombobox({
 }) {
   const { pending, submit } = usePropertySave(projectId, elementId, field);
   const current = pending === undefined ? value : pending;
+  const fieldLabel = usePropertyFieldLabel(label);
   return (
-    <ValidatedForm
-      key={`${field}:${value ?? ""}`}
-      defaultValues={{ [field]: value ?? "" }}
-      validator={z.object({ [field]: zfd.text(z.string().optional()) })}
-      className="w-full"
-    >
-      <Combobox
-        name={field}
-        label={label}
-        termId={termId}
-        options={options}
-        isOptional
-        isReadOnly={isDisabled}
-        inline={(next, opts) =>
-          renderValue?.(next) ?? (
-            <span>{opts.find((o) => o.value === next)?.label ?? next}</span>
-          )
-        }
-        onChange={(option) => {
-          const next = option?.value || null;
-          if (next !== current) submit(next);
-        }}
-      />
-    </ValidatedForm>
+    <PropertyRow label={label} termId={termId}>
+      <ValidatedForm
+        key={`${field}:${value ?? ""}`}
+        defaultValues={{ [field]: value ?? "" }}
+        validator={z.object({ [field]: zfd.text(z.string().optional()) })}
+        className="w-full"
+      >
+        <Combobox
+          name={field}
+          label={fieldLabel}
+          termId={termId}
+          options={options}
+          isOptional
+          isReadOnly={isDisabled}
+          inline={(next, opts) =>
+            renderValue?.(next) ?? (
+              <span>{opts.find((o) => o.value === next)?.label ?? next}</span>
+            )
+          }
+          onChange={(option) => {
+            const next = option?.value || null;
+            if (next !== current) submit(next);
+          }}
+        />
+      </ValidatedForm>
+    </PropertyRow>
   );
 }
 
@@ -243,24 +313,27 @@ export function PropertyDate({
   isDisabled
 }: FieldProps & { value: string | null }) {
   const { submit } = usePropertySave(projectId, elementId, field);
+  const fieldLabel = usePropertyFieldLabel(label);
   return (
-    <ValidatedForm
-      key={`${field}:${value ?? ""}`}
-      defaultValues={{ [field]: value ?? "" }}
-      validator={z.object({ [field]: zfd.text(z.string().optional()) })}
-      className="w-full"
-    >
-      <DatePicker
-        name={field}
-        label={label}
-        termId={termId}
-        inline
-        isDisabled={isDisabled}
-        onChange={(date) => {
-          if ((date || null) !== value) submit(date || null);
-        }}
-      />
-    </ValidatedForm>
+    <PropertyRow label={label} termId={termId}>
+      <ValidatedForm
+        key={`${field}:${value ?? ""}`}
+        defaultValues={{ [field]: value ?? "" }}
+        validator={z.object({ [field]: zfd.text(z.string().optional()) })}
+        className="w-full"
+      >
+        <DatePicker
+          name={field}
+          label={fieldLabel}
+          termId={termId}
+          inline
+          isDisabled={isDisabled}
+          onChange={(date) => {
+            if ((date || null) !== value) submit(date || null);
+          }}
+        />
+      </ValidatedForm>
+    </PropertyRow>
   );
 }
 
@@ -287,34 +360,37 @@ export function PropertyNumber({
   const { pending, submit } = usePropertySave(projectId, elementId, field);
   const current =
     pending === undefined ? value : pending === null ? null : Number(pending);
+  const fieldLabel = usePropertyFieldLabel(label);
   return (
-    <ValidatedForm
-      key={`${field}:${value ?? ""}`}
-      defaultValues={{ [field]: value ?? undefined }}
-      validator={z.object({
-        [field]: zfd.numeric(z.number().optional())
-      })}
-      className="w-full"
-    >
-      <NumberControlled
-        name={field}
-        label={label}
-        termId={termId}
-        inline
-        isReadOnly={isDisabled}
-        value={current ?? Number.NaN}
-        formatOptions={formatOptions}
-        step={step}
-        minValue={minValue}
-        maxValue={maxValue}
-        onChange={(next) => {
-          const nextValue = Number.isNaN(next) ? null : next;
-          if (nextValue !== current) {
-            submit(nextValue === null ? null : String(nextValue));
-          }
-        }}
-      />
-    </ValidatedForm>
+    <PropertyRow label={label} termId={termId}>
+      <ValidatedForm
+        key={`${field}:${value ?? ""}`}
+        defaultValues={{ [field]: value ?? undefined }}
+        validator={z.object({
+          [field]: zfd.numeric(z.number().optional())
+        })}
+        className="w-full"
+      >
+        <NumberControlled
+          name={field}
+          label={fieldLabel}
+          termId={termId}
+          inline
+          isReadOnly={isDisabled}
+          value={current ?? Number.NaN}
+          formatOptions={formatOptions}
+          step={step}
+          minValue={minValue}
+          maxValue={maxValue}
+          onChange={(next) => {
+            const nextValue = Number.isNaN(next) ? null : next;
+            if (nextValue !== current) {
+              submit(nextValue === null ? null : String(nextValue));
+            }
+          }}
+        />
+      </ValidatedForm>
+    </PropertyRow>
   );
 }
 
@@ -330,28 +406,31 @@ export function PropertyText({
   isDisabled
 }: FieldProps & { value: string | null; placeholder?: string }) {
   const { submit } = usePropertySave(projectId, elementId, field);
+  const fieldLabel = usePropertyFieldLabel(label);
   return (
-    <ValidatedForm
-      key={`${field}:${value ?? ""}`}
-      defaultValues={{ [field]: value ?? "" }}
-      validator={z.object({ [field]: zfd.text(z.string().optional()) })}
-      className="w-full"
-    >
-      <InputControlled
-        name={field}
-        label={label}
-        termId={termId}
-        size="sm"
-        inline
-        isReadOnly={isDisabled}
-        placeholder={placeholder}
-        value={value ?? ""}
-        onBlur={(event) => {
-          const next = event.target.value.trim() || null;
-          if (next !== value) submit(next);
-        }}
-      />
-    </ValidatedForm>
+    <PropertyRow label={label} termId={termId}>
+      <ValidatedForm
+        key={`${field}:${value ?? ""}`}
+        defaultValues={{ [field]: value ?? "" }}
+        validator={z.object({ [field]: zfd.text(z.string().optional()) })}
+        className="w-full"
+      >
+        <InputControlled
+          name={field}
+          label={fieldLabel}
+          termId={termId}
+          size="sm"
+          inline
+          isReadOnly={isDisabled}
+          placeholder={placeholder}
+          value={value ?? ""}
+          onBlur={(event) => {
+            const next = event.target.value.trim() || null;
+            if (next !== value) submit(next);
+          }}
+        />
+      </ValidatedForm>
+    </PropertyRow>
   );
 }
 
@@ -367,22 +446,25 @@ export function PropertySwitch({
 }: FieldProps & { value: boolean }) {
   const { pending, submit } = usePropertySave(projectId, elementId, field);
   const checked = pending === undefined ? value : pending === "true";
+  const fieldLabel = usePropertyFieldLabel(label);
   return (
-    <ValidatedForm
-      key={`${field}:${value}`}
-      defaultValues={{ [field]: checked }}
-      validator={z.object({ [field]: zfd.checkbox() })}
-      className="w-full"
-    >
-      <Boolean
-        name={field}
-        label={label}
-        termId={termId}
-        variant="small"
-        isOptional={false}
-        isDisabled={isDisabled}
-        onChange={(next) => submit(next ? "true" : "false")}
-      />
-    </ValidatedForm>
+    <PropertyRow label={label} termId={termId}>
+      <ValidatedForm
+        key={`${field}:${value}`}
+        defaultValues={{ [field]: checked }}
+        validator={z.object({ [field]: zfd.checkbox() })}
+        className="w-full"
+      >
+        <Boolean
+          name={field}
+          label={fieldLabel}
+          termId={termId}
+          variant="small"
+          isOptional={false}
+          isDisabled={isDisabled}
+          onChange={(next) => submit(next ? "true" : "false")}
+        />
+      </ValidatedForm>
+    </PropertyRow>
   );
 }

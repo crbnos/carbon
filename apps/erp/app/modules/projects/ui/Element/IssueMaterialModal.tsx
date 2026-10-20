@@ -227,7 +227,6 @@ export function IssueMaterialModal({
   projectId,
   element,
   defaultLocationId,
-  defaultStorageUnitId,
   action = path.to.projectIssue,
   hiddenFields,
   variant = "project",
@@ -243,8 +242,6 @@ export function IssueMaterialModal({
     itemId?: string | null;
   };
   defaultLocationId?: string | null;
-  /** The storage unit to issue from first, such as the technician's van. */
-  defaultStorageUnitId?: string | null;
   /** The route that posts the issue (a service order's charge route). */
   action?: string;
   /** Extra values the action reads, such as `intent`. */
@@ -260,9 +257,7 @@ export function IssueMaterialModal({
   const [locationId, setLocationId] = useState<string | null>(
     defaultLocationId ?? user.defaults.locationId ?? null
   );
-  const [storageUnitId, setStorageUnitId] = useState<string | null>(
-    defaultStorageUnitId ?? null
-  );
+  const [storageUnitId, setStorageUnitId] = useState<string | null>(null);
   const [direction, setDirection] = useState<Direction>("Issue");
 
   const fetcher = useAction<{
@@ -314,7 +309,7 @@ export function IssueMaterialModal({
             projectElementId: element?.id,
             itemId: "",
             locationId: locationId ?? "",
-            storageUnitId: defaultStorageUnitId ?? undefined,
+            storageUnitId: undefined,
             trackedEntityId: undefined,
             quantity: 1,
             direction: "Issue"

@@ -14,6 +14,14 @@ export const inlineTriggerClassName = cn(
   "disabled:cursor-default disabled:hover:bg-transparent"
 );
 
+/**
+ * The classes of the input that replaces the trigger while the field is edited:
+ * the trigger's height and gutter, with the padding less the 1px border, so the
+ * text stays where it was and nothing below it moves.
+ */
+export const inlineEditorClassName =
+  "-ml-2.5 h-8 max-md:h-8 w-[calc(100%+0.625rem)] px-[9px]";
+
 export type InlineTriggerProps = ComponentPropsWithoutRef<"button"> & {
   /** Shown in place of the value, muted: "Add owner". */
   placeholder?: ReactNode;
