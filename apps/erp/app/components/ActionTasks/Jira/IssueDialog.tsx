@@ -9,7 +9,6 @@ import {
   Badge,
   Button,
   cn,
-  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -84,6 +83,7 @@ export const JiraIssueDialog = ({ entityType, taskId, linkedIssue }: Props) => {
           <Button
             leftIcon={<JiraIcon className={"size-4"} />}
             variant="ghost"
+            size="sm"
             aria-label={t`Update Jira issue`}
           >
             {linked.key}
@@ -92,11 +92,14 @@ export const JiraIssueDialog = ({ entityType, taskId, linkedIssue }: Props) => {
             )}
           </Button>
         ) : (
-          <IconButton
-            icon={<JiraIcon className={"size-4 grayscale"} />}
+          <Button
+            leftIcon={<JiraIcon className={"size-4"} />}
             variant="ghost"
+            size="sm"
             aria-label={t`Connect Jira issue`}
-          />
+          >
+            <Trans>Sync</Trans>
+          </Button>
         )}
       </ModalTrigger>
       <ModalContent size={"large"}>

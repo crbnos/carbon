@@ -9,7 +9,6 @@ import {
   Badge,
   Button,
   cn,
-  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -87,6 +86,7 @@ export const LinearIssueDialog = ({
           <Button
             leftIcon={<LinearIcon className={"size-4"} />}
             variant="ghost"
+            size="sm"
             aria-label={t`Update Linear issue`}
           >
             {linked.identifier}
@@ -95,11 +95,14 @@ export const LinearIssueDialog = ({
             )}
           </Button>
         ) : (
-          <IconButton
-            icon={<LinearIcon className={"size-4 grayscale"} />}
+          <Button
+            leftIcon={<LinearIcon className={"size-4"} />}
             variant="ghost"
+            size="sm"
             aria-label={t`Connect Linear issue`}
-          />
+          >
+            <Trans>Sync</Trans>
+          </Button>
         )}
       </ModalTrigger>
       <ModalContent size={"large"}>
