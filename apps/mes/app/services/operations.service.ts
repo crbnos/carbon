@@ -2202,8 +2202,8 @@ export async function getWorkCentersByCompany(
   return { data: mergedData, error: null };
 }
 
-// `refusal` is a message for the operator: the step was recorded by someone
-// else, and only they can change it.
+// `refusal` is a message for the operator: a Measurement step was sent with no
+// value, or the step was recorded by someone else and only they can change it.
 export async function insertAttributeRecord(
   client: SupabaseClient<Database>,
   data: z.infer<typeof stepRecordValidator> & {
@@ -2215,7 +2215,7 @@ export async function insertAttributeRecord(
   // so a foreign step id would write a record on another company's step.
   const step = await client
     .from("jobOperationStep")
-    .select("id")
+    .select("id, type")
     .eq("id", data.jobOperationStepId)
     .eq("companyId", data.companyId)
     .maybeSingle();
@@ -2229,6 +2229,12 @@ export async function insertAttributeRecord(
       error: notFoundResponse("Job operation step not found").error,
       refusal: null
     };
+  }
+
+  // The record window refuses an empty measurement (measurementStepRecordValidator);
+  // this route validates with the general validator, so repeat the rule here.
+  if (step.data.type === "Measurement" && data.numericValue === undefined) {
+    return { error: null, refusal: "Enter the measurement" };
   }
 
   // One record per step and record set. Recording it again changes the values
