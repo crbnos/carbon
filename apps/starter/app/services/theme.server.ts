@@ -3,16 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ThemeName } from "@carbon/utils";
-import { resolveTheme } from "@carbon/utils";
+import { halloweenTheme, resolveTheme } from "@carbon/utils";
 import * as cookie from "cookie";
 
 const cookieName = "theme";
 
-/** The theme to render: the cookie's, or the default when it names none we offer now. */
-export function getTheme(request: Request): ThemeName {
-  const cookieHeader = request.headers.get("cookie");
-  const stored = cookieHeader ? cookie.parse(cookieHeader)[cookieName] : null;
-  return resolveTheme(stored).name;
+/**
+ * The theme to render: Halloween for everyone while it is in season, whatever
+ * the cookie holds; the default outside its window.
+ */
+export function getTheme(_request: Request): ThemeName {
+  return resolveTheme(halloweenTheme.name).name;
 }
 
 export function setTheme(theme: string) {

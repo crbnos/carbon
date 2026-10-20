@@ -224,9 +224,12 @@ variables (`--primary`, `--background`, `--foreground`, `--card`, `--popover`,
 `green`, `blue`, `violet`, plus seasonal ones.
 
 The choice is a `theme` cookie per browser, never a database column. Each app's
-`getTheme` (`services/theme.server.ts`) reads it through `resolveTheme`, which
+`getTheme` (`services/theme.server.ts`) resolves through `resolveTheme`, which
 returns the default for a name no longer in `themes`, so removing a theme
-needs no migration and breaks no browser that still holds it.
+needs no migration and breaks no browser that still holds it. **For now
+`getTheme` ignores the cookie** and renders `halloween` for everyone while it
+is in season (the default outside its window); the pickers still write the
+cookie, which takes effect again once `getTheme` reads it.
 
 A seasonal theme lives in `seasonalThemes`, not `themes`, and carries an
 `available` window (`ThemeWindow`, month and day, inside one calendar year).
