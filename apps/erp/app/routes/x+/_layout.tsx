@@ -42,6 +42,7 @@ import {
   useNProgress,
   useViewport
 } from "@carbon/react";
+import { HalloweenLayer } from "@carbon/react/Halloween";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
@@ -63,7 +64,6 @@ import type {
 import { Await, data, Outlet, useLoaderData, useNavigate } from "react-router";
 import { RealtimeDataProvider } from "~/components";
 import ChangelogPanel from "~/components/ChangelogPanel";
-import { HalloweenLayer } from "~/components/Halloween/HalloweenLayer";
 import {
   ModuleSidebarLayout,
   PrimaryNavigation,
@@ -593,8 +593,9 @@ export default function AuthenticatedRoute() {
                         />
                       )}
                     </main>
-                    {/* Seasonal: remove after Halloween with components/Halloween/. */}
-                    <HalloweenLayer userId={user?.id ?? ""} />
+                    {/* Seasonal: shows only with the Halloween theme. Remove
+                        with packages/react/src/Halloween/. */}
+                    <HalloweenLayer />
                     {isPhone && (
                       <MobileBottomChrome>
                         <MobileDock />

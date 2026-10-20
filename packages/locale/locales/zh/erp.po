@@ -11010,9 +11010,6 @@ msgstr "再次隐藏"
 msgid "Hide calculation"
 msgstr "隐藏计算"
 
-msgid "Hide decorations"
-msgstr "隐藏装饰"
-
 msgid "Hide documents and activity"
 msgstr "隐藏文档和活动"
 
@@ -21435,9 +21432,6 @@ msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "出现问题。请重试。"
-
-msgid "Something wicked this way ships."
-msgstr "有邪恶之物正在发货。"
 
 msgid "Soon"
 msgstr "即将推出"

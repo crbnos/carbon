@@ -803,6 +803,12 @@ msgstr "Go back to operation"
 msgid "Go to onboarding"
 msgstr "Go to onboarding"
 
+msgid "Halloween surprise"
+msgstr "Halloween surprise"
+
+msgid "Happy Halloween"
+msgstr "Happy Halloween"
+
 msgid "Heading {level}"
 msgstr "Heading {level}"
 
@@ -1481,6 +1487,9 @@ msgstr "Please select an item"
 
 msgid "PM schedule lapsed"
 msgstr "PM schedule lapsed"
+
+msgid "Poke the spider… if you dare"
+msgstr "Poke the spider… if you dare"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."

@@ -803,6 +803,12 @@ msgstr "공정작업으로 돌아가기"
 msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
 
+msgid "Halloween surprise"
+msgstr "할로윈 깜짝 선물"
+
+msgid "Happy Halloween"
+msgstr "해피 할로윈"
+
 msgid "Heading {level}"
 msgstr "{level} 제목"
 
@@ -1481,6 +1487,9 @@ msgstr "품목을 선택하세요"
 
 msgid "PM schedule lapsed"
 msgstr "PM 일정 만료됨"
+
+msgid "Poke the spider… if you dare"
+msgstr "거미를 찔러 보세요… 용기가 있다면"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "어느 페이지에서나 ?를 누르세요. 필드에 입력하는 동안 단축키가 무시됩니다."

@@ -11010,9 +11010,6 @@ msgstr "Ukryj ponownie"
 msgid "Hide calculation"
 msgstr "Ukryj obliczenie"
 
-msgid "Hide decorations"
-msgstr "Ukryj dekoracje"
-
 msgid "Hide documents and activity"
 msgstr "Ukryj dokumenty i aktywność"
 
@@ -21435,9 +21432,6 @@ msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Coś poszło nie tak. Spróbuj ponownie."
-
-msgid "Something wicked this way ships."
-msgstr "Coś złowrogiego właśnie wysyłamy."
 
 msgid "Soon"
 msgstr "Wkrótce"

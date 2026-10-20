@@ -83,6 +83,13 @@ const LEAD = 0.11;
 const MAX_LEAD = 9;
 const smooth = (t: number) => t * t * (3 - 2 * t);
 
+// A leg number always names one of the eight legs, so a missing one is a bug.
+function at<T>(list: readonly T[], i: number): T {
+  const value = list[i];
+  if (value === undefined) throw new Error(`spider rig: no leg ${i}`);
+  return value;
+}
+
 export function toWorld(body: Body, p: Vec): Vec {
   const cos = Math.cos(body.angle);
   const sin = Math.sin(body.angle);
@@ -152,9 +159,11 @@ export function createRig() {
   }));
   let nextGroup: 0 | 1 = 0;
 
-  const restAt = (body: Body, i: number) => toWorld(body, LEGS[i].rest);
-  const reachOf = (i: number) =>
-    (LEGS[i].bones[0] + LEGS[i].bones[1]) * SPIDER_SCALE;
+  const restAt = (body: Body, i: number) => toWorld(body, at(LEGS, i).rest);
+  const reachOf = (i: number) => {
+    const [upper, lower] = at(LEGS, i).bones;
+    return (upper + lower) * SPIDER_SCALE;
+  };
 
   function startStep(
     i: number,
@@ -163,7 +172,7 @@ export function createRig() {
     speed: number,
     duration?: number
   ) {
-    const foot = feet[i];
+    const foot = at(feet, i);
     const grip = surface.grip(target.x, target.y);
     foot.stepping = true;
     foot.fromX = foot.x;
@@ -213,7 +222,7 @@ export function createRig() {
       if (mode === "curl") {
         const ease = Math.min(1, dt * 14);
         feet.forEach((foot, i) => {
-          const rest = LEGS[i].rest;
+          const rest = at(LEGS, i).rest;
           const p = toWorld(body, { x: rest.x * 0.42, y: rest.y * 0.42 + 2 });
           foot.x += (p.x - foot.x) * ease;
           foot.y += (p.y - foot.y) * ease;
@@ -238,7 +247,7 @@ export function createRig() {
         const swing =
           Math.sin(Math.PI * foot.t) *
           Math.min(5 * SPIDER_SCALE, stride * 0.35) *
-          LEGS[i].side;
+          at(LEGS, i).side;
         foot.x = foot.fromX + (to.x - foot.fromX) * e + lateral.x * swing;
         foot.y = foot.fromY + (to.y - foot.fromY) * e + lateral.y * swing;
         if (foot.t >= 1) {
@@ -258,19 +267,20 @@ export function createRig() {
         const p = restAt(body, i);
         return { x: p.x + velocity.x * lead, y: p.y + velocity.y * lead };
       });
-      const error = feet.map((foot, i) =>
-        Math.hypot(foot.x - targets[i].x, foot.y - targets[i].y)
-      );
+      const error = feet.map((foot, i) => {
+        const target = at(targets, i);
+        return Math.hypot(foot.x - target.x, foot.y - target.y);
+      });
 
       if (!feet.some((foot) => foot.stepping)) {
         for (const group of [nextGroup, 1 - nextGroup] as const) {
           const due = LEGS.some(
-            (leg, i) => leg.group === group && error[i] > threshold
+            (leg, i) => leg.group === group && at(error, i) > threshold
           );
           if (!due) continue;
           LEGS.forEach((leg, i) => {
-            if (leg.group === group && error[i] > threshold * 0.4) {
-              startStep(i, targets[i], surface, speed);
+            if (leg.group === group && at(error, i) > threshold * 0.4) {
+              startStep(i, at(targets, i), surface, speed);
             }
           });
           nextGroup = group === 0 ? 1 : 0;
@@ -283,11 +293,11 @@ export function createRig() {
       let airborne = feet.filter((foot) => foot.stepping).length;
       feet.forEach((foot, i) => {
         if (foot.stepping || airborne >= 5) return;
-        const hip = toWorld(body, LEGS[i].hip);
+        const hip = toWorld(body, at(LEGS, i).hip);
         const overstretched =
           Math.hypot(foot.x - hip.x, foot.y - hip.y) > reachOf(i) * 0.97;
-        if (overstretched || error[i] > threshold * 3.2) {
-          startStep(i, targets[i], surface, speed);
+        if (overstretched || at(error, i) > threshold * 3.2) {
+          startStep(i, at(targets, i), surface, speed);
           airborne++;
         }
       });
@@ -295,7 +305,7 @@ export function createRig() {
 
     /** Lift one leg and set it down again a little elsewhere: idle fussing. */
     fidget(i: number, body: Body, surface: Surface, nudge: Vec) {
-      if (feet[i].stepping) return;
+      if (at(feet, i).stepping) return;
       const p = restAt(body, i);
       startStep(i, { x: p.x + nudge.x, y: p.y + nudge.y }, surface, 0, 0.22);
     },
@@ -316,7 +326,7 @@ export function createRig() {
     pose(body: Body): LegPose[] {
       const outwardRight = { x: Math.cos(body.angle), y: Math.sin(body.angle) };
       return LEGS.map((leg, i) => {
-        const foot = feet[i];
+        const foot = at(feet, i);
         const hip = toWorld(body, leg.hip);
         // A foot in the air is lifted towards the viewer: seen from above, the
         // leg looks a little shorter mid-step.

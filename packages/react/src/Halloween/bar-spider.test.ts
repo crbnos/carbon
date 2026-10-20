@@ -198,11 +198,10 @@ describe("createBarSpider", () => {
     const hiding = sim.state();
     expect(hiding.mode).toBe("hide");
     // Ran away from the pointer, into the left-hand web.
+    const [leftHub] = hiding.hubs;
+    if (!leftHub) throw new Error("no left-hand web");
     expect(
-      Math.hypot(
-        hiding.body.x - hiding.hubs[0].x,
-        hiding.body.y - hiding.hubs[0].y
-      )
+      Math.hypot(hiding.body.x - leftHub.x, hiding.body.y - leftHub.y)
     ).toBeLessThan(1);
 
     moveTo(WIDTH / 2, 400);

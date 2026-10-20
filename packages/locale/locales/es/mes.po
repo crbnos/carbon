@@ -803,6 +803,12 @@ msgstr "Volver a la operación"
 msgid "Go to onboarding"
 msgstr "Ir a la incorporación"
 
+msgid "Halloween surprise"
+msgstr "Sorpresa de Halloween"
+
+msgid "Happy Halloween"
+msgstr "Feliz Halloween"
+
 msgid "Heading {level}"
 msgstr "Encabezado {level}"
 
@@ -1481,6 +1487,9 @@ msgstr "Por favor seleccione un artículo"
 
 msgid "PM schedule lapsed"
 msgstr "Cronograma de PM caducado"
+
+msgid "Poke the spider… if you dare"
+msgstr "Toca la araña… si te atreves"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Presione ? en cualquier página para abrir la lista. Los atajos se ignoran mientras escribe en un campo."

@@ -11010,9 +11010,6 @@ msgstr "다시 숨기기"
 msgid "Hide calculation"
 msgstr "계산 숨기기"
 
-msgid "Hide decorations"
-msgstr "장식 숨기기"
-
 msgid "Hide documents and activity"
 msgstr "문서 및 활동 숨기기"
 
@@ -21435,9 +21432,6 @@ msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "문제가 발생했습니다. 다시 시도해 주세요."
-
-msgid "Something wicked this way ships."
-msgstr "무언가 사악한 것이 출하되고 있습니다."
 
 msgid "Soon"
 msgstr "곧"

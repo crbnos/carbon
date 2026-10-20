@@ -11010,9 +11010,6 @@ msgstr "もう一度非表示"
 msgid "Hide calculation"
 msgstr "計算を隠す"
 
-msgid "Hide decorations"
-msgstr "飾りを非表示"
-
 msgid "Hide documents and activity"
 msgstr "ドキュメントと活動を隠す"
 
@@ -21435,9 +21432,6 @@ msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "何か問題が発生しました。もう一度お試しください。"
-
-msgid "Something wicked this way ships."
-msgstr "何か邪悪なものが出荷されようとしている。"
 
 msgid "Soon"
 msgstr "もうすぐ"

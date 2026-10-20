@@ -47,6 +47,11 @@ const meshColorsByTheme: Record<
   violet: {
     light: ["#f3f0fe", "#f7f5fe", "#fbfaff", "#f5f2fe"],
     dark: ["#1e0a2d", "#000000", "#0D0D0D", "#050505"]
+  },
+  // Seasonal: remove with packages/utils/src/halloween-theme.ts.
+  halloween: {
+    light: ["#fdf0e4", "#f6f0fa", "#fffaf5", "#fbefe6"],
+    dark: ["#2d1205", "#14081f", "#0D0D0D", "#050505"]
   }
 };
 

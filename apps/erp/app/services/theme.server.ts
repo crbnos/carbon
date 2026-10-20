@@ -3,26 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { DOMAIN, getCookieDomain } from "@carbon/auth";
+import type { ThemeName } from "@carbon/utils";
+import { resolveTheme } from "@carbon/utils";
 import * as cookie from "cookie";
 
 const cookieName = "theme";
-const themes = [
-  "zinc",
-  "neutral",
-  "red",
-  "orange",
-  "yellow",
-  "green",
-  "blue",
-  "violet"
-] as const;
-type Theme = (typeof themes)[number];
 
-export function getTheme(request: Request): Theme {
+/** The theme to render: the cookie's, or the default when it names none we offer now. */
+export function getTheme(request: Request): ThemeName {
   const cookieHeader = request.headers.get("cookie");
-  const parsed = cookieHeader ? cookie.parse(cookieHeader)[cookieName] : "zinc";
-  if (themes.includes(parsed as Theme)) return parsed as Theme;
-  return "zinc";
+  const stored = cookieHeader ? cookie.parse(cookieHeader)[cookieName] : null;
+  return resolveTheme(stored).name;
 }
 
 export function setTheme(theme: string) {

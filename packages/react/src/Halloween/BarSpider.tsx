@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { cn } from "../utils/cn";
 import type { Obstacle } from "./bar-spider";
 import { createBarSpider, HIT_SIZE } from "./bar-spider";
 import { BAR_HEIGHT } from "./corner-web";
@@ -29,24 +29,41 @@ type WebRefs = {
 
 const emptyWeb = (): WebRefs => ({ spokes: null, rings: null, torn: null });
 
+// How far into the page card to look for the bar: the ERP's top bar is a
+// child of the card, the MES's header a child of the page inside it.
+const BAR_SEARCH_DEPTH = 3;
+
 /**
- * The top bar is the layer's sibling that starts where it does and is as
- * tall. Everything on it you can see or press, as boxes in the layer's
- * coordinates.
+ * The top bar is the element in the layer's card, nearest the card, that
+ * starts where the layer does and is as tall. Everything on it you can see
+ * or press, as boxes in the layer's coordinates.
  */
-function measureBar(layer: HTMLElement) {
+function findBar(layer: HTMLElement) {
   const card = layer.parentElement;
   if (!card) return null;
   const origin = layer.getBoundingClientRect();
-  const bar = Array.from(card.children).find((child) => {
-    if (child === layer) return false;
-    const box = child.getBoundingClientRect();
-    return (
-      Math.abs(box.top - origin.top) < 2 &&
-      Math.abs(box.height - origin.height) < 3
-    );
-  });
-  if (!(bar instanceof HTMLElement)) return null;
+  let level = Array.from(card.children);
+  for (let depth = 0; depth < BAR_SEARCH_DEPTH && level.length > 0; depth++) {
+    const bar = level.find((element) => {
+      if (element === layer) return false;
+      const box = element.getBoundingClientRect();
+      return (
+        Math.abs(box.top - origin.top) < 2 &&
+        Math.abs(box.height - origin.height) < 3
+      );
+    });
+    if (bar instanceof HTMLElement) return bar;
+    level = level
+      .filter((element) => element !== layer)
+      .flatMap((element) => Array.from(element.children));
+  }
+  return null;
+}
+
+function measureBar(layer: HTMLElement) {
+  const origin = layer.getBoundingClientRect();
+  const bar = findBar(layer);
+  if (!bar) return null;
   const obstacles: Obstacle[] = [];
   for (const node of Array.from(bar.querySelectorAll("*"))) {
     // Links and buttons whole, and every other element that holds no
@@ -204,7 +221,8 @@ export function BarSpider({
     <div
       ref={layerRef}
       className="pointer-events-none absolute inset-x-0 top-0 z-20 hidden text-foreground md:block"
-      style={{ height: "var(--topbar-height)" }}
+      // The ERP's top bar, else the MES's page header.
+      style={{ height: "var(--topbar-height, var(--header-height))" }}
     >
       <svg
         ref={svgRef}
@@ -236,10 +254,10 @@ export function BarSpider({
           </filter>
         </defs>
 
-        {websRef.current.map((_, k) => {
+        {websRef.current.map((web, k) => {
           const id = `halloween-corner-web-${k}`;
           const at = (name: keyof WebRefs) => (node: SVGPathElement | null) => {
-            websRef.current[k][name] = node;
+            web[name] = node;
           };
           return (
             <g key={id}>

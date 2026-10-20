@@ -803,6 +803,12 @@ msgstr "操作に戻る"
 msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
 
+msgid "Halloween surprise"
+msgstr "ハロウィンのサプライズ"
+
+msgid "Happy Halloween"
+msgstr "ハッピーハロウィン"
+
 msgid "Heading {level}"
 msgstr "見出し {level}"
 
@@ -1481,6 +1487,9 @@ msgstr "品目を選択してください"
 
 msgid "PM schedule lapsed"
 msgstr "PM スケジュール失効"
+
+msgid "Poke the spider… if you dare"
+msgstr "クモをつついてみて…勇気があれば"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "任意のページで「?」を押すとこのリストが表示されます。フィールドへの入力中はショートカットが無視されます。"

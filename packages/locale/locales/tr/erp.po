@@ -11010,9 +11010,6 @@ msgstr "Tekrar Gizle"
 msgid "Hide calculation"
 msgstr "Hesaplamayı Gizle"
 
-msgid "Hide decorations"
-msgstr "Süslemeleri gizle"
-
 msgid "Hide documents and activity"
 msgstr "Belgeler ve aktiviteyi gizle"
 
@@ -21435,9 +21432,6 @@ msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Bir şeyler ters gitti. Lütfen tekrar deneyin."
-
-msgid "Something wicked this way ships."
-msgstr "Kötü bir şey sevk ediliyor."
 
 msgid "Soon"
 msgstr "Yakında"

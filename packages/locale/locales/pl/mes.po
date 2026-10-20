@@ -803,6 +803,12 @@ msgstr "Wróć do operacji"
 msgid "Go to onboarding"
 msgstr "Przejdź do wdrożenia"
 
+msgid "Halloween surprise"
+msgstr "Halloweenowa niespodzianka"
+
+msgid "Happy Halloween"
+msgstr "Wesołego Halloween"
+
 msgid "Heading {level}"
 msgstr "Nagłówek {level}"
 
@@ -1481,6 +1487,9 @@ msgstr "Wybierz pozycję"
 
 msgid "PM schedule lapsed"
 msgstr "Harmonogram PM wygasł"
+
+msgid "Poke the spider… if you dare"
+msgstr "Szturchnij pająka… jeśli się odważysz"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Naciśnij ? na dowolnej stronie, aby otworzyć tę listę. Skróty klawiszowe są ignorowane podczas wpisywania w polu."

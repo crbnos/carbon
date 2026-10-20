@@ -2,11 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Button, useEscape } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { Button } from "../Button";
+import useEscape from "../hooks/useEscape";
 import { HalloweenScene, NIGHT } from "./HalloweenScene";
 
 // The surprise behind the spider web, over the whole screen. It closes on its
@@ -14,13 +15,7 @@ import { HalloweenScene, NIGHT } from "./HalloweenScene";
 
 const AUTO_CLOSE_MS = 10_000;
 
-export default function HalloweenReveal({
-  onClose,
-  onHide
-}: {
-  onClose: () => void;
-  onHide: () => void;
-}) {
+export default function HalloweenReveal({ onClose }: { onClose: () => void }) {
   const { t } = useLingui();
   const still = useReducedMotion() ?? false;
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -46,11 +41,7 @@ export default function HalloweenReveal({
       transition={{ duration: still ? 0.2 : 0.6, ease: "easeOut" }}
       onClick={onClose}
     >
-      <HalloweenScene
-        title={t`Happy Halloween`}
-        subtitle={t`Something wicked this way ships.`}
-        still={still}
-      />
+      <HalloweenScene title={t`Happy Halloween`} still={still} />
 
       <motion.div
         className="absolute inset-x-0 bottom-10 flex justify-center gap-2"
@@ -61,13 +52,6 @@ export default function HalloweenReveal({
       >
         <Button ref={closeRef} variant="secondary" onClick={onClose}>
           <Trans>Close</Trans>
-        </Button>
-        <Button
-          variant="ghost"
-          className="text-white/80 hover:bg-white/10 hover:text-white"
-          onClick={onHide}
-        >
-          <Trans>Hide decorations</Trans>
         </Button>
       </motion.div>
     </motion.div>,

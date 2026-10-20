@@ -14,6 +14,12 @@ const page: Surface = {
 
 const DT = 1 / 120;
 
+function groupOf(leg: number) {
+  const spec = LEGS[leg];
+  if (!spec) throw new Error(`no leg ${leg}`);
+  return spec.group;
+}
+
 describe("solveKnee", () => {
   it("reaches the foot, with the knee along the leg and leaning out", () => {
     const hip = { x: 0, y: 0 };
@@ -72,11 +78,9 @@ describe("createRig", () => {
       );
       expect(up.size).toBeLessThanOrEqual(4);
       // Legs in the air at once all belong to the same group.
-      expect(
-        new Set([...up].map((leg) => LEGS[leg].group)).size
-      ).toBeLessThanOrEqual(1);
+      expect(new Set([...up].map(groupOf)).size).toBeLessThanOrEqual(1);
       for (const leg of up) {
-        if (!wasUp.has(leg)) steps[LEGS[leg].group]++;
+        if (!wasUp.has(leg)) steps[groupOf(leg)]++;
       }
       wasUp = up;
     }
@@ -102,7 +106,9 @@ describe("createRig", () => {
     sway = 2;
     rig.update(DT, body, { x: 0, y: 0 }, thread, "walk");
     rig.feet().forEach((foot, i) => {
-      expect(foot.x).toBeCloseTo(before[i].x + 2);
+      const was = before[i];
+      if (!was) throw new Error(`no foot ${i} before`);
+      expect(foot.x).toBeCloseTo(was.x + 2);
     });
   });
 

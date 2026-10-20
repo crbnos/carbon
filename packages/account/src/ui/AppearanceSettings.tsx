@@ -11,7 +11,11 @@ import {
   useModePreference,
   useRouteData
 } from "@carbon/react";
-import { modeValidator, themeColorValidator, themes } from "@carbon/utils";
+import {
+  modeValidator,
+  selectableThemes,
+  themeColorValidator
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { CSSProperties } from "react";
 import { useEffect, useRef } from "react";
@@ -100,7 +104,9 @@ export default function AppearanceSettings() {
   };
 
   const onThemeChange = (value: string) => {
-    const next = themes.find((candidate) => candidate.name === value);
+    const next = selectableThemes().find(
+      (candidate) => candidate.name === value
+    );
     if (!next || next.name === theme) return;
     // Preview at once, until the root loader applies it from the cookie.
     const variables = mode === "dark" ? next.cssVars.dark : next.cssVars.light;
@@ -167,7 +173,7 @@ export default function AppearanceSettings() {
           aria-label={t`Theme color`}
           className="grid grid-cols-2 gap-2 sm:grid-cols-4"
         >
-          {themes.map((option) => {
+          {selectableThemes().map((option) => {
             const active = option.name === theme;
             const swatch = option.activeColor[mode];
             return (

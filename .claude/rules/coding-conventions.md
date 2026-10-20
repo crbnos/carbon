@@ -215,9 +215,38 @@ URL strings in links, redirects, and form actions.
 
 ## Theme System
 
-Themes are defined in `packages/utils/src/themes.ts` and selected via the
-`useTheme()` hook (`apps/erp/app/hooks/useTheme.tsx`). Each theme supplies HSL
-values for CSS variables (`--primary`, `--background`, `--foreground`, `--card`,
-`--popover`, `--secondary`, `--muted`, `--accent`, `--destructive`).
-Theme names: `zinc`, `neutral`, `red`, `orange`, `yellow`, `green`, `blue`,
-`violet`. <!-- UNVERIFIED: display labels like "Modern"/"Brutal"/"Cherry" not re-confirmed in current code -->
+Themes are defined in `packages/utils/src/themes.ts` (`themes`, the only list
+of theme names) and selected via the `useTheme()` hook
+(`apps/erp/app/hooks/useTheme.tsx`). Each theme supplies HSL values for CSS
+variables (`--primary`, `--background`, `--foreground`, `--card`, `--popover`,
+`--secondary`, `--muted`, `--accent`, `--destructive`). Theme names: `zinc`
+(the default, `DEFAULT_THEME_NAME`), `neutral`, `red`, `orange`, `yellow`,
+`green`, `blue`, `violet`, plus seasonal ones.
+
+The choice is a `theme` cookie per browser, never a database column. Each app's
+`getTheme` (`services/theme.server.ts`) reads it through `resolveTheme`, which
+returns the default for a name no longer in `themes`, so removing a theme
+needs no migration and breaks no browser that still holds it.
+
+A seasonal theme lives in `seasonalThemes`, not `themes`, and carries an
+`available` window (`ThemeWindow`, month and day, inside one calendar year).
+The server has no time zone for the user, so the window is open while it is in
+season anywhere on Earth (UTC+14 reaches `from`, UTC-12 has not left `to`); a
+fixed UTC check opened it hours late east of UTC. `themes` stays the everyday
+list every picker shows (avatar menu, mobile profile, onboarding); only
+Account settings → Appearance lists `selectableThemes()`, the everyday themes
+plus any seasonal one in its window. Outside the window `themeColorValidator`
+refuses it and `resolveTheme` (which every app's `Document` renders from)
+falls back to the default. A seasonal theme lives in its own file
+(`halloween-theme.ts`) so removing it is that file, its `seasonalThemes`
+entry, its `index.ts` export and its `MeshGradientBackground` colors.
+
+The Halloween decorations (spider, bats, fog, witch on the loading bar, hat,
+Oct 31 date marker, the "boo" ghost) live in `packages/react/src/Halloween/`,
+exported as `@carbon/react/Halloween` and mounted once in each shell
+(`<HalloweenLayer />` in the ERP and MES `x+/_layout.tsx`). `useHalloween`
+(`season.ts`) is the one check they sit behind — the root loader's theme is
+`halloween` — so nothing renders, styles or listens for anyone else. The
+stylesheet hangs off `data-user-menu` (ERP avatar trigger), `data-date`
+(calendar cells) and `data-app-card` (MES page card); those attributes do
+nothing on their own and may stay when the folder is deleted.

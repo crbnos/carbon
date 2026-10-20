@@ -803,6 +803,12 @@ msgstr "İşleme geri dön"
 msgid "Go to onboarding"
 msgstr "Başlangıç adımına git"
 
+msgid "Halloween surprise"
+msgstr "Cadılar Bayramı sürprizi"
+
+msgid "Happy Halloween"
+msgstr "Mutlu Cadılar Bayramı"
+
 msgid "Heading {level}"
 msgstr "Başlık {level}"
 
@@ -1481,6 +1487,9 @@ msgstr "Lütfen bir ürün seçin"
 
 msgid "PM schedule lapsed"
 msgstr "PM zamanlaması süresi doldu"
+
+msgid "Poke the spider… if you dare"
+msgstr "Örümceği dürt… cesaretin varsa"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Herhangi bir sayfada bu listeyi açmak için ? tuşuna basın. Bir alan içinde yazarken kısayollar yoksayılır."

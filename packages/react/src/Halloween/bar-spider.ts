@@ -105,6 +105,14 @@ function turn(from: number, to: number) {
 /** The angle that points the spider's head along (dx, dy). */
 const facing = (dx: number, dy: number) => Math.atan2(-dx, dy);
 
+// The track always has its six points and five lengths once it is built, so
+// a missing one is a bug.
+function at<T>(list: readonly T[], i: number): T {
+  const value = list[i];
+  if (value === undefined) throw new Error(`bar spider: no track entry ${i}`);
+  return value;
+}
+
 /** The page itself: a foot holds wherever it lands. */
 const page: Surface = {
   grip: (x, y) => ({ x, y, hold: null }),
@@ -193,9 +201,10 @@ export function createBarSpider() {
       { x: right.x - 10, y: 30 },
       right
     ];
-    lengths = track
-      .slice(1)
-      .map((p, i) => Math.hypot(p.x - track[i].x, p.y - track[i].y));
+    lengths = track.slice(1).map((p, i) => {
+      const previous = at(track, i);
+      return Math.hypot(p.x - previous.x, p.y - previous.y);
+    });
     total = lengths.reduce((sum, length) => sum + length, 0);
   }
 
@@ -203,13 +212,14 @@ export function createBarSpider() {
   function along(s: number) {
     let rest = Math.max(0, Math.min(total, s));
     for (let k = 0; k < lengths.length; k++) {
-      if (rest <= lengths[k] || k === lengths.length - 1) {
-        const a = k === 0 ? (webs[0]?.hub() ?? track[0]) : track[k];
+      const length = at(lengths, k);
+      if (rest <= length || k === lengths.length - 1) {
+        const a = k === 0 ? (webs[0]?.hub() ?? at(track, 0)) : at(track, k);
         const b =
           k === lengths.length - 1
-            ? (webs[1]?.hub() ?? track[k + 1])
-            : track[k + 1];
-        const t = lengths[k] ? Math.min(1, rest / lengths[k]) : 0;
+            ? (webs[1]?.hub() ?? at(track, k + 1))
+            : at(track, k + 1);
+        const t = length ? Math.min(1, rest / length) : 0;
         return {
           x: a.x + (b.x - a.x) * t,
           y: a.y + (b.y - a.y) * t,
@@ -217,15 +227,16 @@ export function createBarSpider() {
           dy: b.y - a.y
         };
       }
-      rest -= lengths[k];
+      rest -= length;
     }
-    return { x: track[0].x, y: track[0].y, dx: 1, dy: 0 };
+    const start = at(track, 0);
+    return { x: start.x, y: start.y, dx: 1, dy: 0 };
   }
 
   // Where the bottom run starts and ends along the track.
-  const runStart = () => lengths[0] + lengths[1];
+  const runStart = () => at(lengths, 0) + at(lengths, 1);
   const runEnd = () =>
-    total - lengths[lengths.length - 1] - lengths[lengths.length - 2];
+    total - at(lengths, lengths.length - 1) - at(lengths, lengths.length - 2);
   const atHome = () => spider.s <= 0.5 || spider.s >= total - 0.5;
   const homeWeb = () => (spider.s <= total / 2 ? webs[0] : webs[1]);
 

@@ -38,6 +38,14 @@ const RINGS = RING_RADII.length;
 const HIDE_SPOKE = 2;
 const HIDE_RING = 1;
 
+// Every index here comes from the web's own layout, so a missing value is a
+// bug, not a state to carry on through.
+function at<T>(list: ArrayLike<T>, i: number): T {
+  const value = list[i];
+  if (value === undefined) throw new Error(`corner web: no value at ${i}`);
+  return value;
+}
+
 export function createCornerWeb(side: "left" | "right", width: number) {
   const rand = seededRandom(side === "left" ? 4242 : 777);
   // Out from the corner: +x along the top edge for the left corner, -x for
@@ -69,8 +77,8 @@ export function createCornerWeb(side: "left" | "right", width: number) {
   for (let spoke = 0; spoke < SPOKES; spoke++) {
     for (let ring = 0; ring < RINGS; ring++) {
       // Hand-spun: never quite regular.
-      const angle = SPOKE_ANGLES[spoke] + (rand() - 0.5) * 0.06;
-      const r = RING_RADII[ring] * (1 + (rand() - 0.5) * 0.08);
+      const angle = at(SPOKE_ANGLES, spoke) + (rand() - 0.5) * 0.06;
+      const r = at(RING_RADII, ring) * (1 + (rand() - 0.5) * 0.08);
       restX[knot(spoke, ring)] = cornerX + sx * Math.cos(angle) * r;
       restY[knot(spoke, ring)] = Math.sin(angle) * r;
     }
@@ -81,14 +89,18 @@ export function createCornerWeb(side: "left" | "right", width: number) {
     springs.push({
       a,
       b,
-      rest: Math.hypot(restX[b] - restX[a], restY[b] - restY[a]) * PRETENSION
+      rest:
+        Math.hypot(at(restX, b) - at(restX, a), at(restY, b) - at(restY, a)) *
+        PRETENSION
     });
   const spokeChains = SPOKE_ANGLES.map((_, spoke) => [
     CORNER,
     ...RING_RADII.map((_, ring) => knot(spoke, ring))
   ]);
   for (const chain of spokeChains) {
-    for (let j = 0; j < chain.length - 1; j++) tie(chain[j], chain[j + 1]);
+    for (let j = 0; j < chain.length - 1; j++) {
+      tie(at(chain, j), at(chain, j + 1));
+    }
   }
   // Each ring runs from the top edge, through every spoke, to the side.
   const ringChains = RING_RADII.map((_, ring) => [
@@ -100,7 +112,7 @@ export function createCornerWeb(side: "left" | "right", width: number) {
     ring === RINGS - 1 && j === TORN_AFTER_SPOKE + 1;
   ringChains.forEach((chain, ring) => {
     for (let j = 0; j < chain.length - 1; j++) {
-      if (!isTorn(ring, j)) tie(chain[j], chain[j + 1]);
+      if (!isTorn(ring, j)) tie(at(chain, j), at(chain, j + 1));
     }
   });
 
@@ -118,26 +130,32 @@ export function createCornerWeb(side: "left" | "right", width: number) {
     fx.fill(0);
     fy.fill(0);
     for (const { a, b, rest } of springs) {
-      const dx = x[b] - x[a];
-      const dy = y[b] - y[a];
+      const dx = at(x, b) - at(x, a);
+      const dy = at(y, b) - at(y, a);
       const length = Math.hypot(dx, dy) || 1e-6;
       if (length <= rest) continue;
       const f = (STIFFNESS * (length - rest)) / length;
-      fx[a] += f * dx;
-      fy[a] += f * dy;
-      fx[b] -= f * dx;
-      fy[b] -= f * dy;
+      fx[a] = at(fx, a) + f * dx;
+      fy[a] = at(fy, a) + f * dy;
+      fx[b] = at(fx, b) - f * dx;
+      fy[b] = at(fy, b) - f * dy;
     }
     for (let i = 0; i < points; i++) {
       if (fixed[i]) continue;
       const ax =
-        fx[i] + ex[i] + SHAPE_STIFFNESS * (restX[i] - x[i]) - DAMPING * vx[i];
+        at(fx, i) +
+        at(ex, i) +
+        SHAPE_STIFFNESS * (at(restX, i) - at(x, i)) -
+        DAMPING * at(vx, i);
       const ay =
-        fy[i] + ey[i] + SHAPE_STIFFNESS * (restY[i] - y[i]) - DAMPING * vy[i];
-      vx[i] += ax * dt;
-      vy[i] += ay * dt;
-      x[i] += vx[i] * dt;
-      y[i] += vy[i] * dt;
+        at(fy, i) +
+        at(ey, i) +
+        SHAPE_STIFFNESS * (at(restY, i) - at(y, i)) -
+        DAMPING * at(vy, i);
+      vx[i] = at(vx, i) + ax * dt;
+      vy[i] = at(vy, i) + ay * dt;
+      x[i] = at(x, i) + at(vx, i) * dt;
+      y[i] = at(y, i) + at(vy, i) * dt;
     }
     ex.fill(0);
     ey.fill(0);
@@ -145,11 +163,11 @@ export function createCornerWeb(side: "left" | "right", width: number) {
 
   return {
     /** Where the spider hides, now. */
-    hub: (): Point => ({ x: x[hideKnot], y: y[hideKnot] }),
+    hub: (): Point => ({ x: at(x, hideKnot), y: at(y, hideKnot) }),
     /** The spider's weight while it hides there. */
     loadHub(forceX: number, forceY: number) {
-      ex[hideKnot] += forceX;
-      ey[hideKnot] += forceY;
+      ex[hideKnot] = at(ex, hideKnot) + forceX;
+      ey[hideKnot] = at(ey, hideKnot) + forceY;
     },
     step,
     /** Brush the threads near a point, as a passing hand would. */
@@ -157,11 +175,11 @@ export function createCornerWeb(side: "left" | "right", width: number) {
       let touched = false;
       for (let i = 0; i < points; i++) {
         if (fixed[i]) continue;
-        const gap = Math.hypot(x[i] - px, y[i] - py);
+        const gap = Math.hypot(at(x, i) - px, at(y, i) - py);
         if (gap > 12) continue;
         const falloff = 1 - gap / 12;
-        vx[i] += pvx * 0.2 * falloff;
-        vy[i] += pvy * 0.2 * falloff;
+        vx[i] = at(vx, i) + pvx * 0.2 * falloff;
+        vy[i] = at(vy, i) + pvy * 0.2 * falloff;
         touched = true;
       }
       return touched;
@@ -170,12 +188,12 @@ export function createCornerWeb(side: "left" | "right", width: number) {
     burst(random: () => number) {
       for (let i = 0; i < points; i++) {
         if (fixed[i]) continue;
-        const dx = x[i] - cornerX;
-        const dy = y[i];
+        const dx = at(x, i) - cornerX;
+        const dy = at(y, i);
         const length = Math.hypot(dx, dy) || 1;
         const kick = 120 + random() * 140;
-        vx[i] += (dx / length) * kick + (random() - 0.5) * 80;
-        vy[i] += (dy / length) * kick + (random() - 0.5) * 80;
+        vx[i] = at(vx, i) + ((dx / length) * kick + (random() - 0.5) * 80);
+        vy[i] = at(vy, i) + ((dy / length) * kick + (random() - 0.5) * 80);
       }
     },
     reset() {
@@ -188,40 +206,45 @@ export function createCornerWeb(side: "left" | "right", width: number) {
     restlessness() {
       let fastest = 0;
       for (let i = 0; i < points; i++) {
-        fastest = Math.max(fastest, vx[i] * vx[i] + vy[i] * vy[i]);
+        const speedX = at(vx, i);
+        const speedY = at(vy, i);
+        fastest = Math.max(fastest, speedX * speedX + speedY * speedY);
       }
       return fastest;
     },
     /** Every point of the web now, for checking it stays in its corner. */
     knots(): Point[] {
-      return Array.from(x, (value, i) => ({ x: value, y: y[i] }));
+      return Array.from(x, (value, i) => ({ x: value, y: at(y, i) }));
     },
     /** The threads as SVG path data, from where the knots are now. */
     paths() {
       let spokes = "";
       for (const chain of spokeChains) {
-        spokes += `M ${x[chain[0]]} ${y[chain[0]]}`;
+        const start = at(chain, 0);
+        spokes += `M ${at(x, start)} ${at(y, start)}`;
         for (let j = 1; j < chain.length; j++) {
-          spokes += ` L ${x[chain[j]]} ${y[chain[j]]}`;
+          const k = at(chain, j);
+          spokes += ` L ${at(x, k)} ${at(y, k)}`;
         }
         spokes += " ";
       }
       let rings = "";
       ringChains.forEach((chain, ring) => {
-        rings += `M ${x[chain[0]]} ${y[chain[0]]}`;
+        const start = at(chain, 0);
+        rings += `M ${at(x, start)} ${at(y, start)}`;
         for (let j = 0; j < chain.length - 1; j++) {
-          const a = chain[j];
-          const b = chain[j + 1];
+          const a = at(chain, j);
+          const b = at(chain, j + 1);
           if (isTorn(ring, j)) {
-            rings += ` M ${x[b]} ${y[b]}`;
+            rings += ` M ${at(x, b)} ${at(y, b)}`;
             continue;
           }
           // Each span sags towards the corner: the classic scallop.
-          const mx = (x[a] + x[b]) / 2;
-          const my = (y[a] + y[b]) / 2;
+          const mx = (at(x, a) + at(x, b)) / 2;
+          const my = (at(y, a) + at(y, b)) / 2;
           const cx = mx + (cornerX - mx) * SAG;
           const cy = my + (0 - my) * SAG;
-          rings += ` Q ${cx} ${cy} ${x[b]} ${y[b]}`;
+          rings += ` Q ${cx} ${cy} ${at(x, b)} ${at(y, b)}`;
         }
         rings += " ";
       });

@@ -2,8 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { CalendarDate } from "@internationalized/date";
+import { today } from "@internationalized/date";
 import template from "lodash.template";
+import { halloweenTheme } from "./halloween-theme";
 
+/** The everyday themes: what every theme picker offers. */
 export const themes = [
   {
     name: "zinc",
@@ -490,7 +494,90 @@ export const themes = [
   }
 ] as const;
 
-export type Theme = (typeof themes)[number];
+type MonthDay = { month: number; day: number };
+
+/**
+ * The days of the year a seasonal theme can be picked, both ends included,
+ * within one calendar year (`from` before `to`).
+ */
+export type ThemeWindow = { from: MonthDay; to: MonthDay };
+
+/**
+ * Themes offered only for a while each year, and only in Account settings →
+ * Appearance (`selectableThemes`). Every other picker lists `themes`, so it
+ * never shows one.
+ */
+export const seasonalThemes = [halloweenTheme] as const;
+
+const allThemes = [...themes, ...seasonalThemes] as const;
+
+export type Theme = (typeof allThemes)[number];
+export type ThemeName = Theme["name"];
+
+export const DEFAULT_THEME_NAME = "zinc" satisfies ThemeName;
+
+// Fails to compile if the first theme stops being the default.
+const defaultTheme: Theme = themes[0] satisfies {
+  name: typeof DEFAULT_THEME_NAME;
+};
+
+function themeWindow(theme: Theme): ThemeWindow | undefined {
+  return "available" in theme ? theme.available : undefined;
+}
+
+function dayOfYear({ month, day }: MonthDay) {
+  return month * 100 + day;
+}
+
+// The first and last time zones to reach a date: UTC+14 and UTC-12.
+const EARLIEST_TIME_ZONE = "Pacific/Kiritimati";
+const LATEST_TIME_ZONE = "Etc/GMT+12";
+
+/**
+ * Whether a theme can be used. A theme with no window always can.
+ *
+ * Given a `date`, the window is checked against that day. Without one it is
+ * open while it is in season anywhere on Earth: the server has no time zone
+ * for the user, and checking one fixed zone (UTC) opened Halloween five and a
+ * half hours late in India. This way the server and the browser agree, and a
+ * user sees the theme at most a day before or after their own dates.
+ */
+export function isThemeAvailable(theme: Theme, date?: CalendarDate) {
+  const window = themeWindow(theme);
+  if (!window) return true;
+  const from = dayOfYear(window.from);
+  const to = dayOfYear(window.to);
+  if (date) {
+    const current = dayOfYear(date);
+    return current >= from && current <= to;
+  }
+  return (
+    dayOfYear(today(EARLIEST_TIME_ZONE)) >= from &&
+    dayOfYear(today(LATEST_TIME_ZONE)) <= to
+  );
+}
+
+/**
+ * The themes the Appearance pane offers now: the everyday ones and any
+ * seasonal one in its window.
+ */
+export function selectableThemes(date?: CalendarDate): Theme[] {
+  return allThemes.filter((theme) => isThemeAvailable(theme, date));
+}
+
+/**
+ * The theme to render for a stored name. An unknown name (a theme since
+ * removed) or a seasonal theme out of season falls back to the default, so
+ * removing a theme never breaks a browser that still holds its cookie.
+ */
+export function resolveTheme(
+  name: string | null | undefined,
+  date?: CalendarDate
+): Theme {
+  const theme = allThemes.find((candidate) => candidate.name === name);
+  if (theme && isThemeAvailable(theme, date)) return theme;
+  return defaultTheme;
+}
 
 export const BASE_THEME_WITH_VARIABLES = `
 :root {

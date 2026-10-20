@@ -11010,9 +11010,6 @@ msgstr "फिर से छिपाएँ"
 msgid "Hide calculation"
 msgstr "गणना छिपाएं"
 
-msgid "Hide decorations"
-msgstr "सजावट छिपाएँ"
-
 msgid "Hide documents and activity"
 msgstr "दस्तावेज़ और गतिविधि छिपाएं"
 
@@ -21435,9 +21432,6 @@ msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "कुछ गलत हो गया। कृपया पुनः प्रयास करें।"
-
-msgid "Something wicked this way ships."
-msgstr "कुछ डरावना शिप हो रहा है।"
 
 msgid "Soon"
 msgstr "जल्द ही"
