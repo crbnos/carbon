@@ -2172,6 +2172,9 @@ msgstr "Dodaj {0} operacji"
 msgid "Add {0} selected"
 msgstr "Dodaj {0} wybranych"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "Dodaj i wydaj"
 
@@ -2252,6 +2255,9 @@ msgstr "Dodaj Aktywo"
 
 msgid "Add Asset Class"
 msgstr "Dodaj klasę środków trwałych"
+
+msgid "Add assignee"
+msgstr ""
 
 msgid "Add at least one asset before activating."
 msgstr "Dodaj co najmniej jedno aktywo przed aktywacją."
@@ -14274,6 +14280,12 @@ msgstr "Wynajmy na okres 12 miesięcy lub krócej bez opcji zakupu o rozsądnej 
 msgid "Leave"
 msgstr "Urlop"
 
+msgid "Leave a comment"
+msgstr ""
+
+msgid "Leave a comment..."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "Pozostaw wszelkie powiązane paragony bez zmian"
 
@@ -16554,9 +16566,6 @@ msgstr "Brak ścieżki wolnej od kolizji"
 
 msgid "No comments on the change request as a whole."
 msgstr "Brak komentarzy dotyczących żądania zmiany jako całości."
-
-msgid "No comments yet"
-msgstr "Brak komentarzy"
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Brak komentarzy. Bądź pierwszy i dodaj komentarz."
@@ -27254,9 +27263,6 @@ msgstr "Do zrobienia"
 
 msgid "Toggle"
 msgstr "Przełącz"
-
-msgid "Toggle Assignee"
-msgstr "Przełącz osobę przypisaną"
 
 msgid "Toggle break active"
 msgstr "Przełącz aktywność podziału"

@@ -2172,6 +2172,9 @@ msgstr "Aggiungi {0} operazioni"
 msgid "Add {0} selected"
 msgstr "Aggiungi {0} selezionati"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "Aggiungi e Emetti"
 
@@ -2252,6 +2255,9 @@ msgstr "Aggiungi bene"
 
 msgid "Add Asset Class"
 msgstr "Aggiungi Classe di cespiti"
+
+msgid "Add assignee"
+msgstr ""
 
 msgid "Add at least one asset before activating."
 msgstr "Aggiungi almeno un bene prima dell'attivazione."
@@ -14274,6 +14280,12 @@ msgstr "I leasing di 12 mesi o inferiori senza un'opzione di acquisto ragionevol
 msgid "Leave"
 msgstr "Lascia"
 
+msgid "Leave a comment"
+msgstr ""
+
+msgid "Leave a comment..."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "Lasciare le ricevute correlate intatte"
 
@@ -16554,9 +16566,6 @@ msgstr "Nessun percorso libero da collisioni"
 
 msgid "No comments on the change request as a whole."
 msgstr "Nessun commento sulla richiesta di modifica nel complesso."
-
-msgid "No comments yet"
-msgstr "Nessun commento ancora"
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Nessun commento ancora. Sii il primo ad aggiungere un commento."
@@ -27254,9 +27263,6 @@ msgstr "Da fare"
 
 msgid "Toggle"
 msgstr "Attiva/Disattiva"
-
-msgid "Toggle Assignee"
-msgstr "Attiva/Disattiva Assegnatario"
 
 msgid "Toggle break active"
 msgstr "Attiva/disattiva interruzione"

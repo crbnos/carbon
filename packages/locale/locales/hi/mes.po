@@ -143,6 +143,9 @@ msgstr "वास्तविक"
 msgid "Add"
 msgstr "जोड़ें"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 

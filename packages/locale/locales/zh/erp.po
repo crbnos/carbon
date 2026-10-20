@@ -2172,6 +2172,9 @@ msgstr "添加 {0} 项操作"
 msgid "Add {0} selected"
 msgstr "添加 {0} 个已选择的"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "添加并发放"
 
@@ -2252,6 +2255,9 @@ msgstr "添加资产"
 
 msgid "Add Asset Class"
 msgstr "添加资产类别"
+
+msgid "Add assignee"
+msgstr ""
 
 msgid "Add at least one asset before activating."
 msgstr "激活前请至少添加一项资产。"
@@ -14274,6 +14280,12 @@ msgstr "12个月或更短期限且没有合理确定购买选项的租赁作为�
 msgid "Leave"
 msgstr "离开"
 
+msgid "Leave a comment"
+msgstr ""
+
+msgid "Leave a comment..."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "保留任何相关收据不变"
 
@@ -16554,9 +16566,6 @@ msgstr "没有无碰撞路径"
 
 msgid "No comments on the change request as a whole."
 msgstr "关于整个更改请求没有评论。"
-
-msgid "No comments yet"
-msgstr "还没有评论"
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "还没有评论。成为第一个添加评论的人。"
@@ -27254,9 +27263,6 @@ msgstr "待办事项"
 
 msgid "Toggle"
 msgstr "切换"
-
-msgid "Toggle Assignee"
-msgstr "切换经办人"
 
 msgid "Toggle break active"
 msgstr "切换休息启用"

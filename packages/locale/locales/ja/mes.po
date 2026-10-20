@@ -143,6 +143,9 @@ msgstr "実績"
 msgid "Add"
 msgstr "追加"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "追加して払出"
 

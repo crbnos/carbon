@@ -143,6 +143,9 @@ msgstr "Факт"
 msgid "Add"
 msgstr "Добавить"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "Добавить и выдать"
 

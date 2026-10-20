@@ -2172,6 +2172,9 @@ msgstr "{0}개 공정 추가"
 msgid "Add {0} selected"
 msgstr "선택된 {0}개 추가"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "추가 및 출고"
 
@@ -2252,6 +2255,9 @@ msgstr "자산 추가"
 
 msgid "Add Asset Class"
 msgstr "자산 클래스 추가"
+
+msgid "Add assignee"
+msgstr ""
 
 msgid "Add at least one asset before activating."
 msgstr "활성화하기 전에 최소한 하나의 자산을 추가하세요."
@@ -14274,6 +14280,12 @@ msgstr "12개월 이하이고 합리적으로 확실한 구매 선택권이 없�
 msgid "Leave"
 msgstr "휴가"
 
+msgid "Leave a comment"
+msgstr ""
+
+msgid "Leave a comment..."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "관련 입고는 그대로 둡니다"
 
@@ -16554,9 +16566,6 @@ msgstr "충돌 없는 경로 없음"
 
 msgid "No comments on the change request as a whole."
 msgstr "전체 변경 요청에 대한 댓글이 없습니다."
-
-msgid "No comments yet"
-msgstr "아직 댓글이 없습니다"
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "아직 댓글이 없습니다. 첫 번째 댓글을 추가하세요."
@@ -27254,9 +27263,6 @@ msgstr "할 일"
 
 msgid "Toggle"
 msgstr "전환"
-
-msgid "Toggle Assignee"
-msgstr "담당자 전환"
 
 msgid "Toggle break active"
 msgstr "휴식 활성 전환"

@@ -2172,6 +2172,9 @@ msgstr "Agregar {0} operaciones"
 msgid "Add {0} selected"
 msgstr "Agregar {0} seleccionados"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "Agregar y Emitir"
 
@@ -2252,6 +2255,9 @@ msgstr "Agregar activo"
 
 msgid "Add Asset Class"
 msgstr "Agregar Clase de activo"
+
+msgid "Add assignee"
+msgstr ""
 
 msgid "Add at least one asset before activating."
 msgstr "Agregar al menos un activo antes de activar."
@@ -14274,6 +14280,12 @@ msgstr "Los arrendamientos de 12 meses o menos sin opción de compra razonableme
 msgid "Leave"
 msgstr "Licencia"
 
+msgid "Leave a comment"
+msgstr ""
+
+msgid "Leave a comment..."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "Dejar los recibos relacionados sin tocar"
 
@@ -16554,9 +16566,6 @@ msgstr "Sin ruta libre de colisiones"
 
 msgid "No comments on the change request as a whole."
 msgstr "Sin comentarios en la solicitud de cambio en su conjunto."
-
-msgid "No comments yet"
-msgstr "Sin comentarios aún"
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "No hay comentarios aún. Sé el primero en agregar un comentario."
@@ -27254,9 +27263,6 @@ msgstr "Por hacer"
 
 msgid "Toggle"
 msgstr "Alternar"
-
-msgid "Toggle Assignee"
-msgstr "Alternar Asignado"
 
 msgid "Toggle break active"
 msgstr "Alternar descanso activo"

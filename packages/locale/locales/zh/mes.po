@@ -143,6 +143,9 @@ msgstr "实际"
 msgid "Add"
 msgstr "添加"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "添加并发放"
 

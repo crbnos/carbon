@@ -143,6 +143,9 @@ msgstr "Real"
 msgid "Add"
 msgstr "Adicionar"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "Adicionar e Emitir"
 

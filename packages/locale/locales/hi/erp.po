@@ -2172,6 +2172,9 @@ msgstr "{0} ऑपरेशन जोड़ें"
 msgid "Add {0} selected"
 msgstr "{0} चयनित जोड़ें"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 
@@ -2252,6 +2255,9 @@ msgstr "संपत्ति जोड़ें"
 
 msgid "Add Asset Class"
 msgstr "परिसंपत्ति वर्ग जोड़ें"
+
+msgid "Add assignee"
+msgstr ""
 
 msgid "Add at least one asset before activating."
 msgstr "सक्रियण से पहले कम से कम एक संपत्ति जोड़ें।"
@@ -14274,6 +14280,12 @@ msgstr "12 महीने या उससे कम की अवधि के
 msgid "Leave"
 msgstr "छुट्टी"
 
+msgid "Leave a comment"
+msgstr ""
+
+msgid "Leave a comment..."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "किसी भी संबंधित रसीदों को अछूता छोड़ें"
 
@@ -16554,9 +16566,6 @@ msgstr "कोई टकराव-मुक्त पथ नहीं"
 
 msgid "No comments on the change request as a whole."
 msgstr "पूरे परिवर्तन अनुरोध पर कोई टिप्पणी नहीं।"
-
-msgid "No comments yet"
-msgstr "अभी कोई टिप्पणी नहीं"
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "अभी कोई टिप्पणी नहीं है। पहली टिप्पणी जोड़ने वाले बनें।"
@@ -27254,9 +27263,6 @@ msgstr "करने के लिए"
 
 msgid "Toggle"
 msgstr "टॉगल करें"
-
-msgid "Toggle Assignee"
-msgstr "असाइनी को टॉगल करें"
 
 msgid "Toggle break active"
 msgstr "ब्रेक सक्रिय करें/निष्क्रिय करें"

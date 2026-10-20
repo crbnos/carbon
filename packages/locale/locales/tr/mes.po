@@ -143,6 +143,9 @@ msgstr "Gerçek"
 msgid "Add"
 msgstr "Ekle"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
 

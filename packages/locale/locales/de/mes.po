@@ -143,6 +143,9 @@ msgstr "Ist"
 msgid "Add"
 msgstr "Hinzufügen"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "Hinzufügen & Ausgeben"
 

@@ -143,6 +143,9 @@ msgstr "실제"
 msgid "Add"
 msgstr "추가"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "추가 및 출고"
 

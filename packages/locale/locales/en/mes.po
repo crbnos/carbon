@@ -143,6 +143,9 @@ msgstr "Actual"
 msgid "Add"
 msgstr "Add"
 
+msgid "Add {phrase}"
+msgstr "Add {phrase}"
+
 msgid "Add & Issue"
 msgstr "Add & Issue"
 

@@ -143,6 +143,9 @@ msgstr "Effettivo"
 msgid "Add"
 msgstr "Aggiungi"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "Aggiungi e Preleva"
 

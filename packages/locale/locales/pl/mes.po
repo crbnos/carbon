@@ -143,6 +143,9 @@ msgstr "Rzeczywiste"
 msgid "Add"
 msgstr "Dodaj"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "Dodaj i wydaj"
 

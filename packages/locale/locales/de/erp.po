@@ -2172,6 +2172,9 @@ msgstr "{0} Arbeitsgänge hinzufügen"
 msgid "Add {0} selected"
 msgstr "Hinzufügen {0} ausgewählte"
 
+msgid "Add {phrase}"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "Hinzufügen & Ausgeben"
 
@@ -2252,6 +2255,9 @@ msgstr "Anlage hinzufügen"
 
 msgid "Add Asset Class"
 msgstr "Anlagenklasse hinzufügen"
+
+msgid "Add assignee"
+msgstr ""
 
 msgid "Add at least one asset before activating."
 msgstr "Fügen Sie mindestens eine Anlage hinzu, bevor Sie aktivieren."
@@ -14274,6 +14280,12 @@ msgstr "Leasing mit einer Laufzeit von 12 Monaten oder weniger ohne angemessen s
 msgid "Leave"
 msgstr "Urlaub"
 
+msgid "Leave a comment"
+msgstr ""
+
+msgid "Leave a comment..."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "Alle zugehörigen Belege unverändert lassen"
 
@@ -16554,9 +16566,6 @@ msgstr "Kein kollisionsfreier Pfad"
 
 msgid "No comments on the change request as a whole."
 msgstr "Keine Kommentare zur Änderungsanfrage insgesamt."
-
-msgid "No comments yet"
-msgstr "Noch keine Kommentare"
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Noch keine Kommentare. Seien Sie der Erste, der einen Kommentar hinzufügt."
@@ -27254,9 +27263,6 @@ msgstr "Zu erledigen"
 
 msgid "Toggle"
 msgstr "Umschalten"
-
-msgid "Toggle Assignee"
-msgstr "Bearbeiter umschalten"
 
 msgid "Toggle break active"
 msgstr "Pause umschalten"
