@@ -81,7 +81,7 @@ export function BatchRecordModal({
 }) {
   const { t } = useLingui();
   const { carbon } = useCarbon();
-  const { company } = useUser();
+  const { company, id: userId } = useUser();
   const [people] = usePeople();
   const fetcher = useAction<{ success?: boolean }>({
     onSuccess: (data) => {
@@ -92,6 +92,10 @@ export function BatchRecordModal({
   });
   const kind = kindOf(step.type);
   const ticked = kind === "tick" || kind === "file";
+  // Only the person who recorded a job's step can change it: that job's cell
+  // is read-only, and "All jobs" fills only the cells this operator may write.
+  const isLocked = (m: Member) => !!m.record && m.record.createdBy !== userId;
+  const editable = members.filter((m) => !isLocked(m));
 
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(members.map((m) => [m.stepId, initialValue(kind, m)]))
@@ -105,7 +109,7 @@ export function BatchRecordModal({
   const [passed, setPassed] = useState(true);
   const [uploading, setUploading] = useState(false);
 
-  const changed = members.filter((m) =>
+  const changed = editable.filter((m) =>
     ticked
       ? selected.has(m.stepId)
       : values[m.stepId]?.trim() &&
@@ -125,7 +129,10 @@ export function BatchRecordModal({
   };
 
   const setAll = (value: string) =>
-    setValues(Object.fromEntries(members.map((m) => [m.stepId, value])));
+    setValues((prev) => ({
+      ...prev,
+      ...Object.fromEntries(editable.map((m) => [m.stepId, value]))
+    }));
 
   const submit = async () => {
     const formData = new FormData();
@@ -178,8 +185,10 @@ export function BatchRecordModal({
   };
 
   const cellFor = (m: Member | null) => {
-    // `null` is the "All jobs" row: it writes every job's cell.
-    const rowValues = members.map((row) => values[row.stepId] ?? "");
+    // `null` is the "All jobs" row: it writes every job's cell this operator
+    // may change.
+    const rowValues = editable.map((row) => values[row.stepId] ?? "");
+    const disabled = m ? isLocked(m) : editable.length === 0;
     const value = m
       ? (values[m.stepId] ?? "")
       : rowValues.every((v) => v === rowValues[0])
@@ -196,6 +205,7 @@ export function BatchRecordModal({
           aria-label={m ? jobIdOf(m.jobOperationId) : t`All jobs`}
           placeholder={m ? undefined : t`Same for every job`}
           value={value}
+          disabled={disabled}
           onFocus={(e) => e.currentTarget.select()}
           onChange={(e) =>
             onChange(
@@ -221,6 +231,7 @@ export function BatchRecordModal({
         <select
           aria-label={m ? jobIdOf(m.jobOperationId) : t`All jobs`}
           value={value}
+          disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
           className={cn(cellClass, !value && "text-muted-foreground")}
         >

@@ -41,6 +41,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     createdBy: userId,
     records: validation.data.records
   });
+  if (inserted.refusal) {
+    return data({}, await flash(request, error(null, inserted.refusal)));
+  }
   if (inserted.error) {
     return data(
       {},

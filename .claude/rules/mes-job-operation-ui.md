@@ -123,7 +123,11 @@ ticks for Task/Checkbox/Timestamp, one upload copied into each job's own step
 folder for File/Inspection) posting to `batch.$batchId.record.tsx`
 (`insertBatchStepRecords`: steps re-read under the batch + company, upsert at
 record set 0, then the per-step backflush). Only new or changed rows are sent,
-since a re-record re-runs the step's backflush. When an
+since a re-record re-runs the step's backflush. A step record belongs to whoever
+recorded it (`createdBy`): only they can change or remove it, a re-record keeps
+`createdBy`/`createdAt` and fills `updatedBy`/`updatedAt`, and both record
+routes refuse a change to someone else's record (`step-records.ts`); the batch
+grid shows those cells read-only. When an
 operation belongs to a batch that is still `Active`/`Completing`, the loader
 (`operation.$operationId.tsx`) reads `jobOperationBatch` (via
 `getJobOperationBatch`; the RPC `get_job_operation_by_id` omits

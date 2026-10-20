@@ -19,11 +19,34 @@ export function allStepsRecordedAt(steps: StepWithRecords[], index: number) {
   );
 }
 
+export const STEP_RECORD_OWNER_REFUSAL =
+  "Only the person who recorded this step can change it.";
+
+export function batchStepRecordRefusal(count: number) {
+  return `${count === 1 ? "One job was" : `${count} jobs were`} recorded by someone else, and only the person who recorded a step can change it. Nothing was recorded.`;
+}
+
+export type StepRecordWrite = "insert" | "update" | "refuse";
+
+/**
+ * Anyone can record a step that has no record in this record set yet. Once it
+ * is recorded, only the person who recorded it can change it, the same rule
+ * removing a record follows.
+ */
+export function planStepRecordWrite(
+  existing: { createdBy: string } | null | undefined,
+  userId: string
+): StepRecordWrite {
+  if (!existing) return "insert";
+  return existing.createdBy === userId ? "update" : "refuse";
+}
+
 /**
  * The batch view's rows for one upsert at record set 0. A new record carries
  * the caller as its recorder. A step recorded again keeps its recorder
  * (`createdBy`; `createdAt` is left out, so the upsert keeps it) and gets
- * `updatedBy` / `updatedAt`.
+ * `updatedBy` / `updatedAt`. Steps someone else recorded are listed in
+ * `refusedStepIds`; the caller writes nothing when there are any.
  */
 export function planBatchStepRecordRows<
   R extends { jobOperationStepId: string }
@@ -37,8 +60,12 @@ export function planBatchStepRecordRows<
   const existingByStep = new Map(
     args.existing.map((r) => [r.jobOperationStepId, r])
   );
+  const refusedStepIds: string[] = [];
   const rows = args.records.map((record) => {
     const existing = existingByStep.get(record.jobOperationStepId);
+    if (planStepRecordWrite(existing, args.userId) === "refuse") {
+      refusedStepIds.push(record.jobOperationStepId);
+    }
     return {
       ...record,
       index: 0,
@@ -48,5 +75,5 @@ export function planBatchStepRecordRows<
       updatedAt: existing ? args.now : null
     };
   });
-  return { rows };
+  return { rows, refusedStepIds };
 }

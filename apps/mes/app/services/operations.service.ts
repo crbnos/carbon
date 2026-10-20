@@ -40,7 +40,12 @@ import type {
   stepRecordValidator
 } from "./models";
 import { planStepBackflush } from "./step-backflush";
-import { planBatchStepRecordRows } from "./step-records";
+import {
+  batchStepRecordRefusal,
+  planBatchStepRecordRows,
+  planStepRecordWrite,
+  STEP_RECORD_OWNER_REFUSAL
+} from "./step-records";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
 const log = getLogger("mes", "operations");
@@ -923,6 +928,8 @@ export type BatchStepRecord = {
   numericValue: number | null;
   booleanValue: boolean | null;
   userValue: string | null;
+  // Who recorded it: only they can change it.
+  createdBy: string;
 };
 
 export type BatchParameter = {
@@ -968,7 +975,7 @@ export async function getBatchWorkInstructions(
     client
       .from("jobOperationStep")
       .select(
-        "id, operationId, name, type, sortOrder, required, unitOfMeasureCode, minValue, maxValue, listValues, description, jobOperationStepSlide(id, imagePath, caption, sortOrder, annotations), jobOperationStepRecord(index, value, numericValue, booleanValue, userValue)"
+        "id, operationId, name, type, sortOrder, required, unitOfMeasureCode, minValue, maxValue, listValues, description, jobOperationStepSlide(id, imagePath, caption, sortOrder, annotations), jobOperationStepRecord(index, value, numericValue, booleanValue, userValue, createdBy)"
       )
       .in("operationId", memberIds)
       .eq("companyId", args.companyId),
@@ -1009,7 +1016,8 @@ export async function getBatchWorkInstructions(
             value: record.value ?? null,
             numericValue: record.numericValue ?? null,
             booleanValue: record.booleanValue ?? null,
-            userValue: record.userValue ?? null
+            userValue: record.userValue ?? null,
+            createdBy: record.createdBy
           }
         : null
     });
@@ -2174,13 +2182,15 @@ export async function getWorkCentersByCompany(
   return { data: mergedData, error: null };
 }
 
+// `refusal` is a message for the operator: the step was recorded by someone
+// else, and only they can change it.
 export async function insertAttributeRecord(
   client: SupabaseClient<Database>,
   data: z.infer<typeof stepRecordValidator> & {
     companyId: string;
     createdBy: string;
   }
-) {
+): Promise<{ error: PostgrestError | null; refusal: string | null }> {
   // Callers pass a service-role client and the step id comes from the form,
   // so a foreign step id would write a record on another company's step.
   const step = await client
@@ -2189,28 +2199,36 @@ export async function insertAttributeRecord(
     .eq("id", data.jobOperationStepId)
     .eq("companyId", data.companyId)
     .maybeSingle();
-  if (step.error) return step;
+  if (step.error) return { error: step.error, refusal: null };
   if (!step.data) {
     log.warn("insertAttributeRecord: step not found in company", {
       companyId: data.companyId,
       jobOperationStepId: data.jobOperationStepId
     });
-    return notFoundResponse("Job operation step not found");
+    return {
+      error: notFoundResponse("Job operation step not found").error,
+      refusal: null
+    };
   }
 
   // One record per step and record set. Recording it again changes the values
   // and keeps who recorded it and when; updatedBy/updatedAt say who changed it.
+  // Only the person who recorded it can change it (planStepRecordWrite).
   const existing = await client
     .from("jobOperationStepRecord")
-    .select("id")
+    .select("id, createdBy")
     .eq("jobOperationStepId", data.jobOperationStepId)
     .eq("index", data.index)
     .eq("companyId", data.companyId)
     .maybeSingle();
-  if (existing.error) return existing;
+  if (existing.error) return { error: existing.error, refusal: null };
+
+  if (planStepRecordWrite(existing.data, data.createdBy) === "refuse") {
+    return { error: null, refusal: STEP_RECORD_OWNER_REFUSAL };
+  }
 
   if (existing.data) {
-    return client
+    const update = await client
       .from("jobOperationStepRecord")
       .update({
         value: data.value,
@@ -2221,10 +2239,13 @@ export async function insertAttributeRecord(
         updatedAt: datetime.timestamp()
       })
       .eq("id", existing.data.id)
-      .eq("companyId", data.companyId);
+      .eq("companyId", data.companyId)
+      .eq("createdBy", data.createdBy);
+    return { error: update.error, refusal: null };
   }
 
-  return client.from("jobOperationStepRecord").insert(data);
+  const insert = await client.from("jobOperationStepRecord").insert(data);
+  return { error: insert.error, refusal: null };
 }
 
 // The batch view's Record: one step written for several members in one upsert,
@@ -2239,13 +2260,13 @@ export async function insertBatchStepRecords(
     createdBy: string;
     records: z.infer<typeof batchStepRecordsValidator>["records"];
   }
-): Promise<{ error: { message: string } | null }> {
+): Promise<{ error: { message: string } | null; refusal: string | null }> {
   const members = await client
     .from("jobOperation")
     .select("id")
     .eq("jobOperationBatchId", args.batchId)
     .eq("companyId", args.companyId);
-  if (members.error) return { error: members.error };
+  if (members.error) return { error: members.error, refusal: null };
 
   const stepIds = [...new Set(args.records.map((r) => r.jobOperationStepId))];
   const steps = await client
@@ -2257,33 +2278,43 @@ export async function insertBatchStepRecords(
       (members.data ?? []).map((m) => m.id)
     )
     .eq("companyId", args.companyId);
-  if (steps.error) return { error: steps.error };
+  if (steps.error) return { error: steps.error, refusal: null };
   if ((steps.data ?? []).length !== stepIds.length) {
-    return { error: { message: "A step is not part of this batch" } };
+    return {
+      error: { message: "A step is not part of this batch" },
+      refusal: null
+    };
   }
 
-  // A step recorded again keeps its recorder; see planBatchStepRecordRows.
+  // A step recorded again keeps its recorder, and only that person can change
+  // it; see planBatchStepRecordRows.
   const existing = await client
     .from("jobOperationStepRecord")
     .select("jobOperationStepId, createdBy")
     .in("jobOperationStepId", stepIds)
     .eq("index", 0)
     .eq("companyId", args.companyId);
-  if (existing.error) return { error: existing.error };
+  if (existing.error) return { error: existing.error, refusal: null };
 
-  const { rows } = planBatchStepRecordRows({
+  const { rows, refusedStepIds } = planBatchStepRecordRows({
     records: args.records,
     existing: existing.data ?? [],
     companyId: args.companyId,
     userId: args.createdBy,
     now: datetime.timestamp()
   });
+  if (refusedStepIds.length > 0) {
+    return {
+      error: null,
+      refusal: batchStepRecordRefusal(refusedStepIds.length)
+    };
+  }
 
   const upsert = await client.from("jobOperationStepRecord").upsert(rows, {
     onConflict: "jobOperationStepId, index",
     ignoreDuplicates: false
   });
-  return { error: upsert.error };
+  return { error: upsert.error, refusal: null };
 }
 
 // Manager override: record every step of an operation that has no record yet for this unit

@@ -190,6 +190,7 @@ export function StepsListItem({
                     variant="secondary"
                     size="lg"
                     rightIcon={<LuCircleCheck />}
+                    isDisabled={record?.createdBy !== user?.id}
                     onClick={() => onRecord(step)}
                   >
                     <Trans>Update</Trans>

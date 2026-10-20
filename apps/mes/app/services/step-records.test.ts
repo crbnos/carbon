@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { allStepsRecordedAt, planBatchStepRecordRows } from "./step-records";
+import {
+  allStepsRecordedAt,
+  planBatchStepRecordRows,
+  planStepRecordWrite
+} from "./step-records";
 
 const step = (...indexes: number[]) => ({
   jobOperationStepRecord: indexes.map((index) => ({ index }))
@@ -58,18 +62,19 @@ describe("planBatchStepRecordRows", () => {
   });
 
   it("keeps the recorder of a step recorded again and stamps the change", () => {
-    const { rows } = planBatchStepRecordRows({
+    const { rows, refusedStepIds } = planBatchStepRecordRows({
       records: [
         { jobOperationStepId: "s1", numericValue: 5 },
         { jobOperationStepId: "s2", numericValue: 6 }
       ],
-      existing: [{ jobOperationStepId: "s1", createdBy: "u0" }],
+      existing: [{ jobOperationStepId: "s1", createdBy: "u1" }],
       companyId: "c1",
       userId: "u1",
       now
     });
+    expect(refusedStepIds).toEqual([]);
     expect(rows[0]).toMatchObject({
-      createdBy: "u0",
+      createdBy: "u1",
       updatedBy: "u1",
       updatedAt: now
     });
@@ -79,5 +84,35 @@ describe("planBatchStepRecordRows", () => {
       updatedBy: null,
       updatedAt: null
     });
+  });
+
+  it("refuses steps another person recorded", () => {
+    const { refusedStepIds, rows } = planBatchStepRecordRows({
+      records: [
+        { jobOperationStepId: "s1", numericValue: 5 },
+        { jobOperationStepId: "s2", numericValue: 6 }
+      ],
+      existing: [{ jobOperationStepId: "s2", createdBy: "u0" }],
+      companyId: "c1",
+      userId: "u1",
+      now
+    });
+    expect(refusedStepIds).toEqual(["s2"]);
+    // Never written, but even so it would not take the recorder over.
+    expect(rows[1]?.createdBy).toBe("u0");
+  });
+});
+
+describe("planStepRecordWrite", () => {
+  it("inserts a step with no record yet", () => {
+    expect(planStepRecordWrite(null, "u1")).toBe("insert");
+  });
+
+  it("updates the caller's own record", () => {
+    expect(planStepRecordWrite({ createdBy: "u1" }, "u1")).toBe("update");
+  });
+
+  it("refuses a record someone else made", () => {
+    expect(planStepRecordWrite({ createdBy: "u0" }, "u1")).toBe("refuse");
   });
 });
