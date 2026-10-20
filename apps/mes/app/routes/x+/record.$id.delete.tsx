@@ -9,6 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { deleteAttributeRecord } from "~/services/operations.service";
+import { STEP_RECORD_REMOVE_REFUSAL } from "~/services/step-records";
 
 export async function action({ params, request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -34,6 +35,15 @@ export async function action({ params, request }: ActionFunctionArgs) {
         request,
         error(attributeDelete.error, "Failed to delete step")
       )
+    );
+  }
+
+  // The delete matches only the caller's own record, so an empty result is
+  // someone else's record (or one already removed), not a success.
+  if (!attributeDelete.data?.length) {
+    return data(
+      { success: false },
+      await flash(request, error(null, STEP_RECORD_REMOVE_REFUSAL))
     );
   }
 

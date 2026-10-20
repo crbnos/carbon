@@ -22,6 +22,9 @@ export function allStepsRecordedAt(steps: StepWithRecords[], index: number) {
 export const STEP_RECORD_OWNER_REFUSAL =
   "Only the person who recorded this step can change it.";
 
+export const STEP_RECORD_REMOVE_REFUSAL =
+  "Nothing was removed. Only the person who recorded this value can remove it.";
+
 export function batchStepRecordRefusal(count: number) {
   return `${count === 1 ? "One job was" : `${count} jobs were`} recorded by someone else, and only the person who recorded a step can change it. Nothing was recorded.`;
 }

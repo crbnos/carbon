@@ -313,6 +313,8 @@ export async function getUpstreamOperations(
     .order("order", { ascending: true });
 }
 
+// Only the person who recorded a step can remove its record: someone else's
+// record matches nothing. The removed rows come back so the caller can tell.
 export async function deleteAttributeRecord(
   client: SupabaseClient<Database>,
   args: { id: string; companyId: string; userId: string }
@@ -322,7 +324,8 @@ export async function deleteAttributeRecord(
     .delete()
     .eq("id", args.id)
     .eq("companyId", args.companyId)
-    .eq("createdBy", args.userId);
+    .eq("createdBy", args.userId)
+    .select("id");
 }
 
 export async function finishJobOperation(
