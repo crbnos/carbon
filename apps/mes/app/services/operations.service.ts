@@ -2173,6 +2173,8 @@ export async function getWorkCentersByCompany(
   return { data: mergedData, error: null };
 }
 
+// `refusal` is a message for the operator: a Measurement step was sent with no
+// value.
 export async function insertAttributeRecord(
   client: SupabaseClient<Database>,
   data: z.infer<typeof stepRecordValidator> & {
@@ -2185,23 +2187,33 @@ export async function insertAttributeRecord(
   // step id would overwrite — and re-tenant — another company's record.
   const step = await client
     .from("jobOperationStep")
-    .select("id")
+    .select("id, type")
     .eq("id", data.jobOperationStepId)
     .eq("companyId", data.companyId)
     .maybeSingle();
-  if (step.error) return step;
+  if (step.error) return { error: step.error, refusal: null };
   if (!step.data) {
     log.warn("insertAttributeRecord: step not found in company", {
       companyId: data.companyId,
       jobOperationStepId: data.jobOperationStepId
     });
-    return notFoundResponse("Job operation step not found");
+    return {
+      error: notFoundResponse("Job operation step not found").error,
+      refusal: null
+    };
   }
 
-  return client.from("jobOperationStepRecord").upsert(data, {
+  // The record window refuses an empty measurement (measurementStepRecordValidator);
+  // this route validates with the general validator, so repeat the rule here.
+  if (step.data.type === "Measurement" && data.numericValue === undefined) {
+    return { error: null, refusal: "Enter the measurement" };
+  }
+
+  const record = await client.from("jobOperationStepRecord").upsert(data, {
     onConflict: "jobOperationStepId, index",
     ignoreDuplicates: false
   });
+  return { error: record.error, refusal: null };
 }
 
 // The batch view's Record: one step written for several members in one upsert,
