@@ -24,7 +24,9 @@ const RETRIES = 3;
 async function countOutcome(
   webhookId: string,
   outcome: "success" | "error",
-  logger: { error: (message: string) => void }
+  logger: {
+    error: (message: string, properties: Record<string, unknown>) => void;
+  }
 ) {
   const { error } = await getCarbonServiceRole().rpc(
     outcome === "success"
@@ -33,9 +35,11 @@ async function countOutcome(
     { webhook_id: webhookId }
   );
   if (error) {
-    logger.error(
-      `Could not count the ${outcome} of webhook ${webhookId}: ${error.message}`
-    );
+    logger.error("Could not count the {outcome} of webhook {webhookId}", {
+      outcome,
+      webhookId,
+      error: error.message
+    });
   }
 }
 
