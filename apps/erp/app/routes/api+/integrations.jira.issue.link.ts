@@ -211,11 +211,8 @@ export const loader: LoaderFunction = async ({ request }) => {
     syncedEntityPermissions(entityType)
   );
 
-  const query = url.searchParams.get("search") as string;
-
-  if (!query || query.trim().length === 0) {
-    return { issues: [] };
-  }
+  // No search yet: the most recent issues, so the dialog opens with a list.
+  const query = url.searchParams.get("search") ?? "";
 
   const issues = await jira.searchIssues(companyId, query);
 

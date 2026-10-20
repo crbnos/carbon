@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import { SalesOrderEmail } from "@carbon/documents/email";
 import type { SyncedEntityType } from "@carbon/ee/issue-sync";
 import { syncedEntities } from "@carbon/ee/issue-sync";
+import { type TiptapDocument, tiptapToMarkdown } from "@carbon/ee/linear";
 import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
@@ -808,6 +809,58 @@ export async function getImplementationSignals(
     }
   }
   return signals;
+}
+
+/**
+ * A record's Linear and Jira links (the link's `metadata`, or null), for the
+ * issue dialogs. One query for both trackers.
+ */
+export async function getRecordIssueLinks(
+  client: SupabaseClient<Database>,
+  entityType: SyncedEntityType,
+  entityId: string,
+  companyId: string
+): Promise<{ linearIssue: unknown; jiraIssue: unknown }> {
+  const links = await client
+    .from("externalIntegrationMapping")
+    .select("integration, metadata")
+    .eq("companyId", companyId)
+    .eq("entityType", entityType)
+    .eq("entityId", entityId)
+    .in("integration", ["linear", "jira"]);
+  const linkOf = (integration: string) =>
+    links.data?.find((link) => link.integration === integration)?.metadata ??
+    null;
+  return { linearIssue: linkOf("linear"), jiraIssue: linkOf("jira") };
+}
+
+/**
+ * The title and description a new Linear or Jira issue starts from: the
+ * record's description as Markdown, and an element's name. The form shows
+ * them so the user creates the issue from the record, not from a blank page.
+ */
+export async function getNewIssueDefaults(
+  client: SupabaseClient<Database>,
+  entityType: SyncedEntityType,
+  id: string,
+  companyId: string
+): Promise<{ title: string; description: string }> {
+  const [task, element] = await Promise.all([
+    getActionTaskWithParent(client, entityType, id, companyId),
+    entityType === "projectElement"
+      ? client
+          .from("projectElement")
+          .select("name")
+          .eq("id", id)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null })
+  ]);
+
+  return {
+    title: element.data?.name ?? "",
+    description: tiptapToMarkdown(task.notes as TiptapDocument | null)
+  };
 }
 
 /**

@@ -78,7 +78,8 @@ export const JiraIssueDialog = ({ entityType, taskId, linkedIssue }: Props) => {
         }
       }}
     >
-      <ModalTrigger onClick={() => disclosure.onToggle()}>
+      {/* asChild: the trigger is the button itself, not a button around it. */}
+      <ModalTrigger asChild onClick={() => disclosure.onToggle()}>
         {linked ? (
           <Button
             leftIcon={<JiraIcon className={"size-4"} />}

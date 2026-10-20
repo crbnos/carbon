@@ -89,10 +89,6 @@ msgstr "{0, plural, one {# jour de retard} other {# jours de retard}}"
 msgid "{0, plural, one {# element changed} other {# elements changed}}"
 msgstr "{0, plural, one {# élément modifié} other {# éléments modifiés}}"
 
-#. placeholder {0}: rows.length
-msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
-msgstr "{0, plural, one {# élément sera créé} other {# éléments seront créés}}"
-
 #. placeholder {0}: baseline.elementCount
 msgid "{0, plural, one {# element} other {# elements}}"
 msgstr "{0, plural, one {# élément} other {# éléments}}"
@@ -149,6 +145,10 @@ msgstr "{0, plural, one {Agrégat de # composant métier} other {Agrégat de # c
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Terminez ou annulez l'ordre de fabrication # qui a engagé des coûts avant que Carbon ne les enregistre.} other {Terminez ou annulez les # ordres de fabrication qui ont engagé des coûts avant que Carbon ne les enregistre.}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {Creates # element} other {Creates # elements}}"
+msgstr ""
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -764,6 +764,9 @@ msgstr "{sectionLineCount} lignes"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} sélectionnés"
+
+msgid "{serialLabel} has no components recorded in Carbon. Build from the item's bill of materials instead."
+msgstr ""
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# mois} other {# mois}}"
@@ -1642,6 +1645,9 @@ msgstr "Un secret limité en portée envoyé sur l'en-tête de requête carbon-k
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Un calendrier d'amortissement distinct pour la déclaration fiscale quand les règles fiscales exigent une méthode différente de l'amortissement comptable."
 
+msgid "A serial's build history"
+msgstr ""
+
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Un service est une activité facturable qui est achetée ou exécutée — il n'est jamais expédié, reçu ou stocké"
 
@@ -1752,6 +1758,9 @@ msgstr "Le type d'un fournisseur change"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "Une majoration taxable (manutention, réglage, carburant) ajoutée à la ligne; s'ajoute à la base imposable."
+
+msgid "A template"
+msgstr ""
 
 msgid "A template holds the elements and planned work a service order starts from."
 msgstr "Un modèle contient les éléments et le travail planifié à partir duquel une prestation commence."
@@ -2256,9 +2265,6 @@ msgstr "Ajouter au moins une prestation."
 msgid "Add at least one unit."
 msgstr "Ajouter au moins une unité."
 
-msgid "Add at the top level"
-msgstr "Ajouter au niveau supérieur"
-
 msgid "Add Authenticator App"
 msgstr "Ajouter une application d'authentification"
 
@@ -2279,9 +2285,6 @@ msgstr "Ajouter une Charge"
 
 msgid "Add child"
 msgstr "Ajouter un enfant"
-
-msgid "Add Child Element"
-msgstr "Ajouter un élément enfant"
 
 msgid "Add Child Storage Unit"
 msgstr "Ajouter une unité de stockage enfant"
@@ -2307,9 +2310,6 @@ msgstr "Ajouter Prestataire"
 msgid "Add cost center"
 msgstr "Ajouter un centre de coûts"
 
-msgid "Add Element"
-msgstr "Ajouter un élément"
-
 msgid "Add Employee"
 msgstr "Ajouter un employé"
 
@@ -2318,6 +2318,9 @@ msgstr "Ajouter une entrée"
 
 msgid "Add Event"
 msgstr "Ajouter un événement"
+
+msgid "Add expense"
+msgstr ""
 
 msgid "Add Expense"
 msgstr "Ajouter une charge"
@@ -2437,9 +2440,6 @@ msgstr "Ajouter un paiement"
 msgid "Add Permissions"
 msgstr "Ajouter des autorisations"
 
-msgid "Add plan line"
-msgstr "Ajouter une ligne de plan"
-
 msgid "Add Predecessor"
 msgstr "Ajouter un prédécesseur"
 
@@ -2521,6 +2521,9 @@ msgstr "Ajouter un transfert de stock"
 msgid "Add Supplier"
 msgstr "Ajouter un fournisseur"
 
+msgid "Add the components of a serial, an item or a template as elements."
+msgstr ""
+
 msgid "Add the items to move."
 msgstr "Ajouter les articles à déplacer."
 
@@ -2562,6 +2565,9 @@ msgstr "Ajouter au stock pour utilisation future"
 
 msgid "Add tools"
 msgstr "Ajouter des outils"
+
+msgid "Add under"
+msgstr ""
 
 msgid "Add Unit"
 msgstr "Ajouter une Unité"
@@ -3033,6 +3039,9 @@ msgstr "Le statut actif d'un article change"
 
 msgid "An item's assignee changes"
 msgstr "L'assigné d'un article change"
+
+msgid "An item's bill of materials"
+msgstr ""
 
 msgid "An item's default method type changes"
 msgstr "Le Type d'approvisionnement par défaut d'un Article change"
@@ -3506,10 +3515,6 @@ msgstr "Êtes-vous sûr de vouloir désactiver cet instrument de mesure ?"
 
 msgid "Are you sure you want to deactivate this user?"
 msgstr "Êtes-vous sûr de vouloir désactiver cet utilisateur ?"
-
-#. placeholder {0}: deleting.readableId
-msgid "Are you sure you want to delete {0} and the elements under it? This cannot be undone."
-msgstr "Êtes-vous sûr de vouloir supprimer {0} et les éléments qu'il contient ? Ceci ne peut pas être annulé."
 
 #. placeholder {0}: tool.readableIdWithRevision
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
@@ -4701,9 +4706,6 @@ msgstr "Nomenclatures de produits"
 msgid "Bills the work charged to this element and the elements below it"
 msgstr "Facture le travail imputé à cet élément et aux éléments en dessous"
 
-msgid "Bills this element and the work under it as one line. Leave it empty to bill each item."
-msgstr "Facture cet élément et le travail qu'il contient comme une seule ligne. Laissez-le vide pour facturer chaque article."
-
 msgid "Bills until it is cancelled"
 msgstr "Facture jusqu'à ce qu'elle soit annulée"
 
@@ -4868,9 +4870,6 @@ msgstr "Budget à l'achèvement"
 msgid "Budget control"
 msgstr "Contrôle du budget"
 
-msgid "Budget Control"
-msgstr "Contrôle du budget"
-
 msgid "Budget used"
 msgstr "Budget utilisé"
 
@@ -4889,8 +4888,14 @@ msgstr "Créer tout nouveau travail"
 msgid "Build for Fleet"
 msgstr "Construire pour la flotte"
 
+msgid "Build from"
+msgstr ""
+
 msgid "Build from part"
 msgstr "Construire à partir d'une pièce"
+
+msgid "Build from Part"
+msgstr ""
 
 msgid "Build integrations and customizations"
 msgstr "Créer des intégrations et des personnalisations"
@@ -4903,9 +4908,6 @@ msgstr "Créer des matériels de formation basés sur les rôles"
 
 msgid "Build tailored, role-based training materials"
 msgstr "Créer des matériels de formation personnalisés et basés sur les rôles"
-
-msgid "Build Tree"
-msgstr "Arborescence de construction"
 
 msgid "Built after this step"
 msgstr "Construit après cette étape"
@@ -5619,9 +5621,6 @@ msgstr "Plan comptable"
 msgid "Chat"
 msgstr "Chat"
 
-msgid "Check each charge against the budget of its nearest budgeted element. A timesheet only warns."
-msgstr "Vérifier chaque charge par rapport au budget de son élément budgété le plus proche. Une feuille de temps avertit seulement."
-
 msgid "Check operations on the left to build the batch."
 msgstr "Cochez les opérations à gauche pour créer le lot."
 
@@ -5685,9 +5684,6 @@ msgstr "Choisissez une ligne à gauche pour voir d'où son stock peut provenir."
 msgid "Choose a serial number"
 msgstr "Choisir un numéro de série"
 
-msgid "Choose a source to see the elements it creates."
-msgstr "Choisir une source pour voir les éléments qu'elle crée."
-
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "choisir un fournisseur pour {0} sur l'ordre de fabrication"
@@ -5728,8 +5724,8 @@ msgstr "Choisissez le premier jour de la période actuelle ou de l'une des 3 pé
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Choisissez les unités de parc que cet accord loue. Chacune commence à son taux en file pour la fréquence ; changez-le dans la grille."
 
-msgid "Choose the item to see its serials."
-msgstr "Choisir l'Article pour voir ses numéros de série."
+msgid "Choose the item first"
+msgstr ""
 
 msgid "Choose the new parent"
 msgstr "Choisir le nouveau parent"
@@ -5739,6 +5735,9 @@ msgstr "Choisissez les prestations que ce contrat facture. Chacune est ajoutée 
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Choisir ce qui apparaît sur la fiche suiveuse d'ordre de fabrication imprimée."
+
+msgid "Choose what to build from to see a preview."
+msgstr ""
 
 msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
 msgstr "Choisissez quand le MRP se recalcule automatiquement. Vous pouvez toujours l'exécuter manuellement à tout moment avec Recalculer sur les pages de Planification."
@@ -5757,6 +5756,9 @@ msgstr "Choisi lors de votre connexion et fixé pour cette installation. Pour le
 
 msgid "Chosen while the project is Draft"
 msgstr "Choisi pendant que le projet est en Brouillon"
+
+msgid "CIP class"
+msgstr ""
 
 msgid "CIP Class"
 msgstr "Classe CIP"
@@ -6914,9 +6916,6 @@ msgstr "Copier l'identifiant unique de l'ordre de retour de vente"
 msgid "Copy service number"
 msgstr "Copier le numéro de service"
 
-msgid "Copy service order unique identifier"
-msgstr "Copier l'identifiant unique de la commande de service"
-
 msgid "Copy service unique identifier"
 msgstr "Copier l'identifiant unique du service"
 
@@ -6999,6 +6998,9 @@ msgstr "Action corrective"
 
 msgid "Cost"
 msgstr "Coût"
+
+msgid "Cost account"
+msgstr ""
 
 msgid "Cost Account"
 msgstr "Compte de coût"
@@ -7312,8 +7314,8 @@ msgstr "Créer un avis de modification"
 msgid "Create Contract"
 msgstr "Créer un contrat"
 
-msgid "Create elements"
-msgstr "Créer des éléments"
+msgid "Create Elements"
+msgstr ""
 
 msgid "Create Forecast"
 msgstr "Créer une prévision"
@@ -7374,9 +7376,6 @@ msgstr "Créer une écriture"
 
 msgid "Create Supplier Return"
 msgstr "Créer un retour fournisseur"
-
-msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
-msgstr "Créer des éléments système à partir de l'historique de construction d'une série, de la nomenclature d'un article ou d'un modèle."
 
 msgid "Create transfer"
 msgstr "Créer un transfert"
@@ -8473,9 +8472,6 @@ msgstr "Supprimer l'intervention de maintenance"
 msgid "Delete Document"
 msgstr "Supprimer le document"
 
-msgid "Delete Element"
-msgstr "Supprimer l'élément"
-
 msgid "Delete Employee Type"
 msgstr "Supprimer le type d'employé"
 
@@ -8898,9 +8894,6 @@ msgstr "Début d'amortissement"
 
 msgid "Depreciation Start Date"
 msgstr "Date de Début de l'Amortissement"
-
-msgid "Depth"
-msgstr "Profondeur"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Dériver la durée de conservation de cet article à partir de la durée de conservation la plus courte de ses composants, en ignorant le champ Jours ci-dessus."
@@ -10058,9 +10051,6 @@ msgstr "Élément"
 msgid "Element of cost"
 msgstr "Élément de Coût"
 
-msgid "Element type"
-msgstr "Type d'élément"
-
 #. placeholder {0}: typeLabels[type]
 msgid "Element type: {0}"
 msgstr "Type d'élément : {0}"
@@ -11000,9 +10990,6 @@ msgstr "Échec de l'ajout de la ligne — {addedCount} lignes sur {0} ont été 
 msgid "Failed to add lines"
 msgstr "Échec de l'ajout des lignes"
 
-msgid "Failed to add the element"
-msgstr "Impossible d'Ajouter l'élément"
-
 msgid "Failed to add the link"
 msgstr "Impossible d'ajouter le lien"
 
@@ -11728,9 +11715,6 @@ msgstr "Fixé une fois que les périodes comptables ont été comptabilisées ou
 
 msgid "Fixed price"
 msgstr "Prix fixe"
-
-msgid "Fixed Price"
-msgstr "Prix Fixe"
 
 msgid "Fixed Reorder"
 msgstr "Réapprovisionnement Fixe"
@@ -12618,9 +12602,6 @@ msgstr "Comment le loyer de chaque unité est divisé en périodes, et quand dan
 msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
 msgstr "Comment les employés enregistrent le temps sur les projets. Standard garde la feuille de temps simple. DCAA ajoute les contrôles qu'un audit de contrat gouvernemental vérifie."
 
-msgid "How far over the budget a charge may go"
-msgstr "De combien une charge peut dépasser le budget"
-
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "la distance entre le travail planifié et les heures disponibles (+) ou le nombre d'heures encore libres."
 
@@ -12656,6 +12637,9 @@ msgstr "Nombre de jours à partir de la date de facture que ce fournisseur s'att
 
 msgid "How many fractional digits to keep when rounding amounts in this currency."
 msgstr "Combien de chiffres fractionnaires à conserver lors de l'arrondi de montants dans cette devise."
+
+msgid "How many levels of components below the part"
+msgstr ""
 
 msgid "How many of the successor replace one old part"
 msgstr "Combien de successeurs remplacent une ancienne pièce"
@@ -13645,6 +13629,9 @@ msgstr "Sortie de stock de matière (l'élément ouvert)"
 msgid "Issue not found"
 msgstr "Problème non trouvé"
 
+msgid "Issue part"
+msgstr ""
+
 msgid "Issue Part"
 msgstr "Sortie de pièce"
 
@@ -14139,6 +14126,9 @@ msgstr "Dernière exécution"
 msgid "Last scheduled push {when}:"
 msgstr "Dernier envoi planifié {when} :"
 
+msgid "Last service"
+msgstr ""
+
 msgid "Last Service"
 msgstr "Dernière prestation"
 
@@ -14370,6 +14360,9 @@ msgstr "Lettre"
 
 msgid "Level of Effort"
 msgstr "Niveau d'effort"
+
+msgid "Levels"
+msgstr ""
 
 msgid "Liability"
 msgstr "Passif"
@@ -14693,6 +14686,9 @@ msgstr "Verrouiller d'abord une période comptable"
 
 msgid "Lock Period"
 msgstr "Verrouiller la période"
+
+msgid "Lock plan after milestone"
+msgstr ""
 
 msgid "Lock Plan After Milestone"
 msgstr "Verrouiller le plan après la jalon"
@@ -15198,8 +15194,8 @@ msgstr "article de matière"
 msgid "Material item"
 msgstr "Article de matière"
 
-msgid "Material Measurement Point"
-msgstr "Point de mesure de matière"
+msgid "Material measurement point"
+msgstr ""
 
 msgid "Material Planning"
 msgstr "Planification des matériaux"
@@ -15749,9 +15745,6 @@ msgstr "Nom"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "Nommez un propriétaire de projet interne ayant autorité décisionnelle"
-
-msgid "Name the element"
-msgstr "Nommer l'élément"
 
 msgid "Name the new element, then press Enter"
 msgstr "Nommez le nouvel élément, puis appuyez sur Entrée"
@@ -16607,6 +16600,9 @@ msgstr "Aucun coût n'a été enregistré pour cet actif pour le moment."
 msgid "No cost history found"
 msgstr "Aucun historique de coûts trouvé"
 
+msgid "No costs have been posted to this element yet."
+msgstr ""
+
 msgid "No costs posted yet"
 msgstr "Aucun coût comptabilisé pour le moment"
 
@@ -16690,9 +16686,6 @@ msgstr "Aucun élément pour le moment"
 
 msgid "No elements yet."
 msgstr "Aucun élément pour l'instant."
-
-msgid "No elements yet. Add the first element."
-msgstr "Aucun élément pour l'instant. Ajouter le premier élément."
 
 msgid "No eligible operations"
 msgstr "Aucune opération admissible"
@@ -17343,9 +17336,6 @@ msgstr "Aucun poste de travail n'existe"
 msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
 msgstr "Aucun lot de travail encore. Donnez à un élément facturable sous un compte de contrôle une technique de valeur gagnée."
 
-msgid "No work yet. Build the tree from the unit, or add the first element."
-msgstr "Aucun travail pour l'instant. Construisez l'arborescence à partir de l'unité, ou ajoutez le premier élément."
-
 msgid "No, More Work"
 msgstr "Non, Plus de travail"
 
@@ -17519,9 +17509,6 @@ msgstr "Rien n'a encore été terminé dans MES"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Aucun autre article à cet endroit n'a de stock à prélever."
 
-msgid "Nothing has been charged to this element yet."
-msgstr "Rien n'a été facturé à cet élément pour le moment."
-
 msgid "Nothing here matches your search and filters."
 msgstr "Rien ici ne correspond à votre recherche et vos filtres."
 
@@ -17560,6 +17547,9 @@ msgstr "Rien à approuver"
 
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "Rien à facturer encore. Le temps, les pièces et les charges facturés au travail s'affichent ici."
+
+msgid "Nothing to build"
+msgstr ""
 
 msgid "Nothing to post for this period."
 msgstr "Rien à comptabiliser pour cette période."
@@ -18456,6 +18446,9 @@ msgstr "Substitution de la classification"
 msgid "Override Classification of {0}"
 msgstr "Substitution de classification de {0}"
 
+msgid "Override coverage"
+msgstr ""
+
 msgid "Override Coverage"
 msgstr "Couverture de substitution"
 
@@ -18592,9 +18585,6 @@ msgstr "Centre de coûts parent"
 
 msgid "Parent Department"
 msgstr "Département Parent"
-
-msgid "Parent element"
-msgstr "Élément parent"
 
 msgid "Parent Group"
 msgstr "Groupe parent"
@@ -19194,9 +19184,6 @@ msgstr "Planifiée à partir des factures. Modifier une cellule enregistre le pl
 msgid "Planned from the lines. Editing a cell saves the schedule."
 msgstr "Planifiée à partir des lignes. Modifier une cellule enregistre le planning."
 
-msgid "Planned Hours"
-msgstr "Heures planifiées"
-
 msgid "Planned invoices"
 msgstr "Factures planifiées"
 
@@ -19262,6 +19249,9 @@ msgstr "Horizon de Planification :"
 
 msgid "Planning Ownership"
 msgstr "Responsabilité de planification"
+
+msgid "Planning priority"
+msgstr ""
 
 msgid "Planning Priority"
 msgstr "Priorité de planification"
@@ -19623,6 +19613,9 @@ msgstr "Imprimer {0} étiquettes"
 msgid "Print batch list"
 msgstr "Imprimer la liste des lots de production"
 
+msgid "Print estimate"
+msgstr ""
+
 msgid "Print Estimate"
 msgstr "Imprimer l'estimation"
 
@@ -19797,6 +19790,9 @@ msgstr "Demande de modification de projet"
 
 msgid "Project Change Requests"
 msgstr "Demandes de changement de projet"
+
+msgid "Project control"
+msgstr ""
 
 msgid "Project Control"
 msgstr "Contrôle de projet"
@@ -20649,9 +20645,6 @@ msgstr "Recalcul en cours…"
 
 msgid "Receipt"
 msgstr "Reçu"
-
-msgid "Receipt counts material when it is received. Issue counts it when project stock is issued."
-msgstr "La réception compte le matériel lorsqu'il est reçu. La sortie de stock le compte lorsque le stock du projet est émis."
 
 msgid "Receipt ID"
 msgstr "ID de reçu"
@@ -23237,6 +23230,9 @@ msgstr "Bon de prestation"
 msgid "Service Order"
 msgstr "Bon de prestation"
 
+msgid "Service order pages"
+msgstr ""
+
 msgid "Service orders"
 msgstr "Bons de prestation"
 
@@ -25629,9 +25625,6 @@ msgstr "Les premières heures, {name}."
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "La méthode de qualité en huit disciplines, modélisée avec les tâches du flux de travail de non-conformité plutôt que codée en dur."
 
-msgid "The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs."
-msgstr "L'élément et ses matériaux planifiés, main-d'œuvre et coûts quittent le modèle. Les commandes de prestation déjà commencées à partir de lui conservent les leurs."
-
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "L'employé responsable de ce centre de coûts — lorsque les approbations de bons de commande sont activées, c'est l'approbateur des dépenses enregistrées contre lui."
 
@@ -25805,6 +25798,9 @@ msgstr "La classe de période de récupération IRS pour cet actif selon MACRS (
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "L'article que chaque ordre de fabrication produit — exiger qu'il corresponde pour fusionner les lots de sortie"
+
+msgid "The item has no made components at this depth. Include bought components to add its purchased parts."
+msgstr ""
 
 msgid "The item's bill of materials"
 msgstr "La nomenclature de l'article"
@@ -26328,6 +26324,9 @@ msgstr "Les compétences et aptitudes que vous suivez pour votre personnel"
 
 msgid "The smallest quantity this supplier will accept on a PO line for this part; planning rounds up to it."
 msgstr "La quantité la plus petite que ce fournisseur acceptera sur une ligne de PO pour cette pièce; la planification s'arrondit à elle."
+
+msgid "The source has nothing to build at this depth."
+msgstr ""
 
 msgid "The specific contact on the selected customer who will own this portal account; their email becomes the sign-in identifier."
 msgstr "Le contact spécifique sur le client sélectionné qui possédera ce compte de portail; son e-mail devient l'identifiant de connexion."
@@ -26900,6 +26899,9 @@ msgstr "Cette commande client a des ordres de fabrication associés. Choisissez 
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Cette commande client a des lignes qui nécessitent la création d'ordres de fabrication."
+
+msgid "This serial"
+msgstr ""
 
 msgid "This service order has no work yet."
 msgstr "Cette commande de prestation n'a pas encore de travail."
@@ -27766,11 +27768,6 @@ msgstr "Non classé"
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Les lignes non comptabilisées restent inchangées à la publication — elles ne sont pas mises à zéro."
 
-#. placeholder {0}: parent.readableId
-#. placeholder {1}: parent.name
-msgid "Under {0} {1}"
-msgstr "Sous {0} {1}"
-
 msgid "Under Construction"
 msgstr "En construction"
 
@@ -28260,6 +28257,9 @@ msgstr "Utiliser le système métrique pour les dimensions de matière par défa
 
 msgid "Use Sub-Assembly"
 msgstr "Utiliser le sous-ensemble"
+
+msgid "Use the Bill of Materials"
+msgstr ""
 
 msgid "Used by"
 msgstr "Utilisé par"
@@ -28829,9 +28829,6 @@ msgstr "Avertissement — les modifications réussissent avec un avertissement"
 
 msgid "Warn but allow"
 msgstr "Avertir mais autoriser"
-
-msgid "Warn saves the charge and shows the overrun. Block refuses it."
-msgstr "Avertir enregistre la charge et affiche le dépassement. Bloquer la refuse."
 
 msgid "Warn this many days before expiry"
 msgstr "Avertir ce nombre de jours avant péremption"

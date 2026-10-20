@@ -89,10 +89,6 @@ msgstr "{0, plural, one {# gün gecikme} other {# gün gecikme}}"
 msgid "{0, plural, one {# element changed} other {# elements changed}}"
 msgstr "{0, plural, one {# element değişti} other {# elementler değişti}}"
 
-#. placeholder {0}: rows.length
-msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
-msgstr "{0, plural, one {# element oluşturulacak} other {# elementler oluşturulacak}}"
-
 #. placeholder {0}: baseline.elementCount
 msgid "{0, plural, one {# element} other {# elements}}"
 msgstr "{0, plural, one {# element} other {# elementler}}"
@@ -149,6 +145,10 @@ msgstr "{0, plural, one {# iş bileşeninin toplamı} other {# iş bileşenlerin
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Carbon maliyetleri kaydetmeden önce maliyet oluşan # iş emrini tamamla veya iptal et.} other {Carbon maliyetleri kaydetmeden önce maliyet oluşan # iş emirlerini tamamla veya iptal et.}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {Creates # element} other {Creates # elements}}"
+msgstr ""
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -764,6 +764,9 @@ msgstr "{sectionLineCount} satır"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} seçildi"
+
+msgid "{serialLabel} has no components recorded in Carbon. Build from the item's bill of materials instead."
+msgstr ""
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ay} other {# ay}}"
@@ -1642,6 +1645,9 @@ msgstr "Carbon'a programlı çağrıları doğrulayan carbon-key istek başlığ
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Vergi kuralları defter amortismanından farklı bir yöntem gerektirdiğinde vergi raporlaması için ayrı bir zaman çizelgesi."
 
+msgid "A serial's build history"
+msgstr ""
+
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Bir hizmet, satın alınan veya gerçekleştirilen faturalaştırılabilir bir etkinliktir — hiçbir zaman gönderilmez, alınmaz veya depolanmaz"
 
@@ -1752,6 +1758,9 @@ msgstr "Bir tedarikçinin türü değişti"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "Vergilendirilecek bir ek ücret (işçilik, kurulum, yakıt) satıra eklenir ve vergi matrahına dahil edilir."
+
+msgid "A template"
+msgstr ""
 
 msgid "A template holds the elements and planned work a service order starts from."
 msgstr "Bir şablon, bir hizmet siparişinin başladığı öğeleri ve planlanan işi içerir."
@@ -2256,9 +2265,6 @@ msgstr "En az bir hizmet ekleyin."
 msgid "Add at least one unit."
 msgstr "En az bir adet ekleyin."
 
-msgid "Add at the top level"
-msgstr "Üst düzeye Ekle"
-
 msgid "Add Authenticator App"
 msgstr "Kimlik Doğrulayıcı Uygulaması Ekle"
 
@@ -2279,9 +2285,6 @@ msgstr "Ücret Ekle"
 
 msgid "Add child"
 msgstr "Alt öğe Ekle"
-
-msgid "Add Child Element"
-msgstr "Alt Öğe Ekle"
 
 msgid "Add Child Storage Unit"
 msgstr "Alt Depolama Birimi Ekle"
@@ -2307,9 +2310,6 @@ msgstr "Taşeron Ekle"
 msgid "Add cost center"
 msgstr "Maliyet Merkezi Ekle"
 
-msgid "Add Element"
-msgstr "Öğe Ekle"
-
 msgid "Add Employee"
 msgstr "Çalışan Ekle"
 
@@ -2318,6 +2318,9 @@ msgstr "Giri Ekle"
 
 msgid "Add Event"
 msgstr "Olay Ekle"
+
+msgid "Add expense"
+msgstr ""
 
 msgid "Add Expense"
 msgstr "Gider Ekle"
@@ -2437,9 +2440,6 @@ msgstr "Ödeme Ekle"
 msgid "Add Permissions"
 msgstr "İzin Ekle"
 
-msgid "Add plan line"
-msgstr "Plan satırı ekle"
-
 msgid "Add Predecessor"
 msgstr "Öncülü Ekle"
 
@@ -2521,6 +2521,9 @@ msgstr "Stok Transferi Ekle"
 msgid "Add Supplier"
 msgstr "Tedarikçi Ekle"
 
+msgid "Add the components of a serial, an item or a template as elements."
+msgstr ""
+
 msgid "Add the items to move."
 msgstr "Taşınacak stok kartlarını Ekleyiniz."
 
@@ -2562,6 +2565,9 @@ msgstr "Gelecekteki kullanım için stoğa ekle"
 
 msgid "Add tools"
 msgstr "Araç ekle"
+
+msgid "Add under"
+msgstr ""
 
 msgid "Add Unit"
 msgstr "Birim Ekle"
@@ -3033,6 +3039,9 @@ msgstr "Bir öğenin etkin durumu değişti"
 
 msgid "An item's assignee changes"
 msgstr "Bir öğenin atanmış kişisi değişir"
+
+msgid "An item's bill of materials"
+msgstr ""
 
 msgid "An item's default method type changes"
 msgstr "Bir stok kartının varsayılan tedarik şekli değişir"
@@ -3506,10 +3515,6 @@ msgstr "Bu ölçüm aletini devre dışı bırakmak istediğinizden emin misiniz
 
 msgid "Are you sure you want to deactivate this user?"
 msgstr "Bu kullanıcıyı devre dışı bırakmak istediğinizden emin misiniz?"
-
-#. placeholder {0}: deleting.readableId
-msgid "Are you sure you want to delete {0} and the elements under it? This cannot be undone."
-msgstr "{0} ve altındaki öğeleri silmek istediğinizden emin misiniz? Bu geri alınamaz."
 
 #. placeholder {0}: tool.readableIdWithRevision
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
@@ -4701,9 +4706,6 @@ msgstr "Malzeme Faturaları"
 msgid "Bills the work charged to this element and the elements below it"
 msgstr "Bu öğeye ve aşağıdaki öğelere yüklenen işçiliği faturalar."
 
-msgid "Bills this element and the work under it as one line. Leave it empty to bill each item."
-msgstr "Bu öğeyi ve altındaki işi bir satır olarak faturalandırır. Her öğeyi faturalandırmak için boş bırakın."
-
 msgid "Bills until it is cancelled"
 msgstr "İptal edilene kadar faturalandırır"
 
@@ -4868,9 +4870,6 @@ msgstr "Tamamlanmadaki bütçe"
 msgid "Budget control"
 msgstr "Bütçe kontrolü"
 
-msgid "Budget Control"
-msgstr "Bütçe Kontrolü"
-
 msgid "Budget used"
 msgstr "Kullanılan bütçe"
 
@@ -4889,8 +4888,14 @@ msgstr "Herhangi bir yeni çalışma oluşturun"
 msgid "Build for Fleet"
 msgstr "Filo İçin Üret"
 
+msgid "Build from"
+msgstr ""
+
 msgid "Build from part"
 msgstr "Parçadan oluştur"
+
+msgid "Build from Part"
+msgstr ""
 
 msgid "Build integrations and customizations"
 msgstr "Entegrasyonlar ve özelleştirmeler oluşturun"
@@ -4903,9 +4908,6 @@ msgstr "Rol tabanlı eğitim materyalleri oluşturun"
 
 msgid "Build tailored, role-based training materials"
 msgstr "Özelleştirilmiş, rol tabanlı eğitim materyalleri oluşturun"
-
-msgid "Build Tree"
-msgstr "Oluşturma Ağacı"
 
 msgid "Built after this step"
 msgstr "Bu adımdan sonra inşa edildi"
@@ -5619,9 +5621,6 @@ msgstr "Hesap Planı"
 msgid "Chat"
 msgstr "Sohbet"
 
-msgid "Check each charge against the budget of its nearest budgeted element. A timesheet only warns."
-msgstr "Her harcamayı en yakın bütçelenmiş öğesinin bütçesine karşı kontrol et. Bir zaman tablosu sadece uyarır."
-
 msgid "Check operations on the left to build the batch."
 msgstr "Toplu işi oluşturmak için sol tarafta operasyonları kontrol edin."
 
@@ -5685,9 +5684,6 @@ msgstr "Stokun nereden gelebileceğini görmek için sol taraftaki bir satırı 
 msgid "Choose a serial number"
 msgstr "Bir seri numarası seçin"
 
-msgid "Choose a source to see the elements it creates."
-msgstr "Oluşturduğu öğeleri görmek için bir kaynak seç."
-
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "İş emirde {0} için bir tedarikçi seçin"
@@ -5728,8 +5724,8 @@ msgstr "Geçerli dönem veya bundan önceki 3 dönemden birinin ilk gününü se
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Bu anlaşmanın kiraladığı filo adetlerini seçin. Her biri dosyadaki oranında başlar; ızgarada değiştirin."
 
-msgid "Choose the item to see its serials."
-msgstr "Seri numaralarını görmek için stok kartını seç."
+msgid "Choose the item first"
+msgstr ""
 
 msgid "Choose the new parent"
 msgstr "Yeni üst öğeyi seç"
@@ -5739,6 +5735,9 @@ msgstr "Bu sözleşmenin faturaladığı hizmetleri seçin. Her biri, ızgarada 
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Yazdırılan İş takip kartında neyin görüneceğini seçin."
+
+msgid "Choose what to build from to see a preview."
+msgstr ""
 
 msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
 msgstr "MRP'nin otomatik olarak ne zaman yeniden hesaplandığını seçin. Planlama sayfalarındaki Yeniden Hesapla seçeneğiyle istediğiniz zaman elle çalıştırabilirsiniz."
@@ -5757,6 +5756,9 @@ msgstr "Bağlandığınızda seçildi ve bu kurulum için sabitlendi. Değiştir
 
 msgid "Chosen while the project is Draft"
 msgstr "Proje Taslak iken seçildi"
+
+msgid "CIP class"
+msgstr ""
 
 msgid "CIP Class"
 msgstr "CIP Sınıfı"
@@ -6914,9 +6916,6 @@ msgstr "Satış iade siparişi benzersiz tanıtıcısını kopyala"
 msgid "Copy service number"
 msgstr "Hizmet numarasını kopyala"
 
-msgid "Copy service order unique identifier"
-msgstr "Hizmet siparişinin benzersiz tanımlayıcısını kopyala"
-
 msgid "Copy service unique identifier"
 msgstr "Hizmet benzersiz tanımlayıcısını kopyala"
 
@@ -6999,6 +6998,9 @@ msgstr "Düzeltici faaliyet"
 
 msgid "Cost"
 msgstr "Maliyet"
+
+msgid "Cost account"
+msgstr ""
 
 msgid "Cost Account"
 msgstr "Maliyet Hesabı"
@@ -7312,8 +7314,8 @@ msgstr "Değişiklik Bildirisi Oluştur"
 msgid "Create Contract"
 msgstr "Sözleşme Oluştur"
 
-msgid "Create elements"
-msgstr "Öğeler oluştur"
+msgid "Create Elements"
+msgstr ""
 
 msgid "Create Forecast"
 msgstr "Tahmin Oluştur"
@@ -7374,9 +7376,6 @@ msgstr "Çalıştırma Oluştur"
 
 msgid "Create Supplier Return"
 msgstr "Tedarikçi İadesi Oluştur"
-
-msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
-msgstr "Bir seri numarasının yapı geçmişinden, bir öğenin Ürün ağacından veya bir şablondan Sistem öğeleri oluştur."
 
 msgid "Create transfer"
 msgstr "Transfer oluştur"
@@ -8473,9 +8472,6 @@ msgstr "Bakım emrini sil"
 msgid "Delete Document"
 msgstr "Belgeyi Sil"
 
-msgid "Delete Element"
-msgstr "Öğeyi Sil"
-
 msgid "Delete Employee Type"
 msgstr "Çalışan Türünü Sil"
 
@@ -8898,9 +8894,6 @@ msgstr "Amortisman Başlangıcı"
 
 msgid "Depreciation Start Date"
 msgstr "Amortisman Başlangıç Tarihi"
-
-msgid "Depth"
-msgstr "Derinlik"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Bu öğenin raf ömrünü, bileşenlerinin en kısa raf ömründen türet, yukarıdaki Günler alanını yok say."
@@ -10058,9 +10051,6 @@ msgstr "Element"
 msgid "Element of cost"
 msgstr "Maliyet Öğesi"
 
-msgid "Element type"
-msgstr "Öğe türü"
-
 #. placeholder {0}: typeLabels[type]
 msgid "Element type: {0}"
 msgstr "Element türü: {0}"
@@ -11000,9 +10990,6 @@ msgstr "Satır eklenemedi — {0} satırdan {addedCount} tanesi eklendi"
 msgid "Failed to add lines"
 msgstr "Satırlar ekleme başarısız oldu"
 
-msgid "Failed to add the element"
-msgstr "Öğe ekleme başarısız"
-
 msgid "Failed to add the link"
 msgstr "Bağlantı eklenemedi"
 
@@ -11728,9 +11715,6 @@ msgstr "Muhasebe dönemleri bir kez nakliye yapıldığında veya kapatıldığ�
 
 msgid "Fixed price"
 msgstr "Sabit fiyat"
-
-msgid "Fixed Price"
-msgstr "Sabit Fiyat"
 
 msgid "Fixed Reorder"
 msgstr "Sabit Yeniden Sipariş"
@@ -12618,9 +12602,6 @@ msgstr "Her adetin kirası dönemlere nasıl bölündüğü ve bir dönem içind
 msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
 msgstr "Çalışanların projeler üzerinde zamanı nasıl kaydettikleri. Normal zaman çizelgesini basit tutar. DCAA hükümet sözleşmesi denetiminin kontrol ettiği kontrolleri ekler."
 
-msgid "How far over the budget a charge may go"
-msgstr "Bir masrafın bütçeyi ne kadar aşabileceği"
-
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "Planlanan işin mevcut saatleri ne kadar aştığı (+) veya kaç saatin hala boş olması."
 
@@ -12656,6 +12637,9 @@ msgstr "Bu tedarikçi fatura tarihinden itibaren kaç gün ödeme bekler; fatura
 
 msgid "How many fractional digits to keep when rounding amounts in this currency."
 msgstr "Bu para biriminde tutarlar yuvarlanırken kaç kesirli rakam tutulur."
+
+msgid "How many levels of components below the part"
+msgstr ""
 
 msgid "How many of the successor replace one old part"
 msgstr "Bir eski parçanın yerini kaç ardıl alır"
@@ -13645,6 +13629,9 @@ msgstr "Malzeme çıkışı (açık öğe)"
 msgid "Issue not found"
 msgstr "Sorun bulunamadı"
 
+msgid "Issue part"
+msgstr ""
+
 msgid "Issue Part"
 msgstr "Parça Çıkışı"
 
@@ -14139,6 +14126,9 @@ msgstr "Son Çalıştırma"
 msgid "Last scheduled push {when}:"
 msgstr "Son planlanan gönderim {when}:"
 
+msgid "Last service"
+msgstr ""
+
 msgid "Last Service"
 msgstr "Son Hizmet"
 
@@ -14370,6 +14360,9 @@ msgstr "Harf"
 
 msgid "Level of Effort"
 msgstr "Çaba Düzeyi"
+
+msgid "Levels"
+msgstr ""
 
 msgid "Liability"
 msgstr "Yükümlülük"
@@ -14693,6 +14686,9 @@ msgstr "Önce bir muhasebe dönemini kilitle"
 
 msgid "Lock Period"
 msgstr "Dönemi Kilitle"
+
+msgid "Lock plan after milestone"
+msgstr ""
 
 msgid "Lock Plan After Milestone"
 msgstr "Kilometre Taşından Sonra Planı Kilitle"
@@ -15198,8 +15194,8 @@ msgstr "malzeme stok kartı"
 msgid "Material item"
 msgstr "Malzeme Stok Kartı"
 
-msgid "Material Measurement Point"
-msgstr "Malzeme Ölçüm Noktası"
+msgid "Material measurement point"
+msgstr ""
 
 msgid "Material Planning"
 msgstr "Malzeme Planlama"
@@ -15749,9 +15745,6 @@ msgstr "Adı"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "Karar verme yetkisine sahip bir dahili proje sahibi belirleyin"
-
-msgid "Name the element"
-msgstr "Öğeyi adlandırın"
 
 msgid "Name the new element, then press Enter"
 msgstr "Yeni öğeyi adlandırın, ardından Enter tuşuna basın"
@@ -16607,6 +16600,9 @@ msgstr "Bu varlık için henüz maliyet kaydı yapılmamıştır."
 msgid "No cost history found"
 msgstr "Hiç maliyet geçmişi bulunamadı"
 
+msgid "No costs have been posted to this element yet."
+msgstr ""
+
 msgid "No costs posted yet"
 msgstr "Henüz maliyet muhasebeleştirilmedi"
 
@@ -16690,9 +16686,6 @@ msgstr "Henüz öğe yok"
 
 msgid "No elements yet."
 msgstr "Henüz öğe yok."
-
-msgid "No elements yet. Add the first element."
-msgstr "Henüz öğe yok. İlk öğeyi ekleyin."
 
 msgid "No eligible operations"
 msgstr "Uygun operasyon yok"
@@ -17343,9 +17336,6 @@ msgstr "İş merkezi bulunmamaktadır"
 msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
 msgstr "Henüz çalışma paketi yok. Kontrol hesabının altındaki ücretlendirilebilir bir öğeye kazanılmış değer tekniği verin."
 
-msgid "No work yet. Build the tree from the unit, or add the first element."
-msgstr "Henüz iş yok. Ağacı birimden oluşturun veya ilk öğeyi ekleyin."
-
 msgid "No, More Work"
 msgstr "Hayır, Daha Çok İş"
 
@@ -17519,9 +17509,6 @@ msgstr "MES'te henüz hiçbir şey tamamlanmadı"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."
 
-msgid "Nothing has been charged to this element yet."
-msgstr "Henüz bu öğeye hiçbir ücret yüklenmedi."
-
 msgid "Nothing here matches your search and filters."
 msgstr "Burada arama ve filtrelerinizle eşleşen hiçbir şey yok."
 
@@ -17560,6 +17547,9 @@ msgstr "Onaylanacak bir şey yok"
 
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "Henüz faturalanacak hiçbir şey yok. İşe ücretlendirilen zaman, parçalar ve giderler burada görünür."
+
+msgid "Nothing to build"
+msgstr ""
 
 msgid "Nothing to post for this period."
 msgstr "Bu dönem için muhasebeleştirecek bir şey yok."
@@ -18456,6 +18446,9 @@ msgstr "Sınıflandırmayı Geçersiz Kıl"
 msgid "Override Classification of {0}"
 msgstr "{0} Sınıflandırmasını Geçersiz Kıl"
 
+msgid "Override coverage"
+msgstr ""
+
 msgid "Override Coverage"
 msgstr "Geçersiz Kılma Kapsamı"
 
@@ -18592,9 +18585,6 @@ msgstr "Üst Maliyet Merkezi"
 
 msgid "Parent Department"
 msgstr "Üst Departman"
-
-msgid "Parent element"
-msgstr "Ana Öğe"
 
 msgid "Parent Group"
 msgstr "Üst Grup"
@@ -19194,9 +19184,6 @@ msgstr "Faturalardan planlandı. Bir hücreyi düzenleme, planı kaydeder."
 msgid "Planned from the lines. Editing a cell saves the schedule."
 msgstr "Satırlardan planlandı. Bir hücreyi düzenleme, çizelgeyi kaydeder."
 
-msgid "Planned Hours"
-msgstr "Planlanan Saatler"
-
 msgid "Planned invoices"
 msgstr "Planlanmış Faturalar"
 
@@ -19262,6 +19249,9 @@ msgstr "Planlama Ufku:"
 
 msgid "Planning Ownership"
 msgstr "Planlama Sahipliği"
+
+msgid "Planning priority"
+msgstr ""
 
 msgid "Planning Priority"
 msgstr "Planlama Önceliği"
@@ -19623,6 +19613,9 @@ msgstr "{0} Etiket Yazdır"
 msgid "Print batch list"
 msgstr "Parti Listesini Yazdır"
 
+msgid "Print estimate"
+msgstr ""
+
 msgid "Print Estimate"
 msgstr "Tahmini Yazdır"
 
@@ -19797,6 +19790,9 @@ msgstr "Proje Değişiklik İsteği"
 
 msgid "Project Change Requests"
 msgstr "Proje Değişiklik İstekleri"
+
+msgid "Project control"
+msgstr ""
 
 msgid "Project Control"
 msgstr "Proje Kontrolü"
@@ -20649,9 +20645,6 @@ msgstr "Yeniden hesaplanıyor…"
 
 msgid "Receipt"
 msgstr "Makbuz"
-
-msgid "Receipt counts material when it is received. Issue counts it when project stock is issued."
-msgstr "Mal kabul malzemeleri alındığında sayar. Malzeme çıkışı proje stoku çıkışında sayar."
 
 msgid "Receipt ID"
 msgstr "Fiş No"
@@ -23237,6 +23230,9 @@ msgstr "Hizmet Siparişi"
 msgid "Service Order"
 msgstr "Hizmet Siparişi"
 
+msgid "Service order pages"
+msgstr ""
+
 msgid "Service orders"
 msgstr "Hizmet Siparişleri"
 
@@ -25629,9 +25625,6 @@ msgstr "Sabah saatleri, {name}."
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Sekiz disiplin kalite yöntemi, uygunsuzluk iş akışının görevleriyle modellenmiş olup sabit kodlanmamıştır."
 
-msgid "The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs."
-msgstr "Öğe ve onun planlanmış malzemeleri, işçiliği ve maliyetleri şablondan çıkarılır. Zaten bundan başlayan hizmet emirleri kendilerinkileri tutarlar."
-
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "Bu maliyet merkezi için sorumlu çalışan — satın alma siparişi onayları açık olduğunda, ona karşı kaydedilen harcamaların onaylayanı olur."
 
@@ -25805,6 +25798,9 @@ msgstr "Bu varlık için MACRS kapsamında IRS kurtarma süresi sınıfı (3, 5,
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "Her iş emrinin ürettiği stok kartı — çıkış lotlarını birleştirmek için eşleşmesi gerekir"
+
+msgid "The item has no made components at this depth. Include bought components to add its purchased parts."
+msgstr ""
 
 msgid "The item's bill of materials"
 msgstr "Stok kartının ürün ağacı"
@@ -26328,6 +26324,9 @@ msgstr "Personelleriniz için izlediğiniz beceriler ve yetkinlikler"
 
 msgid "The smallest quantity this supplier will accept on a PO line for this part; planning rounds up to it."
 msgstr "Bu tedarikçinin bu parça için bir PO satırında kabul edeceği en küçük miktar; planlama ona yuvarlanır."
+
+msgid "The source has nothing to build at this depth."
+msgstr ""
 
 msgid "The specific contact on the selected customer who will own this portal account; their email becomes the sign-in identifier."
 msgstr "Seçilen müşteri üzerindeki bu portal hesabına sahip olacak belirli ilgili kişi; e-postaları giriş tanımlayıcısı olur."
@@ -26900,6 +26899,9 @@ msgstr "Bu satış siparişinin ilişkili iş emirleri var. Bunlarla ne yapacağ
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Bu satış siparişi, oluşturulması gereken iş emirlerini gerektiren satırlar içerir"
+
+msgid "This serial"
+msgstr ""
 
 msgid "This service order has no work yet."
 msgstr "Bu hizmet emrinin henüz işi yok."
@@ -27766,11 +27768,6 @@ msgstr "Sınıflandırılmamış"
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Sayılmayan satırlar gönderide değiştirilmeden bırakılır — sıfırlanmaz."
 
-#. placeholder {0}: parent.readableId
-#. placeholder {1}: parent.name
-msgid "Under {0} {1}"
-msgstr "Altında {0} {1}"
-
 msgid "Under Construction"
 msgstr "İnşaat Aşamasında"
 
@@ -28260,6 +28257,9 @@ msgstr "Varsayılan malzeme boyutları için metrik sistemi kullanın."
 
 msgid "Use Sub-Assembly"
 msgstr "Alt Montajı Kullan"
+
+msgid "Use the Bill of Materials"
+msgstr ""
 
 msgid "Used by"
 msgstr "Tarafından kullanılan"
@@ -28829,9 +28829,6 @@ msgstr "Uyar — düzenlemeler bir uyarı ile başarılı olur"
 
 msgid "Warn but allow"
 msgstr "Uyarı ver ama izin ver"
-
-msgid "Warn saves the charge and shows the overrun. Block refuses it."
-msgstr "Uyar maliyeti kaydeder ve aşımı gösterir. Engelle reddet."
 
 msgid "Warn this many days before expiry"
 msgstr "Son kullanma tarihinden önce bu kadar gün uyar"

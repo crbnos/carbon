@@ -89,10 +89,6 @@ msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
 msgid "{0, plural, one {# element changed} other {# elements changed}}"
 msgstr "{0, plural, one {# 元素已更改} other {# 元素已更改}}"
 
-#. placeholder {0}: rows.length
-msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
-msgstr "{0, plural, one {# 元素将被创建} other {# 元素将被创建}}"
-
 #. placeholder {0}: baseline.elementCount
 msgid "{0, plural, one {# element} other {# elements}}"
 msgstr "{0, plural, one {# 元素} other {# 元素}}"
@@ -149,6 +145,10 @@ msgstr "{0, plural, one {# 个业务组件的聚合} other {# 个业务组件的
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {完成或取消在 Carbon 记录成本之前已产生成本的 # 个工单。} other {完成或取消在 Carbon 记录成本之前已产生成本的 # 个工单。}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {Creates # element} other {Creates # elements}}"
+msgstr ""
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -764,6 +764,9 @@ msgstr "{sectionLineCount} 行"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 已选择"
+
+msgid "{serialLabel} has no components recorded in Carbon. Build from the item's bill of materials instead."
+msgstr ""
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 个月} other {# 个月}}"
@@ -1642,6 +1645,9 @@ msgstr "在 carbon-key 请求标头上发送的范围内秘密，用于验证对
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "当税收规则要求与账面折旧不同的方法时，用于税收报告的单独税收折旧方案。"
 
+msgid "A serial's build history"
+msgstr ""
+
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "服务是一种可计费活动，可以购买或执行——它从不被运送、接收或存储"
 
@@ -1752,6 +1758,9 @@ msgstr "供应商的类型已更改"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "应税附加费（处理、换型、燃料）添加到行中；纳入税基。"
+
+msgid "A template"
+msgstr ""
 
 msgid "A template holds the elements and planned work a service order starts from."
 msgstr "模板包含服务工单开始所需的单位和计划工作。"
@@ -2256,9 +2265,6 @@ msgstr "至少添加一项服务。"
 msgid "Add at least one unit."
 msgstr "至少添加一件。"
 
-msgid "Add at the top level"
-msgstr "在顶级添加"
-
 msgid "Add Authenticator App"
 msgstr "添加身份验证器应用"
 
@@ -2279,9 +2285,6 @@ msgstr "添加 费用"
 
 msgid "Add child"
 msgstr "添加子项"
-
-msgid "Add Child Element"
-msgstr "添加子单位"
 
 msgid "Add Child Storage Unit"
 msgstr "添加子存储单元"
@@ -2307,9 +2310,6 @@ msgstr "添加外协人员"
 msgid "Add cost center"
 msgstr "添加成本中心"
 
-msgid "Add Element"
-msgstr "添加单位"
-
 msgid "Add Employee"
 msgstr "添加员工"
 
@@ -2318,6 +2318,9 @@ msgstr "添加条目"
 
 msgid "Add Event"
 msgstr "添加事件"
+
+msgid "Add expense"
+msgstr ""
 
 msgid "Add Expense"
 msgstr "添加费用"
@@ -2437,9 +2440,6 @@ msgstr "添加付款"
 msgid "Add Permissions"
 msgstr "添加权限"
 
-msgid "Add plan line"
-msgstr "添加计划行"
-
 msgid "Add Predecessor"
 msgstr "添加前驱物料"
 
@@ -2521,6 +2521,9 @@ msgstr "添加库存转移"
 msgid "Add Supplier"
 msgstr "添加供应商"
 
+msgid "Add the components of a serial, an item or a template as elements."
+msgstr ""
+
 msgid "Add the items to move."
 msgstr "添加要移动的物料。"
 
@@ -2562,6 +2565,9 @@ msgstr "添加到库存以供将来使用"
 
 msgid "Add tools"
 msgstr "添加工具"
+
+msgid "Add under"
+msgstr ""
 
 msgid "Add Unit"
 msgstr "添加 件"
@@ -3033,6 +3039,9 @@ msgstr "物料的启用状态更改"
 
 msgid "An item's assignee changes"
 msgstr "物料的经办人更改"
+
+msgid "An item's bill of materials"
+msgstr ""
 
 msgid "An item's default method type changes"
 msgstr "物料的默认供料方式更改"
@@ -3506,10 +3515,6 @@ msgstr "确定要停用此量具吗？"
 
 msgid "Are you sure you want to deactivate this user?"
 msgstr "你确定要停用此用户吗？"
-
-#. placeholder {0}: deleting.readableId
-msgid "Are you sure you want to delete {0} and the elements under it? This cannot be undone."
-msgstr "你确定要删除 {0} 及其下的单位吗？此操作无法撤销。"
 
 #. placeholder {0}: tool.readableIdWithRevision
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
@@ -4701,9 +4706,6 @@ msgstr "物料清单"
 msgid "Bills the work charged to this element and the elements below it"
 msgstr "计费该要素及其下要素的计费工作"
 
-msgid "Bills this element and the work under it as one line. Leave it empty to bill each item."
-msgstr "将此单位及其下的工作作为一行计费。保留为空可逐项计费。"
-
 msgid "Bills until it is cancelled"
 msgstr "持续开票直到被取消"
 
@@ -4868,9 +4870,6 @@ msgstr "完工预算"
 msgid "Budget control"
 msgstr "预算控制"
 
-msgid "Budget Control"
-msgstr "预算控制"
-
 msgid "Budget used"
 msgstr "已用预算"
 
@@ -4889,8 +4888,14 @@ msgstr "构建任何全新工作"
 msgid "Build for Fleet"
 msgstr "为车队制造"
 
+msgid "Build from"
+msgstr ""
+
 msgid "Build from part"
 msgstr "从零件构建"
+
+msgid "Build from Part"
+msgstr ""
 
 msgid "Build integrations and customizations"
 msgstr "构建集成和自定义"
@@ -4903,9 +4908,6 @@ msgstr "构建基于角色的培训材料"
 
 msgid "Build tailored, role-based training materials"
 msgstr "构建定制的、基于角色的培训材料"
-
-msgid "Build Tree"
-msgstr "构建树"
 
 msgid "Built after this step"
 msgstr "在此步骤之后构建"
@@ -5619,9 +5621,6 @@ msgstr "会计科目表"
 msgid "Chat"
 msgstr "聊天"
 
-msgid "Check each charge against the budget of its nearest budgeted element. A timesheet only warns."
-msgstr "检查每笔费用是否符合其最近的预算元素的预算。时间表仅发出警告。"
-
 msgid "Check operations on the left to build the batch."
 msgstr "勾选左侧的操作以构建批次。"
 
@@ -5685,9 +5684,6 @@ msgstr "选择左侧的行以查看其库存可能来自何处。"
 msgid "Choose a serial number"
 msgstr "选择序列号"
 
-msgid "Choose a source to see the elements it creates."
-msgstr "选择源以查看其创建的元素。"
-
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "为工单上的{0}选择供应商"
@@ -5728,8 +5724,8 @@ msgstr "选择当前期间或之前 3 个期间中任意一个的第一天。"
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "选择本协议租赁的设备。每件在频率的文件费率开始；在网格中更改。"
 
-msgid "Choose the item to see its serials."
-msgstr "选择物料以查看其序列号。"
+msgid "Choose the item first"
+msgstr ""
 
 msgid "Choose the new parent"
 msgstr "选择新的父项"
@@ -5739,6 +5735,9 @@ msgstr "选择此合同开票的服务。每个作为循环行添加，您可以
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印工单流转卡上显示的内容。"
+
+msgid "Choose what to build from to see a preview."
+msgstr ""
 
 msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
 msgstr "选择MRP何时自动重新计算。您可以随时在计划页面上使用「重新计算」功能手动运行。"
@@ -5757,6 +5756,9 @@ msgstr "在连接时选择并为此安装固定。要更改它，请卸载并以
 
 msgid "Chosen while the project is Draft"
 msgstr "在项目为草稿时选择"
+
+msgid "CIP class"
+msgstr ""
 
 msgid "CIP Class"
 msgstr "CIP 级别"
@@ -6914,9 +6916,6 @@ msgstr "复制销售退货订单唯一标识符"
 msgid "Copy service number"
 msgstr "复制服务编号"
 
-msgid "Copy service order unique identifier"
-msgstr "复制服务单位唯一标识符"
-
 msgid "Copy service unique identifier"
 msgstr "复制服务唯一标识符"
 
@@ -6999,6 +6998,9 @@ msgstr "纠正措施"
 
 msgid "Cost"
 msgstr "成本"
+
+msgid "Cost account"
+msgstr ""
 
 msgid "Cost Account"
 msgstr "成本账户"
@@ -7312,8 +7314,8 @@ msgstr "创建变更通知"
 msgid "Create Contract"
 msgstr "创建合约"
 
-msgid "Create elements"
-msgstr "创建要素"
+msgid "Create Elements"
+msgstr ""
 
 msgid "Create Forecast"
 msgstr "创建预测"
@@ -7374,9 +7376,6 @@ msgstr "创建凭证"
 
 msgid "Create Supplier Return"
 msgstr "创建供应商退货"
-
-msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
-msgstr "从序列号的构建历史记录、物料的物料清单或模板创建系统要素。"
 
 msgid "Create transfer"
 msgstr "创建调拨"
@@ -8473,9 +8472,6 @@ msgstr "删除维护工单"
 msgid "Delete Document"
 msgstr "删除文件"
 
-msgid "Delete Element"
-msgstr "删除要素"
-
 msgid "Delete Employee Type"
 msgstr "删除员工类型"
 
@@ -8898,9 +8894,6 @@ msgstr "折旧开始"
 
 msgid "Depreciation Start Date"
 msgstr "折旧开始日期"
-
-msgid "Depth"
-msgstr "深度"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "从其组件的最短保质期推导该物料的保质期，忽略上面的天数字段。"
@@ -10058,9 +10051,6 @@ msgstr "元素"
 msgid "Element of cost"
 msgstr "成本要素"
 
-msgid "Element type"
-msgstr "要素类型"
-
 #. placeholder {0}: typeLabels[type]
 msgid "Element type: {0}"
 msgstr "元素类型：{0}"
@@ -11000,9 +10990,6 @@ msgstr "无法添加行 — 已添加 {addedCount} / {0} 行"
 msgid "Failed to add lines"
 msgstr "添加行失败"
 
-msgid "Failed to add the element"
-msgstr "添加要素失败"
-
 msgid "Failed to add the link"
 msgstr "添加链接失败"
 
@@ -11727,9 +11714,6 @@ msgid "Fixed once accounting periods have been posted to or closed. Delete all o
 msgstr "一旦会计期间已过账或已关闭即被固定。删除所有未结期间以更改它。"
 
 msgid "Fixed price"
-msgstr "固定价格"
-
-msgid "Fixed Price"
 msgstr "固定价格"
 
 msgid "Fixed Reorder"
@@ -12618,9 +12602,6 @@ msgstr "如何将每件的租赁分成周期，以及在周期内何时开具发
 msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
 msgstr "员工如何在项目上记录时间。标准保持工时单简单。DCAA 添加政府合同审计检查的控制。"
 
-msgid "How far over the budget a charge may go"
-msgstr "费用超过预算的金额"
-
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "计划工作超过可用小时数的程度 (+)，或还有多少小时空闲。"
 
@@ -12656,6 +12637,9 @@ msgstr "该供应商从发票日期起期望付款的天数; 确定发票上的�
 
 msgid "How many fractional digits to keep when rounding amounts in this currency."
 msgstr "使用此货币舍入金额时保留多少位小数。"
+
+msgid "How many levels of components below the part"
+msgstr ""
 
 msgid "How many of the successor replace one old part"
 msgstr "后继物料中的多少个替代一个旧零件"
@@ -13645,6 +13629,9 @@ msgstr "领料（未结元素）"
 msgid "Issue not found"
 msgstr "问题未找到"
 
+msgid "Issue part"
+msgstr ""
+
 msgid "Issue Part"
 msgstr "领取零件"
 
@@ -14139,6 +14126,9 @@ msgstr "最后运行"
 msgid "Last scheduled push {when}:"
 msgstr "最后一次计划推送 {when}："
 
+msgid "Last service"
+msgstr ""
+
 msgid "Last Service"
 msgstr "最后服务"
 
@@ -14370,6 +14360,9 @@ msgstr "字母"
 
 msgid "Level of Effort"
 msgstr "工作量级别"
+
+msgid "Levels"
+msgstr ""
 
 msgid "Liability"
 msgstr "负债"
@@ -14693,6 +14686,9 @@ msgstr "先锁定会计期间"
 
 msgid "Lock Period"
 msgstr "锁定期间"
+
+msgid "Lock plan after milestone"
+msgstr ""
 
 msgid "Lock Plan After Milestone"
 msgstr "里程碑后锁定计划"
@@ -15198,8 +15194,8 @@ msgstr "原材料物料"
 msgid "Material item"
 msgstr "原材料物料"
 
-msgid "Material Measurement Point"
-msgstr "原材料测量点"
+msgid "Material measurement point"
+msgstr ""
 
 msgid "Material Planning"
 msgstr "物料规划"
@@ -15749,9 +15745,6 @@ msgstr "名称"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "指定具有决策权的内部项目负责人"
-
-msgid "Name the element"
-msgstr "为要素命名"
 
 msgid "Name the new element, then press Enter"
 msgstr "命名新元素，然后按Enter键"
@@ -16607,6 +16600,9 @@ msgstr "尚未针对此资产记录任何成本。"
 msgid "No cost history found"
 msgstr "未找到成本历史记录"
 
+msgid "No costs have been posted to this element yet."
+msgstr ""
+
 msgid "No costs posted yet"
 msgstr "还没有过账成本"
 
@@ -16690,9 +16686,6 @@ msgstr "还没有元素"
 
 msgid "No elements yet."
 msgstr "还没有要素。"
-
-msgid "No elements yet. Add the first element."
-msgstr "还没有要素。添加第一个要素。"
 
 msgid "No eligible operations"
 msgstr "没有符合条件的操作"
@@ -17343,9 +17336,6 @@ msgstr "没有工作中心存在"
 msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
 msgstr "还没有工作包。为控制账户下的可计费元素指定挣值技术。"
 
-msgid "No work yet. Build the tree from the unit, or add the first element."
-msgstr "还没有工作。从单位构建树，或添加第一个元素。"
-
 msgid "No, More Work"
 msgstr "否，更多工作"
 
@@ -17519,9 +17509,6 @@ msgstr "MES中尚未完成任何内容"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"
 
-msgid "Nothing has been charged to this element yet."
-msgstr "还没有向此元素收费。"
-
 msgid "Nothing here matches your search and filters."
 msgstr "没有与您的搜索和过滤条件匹配的内容。"
 
@@ -17560,6 +17547,9 @@ msgstr "无需审批"
 
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "还没有账单。向工作收取的工时、零件和费用显示在这里。"
+
+msgid "Nothing to build"
+msgstr ""
 
 msgid "Nothing to post for this period."
 msgstr "此期间无内容待过账。"
@@ -18456,6 +18446,9 @@ msgstr "覆盖分类"
 msgid "Override Classification of {0}"
 msgstr "覆盖 {0} 的分类"
 
+msgid "Override coverage"
+msgstr ""
+
 msgid "Override Coverage"
 msgstr "覆盖范围覆盖"
 
@@ -18592,9 +18585,6 @@ msgstr "父成本中心"
 
 msgid "Parent Department"
 msgstr "上级部门"
-
-msgid "Parent element"
-msgstr "父项元素"
 
 msgid "Parent Group"
 msgstr "上级组"
@@ -19194,9 +19184,6 @@ msgstr "从发票计划。编辑单元格保存计划。"
 msgid "Planned from the lines. Editing a cell saves the schedule."
 msgstr "从行计划。编辑单元格保存排程。"
 
-msgid "Planned Hours"
-msgstr "计划工时"
-
 msgid "Planned invoices"
 msgstr "已计划发票"
 
@@ -19262,6 +19249,9 @@ msgstr "计划周期："
 
 msgid "Planning Ownership"
 msgstr "计划所有权"
+
+msgid "Planning priority"
+msgstr ""
 
 msgid "Planning Priority"
 msgstr "计划优先级"
@@ -19623,6 +19613,9 @@ msgstr "打印 {0} 个标签"
 msgid "Print batch list"
 msgstr "打印生产批次列表"
 
+msgid "Print estimate"
+msgstr ""
+
 msgid "Print Estimate"
 msgstr "打印估算"
 
@@ -19797,6 +19790,9 @@ msgstr "项目变更请求"
 
 msgid "Project Change Requests"
 msgstr "项目变更请求"
+
+msgid "Project control"
+msgstr ""
 
 msgid "Project Control"
 msgstr "项目控制"
@@ -20649,9 +20645,6 @@ msgstr "重新计算中…"
 
 msgid "Receipt"
 msgstr "收据"
-
-msgid "Receipt counts material when it is received. Issue counts it when project stock is issued."
-msgstr "收货时计数物料。项目库存领料时计数。"
 
 msgid "Receipt ID"
 msgstr "收据ID"
@@ -23237,6 +23230,9 @@ msgstr "服务订单"
 msgid "Service Order"
 msgstr "服务订单"
 
+msgid "Service order pages"
+msgstr ""
+
 msgid "Service orders"
 msgstr "服务订单"
 
@@ -25629,9 +25625,6 @@ msgstr "早晨时刻，{name}。"
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "八大纪律质量方法，通过不合格工作流的任务建模，而非硬编码。"
 
-msgid "The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs."
-msgstr "该元素及其计划的原材料、人工和成本离开模板。已从其开始的服务订单保留其成本。"
-
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "对此成本中心负责的员工 — 当启用采购订单审批时，他们是针对其发生的支出的批准人。"
 
@@ -25805,6 +25798,9 @@ msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "每个工单生产的物料 — 要求其匹配以合并输出批次"
+
+msgid "The item has no made components at this depth. Include bought components to add its purchased parts."
+msgstr ""
 
 msgid "The item's bill of materials"
 msgstr "物料的物料清单"
@@ -26328,6 +26324,9 @@ msgstr "你为人员跟踪的技能和能力"
 
 msgid "The smallest quantity this supplier will accept on a PO line for this part; planning rounds up to it."
 msgstr "此供应商将在此零件的采购单行上接受的最小数量；计划向上舍入到它。"
+
+msgid "The source has nothing to build at this depth."
+msgstr ""
 
 msgid "The specific contact on the selected customer who will own this portal account; their email becomes the sign-in identifier."
 msgstr "将拥有此门户帐户的选定客户上的特定联系人；他们的电子邮件成为登录标识符。"
@@ -26900,6 +26899,9 @@ msgstr "这个销售订单有关联的工单。选择如何处理它们。"
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "这个销售订单有需要创建工单的行。"
+
+msgid "This serial"
+msgstr ""
 
 msgid "This service order has no work yet."
 msgstr "此服务订单还没有工作。"
@@ -27766,11 +27768,6 @@ msgstr "未分类"
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未计数的行在过账时保持不变——它们不会被清零。"
 
-#. placeholder {0}: parent.readableId
-#. placeholder {1}: parent.name
-msgid "Under {0} {1}"
-msgstr "在{0} {1}下"
-
 msgid "Under Construction"
 msgstr "建设中"
 
@@ -28260,6 +28257,9 @@ msgstr "使用公制作为默认原材料尺寸。"
 
 msgid "Use Sub-Assembly"
 msgstr "使用子装配体"
+
+msgid "Use the Bill of Materials"
+msgstr ""
 
 msgid "Used by"
 msgstr "使用情况"
@@ -28829,9 +28829,6 @@ msgstr "警告 — 编辑成功，但显示警告"
 
 msgid "Warn but allow"
 msgstr "警告但允许"
-
-msgid "Warn saves the charge and shows the overrun. Block refuses it."
-msgstr "警告保存费用并显示超支。阻止拒绝它。"
 
 msgid "Warn this many days before expiry"
 msgstr "在有效期前提醒多少天"

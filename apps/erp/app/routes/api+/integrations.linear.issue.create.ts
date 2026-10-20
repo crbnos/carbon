@@ -19,6 +19,7 @@ import { data } from "react-router";
 import { requireChangeNoticeEditable } from "~/modules/items/items.server";
 import {
   getActionTaskWithParent,
+  getNewIssueDefaults,
   projectElementLinkRefusal
 } from "~/modules/shared/shared.server";
 
@@ -144,6 +145,15 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const url = new URL(request.url);
 
+  // The record the dialog was opened from: its title and description
+  // prefill the form (getNewIssueDefaults).
+  const actionId = url.searchParams.get("actionId");
+  const entityType = url.searchParams.get("entityType");
+  const defaults =
+    actionId && isSyncedEntityType(entityType)
+      ? await getNewIssueDefaults(client, entityType, actionId, companyId)
+      : null;
+
   const teamId = url.searchParams.get("teamId") as string;
   const teams = await linear.listTeams(companyId);
 
@@ -159,6 +169,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 
     // I am sure we can improve this filtering step
     return {
+      defaults,
       teams,
       members: members.filter((m) =>
         employees.some((v) => {
@@ -171,5 +182,5 @@ export const loader: LoaderFunction = async ({ request }) => {
     };
   }
 
-  return { teams };
+  return { teams, defaults };
 };

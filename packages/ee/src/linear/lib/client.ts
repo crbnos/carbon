@@ -118,6 +118,26 @@ export class LinearClient {
     }
   }
 
+  /** The most recently updated issues, for the Link dialog before a search. */
+  async listRecentIssues(companyId: string) {
+    try {
+      const query = `query RecentIssues { issues(first: 10, orderBy: updatedAt) { nodes { id identifier title dueDate priority description state { name type color } url assignee { email } team { id } } } }`;
+
+      const response = await this.instance.request<{
+        data: { issues: { nodes: LinearIssue[] } };
+      }>({
+        method: "POST",
+        headers: await this.getAuthHeaders(companyId),
+        data: { query }
+      });
+
+      return response.data.data.issues.nodes;
+    } catch (error) {
+      logger.error("Error listing recent Linear issues", { error });
+      return [];
+    }
+  }
+
   async getIssueById(companyId: string, issueId: string) {
     try {
       const query = `query SearchIssues($filter: IssueFilter!) { issues( filter: $filter first: 1 orderBy: updatedAt ) { nodes { id identifier title dueDate priority description state { name type color } url assignee { email } team { id } } } }`;

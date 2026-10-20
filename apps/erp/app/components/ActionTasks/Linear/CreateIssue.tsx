@@ -39,7 +39,8 @@ export const CreateIssue = (props: Props) => {
   const id = useId();
   const [team, setTeam] = useState<string | undefined>();
 
-  const { teams, members, fetcher } = useLinearTeams(team);
+  const { teams, members, defaults, fetcher } = useLinearTeams(team, props);
+  const initial = useInitialDefaults(defaults);
 
   const teamOptions = useMemo(
     () => teams.map((el) => ({ label: el.name, value: el.id })),
@@ -54,6 +55,13 @@ export const CreateIssue = (props: Props) => {
 
   return (
     <ValidatedForm
+      // Remount once the record's title and description arrive, so they fill
+      // the form.
+      key={initial ? "defaults" : "empty"}
+      defaultValues={{
+        title: initial?.title ?? "",
+        description: initial?.description ?? ""
+      }}
       id={id}
       method="post"
       action={path.to.api.linearCreateIssue}
@@ -114,22 +122,41 @@ export const CreateIssue = (props: Props) => {
 
 CreateIssue.displayName = "CreateIssue";
 
-const useLinearTeams = (teamId?: string) => {
+type IssueDefaults = { title: string; description: string };
+
+/** The first defaults the loader returns; later loads do not overwrite edits. */
+const useInitialDefaults = (defaults: IssueDefaults | null | undefined) => {
+  const [initial, setInitial] = useState<IssueDefaults | null>(null);
+  useEffect(() => {
+    if (!initial && defaults) setInitial(defaults);
+  }, [defaults, initial]);
+  return initial;
+};
+
+const useLinearTeams = (
+  teamId: string | undefined,
+  record: { taskId: string; entityType: SyncedEntityType }
+) => {
   const fetcher = useAsyncFetcher<{
     teams: LinearTeam[];
     members: LinearUser[];
+    defaults?: IssueDefaults | null;
   }>();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    fetcher.load(
-      path.to.api.linearCreateIssue + (teamId ? `?teamId=${teamId}` : "")
-    );
+    const params = new URLSearchParams({
+      actionId: record.taskId,
+      entityType: record.entityType
+    });
+    if (teamId) params.set("teamId", teamId);
+    fetcher.load(`${path.to.api.linearCreateIssue}?${params}`);
   }, [teamId]);
 
   return {
     teams: fetcher.data?.teams || [],
     members: fetcher.data?.members || [],
+    defaults: fetcher.data?.defaults,
     fetcher
   };
 };

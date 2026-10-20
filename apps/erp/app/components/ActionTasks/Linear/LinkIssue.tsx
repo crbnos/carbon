@@ -19,7 +19,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
 import z from "zod";
@@ -49,13 +49,21 @@ export const LinkIssue = (props: Props) => {
 
   const { issues, fetcher } = useLinearIssues();
 
-  const onSearch = useDebounce((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.value || e.target.value.trim().length < 3) return;
-
+  // An empty search lists the most recent issues, so the dialog opens with
+  // something to pick.
+  const search = (term: string) =>
     fetcher.load(
       path.to.api.linearLinkExistingIssue +
-        `?actionId=${props.taskId}&entityType=${props.entityType}&search=${e.target.value}`
+        `?actionId=${props.taskId}&entityType=${props.entityType}&search=${encodeURIComponent(term.trim())}`
     );
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: load once, on open
+  useEffect(() => {
+    search("");
+  }, []);
+
+  const onSearch = useDebounce((e: React.ChangeEvent<HTMLInputElement>) => {
+    search(e.target.value);
   }, 300);
 
   const isSearching = fetcher.state === "loading";
@@ -83,7 +91,6 @@ export const LinkIssue = (props: Props) => {
             autoComplete="off"
             placeholder={t`Search by linear issue title...`}
             onChange={onSearch}
-            disabled={isSearching}
           />
           {isSearching && (
             <Spinner className="w-5 h-5 absolute right-3.5  text-primary animate-spin" />
@@ -148,7 +155,7 @@ export const LinkIssue = (props: Props) => {
             </ToggleGroupItem>
           ))}
 
-          {issues.length === 0 && !isSearching && (
+          {issues.length === 0 && !isSearching && fetcher.data && (
             <p className="text-sm text-muted-foreground">
               No Linear issues found
             </p>

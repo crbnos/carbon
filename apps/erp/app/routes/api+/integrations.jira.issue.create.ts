@@ -23,6 +23,7 @@ import { data } from "react-router";
 import { requireChangeNoticeEditable } from "~/modules/items/items.server";
 import {
   getActionTaskWithParent,
+  getNewIssueDefaults,
   projectElementLinkRefusal
 } from "~/modules/shared/shared.server";
 
@@ -201,6 +202,15 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const url = new URL(request.url);
 
+  // The record the dialog was opened from: its title and description
+  // prefill the form (getNewIssueDefaults).
+  const actionId = url.searchParams.get("actionId");
+  const entityType = url.searchParams.get("entityType");
+  const defaults =
+    actionId && isSyncedEntityType(entityType)
+      ? await getNewIssueDefaults(client, entityType, actionId, companyId)
+      : null;
+
   const projectKey = url.searchParams.get("projectKey") as string;
   const projects = await jira.listProjects(companyId);
 
@@ -230,11 +240,12 @@ export const loader: LoaderFunction = async ({ request }) => {
     );
 
     return {
+      defaults,
       projects,
       issueTypes,
       members: filteredMembers
     };
   }
 
-  return { projects };
+  return { projects, defaults };
 };

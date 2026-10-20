@@ -40,8 +40,11 @@ export const CreateIssue = (props: Props) => {
   const id = useId();
   const [projectKey, setProjectKey] = useState<string | undefined>();
 
-  const { projects, issueTypes, members, fetcher } =
-    useJiraProjects(projectKey);
+  const { projects, issueTypes, members, defaults, fetcher } = useJiraProjects(
+    projectKey,
+    props
+  );
+  const initial = useInitialDefaults(defaults);
 
   const projectOptions = useMemo(
     () =>
@@ -67,6 +70,13 @@ export const CreateIssue = (props: Props) => {
 
   return (
     <ValidatedForm
+      // Remount once the record's title and description arrive, so they fill
+      // the form.
+      key={initial ? "defaults" : "empty"}
+      defaultValues={{
+        title: initial?.title ?? "",
+        description: initial?.description ?? ""
+      }}
       id={id}
       method="post"
       action={path.to.api.jiraCreateIssue}
@@ -135,25 +145,43 @@ export const CreateIssue = (props: Props) => {
 
 CreateIssue.displayName = "CreateIssue";
 
-const useJiraProjects = (projectKey?: string) => {
+type IssueDefaults = { title: string; description: string };
+
+/** The first defaults the loader returns; later loads do not overwrite edits. */
+const useInitialDefaults = (defaults: IssueDefaults | null | undefined) => {
+  const [initial, setInitial] = useState<IssueDefaults | null>(null);
+  useEffect(() => {
+    if (!initial && defaults) setInitial(defaults);
+  }, [defaults, initial]);
+  return initial;
+};
+
+const useJiraProjects = (
+  projectKey: string | undefined,
+  record: { taskId: string; entityType: SyncedEntityType }
+) => {
   const fetcher = useAsyncFetcher<{
     projects: JiraProject[];
     issueTypes: JiraIssueType[];
     members: JiraUser[];
+    defaults?: IssueDefaults | null;
   }>();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: not necessary
   useEffect(() => {
-    fetcher.load(
-      path.to.api.jiraCreateIssue +
-        (projectKey ? `?projectKey=${projectKey}` : "")
-    );
+    const params = new URLSearchParams({
+      actionId: record.taskId,
+      entityType: record.entityType
+    });
+    if (projectKey) params.set("projectKey", projectKey);
+    fetcher.load(`${path.to.api.jiraCreateIssue}?${params}`);
   }, [projectKey]);
 
   return {
     projects: fetcher.data?.projects || [],
     issueTypes: fetcher.data?.issueTypes || [],
     members: fetcher.data?.members || [],
+    defaults: fetcher.data?.defaults,
     fetcher
   };
 };

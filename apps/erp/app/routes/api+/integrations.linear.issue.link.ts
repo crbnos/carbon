@@ -205,9 +205,12 @@ export const loader: LoaderFunction = async ({ request }) => {
     syncedEntityPermissions(entityType)
   );
 
-  const query = url.searchParams.get("search") as string;
+  // No search yet: the most recent issues, so the dialog opens with a list.
+  const query = (url.searchParams.get("search") ?? "").trim();
 
-  const issues = await linear.listIssues(companyId, query);
+  const issues = query
+    ? await linear.listIssues(companyId, query)
+    : await linear.listRecentIssues(companyId);
 
   return { issues };
 };

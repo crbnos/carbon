@@ -25,6 +25,7 @@ import { getProject } from "~/modules/projects";
 import { getProjectElementPageInChangeRequest } from "~/modules/projects/projects.server";
 import ChangeRequestBanner from "~/modules/projects/ui/ChangeRequests/ChangeRequestBanner";
 import { ElementView } from "~/modules/projects/ui/Element/ElementView";
+import { getRecordIssueLinks } from "~/modules/shared/shared.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -67,22 +68,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // The element's Linear and Jira links (issue-sync), for the header dialogs.
-  const links = await client
-    .from("externalIntegrationMapping")
-    .select("integration, metadata")
-    .eq("companyId", companyId)
-    .eq("entityType", "projectElement")
-    .eq("entityId", elementId)
-    .in("integration", ["linear", "jira"]);
-  const linkOf = (integration: string) =>
-    links.data?.find((link) => link.integration === integration)?.metadata ??
-    null;
-
+  // The element's Linear and Jira links (issue-sync), for the issue dialogs.
   return {
     ...page.data,
-    linearIssue: linkOf("linear"),
-    jiraIssue: linkOf("jira")
+    ...(await getRecordIssueLinks(
+      client,
+      "projectElement",
+      elementId,
+      companyId
+    ))
   };
 }
 

@@ -372,8 +372,12 @@ export class JiraClient {
   async searchIssues(companyId: string, query: string): Promise<JiraIssue[]> {
     try {
       // Escape special characters in query for JQL text search
-      const escapedQuery = query.replace(/['"\\]/g, "\\$&");
-      const jql = `text ~ "${escapedQuery}" ORDER BY updated DESC`;
+      // No query: the most recently updated issues, for the Link dialog
+      // before a search.
+      const escapedQuery = query.trim().replace(/['"\\]/g, "\\$&");
+      const jql = escapedQuery
+        ? `text ~ "${escapedQuery}" ORDER BY updated DESC`
+        : "updated >= -365d ORDER BY updated DESC";
 
       const response = await this.request<{ issues: JiraIssue[] }>(
         companyId,

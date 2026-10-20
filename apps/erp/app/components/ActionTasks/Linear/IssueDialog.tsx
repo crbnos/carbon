@@ -81,7 +81,8 @@ export const LinearIssueDialog = ({
         }
       }}
     >
-      <ModalTrigger onClick={() => disclosure.onToggle()}>
+      {/* asChild: the trigger is the button itself, not a button around it. */}
+      <ModalTrigger asChild onClick={() => disclosure.onToggle()}>
         {linked ? (
           <Button
             leftIcon={<LinearIcon className={"size-4"} />}
