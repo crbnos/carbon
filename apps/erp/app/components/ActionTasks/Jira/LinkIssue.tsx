@@ -10,6 +10,7 @@ import {
   Button,
   cn,
   Input,
+  ModalBody,
   ModalFooter,
   Spinner,
   ToggleGroup,
@@ -86,6 +87,7 @@ export const LinkIssue = (props: Props) => {
 
   return (
     <ValidatedForm
+      className="flex min-h-0 flex-col"
       id={id}
       method="post"
       action={path.to.api.jiraLinkExistingIssue}
@@ -98,82 +100,84 @@ export const LinkIssue = (props: Props) => {
       <Hidden name="actionId" value={props.taskId} />
       <Hidden name="entityType" value={props.entityType} />
       <Hidden name="issueId" value={issueId} />
-      <VStack spacing={4}>
-        <div className="w-full flex items-center gap-x-2 relative">
-          <Input
-            name="query"
-            type="search"
-            className="w-full"
-            autoComplete="off"
-            placeholder={t`Search by Jira issue title...`}
-            onChange={onSearch}
-          />
-          {isSearching && (
-            <Spinner className="w-5 h-5 absolute right-3.5 text-primary animate-spin" />
-          )}
-        </div>
-        <ToggleGroup
-          orientation="vertical"
-          onValueChange={setIssueId}
-          value={issueId}
-          type="single"
-          className="w-full flex-col gap-y-2"
-        >
-          {issues.map((issue) => (
-            <ToggleGroupItem
-              key={issue.id}
-              name="issueId"
-              value={issue.id}
-              disabled={issue.id === linked?.id}
-              variant={"outline"}
-              className={cn(
-                "w-full rounded-lg p-3 text-left transition-colors hover:bg-transparent block h-auto data-[state=on]:bg-transparent hover:data-[state=on]:bg-transparent data-[state=on]:border-primary hover:data-[state=on]:border-primary"
-              )}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 justify-between">
-                    <span className="mr-2 text-foreground flex items-center">
-                      {issue.fields.summary}
-                    </span>
+      <ModalBody>
+        <VStack spacing={4}>
+          <div className="w-full flex items-center gap-x-2 relative">
+            <Input
+              name="query"
+              type="search"
+              className="w-full"
+              autoComplete="off"
+              placeholder={t`Search by Jira issue title...`}
+              onChange={onSearch}
+            />
+            {isSearching && (
+              <Spinner className="w-5 h-5 absolute right-3.5 text-primary animate-spin" />
+            )}
+          </div>
+          <ToggleGroup
+            orientation="vertical"
+            onValueChange={setIssueId}
+            value={issueId}
+            type="single"
+            className="w-full flex-col gap-y-2"
+          >
+            {issues.map((issue) => (
+              <ToggleGroupItem
+                key={issue.id}
+                name="issueId"
+                value={issue.id}
+                disabled={issue.id === linked?.id}
+                variant={"outline"}
+                className={cn(
+                  "w-full rounded-lg p-3 text-left transition-colors hover:bg-transparent block h-auto data-[state=on]:bg-transparent hover:data-[state=on]:bg-transparent data-[state=on]:border-primary hover:data-[state=on]:border-primary"
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 justify-between">
+                      <span className="mr-2 text-foreground flex items-center">
+                        {issue.fields.summary}
+                      </span>
 
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={"outline"}
-                        className="font-normal font-mono text-muted-foreground flex items-center"
-                      >
-                        {issue.key}
-                      </Badge>
-                      <JiraIssueStatusBadge
-                        status={{
-                          name: issue.fields.status.name,
-                          category: issue.fields.status.statusCategory.key
-                        }}
-                        className="size-3.5"
-                      />
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={"outline"}
+                          className="font-normal font-mono text-muted-foreground flex items-center"
+                        >
+                          {issue.key}
+                        </Badge>
+                        <JiraIssueStatusBadge
+                          status={{
+                            name: issue.fields.status.name,
+                            category: issue.fields.status.statusCategory.key
+                          }}
+                          className="size-3.5"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-2 text-sm text-muted-foreground flex justify-between items-center">
+                      <span>
+                        {issue.fields.assignee?.displayName
+                          ? `Assigned to ${issue.fields.assignee.displayName}`
+                          : "Unassigned"}
+                      </span>
                     </div>
                   </div>
-
-                  <div className="mt-2 text-sm text-muted-foreground flex justify-between items-center">
-                    <span>
-                      {issue.fields.assignee?.displayName
-                        ? `Assigned to ${issue.fields.assignee.displayName}`
-                        : "Unassigned"}
-                    </span>
-                  </div>
                 </div>
-              </div>
-            </ToggleGroupItem>
-          ))}
+              </ToggleGroupItem>
+            ))}
 
-          {issues.length === 0 && !isSearching && fetcher.data && (
-            <p className="text-sm text-muted-foreground">
-              No Jira issues found
-            </p>
-          )}
-        </ToggleGroup>
-      </VStack>
-      <ModalFooter className="px-0 pb-0">
+            {issues.length === 0 && !isSearching && fetcher.data && (
+              <p className="text-sm text-muted-foreground">
+                No Jira issues found
+              </p>
+            )}
+          </ToggleGroup>
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
         <Button
           variant="secondary"
           onClick={() => {

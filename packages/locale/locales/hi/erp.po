@@ -2974,6 +2974,9 @@ msgstr "एक एंटरप्राइज साइन-इन विधि �
 msgid "An entry older than this needs a late reason."
 msgstr "इससे पुरानी प्रविष्टि को एक देर का कारण चाहिए।"
 
+msgid "An exempt employee's hours over the standard week dilute the cost of each hour"
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "एक HTTPS अनुरोध जो कार्बन आपके सिस्टम को भेजता है जब एक वर्कफ़्लो उस चरण तक पहुंचता है, आपके द्वारा कॉन्फ़िगर किए गए किसी भी हेडर और बॉडी को ले जाता है।"
 
@@ -11758,6 +11761,9 @@ msgstr "पलटें"
 msgid "FLSA status"
 msgstr "FLSA स्थिति"
 
+msgid "FLSA Status"
+msgstr ""
+
 msgid "Focus on {label}"
 msgstr "{label} पर ध्यान केंद्रित करें"
 
@@ -11772,6 +11778,9 @@ msgstr "के लिए <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "किसी भी चीज़ के लिए। वे सही व्यक्ति को शामिल करेंगे।"
+
+msgid "For Form 6765 Section E"
+msgstr ""
 
 msgid "Forecast"
 msgstr "पूर्वानुमान"
@@ -12915,9 +12924,6 @@ msgstr "एक खुले मेनू में"
 
 msgid "in arrears"
 msgstr "बकाया में"
-
-msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
-msgstr "DCAA मोड में, छूट प्राप्त कर्मचारी के मानक सप्ताह से अधिक घंटे प्रत्येक घंटे की लागत को कम करते हैं।"
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr "DCAA मोड में, एक छूट प्राप्त कर्मचारी का सप्ताह मानक साप्ताहिक घंटों से अधिक मानक घंटों ÷ घंटे काम किए गए पर पोस्ट होता है, इसलिए सप्ताह की लागत हर घंटे में फैलती है।"
@@ -14597,9 +14603,6 @@ msgstr "सूची दृश्य"
 
 msgid "List View"
 msgstr "सूची दृश्य"
-
-msgid "Listed on the Missing Time report for scheduled days with no time"
-msgstr "किसी समय के बिना निर्धारित दिनों के लिए Missing Time रिपोर्ट पर सूचीबद्ध"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -17738,6 +17741,9 @@ msgstr "साइट पर"
 
 msgid "On Storage Unit"
 msgstr "भंडारण इकाई पर"
+
+msgid "On the Missing Time report"
+msgstr ""
 
 msgid "On this operation"
 msgstr "इस ऑपरेशन पर"
@@ -27168,8 +27174,8 @@ msgstr "टाइमशीट अनुमोदन"
 msgid "Timesheet Audit"
 msgstr "टाइमशीट ऑडिट"
 
-msgid "Timesheet required"
-msgstr "टाइमशीट आवश्यक"
+msgid "Timesheet Required"
+msgstr ""
 
 msgid "Timezone"
 msgstr "समय क्षेत्र"
@@ -28264,9 +28270,6 @@ msgstr ""
 msgid "Used by"
 msgstr "द्वारा प्रयुक्त"
 
-msgid "Used for Form 6765 Section E"
-msgstr "फॉर्म 6765 सेक्शन ई के लिए उपयोग किया जाता है"
-
 msgid "Used in"
 msgstr "में प्रयुक्त"
 
@@ -28411,8 +28414,8 @@ msgstr "मान ऐतिहासिक मात्राओं पर आ�
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "इस रन में मान सारांशित किए गए हैं। पूर्ण विस्तार 7 दिनों के लिए रखा जाता है।"
 
-msgid "Van (default storage unit)"
-msgstr "Van (डिफ़ॉल्ट भंडारण इकाई)"
+msgid "Van"
+msgstr ""
 
 msgid "Variable lease cost"
 msgstr "परिवर्तनशील पट्टा लागत"

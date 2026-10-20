@@ -2974,6 +2974,9 @@ msgstr "Bir kurumsal oturum açma yöntemi; Şirketin kayıtlı e-posta alanlar�
 msgid "An entry older than this needs a late reason."
 msgstr "Bundan daha eski bir giriş geç bir neden gerekir."
 
+msgid "An exempt employee's hours over the standard week dilute the cost of each hour"
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "Bir iş akışı bu adıma ulaştığında Carbon'un sisteminize gönderdiği bir https isteği, yapılandırdığınız başlıkları ve gövdeyi taşır."
 
@@ -11758,6 +11761,9 @@ msgstr "Ters çevir"
 msgid "FLSA status"
 msgstr "FLSA durumu"
 
+msgid "FLSA Status"
+msgstr ""
+
 msgid "Focus on {label}"
 msgstr "Şuna odaklan: {label}"
 
@@ -11772,6 +11778,9 @@ msgstr "İçin <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
+
+msgid "For Form 6765 Section E"
+msgstr ""
 
 msgid "Forecast"
 msgstr "Tahmin"
@@ -12915,9 +12924,6 @@ msgstr "Açık bir menüde"
 
 msgid "in arrears"
 msgstr "vadeli"
-
-msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
-msgstr "DCAA modunda, muaf bir çalışanın standart haftayı aşan saatleri her saatin maliyetini azaltır."
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr "DCAA modunda, muaf bir çalışanın standart haftalık saatleri aşan haftası, standart saatler ÷ çalışılan saatlerde gönderilir, böylece haftanın maliyeti her saate yayılır."
@@ -14597,9 +14603,6 @@ msgstr "Liste görünümü"
 
 msgid "List View"
 msgstr "Liste Görünümü"
-
-msgid "Listed on the Missing Time report for scheduled days with no time"
-msgstr "Zamanı olmayan planlanan günler için Eksik Zaman raporunda listelenir"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -17738,6 +17741,9 @@ msgstr "Sahada"
 
 msgid "On Storage Unit"
 msgstr "Depolama biriminde"
+
+msgid "On the Missing Time report"
+msgstr ""
 
 msgid "On this operation"
 msgstr "Bu operasyonda"
@@ -27168,8 +27174,8 @@ msgstr "Zaman Saati Onayı"
 msgid "Timesheet Audit"
 msgstr "Zaman Çizelgesi Denetimi"
 
-msgid "Timesheet required"
-msgstr "Zaman Çizelgesi Gerekli"
+msgid "Timesheet Required"
+msgstr ""
 
 msgid "Timezone"
 msgstr "Saat Dilim"
@@ -28264,9 +28270,6 @@ msgstr ""
 msgid "Used by"
 msgstr "Tarafından kullanılan"
 
-msgid "Used for Form 6765 Section E"
-msgstr "Form 6765 Kısım E için kullanıldı"
-
 msgid "Used in"
 msgstr "Kullanıldığı Yer"
 
@@ -28411,8 +28414,8 @@ msgstr "Değerler, tarihsel miktarlara bugünün birim maliyetlerini uygular."
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Bu çalışmadaki değerler özetlenmiştir. Tam ayrıntılar 7 gün boyunca tutulur."
 
-msgid "Van (default storage unit)"
-msgstr "Kamyon (varsayılan depolama birimi)"
+msgid "Van"
+msgstr ""
 
 msgid "Variable lease cost"
 msgstr "Değişken kiralama maliyeti"

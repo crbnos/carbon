@@ -2974,6 +2974,9 @@ msgstr "회사의 등록된 이메일 도메인의 모든 사용자가 마법 �
 msgid "An entry older than this needs a late reason."
 msgstr "이것보다 오래된 항목에는 지연 사유가 필요합니다."
 
+msgid "An exempt employee's hours over the standard week dilute the cost of each hour"
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "워크플로우가 해당 단계에 도달할 때 Carbon이 귀사의 시스템으로 보내는 https 요청으로, 구성한 헤더 및 본문을 전달합니다."
 
@@ -11758,6 +11761,9 @@ msgstr "뒤집기"
 msgid "FLSA status"
 msgstr "FLSA 상태"
 
+msgid "FLSA Status"
+msgstr ""
+
 msgid "Focus on {label}"
 msgstr "{label}에 초점 맞추기"
 
@@ -11772,6 +11778,9 @@ msgstr "대상 <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "무엇이든지요. 적임자를 연결해 드립니다."
+
+msgid "For Form 6765 Section E"
+msgstr ""
 
 msgid "Forecast"
 msgstr "예측"
@@ -12915,9 +12924,6 @@ msgstr "열린 메뉴에서"
 
 msgid "in arrears"
 msgstr "연체로"
-
-msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
-msgstr "DCAA 모드에서 면제된 직원의 표준주 초과 시간이 시간당 원가를 희석합니다."
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr "DCAA 모드에서, 면제 직원의 표준 매주 시간을 초과한 주는 표준 시간 ÷ 근무 시간으로 전기되므로 주의 원가가 모든 시간에 걸쳐 분산됩니다."
@@ -14597,9 +14603,6 @@ msgstr "목록 보기"
 
 msgid "List View"
 msgstr "목록 보기"
-
-msgid "Listed on the Missing Time report for scheduled days with no time"
-msgstr "시간이 없는 예정된 날에 대한 누락된 시간 보고서에 나열됨"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -17738,6 +17741,9 @@ msgstr "현장"
 
 msgid "On Storage Unit"
 msgstr "보관 단위에"
+
+msgid "On the Missing Time report"
+msgstr ""
 
 msgid "On this operation"
 msgstr "이 작업 시"
@@ -27168,8 +27174,8 @@ msgstr "시간표 승인"
 msgid "Timesheet Audit"
 msgstr "타임시트 감사"
 
-msgid "Timesheet required"
-msgstr "타임시트 필수"
+msgid "Timesheet Required"
+msgstr ""
 
 msgid "Timezone"
 msgstr "시간대"
@@ -28264,9 +28270,6 @@ msgstr ""
 msgid "Used by"
 msgstr "사용처"
 
-msgid "Used for Form 6765 Section E"
-msgstr "Form 6765 Section E에 사용됨"
-
 msgid "Used in"
 msgstr "사용 위치"
 
@@ -28411,8 +28414,8 @@ msgstr "값은 과거 수량에 오늘의 단위 원가를 적용합니다."
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "이 실행의 값이 요약되었습니다. 전체 세부정보는 7일간 유지됩니다."
 
-msgid "Van (default storage unit)"
-msgstr "Van (기본 보관 단위)"
+msgid "Van"
+msgstr ""
 
 msgid "Variable lease cost"
 msgstr "변동 임차 원가"

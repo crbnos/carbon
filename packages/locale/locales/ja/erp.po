@@ -2974,6 +2974,9 @@ msgstr "エンタープライズ認証方式で、会社の登録済みメール
 msgid "An entry older than this needs a late reason."
 msgstr "これより古いエントリには遅延理由が必要です。"
 
+msgid "An exempt employee's hours over the standard week dilute the cost of each hour"
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "ワークフローがそのステップに到達したときに、Carbonがあなたのシステムに送信するHTTPSリクエスト。設定したヘッダーと本文が含まれます。"
 
@@ -11758,6 +11761,9 @@ msgstr "裏返す"
 msgid "FLSA status"
 msgstr "FLSAステータス"
 
+msgid "FLSA Status"
+msgstr ""
+
 msgid "Focus on {label}"
 msgstr "{label}に焦点を当てる"
 
@@ -11772,6 +11778,9 @@ msgstr "用<0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "何でも構いません。彼らが適切な人を連れてきます。"
+
+msgid "For Form 6765 Section E"
+msgstr ""
 
 msgid "Forecast"
 msgstr "予測"
@@ -12915,9 +12924,6 @@ msgstr "開いているメニュー内"
 
 msgid "in arrears"
 msgstr "後払い"
-
-msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
-msgstr "DCAA モードでは、超過勤務時間従業員の標準週超の時間は、各時間の原価を希薄化します。"
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr "DCAA モードでは、適格外従業員の標準週間時間を超える週は標準時間 ÷ 実際の時間で転記され、週の原価はすべての時間に分散されます。"
@@ -14597,9 +14603,6 @@ msgstr "リスト表示"
 
 msgid "List View"
 msgstr "一覧表示"
-
-msgid "Listed on the Missing Time report for scheduled days with no time"
-msgstr "スケジュール済み日で時間がない不足時間レポートにリストされます"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -17738,6 +17741,9 @@ msgstr "現場"
 
 msgid "On Storage Unit"
 msgstr "保管ユニット上"
+
+msgid "On the Missing Time report"
+msgstr ""
 
 msgid "On this operation"
 msgstr "この操作で"
@@ -27168,8 +27174,8 @@ msgstr "タイムシート承認"
 msgid "Timesheet Audit"
 msgstr "工数表監査"
 
-msgid "Timesheet required"
-msgstr "工数表が必要です"
+msgid "Timesheet Required"
+msgstr ""
 
 msgid "Timezone"
 msgstr "タイムゾーン"
@@ -28264,9 +28270,6 @@ msgstr ""
 msgid "Used by"
 msgstr "で使用"
 
-msgid "Used for Form 6765 Section E"
-msgstr "Form 6765 Section E に使用"
-
 msgid "Used in"
 msgstr "で使用"
 
@@ -28411,8 +28414,8 @@ msgstr "値は本日の単位原価を過去の数量に適用します。"
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "このランの値が要約されました。詳細は7日間保持されます。"
 
-msgid "Van (default storage unit)"
-msgstr "バン（デフォルト保管ユニット）"
+msgid "Van"
+msgstr ""
 
 msgid "Variable lease cost"
 msgstr "変動リースコスト"

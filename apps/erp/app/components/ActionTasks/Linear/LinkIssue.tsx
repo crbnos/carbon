@@ -11,6 +11,7 @@ import {
   Button,
   cn,
   Input,
+  ModalBody,
   ModalFooter,
   Spinner,
   ToggleGroup,
@@ -70,6 +71,7 @@ export const LinkIssue = (props: Props) => {
 
   return (
     <ValidatedForm
+      className="flex min-h-0 flex-col"
       id={id}
       method="post"
       action={path.to.api.linearLinkExistingIssue}
@@ -82,86 +84,88 @@ export const LinkIssue = (props: Props) => {
       <Hidden name="actionId" value={props.taskId} />
       <Hidden name="entityType" value={props.entityType} />
       <Hidden name="issueId" value={issueId} />
-      <VStack spacing={4}>
-        <div className="w-full flex items-center gap-x-2 relative">
-          <Input
-            name="query"
-            type="search"
-            className="w-full"
-            autoComplete="off"
-            placeholder={t`Search by linear issue title...`}
-            onChange={onSearch}
-          />
-          {isSearching && (
-            <Spinner className="w-5 h-5 absolute right-3.5  text-primary animate-spin" />
-          )}
-        </div>
-        <ToggleGroup
-          orientation="vertical"
-          onValueChange={setIssueId}
-          value={issueId}
-          type="single"
-          className="w-full flex-col gap-y-2"
-        >
-          {issues.map((issue) => (
-            <ToggleGroupItem
-              key={issue.id}
-              name="issueId"
-              value={issue.id}
-              disabled={issue.id === linked?.id}
-              variant={"outline"}
-              className={cn(
-                "w-full rounded-lg p-3 text-left transition-colors hover:bg-transparent block h-auto data-[state=on]:bg-transparent hover:data-[state=on]:bg-transparent data-[state=on]:border-primary hover:data-[state=on]:border-primary"
-              )}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 justify-between">
-                    <Link
-                      to={issue.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center"
-                    >
-                      <span className="mr-2 text-foreground flex items-center">
-                        {issue.title}
-                        <LuExternalLink className="size-4 ml-2 text-primary" />
-                      </span>
-                    </Link>
-
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={"outline"}
-                        className="font-normal font-mono text-muted-foreground flex items-center"
+      <ModalBody>
+        <VStack spacing={4}>
+          <div className="w-full flex items-center gap-x-2 relative">
+            <Input
+              name="query"
+              type="search"
+              className="w-full"
+              autoComplete="off"
+              placeholder={t`Search by linear issue title...`}
+              onChange={onSearch}
+            />
+            {isSearching && (
+              <Spinner className="w-5 h-5 absolute right-3.5  text-primary animate-spin" />
+            )}
+          </div>
+          <ToggleGroup
+            orientation="vertical"
+            onValueChange={setIssueId}
+            value={issueId}
+            type="single"
+            className="w-full flex-col gap-y-2"
+          >
+            {issues.map((issue) => (
+              <ToggleGroupItem
+                key={issue.id}
+                name="issueId"
+                value={issue.id}
+                disabled={issue.id === linked?.id}
+                variant={"outline"}
+                className={cn(
+                  "w-full rounded-lg p-3 text-left transition-colors hover:bg-transparent block h-auto data-[state=on]:bg-transparent hover:data-[state=on]:bg-transparent data-[state=on]:border-primary hover:data-[state=on]:border-primary"
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 justify-between">
+                      <Link
+                        to={issue.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center"
                       >
-                        {issue.identifier}
-                      </Badge>
-                      <LinearIssueStateBadge
-                        state={issue.state}
-                        className="size-3.5"
-                      />
+                        <span className="mr-2 text-foreground flex items-center">
+                          {issue.title}
+                          <LuExternalLink className="size-4 ml-2 text-primary" />
+                        </span>
+                      </Link>
+
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={"outline"}
+                          className="font-normal font-mono text-muted-foreground flex items-center"
+                        >
+                          {issue.identifier}
+                        </Badge>
+                        <LinearIssueStateBadge
+                          state={issue.state}
+                          className="size-3.5"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-2 text-sm text-muted-foreground flex justify-between items-center">
+                      <span>
+                        {issue.assignee?.email
+                          ? `Assigned to ${issue.assignee?.email}`
+                          : "Unassigned"}
+                      </span>
                     </div>
                   </div>
-
-                  <div className="mt-2 text-sm text-muted-foreground flex justify-between items-center">
-                    <span>
-                      {issue.assignee?.email
-                        ? `Assigned to ${issue.assignee?.email}`
-                        : "Unassigned"}
-                    </span>
-                  </div>
                 </div>
-              </div>
-            </ToggleGroupItem>
-          ))}
+              </ToggleGroupItem>
+            ))}
 
-          {issues.length === 0 && !isSearching && fetcher.data && (
-            <p className="text-sm text-muted-foreground">
-              No Linear issues found
-            </p>
-          )}
-        </ToggleGroup>
-      </VStack>
+            {issues.length === 0 && !isSearching && fetcher.data && (
+              <p className="text-sm text-muted-foreground">
+                No Linear issues found
+              </p>
+            )}
+          </ToggleGroup>
+        </VStack>
+      </ModalBody>
       <ModalFooter>
         <Button
           variant="secondary"

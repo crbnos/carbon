@@ -2974,6 +2974,9 @@ msgstr "An Enterprise sign-in method where everyone on a company's registered em
 msgid "An entry older than this needs a late reason."
 msgstr "An entry older than this needs a late reason."
 
+msgid "An exempt employee's hours over the standard week dilute the cost of each hour"
+msgstr "An exempt employee's hours over the standard week dilute the cost of each hour"
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 
@@ -11758,6 +11761,9 @@ msgstr "Flip over"
 msgid "FLSA status"
 msgstr "FLSA status"
 
+msgid "FLSA Status"
+msgstr "FLSA Status"
+
 msgid "Focus on {label}"
 msgstr "Focus on {label}"
 
@@ -11772,6 +11778,9 @@ msgstr "For <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "for anything. They'll pull in the right person."
+
+msgid "For Form 6765 Section E"
+msgstr "For Form 6765 Section E"
 
 msgid "Forecast"
 msgstr "Forecast"
@@ -12915,9 +12924,6 @@ msgstr "In an open menu"
 
 msgid "in arrears"
 msgstr "in arrears"
-
-msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
-msgstr "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
@@ -14597,9 +14603,6 @@ msgstr "List view"
 
 msgid "List View"
 msgstr "List View"
-
-msgid "Listed on the Missing Time report for scheduled days with no time"
-msgstr "Listed on the Missing Time report for scheduled days with no time"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -17738,6 +17741,9 @@ msgstr "On Site"
 
 msgid "On Storage Unit"
 msgstr "On Storage Unit"
+
+msgid "On the Missing Time report"
+msgstr "On the Missing Time report"
 
 msgid "On this operation"
 msgstr "On this operation"
@@ -27168,8 +27174,8 @@ msgstr "Timesheet Approval"
 msgid "Timesheet Audit"
 msgstr "Timesheet Audit"
 
-msgid "Timesheet required"
-msgstr "Timesheet required"
+msgid "Timesheet Required"
+msgstr "Timesheet Required"
 
 msgid "Timezone"
 msgstr "Timezone"
@@ -28264,9 +28270,6 @@ msgstr "Use the Bill of Materials"
 msgid "Used by"
 msgstr "Used by"
 
-msgid "Used for Form 6765 Section E"
-msgstr "Used for Form 6765 Section E"
-
 msgid "Used in"
 msgstr "Used in"
 
@@ -28411,8 +28414,8 @@ msgstr "Values apply today's unit costs to historical quantities."
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Values in this run have been summarised. Full detail is kept for 7 days."
 
-msgid "Van (default storage unit)"
-msgstr "Van (default storage unit)"
+msgid "Van"
+msgstr "Van"
 
 msgid "Variable lease cost"
 msgstr "Variable lease cost"

@@ -12,7 +12,7 @@ import {
   TextArea,
   ValidatedForm
 } from "@carbon/form";
-import { Button, ModalFooter, VStack } from "@carbon/react";
+import { Button, ModalBody, ModalFooter, VStack } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useId, useMemo, useState } from "react";
 import z from "zod";
@@ -70,6 +70,7 @@ export const CreateIssue = (props: Props) => {
 
   return (
     <ValidatedForm
+      className="flex min-h-0 flex-col"
       // Remount once the record's title and description arrive, so they fill
       // the form.
       key={initial ? "defaults" : "empty"}
@@ -86,47 +87,50 @@ export const CreateIssue = (props: Props) => {
       resetAfterSubmit
       onAfterSubmit={() => props.onClose()}
     >
-      <VStack spacing={4}>
-        <Hidden name="actionId" value={props.taskId} />
-        <Hidden name="entityType" value={props.entityType} />
-        <Select
-          isLoading={isLoading}
-          label={t`Project`}
-          name="projectKey"
-          placeholder={t`Select a project`}
-          value={projectKey}
-          onChange={(e) => setProjectKey(e?.value)}
-          options={projectOptions}
-        />
-        <Select
-          isLoading={isLoading}
-          label={t`Issue Type`}
-          name="issueTypeId"
-          placeholder={t`Select an issue type`}
-          options={issueTypeOptions}
-          isDisabled={!projectKey || issueTypes.length === 0}
-        />
-        <Input
-          label={t`Title`}
-          name="title"
-          placeholder={t`Issue title`}
-          required
-        />
-        <TextArea
-          label={t`Description`}
-          name="description"
-          placeholder={t`Issue description`}
-        />
-        <Select
-          label={t`Assign To`}
-          name="assignee"
-          placeholder={t`Select an assignee`}
-          isOptional
-          options={memberOptions}
-          isDisabled={!projectKey || members.length === 0}
-        />
-      </VStack>
-      <ModalFooter className="px-0 pb-0">
+      {/* Outside the stack: a hidden input in a spaced stack still takes a gap. */}
+      <Hidden name="actionId" value={props.taskId} />
+      <Hidden name="entityType" value={props.entityType} />
+      <ModalBody>
+        <VStack spacing={4}>
+          <Select
+            isLoading={isLoading}
+            label={t`Project`}
+            name="projectKey"
+            placeholder={t`Select a project`}
+            value={projectKey}
+            onChange={(e) => setProjectKey(e?.value)}
+            options={projectOptions}
+          />
+          <Select
+            isLoading={isLoading}
+            label={t`Issue Type`}
+            name="issueTypeId"
+            placeholder={t`Select an issue type`}
+            options={issueTypeOptions}
+            isDisabled={!projectKey || issueTypes.length === 0}
+          />
+          <Input
+            label={t`Title`}
+            name="title"
+            placeholder={t`Issue title`}
+            required
+          />
+          <TextArea
+            label={t`Description`}
+            name="description"
+            placeholder={t`Issue description`}
+          />
+          <Select
+            label={t`Assign To`}
+            name="assignee"
+            placeholder={t`Select an assignee`}
+            isOptional
+            options={memberOptions}
+            isDisabled={!projectKey || members.length === 0}
+          />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
         <Button
           variant="secondary"
           onClick={() => {

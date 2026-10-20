@@ -2974,6 +2974,9 @@ msgstr "一种企业登录方法,公司注册电子邮件域中的所有人通�
 msgid "An entry older than this needs a late reason."
 msgstr "比此更早的条目需要晚期原因。"
 
+msgid "An exempt employee's hours over the standard week dilute the cost of each hour"
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "当工作流到达该步骤时，Carbon向您的系统发送的HTTPS请求，携带您配置的任何标头和请求体。"
 
@@ -11758,6 +11761,9 @@ msgstr "翻面"
 msgid "FLSA status"
 msgstr "FLSA 状态"
 
+msgid "FLSA Status"
+msgstr ""
+
 msgid "Focus on {label}"
 msgstr "专注于 {label}"
 
@@ -11772,6 +11778,9 @@ msgstr "对于 <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "用于任何事项。他们会调配合适的人员。"
+
+msgid "For Form 6765 Section E"
+msgstr ""
 
 msgid "Forecast"
 msgstr "预测"
@@ -12915,9 +12924,6 @@ msgstr "在打开的菜单中"
 
 msgid "in arrears"
 msgstr "后付"
-
-msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
-msgstr "在 DCAA 模式下，豁免员工超出标准周的小时数会稀释每小时成本。"
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr "在 DCAA 模式下，豁免员工的周超过标准每周小时数时，以标准小时 ÷ 工作小时过账，因此该周的成本分配到每小时。"
@@ -14597,9 +14603,6 @@ msgstr "列表视图"
 
 msgid "List View"
 msgstr "列表视图"
-
-msgid "Listed on the Missing Time report for scheduled days with no time"
-msgstr "在缺失时间报告中列出计划日期但无时间的情况"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -17738,6 +17741,9 @@ msgstr "现场"
 
 msgid "On Storage Unit"
 msgstr "在存储单元上"
+
+msgid "On the Missing Time report"
+msgstr ""
 
 msgid "On this operation"
 msgstr "在此工序上"
@@ -27168,8 +27174,8 @@ msgstr "工时单审批"
 msgid "Timesheet Audit"
 msgstr "工时表审计"
 
-msgid "Timesheet required"
-msgstr "需要工时表"
+msgid "Timesheet Required"
+msgstr ""
 
 msgid "Timezone"
 msgstr "时区"
@@ -28264,9 +28270,6 @@ msgstr ""
 msgid "Used by"
 msgstr "使用情况"
 
-msgid "Used for Form 6765 Section E"
-msgstr "用于Form 6765第E部分"
-
 msgid "Used in"
 msgstr "用在"
 
@@ -28411,8 +28414,8 @@ msgstr "价值采用今日的单位成本应用于历史数量。"
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "该运行中的值已汇总。完整详情保留 7 天。"
 
-msgid "Van (default storage unit)"
-msgstr "货车（默认存储单元）"
+msgid "Van"
+msgstr ""
 
 msgid "Variable lease cost"
 msgstr "可变租赁成本"

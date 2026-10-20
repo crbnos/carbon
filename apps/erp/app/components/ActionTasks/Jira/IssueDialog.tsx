@@ -103,7 +103,12 @@ export const JiraIssueDialog = ({ entityType, taskId, linkedIssue }: Props) => {
         )}
       </ModalTrigger>
       <ModalContent size={"large"}>
-        <Tabs value={tab} onValueChange={setTab} defaultValue="link">
+        <Tabs
+          value={tab}
+          onValueChange={setTab}
+          defaultValue="link"
+          className="flex min-h-0 flex-col"
+        >
           <ModalHeader className="mb-1 flex-row justify-between py-3 pr-10">
             <div className="space-y-1">
               <ModalTitle>
@@ -123,8 +128,10 @@ export const JiraIssueDialog = ({ entityType, taskId, linkedIssue }: Props) => {
               </TabsTrigger>
             </TabsList>
           </ModalHeader>
-          <ModalBody>
-            {linked && (
+          {/* The forms below own their ModalBody and ModalFooter, so the footer
+              runs edge to edge (a ModalFooter inside a ModalBody is inset). */}
+          {linked && (
+            <ModalBody>
               <div
                 className={cn(
                   "w-full rounded-lg p-3 mb-3 text-left transition-colors block h-auto border border-secondary"
@@ -184,29 +191,35 @@ export const JiraIssueDialog = ({ entityType, taskId, linkedIssue }: Props) => {
                   </div>
                 </div>
               </div>
-            )}
+            </ModalBody>
+          )}
 
-            <TabsContent
-              value="link"
-              hidden={isAlreadyLinked}
-              className="relative mt-0"
-            >
-              <LinkIssue
-                entityType={entityType}
-                taskId={taskId}
-                linkedIssue={linkedIssue}
-                onClose={disclosure.onClose}
-              />
-            </TabsContent>
-            <TabsContent value="create" className="relative mt-0">
-              <CreateIssue
-                entityType={entityType}
-                taskId={taskId}
-                linkedIssue={linkedIssue}
-                onClose={disclosure.onClose}
-              />
-            </TabsContent>
-          </ModalBody>
+          <TabsContent
+            value="link"
+            hidden={isAlreadyLinked}
+            className={cn(
+              "relative mt-0 min-h-0 flex-col",
+              isAlreadyLinked ? "hidden" : "flex"
+            )}
+          >
+            <LinkIssue
+              entityType={entityType}
+              taskId={taskId}
+              linkedIssue={linkedIssue}
+              onClose={disclosure.onClose}
+            />
+          </TabsContent>
+          <TabsContent
+            value="create"
+            className="relative mt-0 flex min-h-0 flex-col"
+          >
+            <CreateIssue
+              entityType={entityType}
+              taskId={taskId}
+              linkedIssue={linkedIssue}
+              onClose={disclosure.onClose}
+            />
+          </TabsContent>
         </Tabs>
       </ModalContent>
     </Modal>

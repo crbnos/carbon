@@ -2974,6 +2974,9 @@ msgstr "Метод входа в Enterprise, при котором все сот
 msgid "An entry older than this needs a late reason."
 msgstr "Запись старше этого нуждается в причине опоздания."
 
+msgid "An exempt employee's hours over the standard week dilute the cost of each hour"
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "HTTPS-запрос, который Carbon отправляет в вашу систему, когда рабочий процесс достигает этого шага, с любыми заголовками и телом, которые вы настроили."
 
@@ -11758,6 +11761,9 @@ msgstr "Перевернуть"
 msgid "FLSA status"
 msgstr "Статус FLSA"
 
+msgid "FLSA Status"
+msgstr ""
+
 msgid "Focus on {label}"
 msgstr "Сосредоточиться на {label}"
 
@@ -11772,6 +11778,9 @@ msgstr "На <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "для чего угодно. Они привлекут нужного человека."
+
+msgid "For Form 6765 Section E"
+msgstr ""
 
 msgid "Forecast"
 msgstr "Прогноз"
@@ -12915,9 +12924,6 @@ msgstr "В открытом меню"
 
 msgid "in arrears"
 msgstr "в конце периода"
-
-msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
-msgstr "В режиме DCAA часы освобожденного сотрудника сверх стандартной недели разбавляют стоимость каждого часа."
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr "В режиме DCAA неделя освобожденного сотрудника сверх стандартных еженедельных часов проводится по формуле стандартные часы ÷ отработанные часы, поэтому себестоимость недели распределяется на каждый час."
@@ -14597,9 +14603,6 @@ msgstr "Вид списка"
 
 msgid "List View"
 msgstr "Представление списка"
-
-msgid "Listed on the Missing Time report for scheduled days with no time"
-msgstr "Перечислен в отчете об отсутствующем времени для запланированных дней без времени"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -17738,6 +17741,9 @@ msgstr "На месте"
 
 msgid "On Storage Unit"
 msgstr "На единице хранения"
+
+msgid "On the Missing Time report"
+msgstr ""
 
 msgid "On this operation"
 msgstr "На эту операцию"
@@ -27168,8 +27174,8 @@ msgstr "Утверждение табеля учета рабочего врем
 msgid "Timesheet Audit"
 msgstr "Аудит табеля учета"
 
-msgid "Timesheet required"
-msgstr "Требуется табель учета"
+msgid "Timesheet Required"
+msgstr ""
 
 msgid "Timezone"
 msgstr "Часовой пояс"
@@ -28264,9 +28270,6 @@ msgstr ""
 msgid "Used by"
 msgstr "Используется"
 
-msgid "Used for Form 6765 Section E"
-msgstr "Используется для раздела E формы 6765"
-
 msgid "Used in"
 msgstr "Используется в"
 
@@ -28411,8 +28414,8 @@ msgstr "Значения применяют сегодняшние себест�
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Значения в этом запуске были сведены. Полные детали хранятся 7 дней."
 
-msgid "Van (default storage unit)"
-msgstr "Фургон (единица хранения по умолчанию)"
+msgid "Van"
+msgstr ""
 
 msgid "Variable lease cost"
 msgstr "Переменная стоимость лизинга"

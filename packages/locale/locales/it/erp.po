@@ -2974,6 +2974,9 @@ msgstr "Un metodo di accesso aziendale in cui tutti gli utenti con domini email 
 msgid "An entry older than this needs a late reason."
 msgstr "Una voce più vecchia di questa ha bisogno di un motivo tardivo."
 
+msgid "An exempt employee's hours over the standard week dilute the cost of each hour"
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "Una richiesta https che Carbon invia a un tuo sistema quando un flusso di lavoro raggiunge quel passaggio, portando i header e il corpo che hai configurato."
 
@@ -11758,6 +11761,9 @@ msgstr "Capovolgi"
 msgid "FLSA status"
 msgstr "Stato FLSA"
 
+msgid "FLSA Status"
+msgstr ""
+
 msgid "Focus on {label}"
 msgstr "Concentrati su {label}"
 
@@ -11772,6 +11778,9 @@ msgstr "Per <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "per qualsiasi cosa. Porteranno la persona giusta."
+
+msgid "For Form 6765 Section E"
+msgstr ""
 
 msgid "Forecast"
 msgstr "Previsione"
@@ -12915,9 +12924,6 @@ msgstr "In un menu aperto"
 
 msgid "in arrears"
 msgstr "in arretrato"
-
-msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
-msgstr "In modalità DCAA, le ore dei dipendenti esenti oltre la settimana standard diluiscono il costo di ogni ora."
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr "In modalità DCAA, la settimana di un dipendente esente oltre le ore settimanali standard viene registrata a ore standard ÷ ore lavorate, quindi il costo della settimana si distribuisce su ogni ora."
@@ -14597,9 +14603,6 @@ msgstr "Vista elenco"
 
 msgid "List View"
 msgstr "Vista elenco"
-
-msgid "Listed on the Missing Time report for scheduled days with no time"
-msgstr "Elencato nel rapporto Tempo mancante per i giorni programmati senza tempo"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -17738,6 +17741,9 @@ msgstr "In loco"
 
 msgid "On Storage Unit"
 msgstr "Su Unità di Stoccaggio"
+
+msgid "On the Missing Time report"
+msgstr ""
 
 msgid "On this operation"
 msgstr "Su questa operazione"
@@ -27168,8 +27174,8 @@ msgstr "Approvazione foglio presenze"
 msgid "Timesheet Audit"
 msgstr "Audit presenze"
 
-msgid "Timesheet required"
-msgstr "Foglio presenze richiesto"
+msgid "Timesheet Required"
+msgstr ""
 
 msgid "Timezone"
 msgstr "Fuso orario"
@@ -28264,9 +28270,6 @@ msgstr ""
 msgid "Used by"
 msgstr "Utilizzato da"
 
-msgid "Used for Form 6765 Section E"
-msgstr "Utilizzato per il Modulo 6765 Sezione E"
-
 msgid "Used in"
 msgstr "Utilizzato in"
 
@@ -28411,8 +28414,8 @@ msgstr "I valori applicano i costi unitari odierni alle quantità storiche."
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "I valori in questa esecuzione sono stati riassunti. I dettagli completi vengono conservati per 7 giorni."
 
-msgid "Van (default storage unit)"
-msgstr "Furgone (unità di stoccaggio predefinita)"
+msgid "Van"
+msgstr ""
 
 msgid "Variable lease cost"
 msgstr "Costo variabile di leasing"
