@@ -18,3 +18,35 @@ export function allStepsRecordedAt(steps: StepWithRecords[], index: number) {
     (step.jobOperationStepRecord ?? []).some((r) => r.index === index)
   );
 }
+
+/**
+ * The batch view's rows for one upsert at record set 0. A new record carries
+ * the caller as its recorder. A step recorded again keeps its recorder
+ * (`createdBy`; `createdAt` is left out, so the upsert keeps it) and gets
+ * `updatedBy` / `updatedAt`.
+ */
+export function planBatchStepRecordRows<
+  R extends { jobOperationStepId: string }
+>(args: {
+  records: R[];
+  existing: { jobOperationStepId: string; createdBy: string }[];
+  companyId: string;
+  userId: string;
+  now: string;
+}) {
+  const existingByStep = new Map(
+    args.existing.map((r) => [r.jobOperationStepId, r])
+  );
+  const rows = args.records.map((record) => {
+    const existing = existingByStep.get(record.jobOperationStepId);
+    return {
+      ...record,
+      index: 0,
+      companyId: args.companyId,
+      createdBy: existing?.createdBy ?? args.userId,
+      updatedBy: existing ? args.userId : null,
+      updatedAt: existing ? args.now : null
+    };
+  });
+  return { rows };
+}

@@ -40,6 +40,7 @@ import type {
   stepRecordValidator
 } from "./models";
 import { planStepBackflush } from "./step-backflush";
+import { planBatchStepRecordRows } from "./step-records";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
 const log = getLogger("mes", "operations");
@@ -2180,9 +2181,8 @@ export async function insertAttributeRecord(
     createdBy: string;
   }
 ) {
-  // Callers pass a service-role client and the step id comes from the form.
-  // The upsert's conflict target is (jobOperationStepId, index), so a foreign
-  // step id would overwrite — and re-tenant — another company's record.
+  // Callers pass a service-role client and the step id comes from the form,
+  // so a foreign step id would write a record on another company's step.
   const step = await client
     .from("jobOperationStep")
     .select("id")
@@ -2198,10 +2198,33 @@ export async function insertAttributeRecord(
     return notFoundResponse("Job operation step not found");
   }
 
-  return client.from("jobOperationStepRecord").upsert(data, {
-    onConflict: "jobOperationStepId, index",
-    ignoreDuplicates: false
-  });
+  // One record per step and record set. Recording it again changes the values
+  // and keeps who recorded it and when; updatedBy/updatedAt say who changed it.
+  const existing = await client
+    .from("jobOperationStepRecord")
+    .select("id")
+    .eq("jobOperationStepId", data.jobOperationStepId)
+    .eq("index", data.index)
+    .eq("companyId", data.companyId)
+    .maybeSingle();
+  if (existing.error) return existing;
+
+  if (existing.data) {
+    return client
+      .from("jobOperationStepRecord")
+      .update({
+        value: data.value,
+        numericValue: data.numericValue,
+        booleanValue: data.booleanValue,
+        userValue: data.userValue,
+        updatedBy: data.createdBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", existing.data.id)
+      .eq("companyId", data.companyId);
+  }
+
+  return client.from("jobOperationStepRecord").insert(data);
 }
 
 // The batch view's Record: one step written for several members in one upsert,
@@ -2239,15 +2262,27 @@ export async function insertBatchStepRecords(
     return { error: { message: "A step is not part of this batch" } };
   }
 
-  const upsert = await client.from("jobOperationStepRecord").upsert(
-    args.records.map((record) => ({
-      ...record,
-      index: 0,
-      companyId: args.companyId,
-      createdBy: args.createdBy
-    })),
-    { onConflict: "jobOperationStepId, index", ignoreDuplicates: false }
-  );
+  // A step recorded again keeps its recorder; see planBatchStepRecordRows.
+  const existing = await client
+    .from("jobOperationStepRecord")
+    .select("jobOperationStepId, createdBy")
+    .in("jobOperationStepId", stepIds)
+    .eq("index", 0)
+    .eq("companyId", args.companyId);
+  if (existing.error) return { error: existing.error };
+
+  const { rows } = planBatchStepRecordRows({
+    records: args.records,
+    existing: existing.data ?? [],
+    companyId: args.companyId,
+    userId: args.createdBy,
+    now: datetime.timestamp()
+  });
+
+  const upsert = await client.from("jobOperationStepRecord").upsert(rows, {
+    onConflict: "jobOperationStepId, index",
+    ignoreDuplicates: false
+  });
   return { error: upsert.error };
 }
 

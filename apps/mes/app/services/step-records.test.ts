@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { allStepsRecordedAt } from "./step-records";
+import { allStepsRecordedAt, planBatchStepRecordRows } from "./step-records";
 
 const step = (...indexes: number[]) => ({
   jobOperationStepRecord: indexes.map((index) => ({ index }))
@@ -30,5 +30,54 @@ describe("allStepsRecordedAt", () => {
     expect(allStepsRecordedAt([{ jobOperationStepRecord: null }], 0)).toBe(
       false
     );
+  });
+});
+
+describe("planBatchStepRecordRows", () => {
+  const now = "2026-10-20T10:00:00.000Z";
+
+  it("records a new step with the caller as recorder", () => {
+    const { rows } = planBatchStepRecordRows({
+      records: [{ jobOperationStepId: "s1", numericValue: 4 }],
+      existing: [],
+      companyId: "c1",
+      userId: "u1",
+      now
+    });
+    expect(rows).toEqual([
+      {
+        jobOperationStepId: "s1",
+        numericValue: 4,
+        index: 0,
+        companyId: "c1",
+        createdBy: "u1",
+        updatedBy: null,
+        updatedAt: null
+      }
+    ]);
+  });
+
+  it("keeps the recorder of a step recorded again and stamps the change", () => {
+    const { rows } = planBatchStepRecordRows({
+      records: [
+        { jobOperationStepId: "s1", numericValue: 5 },
+        { jobOperationStepId: "s2", numericValue: 6 }
+      ],
+      existing: [{ jobOperationStepId: "s1", createdBy: "u0" }],
+      companyId: "c1",
+      userId: "u1",
+      now
+    });
+    expect(rows[0]).toMatchObject({
+      createdBy: "u0",
+      updatedBy: "u1",
+      updatedAt: now
+    });
+    expect(rows[0]).not.toHaveProperty("createdAt");
+    expect(rows[1]).toMatchObject({
+      createdBy: "u1",
+      updatedBy: null,
+      updatedAt: null
+    });
   });
 });
