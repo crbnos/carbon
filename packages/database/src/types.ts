@@ -92471,6 +92471,10 @@ export type Database = {
         }[]
       }
       get_claims: { Args: { company: string; uid: string }; Returns: Json }
+      get_companies_with_any_employee_permission: {
+        Args: { permissions: string[] }
+        Returns: string[]
+      }
       get_companies_with_any_role: { Args: never; Returns: string[] }
       get_companies_with_employee_permission: {
         Args: { permission: string }

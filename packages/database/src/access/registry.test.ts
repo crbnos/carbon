@@ -112,12 +112,24 @@ const policiesOf = (table: string) =>
   );
 
 /** Every `<key>_<action>` an employee permission check in SQL names. */
-const checkedKeys = (sql: string) =>
-  [
+const checkedKeys = (sql: string) => [
+  ...[
     ...sql.matchAll(
       /get_(?:companies_with_employee_permission|company_groups_for_root_permission)\('([\w.]+)_(?:view|create|update|delete)'/g
     )
-  ].map((match) => match[1] as string);
+  ].map((match) => match[1] as string),
+  ...[
+    ...sql.matchAll(
+      /get_companies_with_any_employee_permission\(ARRAY\[([^\]]*)\]/g
+    )
+  ].flatMap((match) =>
+    [
+      ...(match[1] as string).matchAll(
+        /'([\w.]+)_(?:view|create|update|delete)'/g
+      )
+    ].map((key) => key[1] as string)
+  )
+];
 
 /** Whether SQL checks a permission, not only "employee". */
 const namesPermission = (sql: string) => checkedKeys(sql).length > 0;

@@ -122,15 +122,28 @@ BEGIN
   IF cardinality(get_companies_with_employee_permission('inventory')) <> 0 THEN
     RAISE EXCEPTION 'a permission with no action must hold nothing';
   END IF;
+  -- get_companies_with_any_employee_permission: one held key is enough.
+  IF NOT company_a = ANY (get_companies_with_any_employee_permission(ARRAY['sales_view', 'inventory_update'])) THEN
+    RAISE EXCEPTION 'any-of must hold when one key is held';
+  END IF;
+  IF cardinality(get_companies_with_any_employee_permission(ARRAY['sales_view', 'inventory_delete', 'inventory'])) <> 0 THEN
+    RAISE EXCEPTION 'any-of must hold nothing when no key is held';
+  END IF;
 
   PERFORM pg_temp.act_as(a);
   IF NOT company_a = ANY (get_companies_with_employee_permission('accounting_delete')) THEN
     RAISE EXCEPTION 'the Admin type must hold every action';
   END IF;
+  IF NOT company_a = ANY (get_companies_with_any_employee_permission(ARRAY['accounting_delete', 'sales_delete'])) THEN
+    RAISE EXCEPTION 'the Admin type must hold every action, any-of';
+  END IF;
 
   PERFORM pg_temp.act_as(c);
   IF cardinality(get_companies_with_employee_permission('inventory_view')) <> 0 THEN
     RAISE EXCEPTION 'a portal account must hold no employee permission';
+  END IF;
+  IF cardinality(get_companies_with_any_employee_permission(ARRAY['inventory_view', 'sales_view'])) <> 0 THEN
+    RAISE EXCEPTION 'a portal account must hold no employee permission, any-of';
   END IF;
 
   PERFORM pg_temp.act_as(u, raw_key);
@@ -143,6 +156,13 @@ BEGIN
   END IF;
   IF cardinality(get_companies_with_employee_permission('inventory_update')) <> 0 THEN
     RAISE EXCEPTION 'a key must not borrow the role grants of the user who sent it';
+  END IF;
+  companies := get_companies_with_any_employee_permission(ARRAY['inventory_update', 'purchasing_view']);
+  IF companies IS DISTINCT FROM ARRAY[company_a] THEN
+    RAISE EXCEPTION 'a key grant of View must hold purchasing_view, any-of, got %', companies;
+  END IF;
+  IF cardinality(get_companies_with_any_employee_permission(ARRAY['inventory_update', 'purchasing_create'])) <> 0 THEN
+    RAISE EXCEPTION 'a key must hold none of its ungranted keys, any-of';
   END IF;
   IF (get_api_key_scopes()->'grants'->0->>'level') IS DISTINCT FROM 'View' THEN
     RAISE EXCEPTION 'get_api_key_scopes must return the key''s grants';

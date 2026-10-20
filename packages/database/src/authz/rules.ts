@@ -80,6 +80,18 @@ const moduleAction = (permission: string) =>
 const holds = (subject: RawBuilder<unknown>, key: string) =>
   sql`${subject} = ANY ((SELECT get_companies_with_employee_permission(${sql.lit(key)}))::text[])`;
 
+/**
+ * `subject` is one of the companies where the caller holds any of `keys`. One
+ * call for the whole list: a read admits every page of a module, and a call
+ * per key cost a helper call each.
+ */
+const holdsAny = (subject: RawBuilder<unknown>, keys: readonly string[]) =>
+  keys.length === 1
+    ? holds(subject, keys[0] as string)
+    : sql`${subject} = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY[${sql.join(
+        keys.map((key) => sql.lit(key))
+      )}]::text[]))::text[])`;
+
 const either = (terms: RawBuilder<unknown>[]) =>
   terms.length === 1 && terms[0]
     ? terms[0]
@@ -115,9 +127,7 @@ const branches = (
         branch.value === undefined
           ? sql`${column} IS NOT NULL`
           : sql`${column} = ${sql.lit(branch.value)}`
-      } AND ${either(
-        pageKeys(branch.page, action).map((key) => holds(subject, key))
-      )})`;
+      } AND ${holdsAny(subject, pageKeys(branch.page, action))})`;
     })
   );
   if (place.kind === "shared") return arms;
@@ -153,8 +163,15 @@ const belongsTo = (
     return sql`${subject} = ANY ((SELECT get_companies_with_employee_role())::text[])`;
   if (who === "member")
     return sql`${subject} = ANY ((SELECT get_companies_with_any_role())::text[])`;
+  // Plain keys go into one `holdsAny` call; branch checks stay their own terms.
+  const keys: string[] = [];
   const terms: RawBuilder<unknown>[] = [];
   const seen = new Set<string>();
+  const addKey = (key: string) => {
+    if (seen.has(key)) return;
+    seen.add(key);
+    keys.push(key);
+  };
   const add = (key: string, term: () => RawBuilder<unknown>) => {
     if (seen.has(key)) return;
     seen.add(key);
@@ -165,20 +182,18 @@ const belongsTo = (
   for (const permission of typeof who === "object" ? who.anyOf : [who]) {
     const action = moduleAction(permission);
     if (!action || !table || !place) {
-      add(permission, () => holds(subject, permission));
+      addKey(permission);
       continue;
     }
     if (place.kind === "page") {
-      for (const key of pageKeys(place.page, action))
-        add(key, () => holds(subject, key));
+      for (const key of pageKeys(place.page, action)) addKey(key);
     } else if (place.kind === "child" && action === "view") {
       // A child's read never goes through its parent: the parent's SELECT
       // reads its children (item's portal branches read supplierPart), so a
       // lookup back would make Postgres refuse both tables as recursive. It
       // admits View on any page of its parent's module.
       for (const { page } of place.branches)
-        for (const key of pageKeys(page, "view"))
-          add(key, () => holds(subject, key));
+        for (const key of pageKeys(page, "view")) addKey(key);
     } else {
       add(`:${action}`, () =>
         branches(
@@ -191,12 +206,9 @@ const belongsTo = (
       );
     }
     if (action === "view")
-      for (const reader of readersOf(table)) {
-        const key = `${reader}_view`;
-        add(key, () => holds(subject, key));
-      }
+      for (const reader of readersOf(table)) addKey(`${reader}_view`);
   }
-  return either(terms);
+  return either(keys.length ? [holdsAny(subject, keys), ...terms] : terms);
 };
 
 /** The row's own company column is one of the caller's companies. */

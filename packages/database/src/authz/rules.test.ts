@@ -152,11 +152,11 @@ describe("render: module keys become page keys", () => {
 
   // A read admits View on any page of the owner's module, then its readers.
   const readKeys = (module: string, table: string) =>
-    [...new Set([...pagesOf(module), ...readersOf(table)])]
-      .map(
-        (page) => `"companyId" = ANY ((SELECT ${key(`${page}_view`)})::text[])`
-      )
-      .join(" OR ");
+    `"companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY[${[
+      ...new Set([...pagesOf(module), ...readersOf(table)])
+    ]
+      .map((page) => `'${page}_view'`)
+      .join(", ")}]::text[]))::text[])`;
 
   test("a restricted read admits any page of the owner's module and every reader", () => {
     const select = policy(
@@ -167,10 +167,10 @@ describe("render: module keys become page keys", () => {
       "SELECT"
     );
     expect(select).toBe(
-      `CREATE POLICY "SELECT" ON "public"."purchaseOrder" FOR SELECT USING ((${readKeys("purchasing", "purchaseOrder")}));`
+      `CREATE POLICY "SELECT" ON "public"."purchaseOrder" FOR SELECT USING (${readKeys("purchasing", "purchaseOrder")});`
     );
-    expect(select).toContain(key("purchasing.types_view"));
-    expect(select).toContain(key("inventory.receipts_view"));
+    expect(select).toContain("'purchasing.types_view'");
+    expect(select).toContain("'inventory.receipts_view'");
     // Writes stay per page.
     expect(
       policy(render(company("purchasing"), "purchaseOrder"), "UPDATE")
@@ -187,7 +187,7 @@ describe("render: module keys become page keys", () => {
       ),
       "SELECT"
     );
-    expect(select.split(key("sales.customers_view")).length).toBe(2);
+    expect(select.split("'sales.customers_view'").length).toBe(2);
   });
 
   test("a shared table checks the page whose rows it is: by value, or by a column that is set", () => {
@@ -237,7 +237,7 @@ describe("render: module keys become page keys", () => {
     );
     expect(select).not.toContain(`"public"."item"`);
     expect(select).toBe(
-      `CREATE POLICY "SELECT" ON "public"."supplierPart" FOR SELECT USING ((${readKeys("parts", "supplierPart")}));`
+      `CREATE POLICY "SELECT" ON "public"."supplierPart" FOR SELECT USING (${readKeys("parts", "supplierPart")});`
     );
   });
 
