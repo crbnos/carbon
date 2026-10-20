@@ -1975,6 +1975,9 @@ msgstr "Sistema"
 msgid "Tag"
 msgstr "Etiqueta"
 
+msgid "Take Photo"
+msgstr "Tirar foto"
+
 msgid "The accent color used across Carbon."
 msgstr "A cor de destaque usada em todo o Carbon."
 

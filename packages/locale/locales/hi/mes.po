@@ -1975,6 +1975,9 @@ msgstr "सिस्टम"
 msgid "Tag"
 msgstr "टैग"
 
+msgid "Take Photo"
+msgstr "फ़ोटो लें"
+
 msgid "The accent color used across Carbon."
 msgstr "Carbon में उपयोग किया जाने वाला उच्चारण रंग।"
 
