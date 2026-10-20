@@ -106,7 +106,9 @@ export function BatchRecordModal({
     () => new Set(members.filter((m) => !m.recorded).map((m) => m.stepId))
   );
   const [file, setFile] = useState<File | null>(null);
-  const [passed, setPassed] = useState(true);
+  // An Inspection starts as not passed, as in the job's own record window:
+  // passing always takes a deliberate tick.
+  const [passed, setPassed] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const changed = editable.filter((m) =>
@@ -405,7 +407,9 @@ export function BatchRecordModal({
             rightIcon={<LuCircleCheck />}
             isLoading={busy}
             isDisabled={
-              busy || changed.length === 0 || (kind === "file" && !file)
+              // A File step records the file itself; an Inspection's photo is
+              // optional, as in the job's own record window.
+              busy || changed.length === 0 || (step.type === "File" && !file)
             }
             onClick={submit}
           >
