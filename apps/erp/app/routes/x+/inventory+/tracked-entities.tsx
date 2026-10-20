@@ -7,7 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import TrackedEntitiesTable from "~/modules/inventory/ui/Traceability/TrackedEntitiesTable";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { trackedEntitiesList } from "~/utils/list-registry/inventory.server";
 import { loadListPage } from "~/utils/list-registry/load.server";

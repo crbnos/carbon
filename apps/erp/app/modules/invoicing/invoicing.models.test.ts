@@ -57,18 +57,18 @@ describe("paymentValidator", () => {
     ).toBe(true);
   });
 
-  it.each([
-    "Receipt",
-    "Disbursement"
-  ])("rejects ambiguous %s counterparty", (paymentType) => {
-    expect(
-      paymentValidator.safeParse({
-        ...validReceipt,
-        paymentType,
-        supplierId: "supp1"
-      }).success
-    ).toBe(false);
-  });
+  it.each(["Receipt", "Disbursement"])(
+    "rejects ambiguous %s counterparty",
+    (paymentType) => {
+      expect(
+        paymentValidator.safeParse({
+          ...validReceipt,
+          paymentType,
+          supplierId: "supp1"
+        }).success
+      ).toBe(false);
+    }
+  );
 
   it("rejects a Receipt missing customer", () => {
     const r = paymentValidator.safeParse({

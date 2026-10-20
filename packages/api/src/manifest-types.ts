@@ -10,28 +10,6 @@
 
 export type Classification = "READ" | "WRITE" | "DESTRUCTIVE";
 
-/** Audit/identity fields the dispatcher stamps into a service payload. */
-export type AuthField =
-  | "companyId"
-  | "companyGroupId"
-  | "createdBy"
-  | "updatedBy"
-  | "userId";
-
-/** What the dispatcher fills a positional service parameter with. */
-export type ContextSource =
-  | "client"
-  | "db"
-  | "userId"
-  | "companyId"
-  | "companyGroupId";
-
-/**
- * How the service reports failure in the value it returns, read off its return
- * type by the generator (`scripts/lib/result-shape.ts`).
- */
-export type ResultShape = "envelope" | "envelopes" | "flag" | "plain";
-
 export type PermissionAction = "view" | "create" | "update" | "delete";
 
 /**
@@ -50,44 +28,20 @@ export interface ManifestEntry {
   module: string;
   classification: Classification;
   description: string;
-  paramCount: number;
-  serviceParams: string[];
-  /** The positional params the dispatcher fills from the authenticated context,
-   *  and with what. The generator decides this from the service's signature and
-   *  body; the dispatcher keeps no list of its own. A param absent here carries
-   *  the caller's payload. */
-  contextParams: Record<string, ContextSource>;
-  injectAuth: AuthField[];
-  /** Where dispatch looks for a failure in the service's result. */
-  resultShape: ResultShape;
   permission: ToolPermission;
-  /** Whether the service itself applies limit/offset (`setGenericQueryFilters`
-   *  or a direct `.range(`). A list operation with `paginates: false` is a
-   *  fetchAll read — pagination args are inert in the service, and the MCP
-   *  layer pages the response at its own boundary instead. */
+  /** Whether the operation applies limit/offset itself. A list operation with
+   *  `paginates: false` returns every row, and the MCP layer pages the response
+   *  at its own boundary instead. */
   paginates: boolean;
-  /** Present when the service picks insert-vs-update by testing for an audit
-   *  field on the payload (`"createdBy" in payload`), so the dispatcher has to
-   *  stamp exactly one of them. `keys` are the payload fields that identify the
-   *  record; a call missing any of them is a create. With no `lookups`, a call
-   *  carrying them all is an update. With `lookups`, it is an update only when
-   *  one of them finds a row in the caller's company — `match` maps a column of
-   *  `table` to the payload field it is compared with. */
-  upsert?: {
-    keys: string[];
-    lookups?: Array<{ table: string; match: Record<string, string> }>;
-  };
-  /** When the dispatcher fills the defaults the schema publishes: on every
-   *  call (`always` — a read, a create, an action), or only when an upsert
-   *  resolves to a create (`create` — an update that leaves a field out keeps
-   *  the stored value). Absent when the schema publishes none; the generator
-   *  strips a default nothing would apply. */
-  defaults?: "always" | "create";
   /** The JSON Schema for the operation's input. */
   schema: Record<string, unknown>;
+  /** A service function's title: its TSDoc summary line. */
+  title?: string;
+  /** The operation's path in the ERP router (`["production", "cancelJob"]`).
+   *  Its HTTP path is the path joined by `/`. */
+  serviceFn: { path: string[] };
   /** The JSON Schema for the operation's RESPONSE `data`, reflected from the
    *  service function's TypeScript return type — absent when nothing useful could
-   *  be derived (an `any`, a void, or an opaque shape). Describes the payload the
-   *  dispatcher puts in `data`, not the `{ data, count }` envelope around it. */
+   *  be derived (an `any`, a void, or an opaque shape). */
   responseSchema?: Record<string, unknown>;
 }

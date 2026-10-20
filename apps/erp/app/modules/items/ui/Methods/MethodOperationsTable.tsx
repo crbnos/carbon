@@ -7,7 +7,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { operationTypes } from "~/modules/shared";
+import { operationTypes } from "~/modules/shared/shared.models";
 import { useParts, useTools } from "~/stores";
 import type { MethodOperation } from "../../types";
 import { getPathToMakeMethod } from "./utils";

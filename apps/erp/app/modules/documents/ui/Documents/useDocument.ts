@@ -12,7 +12,7 @@ import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import type {
   DocumentTransactionType,
   Document as DocumentType
-} from "~/modules/documents";
+} from "~/modules/documents/types";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "usedocument");

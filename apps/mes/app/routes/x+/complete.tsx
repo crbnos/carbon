@@ -10,16 +10,16 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import { nonScrapQuantityValidator } from "~/services/models";
 import {
   finishJobOperation,
   insertProductionQuantity
 } from "~/services/operations.service";
+import { checkStrictBackflush } from "~/services/quality.server";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
@@ -179,17 +179,32 @@ export async function action({ request }: ActionFunctionArgs) {
       0);
 
   if (validation.data.trackingType === "Serial") {
-    const response = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("issue", {
+    const response = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         type: "jobOperationSerialComplete",
         ...validation.data,
         trackedEntityId: validation.data.trackedEntityId!
-      });
+      }
+    );
 
     const newTrackedEntityId = response.data?.newTrackedEntityId as
       | string
       | undefined;
+    if (response.error) {
+      return data(
+        {},
+        await flash(request, {
+          ...error(
+            response.error,
+            response.error.message || "Failed to complete job operation"
+          ),
+          flash: "error"
+        })
+      );
+    }
+
     // Print the entity that was just completed (from form), not the new reserved one
     const completedEntityId = validation.data.trackedEntityId;
 
@@ -205,26 +220,12 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    if (response.error) {
-      return data(
-        {},
-        await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
-          flash: "error"
-        })
-      );
-    }
-
     if (willBeFinished) {
-      const finishOperation = await finishJobOperation(
-        serviceRole,
-        getDatabaseClient(),
-        {
-          jobOperationId: jobOperation.data.id,
-          userId,
-          companyId
-        }
-      );
+      const finishOperation = await finishJobOperation(serviceRole, {
+        jobOperationId: jobOperation.data.id,
+        userId,
+        companyId
+      });
 
       if (finishOperation.error) {
         return data(
@@ -261,19 +262,24 @@ export async function action({ request }: ActionFunctionArgs) {
       })
     );
   } else if (validation.data.trackingType === "Batch") {
-    const response = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("issue", {
+    const response = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         type: "jobOperationBatchComplete",
         ...validation.data,
         trackedEntityId: validation.data.trackedEntityId!
-      });
+      }
+    );
 
     if (response.error) {
       return data(
         {},
         await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
+          ...error(
+            response.error,
+            response.error.message || "Failed to complete job operation"
+          ),
           flash: "error"
         })
       );
@@ -291,15 +297,11 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (willBeFinished) {
-      const finishOperation = await finishJobOperation(
-        serviceRole,
-        getDatabaseClient(),
-        {
-          jobOperationId: jobOperation.data.id,
-          userId,
-          companyId
-        }
-      );
+      const finishOperation = await finishJobOperation(serviceRole, {
+        jobOperationId: jobOperation.data.id,
+        userId,
+        companyId
+      });
 
       if (finishOperation.error) {
         return data(
@@ -325,6 +327,24 @@ export async function action({ request }: ActionFunctionArgs) {
   } else {
     // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
     const { trackedEntityId, trackingType, ...d } = validation.data;
+
+    const check = await checkStrictBackflush({
+      jobOperationId: validation.data.jobOperationId,
+      quantity: validation.data.quantity,
+      companyId,
+      userId
+    });
+
+    if (check.error) {
+      return data(
+        {},
+        await flash(request, {
+          ...error(check.error, check.message!),
+          flash: "error"
+        })
+      );
+    }
+
     const insertProduction = await insertProductionQuantity(client, {
       ...d,
       companyId,
@@ -344,34 +364,35 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const issued = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("issue", {
+    const issued = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         id: validation.data.jobOperationId,
         type: "jobOperation",
         quantity: validation.data.quantity
-      });
+      }
+    );
 
     if (issued.error) {
       return data(
         {},
         await flash(request, {
-          ...error(issued.error, "Failed to issue materials"),
+          ...error(
+            issued.error,
+            `Units completed, but ${issued.error.message || "failed to issue materials"}`
+          ),
           flash: "error"
         })
       );
     }
 
     if (willBeFinished) {
-      const finishOperation = await finishJobOperation(
-        serviceRole,
-        getDatabaseClient(),
-        {
-          jobOperationId: jobOperation.data.id,
-          userId,
-          companyId
-        }
-      );
+      const finishOperation = await finishJobOperation(serviceRole, {
+        jobOperationId: jobOperation.data.id,
+        userId,
+        companyId
+      });
 
       if (finishOperation.error) {
         return data(

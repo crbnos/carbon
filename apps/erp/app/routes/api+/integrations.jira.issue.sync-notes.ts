@@ -16,8 +16,8 @@ import {
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction } from "react-router";
 import { data } from "react-router";
-import { requireChangeNoticeEditable } from "~/modules/items/items.server";
-import { getActionTaskWithParent } from "~/modules/shared/shared.server";
+import { requireChangeNoticeEditable } from "~/modules/items/items.service";
+import { getActionTaskWithParent } from "~/modules/shared/shared.service";
 
 const logger = getLogger("erp", "integrations-jira-issue-sync-notes");
 

@@ -13,7 +13,7 @@ import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
-import type { getRevenueRecognitionRuns } from "~/modules/accounting";
+import type { getRevenueRecognitionRuns } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 import RevenueRecognitionRunStatus from "./RevenueRecognitionRunStatus";
 import { RUN_PAGES } from "./runPages";

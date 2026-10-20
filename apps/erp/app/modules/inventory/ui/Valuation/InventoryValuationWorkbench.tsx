@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Button,
   cn,
@@ -29,7 +30,6 @@ import {
   LuScale,
   LuTriangleAlert
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { Hyperlink, ItemThumbnail, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
@@ -42,7 +42,7 @@ import {
 import type {
   InventoryTieOutRow,
   InventoryValuationRow
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 
 type InventoryValuationWorkbenchProps = {
@@ -101,7 +101,8 @@ export function InventoryValuationWorkbench({
   const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
   const permissions = usePermissions();
-  const reconcileFetcher = useFetcher<object>();
+  // A refusal is toasted here; a draft journal redirects to the journals.
+  const reconcileFetcher = useAction();
   const unitOfMeasures = useUnitOfMeasure();
 
   const money = useCallback(

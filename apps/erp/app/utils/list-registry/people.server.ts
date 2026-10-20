@@ -12,7 +12,7 @@ import {
   HOLIDAYS_PAGING,
   SHIFTS_PAGING,
   TIMECARD_ENTRIES_PAGING
-} from "~/modules/people";
+} from "~/modules/people/people.service";
 import { EMPLOYEES_PAGING } from "~/modules/users/users.service";
 import type { ListDefinition } from "./index.server";
 import { searchList } from "./index.server";

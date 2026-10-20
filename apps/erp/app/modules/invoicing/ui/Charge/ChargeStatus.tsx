@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Status } from "@carbon/react";
-import type { chargeStatus } from "~/modules/invoicing";
+import type { chargeStatus } from "~/modules/invoicing/invoicing.models";
 
 type ChargeStatusProps = {
   status?: (typeof chargeStatus)[number] | null;

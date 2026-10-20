@@ -9,7 +9,7 @@
 
 import { Trans } from "@lingui/react/macro";
 import RulesUpgradeOverlay from "~/components/RulesUpgradeOverlay";
-import type { EmployeeType } from "~/modules/users";
+import type { EmployeeType } from "~/modules/users/types";
 import EmployeeTypesTable from "./EmployeeTypesTable.ee";
 
 const mockEmployeeTypes: EmployeeType[] = [

@@ -14,7 +14,7 @@ import { usePanels } from "~/components/Layout";
 import {
   getJobOperationStepRecords,
   JOB_OPERATION_STEP_RECORDS_PAGING
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { JobOperationStepRecordsTable } from "~/modules/production/ui/Jobs";
 import { toPage } from "~/utils/cursor";
 import { listErrorPage } from "~/utils/list-registry/load.server";

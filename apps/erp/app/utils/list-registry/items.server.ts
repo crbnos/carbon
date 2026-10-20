@@ -39,7 +39,7 @@ import {
   SERVICES_PAGING,
   TOOLS_PAGING,
   UNIT_OF_MEASURES_PAGING
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { ListDefinition } from "./index.server";
 import { searchList } from "./index.server";

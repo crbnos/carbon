@@ -11,7 +11,10 @@ import {
   RelatedDocumentGroup
 } from "~/components/DocumentPage";
 import { useRouteData } from "~/hooks";
-import type { StockTransfer, StockTransferLine } from "~/modules/inventory";
+import type {
+  StockTransfer,
+  StockTransferLine
+} from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 
 /**

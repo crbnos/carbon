@@ -200,7 +200,7 @@ After the cutover, a document dated before it keeps its status, with some limits
 
 Exact errors from period close, journal immutability and the accounting setup.
 
-The setup wizard is `x+/accounting+/activation.tsx` with one route per step (`activation.readiness`, `.inventory`, `.fixed-assets`, `.trial-balance`, `.enable`); the cutover date rides the `?cutover=` search param. The enable is the `activate-accounting` server function. The cutover is `companySettings.accountingCutoverDate`; `accountingEnabled` is unused. A Provisional journal's lines may sit on Retained Earnings with `journalLine.accountDefaultRole` naming the empty default they wanted; the enable moves them to that default.
+The setup wizard is `x+/accounting+/activation.tsx` with one route per step (`activation.readiness`, `.inventory`, `.fixed-assets`, `.trial-balance`, `.enable`); the cutover date rides the `?cutover=` search param. The enable is the `activate-accounting` posting. The cutover is `companySettings.accountingCutoverDate`; `accountingEnabled` is unused. A Provisional journal's lines may sit on Retained Earnings with `journalLine.accountDefaultRole` naming the empty default they wanted; the enable moves them to that default.
 
 ### "Set up accounting before you post journals, runs or period closes."
 The company has no cutover date. Manual journals, reversals, depreciation runs and disposals, revenue recognition and lease runs, intercompany matching and eliminations, and period lock and close all wait for the setup.
@@ -233,7 +233,7 @@ After the cutover, a posting needed a default account that is empty. Set it unde
 A production event or a maintenance time entry whose journal became Before cutover cannot be posted again. For a production event, setting up accounting opened the job's work in process with its cost, so a re-post would add the cost twice. `TIME_ENTRY_BEFORE_CUTOVER_ERROR`, from `post-production-event` and `post-maintenance-event`.
 
 ### "Target is missing its original control account"
-A payment applied to a document posted before Carbon kept journals, dated on or after the cutover. Press **Write missing journals** on Settings → Accounting (the `journal-legacy-documents` server function), then apply the payment again.
+A payment applied to a document posted before Carbon kept journals, dated on or after the cutover. Press **Write missing journals** on Settings → Accounting (the `journal-legacy-documents` posting), then apply the payment again.
 
 ### "Set the Migration Clearing account to an active Equity account that is not a group." / "Migration Clearing must be an Equity account, not …"
 The Migration Clearing default names an account of another class, or a group account. The opening journal signs its lines as equity.

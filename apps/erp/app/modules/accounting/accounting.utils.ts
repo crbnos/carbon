@@ -495,6 +495,24 @@ export function isFutureRunPeriod(
   return periodEnd > endOfMonth(parseDate(companyToday)).toString();
 }
 
+/** Why `accountId` cannot move under `parentId` in this chart, or null. */
+export function accountMoveRefusal(
+  accounts: { id: string; parentId: string | null; isGroup: boolean }[],
+  accountId: string,
+  parentId: string
+): string | null {
+  const parent = accounts.find((account) => account.id === parentId);
+  if (!parent?.isGroup) return "Choose a group account to move it under";
+  const parentOf = new Map(accounts.map((a) => [a.id, a.parentId]));
+  // Walk up from the new parent: meeting the account means a cycle.
+  for (let id: string | null = parentId; id; id = parentOf.get(id) ?? null) {
+    if (id === accountId) {
+      return "An account cannot move under itself or one of its own accounts";
+    }
+  }
+  return null;
+}
+
 /** The last day of the month a `YYYY-MM-DD` (or ISO timestamp) falls in. */
 export function monthEndOf(date: string): string {
   return endOfMonth(parseDate(date.slice(0, 10))).toString();
@@ -1105,3 +1123,10 @@ function isCalendarDateString(value: string): boolean {
     return false;
   }
 }
+
+// The "Lock the period" checklist step is an Action task whose completion IS the
+// Open -> Locked transition. Its status is derived from the period's closeStatus
+// (Locked/Closed => Done) rather than a stored task status, and its button drives
+// lock/unlock instead of a generic "Mark Done". Identified by name (a stable,
+// non-deletable system definition).
+export const LOCK_PERIOD_TASK_NAME = "Lock the period";

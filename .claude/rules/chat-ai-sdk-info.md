@@ -3,7 +3,7 @@ description: Vercel AI SDK usage in Carbon — versions, the v7 idioms in use, e
 paths:
   - "apps/erp/app/routes/api+/ai+/**"
   - "apps/erp/app/modules/agent/**"
-  - "apps/erp/app/modules/quality/quality.server.ts"
+  - "apps/erp/app/modules/quality/quality.service.ts"
   - "packages/utils/src/llm.ts"
 ---
 
@@ -37,7 +37,7 @@ That is expected and nothing imports it.
 |---|---|---|
 | `apps/erp/app/routes/api+/ai+/csv+/$table.columns.tsx` | `gpt-4o` | Map CSV import columns → DB fields |
 | `apps/erp/app/routes/x+/quote+/$quoteId.drag.tsx` | `gpt-4o-mini` | Parse 3D model filename → part id + revision |
-| `apps/erp/app/modules/quality/quality.server.ts` (`runInspectionBalloonRegionVisionAnalysis`) | `gpt-4o` | Vision: dimension callouts from drawing crops |
+| `apps/erp/app/modules/quality/quality.service.ts` (`runInspectionBalloonRegionVisionAnalysis`) | `gpt-4o` | Vision: dimension callouts from drawing crops |
 | `packages/ee/src/accounting/core/account-mapping-ai.ts` | `openAiCategorizationModel` | Map GL accounts to a provider's chart |
 | `packages/ee/src/paperless-parts/lib/lib.ts` (2) | `openAiCategorizationModel` | Substance / material properties |
 | `packages/jobs/src/inngest/functions/tasks/onboard.ts` | `gpt-4o` | Lead quality (Warm/Cold) |
@@ -60,7 +60,7 @@ reusing a data validator.
 ## The in-app agent (streaming)
 
 `apps/erp/app/modules/agent/` is the only streaming, multi-turn, tool-using use.
-`streamChat` (`agent.server.ts`) runs `streamText`, converts its `stream` with the
+`streamChat` (`agent.service.ts`) runs `streamText`, converts its `stream` with the
 standalone `toUIMessageStream` (`generateMessageId` mints the stored row's id; `onEnd`
 persists the answer) and returns it with `createUIMessageStreamResponse`, where
 `consumeSseStream: consumeStream` keeps `onEnd` running after a browser disconnect.

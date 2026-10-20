@@ -10,7 +10,7 @@ import { useUser } from "~/hooks";
 import type {
   shipmentStatusType,
   shipmentValidator
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.models";
 import type { ShipmentSourceDocument } from "~/modules/inventory/types";
 import type { ListItem } from "~/types";
 

@@ -6,7 +6,10 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getFailureModesList, getLocationsList } from "~/modules/resources";
+import {
+  getFailureModesList,
+  getLocationsList
+} from "~/modules/resources/resources.service";
 import MaintenanceDispatchesTable from "~/modules/resources/ui/Maintenance/MaintenanceDispatchesTable";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";

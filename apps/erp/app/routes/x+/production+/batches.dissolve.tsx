@@ -5,8 +5,8 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { bulkDissolveBatches } from "~/modules/production/bulk-actions.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { serviceContext } from "~/modules/service-context.server";
+import { bulkDissolveBatches } from "~/utils/production-bulk-actions.server";
 import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
 
 // Bulk dissolve — one server-fn dissolve per selected Planned or Active batch.
@@ -18,9 +18,8 @@ import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
 // revalidates.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
-  });
+  const auth = await requirePermissions(request, { update: "production" });
+  const { companyId, userId } = auth;
 
   const json = (await request.json().catch(() => null)) as {
     batchIds?: string[];
@@ -45,12 +44,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: false, message: "No batches selected" };
   }
 
-  const result = await bulkDissolveBatches({
-    client,
-    db: getDatabaseClient(),
-    batchIds: ids,
-    companyId,
-    userId
+  const result = await bulkDissolveBatches(serviceContext(auth), {
+    batchIds: ids
   });
   if (!result.success) return result;
   return {

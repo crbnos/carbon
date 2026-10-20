@@ -22,7 +22,7 @@ import {
 import {
   deactivateUsersAllMatchingValidator,
   deactivateUsersValidator
-} from "~/modules/users";
+} from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 import {
   AllMatchingUsersNote,

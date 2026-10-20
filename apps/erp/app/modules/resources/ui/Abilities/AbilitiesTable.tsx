@@ -17,7 +17,7 @@ import { useNavigate } from "react-router";
 import { EmployeeAvatarGroup, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { Abilities } from "~/modules/resources";
+import type { Abilities } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 

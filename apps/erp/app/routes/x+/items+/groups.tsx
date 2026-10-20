@@ -9,7 +9,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAccountsList } from "~/modules/accounting";
+import { getAccountsList } from "~/modules/accounting/accounting.service";
 import { ItemPostingGroupsTable } from "~/modules/items/ui/ItemPostingGroups";
 import type { Handle } from "~/utils/handle";
 import { itemPostingGroupsList } from "~/utils/list-registry/items.server";

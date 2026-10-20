@@ -128,7 +128,6 @@ for (const problem of validateCatalogInputs(
 
 type ToolMeta = {
   name: string;
-  injectAuth?: string[];
   schema?: { required?: string[]; properties?: Record<string, unknown> };
 };
 
@@ -140,12 +139,9 @@ const tools = new Map<string, ToolMeta>(
   ).tools.map((tool) => [tool.name, tool])
 );
 
-/** A nested `{ input: {...} }` schema describes the wrapper, not the fields the
- * action supplies; unwrap so the required list is comparable. */
+/** An action sends its inputs flat, as the operation's top-level fields. */
 function requiredParamsOf(tool: ToolMeta): string[] {
-  const outer = tool.schema;
-  const inner = outer?.properties?.input as ToolMeta["schema"] | undefined;
-  return (inner?.required ?? outer?.required ?? []) as string[];
+  return tool.schema?.required ?? [];
 }
 
 for (const [id, declaration] of Object.entries(WORKFLOW_ACTIONS)) {
@@ -159,22 +155,32 @@ for (const [id, declaration] of Object.entries(WORKFLOW_ACTIONS)) {
     continue;
   }
 
-  // Only inputs the builder forces are guaranteed to arrive, plus what the dispatcher
-  // stamps. Counting optional ones would repeat the shape of the bug this exists to catch.
+  // Only inputs the builder forces are guaranteed to arrive. Counting optional
+  // ones would repeat the shape of the bug this exists to catch.
   const inputs = (declaration as { inputs: Record<string, { required: boolean }> })
     .inputs;
-  const supplied = new Set([
-    ...Object.entries(inputs)
+  const supplied = new Set(
+    Object.entries(inputs)
       .filter(([, spec]) => spec.required)
-      .map(([name]) => name),
-    ...(tool.injectAuth ?? [])
-  ]);
+      .map(([name]) => name)
+  );
   const missing = requiredParamsOf(tool).filter((p) => !supplied.has(p));
   if (missing.length > 0) {
     fail(
       `Action "${id}" calls "${call}", which requires ${missing
         .map((p) => `"${p}"`)
-        .join(", ")} — not declared as an input and not injected.`
+        .join(", ")} — not declared as an input.`
+    );
+  }
+  // Inputs go out flat, so each must be a top-level field of the operation;
+  // anything else passes validation unread.
+  const fields = tool.schema?.properties ?? {};
+  const unread = Object.keys(inputs).filter((name) => !(name in fields));
+  if (unread.length > 0) {
+    fail(
+      `Action "${id}" calls "${call}", which has no field ${unread
+        .map((p) => `"${p}"`)
+        .join(", ")} — the operation would never read it.`
     );
   }
 }

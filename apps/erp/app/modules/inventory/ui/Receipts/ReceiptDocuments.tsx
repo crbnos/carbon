@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getDocumentType } from "@carbon/files";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
@@ -24,11 +25,10 @@ import {
   RelatedDocumentSkeleton
 } from "~/components/DocumentPage";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { Receipt, ReceiptLine } from "~/modules/inventory";
-import type { purchaseInvoiceStatusType } from "~/modules/invoicing";
+import type { Receipt, ReceiptLine } from "~/modules/inventory/types";
+import type { purchaseInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
 import { InspectionStatus } from "~/modules/quality/ui/Inspections/InspectionStatus";
-import { getDocumentType } from "~/modules/shared";
 import { useCustomers, useSuppliers } from "~/stores";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";

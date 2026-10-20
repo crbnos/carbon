@@ -258,35 +258,35 @@ beforeEach(() => {
   harness.submit.mockClear();
 });
 describe("payment composer document funding", () => {
-  it.each([
-    "Receipt",
-    "Disbursement"
-  ])("applies %s refunds to memos and reopens exact principal", (paymentType) => {
-    const overrides = {
-      paymentType,
-      isRefund: true,
-      paymentTotal: 110,
-      openInvoices: [props.openInvoices[0]]
-    };
-    const html = render(overrides);
-    expect(html).toContain("Refund memos");
-    expect(harness.amounts).toHaveLength(1);
-    click("Auto apply");
-    render(overrides);
-    const apps = savedApplications();
-    expect(apps).toEqual([
-      expect.objectContaining({
-        targetMemoId: "one",
-        appliedAmount: 100,
-        sourceAmount: 110
-      })
-    ]);
-    expect(apps[0]).not.toHaveProperty("targetSalesInvoiceId");
-    expect(apps[0]).not.toHaveProperty("targetPurchaseInvoiceId");
-    harness.state = undefined;
-    render({ ...overrides, existingApplications: apps });
-    expect(savedApplications()).toEqual(apps);
-  });
+  it.each(["Receipt", "Disbursement"])(
+    "applies %s refunds to memos and reopens exact principal",
+    (paymentType) => {
+      const overrides = {
+        paymentType,
+        isRefund: true,
+        paymentTotal: 110,
+        openInvoices: [props.openInvoices[0]]
+      };
+      const html = render(overrides);
+      expect(html).toContain("Refund memos");
+      expect(harness.amounts).toHaveLength(1);
+      click("Auto apply");
+      render(overrides);
+      const apps = savedApplications();
+      expect(apps).toEqual([
+        expect.objectContaining({
+          targetMemoId: "one",
+          appliedAmount: 100,
+          sourceAmount: 110
+        })
+      ]);
+      expect(apps[0]).not.toHaveProperty("targetSalesInvoiceId");
+      expect(apps[0]).not.toHaveProperty("targetPurchaseInvoiceId");
+      harness.state = undefined;
+      render({ ...overrides, existingApplications: apps });
+      expect(savedApplications()).toEqual(apps);
+    }
+  );
   it("applies an employee disbursement to reimbursements without discount or write-off", () => {
     const overrides = {
       paymentType: "Disbursement" as const,
@@ -355,84 +355,84 @@ describe("payment composer document funding", () => {
     appliedDate: "2026-09-07"
   };
 
-  it.each([
-    false,
-    true
-  ])("manual base .01 consumes160.00 and preserves a document cent (reopened:%s)", (reopened) => {
-    const overrides = {
-      ...highRate,
-      existingApplications: reopened ? [highRateApplication] : []
-    };
-    render(overrides);
-    editAmount("Applied amount for INV1", 0.01);
-    render(overrides);
-    expect(savedApplications()).toEqual([
-      expect.objectContaining({ appliedAmount: 0.01, sourceAmount: 160 })
-    ]);
-  });
+  it.each([false, true])(
+    "manual base .01 consumes160.00 and preserves a document cent (reopened:%s)",
+    (reopened) => {
+      const overrides = {
+        ...highRate,
+        existingApplications: reopened ? [highRateApplication] : []
+      };
+      render(overrides);
+      editAmount("Applied amount for INV1", 0.01);
+      render(overrides);
+      expect(savedApplications()).toEqual([
+        expect.objectContaining({ appliedAmount: 0.01, sourceAmount: 160 })
+      ]);
+    }
+  );
 
-  it.each([
-    "Discount",
-    "Write-off"
-  ])("%s zero edit does not promote a rounded partial amount to full document relief", (label) => {
-    const overrides = {
-      ...highRate,
-      existingApplications: [{ ...highRateApplication, sourceAmount: 160 }]
-    };
-    render(overrides);
-    editAmount(`${label} for INV1`, 0);
-    render(overrides);
-    expect(savedApplications()).toEqual([
-      expect.objectContaining({
-        appliedAmount: 0.01,
-        sourceAmount: 160,
-        discountAmount: 0,
-        writeOffAmount: 0
-      })
-    ]);
-  });
+  it.each(["Discount", "Write-off"])(
+    "%s zero edit does not promote a rounded partial amount to full document relief",
+    (label) => {
+      const overrides = {
+        ...highRate,
+        existingApplications: [{ ...highRateApplication, sourceAmount: 160 }]
+      };
+      render(overrides);
+      editAmount(`${label} for INV1`, 0);
+      render(overrides);
+      expect(savedApplications()).toEqual([
+        expect.objectContaining({
+          appliedAmount: 0.01,
+          sourceAmount: 160,
+          discountAmount: 0,
+          writeOffAmount: 0
+        })
+      ]);
+    }
+  );
 
-  it.each([
-    "checkbox",
-    "Auto apply"
-  ])("%s retains all160.01 source units for an exact full application", (selection) => {
-    render(highRate);
-    if (selection === "checkbox")
-      harness.checkboxes[0]?.onCheckedChange?.(true);
-    else click(selection);
-    render(highRate);
-    expect(savedApplications()).toEqual([
-      expect.objectContaining({ appliedAmount: 0.01, sourceAmount: 160.01 })
-    ]);
-  });
+  it.each(["checkbox", "Auto apply"])(
+    "%s retains all160.01 source units for an exact full application",
+    (selection) => {
+      render(highRate);
+      if (selection === "checkbox")
+        harness.checkboxes[0]?.onCheckedChange?.(true);
+      else click(selection);
+      render(highRate);
+      expect(savedApplications()).toEqual([
+        expect.objectContaining({ appliedAmount: 0.01, sourceAmount: 160.01 })
+      ]);
+    }
+  );
 
-  it.each([
-    "checkbox",
-    "Auto apply"
-  ])("%s retains the final document cent even when its carrying base is zero", (selection) => {
-    const overrides = {
-      ...highRate,
-      availableCredit: 0.01,
-      priorSources: [
-        {
-          ...highRate.priorSources[0],
-          remainingDocument: 0.01,
-          remainingBase: 0
-        }
-      ],
-      openInvoices: [
-        { ...highRate.openInvoices[0], remainingDocument: 0.01, balance: 0 }
-      ]
-    };
-    render(overrides);
-    if (selection === "checkbox")
-      harness.checkboxes[0]?.onCheckedChange?.(true);
-    else click(selection);
-    render(overrides);
-    expect(savedApplications()).toEqual([
-      expect.objectContaining({ appliedAmount: 0, sourceAmount: 0.01 })
-    ]);
-  });
+  it.each(["checkbox", "Auto apply"])(
+    "%s retains the final document cent even when its carrying base is zero",
+    (selection) => {
+      const overrides = {
+        ...highRate,
+        availableCredit: 0.01,
+        priorSources: [
+          {
+            ...highRate.priorSources[0],
+            remainingDocument: 0.01,
+            remainingBase: 0
+          }
+        ],
+        openInvoices: [
+          { ...highRate.openInvoices[0], remainingDocument: 0.01, balance: 0 }
+        ]
+      };
+      render(overrides);
+      if (selection === "checkbox")
+        harness.checkboxes[0]?.onCheckedChange?.(true);
+      else click(selection);
+      render(overrides);
+      expect(savedApplications()).toEqual([
+        expect.objectContaining({ appliedAmount: 0, sourceAmount: 0.01 })
+      ]);
+    }
+  );
 
   it("discount and write-off edits still reduce cash on an exact full selection", () => {
     render();
@@ -743,27 +743,27 @@ const memoHighRateProps = {
     }
   ]
 };
-it.each([
-  false,
-  true
-])("manual memo base .01 preserves a document cent (reopened: %s)", (reopened) => {
-  const creditProps = {
-    ...memoHighRateProps,
-    staged: reopened
-      ? [{ memoId: "m", invoiceId: "i", amount: 0.01, sourceAmount: 160.01 }]
-      : []
-  };
-  renderToStaticMarkup(createElement(AvailableCreditsTable, creditProps));
-  expect(harness.amounts).toHaveLength(1);
-  harness.amounts[0]?.onChange?.(0.01);
-  harness.buttons = [];
-  renderToStaticMarkup(createElement(AvailableCreditsTable, creditProps));
-  click("Apply credits");
-  const submitted = harness.submit.mock.calls.at(-1)?.[0] as FormData;
-  expect(JSON.parse(String(submitted.get("applications")))).toEqual([
-    { memoId: "m", invoiceId: "i", amount: 0.01, sourceAmount: 160 }
-  ]);
-});
+it.each([false, true])(
+  "manual memo base .01 preserves a document cent (reopened: %s)",
+  (reopened) => {
+    const creditProps = {
+      ...memoHighRateProps,
+      staged: reopened
+        ? [{ memoId: "m", invoiceId: "i", amount: 0.01, sourceAmount: 160.01 }]
+        : []
+    };
+    renderToStaticMarkup(createElement(AvailableCreditsTable, creditProps));
+    expect(harness.amounts).toHaveLength(1);
+    harness.amounts[0]?.onChange?.(0.01);
+    harness.buttons = [];
+    renderToStaticMarkup(createElement(AvailableCreditsTable, creditProps));
+    click("Apply credits");
+    const submitted = harness.submit.mock.calls.at(-1)?.[0] as FormData;
+    expect(JSON.parse(String(submitted.get("applications")))).toEqual([
+      { memoId: "m", invoiceId: "i", amount: 0.01, sourceAmount: 160 }
+    ]);
+  }
+);
 it("full memo checkbox selection retains the exact document remainder", () => {
   renderToStaticMarkup(createElement(AvailableCreditsTable, memoHighRateProps));
   harness.checkboxes[0]?.onCheckedChange?.(true);

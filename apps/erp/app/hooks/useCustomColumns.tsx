@@ -25,7 +25,7 @@ import {
   SupplierAvatar
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { DataType } from "~/modules/shared";
+import { DataType } from "~/modules/shared/types";
 import { useCustomers, usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { useCustomFieldsSchema } from "./useCustomFieldsSchema";

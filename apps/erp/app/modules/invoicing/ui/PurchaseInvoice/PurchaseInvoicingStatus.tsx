@@ -4,7 +4,7 @@
 
 import { Status } from "@carbon/react";
 import { PURCHASE_INVOICE_STATUS_COLOR_MAP } from "@carbon/utils";
-import type { purchaseInvoiceStatusType } from "~/modules/invoicing";
+import type { purchaseInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
 
 type PurchaseInvoicingStatusProps = {
   status?: (typeof purchaseInvoiceStatusType)[number] | null;

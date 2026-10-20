@@ -7,17 +7,17 @@ import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
-import type { AgingTotals, RecentPayment } from "~/modules/invoicing";
 import {
   getApAging,
   getApTieOut,
   getArAging,
   getArTieOut,
-  getPayments,
-  InvoicingDashboard
-} from "~/modules/invoicing";
-import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+  getPayments
+} from "~/modules/invoicing/invoicing.service";
+import type { AgingTotals, RecentPayment } from "~/modules/invoicing/ui";
+import { InvoicingDashboard } from "~/modules/invoicing/ui";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const meta: MetaFunction = () => {

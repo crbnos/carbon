@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -11,10 +12,10 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  ModalTitle
+  ModalTitle,
+  toast
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
-import { useFetcher } from "react-router";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { UserSelect } from "~/components/Selectors";
 import {
   type AllMatchingSelection,
@@ -23,7 +24,7 @@ import {
 import {
   resendInviteAllMatchingValidator,
   resendInviteValidator
-} from "~/modules/users";
+} from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 import {
   AllMatchingUsersNote,
@@ -48,7 +49,18 @@ const ResendInviteModal = ({
   allMatchingFetcher,
   onClose
 }: ResendInviteModalProps) => {
-  const fetcher = useFetcher<{}>();
+  const { t } = useLingui();
+  // The modal stays open until the action answers: it unmounts when it
+  // closes, and the result is read here.
+  const fetcher = useAction({
+    onSuccess: (data) =>
+      toast.success(
+        data.data?.queued
+          ? t`Successfully added invites to queue`
+          : t`Successfully resent invite`
+      ),
+    onSettled: () => onClose()
+  });
   const isSingleUser = !allMatching && userIds.length === 1;
 
   return (
@@ -100,7 +112,7 @@ const ResendInviteModal = ({
                   ? resendInviteAllMatchingValidator
                   : resendInviteValidator
               }
-              onSubmit={onClose}
+              onSubmit={allMatching ? onClose : undefined}
               fetcher={allMatching ? allMatchingFetcher : fetcher}
             >
               {allMatching && (
@@ -118,7 +130,7 @@ const ResendInviteModal = ({
                   value={id}
                 />
               ))}
-              <Button type="submit">
+              <Button type="submit" isLoading={fetcher.isPending}>
                 <Trans>Send</Trans>
               </Button>
             </ValidatedForm>

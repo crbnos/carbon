@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateQuoteFavorite } from "~/modules/sales";
+import { updateQuoteFavorite } from "~/modules/sales/sales.service";
 import { favoriteSchema } from "~/types/validators";
 
 export async function action({ request }: ActionFunctionArgs) {

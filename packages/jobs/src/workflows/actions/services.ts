@@ -14,6 +14,7 @@ import {
   type WorkflowServices
 } from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { OwnerPermissions } from "../engine/owner";
 import { runCreateAction } from "./create";
 import { getWorkflowDispatch } from "./dispatcher";
 import { runNotifyAction } from "./notify";
@@ -33,6 +34,7 @@ export function createWorkflowServices(params: {
   companyId: string;
   companyGroupId: string;
   ownerId: string;
+  permissions: OwnerPermissions;
   runId: string;
   workflowId: string;
 }): WorkflowServices {
@@ -42,6 +44,7 @@ export function createWorkflowServices(params: {
     companyId,
     companyGroupId,
     ownerId,
+    permissions,
     runId,
     workflowId
   } = params;
@@ -87,7 +90,13 @@ export function createWorkflowServices(params: {
 
       return runCreateAction({
         dispatch,
-        context: { client, companyId, companyGroupId, userId: ownerId },
+        context: {
+          client,
+          companyId,
+          companyGroupId,
+          userId: ownerId,
+          permissions
+        },
         call: route.call,
         entity: record.of,
         inputs

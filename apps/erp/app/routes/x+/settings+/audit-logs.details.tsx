@@ -15,7 +15,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { AuditLogTable } from "~/modules/settings";
+import { AuditLogTable } from "~/modules/settings/ui";
 import { decodeOffsetToken, encodeOffsetToken } from "~/utils/cursor";
 import { listErrorPage } from "~/utils/list-registry/load.server";
 import { PAGE_SIZE } from "~/utils/pagination";

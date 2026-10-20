@@ -25,7 +25,7 @@ import {
 import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { SuggestionListItem } from "~/modules/resources";
+import type { SuggestionListItem } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 

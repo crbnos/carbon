@@ -2,278 +2,39 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { serverFns } from "@carbon/server-functions";
-import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { Shipment, ShipmentLine } from "~/modules/inventory";
-import {
-  getShipment,
-  shipmentValidator,
-  upsertShipment
-} from "~/modules/inventory";
+import { shipmentValidator } from "~/modules/inventory/inventory.models";
+import type { Shipment, ShipmentLine } from "~/modules/inventory/types";
 import {
   ShipmentForm,
   ShipmentLines,
   ShipmentNotes
 } from "~/modules/inventory/ui/Shipments";
-import type { Note } from "~/modules/shared";
-import { getDatabaseClient } from "~/services/database.server";
+import type { Note } from "~/modules/shared/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "shipment", "details");
-
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(shipmentValidator).request(args, {
+    params: ["shipmentId"]
   });
-
-  const formData = await request.formData();
-  const validation = await validator(shipmentValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...d } = validation.data;
-  if (!id) throw new Error("id not found");
-
-  const currentShipment = await getShipment(client, id);
-  if (currentShipment.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(currentShipment.error, "Failed to load shipment")
-      )
-    );
-  }
-
-  const shipmentDataHasChanged =
-    currentShipment.data.sourceDocument !== d.sourceDocument ||
-    currentShipment.data.sourceDocumentId !== d.sourceDocumentId ||
-    currentShipment.data.locationId !== d.locationId;
-
-  const sourceChanged =
-    currentShipment.data.sourceDocument !== d.sourceDocument ||
-    currentShipment.data.sourceDocumentId !== d.sourceDocumentId;
-  const isRental =
-    currentShipment.data.sourceDocument === "Rental Agreement" ||
-    d.sourceDocument === "Rental Agreement";
-  if (isRental && sourceChanged) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(
-          null,
-          "A rental shipment keeps its rental agreement. Create it from the agreement."
-        )
-      )
-    );
-  }
-
-  if (shipmentDataHasChanged && !isRental) {
-    switch (d.sourceDocument) {
-      case "Sales Order":
-        const salesOrderShipment = await serverFns
-          .system({
-            db: getDatabaseClient(),
-            companyId,
-            userId
-          })
-          .invoke("create", {
-            type: "shipmentFromSalesOrder",
-            locationId: d.locationId as string,
-            salesOrderId: d.sourceDocumentId,
-            shipmentId: id
-          });
-        if (!salesOrderShipment.data || salesOrderShipment.error) {
-          logger.error("Failed to create shipment from source document", {
-            error: salesOrderShipment.error
-          });
-          throw redirect(
-            path.to.shipment(id),
-            await flash(
-              request,
-              error(
-                salesOrderShipment.error,
-                getErrorMessage(
-                  salesOrderShipment.error,
-                  "Failed to create shipment"
-                )
-              )
-            )
-          );
-        }
-        break;
-      case "Sales Return Order": {
-        const salesReturnShipment = await serverFns
-          .system({
-            db: getDatabaseClient(),
-            companyId,
-            userId
-          })
-          .invoke("create", {
-            type: "shipmentFromSalesReturnOrder",
-            locationId: d.locationId,
-            salesReturnOrderId: d.sourceDocumentId,
-            shipmentId: id
-          });
-        if (!salesReturnShipment.data || salesReturnShipment.error) {
-          logger.error("Failed to create shipment from source document", {
-            error: salesReturnShipment.error
-          });
-          throw redirect(
-            path.to.shipment(id),
-            await flash(
-              request,
-              error(
-                salesReturnShipment.error,
-                getErrorMessage(
-                  salesReturnShipment.error,
-                  "Failed to create shipment"
-                )
-              )
-            )
-          );
-        }
-        break;
-      }
-      case "Purchase Return Order": {
-        const purchaseReturnShipment = await serverFns
-          .system({
-            db: getDatabaseClient(),
-            companyId,
-            userId
-          })
-          .invoke("create", {
-            type: "shipmentFromPurchaseReturnOrder",
-            locationId: d.locationId,
-            purchaseReturnOrderId: d.sourceDocumentId,
-            shipmentId: id
-          });
-        if (!purchaseReturnShipment.data || purchaseReturnShipment.error) {
-          logger.error("Failed to create shipment from source document", {
-            error: purchaseReturnShipment.error
-          });
-          throw redirect(
-            path.to.shipment(id),
-            await flash(
-              request,
-              error(
-                purchaseReturnShipment.error,
-                getErrorMessage(
-                  purchaseReturnShipment.error,
-                  "Failed to create shipment"
-                )
-              )
-            )
-          );
-        }
-        break;
-      }
-      case "Purchase Order":
-        const purchaseOrderShipment = await serverFns
-          .system({
-            db: getDatabaseClient(),
-            companyId,
-            userId
-          })
-          .invoke("create", {
-            type: "shipmentFromPurchaseOrder",
-            locationId: d.locationId as string,
-            purchaseOrderId: d.sourceDocumentId,
-            shipmentId: id
-          });
-        if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
-          logger.error("Failed to create shipment from source document", {
-            error: purchaseOrderShipment.error
-          });
-          throw redirect(
-            path.to.shipment(id),
-            await flash(
-              request,
-              error(
-                purchaseOrderShipment.error,
-                getErrorMessage(
-                  purchaseOrderShipment.error,
-                  "Failed to create shipment"
-                )
-              )
-            )
-          );
-        }
-        break;
-      case "Outbound Transfer":
-        const warehouseTransferShipment = await serverFns
-          .system({
-            db: getDatabaseClient(),
-            companyId,
-            userId
-          })
-          .invoke("create", {
-            type: "shipmentFromWarehouseTransfer",
-            warehouseTransferId: d.sourceDocumentId,
-            shipmentId: id
-          });
-        if (
-          !warehouseTransferShipment.data ||
-          warehouseTransferShipment.error
-        ) {
-          logger.error("Failed to create shipment from source document", {
-            error: warehouseTransferShipment.error
-          });
-          throw redirect(
-            path.to.shipment(id),
-            await flash(
-              request,
-              error(
-                warehouseTransferShipment.error,
-                getErrorMessage(
-                  warehouseTransferShipment.error,
-                  "Failed to create shipment"
-                )
-              )
-            )
-          );
-        }
-        break;
-      default:
-        throw new Error(`Unsupported source document: ${d.sourceDocument}`);
-    }
-  } else {
-    const updateShipment = await upsertShipment(client, {
-      id,
-      ...d,
-      updatedBy: userId,
-      customFields: setCustomFields(formData)
-    });
-
-    if (updateShipment.error) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(updateShipment.error, "Failed to update shipment")
-        )
-      );
-    }
-  }
-
-  throw redirect(
-    path.to.shipment(id),
-    await flash(request, success("Updated shipment"))
-  );
+  if ("invalid" in input) return input.invalid;
+  const { shipmentId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.inventory.updateShipment({
+    ...input.data,
+    // The document in the URL is the one updated, whatever the form's id says.
+    id: shipmentId,
+    customFields: input.formData && setCustomFields(input.formData)
+  });
+  return respond(args.request, result).redirect(path.to.shipment(shipmentId), {
+    message: "Updated shipment"
+  });
 }
 
 export default function ShipmentDetailsRoute() {

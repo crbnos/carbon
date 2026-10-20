@@ -194,6 +194,21 @@ BEGIN
   ASSERT v_error IS NULL, 'Scrap job at 1 failed: ' || COALESCE(v_error, '');
   ASSERT pg_temp.serials(v_job) = 'XJ-01:Scrapped:0,XJ-02:Available:1', 'A scrapped unit must not be received: ' || pg_temp.serials(v_job);
 
+  -- A finished unit another job consumed before this job was received is still
+  -- received: its consumption already took it out of stock, so the receipt
+  -- nets its on-hand to zero, and it stays Consumed.
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'CJ', 3);
+  UPDATE "trackedEntity" SET status = 'Available' WHERE "readableId" = 'CJ-02' AND "companyId" = v_company_id;
+  UPDATE "trackedEntity" SET status = 'Consumed' WHERE "readableId" = 'CJ-01' AND "companyId" = v_company_id;
+  INSERT INTO "itemLedger" ("entryType", "documentType", "documentId", "companyId", "itemId", quantity, "locationId", "trackedEntityId", "createdBy")
+    SELECT 'Consumption', 'Job Consumption', 'parent-job', v_company_id, v_serial_item, -1, v_location_id, id, 'system'
+    FROM "trackedEntity" WHERE "readableId" = 'CJ-01' AND "companyId" = v_company_id;
+  v_error := pg_temp.try_complete(v_job, 3);
+  ASSERT v_error IS NULL, 'A job with a consumed unit must complete, got: ' || COALESCE(v_error, '');
+  ASSERT pg_temp.serials(v_job) = 'CJ-01:Consumed:1,CJ-02:Available:1,CJ-03:Available:1', 'The consumed unit must be received and stay Consumed: ' || pg_temp.serials(v_job);
+  ASSERT (SELECT sum(il.quantity) FROM "itemLedger" il JOIN "trackedEntity" te ON te.id = il."trackedEntityId"
+    WHERE te."readableId" = 'CJ-01' AND te."companyId" = v_company_id) = 0, 'The consumed unit must net to zero on hand';
+
   -- An item with no serial sequence keeps one seed entity covering every unit.
   -- It is received as a whole, so marking the last operation Done never raises
   -- out of sync_finish_job_operation's BEFORE trigger.
@@ -290,7 +305,7 @@ BEGIN
   ASSERT pg_temp.wip(v_job, v_wip_account) = 0, 'The next receipt must discharge the WIP: ' || pg_temp.wip(v_job, v_wip_account);
   ASSERT (SELECT count(*) FROM "costLedger" WHERE "documentId" = v_job AND quantity = 1 AND cost = 50) = 1, 'The next receipt must carry the WIP into one cost layer';
 
-  RAISE NOTICE 'ALL JOB COMPLETION CASES PASSED (zero/fraction/lower refusal, partial and full serial receipt, re-completion, shop-floor-first, scrapped, too few units, unsplit placeholders, inventory lower/re-completion, reopened last operation, non-inventory, accounting zero-delta with catch-up WIP)';
+  RAISE NOTICE 'ALL JOB COMPLETION CASES PASSED (zero/fraction/lower refusal, partial and full serial receipt, re-completion, shop-floor-first, scrapped, too few units, consumed before receipt, unsplit placeholders, inventory lower/re-completion, reopened last operation, non-inventory, accounting zero-delta with catch-up WIP)';
 END;
 $cases$;
 ROLLBACK;

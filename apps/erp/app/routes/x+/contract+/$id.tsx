@@ -34,7 +34,7 @@ import {
   getContractAmendments,
   getContractInvoiceSchedule,
   getContractLines
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import type {
   Contract,
   ContractCreditMemoLinks,
@@ -49,7 +49,7 @@ import {
   toContractLineTerms,
   toContractTerms
 } from "~/modules/sales/ui/Contracts";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

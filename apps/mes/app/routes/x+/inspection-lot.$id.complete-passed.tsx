@@ -9,10 +9,10 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
 import { inspectionCompletePassedValidator } from "~/services/models";
 import { returnPickedRemainders } from "~/services/operations.service";
 import {
+  checkStrictBackflush,
   getInspectionOutcomeState,
   getSerialCompletionCandidates,
   postBulkCompletion,
@@ -36,7 +36,7 @@ async function sweepIfOperationDone(
     .eq("companyId", args.companyId)
     .maybeSingle();
   if (op.data?.status !== "Done") return;
-  await returnPickedRemainders(serviceRole, getDatabaseClient(), args);
+  await returnPickedRemainders(serviceRole, args);
 }
 
 // Progressive completion while the lot stays open: any unit that passed
@@ -106,6 +106,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
         `Passed units (${candidates.length}) exceed the operation's remaining quantity (${state.opRemaining}) — quantities were already recorded from the actions menu`
       );
     }
+    const backflushCheck = await checkStrictBackflush({
+      jobOperationId: state.jobOperationId,
+      quantity: candidates.length,
+      companyId,
+      userId
+    });
+    if (backflushCheck.error) {
+      return fail(backflushCheck.error, backflushCheck.message!);
+    }
     const completions = await postSerialCompletions(serviceRole, {
       candidates,
       jobOperationId: state.jobOperationId,
@@ -143,6 +152,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (quantity <= 0) {
     return fail(null, "No passed units to complete");
+  }
+
+  const backflushCheck = await checkStrictBackflush({
+    jobOperationId: state.jobOperationId,
+    quantity,
+    companyId,
+    userId
+  });
+  if (backflushCheck.error) {
+    return fail(backflushCheck.error, backflushCheck.message!);
   }
 
   const completion = await postBulkCompletion(serviceRole, client, state, {

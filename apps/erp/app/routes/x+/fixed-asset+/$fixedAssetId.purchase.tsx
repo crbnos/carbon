@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ValidatedForm, validationError, validator } from "@carbon/form";
+import { ValidatedForm, validator } from "@carbon/form";
 import {
   Button,
   HStack,
@@ -23,12 +24,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
 import { Submit, Supplier } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { getFixedAsset } from "~/modules/accounting";
-import {
-  insertPurchaseOrder,
-  upsertPurchaseOrderLine
-} from "~/modules/purchasing";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getFixedAsset } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 
 const purchaseAssetValidator = z.object({
@@ -69,83 +65,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return null;
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      create: "purchasing"
-    });
-
-  const { fixedAssetId } = params;
-  if (!fixedAssetId) throw notFound("fixedAssetId not found");
-
-  const formData = await request.formData();
-  const validation = await validator(purchaseAssetValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { supplierId } = validation.data;
-
-  const [asset, defaults] = await Promise.all([
-    getFixedAsset(client, fixedAssetId, companyId),
-    getUserDefaults(client, userId, companyId)
-  ]);
-
-  if (asset.error || !asset.data) {
-    throw redirect(
-      path.to.fixedAssets,
-      await flash(request, error(asset.error, "Failed to get fixed asset"))
-    );
-  }
-
-  const locationId = asset.data.locationId ?? defaults.data?.locationId ?? "";
-
-  const newPO = await insertPurchaseOrder(client, {
-    supplierId,
-    locationId,
-    status: "Draft",
-    purchaseOrderType: "Purchase",
-    companyId,
-    companyGroupId,
-    createdBy: userId
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(purchaseAssetValidator).request(args, {
+    params: ["fixedAssetId"]
   });
-
-  if (newPO.error || !newPO.data) {
-    throw redirect(
-      path.to.fixedAsset(fixedAssetId),
-      await flash(
-        request,
-        error(newPO.error, "Failed to create purchase order")
-      )
-    );
-  }
-
-  const purchaseOrderId = newPO.data.id;
-
-  await upsertPurchaseOrderLine(client, {
-    purchaseOrderId,
-    purchaseOrderLineType: "Fixed Asset",
-    assetId: fixedAssetId,
-    description: asset.data.name,
-    locationId,
-    purchaseQuantity: 1,
-    supplierUnitPrice: 0,
-    supplierShippingCost: 0,
-    supplierTaxAmount: 0,
-    taxPercent: 0,
-    exchangeRate: 1,
-    purchaseUnitOfMeasureCode: "EA",
-    inventoryUnitOfMeasureCode: "EA",
-    conversionFactor: 1,
-    companyId,
-    createdBy: userId
+  if ("invalid" in input) return input.invalid;
+  const { fixedAssetId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.accounting.purchaseFixedAsset({
+    fixedAssetId,
+    supplierId: input.data.supplierId
   });
-
-  throw redirect(
-    path.to.purchaseOrder(purchaseOrderId),
-    await flash(request, success("Purchase order created"))
+  return respond(args.request, result).redirect(
+    result.data
+      ? path.to.purchaseOrder(result.data.purchaseOrderId)
+      : path.to.fixedAsset(fixedAssetId),
+    { message: "Purchase order created" }
   );
 }
 

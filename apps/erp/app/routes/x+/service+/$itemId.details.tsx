@@ -13,8 +13,9 @@ import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ItemFile, ServiceSummary } from "~/modules/items";
-import { serviceValidator, upsertService } from "~/modules/items";
+import { serviceValidator } from "~/modules/items/items.models";
+import { upsertService } from "~/modules/items/items.service";
+import type { ItemFile, ServiceSummary } from "~/modules/items/types";
 import {
   ItemDocuments,
   ItemNotes,

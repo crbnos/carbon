@@ -15,9 +15,9 @@ import {
   getJobOperationsList,
   getProductionEvents,
   PRODUCTION_EVENTS_PAGING
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { ProductionEventsTable } from "~/modules/production/ui/Jobs";
-import { getWorkCentersList } from "~/modules/resources";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { toPage } from "~/utils/cursor";
 import { listErrorPage } from "~/utils/list-registry/load.server";
 import { path, requestReferrer } from "~/utils/path";

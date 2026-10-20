@@ -8,6 +8,7 @@
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
 
+#[derive(Debug)]
 pub struct ApiError {
     pub status: u16,
     pub code: String,

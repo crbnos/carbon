@@ -30,8 +30,11 @@ import {
   SALES_ORDERS_PAGING,
   SALES_RETURN_ORDERS_PAGING,
   SALES_RFQS_PAGING
-} from "~/modules/sales";
-import { CUSTOMER_PORTALS_PAGING, getCustomerPortals } from "~/modules/shared";
+} from "~/modules/sales/sales.service";
+import {
+  CUSTOMER_PORTALS_PAGING,
+  getCustomerPortals
+} from "~/modules/shared/shared.service";
 import type { ListDefinition } from "./index.server";
 import { searchList } from "./index.server";
 

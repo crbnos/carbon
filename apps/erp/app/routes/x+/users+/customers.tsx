@@ -10,12 +10,12 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCustomerTypes } from "~/modules/sales";
+import { getCustomerTypes } from "~/modules/sales/sales.service";
+import { CustomerAccountsTable } from "~/modules/users/ui";
 import {
-  CustomerAccountsTable,
   getCustomers,
   getUnrevokedInviteEmails
-} from "~/modules/users";
+} from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";

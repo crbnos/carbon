@@ -25,7 +25,7 @@ import {
   getDepreciationRun,
   getDepreciationRunLines,
   getPeriodRunRelatedItems
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { depreciationRunLineDisplay } from "~/modules/accounting/accounting.utils";
 import {
   DepreciationRunDocuments,

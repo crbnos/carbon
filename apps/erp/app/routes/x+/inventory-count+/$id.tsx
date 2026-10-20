@@ -18,14 +18,14 @@ import {
   getInventoryCountMovements,
   getStorageTypesList,
   getStorageUnitsListForLocation,
-  INVENTORY_COUNT_LINES_PAGING,
-  InventoryCountDetails
-} from "~/modules/inventory";
+  INVENTORY_COUNT_LINES_PAGING
+} from "~/modules/inventory/inventory.service";
+import { InventoryCountDetails } from "~/modules/inventory/ui";
 import {
   getMaterialFormsList,
   getMaterialSubstancesList
-} from "~/modules/items";
-import { getTagsList } from "~/modules/shared";
+} from "~/modules/items/items.service";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { toPage } from "~/utils/cursor";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { listErrorPage } from "~/utils/list-registry/load.server";

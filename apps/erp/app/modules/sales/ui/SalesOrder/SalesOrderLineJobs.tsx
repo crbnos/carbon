@@ -46,7 +46,7 @@ import {
   LuCirclePlus,
   LuSettings2
 } from "react-icons/lu";
-import { useFetcher, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Assignee, Empty, Hyperlink, TimeTypeIcon } from "~/components";
 import {
   Hidden,
@@ -68,6 +68,7 @@ import { JobStartModal } from "~/modules/production/ui/Jobs/JobHeader";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { OperationDueDatePicker } from "~/modules/production/ui/Jobs/OperationDueDatePicker";
+import { useJobRelease } from "~/modules/production/ui/Jobs/useJobRelease";
 import { path } from "~/utils/path";
 import type {
   Opportunity,
@@ -299,7 +300,7 @@ export function SalesOrderJobItem({
   const disclosure = useDisclosure();
   const permissions = usePermissions();
   const releaseModal = useDisclosure();
-  const statusFetcher = useFetcher<{}>();
+  const release = useJobRelease();
   const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
   return (
@@ -358,13 +359,10 @@ export function SalesOrderJobItem({
         <HStack>
           <Button
             onClick={releaseModal.onOpen}
-            isLoading={
-              statusFetcher.state !== "idle" &&
-              statusFetcher.formData?.get("status") === "Ready"
-            }
+            isLoading={release.isPending}
             isDisabled={
               job.status !== "Draft" ||
-              statusFetcher.state !== "idle" ||
+              release.isPending ||
               !permissions.can("update", "production") ||
               (job?.quantity === 0 && job?.scrapQuantity === 0)
             }
@@ -391,7 +389,7 @@ export function SalesOrderJobItem({
         <JobStartModal
           job={job as Job}
           onClose={releaseModal.onClose}
-          fetcher={statusFetcher}
+          release={release}
         />
       )}
     </VStack>

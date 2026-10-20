@@ -5,7 +5,7 @@
 import { RecordOutlet, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getChangeNoticeTypesList } from "~/modules/items";
+import { getChangeNoticeTypesList } from "~/modules/items/items.service";
 import { ChangeNoticesTable } from "~/modules/items/ui/ChangeNotice";
 import { changeNoticesList } from "~/utils/list-registry/items.server";
 import { loadListPage } from "~/utils/list-registry/load.server";

@@ -2,14 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { unchecked } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAttributeDataTypes } from "~/modules/people";
-import { CustomFieldsTable } from "~/modules/settings";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import { getAttributeDataTypes } from "~/modules/people/people.service";
+import { CustomFieldsTable } from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { customFieldTablesList } from "~/utils/list-registry/settings.server";
@@ -34,43 +36,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+// Any record's properties panel posts here: the record ids, its table and
+// the custom field values as one JSON string.
+const customFieldsForm = z.object({
+  ids: zfd.repeatable(z.array(z.string())),
+  table: z.string().min(1, { message: "Invalid table" }),
+  value: zfd.json(z.record(z.string(), z.unknown()))
+});
 
-  const formData = await request.formData();
-  const ids = formData.getAll("ids");
-  const table = formData.get("table");
-  const value = formData.get("value");
-
-  if (typeof value !== "string" || typeof table !== "string") {
-    return { error: { message: "Invalid table" }, data: null };
-  }
-
-  const result = await client
-    // @ts-expect-error
-    .from(table)
-    .update(
-      unchecked({
-        customFields: JSON.parse(value),
-        updatedBy: userId,
-        updatedAt: new Date().toISOString()
-      })
-    )
-    .in(getIdField(table), ids as string[]);
-
-  return result;
-}
-
-function getIdField(table: string) {
-  switch (table) {
-    case "part":
-    case "material":
-    case "consumable":
-    case "tool":
-    case "fixture":
-    default:
-      return "id";
-  }
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(customFieldsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const { ids, table, value } = input.data;
+  return api.settings.setRecordCustomFields({
+    table,
+    ids,
+    customFields: value
+  });
 }
 
 export default function CustomFieldsRoute() {

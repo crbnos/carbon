@@ -11,6 +11,7 @@ import {
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
 import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
+import { maintenanceMiddleware } from "@carbon/auth/middleware/maintenance.server";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
@@ -75,6 +76,8 @@ export const middleware = timedMiddleware({
   // First: the request scope (context, request id, access log).
   request: requestMiddleware,
   security: securityMiddleware,
+  // After security, so the 503 still carries the nonce and security headers.
+  maintenance: maintenanceMiddleware,
   formBody: formBodyMiddleware,
   flash: flashMiddleware,
   prefetchCache: prefetchCacheMiddleware

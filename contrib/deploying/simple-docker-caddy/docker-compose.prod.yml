@@ -67,6 +67,8 @@ services:
       PORT: "3000"
       TZ: UTC
       CARBON_EDITION: ${CARBON_EDITION:-community}
+      MAINTENANCE_MODE: ${MAINTENANCE_MODE:-}
+      SYSTEM_STATUS_URL: ${SYSTEM_STATUS_URL:-}
       AUTH_PROVIDERS: ${AUTH_PROVIDERS:-email,google,azure}
       DOMAIN: ${DOMAIN}
       ERP_URL: ${ERP_URL}
@@ -114,6 +116,8 @@ services:
       PORT: "3000"
       TZ: UTC
       CARBON_EDITION: ${CARBON_EDITION:-community}
+      MAINTENANCE_MODE: ${MAINTENANCE_MODE:-}
+      SYSTEM_STATUS_URL: ${SYSTEM_STATUS_URL:-}
       AUTH_PROVIDERS: ${AUTH_PROVIDERS:-email,google,azure}
       DOMAIN: ${DOMAIN}
       ERP_URL: ${ERP_URL}

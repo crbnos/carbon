@@ -16,9 +16,9 @@ import {
   getCustomerContacts,
   getCustomerLocations,
   getCustomerTax
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { CustomerHeader, CustomerSidebar } from "~/modules/sales/ui/Customer";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

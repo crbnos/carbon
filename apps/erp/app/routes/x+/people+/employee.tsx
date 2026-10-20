@@ -8,9 +8,12 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAttributeCategories, getShiftsList } from "~/modules/people";
+import {
+  getAttributeCategories,
+  getShiftsList
+} from "~/modules/people/people.service";
 import { PeopleTable } from "~/modules/people/ui/People";
-import { getEmployeeTypes } from "~/modules/users";
+import { getEmployeeTypes } from "~/modules/users/users.service";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { peopleList } from "~/utils/list-registry/people.server";
 import { path } from "~/utils/path";

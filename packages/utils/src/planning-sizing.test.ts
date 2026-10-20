@@ -626,22 +626,25 @@ describe("splitIntoOrders", () => {
       },
       [0]
     ]
-  ] as const)("round-trips the week %s sized", (policy, overrides, projections) => {
-    const orders = computePlanningOrders({
-      reorderingPolicy: policy,
-      periods: weeklyPeriods(["2026-10-05"]),
-      projections: [...projections],
-      todayDate: TODAY,
-      params: params(overrides)
-    });
-    expect(orders.length).toBeGreaterThan(1);
-    const total = orders.reduce((sum, o) => sum + o.quantity, 0);
-    expect(
-      splitIntoOrders(total, orderSizingRules(policy, params(overrides))).map(
-        (o) => o.quantity
-      )
-    ).toEqual(orders.map((o) => o.quantity));
-  });
+  ] as const)(
+    "round-trips the week %s sized",
+    (policy, overrides, projections) => {
+      const orders = computePlanningOrders({
+        reorderingPolicy: policy,
+        periods: weeklyPeriods(["2026-10-05"]),
+        projections: [...projections],
+        todayDate: TODAY,
+        params: params(overrides)
+      });
+      expect(orders.length).toBeGreaterThan(1);
+      const total = orders.reduce((sum, o) => sum + o.quantity, 0);
+      expect(
+        splitIntoOrders(total, orderSizingRules(policy, params(overrides))).map(
+          (o) => o.quantity
+        )
+      ).toEqual(orders.map((o) => o.quantity));
+    }
+  );
 
   // Demand-Based Reorder batches land in the week each is needed, and MRP
   // sums each week into one action: every week's split must give back that

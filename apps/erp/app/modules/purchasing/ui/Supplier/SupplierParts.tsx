@@ -31,10 +31,11 @@ import {
 import { Link, useNavigate, useParams } from "react-router";
 import { ItemThumbnail, New } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
-import type { SupplierPartWithItem } from "~/modules/items";
+import type { SupplierPartWithItem } from "~/modules/items/types";
 import { getLinkToItemPurchasing } from "~/modules/items/ui/Item/ItemForm";
 import { SupplierPartPrice } from "~/modules/items/ui/Item/SupplierParts";
-import { type ItemType, itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 type SupplierPartsProps = {

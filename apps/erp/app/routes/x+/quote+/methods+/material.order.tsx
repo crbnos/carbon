@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateQuoteMaterialOrder } from "~/modules/sales";
+import { updateQuoteMaterialOrder } from "~/modules/sales/sales.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);

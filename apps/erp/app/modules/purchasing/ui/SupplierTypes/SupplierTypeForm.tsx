@@ -23,7 +23,7 @@ import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { supplierTypeValidator } from "~/modules/purchasing";
+import { supplierTypeValidator } from "~/modules/purchasing/purchasing.models";
 import { path } from "~/utils/path";
 
 type SupplierTypeFormProps = {

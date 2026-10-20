@@ -11,7 +11,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Link } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
 import { SettingsPageHeading } from "~/components/SettingsPage";
-import { useSettingsSubmodules } from "~/modules/settings";
+import { useSettingsSubmodules } from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

@@ -2,77 +2,36 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  cancelPurchaseReturnOrder,
-  reopenPurchaseReturnOrder
-} from "~/modules/purchasing";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
 import { path, requestReferrer } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "purchasing"
+// The status follows the lines (To Ship, Completed): by hand a return is only
+// cancelled, or reopened to Draft.
+const form = z.object({ status: z.enum(["Cancelled", "Draft"]) });
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(form).request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const { id } = input.params;
+  const to =
+    requestReferrer(args.request) ?? path.to.purchaseReturnOrderDetails(id);
+  const api = await carbon(args.request);
+
+  if (input.data.status === "Cancelled") {
+    const result = await api.purchasing.cancelReturnOrder({
+      purchaseReturnOrderId: id
+    });
+    return respond(args.request, result).redirect(to, {
+      message: "Cancelled return order"
+    });
+  }
+  const result = await api.purchasing.reopenReturnOrder({
+    purchaseReturnOrderId: id
   });
-
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const formData = await request.formData();
-  const status = formData.get("status");
-
-  // Status is derived from the lines (To Ship / Completed) — the only valid
-  // manual transitions are Cancelled and Draft (reopen a to-ship return).
-  if (status !== "Cancelled" && status !== "Draft") {
-    throw redirect(
-      requestReferrer(request) ?? path.to.purchaseReturnOrderDetails(id),
-      await flash(request, error(null, "Invalid status"))
-    );
-  }
-
-  try {
-    // Kysely transactions (row-locked against concurrent shipment posting) —
-    // they THROW on a guard violation.
-    if (status === "Cancelled") {
-      await cancelPurchaseReturnOrder(getDatabaseClient(), {
-        id,
-        companyId,
-        userId
-      });
-    } else {
-      await reopenPurchaseReturnOrder(getDatabaseClient(), {
-        id,
-        companyId,
-        userId
-      });
-    }
-  } catch (err) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.purchaseReturnOrderDetails(id),
-      await flash(
-        request,
-        error(
-          err,
-          err instanceof Error ? err.message : "Failed to update status"
-        )
-      )
-    );
-  }
-
-  throw redirect(
-    requestReferrer(request) ?? path.to.purchaseReturnOrderDetails(id),
-    await flash(
-      request,
-      success(
-        status === "Cancelled"
-          ? "Cancelled return order"
-          : "Reopened return order"
-      )
-    )
-  );
+  return respond(args.request, result).redirect(to, {
+    message: "Reopened return order"
+  });
 }

@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { itemPostingGroupValidator } from "~/modules/items/items.models";
 import {
   getItemPostingGroup,
-  itemPostingGroupValidator,
   upsertItemPostingGroup
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import { ItemPostingGroupForm } from "~/modules/items/ui/ItemPostingGroups";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";

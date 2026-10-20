@@ -55,7 +55,7 @@ import {
   useUser
 } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { WorkCenter } from "~/modules/resources";
+import type { WorkCenter } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";

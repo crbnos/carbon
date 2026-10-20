@@ -6,7 +6,7 @@ import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
 
 const logger = getLogger("erp", "documents-models");
 
@@ -48,6 +48,13 @@ export const documentLabelsValidator = z.object({
   documentId: z.string().min(20),
   labels: z.array(z.string().min(1).max(50)).optional()
 });
+
+/** A viewer camera direction: model towards camera, in the model's axes (Z up). */
+export const modelViewDirection = z
+  .tuple([z.number(), z.number(), z.number()])
+  .refine((direction) => direction.some((n) => n !== 0), {
+    message: "A view direction cannot be zero"
+  });
 
 export {
   buildDocumentUploadPath,

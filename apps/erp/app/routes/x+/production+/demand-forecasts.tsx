@@ -16,12 +16,15 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import {
   getProductionProjections,
   PRODUCTION_PROJECTIONS_PAGING
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import DemandProjectionsTable from "~/modules/production/ui/DemandProjection/DemandProjectionTable";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  getOrCreatePeriods,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
 import { listErrorPage } from "~/utils/list-registry/load.server";
@@ -59,6 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const periods = await getOrCreatePeriods(
+    getDatabaseClient(),
     datetime.today(await getLocationTimeZone(client, locationId, companyId)),
     WEEKS_TO_PROJECT
   );

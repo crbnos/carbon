@@ -54,11 +54,11 @@ import type { BulkActionScope } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
 import { useBulkFormAction } from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { PurchaseOrderListItem } from "~/modules/purchasing";
 import {
   isPurchaseOrderBulkDeletable,
   purchaseOrderStatusType
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.models";
+import type { PurchaseOrderListItem } from "~/modules/purchasing/types";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import PurchasingStatus from "./PurchasingStatus";

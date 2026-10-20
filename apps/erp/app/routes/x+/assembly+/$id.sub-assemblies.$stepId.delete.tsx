@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteAssemblySubAssembly } from "~/modules/production";
+import { deleteAssemblySubAssembly } from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "assembly-sub-assembly-delete");

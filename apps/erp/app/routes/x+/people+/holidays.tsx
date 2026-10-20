@@ -6,7 +6,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getHolidayYears } from "~/modules/people";
+import { getHolidayYears } from "~/modules/people/people.service";
 import { HolidaysTable } from "~/modules/people/ui/Holidays";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";

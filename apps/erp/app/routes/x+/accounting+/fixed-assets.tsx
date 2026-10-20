@@ -10,7 +10,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
-import { getFixedAssetClassesList } from "~/modules/accounting";
+import { getFixedAssetClassesList } from "~/modules/accounting/accounting.service";
 import { FixedAssetsTable } from "~/modules/accounting/ui/FixedAssets";
 import type { Handle } from "~/utils/handle";
 import { fixedAssetsList } from "~/utils/list-registry/accounting.server";

@@ -15,7 +15,7 @@ import {
   PURCHASE_INVOICES_PAGING,
   REIMBURSEMENTS_PAGING,
   SALES_INVOICES_PAGING
-} from "~/modules/invoicing";
+} from "~/modules/invoicing/invoicing.service";
 import type { Filter } from "../query";
 import type { ListDefinition } from "./index.server";
 import { searchList } from "./index.server";

@@ -8,10 +8,8 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { formatAddress } from "@carbon/utils";
 import { useMemo, useRef, useState } from "react";
-import type {
-  getSupplierLocations,
-  SupplierLocation as SupplierLocationType
-} from "~/modules/purchasing";
+import type { getSupplierLocations } from "~/modules/purchasing/purchasing.service";
+import type { SupplierLocation as SupplierLocationType } from "~/modules/purchasing/types";
 import { SupplierLocationForm } from "~/modules/purchasing/ui/Supplier";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";

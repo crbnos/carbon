@@ -21,7 +21,7 @@ import {
   STORAGE_TYPES_PAGING,
   TRACKED_ENTITIES_PAGING,
   WAREHOUSE_TRANSFERS_PAGING
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
 import type { ListDefinition } from "./index.server";
 import { searchList } from "./index.server";
 

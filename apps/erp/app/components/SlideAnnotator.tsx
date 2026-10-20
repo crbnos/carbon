@@ -16,7 +16,7 @@ import {
 import { nanoid } from "nanoid";
 import { useEffect, useRef, useState } from "react";
 import { LuTrash2 } from "react-icons/lu";
-import type { SlideAnnotation } from "~/modules/shared";
+import type { SlideAnnotation } from "~/modules/shared/shared.models";
 
 // Fixed pin palette — a handful of high-contrast colors that read on any photo. Stored as
 // hex on the annotation so the MES overlay renders identically without a theme lookup.

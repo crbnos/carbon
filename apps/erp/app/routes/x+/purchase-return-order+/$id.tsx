@@ -15,7 +15,7 @@ import {
   getPurchaseReturnOrder,
   getPurchaseReturnOrderLines,
   getPurchaseReturnOrderLineTrackedEntities
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import {
   PurchaseReturnOrderExplorer,
   PurchaseReturnOrderHeader,

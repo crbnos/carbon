@@ -7,7 +7,10 @@ import { describe, expect, it, vi } from "vitest";
 // The settings barrel re-exports its UI, which pulls Lingui `msg` macros that
 // vitest does not transform; the glossary evaluates them at module load.
 // Nothing under test touches either.
-vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
+vi.mock("~/modules/settings/settings.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  getNextSequence: vi.fn()
+}));
 vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,

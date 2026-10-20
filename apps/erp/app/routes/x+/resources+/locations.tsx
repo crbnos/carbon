@@ -6,7 +6,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { LocationsTable } from "~/modules/resources";
+import { LocationsTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { locationsList } from "~/utils/list-registry/resources.server";

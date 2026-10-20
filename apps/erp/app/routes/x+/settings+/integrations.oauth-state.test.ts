@@ -7,10 +7,14 @@ import { describe, expect, it, vi } from "vitest";
 const requirePermissions = vi.hoisted(() => vi.fn());
 const getIntegrationsWithHealth = vi.hoisted(() => vi.fn());
 
-vi.mock("@carbon/auth", () => ({ error: vi.fn() }));
+vi.mock("@carbon/auth", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  error: vi.fn()
+}));
 vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions }));
 vi.mock("@carbon/auth/session.server", () => ({ flash: vi.fn() }));
-vi.mock("@carbon/ee", () => ({
+vi.mock("@carbon/ee", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@carbon/ee")>()),
   integrations: [],
   quickInstallConnectors: [],
   // The loader derives which role slots are taken so the cards can disable a
@@ -19,11 +23,12 @@ vi.mock("@carbon/ee", () => ({
 }));
 vi.mock("@carbon/react", () => ({ toast: { error: vi.fn() } }));
 vi.mock("@lingui/react/macro", () => ({ useLingui: vi.fn() }));
-vi.mock("~/modules/settings", () => ({ IntegrationsList: vi.fn() }));
+vi.mock("~/modules/settings/ui", () => ({ IntegrationsList: vi.fn() }));
 vi.mock("~/modules/settings/integration-errors", () => ({
   getIntegrationError: vi.fn()
 }));
-vi.mock("~/modules/settings/settings.server", () => ({
+vi.mock("~/modules/settings/settings.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getIntegrationsWithHealth
 }));
 vi.mock("~/utils/path", () => ({

@@ -5,7 +5,7 @@
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { PaymentsTable } from "~/modules/invoicing";
+import { PaymentsTable } from "~/modules/invoicing/ui";
 import type { Handle } from "~/utils/handle";
 import { paymentsList } from "~/utils/list-registry/invoicing.server";
 import { loadListPage } from "~/utils/list-registry/load.server";

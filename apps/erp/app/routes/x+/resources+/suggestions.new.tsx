@@ -2,105 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { isUnsafeStoragePath } from "@carbon/files";
+import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
-import { postSuggestionToCarbonSlack } from "@carbon/lib/slack.server";
-import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
 import type { ActionFunctionArgs } from "react-router";
-import { getCompany } from "~/modules/settings";
-import { suggestionValidator } from "~/modules/shared";
+import { suggestionValidator } from "~/modules/shared/shared.models";
 
-const logger = getLogger("erp", "suggestions-new");
-
-export async function action({ request }: ActionFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {});
-
-  const formData = await request.formData();
-  const validation = await validator(suggestionValidator).validate(formData);
-
-  if (validation.error) {
-    return {
-      success: false,
-      message: "Failed to submit suggestion"
-    };
-  }
-
-  const {
-    attachmentPath,
-    emoji,
-    suggestion,
-    path,
-    userId: formUserId,
-    sendToCarbon
-  } = validation.data;
-
-  // formUserId is only an anonymous on/off signal — attribute the session user or nobody
-  const suggestionUserId = formUserId ? userId : null;
-  const suggestionAttachmentPath =
-    attachmentPath &&
-    attachmentPath.startsWith(`${companyId}/suggestions/`) &&
-    !isUnsafeStoragePath(attachmentPath)
-      ? attachmentPath
-      : null;
-
-  const serviceRole = await getCarbonServiceRole();
-
-  const insertSuggestion = await serviceRole
-    .from("suggestion")
-    .insert([
-      {
-        suggestion,
-        emoji,
-        path,
-        attachmentPath: suggestionAttachmentPath,
-        userId: suggestionUserId,
-        companyId
-      }
-    ])
-    .select("id")
-    .single();
-
-  if (insertSuggestion.error) {
-    return {
-      success: false,
-      message: "Failed to submit suggestion"
-    };
-  }
-
-  const company = await getCompany(serviceRole, companyId);
-
-  if (sendToCarbon) {
-    await postSuggestionToCarbonSlack(serviceRole, {
-      companyId,
-      companyName: company.data?.name,
-      suggestion,
-      emoji,
-      path,
-      userId: suggestionUserId,
-      attachmentPath: suggestionAttachmentPath
-    });
-  }
-
-  if (!company.error && company.data?.suggestionNotificationGroup?.length) {
-    try {
-      await trigger("notify", {
-        companyId,
-        documentId: insertSuggestion.data.id,
-        event: NotificationEvent.SuggestionResponse,
-        recipient: {
-          type: "group",
-          groupIds: company.data.suggestionNotificationGroup
-        },
-        from: suggestionUserId || userId
-      });
-    } catch (err) {
-      logger.error("Failed to trigger suggestion notification", { error: err });
-    }
-  }
-
-  return { success: true, message: "Suggestion submitted" };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(suggestionValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { userId, ...suggestion } = input.data;
+  const api = await carbon(args.request);
+  // The form's `userId` is only an on/off signal: the suggestion is
+  // attributed to the session's user, or to nobody.
+  return api.resources.createSuggestion({
+    ...suggestion,
+    attributed: !!userId
+  });
 }

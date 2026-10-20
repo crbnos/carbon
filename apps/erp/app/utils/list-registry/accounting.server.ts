@@ -24,7 +24,7 @@ import {
   PAYMENT_TERMS_PAGING,
   PERIOD_RUNS_PAGING,
   PROJECTS_PAGING
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import type { ListDefinition } from "./index.server";
 import { resolveCompanyGroupId, searchList } from "./index.server";
 

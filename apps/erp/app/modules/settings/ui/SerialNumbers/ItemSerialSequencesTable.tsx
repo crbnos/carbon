@@ -20,7 +20,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { ItemSerialSequence } from "~/modules/settings";
+import type { ItemSerialSequence } from "~/modules/settings/types";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 

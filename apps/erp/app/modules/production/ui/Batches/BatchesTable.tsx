@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -41,6 +42,7 @@ import {
   useBulkStartToast
 } from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import type { action as releaseBatchesAction } from "~/routes/x+/production+/batches.release";
 import {
   bulkSelectionBody,
   isOverAllMatchingLimit
@@ -50,6 +52,7 @@ import { ALL_MATCHING_RELEASE_LIMIT } from "~/utils/table-jobs";
 import { isBatchDissolvable, isBatchReleasable } from "../../production.models";
 import type { JobOperationBatch } from "../../types";
 import { BatchReleaseModal } from "./BatchReleaseModal";
+import { useBatchRelease } from "./useBatchRelease";
 
 type BatchesTableProps = {
   data: JobOperationBatch[];
@@ -119,47 +122,8 @@ const BatchesTable = memo(({ data, count, nextCursor }: BatchesTableProps) => {
   const canUpdate = permissions.can("update", "production");
 
   // Release (Planned → Active) / Unrelease (Active → Planned) post to the
-  // batching action; the server's refusal (no work center, production already
-  // recorded) comes back as { success: false, message } and lands in the toast.
-  const releaseFetcher = useFetcher<{
-    success?: boolean;
-    message?: string;
-  }>();
-  const wasReleasing = useRef(false);
-  useEffect(() => {
-    if (releaseFetcher.state !== "idle") {
-      wasReleasing.current = true;
-      return;
-    }
-    if (!wasReleasing.current) return;
-    wasReleasing.current = false;
-    const d = releaseFetcher.data;
-    if (d?.success === false && d.message) {
-      toast.error(d.message);
-    }
-  }, [releaseFetcher.state, releaseFetcher.data]);
-
-  const submitBatchIntent = useCallback(
-    (
-      intent: "release" | "unrelease",
-      batchId: string,
-      purchaseOrdersBySupplierId?: Record<string, string>
-    ) => {
-      releaseFetcher.submit(
-        {
-          intent,
-          batchId,
-          ...(purchaseOrdersBySupplierId && {
-            purchaseOrdersBySupplierId: JSON.stringify(
-              purchaseOrdersBySupplierId
-            )
-          })
-        },
-        { method: "post", action: path.to.priorityBatchingUpdate }
-      );
-    },
-    [releaseFetcher]
-  );
+  // batching action; a refusal lands in the toast.
+  const { submit: submitBatchIntent } = useBatchRelease();
   // The row action opens the Release dialog (member-job checks + PO choice)
   // instead of releasing straight away.
   const [releaseTarget, setReleaseTarget] = useState<{
@@ -260,40 +224,26 @@ const BatchesTable = memo(({ data, count, nextCursor }: BatchesTableProps) => {
   // Planned → Active flip; Active/Completing/Completed batches are already on or
   // off the floor). Posts the ids to the release action, which recalcs member
   // jobs, releases each, and notifies the scheduler; we toast the summary.
-  const releaseBatchesFetcher = useFetcher<{
-    success?: boolean;
-    message?: string;
-    background?: boolean;
-    released?: number;
-    failed?: { readableId: string; message: string }[];
-  }>();
-  const wasReleasingBatches = useRef(false);
-  useEffect(() => {
-    if (releaseBatchesFetcher.state !== "idle") {
-      wasReleasingBatches.current = true;
-      return;
+  const releaseBatchesFetcher = useAction<typeof releaseBatchesAction>({
+    onSuccess: (result) => {
+      if (showBulkStart(result)) return;
+      const { data } = result;
+      if (!data) return;
+      if (data.released.length) {
+        toast.success(countMessages.released(data.released.length));
+      }
+      if (data.failed.length) {
+        toast.error(
+          t`Could not release ${data.failed.length}: ${data.failed
+            .map((f) => `${f.readableId} (${f.message})`)
+            .join(", ")}`
+        );
+      }
+    },
+    onError: (result) => {
+      showBulkStart(result);
     }
-    if (!wasReleasingBatches.current) return;
-    wasReleasingBatches.current = false;
-    const d = releaseBatchesFetcher.data;
-    if (!d || showBulkStart(d)) return;
-    if (d.released) {
-      toast.success(countMessages.released(d.released));
-    }
-    if (d.failed?.length) {
-      toast.error(
-        t`Could not release ${d.failed.length}: ${d.failed
-          .map((f) => f.readableId)
-          .join(", ")}`
-      );
-    }
-  }, [
-    releaseBatchesFetcher.state,
-    releaseBatchesFetcher.data,
-    t,
-    countMessages,
-    showBulkStart
-  ]);
+  });
 
   const renderActions = useCallback(
     (selectedRows: JobOperationBatch[], scope?: BulkActionScope) => {

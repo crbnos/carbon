@@ -9,8 +9,10 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAccount } from "~/modules/accounting";
-import { getAccountLedgerPage } from "~/modules/accounting/accounting.server";
+import {
+  getAccount,
+  getAccountLedgerPage
+} from "~/modules/accounting/accounting.service";
 import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
 

@@ -19,6 +19,7 @@ const IDLE_MS = 15 * 60 * 1000;
 const ABSOLUTE_MS = 12 * 60 * 60 * 1000;
 
 vi.mock("../config/env", () => ({
+  AUTH_COOKIE_SUFFIX: undefined,
   DOMAIN: "localhost",
   CarbonEdition: "Community",
   CONTROLLED_ENVIRONMENT: false,
@@ -56,6 +57,8 @@ import type { AuthSession } from "../types";
 import { refreshAccessToken } from "./auth.server";
 import { userHasVerifiedTotpFactor } from "./mfa.server";
 import {
+  flash,
+  getSessionFlash,
   isSessionExpiredAbsolute,
   isSessionIdleLocked,
   refreshAuthSession,
@@ -254,5 +257,40 @@ describe("requireAuthSession returns to the requested URL", () => {
 
     expect(response.headers.get("Location")).toMatch(/^\/mfa\?/);
     expect(redirectToOf(response)).toBe(EMAIL_LINK);
+  });
+});
+
+describe("a flash keeps the signed-in session's expiry", () => {
+  // The toast is stored in the session cookie, so writing or reading it
+  // re-issues that cookie. Without a max age it became a cookie that ends
+  // when the browser closes, signing the user out.
+  // A Set-Cookie header as the browser would send it back.
+  const cookiePair = (setCookie: string) => setCookie.split(";")[0] ?? "";
+  const signedIn = async () =>
+    cookiePair(
+      await setAuthSession(new Request("http://localhost:3000/x"), {
+        authSession: makeSession()
+      })
+    );
+
+  it("when the flash is written", async () => {
+    const { headers } = await flash(requestWithCookie(await signedIn()), {
+      success: true,
+      message: "Saved"
+    });
+
+    expect(headers["Set-Cookie"]).toContain("Max-Age=604800");
+  });
+
+  it("when the flash is read", async () => {
+    const written = await flash(requestWithCookie(await signedIn()), {
+      success: true,
+      message: "Saved"
+    });
+    const read = await getSessionFlash(
+      requestWithCookie(cookiePair(written.headers["Set-Cookie"]))
+    );
+
+    expect(read?.headers["Set-Cookie"]).toContain("Max-Age=604800");
   });
 });

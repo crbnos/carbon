@@ -18,7 +18,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { Sequence } from "~/modules/settings";
+import type { Sequence } from "~/modules/settings/types";
 import { path } from "~/utils/path";
 
 type SequencesTableProps = {

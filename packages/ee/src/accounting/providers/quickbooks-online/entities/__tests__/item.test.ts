@@ -352,19 +352,22 @@ describe("QBO shipping helper identity", () => {
     { Type: "NonInventory" },
     { Active: false },
     { IncomeAccountRef: { value: "wrong" } }
-  ])("refuses an incompatible unowned helper without mutating it: %s", async (override) => {
-    const test = shippingSyncer({
-      matches: [shippingItem(override as Partial<Qbo.Item>)]
-    });
-    await expect(
-      test.syncer.ensureShippingItem({ shippingAccountId: "acct-shipping" })
-    ).rejects.toMatchObject({
-      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
-    });
-    expect(test.createItem).not.toHaveBeenCalled();
-    expect(test.updateItem).not.toHaveBeenCalled();
-    expect(shippingLinks).toEqual([]);
-  });
+  ])(
+    "refuses an incompatible unowned helper without mutating it: %s",
+    async (override) => {
+      const test = shippingSyncer({
+        matches: [shippingItem(override as Partial<Qbo.Item>)]
+      });
+      await expect(
+        test.syncer.ensureShippingItem({ shippingAccountId: "acct-shipping" })
+      ).rejects.toMatchObject({
+        failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+      });
+      expect(test.createItem).not.toHaveBeenCalled();
+      expect(test.updateItem).not.toHaveBeenCalled();
+      expect(shippingLinks).toEqual([]);
+    }
+  );
   it("reconverges only an owned helper with the current SyncToken", async () => {
     const test = shippingSyncer({
       existingId: "shipping-remote",

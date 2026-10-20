@@ -4,7 +4,8 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { isChangeNoticeLocked, updateChangeNotice } from "~/modules/items";
+import { isChangeNoticeLocked } from "~/modules/items/items.models";
+import { updateChangeNotice } from "~/modules/items/items.service";
 
 // Inline field editor used by ChangeNoticeProperties (and future inline editors).
 // The fetcher posts { id, field, value }; only a curated set of header fields is
@@ -61,6 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const result = await updateChangeNotice(client, {
     id,
+    companyId,
     [field]: normalized,
     updatedBy: userId
   });

@@ -22,7 +22,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
 import { SettingsPageHeading } from "~/components/SettingsPage";
-import { getSubsidiaries } from "~/modules/settings";
+import { getSubsidiaries } from "~/modules/settings/settings.service";
 import {
   CompaniesListView,
   CompaniesTreeView

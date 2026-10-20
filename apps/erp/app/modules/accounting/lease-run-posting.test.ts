@@ -12,7 +12,12 @@ import { expect, it, vi } from "vitest";
 // accounting.service (imported by accounting.server) reaches the settings
 // barrel and the glossary, whose Lingui `msg` macros vitest does not
 // transform. Nothing under test uses them.
-vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
+vi.mock("~/modules/settings/settings.service", () => ({
+  getNextSequence: vi.fn()
+}));
 vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
@@ -25,12 +30,12 @@ vi.mock("@carbon/content/glossary", () => ({
   terms: {}
 }));
 
-import { leaseFixture } from "../../../../../packages/server-functions/src/post-lease/lease-test-fixture";
-import { holdInDraftRun } from "../../../../../packages/server-functions/src/propose-revenue-recognition-run/run-test-fixture";
+import { leaseFixture } from "../../../test/database/fixtures/lease";
+import { holdInDraftRun } from "../../../test/database/fixtures/run";
 import {
   postRevenueRecognitionRun,
   reverseRevenueRecognitionRun
-} from "./accounting.server";
+} from "./accounting.service";
 
 const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
 

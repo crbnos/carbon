@@ -9,7 +9,7 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteLease } from "~/modules/purchasing";
+import { deleteLease } from "~/modules/purchasing/purchasing.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "lease-delete");

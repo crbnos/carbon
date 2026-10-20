@@ -7,7 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import QualityDocumentsTable from "~/modules/quality/ui/Documents/QualityDocumentsTable";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { qualityDocumentsList } from "~/utils/list-registry/quality.server";

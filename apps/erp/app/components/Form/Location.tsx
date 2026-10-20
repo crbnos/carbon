@@ -9,7 +9,7 @@ import { useDisclosure } from "@carbon/react";
 import { getLocalTimeZone } from "@internationalized/date";
 import { useMemo, useRef, useState } from "react";
 import { useUser } from "~/hooks";
-import type { getLocationsList } from "~/modules/resources";
+import type { getLocationsList } from "~/modules/resources/resources.service";
 import LocationForm from "~/modules/resources/ui/Locations/LocationForm";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";

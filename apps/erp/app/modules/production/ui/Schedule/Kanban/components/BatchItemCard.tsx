@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Badge,
   BarProgress,
@@ -37,7 +38,6 @@ import {
   LuUsers,
   LuX
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { CustomerAvatar, OperationStatusIcon } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { MoveToSubmenu } from "~/components/MoveToSubmenu";
@@ -114,7 +114,7 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
   const { t } = useLingui();
   const { formatRelativeTime } = useDateFormatter();
   const { displaySettings, scheduleToday, moveTo } = useKanban();
-  const fetcher = useFetcher();
+  const fetcher = useAction();
   const isCompleting = item.batchStatus === "Completing";
   // Planned = composed but not yet on the floor. Visually distinct (dashed
   // border, outline badge) but still draggable — work-center reassignment is

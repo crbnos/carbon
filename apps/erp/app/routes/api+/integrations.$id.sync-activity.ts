@@ -10,7 +10,7 @@ import {
 } from "@carbon/ee/accounting";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import { withSyncOperationReferences } from "~/modules/settings/settings.server";
+import { withSyncOperationReferences } from "~/modules/settings/settings.service";
 import { SYNC_ACTIVITY_SORTS } from "~/modules/settings/ui/Integrations/SyncActivity";
 import { decodeCursor, toPage } from "~/utils/cursor";
 import { listErrorPage } from "~/utils/list-registry/list-error";

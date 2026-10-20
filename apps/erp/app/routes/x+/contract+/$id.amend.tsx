@@ -2,140 +2,61 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { validationError, validator } from "@carbon/form";
-import { serverFns } from "@carbon/server-functions";
-import type { ContractAmendmentPreview } from "@carbon/server-functions/post-customer-contract";
-import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { customerContractAmendmentValidator } from "~/modules/sales";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import { customerContractAmendmentValidator } from "~/modules/sales/sales.models";
 import { path } from "~/utils/path";
 
-/** The preview answers before the reason and type are filled in — the type
- *  is pre-filled FROM the preview — so it validates without them. */
+const intentForm = z.object({ intent: zfd.text(z.string().optional()) });
+
+/** The preview answers before the reason and type are filled in (the type is
+ *  pre-filled FROM the preview), so it validates without them. */
 const amendmentPreviewValidator = customerContractAmendmentValidator.omit({
   reason: true,
   contractType: true
 });
 
-type ContractAmendPreviewResponse = {
-  preview: ContractAmendmentPreview | null;
-  error: string | null;
-};
-
 /** Amends an Active contract: change, add or end lines from an effective
- *  date. `intent=preview` runs the same amendment in a transaction the server
- *  function rolls back, and returns the adjustments, the next two invoices
- *  and the suggested type; anything else saves it. The server function owns
- *  every guard and its refusal is the reason shown. */
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
-  });
+ *  date. `intent=preview` runs the same amendment and rolls it back,
+ *  answering the modal's `{ preview, error }`. */
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(intentForm).request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const { id } = input.params;
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
 
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const formData = await request.formData();
-  const isPreview = formData.get("intent") === "preview";
-
-  const asOf = datetime
-    .today(await getCompanyTimeZone(client, companyId))
-    .toString();
-  const contracts = serverFns.as({
-    client,
-    db: getDatabaseClient(),
-    companyId,
-    userId
-  });
-
-  if (isPreview) {
-    const validation = await validator(amendmentPreviewValidator).validate(
+  if (input.data.intent === "preview") {
+    const amendment = await validator(amendmentPreviewValidator).validate(
       formData
     );
-    if (validation.error) {
-      return data<ContractAmendPreviewResponse>({
+    if (amendment.error) {
+      return {
         preview: null,
         error:
-          Object.values(validation.error.fieldErrors)[0] ??
+          Object.values(amendment.error.fieldErrors)[0] ??
           "The amendment is incomplete"
-      });
+      };
     }
-    const { amendmentDate, effect, changes } = validation.data;
-    const result = await contracts.invoke("post-customer-contract", {
-      type: "amend",
-      customerContractId: id,
-      asOf,
-      amendmentDate,
-      effect,
-      // Neither changes what the amendment does; both are recorded only.
-      contractType: "Existing",
-      reason: "Preview",
-      changes,
-      preview: true
+    const result = await api.sales.previewContractAmendment({
+      ...amendment.data,
+      customerContractId: id
     });
-    if (result.error) {
-      return data<ContractAmendPreviewResponse>({
-        preview: null,
-        error: getErrorMessage(result.error, "Failed to preview the amendment")
-      });
-    }
-    return data<ContractAmendPreviewResponse>({
-      preview: isAmendmentPreview(result.data) ? result.data : null,
-      error: null
-    });
+    return { preview: result.data, error: result.error?.message ?? null };
   }
 
-  const validation = await validator(
+  const amendment = await validator(
     customerContractAmendmentValidator
   ).validate(formData);
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { amendmentDate, effect, contractType, reason, changes } =
-    validation.data;
-  const result = await contracts.invoke("post-customer-contract", {
-    type: "amend",
-    customerContractId: id,
-    asOf,
-    amendmentDate,
-    effect,
-    contractType,
-    reason,
-    changes
+  if (amendment.error) return validationError(amendment.error);
+  const result = await api.sales.amendContract({
+    ...amendment.data,
+    customerContractId: id
   });
-
-  if (result.error) {
-    throw redirect(
-      path.to.contractDetails(id),
-      await flash(
-        request,
-        error(
-          result.error,
-          getErrorMessage(result.error, "Failed to amend the contract")
-        )
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.contractDetails(id),
-    await flash(request, success("Contract amended"))
-  );
-}
-
-function isAmendmentPreview(value: unknown): value is ContractAmendmentPreview {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "nextInvoices" in value &&
-    "adjustments" in value
-  );
+  return respond(args.request, result).redirect(path.to.contractDetails(id), {
+    message: "Contract amended"
+  });
 }

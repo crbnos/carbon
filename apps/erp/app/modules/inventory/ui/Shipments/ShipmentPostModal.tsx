@@ -35,8 +35,8 @@ import { DateTime } from "~/components";
 import { useCompanyToday, useSettings, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import type { Shipment, ShipmentLine } from "../..";
-import { getShipmentTracking } from "../..";
+import { getShipmentTracking } from "../../inventory.utils";
+import type { Shipment, ShipmentLine } from "../../types";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 

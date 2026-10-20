@@ -24,7 +24,7 @@ import {
   LocationEmployee,
   Submit
 } from "~/components/Form";
-import { peopleAbsenceRangeValidator } from "~/modules/production";
+import { peopleAbsenceRangeValidator } from "~/modules/production/production.models";
 import { path } from "~/utils/path";
 
 type TimeOffDialogProps = {

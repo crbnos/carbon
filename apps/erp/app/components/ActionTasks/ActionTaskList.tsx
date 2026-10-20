@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardAction,
@@ -17,7 +18,6 @@ import { Trans } from "@lingui/react/macro";
 import type { DragControls } from "motion/react";
 import { Reorder, useDragControls } from "motion/react";
 import { type ReactNode, useEffect, useState } from "react";
-import { useFetcher } from "react-router";
 import type { ListItem } from "~/types";
 import { ActionTaskAddModal } from "./ActionTaskAddModal";
 import type { ActionTaskStatus } from "./ActionTaskCard";
@@ -57,7 +57,7 @@ export function ActionTaskList<T extends ActionTaskRow>({
   isDisabled?: boolean;
   title?: ReactNode;
 }) {
-  const orderFetcher = useFetcher<{ success: boolean }>();
+  const orderFetcher = useAction();
   const { isPhone } = useViewport();
 
   const [sortOrder, setSortOrder] = useState<string[]>(() =>

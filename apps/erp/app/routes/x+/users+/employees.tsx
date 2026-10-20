@@ -10,12 +10,12 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { EmployeesTable } from "~/modules/users/ui";
 import {
-  EmployeesTable,
   getEmployeeTypes,
   getUnrevokedInviteEmails,
   getUsersWithVerifiedMfa
-} from "~/modules/users";
+} from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { employeeAccountsList } from "~/utils/list-registry/users.server";

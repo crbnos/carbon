@@ -7,7 +7,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { Hyperlink, MethodIcon, MethodItemTypeIcon, Table } from "~/components";
-import { methodItemType, methodType } from "~/modules/shared";
+import { methodItemType, methodType } from "~/modules/shared/shared.models";
 import { useParts, useTools } from "~/stores";
 import type { MethodMaterial } from "../../types";
 import { getPathToMakeMethod } from "./utils";

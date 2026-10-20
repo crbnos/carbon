@@ -3,11 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The operation catalog for the Carbon API v1 surface. Reads the generated MCP
-// manifest (tool-metadata.json) and shapes it for the oRPC router and the MCP/agent
-// bridges — a single source of truth for HTTP and MCP.
-//
-// (Decision 7's build-time relocation of this manifest into @carbon/api is deferred
-// to Docs Phase 2; see the plan. For now the committed manifest is the source.)
+// manifest (tool-metadata.json, gitignored build output of `pnpm generate:mcp`)
+// and shapes it for the oRPC router and the MCP/agent bridges — a single source
+// of truth for HTTP and MCP.
 
 import type { ManifestEntry } from "@carbon/api";
 import raw from "../../mcp+/lib/tool-metadata.json";
@@ -26,60 +24,19 @@ if (!Array.isArray(companyTables) || companyTables.length === 0) {
 
 /** Every table with a `companyId` column, from the generated database types. */
 export const COMPANY_TABLES: ReadonlySet<string> = new Set(companyTables);
-
-/**
- * Deprecated operation names → the operation that replaced them. An operation's
- * name is derived from the module its service lives in, so moving a function
- * between modules renames the published operation; an entry here keeps the old
- * name working for MCP `call_tool`/`describe_tool`, the agent, workflows and
- * `POST /api/v1/{module}/{operation}`. The alias runs the NEW operation in full —
- * its schema, its dispatch and its permission — so it grants nothing the new name
- * does not. Aliases are never listed in the catalog (search, docs); the OpenAPI
- * spec carries them marked `deprecated`.
- */
-export const OPERATION_ALIASES: Readonly<Record<string, string>> = {
-  // Inspection plans moved from production to quality.
-  production_getInspectionDocument: "quality_getInspectionDocument",
-  production_getInspectionDocuments: "quality_getInspectionDocuments",
-  production_getInspectionDocumentsForItem:
-    "quality_getInspectionDocumentsForItem",
-  production_getInspectionFeatures: "quality_getInspectionFeatures",
-  production_getBalloons: "quality_getBalloons",
-  production_getInspectionPlan: "quality_getInspectionPlan",
-  production_saveInspectionDocumentAtomic:
-    "quality_saveInspectionDocumentAtomic",
-  production_updateInspectionDocumentSampling:
-    "quality_updateInspectionDocumentSampling",
-  production_upsertInspectionDocument: "quality_upsertInspectionDocument",
-  production_deleteInspectionDocument: "quality_deleteInspectionDocument"
-};
-
-const canonicalByName = new Map<string, ManifestEntry>(
+/** Every published operation by its name. */
+export const operationsByName = new Map<string, ManifestEntry>(
   OPERATIONS.map((op) => [op.name, op])
 );
-
-/** The aliases that resolve: a real operation of the same name always wins, and
- *  an alias whose target is gone is dropped (dispatch-parity.test.ts fails on
- *  both, so neither ships). */
-export const liveOperationAliases: ReadonlyArray<[string, ManifestEntry]> =
-  Object.entries(OPERATION_ALIASES).flatMap(([alias, target]) => {
-    const op = canonicalByName.get(target);
-    return op && !canonicalByName.has(alias)
-      ? [[alias, op] as [string, ManifestEntry]]
-      : [];
-  });
-
-/** operation name (`module_func`) → entry, deprecated aliases included (an alias
- *  maps to its replacement's entry, so `entry.name` is the CURRENT name). A lookup
- *  table only — iterate `OPERATIONS` for the catalog. */
-export const operationsByName = new Map<string, ManifestEntry>([
-  ...canonicalByName,
-  ...liveOperationAliases
-]);
 
 /** The bare operation id (the name without its `module_` prefix). */
 export function operationId(op: ManifestEntry): string {
   return op.name.slice(op.module.length + 1);
+}
+
+/** The operation's HTTP path: `/{module}/{operationId}` (`/production/cancelJob`). */
+export function operationPath(op: ManifestEntry): `/${string}` {
+  return `/${op.module}/${operationId(op)}`;
 }
 
 /**

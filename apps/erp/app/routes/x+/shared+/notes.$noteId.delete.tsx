@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteNote } from "~/modules/shared";
+import { deleteNote } from "~/modules/shared/shared.service";
 import { requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

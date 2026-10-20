@@ -689,25 +689,27 @@ const JobsTable = memo((props: JobsTableProps) => {
   );
   const releaseFetcher = useAction<typeof releaseAction>({
     onSuccess: (result) => {
-      if (showBulkStart(result) || !("released" in result)) return;
-      if (result.released) {
-        toast.success(releasedJobsMessage(result.released));
+      if (showBulkStart(result)) return;
+      const { data } = result;
+      if (!data) return;
+      if (data.released.length) {
+        toast.success(releasedJobsMessage(data.released.length));
       }
-      if (result.warnings.length) {
+      if (data.warnings.length) {
         toast.error(
-          t`Released with problems: ${result.warnings
+          t`Released with problems: ${data.warnings
             .map((w) => `${w.readableId} (${w.message})`)
             .join(", ")}`
         );
       }
-      if (result.failed.length) {
+      if (data.failed.length) {
         toast.error(
-          t`Could not release ${result.failed.length}: ${result.failed
+          t`Could not release ${data.failed.length}: ${data.failed
             .map((f) => `${f.readableId} (${f.message})`)
             .join(", ")}`
         );
       }
-      if (!result.scheduled) {
+      if (!data.scheduled) {
         toast.error(t`The schedule could not be updated after the release`);
       }
     },

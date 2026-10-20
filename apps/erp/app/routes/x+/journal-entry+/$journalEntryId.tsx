@@ -17,7 +17,7 @@ import {
   getJournalEntry,
   getJournalEntryRelatedItems,
   getJournalLineDimensions
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import {
   JournalEntryDocuments,
   JournalEntryHeader

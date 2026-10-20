@@ -116,16 +116,12 @@ describe("Dates board date helpers", () => {
 });
 
 describe("shared schedule priority validation", () => {
-  it.each([
-    undefined,
-    "",
-    " ",
-    "\t",
-    "\n",
-    " \t\n"
-  ])("rejects blank priority %j", (value) => {
-    expect(schedulePriorityValidator.safeParse(value).success).toBe(false);
-  });
+  it.each([undefined, "", " ", "\t", "\n", " \t\n"])(
+    "rejects blank priority %j",
+    (value) => {
+      expect(schedulePriorityValidator.safeParse(value).success).toBe(false);
+    }
+  );
 
   it.each([
     [" 4.25 ", 4.25],
@@ -137,11 +133,10 @@ describe("shared schedule priority validation", () => {
     });
   });
 
-  it.each([
-    "NaN",
-    "Infinity",
-    "-Infinity"
-  ])("rejects non-finite priority %s", (value) => {
-    expect(schedulePriorityValidator.safeParse(value).success).toBe(false);
-  });
+  it.each(["NaN", "Infinity", "-Infinity"])(
+    "rejects non-finite priority %s",
+    (value) => {
+      expect(schedulePriorityValidator.safeParse(value).success).toBe(false);
+    }
+  );
 });

@@ -8233,6 +8233,7 @@ export type Database = {
       companyPlan: {
         Row: {
           aiTokensLimit: number
+          apiRateLimit: number | null
           createdAt: string
           id: string
           planId: string
@@ -8247,6 +8248,7 @@ export type Database = {
         }
         Insert: {
           aiTokensLimit?: number
+          apiRateLimit?: number | null
           createdAt?: string
           id?: string
           planId: string
@@ -8261,6 +8263,7 @@ export type Database = {
         }
         Update: {
           aiTokensLimit?: number
+          apiRateLimit?: number | null
           createdAt?: string
           id?: string
           planId?: string
@@ -8359,12 +8362,15 @@ export type Database = {
           operationsDispatchNotificationGroup: string[] | null
           otherDispatchNotificationGroup: string[] | null
           plmReleaseControl: string
+          preventNegativeBackflush: boolean
           printing: Json | null
           productLabelSize: string | null
           purchasePriceUpdateTiming: Database["public"]["Enums"]["purchasePriceUpdateTiming"]
           qualityDispatchNotificationGroup: string[] | null
           qualityIssueTarget: number
           quoteLineCategoryMarkups: Json | null
+          receiptQuantitiesStartAtZero: boolean
+          requireBackflushStorageUnit: boolean
           requireCustomerContactAndLocation: boolean
           requireMfa: boolean
           requireSupplierContactAndLocation: boolean
@@ -8432,12 +8438,15 @@ export type Database = {
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
           plmReleaseControl?: string
+          preventNegativeBackflush?: boolean
           printing?: Json | null
           productLabelSize?: string | null
           purchasePriceUpdateTiming?: Database["public"]["Enums"]["purchasePriceUpdateTiming"]
           qualityDispatchNotificationGroup?: string[] | null
           qualityIssueTarget?: number
           quoteLineCategoryMarkups?: Json | null
+          receiptQuantitiesStartAtZero?: boolean
+          requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
           requireSupplierContactAndLocation?: boolean
@@ -8505,12 +8514,15 @@ export type Database = {
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
           plmReleaseControl?: string
+          preventNegativeBackflush?: boolean
           printing?: Json | null
           productLabelSize?: string | null
           purchasePriceUpdateTiming?: Database["public"]["Enums"]["purchasePriceUpdateTiming"]
           qualityDispatchNotificationGroup?: string[] | null
           qualityIssueTarget?: number
           quoteLineCategoryMarkups?: Json | null
+          receiptQuantitiesStartAtZero?: boolean
+          requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
           requireSupplierContactAndLocation?: boolean
@@ -69349,6 +69361,7 @@ export type Database = {
           estimatedDuration: string | null
           frequency: Database["public"]["Enums"]["trainingFrequency"]
           grantsAbilityId: string | null
+          guidePath: string | null
           id: string
           name: string
           processId: string | null
@@ -69369,6 +69382,7 @@ export type Database = {
           estimatedDuration?: string | null
           frequency?: Database["public"]["Enums"]["trainingFrequency"]
           grantsAbilityId?: string | null
+          guidePath?: string | null
           id?: string
           name: string
           processId?: string | null
@@ -69389,6 +69403,7 @@ export type Database = {
           estimatedDuration?: string | null
           frequency?: Database["public"]["Enums"]["trainingFrequency"]
           grantsAbilityId?: string | null
+          guidePath?: string | null
           id?: string
           name?: string
           processId?: string | null
@@ -69570,7 +69585,8 @@ export type Database = {
           createdBy: string
           groupIds: string[] | null
           id: string
-          trainingId: string
+          name: string | null
+          trainingId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -69580,7 +69596,8 @@ export type Database = {
           createdBy: string
           groupIds?: string[] | null
           id?: string
-          trainingId: string
+          name?: string | null
+          trainingId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -69590,7 +69607,8 @@ export type Database = {
           createdBy?: string
           groupIds?: string[] | null
           id?: string
-          trainingId?: string
+          name?: string | null
+          trainingId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -69711,6 +69729,7 @@ export type Database = {
       }
       trainingCompletion: {
         Row: {
+          certificatePath: string | null
           companyId: string
           completedAt: string
           completedBy: string
@@ -69724,6 +69743,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          certificatePath?: string | null
           companyId: string
           completedAt?: string
           completedBy: string
@@ -69737,6 +69757,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          certificatePath?: string | null
           companyId?: string
           completedAt?: string
           completedBy?: string
@@ -91899,6 +91920,10 @@ export type Database = {
         Args: { p_company_id: string; p_cutoff_date: string }
         Returns: number
       }
+      delete_webhook_signing_secret: {
+        Args: { p_company_id: string; p_webhook_id: string }
+        Returns: undefined
+      }
       drop_audit_log_table: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -93974,6 +93999,7 @@ export type Database = {
         Args: { p_company_id: string; p_employee_id?: string }
         Returns: {
           avatarUrl: string
+          certificatePath: string
           companyId: string
           completedAt: string
           completionId: number
@@ -93982,6 +94008,7 @@ export type Database = {
           employeeName: string
           employeeStartDate: string
           frequency: Database["public"]["Enums"]["trainingFrequency"]
+          isExternal: boolean
           status: string
           trainingAssignmentId: string
           trainingId: string
@@ -93996,9 +94023,11 @@ export type Database = {
           completionPercent: number
           currentPeriod: string
           frequency: Database["public"]["Enums"]["trainingFrequency"]
+          isExternal: boolean
           overdue: number
           pending: number
           totalAssigned: number
+          trainingAssignmentId: string
           trainingId: string
           trainingName: string
         }[]
@@ -94085,6 +94114,10 @@ export type Database = {
           name: string
           userCount: number
         }[]
+      }
+      get_webhook_signing_secret: {
+        Args: { p_company_id: string; p_webhook_id: string }
+        Returns: string
       }
       getConsolidationRates: {
         Args: {
@@ -94292,10 +94325,6 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
-      populate_sales_search_results: {
-        Args: { p_company_id: string }
-        Returns: undefined
-      }
       prevent_posted_purchase_invoice_deletion: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
@@ -94362,6 +94391,10 @@ export type Database = {
       reconcile_item_stock_quantities: { Args: never; Returns: undefined }
       resolve_shelf_life_start_for_receipt: {
         Args: { p_item_id: string; p_receipt_id: string }
+        Returns: string
+      }
+      rotate_webhook_signing_secret: {
+        Args: { p_company_id: string; p_webhook_id: string }
         Returns: string
       }
       save_inspection_document_atomic: {
@@ -95537,7 +95570,7 @@ export type Database = {
       reimbursementStatus: "Draft" | "Posted" | "Voided"
       rentalAgreementLineStatus: "Pending" | "On Rent" | "Returned" | "Sold"
       rentalAgreementStatus: "Draft" | "Active" | "Closed" | "Cancelled"
-      rentalBillingCycle: "Calendar Month" | "28 Days"
+      rentalBillingCycle: "Calendar Month" | "28 Days" | "Monthly"
       rentalBillingPeriodStatus: "Pending" | "Invoiced"
       rentalBillingTiming: "Advance" | "Arrears"
       rentalInvoiceLineType: "Rent" | "Charge" | "Purchase Option"
@@ -97103,7 +97136,7 @@ export const Constants = {
       reimbursementStatus: ["Draft", "Posted", "Voided"],
       rentalAgreementLineStatus: ["Pending", "On Rent", "Returned", "Sold"],
       rentalAgreementStatus: ["Draft", "Active", "Closed", "Cancelled"],
-      rentalBillingCycle: ["Calendar Month", "28 Days"],
+      rentalBillingCycle: ["Calendar Month", "28 Days", "Monthly"],
       rentalBillingPeriodStatus: ["Pending", "Invoiced"],
       rentalBillingTiming: ["Advance", "Arrears"],
       rentalInvoiceLineType: ["Rent", "Charge", "Purchase Option"],

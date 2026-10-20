@@ -11,7 +11,7 @@ import { useLoaderData, useNavigate } from "react-router";
 import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
 import { AssetClassesTable } from "~/modules/accounting/ui/FixedAssets";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { assetClassesList } from "~/utils/list-registry/accounting.server";
 import { loadListPage } from "~/utils/list-registry/load.server";

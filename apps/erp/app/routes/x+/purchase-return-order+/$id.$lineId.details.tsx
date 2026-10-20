@@ -2,30 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { purchaseReturnOrderLineValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getPurchaseReturnOrder,
   getPurchaseReturnOrderLine,
   getPurchaseReturnOrderLineTrackedEntities,
-  getReturnableEntitiesForSupplier,
-  isPurchaseReturnOrderLocked,
-  purchaseReturnOrderLineValidator,
-  setPurchaseReturnOrderLineTrackedEntities,
-  upsertPurchaseReturnOrderLine
-} from "~/modules/purchasing";
+  getReturnableEntitiesForSupplier
+} from "~/modules/purchasing/purchasing.service";
 import { PurchaseReturnOrderLineForm } from "~/modules/purchasing/ui/PurchaseReturnOrders";
 import type { PurchaseReturnOrderLine } from "~/modules/purchasing/ui/PurchaseReturnOrders/types";
+import { getReturnReasonsList } from "~/modules/sales/sales.service";
 // returnReason is shared reference data; its list read lives in the sales module
-import { getReturnReasonsList } from "~/modules/sales";
 import { getCustomFields, setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -168,152 +165,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { id: orderId, lineId } = params;
-  if (!orderId) throw new Error("Could not find orderId");
-  if (!lineId) throw new Error("Could not find lineId");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "purchasing"
-  });
-
-  const purchaseReturnOrder = await getPurchaseReturnOrder(viewClient, orderId);
-  await requireUnlocked({
-    request,
-    isLocked: isPurchaseReturnOrderLocked(purchaseReturnOrder.data?.status),
-    redirectTo: path.to.purchaseReturnOrderLine(orderId, lineId),
-    message: "Cannot modify a completed or cancelled return order."
-  });
-
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "purchasing"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(purchaseReturnOrderLineValidator).validate(
-    formData
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(purchaseReturnOrderLineValidator).request(
+    args,
+    { params: ["id", "lineId"] }
   );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id: _id, trackedEntityIds, ...d } = validation.data;
-
-  // The lock guard above checked the URL's order — verify the line actually
-  // belongs to it, and never re-parent it to the form's copy of the id.
-  const existingLine = await client
-    .from("purchaseReturnOrderLine")
-    .select(
-      "purchaseReturnOrderId, quantity, itemId, unitPrice, restockFeePercent, unitOfMeasureCode, purchaseOrderLineId, receiptLineId, purchaseInvoiceLineId"
-    )
-    .eq("id", lineId)
-    .eq("companyId", companyId)
-    .single();
-  if (
-    existingLine.error ||
-    existingLine.data.purchaseReturnOrderId !== orderId
-  ) {
-    throw redirect(
-      path.to.purchaseReturnOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(null, "This line does not belong to this return order")
-      )
-    );
-  }
-  d.purchaseReturnOrderId = orderId;
-
-  // Quantities, item, pricing, and source-document links are validated
-  // against source-line caps at Confirm; once the order is confirmed, editing
-  // any of them would bypass that validation (re-pointing a link frees the
-  // original source line's cap) or change the credit basis after the fact.
-  // A field only counts as changed when it was provided AND differs —
-  // upsertPurchaseReturnOrderLine sanitize()s the update, so omitted
-  // optionals never overwrite.
-  if (purchaseReturnOrder.data?.status !== "Draft") {
-    const lockedFields: [string, unknown, unknown][] = [
-      ["Quantity", Number(d.quantity), Number(existingLine.data.quantity)],
-      ["Item", d.itemId, existingLine.data.itemId],
-      ["Unit price", Number(d.unitPrice), Number(existingLine.data.unitPrice)],
-      [
-        "Restocking fee",
-        d.restockFeePercent === undefined
-          ? undefined
-          : Number(d.restockFeePercent),
-        Number(existingLine.data.restockFeePercent)
-      ],
-      [
-        "Unit of measure",
-        d.unitOfMeasureCode,
-        existingLine.data.unitOfMeasureCode ?? undefined
-      ],
-      [
-        "Purchase order line link",
-        d.purchaseOrderLineId,
-        existingLine.data.purchaseOrderLineId ?? undefined
-      ],
-      [
-        "Receipt line link",
-        d.receiptLineId,
-        existingLine.data.receiptLineId ?? undefined
-      ],
-      [
-        "Invoice line link",
-        d.purchaseInvoiceLineId,
-        existingLine.data.purchaseInvoiceLineId ?? undefined
-      ]
-    ];
-    const changed = lockedFields.find(
-      ([, next, current]) => next !== undefined && next !== current
-    );
-    if (changed) {
-      throw redirect(
-        path.to.purchaseReturnOrderLine(orderId, lineId),
-        await flash(
-          request,
-          error(null, `${changed[0]} is locked after confirmation`)
-        )
-      );
-    }
-  }
-
-  const updateLine = await upsertPurchaseReturnOrderLine(client, {
-    ...d,
-    id: lineId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
-  });
-
-  if (updateLine.error) {
-    throw redirect(
-      path.to.purchaseReturnOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(updateLine.error, "Failed to update return order line")
-      )
-    );
-  }
-
-  const setEntities = await setPurchaseReturnOrderLineTrackedEntities(
-    client,
+  if ("invalid" in input) return input.invalid;
+  const { id: orderId, lineId } = input.params;
+  const { id: _id, ...line } = input.data;
+  const api = await carbon(args.request);
+  // The line must be on the URL's order, never re-parented to the form's.
+  const result = await api.purchasing.updateReturnOrderLine({
+    ...line,
+    purchaseReturnOrderId: orderId,
     lineId,
-    companyId,
-    trackedEntityIds ?? [],
-    userId
+    customFields: input.formData && setCustomFields(input.formData)
+  });
+  return respond(args.request, result).redirect(
+    path.to.purchaseReturnOrderLine(orderId, lineId),
+    { message: "Return order line updated" }
   );
-  if (setEntities.error) {
-    throw redirect(
-      path.to.purchaseReturnOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(setEntities.error, "Failed to set tracked entities")
-      )
-    );
-  }
-
-  throw redirect(path.to.purchaseReturnOrderLine(orderId, lineId));
 }
 
 export default function PurchaseReturnOrderLineDetailsRoute() {

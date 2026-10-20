@@ -15,11 +15,11 @@ import {
   getKanbanProjectedQuantities,
   getKanbans,
   KANBANS_PAGING
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
 import KanbansTable from "~/modules/inventory/ui/Kanbans/KanbansTable";
-import { getLocationsList } from "~/modules/resources";
-import { getKanbanOutputSetting } from "~/modules/settings";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getKanbanOutputSetting } from "~/modules/settings/settings.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
 import { listErrorPage } from "~/utils/list-registry/load.server";

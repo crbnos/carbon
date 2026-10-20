@@ -6,7 +6,7 @@ import { cn } from "@carbon/react";
 import { cva } from "class-variance-authority";
 import { useState } from "react";
 import { LuBlocks } from "react-icons/lu";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { getPrivateUrl } from "~/utils/path";
 import { MethodItemTypeIcon } from "./Icons";
 

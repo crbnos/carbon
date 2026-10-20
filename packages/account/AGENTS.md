@@ -22,7 +22,7 @@ and the starter. Each app mounts it once in its shell; it opens over any page.
   (`/api` in the ERP, `/x/proxy/api` elsewhere), `user`, `companyId`. Only the ERP passes
   `renderBrowserNotifications` (the push service worker is on its origin) and `twoFactor`
   (the plan gate + upgrade dialog) and `transitionMode` (the view-transition mode wipe, whose
-  CSS is in the ERP's stylesheet) — see `apps/erp/app/modules/account/ui/AccountSettings.tsx`.
+  CSS is in the ERP's stylesheet) — see `apps/erp/app/modules/users/ui/AccountSettings.tsx`.
 - **Appearance is the one pane that does not call the ERP.** Mode and theme color are
   per-browser cookies on the HOST app, so the pane posts `mode` / `theme` to the host's own
   root action (`/`), which every app's `root.tsx` handles (`modeValidator` /

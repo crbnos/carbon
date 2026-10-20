@@ -17,7 +17,7 @@ export {
   ReceiptHeader,
   ReceiptLines,
   ReceiptPostModal,
-  ReceiptsTable,
   ReceiptStatus,
+  ReceiptsTable,
   ReceiptVoidModal
 };

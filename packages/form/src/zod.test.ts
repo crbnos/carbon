@@ -155,3 +155,93 @@ describe("validator with FormData (the route-action path)", () => {
     expect(result.error?.fieldErrors?.name).toBe("Name is required");
   });
 });
+
+describe("validator(...).request", () => {
+  const post = (body: FormData | string, contentType?: string) =>
+    new Request("http://localhost/x", {
+      method: "POST",
+      body,
+      ...(contentType ? { headers: { "content-type": contentType } } : {})
+    });
+  const schema = z.object({ quantity: zfd.numeric(z.number().min(1)) });
+
+  it("refuses another method before reading anything", async () => {
+    const thrown = await validator(schema)
+      .request({ request: new Request("http://localhost/x"), params: {} })
+      .catch((e) => e);
+    expect(thrown).toBeInstanceOf(Response);
+    expect((thrown as Response).status).toBe(405);
+  });
+
+  it("refuses a missing route param", async () => {
+    const thrown = await validator(schema)
+      .request(
+        { request: post(new FormData()), params: {} },
+        { params: ["jobId"] }
+      )
+      .catch((e) => e);
+    expect((thrown as Response).status).toBe(400);
+  });
+
+  it("returns the form's field errors as `invalid`", async () => {
+    const fd = new FormData();
+    fd.append("quantity", "0");
+    const input = await validator(schema).request({
+      request: post(fd),
+      params: {}
+    });
+    assert("invalid" in input);
+    expect(input.invalid.init?.status).toBe(422);
+  });
+
+  it("parses form data and returns the params", async () => {
+    const fd = new FormData();
+    fd.append("quantity", "3");
+    const input = await validator(schema).request(
+      { request: post(fd), params: { jobId: "job-1" } },
+      { params: ["jobId"] }
+    );
+    assert(!("invalid" in input));
+    expect(input).toMatchObject({
+      data: { quantity: 3 },
+      params: { jobId: "job-1" }
+    });
+    expect(input.formData?.get("quantity")).toBe("3");
+  });
+
+  it("parses a JSON body", async () => {
+    const input = await validator(
+      z.object({ ids: z.array(z.string()) })
+    ).request({
+      request: post(JSON.stringify({ ids: ["a"] }), "application/json"),
+      params: {}
+    });
+    assert(!("invalid" in input));
+    expect(input.data).toEqual({ ids: ["a"] });
+    expect(input.formData).toBeUndefined();
+  });
+
+  it("refuses a JSON body that does not parse with a 400", async () => {
+    const thrown = await validator(z.object({ ids: z.array(z.string()) }))
+      .request({ request: post("{not json", "application/json"), params: {} })
+      .catch((e) => e);
+    expect(thrown).toBeInstanceOf(Response);
+    expect((thrown as Response).status).toBe(400);
+  });
+
+  it("reads no body without a schema", async () => {
+    const input = await validator().request(
+      {
+        request: new Request("http://localhost/x", { method: "POST" }),
+        params: { jobId: "job-1" }
+      },
+      { params: ["jobId"] }
+    );
+    assert(!("invalid" in input));
+    expect(input).toEqual({
+      data: {},
+      params: { jobId: "job-1" },
+      formData: undefined
+    });
+  });
+});

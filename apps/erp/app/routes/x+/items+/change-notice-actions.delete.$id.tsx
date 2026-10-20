@@ -13,7 +13,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteChangeNoticeRequiredAction,
   getChangeNoticeRequiredAction
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

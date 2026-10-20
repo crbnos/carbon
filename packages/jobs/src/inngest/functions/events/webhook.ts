@@ -4,9 +4,16 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
+import { getWebhookSigningSecret } from "@carbon/ee/webhooks.server";
 import axios from "axios";
+import { getJobDatabaseClient } from "../../../db.ts";
 import { inngest } from "../../client.ts";
-import { toWebhookBody, webhookPayloadSchema } from "./webhook-body.ts";
+import {
+  signWebhookBody,
+  toWebhookBody,
+  WEBHOOK_SIGNATURE_HEADER,
+  webhookPayloadSchema
+} from "./webhook-body.ts";
 
 const RETRIES = 3;
 // A documented part of the webhook contract (docs: building/webhooks).
@@ -53,18 +60,38 @@ export const webhookFunction = inngest.createFunction(
     }
 
     await step.run("send-webhook", async () => {
-      // Never log payload.url — the docs tell customers to treat the URL itself
-      // as the secret (an unguessable token in the path or query), since Carbon
-      // does not sign webhooks. webhookId identifies it without leaking that.
+      // Never log payload.url or the secret — a URL may still carry a token of
+      // its own. webhookId identifies the webhook without leaking either.
       logger.info(
         `Firing ${body.type} webhook ${webhookId ?? "<unknown>"} for ${payload.data.table}`
       );
 
+      // Serialised once: the signature covers these exact bytes, and the
+      // receiver verifies the raw body it is sent. Signed per attempt, so a
+      // retry carries a fresh timestamp.
+      const raw = JSON.stringify(body);
+      const secret = webhookId
+        ? await getWebhookSigningSecret(
+            getJobDatabaseClient(),
+            payload.companyId,
+            webhookId
+          )
+        : null;
+      if (!secret) {
+        // The subscription outlived its webhook row; nothing to deliver for.
+        logger.warn(
+          `No signing secret for webhook ${webhookId ?? "<unknown>"}; skipping delivery`
+        );
+        return;
+      }
+      const timestamp = Math.floor(Date.now() / 1000);
+
       try {
-        await axios.post(payload.url, body, {
+        await axios.post(payload.url, raw, {
           headers: {
             "Content-Type": "application/json",
-            ...payload.config.headers
+            ...payload.config.headers,
+            [WEBHOOK_SIGNATURE_HEADER]: signWebhookBody(secret, raw, timestamp)
           },
           timeout: WEBHOOK_TIMEOUT_MS
         });

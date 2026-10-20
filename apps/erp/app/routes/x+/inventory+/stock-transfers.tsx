@@ -11,10 +11,13 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getStockTransfers, STOCK_TRANSFERS_PAGING } from "~/modules/inventory";
+import {
+  getStockTransfers,
+  STOCK_TRANSFERS_PAGING
+} from "~/modules/inventory/inventory.service";
 import StockTransfersTable from "~/modules/inventory/ui/StockTransfers/StockTransfersTable";
-import { getLocationsList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
 import { listErrorPage } from "~/utils/list-registry/load.server";

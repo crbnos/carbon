@@ -34,6 +34,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { z } from "zod";
 import { toIsoDate } from "../scheduling/date-utils.ts";
+import { bomChildren } from "./bom-children.ts";
 import {
   actualConsumesForecast,
   consumeForecast
@@ -378,15 +379,7 @@ export async function runMrp(
     // Build itemId -> direct BOM children (one level only)
     const bomByItem = new Map<string, BomChild[]>();
     for (const [itemId, methodId] of methodIdByItem) {
-      const materials = materialsByMethodId.get(methodId) ?? [];
-      const children: BomChild[] = [];
-      for (const mat of materials) {
-        children.push({
-          itemId: mat.itemId,
-          quantity: Number(mat.quantity) || 1,
-          methodType: mat.methodType as MethodType
-        });
-      }
+      const children = bomChildren(materialsByMethodId.get(methodId) ?? []);
       if (children.length > 0) {
         bomByItem.set(itemId, children);
       }

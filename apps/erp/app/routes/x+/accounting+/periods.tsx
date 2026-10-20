@@ -13,7 +13,7 @@ import { LuCalendarPlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { usePermissions } from "~/hooks";
-import { getAccountingPeriods } from "~/modules/accounting";
+import { getAccountingPeriods } from "~/modules/accounting/accounting.service";
 import { PeriodsTable } from "~/modules/accounting/ui/Periods";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

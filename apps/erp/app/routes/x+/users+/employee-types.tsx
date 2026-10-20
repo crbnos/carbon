@@ -10,7 +10,7 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import {
   EmployeeTypesTable,
   EmployeeTypesUpgradeOverlay
-} from "~/modules/users";
+} from "~/modules/users/ui";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { employeeTypesList } from "~/utils/list-registry/users.server";

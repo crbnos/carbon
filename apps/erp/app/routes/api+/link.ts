@@ -8,7 +8,7 @@ import { updateCompanySession } from "@carbon/auth/session.server";
 import type { NotificationEvent } from "@carbon/notifications";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompanies } from "~/modules/settings";
+import { getCompanies } from "~/modules/settings/settings.service";
 import {
   type NotificationDocumentType,
   notificationTarget

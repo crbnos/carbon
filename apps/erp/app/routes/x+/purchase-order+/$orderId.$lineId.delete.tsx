@@ -7,12 +7,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { isPurchaseOrderLocked } from "~/modules/purchasing/purchasing.models";
 import {
   deletePurchaseOrderLine,
   getPurchaseOrder,
-  getPurchaseOrderLine,
-  isPurchaseOrderLocked
-} from "~/modules/purchasing";
+  getPurchaseOrderLine
+} from "~/modules/purchasing/purchasing.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 

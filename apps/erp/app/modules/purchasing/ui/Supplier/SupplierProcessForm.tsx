@@ -32,8 +32,8 @@ import {
   Supplier
 } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
-import type { SupplierProcess } from "~/modules/purchasing";
-import { supplierProcessValidator } from "~/modules/purchasing";
+import { supplierProcessValidator } from "~/modules/purchasing/purchasing.models";
+import type { SupplierProcess } from "~/modules/purchasing/types";
 import { path } from "~/utils/path";
 
 type SupplierProcessFormProps = {

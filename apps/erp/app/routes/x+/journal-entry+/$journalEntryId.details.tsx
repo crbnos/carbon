@@ -2,18 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect, toDisplayCredit, toDisplayDebit } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import { toDisplayCredit, toDisplayDebit } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, useParams } from "react-router";
+import { useParams } from "react-router";
+import { z } from "zod";
 import { useRouteData } from "~/hooks";
-import type { JournalEntry } from "~/modules/accounting";
-import {
-  postJournalEntry,
-  saveJournalEntryWithLines
-} from "~/modules/accounting";
+import { journalEntryValidator } from "~/modules/accounting/accounting.models";
+import type { JournalEntry } from "~/modules/accounting/types";
 import { JournalEntryForm } from "~/modules/accounting/ui/JournalEntries";
 import type {
   DimensionWithValues,
@@ -21,107 +18,41 @@ import type {
 } from "~/modules/accounting/ui/JournalEntries/types";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId, companyId, companyGroupId } =
-    await requirePermissions(request, {
-      update: "accounting"
-    });
-
-  const { journalEntryId } = params;
-  if (!journalEntryId) throw new Error("Could not find journalEntryId");
-
-  const formData = await request.formData();
-  const intent = formData.get("intent") as string;
-  const postingDate = formData.get("postingDate") as string;
-  const description = formData.get("description") as string;
-  const linesJson = formData.get("lines") as string;
-
-  if (!postingDate) {
-    return data(
-      {},
-      await flash(request, error(null, "Posting date is required"))
-    );
-  }
-
-  let lines: Array<{
-    id?: string;
-    accountId: string;
-    description?: string;
-    debit: number;
-    credit: number;
-    dimensions?: Array<{ dimensionId: string; valueId: string }>;
-  }>;
-
-  try {
-    lines = JSON.parse(linesJson);
-  } catch {
-    return data({}, await flash(request, error(null, "Invalid lines data")));
-  }
-
-  // Validate lines
-  for (const line of lines) {
-    if (!line.accountId) {
-      return data(
-        {},
-        await flash(request, error(null, "Each line must have an account"))
-      );
+// The lines ride as one JSON field; the operation checks each of them.
+const form = journalEntryValidator.extend({
+  intent: z.enum(["save", "post"]).optional(),
+  lines: z.string().transform((value, ctx) => {
+    try {
+      return JSON.parse(value) as unknown;
+    } catch {
+      ctx.addIssue({ code: "custom", message: "Invalid lines data" });
+      return z.NEVER;
     }
-    if (
-      (line.debit <= 0 && line.credit <= 0) ||
-      (line.debit > 0 && line.credit > 0)
-    ) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(null, "Each line must have either a debit or credit amount")
-        )
-      );
-    }
-  }
+  })
+});
 
-  const saveResult = await saveJournalEntryWithLines(client, {
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(form).request(args, {
+    params: ["journalEntryId"]
+  });
+  if ("invalid" in input) return input.invalid;
+  const { journalEntryId } = input.params;
+  const { intent, postingDate, description, lines } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.accounting.saveJournalEntry({
     journalEntryId,
     postingDate,
     description,
-    updatedBy: userId,
-    lines,
-    companyId,
-    companyGroupId
+    lines: lines as never,
+    post: intent === "post"
   });
-
-  if (saveResult.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(saveResult.error, "Failed to save journal entry")
-      )
-    );
-  }
-
-  if (intent === "post") {
-    const postResult = await postJournalEntry(client, journalEntryId, userId);
-    if (postResult.error) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(postResult.error, "Failed to post journal entry")
-        )
-      );
-    }
-
-    throw redirect(
-      path.to.journalEntryDetails(journalEntryId),
-      await flash(request, success("Journal entry posted"))
-    );
-  }
-
-  throw redirect(
+  return respond(args.request, result).redirect(
     path.to.journalEntryDetails(journalEntryId),
-    await flash(request, success("Journal entry saved"))
+    {
+      message: result.data?.posted
+        ? "Journal entry posted"
+        : "Journal entry saved"
+    }
   );
 }
 

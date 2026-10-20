@@ -29,6 +29,7 @@
     "./middleware/flash.server": "./src/middleware/flash.server.ts",
     "./middleware/form-body.server": "./src/middleware/form-body.server.ts",
     "./middleware/security.server": "./src/middleware/security.server.ts",
+    "./middleware/maintenance.server": "./src/middleware/maintenance.server.ts",
     "./middleware/flash.client": "./src/middleware/flash.client.ts"
   },
   "main": "./src/index.ts",
@@ -63,7 +64,7 @@
     "@carbon/lib": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@react-email/components": "catalog:",
-    "@simplewebauthn/server": "^13.1.0",
+    "@simplewebauthn/server": "^13.3.2",
     "botid": "catalog:",
     "cookie": "catalog:",
     "dompurify": "catalog:",

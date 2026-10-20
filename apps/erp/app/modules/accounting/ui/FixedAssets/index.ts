@@ -27,8 +27,8 @@ import FleetAssetsTable from "./FleetAssetsTable";
 import FleetStatus from "./FleetStatus";
 
 export {
-  AssetClassForm,
   AssetClassesTable,
+  AssetClassForm,
   DepreciationRunDocuments,
   DepreciationRunHeader,
   DepreciationRunStatus,

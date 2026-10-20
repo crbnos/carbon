@@ -5,6 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -41,8 +42,13 @@ export async function action({ request }: ActionFunctionArgs) {
     const serviceRole = getCarbonServiceRole();
     await serviceRole
       .from("modelUpload")
-      .update({ optimizeStatus: "Queued", optimizeError: null })
-      .eq("id", modelUploadId);
+      .update({
+        optimizeStatus: "Queued",
+        optimizeError: null,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", modelUploadId)
+      .eq("companyId", companyId);
   }
 
   await trigger("model-optimize", { modelUploadId, companyId, userId, force });

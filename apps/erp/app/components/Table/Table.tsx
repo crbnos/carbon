@@ -64,7 +64,7 @@ import type {
 } from "~/components/Editable";
 import { useUrlParams } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
-import type { fieldMappings } from "~/modules/shared";
+import type { fieldMappings } from "~/modules/shared/imports.models";
 import { Row, TableHeader, useSort } from "./components";
 import { CompactList } from "./components/Compact";
 import { CompactToolbar } from "./components/Compact/CompactToolbar";

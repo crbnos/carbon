@@ -6,7 +6,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { AbilitiesTable } from "~/modules/resources";
+import { AbilitiesTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { abilitiesList } from "~/utils/list-registry/resources.server";

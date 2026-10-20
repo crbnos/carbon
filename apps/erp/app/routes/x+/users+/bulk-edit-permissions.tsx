@@ -2,149 +2,74 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { requireFeature } from "@carbon/ee/plan.server";
-import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
-import { getClientIp, redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { z } from "zod";
 import {
   bulkPermissionsAllMatchingValidator,
   bulkPermissionsValidator,
   userPermissionsValidator
-} from "~/modules/users";
-import { queuePermissionUpdates } from "~/modules/users/users.server";
+} from "~/modules/users/users.models";
+import { originOf } from "~/modules/users/users.service";
 import { getParams, path } from "~/utils/path";
 import { parseAllMatching } from "~/utils/table-jobs";
 import { startTableBulkAction } from "~/utils/table-jobs.server";
 
-const logger = getLogger("erp", "users-bulk-edit-permissions");
+const modulePermissions = z.record(z.string(), userPermissionsValidator);
 
-type ModulePermissions = Record<
-  string,
-  { view: boolean; create: boolean; update: boolean; delete: boolean }
->;
-
-/** The form's permissions JSON, or null when it is not valid. */
-function parsePermissions(json: string): ModulePermissions | null {
-  let permissions: unknown;
-  try {
-    permissions = JSON.parse(json);
-  } catch {
-    return null;
-  }
-  if (permissions === null || typeof permissions !== "object") return null;
-  return Object.values(permissions).every(
-    (permission) => userPermissionsValidator.safeParse(permission).success
-  )
-    ? (permissions as ModulePermissions)
-    : null;
-}
-
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "users"
-  });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    redirectTo: path.to.employeeAccounts,
-    feature: "PERMISSIONS"
-  });
-
-  const formData = await request.formData();
-
+export async function action(args: ActionFunctionArgs) {
   // Every matching user of the Employees list: the background job picks the
-  // active users and queues their permission update.
-  const allMatching = parseAllMatching(formData.get("allMatching"));
+  // active users and queues their permission update. The job checks the
+  // PERMISSIONS feature (`canRunBulkAction`).
+  const allMatching = parseAllMatching(
+    (await args.request.clone().formData()).get("allMatching")
+  );
   if (allMatching) {
-    const matching = await validator(
-      bulkPermissionsAllMatchingValidator
-    ).validate(formData);
-    if (matching.error) {
-      return validationError(matching.error);
+    const { companyId, userId } = await requirePermissions(args.request, {
+      update: "users"
+    });
+    const input = await validator(bulkPermissionsAllMatchingValidator).request(
+      args
+    );
+    if ("invalid" in input) return input.invalid;
+    let parsed: unknown = null;
+    try {
+      parsed = JSON.parse(input.data.data);
+    } catch {
+      parsed = null;
     }
-    const permissions = parsePermissions(matching.data.data);
-    if (!permissions) {
-      return data({ success: false, message: "Failed to parse permissions" });
+    const permissions = modulePermissions.safeParse(parsed);
+    if (!permissions.success) {
+      return { success: false, message: "Failed to parse permissions" };
     }
-    const ip = getClientIp(request) ?? undefined;
-    const started = await startTableBulkAction({
+    const { ip } = originOf(args.request);
+    return startTableBulkAction({
       companyId,
       userId,
       actionKey: "users.permissions",
       params: {
-        permissions,
-        addOnly: matching.data.editType === "add",
+        permissions: permissions.data,
+        addOnly: input.data.editType === "add",
         ...(ip ? { ip } : {})
       },
       allMatching
     });
-    return started;
   }
 
-  const validation = await validator(bulkPermissionsValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { editType, userIds } = validation.data;
-  const addOnly = editType === "add";
-  const permissions = parsePermissions(validation.data.data);
-
-  if (!permissions) {
-    throw redirect(
-      path.to.employeeAccounts,
-      await flash(
-        request,
-        error(validation.data.data, "Failed to parse permissions")
-      )
-    );
-  }
-
-  // The job writes these users' grants as the service role: every id must be
-  // an employee of this company. One batched read.
-  const uniqueUserIds = [...new Set(userIds)];
-  const members = await getCarbonServiceRole()
-    .from("employee")
-    .select("id")
-    .in("id", uniqueUserIds)
-    .eq("companyId", companyId);
-  if (members.error || (members.data ?? []).length !== uniqueUserIds.length) {
-    logger.error("Bulk permission edit names users outside the company", {
-      companyId,
-      userIds: uniqueUserIds,
-      error: members.error
-    });
-    throw redirect(
-      path.to.employeeAccounts,
-      await flash(request, error(members.error, "Employee not found"))
-    );
-  }
-
-  const ip = getClientIp(request) ?? undefined;
-
-  await queuePermissionUpdates({
+  const input = await validator(bulkPermissionsValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { editType, userIds, data } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.users.bulkUpdatePermissions({
+    editType,
     userIds,
-    companyId,
-    actorId: userId,
-    permissions,
-    addOnly,
-    ip
+    permissions: JSON.parse(data),
+    ip: originOf(args.request).ip
   });
-
-  throw redirect(
-    `${path.to.employeeAccounts}?${getParams(request)}`,
-    await flash(request, success("Updating user permissions"))
+  return respond(args.request, result).redirect(
+    `${path.to.employeeAccounts}?${getParams(args.request)}`,
+    { message: "Updating user permissions", onError: path.to.employeeAccounts }
   );
 }

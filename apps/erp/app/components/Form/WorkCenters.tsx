@@ -8,7 +8,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useUser } from "~/hooks";
-import type { getWorkCentersList } from "~/modules/resources";
+import type { getWorkCentersList } from "~/modules/resources/resources.service";
 import WorkCenterForm from "~/modules/resources/ui/WorkCenters/WorkCenterForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

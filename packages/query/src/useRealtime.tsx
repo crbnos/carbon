@@ -6,6 +6,7 @@ import type {
   RealtimeTable,
   RouteRealtimeTable
 } from "@carbon/database/realtime-tables";
+import { useRevalidator } from "@carbon/react";
 import {
   useCallback,
   useEffect,
@@ -18,7 +19,6 @@ import { getClientCache } from "./cache";
 import { invalidateLoaderEntries } from "./invalidation";
 import { matchesFilter } from "./realtimeFilter";
 import { useRealtimeChannel } from "./useRealtimeChannel";
-import { useRevalidator } from "./useRevalidator";
 
 /** What `broadcast_table_changes` sends: no row data, only which rows changed. */
 export type BroadcastChange = {

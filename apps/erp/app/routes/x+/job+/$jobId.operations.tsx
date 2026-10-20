@@ -15,7 +15,7 @@ import {
   getJob,
   getJobOperations,
   JOB_OPERATIONS_PAGING
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { JobOperationsTable } from "~/modules/production/ui/Jobs";
 import { toPage } from "~/utils/cursor";
 import { listErrorPage } from "~/utils/list-registry/load.server";

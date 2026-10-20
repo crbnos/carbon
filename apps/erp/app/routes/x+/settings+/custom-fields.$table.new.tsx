@@ -11,10 +11,11 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { AttributeDataType } from "~/modules/people";
-import { CustomFieldForm, customFieldValidator } from "~/modules/settings";
-import { upsertCustomField } from "~/modules/settings/settings.server";
-import { DataType } from "~/modules/shared";
+import type { AttributeDataType } from "~/modules/people/types";
+import { customFieldValidator } from "~/modules/settings/settings.models";
+import { upsertCustomField } from "~/modules/settings/settings.service";
+import { CustomFieldForm } from "~/modules/settings/ui";
+import { DataType } from "~/modules/shared/types";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

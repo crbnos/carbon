@@ -2,20 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { isInternalEmail, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  CompanyForm,
-  getSubsidiary,
-  subsidiaryValidator,
-  updateSubsidiary
-} from "~/modules/settings";
-import { invalidateCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { subsidiaryValidator } from "~/modules/settings/settings.models";
+import { getSubsidiary } from "~/modules/settings/settings.service";
+import { CompanyForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -42,46 +39,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { subsidiary: subsidiary.data };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId, email } = await requirePermissions(request, {
-    update: "settings"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(subsidiaryValidator).request(args, {
+    params: ["id"]
   });
-
-  // Multi-company management is gated to internal (Carbon) users for now.
-  if (!isInternalEmail(email)) {
-    throw redirect(path.to.settings);
-  }
-
-  const { id } = params;
-  if (!id) throw notFound("Subsidiary not found");
-
-  const formData = await request.formData();
-  const validation = await validator(subsidiaryValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const result = await updateSubsidiary(client, id, {
-    ...validation.data,
-    updatedBy: userId
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.settings.updateSubsidiaryDetails({
+    ...input.data,
+    id: input.params.id
   });
-
-  if (result.error) {
-    throw redirect(
-      path.to.companies,
-      await flash(request, error(result.error, "Failed to update subsidiary"))
-    );
-  }
-
-  // company.timezone may have changed — drop the cached resolution.
-  await invalidateCompanyTimeZone(id);
-
-  throw redirect(
-    path.to.companies,
-    await flash(request, success("Updated subsidiary"))
-  );
+  return respond(args.request, result).redirect(path.to.companies, {
+    message: "Updated subsidiary"
+  });
 }
 
 export default function EditSubsidiaryRoute() {

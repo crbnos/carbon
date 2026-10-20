@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
@@ -20,6 +21,7 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -34,24 +36,19 @@ import {
   LuTrash,
   LuUndo2
 } from "react-icons/lu";
-import {
-  Link,
-  useFetchers,
-  useNavigate,
-  useParams,
-  useSubmit
-} from "react-router";
+import { Link, useFetchers, useNavigate, useParams } from "react-router";
 import { Empty, ItemThumbnail, PrintButton } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
-import {
-  isStockTransferLocked,
-  type StockTransfer,
-  type StockTransferLine
-} from "~/modules/inventory";
+import { isStockTransferLocked } from "~/modules/inventory/inventory.models";
+import type {
+  StockTransfer,
+  StockTransferLine
+} from "~/modules/inventory/types";
+import type { action as quantityAction } from "~/routes/x+/stock-transfer+/$id.line.quantity";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -64,8 +61,6 @@ interface StockTransferLineProps {
   isPickable: boolean;
   isEditable: boolean;
   isPending: boolean;
-  onPick: (line: StockTransferLine) => void;
-  onUnpick: (line: StockTransferLine) => void;
   onDelete: (line: StockTransferLine) => void;
   permissions: ReturnType<typeof usePermissions>;
 }
@@ -79,8 +74,6 @@ function StockTransferLineComponent({
   isPickable,
   isEditable,
   isPending,
-  onPick,
-  onUnpick,
   onDelete,
   permissions
 }: StockTransferLineProps) {
@@ -89,6 +82,36 @@ function StockTransferLineComponent({
   const params = useParams();
   const { id } = params;
   if (!id) throw new Error("stock transfer id not found");
+
+  // One fetcher per line, so lines pick side by side; the pending state is
+  // read back through `usePendingItems`.
+  const pick = useAction<typeof quantityAction>({
+    key: `stockTransferLine:${line.id}`,
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      toast.success(
+        data.quantity === 0
+          ? t`Line unpicked`
+          : data.quantity === 1
+            ? t`1 item marked as picked`
+            : t`${data.quantity} items marked as picked`
+      );
+    }
+  });
+  // Pick moves the line's quantity; 0 unpicks it.
+  const submitPick = (quantity: number) => {
+    const formData = new FormData();
+    formData.append("id", line.id!);
+    formData.append("quantity", quantity.toString());
+    formData.append("locationId", locationId ?? "");
+    if (line.trackedEntityId) {
+      formData.append("trackedEntityId", line.trackedEntityId);
+    }
+    pick.submit(formData, {
+      method: "post",
+      action: path.to.stockTransferLineQuantity(id)
+    });
+  };
   const [items] = useItems();
   const unitsOfMeasure = useUnitOfMeasure();
 
@@ -189,7 +212,7 @@ function StockTransferLineComponent({
                 isDisabled={!isPickable || isPending}
                 isLoading={isPending}
                 leftIcon={<LuUndo2 />}
-                onClick={() => onUnpick(line)}
+                onClick={() => submitPick(0)}
               >
                 <Trans>Unpick</Trans>
               </Button>
@@ -201,7 +224,7 @@ function StockTransferLineComponent({
                 onClick={
                   isTracked
                     ? () => navigate(path.to.stockTransferScan(id, line.id!))
-                    : () => onPick(line)
+                    : () => submitPick(line.quantity!)
                 }
               >
                 <Trans>Pick</Trans>
@@ -318,43 +341,6 @@ export default function StockTransferLines() {
     }
   });
 
-  const submit = useSubmit();
-
-  const onPick = (line: StockTransferLine) => {
-    const formData = new FormData();
-    formData.append("id", line.id!);
-    formData.append("quantity", line.quantity!.toString());
-    formData.append("locationId", routeData?.stockTransfer?.locationId ?? "");
-
-    if (line.trackedEntityId) {
-      formData.append("trackedEntityId", line.trackedEntityId);
-    }
-
-    submit(formData, {
-      method: "post",
-      action: path.to.stockTransferLineQuantity(id),
-      navigate: false,
-      fetcherKey: `stockTransferLine:${line.id}`
-    });
-  };
-
-  const onUnpick = (line: StockTransferLine) => {
-    const formData = new FormData();
-    formData.append("id", line.id!);
-    formData.append("quantity", "0");
-    formData.append("locationId", routeData?.stockTransfer?.locationId ?? "");
-    if (line.trackedEntityId) {
-      formData.append("trackedEntityId", line.trackedEntityId);
-    }
-
-    submit(formData, {
-      method: "post",
-      action: path.to.stockTransferLineQuantity(id),
-      navigate: false,
-      fetcherKey: `stockTransferLine:${line.id}`
-    });
-  };
-
   return (
     <>
       <Card>
@@ -407,8 +393,6 @@ export default function StockTransferLines() {
                   isPending={
                     pendingQuantities?.some((q) => q.id === line.id) ?? false
                   }
-                  onPick={onPick}
-                  onUnpick={onUnpick}
                   onDelete={() => {
                     setSelectedLine(line);
                     deleteDisclosure.onOpen();

@@ -6,7 +6,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { ShippingMethodsTable } from "~/modules/inventory";
+import { ShippingMethodsTable } from "~/modules/inventory/ui";
 import type { Handle } from "~/utils/handle";
 import { shippingMethodsList } from "~/utils/list-registry/inventory.server";
 import { loadListPage } from "~/utils/list-registry/load.server";

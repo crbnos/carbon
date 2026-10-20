@@ -66,7 +66,7 @@ import type { BulkActionScope } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useBulkFormAction } from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { methodType } from "~/modules/shared";
+import { methodType } from "~/modules/shared/shared.models";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { serviceReplenishmentSystems } from "../../items.models";

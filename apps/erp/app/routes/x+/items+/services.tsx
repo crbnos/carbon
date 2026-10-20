@@ -7,7 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { ServicesTable } from "~/modules/items/ui/Services";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { servicesList } from "~/utils/list-registry/items.server";
 import { loadListPage } from "~/utils/list-registry/load.server";

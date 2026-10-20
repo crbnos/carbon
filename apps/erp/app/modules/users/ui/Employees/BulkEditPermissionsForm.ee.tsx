@@ -29,11 +29,11 @@ import {
   toCompanyPermissions,
   usePermissionMatrix
 } from "~/hooks/usePermissionMatrix";
-import type { CompanyPermission } from "~/modules/users";
+import type { CompanyPermission } from "~/modules/users/types";
 import {
   bulkPermissionsAllMatchingValidator,
   bulkPermissionsValidator
-} from "~/modules/users";
+} from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 import {
   AllMatchingUsersNote,

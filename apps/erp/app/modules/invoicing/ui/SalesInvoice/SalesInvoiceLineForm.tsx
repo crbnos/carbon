@@ -78,9 +78,10 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import type { SalesInvoice } from "~/modules/invoicing";
-import { salesInvoiceLineValidator } from "~/modules/invoicing";
-import { type ItemType, itemType, methodType } from "~/modules/shared";
+import { salesInvoiceLineValidator } from "~/modules/invoicing/invoicing.models";
+import type { SalesInvoice } from "~/modules/invoicing/types";
+import { itemType, methodType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";

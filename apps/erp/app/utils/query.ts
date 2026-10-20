@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { badRequest } from "@carbon/auth";
+import { searchFilter } from "@carbon/utils";
 import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 import type { Cursor, DefaultSort, KeysetSort, Paging, Sort } from "./cursor";
 import {
@@ -284,9 +285,7 @@ export function setGenericQueryFilters<
 }
 
 export function getSearchTokens(search: string): string[] {
-  // Strip characters that are structural in a PostgREST `.or(...)` filter
-  // (comma separates conditions, parens group them) so the search value can't
-  // alter the filter shape.
+  // Commas and parentheses separate words, as spaces do ("Washer, Flat").
   return search
     .replace(/[,()\\]/g, " ")
     .split(/\s+/)
@@ -309,9 +308,7 @@ export function setSearchFilter<
   // Each token must match at least one column, and all tokens must match, so
   // "M8 washer" finds "Washer, Flat, M8". Chained `.or(...)` calls are ANDed.
   for (const token of getSearchTokens(search)) {
-    query = query.or(
-      columns.map((column) => `${column}.ilike.%${token}%`).join(",")
-    );
+    query = query.or(searchFilter(columns, token));
   }
 
   return query;
@@ -339,3 +336,51 @@ export const filterOperatorLabels = Object.entries(filterOperators).map(
     label: value
   })
 );
+
+// Array values sort by their first entry.
+export function pageInMemory<T extends Record<string, unknown>>(
+  rows: T[],
+  searchParams: URLSearchParams,
+  searchable: (row: T) => (string | null | undefined)[]
+): { rows: T[]; count: number } {
+  const search = searchParams.get("search")?.trim().toLowerCase() ?? "";
+  const { sorts } = getGenericQueryFilters(searchParams);
+  // The drawers that use this have no pager: without `limit` every match is
+  // one page (the Table renders only the rows in view).
+  const offset = Math.max(0, Number(searchParams.get("offset")) || 0);
+  const requestedLimit = Number(searchParams.get("limit"));
+
+  const matching = search
+    ? rows.filter((row) =>
+        searchable(row).some((value) =>
+          (value ?? "").toLowerCase().includes(search)
+        )
+      )
+    : [...rows];
+
+  const sortValue = (row: T, key: string) => {
+    const value = row[key];
+    return Array.isArray(value) ? value[0] : value;
+  };
+  for (const { sortBy, sortAsc } of [...(sorts ?? [])].reverse()) {
+    matching.sort((a, b) => {
+      const left = sortValue(a, sortBy);
+      const right = sortValue(b, sortBy);
+      const order =
+        typeof left === "number" && typeof right === "number"
+          ? left - right
+          : String(left ?? "").localeCompare(String(right ?? ""), undefined, {
+              numeric: true
+            });
+      return sortAsc ? order : -order;
+    });
+  }
+
+  return {
+    rows: matching.slice(
+      offset,
+      requestedLimit > 0 ? offset + requestedLimit : undefined
+    ),
+    count: matching.length
+  };
+}

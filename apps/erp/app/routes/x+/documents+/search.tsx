@@ -12,12 +12,12 @@ import {
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useResolved } from "~/hooks/useResolved";
-import type { Document } from "~/modules/documents";
 import {
-  DocumentsTable,
   getDocumentExtensions,
   getDocumentLabels
-} from "~/modules/documents";
+} from "~/modules/documents/documents.service";
+import type { Document } from "~/modules/documents/types";
+import { DocumentsTable } from "~/modules/documents/ui";
 import {
   documentsList,
   recentDocumentsList

@@ -15,13 +15,16 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
-import type { Opportunity, SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import {
-  getSalesRFQ,
   isSalesRfqLocked,
-  salesRfqValidator,
-  upsertSalesRFQ
-} from "~/modules/sales";
+  salesRfqValidator
+} from "~/modules/sales/sales.models";
+import { getSalesRFQ, upsertSalesRFQ } from "~/modules/sales/sales.service";
+import type {
+  Opportunity,
+  SalesRFQ,
+  SalesRFQLine
+} from "~/modules/sales/types";
 import {
   OpportunityDocuments,
   OpportunityNotes,

@@ -37,14 +37,14 @@ import { Enumerable } from "~/components/Enumerable";
 import type { AllMatchingSelection, BulkActionScope } from "~/components/Table";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
-import type { Employee } from "~/modules/users";
+import type { Employee } from "~/modules/users/types";
 import {
   BulkEditPermissionsForm,
-  canBulkActOnUser,
   DeactivateUsersModal,
   ResendInviteModal,
   RevokeInviteModal
-} from "~/modules/users";
+} from "~/modules/users/ui";
+import { canBulkActOnUser } from "~/modules/users/users.models";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { useBulkUserActionFetcher } from "../components/AllMatchingUsers";

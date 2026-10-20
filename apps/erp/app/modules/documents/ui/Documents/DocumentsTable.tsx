@@ -55,7 +55,7 @@ import {
 } from "~/components/Table/rowEdits";
 import { useInfiniteRows } from "~/components/Table/useInfiniteRows";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { documentTypes } from "~/modules/shared";
+import { documentTypes } from "~/modules/shared/shared.models";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { documentSourceTypes } from "../../documents.models";

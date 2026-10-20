@@ -2,341 +2,39 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { error, success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
-import { QuoteEmail } from "@carbon/documents/email";
-import { getQuoteDisplayId } from "@carbon/documents/pdf";
-import {
-  dedupeViolations,
-  evaluateSalesRulesForSalesDocument,
-  isBlocked
-} from "@carbon/ee/rules.server";
-import { storage } from "@carbon/files";
-import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import type { Violation } from "@carbon/utils";
-import { datetime, redirect } from "@carbon/utils";
-import { renderAsync } from "@react-email/components";
+import { validator } from "@carbon/form";
+import { getPreferenceHeaders, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { upsertDocument } from "~/modules/documents";
-import {
-  finalizeQuote,
-  getCustomer,
-  getCustomerContact,
-  getQuote,
-  quoteFinalizeValidator
-} from "~/modules/sales";
-import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
-import { getCompany, getCompanySettings } from "~/modules/settings";
-import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
-import { upsertExternalLink } from "~/modules/shared";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getUser } from "~/modules/users/users.server";
-import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
+import { quoteFinalizeValidator } from "~/modules/sales/sales.models";
 import { path } from "~/utils/path";
-import { stripSpecialCharacters } from "~/utils/string";
-
-const logger = getLogger("erp", "quote", "finalize");
 
 export async function action(args: ActionFunctionArgs) {
-  const { request, params } = args;
-  assertIsPost(request);
-
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "sales",
-    role: "employee",
-    bypassRls: true
+  const input = await validator(quoteFinalizeValidator).request(args, {
+    params: ["quoteId"]
   });
-
-  const { quoteId } = params;
-  if (!quoteId) throw new Error("Could not find quoteId");
-
-  let file: ArrayBuffer;
-  let fileName: string;
-  let documentFilePath: string;
-
-  // `client` is the service role (bypassRls): the URL quote must belong to
-  // this company before it is evaluated, linked, rendered or sent.
-  await requireCompanyRecord(client, "quote", companyId, { id: quoteId });
-
-  const quote = await getQuote(client, quoteId);
-  if (quote.error) {
-    throw redirect(
-      path.to.quote(quoteId),
-      await flash(request, error(quote.error, "Failed to get quote"))
-    );
-  }
-
-  // A customer with no reachable contact cannot be created as a vendor/customer at
-  // a connected platform, so its documents are rejected there long after anyone
-  // is watching. Gate at issue time, where the record can still be fixed. No-op
-  // unless the company has turned the setting on.
-  const customerContactError = await checkPartyContactRequirement(
-    client,
-    companyId,
-    { kind: "customer", id: quote.data.customerId }
-  );
-  if (customerContactError) {
-    throw redirect(
-      path.to.quote(quoteId),
-      await flash(request, error(null, customerContactError))
-    );
-  }
-
-  // Terminal gate: re-evaluate every line before the quote leaves for the
-  // customer. Lines can arrive here from paths the per-line check never saw
-  // (RFQ conversion, duplication, integrations, the API), and a line that
-  // passed earlier may violate a rule authored since or a ship-to that changed.
-  // Runs before the external link + PDF so a blocked quote produces neither.
-  const formData = await request.clone().formData();
-  const acknowledged = formData.get("acknowledged") === "true";
-  let violations: Violation[];
-  let ruleNames: Record<string, string>;
-  try {
-    const result = await evaluateSalesRulesForSalesDocument({
-      client,
-      companyId,
-      userId,
-      documentType: "quote",
-      documentId: quoteId
-    });
-    violations = result.violations;
-    ruleNames = result.ruleNames;
-  } catch (err) {
-    // Fail closed but not as a raw 500 — the modal shows the message.
-    return {
-      violations: [
-        {
-          ruleId: "__evaluation-error__",
-          severity: "error" as const,
-          message:
-            err instanceof Error ? err.message : "Sales rule evaluation failed"
-        }
-      ],
-      ruleNames: {}
-    };
-  }
-  const deduped = dedupeViolations(violations);
-  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
-    // The strongest overrides happen at gates like this one — record the
-    // same evidence + notification the per-line checks write.
-    await recordSalesRuleOutcome(getCarbonServiceRole(), {
-      companyId,
-      userId,
-      documentType: "quote",
-      documentId: quoteId,
-      outcome: "blocked",
-      violations: deduped,
-      ruleNames
-    });
-    return { violations: deduped, ruleNames };
-  }
-
-  const externalLink = await upsertExternalLink(client, {
-    id: quote.data.externalLinkId ?? undefined, // TODO
-    documentType: "Quote",
-    documentId: quoteId,
-    customerId: quote.data.customerId,
-    expiresAt: quote.data.expirationDate,
-    companyId
+  if ("invalid" in input) return input.invalid;
+  const { quoteId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.sales.finalizeAndSendQuote({
+    ...input.data,
+    quoteId,
+    acknowledged: input.formData?.get("acknowledged") === "true",
+    locale: getPreferenceHeaders(args.request).locale
   });
-
-  if (externalLink.data && quote.data.externalLinkId !== externalLink.data.id) {
-    await client
-      .from("quote")
-      .update({
-        externalLinkId: externalLink.data.id,
-        completedDate: datetime.timestamp()
-      })
-      .eq("id", quoteId);
-  }
-
-  try {
-    const pdf = await pdfLoader({ ...args, params: { id: quoteId } });
-    if (pdf.headers.get("content-type") !== "application/pdf")
-      throw new Error("Failed to generate PDF");
-
-    file = await pdf.arrayBuffer();
-    fileName = stripSpecialCharacters(
-      `${getQuoteDisplayId(quote.data)} - ${new Date()
-        .toISOString()
-        .slice(0, -5)}.pdf`
-    );
-
-    documentFilePath = `${companyId}/opportunity/${quote.data.opportunityId}/${fileName}`;
-
-    const documentFileUpload = await storage(client)
-      .company(companyId)
-      .upload(documentFilePath, file, {
-        cacheControl: `${12 * 60 * 60}`,
-        contentType: "application/pdf",
-        upsert: true
-      });
-
-    if (documentFileUpload.error) {
-      throw redirect(
-        path.to.quote(quoteId),
-        await flash(
-          request,
-          error(documentFileUpload.error, "Failed to upload file")
-        )
-      );
-    }
-
-    const createDocument = await upsertDocument(client, {
-      path: documentFilePath,
-      name: fileName,
-      size: Math.round(file.byteLength / 1024),
-      sourceDocument: "Quote",
-      sourceDocumentId: quoteId,
-      readGroups: [userId],
-      writeGroups: [userId],
-      createdBy: userId,
-      companyId
-    });
-
-    if (createDocument.error) {
-      return redirect(
-        path.to.quote(quoteId),
-        await flash(
-          request,
-          error(createDocument.error, "Failed to create document")
-        )
-      );
-    }
-
-    const finalize = await finalizeQuote(client, quoteId, userId, companyId);
-    if (finalize.error) {
-      throw redirect(
-        path.to.quote(quoteId),
-        await flash(request, error(finalize.error, "Failed to finalize quote"))
-      );
-    }
-
-    // Acknowledged-override evidence only once the finalize has committed —
-    // a trail for a transition that then failed would be false, and a retry
-    // would duplicate it.
-    if (deduped.length > 0) {
-      await recordSalesRuleOutcome(getCarbonServiceRole(), {
-        companyId,
-        userId,
-        documentType: "quote",
-        documentId: quoteId,
-        outcome: "acknowledged",
-        violations: deduped,
-        ruleNames
-      });
-    }
-  } catch (err) {
-    throw redirect(
-      path.to.quote(quoteId),
-      await flash(request, error(err, "Failed to finalize quote"))
-    );
-  }
-
-  const validation = await validator(quoteFinalizeValidator).validate(
-    await request.formData()
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const {
-    notification,
-    customerContact: customerContactId,
-    cc: ccSelections
-  } = validation.data;
-
-  switch (notification) {
-    case "Email":
-      try {
-        if (!customerContactId) throw new Error("Customer contact is required");
-
-        const [company, companySettings, customer, customerContact, user] =
-          await Promise.all([
-            getCompany(client, companyId),
-            getCompanySettings(client, companyId),
-            getCustomer(client, quote.data.customerId!),
-            getCustomerContact(client, customerContactId, companyId),
-            getUser(client, userId)
-          ]);
-
-        if (!company.data) throw new Error("Failed to get company");
-        if (!companySettings.data)
-          throw new Error("Failed to get company settings");
-        if (!customer.data) throw new Error("Failed to get customer");
-        if (!customerContact.data)
-          throw new Error("Failed to get customer contact");
-        if (!user.data) throw new Error("Failed to get user");
-
-        const emailTemplate = QuoteEmail({
-          // @ts-expect-error TS2739 - TODO: fix type
-          company: company.data,
-          companySettings: companySettings.data,
-          // @ts-expect-error
-          quote: quote.data,
-          recipient: {
-            email: customerContact.data?.contact!.email!,
-            firstName: customerContact.data.contact!.firstName!,
-            lastName: customerContact.data.contact!.lastName!
-          },
-          sender: {
-            email: user.data.email,
-            firstName: user.data.firstName,
-            lastName: user.data.lastName
-          }
-        });
-
-        const html = await renderAsync(emailTemplate);
-        const text = await renderAsync(emailTemplate, { plainText: true });
-        const signed = await storage(client)
-          .company(companyId)
-          .createSignedUrl(documentFilePath, 3600);
-        if (signed.error) {
-          logger.error("Failed to create signed URL for attachment", {
-            storagePath: documentFilePath,
-            error: signed.error
-          });
-        }
-
-        await trigger("send-email", {
-          to: [user.data.email, customerContact.data.contact!.email!],
-          cc: ccSelections?.length ? ccSelections : undefined,
-          from: user.data.email,
-          subject: `Quote ${getQuoteDisplayId(quote.data)}`,
-          html,
-          text,
-          attachments: signed.data
-            ? [
-                {
-                  path: signed.data.signedUrl,
-                  filename: fileName
-                }
-              ]
-            : undefined,
-          companyId
-        });
-      } catch (err) {
-        throw redirect(
-          path.to.quote(quoteId),
-          await flash(request, error(err, "Failed to send email"))
-        );
-      }
-
-      break;
-    case undefined:
-    case "None":
-      break;
-    default:
-      throw new Error("Invalid notification type");
-  }
-
+  // An error is toasted; the violation modal reads `violations`.
+  if (!result.data) return result;
+  if ("violations" in result.data) return result.data;
+  // A failed email does not undo the finalize.
   throw redirect(
     path.to.quote(quoteId),
-    await flash(request, success("Quote finalized successfully"))
+    await flash(
+      args.request,
+      result.data.warning
+        ? error(null, result.data.warning)
+        : success("Quote finalized successfully")
+    )
   );
 }

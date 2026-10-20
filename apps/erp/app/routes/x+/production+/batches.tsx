@@ -11,7 +11,7 @@ import { useLoaderData } from "react-router";
 import {
   getJobOperationBatchMemberStats,
   getJobOperationBatchMembers
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import BatchesTable from "~/modules/production/ui/Batches/BatchesTable";
 import type { Handle } from "~/utils/handle";
 import { fetchListPage } from "~/utils/list-registry/index.server";

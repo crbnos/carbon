@@ -6,7 +6,10 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getIssueTypesList, getRequiredActionsList } from "~/modules/quality";
+import {
+  getIssueTypesList,
+  getRequiredActionsList
+} from "~/modules/quality/quality.service";
 import ActionsTable from "~/modules/quality/ui/Actions/ActionsTable";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";

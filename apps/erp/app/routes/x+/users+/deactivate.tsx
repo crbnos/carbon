@@ -2,96 +2,43 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { deactivateUser } from "@carbon/auth/users.server";
-import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
-import { getClientIp, redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { deactivateUsersValidator } from "~/modules/users";
-import { queueUserDeactivations } from "~/modules/users/users.server";
+import { deactivateUsersValidator } from "~/modules/users/users.models";
+import { originOf } from "~/modules/users/users.service";
 import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
 
-const logger = getLogger("erp", "users-deactivate");
-
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    delete: "users"
-  });
-
-  const formData = await request.formData();
-  const ip = getClientIp(request) ?? undefined;
-
+export async function action(args: ActionFunctionArgs) {
   // Every matching user of the Employees list: the background job picks the
   // active users other than the actor and queues their deactivation.
-  const started = await startAllMatchingBulkAction(
-    formData.get("allMatching"),
-    {
+  const allMatching = (await args.request.clone().formData()).get(
+    "allMatching"
+  );
+  if (allMatching) {
+    const { companyId, userId } = await requirePermissions(args.request, {
+      delete: "users"
+    });
+    const { ip } = originOf(args.request);
+    const started = await startAllMatchingBulkAction(allMatching, {
       companyId,
       userId,
       actionKey: "users.deactivate",
       params: ip ? { ip } : {}
-    }
-  );
-  if (started) return started;
-
-  const validation = await validator(deactivateUsersValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { users, redirectTo } = validation.data;
-
-  if (users.includes(userId)) {
-    throw redirect(
-      redirectTo,
-      await flash(request, error(null, "You cannot deactivate yourself"))
-    );
-  }
-
-  if (users.length === 1) {
-    const [targetUserId] = users;
-    // deactivateUser() handles Stripe subscription quantity update internally
-    const result = await deactivateUser(
-      client,
-      targetUserId,
-      companyId,
-      userId,
-      ip
-    );
-
-    throw redirect(redirectTo, await flash(request, result));
-  }
-
-  // The success redirect stays outside the try: a thrown redirect is caught
-  // like an error, and every deactivation then reported a failure.
-  try {
-    await queueUserDeactivations({
-      userIds: users,
-      companyId,
-      actorId: userId,
-      ip
     });
-  } catch (e) {
-    logger.error("Failed to queue user deactivations", {
-      companyId,
-      error: e
-    });
-    throw redirect(
-      redirectTo,
-      await flash(request, error(e, "Failed to deactivate users"))
-    );
+    if (started) return started;
   }
-  throw redirect(
-    redirectTo,
-    await flash(
-      request,
-      success("Success. Please check back in a few moments.")
-    )
-  );
+
+  const input = await validator(deactivateUsersValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { users, redirectTo } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.users.deactivateUsers({
+    userIds: users,
+    ip: originOf(args.request).ip
+  });
+  return respond(args.request, result).redirect(redirectTo, {
+    message: result.data?.message
+  });
 }

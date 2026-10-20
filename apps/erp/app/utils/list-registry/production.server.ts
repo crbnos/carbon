@@ -14,7 +14,7 @@ import {
   JOBS_PAGING,
   PROCEDURES_PAGING,
   SCRAP_REASONS_PAGING
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { JOB_LIST_EXPORT_VALUES } from "~/modules/production/ui/Jobs/job-list-export";
 import { withExportValues } from "./export-values";
 import type { ListDefinition, ListRowsContext } from "./index.server";

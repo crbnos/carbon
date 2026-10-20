@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { WorkflowLastRun } from "~/modules/workflows";
+import { WORKFLOW_LIST_EXPORT_VALUES } from "~/modules/workflows/ui/workflow-list-export";
+import type { WorkflowLastRun } from "~/modules/workflows/workflows.service";
 import {
   getWorkflowLastRuns,
   getWorkflowRuns,
@@ -10,8 +11,7 @@ import {
   getWorkflowVersionNumbers,
   WORKFLOW_RUNS_PAGING,
   WORKFLOWS_PAGING
-} from "~/modules/workflows";
-import { WORKFLOW_LIST_EXPORT_VALUES } from "~/modules/workflows/ui/workflow-list-export";
+} from "~/modules/workflows/workflows.service";
 import { withExportValues } from "./export-values";
 import type { ListDefinition, ListRowsContext } from "./index.server";
 import { searchList } from "./index.server";

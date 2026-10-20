@@ -16,19 +16,24 @@ import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import type { ProductionPlanningItem } from "~/modules/production";
+import {
+  PLANNING_DRAWER_PARAM,
+  resolvePlanningActionScope
+} from "~/modules/production/production.models";
 import {
   getPlanningActions,
   getProductionPlanning,
-  PLANNING_DRAWER_PARAM,
-  PRODUCTION_PLANNING_PAGING,
-  resolvePlanningActionScope,
-  withPlanningActions
-} from "~/modules/production";
+  PRODUCTION_PLANNING_PAGING
+} from "~/modules/production/production.service";
+import type { ProductionPlanningItem } from "~/modules/production/types";
 import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import { withPlanningActions } from "~/modules/production/ui/Planning/planning-action-scope";
+import {
+  getLocationTimeZone,
+  getOrCreatePeriods,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
 import { listErrorPage } from "~/utils/list-registry/list-error";
@@ -70,7 +75,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const locationToday = datetime.today(
     await getLocationTimeZone(client, locationId, companyId)
   );
-  const periods = await getOrCreatePeriods(locationToday, WEEKS_TO_PLAN);
+  const periods = await getOrCreatePeriods(
+    getDatabaseClient(),
+    locationToday,
+    WEEKS_TO_PLAN
+  );
 
   // The grid's Actions and Assignee filters are not RPC
   // columns: they go to the RPC as arguments, which keeps the items with a

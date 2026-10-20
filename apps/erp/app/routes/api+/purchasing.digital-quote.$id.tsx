@@ -2,393 +2,89 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, notFound } from "@carbon/auth";
+import { toResult } from "@carbon/api/service-fn.server";
+import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
+import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
-import { deriveRate, taxableBase } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
+import { zfd } from "zod-form-data";
 import {
   externalSupplierQuoteValidator,
   selectedLineSchema
 } from "~/modules/purchasing/purchasing.models";
+import {
+  declineDigitalSupplierQuote,
+  submitDigitalSupplierQuote,
+  updateDigitalSupplierQuoteLineNotes
+} from "~/modules/purchasing/purchasing.server";
 import { getSupplierQuoteByExternalLinkId } from "~/modules/purchasing/purchasing.service";
-import { getCompanySettings } from "~/modules/settings";
+import { shareLinkContext } from "~/modules/service-context.server";
 
 const logger = getLogger("erp", "purchasing", "digital-quote");
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
+const response = z.discriminatedUnion("intent", [
+  externalSupplierQuoteValidator.extend({
+    intent: z.literal("submit"),
+    // lineId → quantity → the supplier's price for that quantity.
+    selectedLines: zfd.json(
+      z.record(z.string(), z.record(z.string(), selectedLineSchema))
+    )
+  }),
+  externalSupplierQuoteValidator.extend({ intent: z.literal("decline") }),
+  z.object({
+    intent: z.literal("updateNotes"),
+    lineId: z.string().min(1),
+    notes: zfd.json(z.unknown()).optional()
+  })
+]);
 
-  const { id } = params;
-  if (!id) throw notFound("id not found");
+// Unauthenticated: the share link is the only credential, so the quote it
+// names states the company and the actor.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(response).request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
 
-  const formData = await request.formData();
-  const intent = String(formData.get("intent"));
-
-  const serviceRole = getCarbonServiceRole();
-  const quote = await getSupplierQuoteByExternalLinkId(serviceRole, id);
-
-  if (quote.error || !quote.data) {
-    logger.error("Quote not found", { error: quote.error });
-    return {
-      success: false,
-      message: "Quote not found"
-    };
-  }
-
-  const companySettings = await getCompanySettings(
-    serviceRole,
-    quote.data.companyId
+  const quote = await getSupplierQuoteByExternalLinkId(
+    getCarbonServiceRole(),
+    input.params.id
   );
+  if (quote.error) {
+    logger.error("Quote not found", { error: quote.error });
+    return { success: false, message: "Quote not found" };
+  }
+  const ctx = await shareLinkContext(quote.data);
+  if (!ctx) throw notFound("Quote not found");
 
-  switch (intent) {
-    case "decline": {
-      const validation = await validator(
-        externalSupplierQuoteValidator
-      ).validate(formData);
-
-      if (validation.error) {
-        return validationError(validation.error);
-      }
-
-      const {
-        digitalSupplierQuoteSubmittedBy,
-        digitalSupplierQuoteSubmittedByEmail,
-        note
-      } = validation.data;
-      const now = new Date().toISOString();
-
-      // Update supplierQuote
-      await serviceRole
-        .from("supplierQuote")
-        .update({
-          status: "Declined",
-          updatedAt: now,
-          externalNotes: {
-            ...((quote.data.externalNotes as Record<string, unknown>) || {}),
-            declineNote: note ?? null,
-            declinedBy: digitalSupplierQuoteSubmittedBy,
-            declinedByEmail: digitalSupplierQuoteSubmittedByEmail,
-            declinedAt: now
-          }
+  const form = input.data;
+  const supplierQuoteId = quote.data.id;
+  switch (form.intent) {
+    case "submit":
+      return toResult(
+        await submitDigitalSupplierQuote(ctx, {
+          supplierQuoteId,
+          submittedBy: form.digitalSupplierQuoteSubmittedBy,
+          submittedByEmail: form.digitalSupplierQuoteSubmittedByEmail,
+          selectedLines: form.selectedLines
         })
-        .eq("id", quote.data.id);
-
-      // Update externalLink if it exists
-      if (quote.data.externalLinkId) {
-        await serviceRole
-          .from("externalLink")
-          .update({
-            declinedAt: now,
-            declinedBy: digitalSupplierQuoteSubmittedBy,
-            declinedByEmail: digitalSupplierQuoteSubmittedByEmail,
-            declineNote: note ?? null
-          } as any)
-          .eq("id", quote.data.externalLinkId);
-      }
-
-      return {
-        success: true,
-        message: "Quote declined successfully"
-      };
-    }
-
-    case "submit": {
-      const validation = await validator(
-        externalSupplierQuoteValidator
-      ).validate(formData);
-
-      if (validation.error) {
-        return validationError(validation.error);
-      }
-
-      const {
-        digitalSupplierQuoteSubmittedBy,
-        digitalSupplierQuoteSubmittedByEmail
-      } = validation.data;
-
-      const selectedLinesRaw = formData.get("selectedLines") ?? "{}";
-
-      if (typeof selectedLinesRaw !== "string") {
-        return { success: false, message: "Invalid selected lines data" };
-      }
-
-      let parsedData: unknown;
-      try {
-        parsedData = JSON.parse(selectedLinesRaw);
-        // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-      } catch (e) {
-        return {
-          success: false,
-          message: "Invalid JSON in selected lines data"
-        };
-      }
-
-      // selectedLines is Record<string, Record<number, SelectedLine>>
-      // where first key is lineId, second key is quantity
-      // Validate the nested structure
-      const nestedSelectedLinesValidator = z.record(
-        z.string(),
-        z.record(z.string(), selectedLineSchema)
       );
-
-      const parseResult = nestedSelectedLinesValidator.safeParse(parsedData);
-
-      if (!parseResult.success) {
-        logger.error("Validation error:", { error: parseResult.error });
-        return { success: false, message: "Invalid selected lines data" };
-      }
-
-      const selectedLines = parseResult.data;
-
-      // Update prices for all selected quantities across all lines
-      // First, collect all price records that need to be updated/inserted
-      const priceRecordsToProcess: Array<{
-        lineId: string;
-        quantity: number;
-        selectedLine: z.infer<typeof selectedLineSchema>;
-      }> = [];
-
-      for (const [lineId, lineSelections] of Object.entries(selectedLines)) {
-        // lineSelections is Record<number, SelectedLine>
-        for (const [quantityStr, selectedLine] of Object.entries(
-          lineSelections
-        )) {
-          const quantity = Number(quantityStr);
-
-          // Only process if quantity > 0 (line is selected)
-          if (quantity > 0 && selectedLine.quantity > 0) {
-            priceRecordsToProcess.push({
-              lineId,
-              quantity,
-              selectedLine
-            });
-          }
-        }
-      }
-
-      // The line ids are caller-supplied and every write below runs as the
-      // service role, while the share link only authorizes THIS quote. Prove
-      // each line belongs to it before touching any price row — otherwise one
-      // supplier's link could rewrite another quote's (or company's) prices.
-      const lineIds = [
-        ...new Set(priceRecordsToProcess.map(({ lineId }) => lineId))
-      ];
-      if (lineIds.length > 0) {
-        const ownedLines = await serviceRole
-          .from("supplierQuoteLine")
-          .select("id")
-          .eq("supplierQuoteId", quote.data.id)
-          .eq("companyId", quote.data.companyId)
-          .in("id", lineIds);
-        if (
-          ownedLines.error ||
-          (ownedLines.data?.length ?? 0) !== lineIds.length
-        ) {
-          logger.error("Digital quote lines do not belong to the quote", {
-            quoteId: quote.data.id,
-            companyId: quote.data.companyId,
-            lineIds,
-            error: ownedLines.error
-          });
-          return { success: false, message: "Invalid selected lines data" };
-        }
-      }
-
-      // Batch check which price records exist
-      const existingPriceChecks = await Promise.all(
-        priceRecordsToProcess.map(({ lineId, quantity }) =>
-          serviceRole
-            .from("supplierQuoteLinePrice")
-            .select("id")
-            .eq("supplierQuoteId", quote.data.id)
-            .eq("supplierQuoteLineId", lineId)
-            .eq("quantity", quantity)
-            .maybeSingle()
-        )
+    case "decline":
+      return toResult(
+        await declineDigitalSupplierQuote(ctx, {
+          supplierQuoteId,
+          submittedBy: form.digitalSupplierQuoteSubmittedBy,
+          submittedByEmail: form.digitalSupplierQuoteSubmittedByEmail,
+          note: form.note
+        })
       );
-
-      // Prepare updates and inserts
-      const priceUpdates = [];
-      const priceInserts = [];
-
-      for (let i = 0; i < priceRecordsToProcess.length; i++) {
-        const { lineId, quantity, selectedLine } = priceRecordsToProcess[i];
-        const existingPrice = existingPriceChecks[i];
-
-        // The portal collects amounts only; seed the stored rate from the
-        // canonical denominator (unit price x quantity + shipping).
-        const taxPercent = deriveRate(
-          selectedLine.supplierTaxAmount ?? 0,
-          taxableBase(
-            selectedLine.supplierUnitPrice ?? 0,
-            quantity,
-            selectedLine.supplierShippingCost ?? 0
-          )
-        );
-
-        if (existingPrice.data) {
-          // Update existing price record
-          priceUpdates.push(
-            serviceRole
-              .from("supplierQuoteLinePrice")
-              .update({
-                supplierUnitPrice: selectedLine.supplierUnitPrice ?? 0,
-                leadTime: selectedLine.leadTime ?? 0,
-                supplierShippingCost: selectedLine.supplierShippingCost ?? 0,
-                supplierTaxAmount: selectedLine.supplierTaxAmount ?? 0,
-                taxPercent,
-                updatedAt: new Date().toISOString(),
-                updatedBy: quote.data.createdBy
-              })
-              .eq("supplierQuoteId", quote.data.id)
-              .eq("supplierQuoteLineId", lineId)
-              .eq("quantity", quantity)
-          );
-        } else {
-          // Insert new price record
-          priceInserts.push({
-            supplierQuoteId: quote.data.id,
-            supplierQuoteLineId: lineId,
-            companyId: quote.data.companyId,
-            quantity: quantity,
-            supplierUnitPrice: selectedLine.supplierUnitPrice ?? 0,
-            leadTime: selectedLine.leadTime ?? 0,
-            supplierShippingCost: selectedLine.supplierShippingCost ?? 0,
-            supplierTaxAmount: selectedLine.supplierTaxAmount ?? 0,
-            taxPercent,
-            exchangeRate: quote.data.exchangeRate ?? 1,
-            createdBy: quote.data.createdBy
-          });
-        }
-      }
-
-      // Execute all updates and inserts. The Supabase client resolves rather
-      // than throwing, so a failed price write is invisible unless every result
-      // is inspected — without this the quote still flipped to Active carrying
-      // the supplier's old prices.
-      const priceWrites = await Promise.all([
-        ...priceUpdates,
-        priceInserts.length > 0
-          ? serviceRole.from("supplierQuoteLinePrice").insert(priceInserts)
-          : Promise.resolve({ data: null, error: null })
-      ]);
-
-      const priceWriteError = priceWrites.find(
-        (result) => result?.error
-      )?.error;
-      if (priceWriteError) {
-        logger.error("Failed to save digital quote prices", {
-          error: priceWriteError,
-          quoteId: quote.data.id
-        });
-        return { success: false, message: "Failed to save quote prices" };
-      }
-
-      const now = new Date().toISOString();
-
-      // Update quote status to Active (submit moves from Draft to Active)
-      await serviceRole
-        .from("supplierQuote")
-        .update({
-          status: "Active",
-          updatedAt: now,
-          externalNotes: {
-            ...((quote.data.externalNotes as Record<string, unknown>) || {}),
-            lastSubmittedBy: digitalSupplierQuoteSubmittedBy,
-            lastSubmittedByEmail: digitalSupplierQuoteSubmittedByEmail,
-            lastSubmittedAt: now
-          }
+    case "updateNotes":
+      return toResult(
+        await updateDigitalSupplierQuoteLineNotes(ctx, {
+          supplierQuoteId,
+          lineId: form.lineId,
+          notes: form.notes ?? null
         })
-        .eq("id", quote.data.id);
-
-      // Update externalLink if it exists
-      if (quote.data.externalLinkId) {
-        await serviceRole
-          .from("externalLink")
-          .update({
-            submittedAt: now,
-            submittedBy: digitalSupplierQuoteSubmittedBy,
-            submittedByEmail: digitalSupplierQuoteSubmittedByEmail
-          } as any)
-          .eq("id", quote.data.externalLinkId);
-      }
-
-      if (companySettings.error) {
-        logger.error("Failed to get company settings", {
-          error: companySettings.error
-        });
-      }
-
-      // Send notification to supplier quote notification group
-      if (companySettings.data?.supplierQuoteNotificationGroup?.length) {
-        try {
-          await trigger("notify", {
-            companyId: companySettings.data.id,
-            documentId: quote.data.id,
-            event: NotificationEvent.SupplierQuoteResponse,
-            recipient: {
-              type: "group",
-              groupIds: companySettings.data.supplierQuoteNotificationGroup
-            }
-          });
-        } catch (err) {
-          logger.error("Failed to trigger supplier quote notification", {
-            error: err
-          });
-        }
-      }
-
-      return {
-        success: true,
-        message: "Quote submitted successfully"
-      };
-    }
-
-    case "updateNotes": {
-      const lineId = formData.get("lineId");
-      const notesRaw = formData.get("notes");
-
-      if (!lineId || typeof lineId !== "string") {
-        return { success: false, message: "Invalid line ID" };
-      }
-
-      let notes = null;
-      if (notesRaw && typeof notesRaw === "string") {
-        try {
-          notes = JSON.parse(notesRaw);
-          // biome-ignore lint/correctness/noUnusedVariables: suppressed
-        } catch (e) {
-          return { success: false, message: "Invalid notes format" };
-        }
-      }
-
-      // Update the supplierQuoteLine with the new notes
-      const updateResult = await serviceRole
-        .from("supplierQuoteLine")
-        .update({
-          externalNotes: notes,
-          updatedAt: new Date().toISOString()
-        })
-        .eq("id", lineId)
-        .eq("supplierQuoteId", quote.data.id);
-
-      if (updateResult.error) {
-        logger.error("Failed to update notes", { error: updateResult.error });
-        return { success: false, message: "Failed to update notes" };
-      }
-
-      return {
-        success: true,
-        message: "Notes updated successfully"
-      };
-    }
-
-    default:
-      return { success: false, message: "Invalid intent" };
+      );
   }
 }

@@ -5,7 +5,7 @@
 import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { MetaFunction } from "react-router";
-import { InventorySections } from "~/modules/inventory";
+import { InventorySections } from "~/modules/inventory/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

@@ -22,25 +22,26 @@ import {
 } from "@carbon/jobs/inngest";
 import { getLogger } from "@carbon/logger";
 import { nanoid } from "nanoid";
-import { isItemBulkUpdateField } from "~/modules/items";
-import { bulkUpdateItems } from "~/modules/items/bulk-actions.server";
-import {
-  bulkDeleteJobs,
-  bulkDissolveBatches,
-  bulkReleaseBatches,
-  bulkReleaseJobs
-} from "~/modules/production/bulk-actions.server";
-import { bulkDeletePurchaseOrders } from "~/modules/purchasing/purchasing.server";
-import { userPermissionsValidator } from "~/modules/users";
+import { isItemBulkUpdateField } from "~/modules/items/items.models";
+import { bulkUpdateItems } from "~/modules/items/items.service";
+import { bulkDeleteJobs } from "~/modules/production/production.service";
+import { bulkDeletePurchaseOrders } from "~/modules/purchasing/purchasing.service";
+import { systemContext } from "~/modules/service-context.server";
+import { userPermissionsValidator } from "~/modules/users/users.models";
 import {
   queueInviteResends,
   queuePermissionUpdates,
   queueUserDeactivations,
   selectUsersForBulkAction
-} from "~/modules/users/users.server";
+} from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { decodeCursor } from "./cursor";
 import { fetchListPage, getListDefinition } from "./list-registry/index.server";
+import {
+  bulkDissolveBatches,
+  bulkReleaseBatches,
+  bulkReleaseJobs
+} from "./production-bulk-actions.server";
 import {
   type AllMatchingRequest,
   type BulkActionStart,
@@ -225,12 +226,8 @@ const BULK_ACTION_RUNS: Record<TableBulkActionKey, BulkActionRun> = {
     };
   },
   "jobs.release": async (ids, _params, context, carry) => {
-    const result = await bulkReleaseJobs({
-      client: context.getClient,
-      db: context.db,
+    const result = await bulkReleaseJobs(await jobServiceContext(context), {
       jobIds: ids,
-      companyId: context.companyId,
-      userId: context.userId,
       // A PO an earlier chunk created is this run's own, not a Draft to
       // choose from: the jobs after it go on the same PO.
       purchaseOrdersBySupplierId: carriedPurchaseOrders(carry)
@@ -270,12 +267,8 @@ const BULK_ACTION_RUNS: Record<TableBulkActionKey, BulkActionRun> = {
     };
   },
   "batches.release": async (ids, _params, context) => {
-    const result = await bulkReleaseBatches({
-      client: context.getClient,
-      db: context.db,
-      batchIds: ids,
-      companyId: context.companyId,
-      userId: context.userId
+    const result = await bulkReleaseBatches(await jobServiceContext(context), {
+      batchIds: ids
     });
     if (!result.success) throw new Error(result.message);
     return {
@@ -286,12 +279,8 @@ const BULK_ACTION_RUNS: Record<TableBulkActionKey, BulkActionRun> = {
     };
   },
   "batches.dissolve": async (ids, _params, context) => {
-    const result = await bulkDissolveBatches({
-      client: context.getClient,
-      db: context.db,
-      batchIds: ids,
-      companyId: context.companyId,
-      userId: context.userId
+    const result = await bulkDissolveBatches(await jobServiceContext(context), {
+      batchIds: ids
     });
     if (!result.success) throw new Error(result.message);
     return {
@@ -363,6 +352,32 @@ const BULK_ACTION_RUNS: Record<TableBulkActionKey, BulkActionRun> = {
     return { done: allowed.length, skipped, failed: 0 };
   }
 };
+
+/**
+ * The context the production service functions run in for a bulk-action job:
+ * the system, on behalf of the requesting user. The job checked the user's
+ * permissions before it ran (`canRunBulkAction`); the service role's client
+ * never expires mid-run, as a five-minute user token would.
+ */
+async function jobServiceContext({ companyId, userId }: TableJobContext) {
+  const company = await getCarbonServiceRole()
+    .from("company")
+    .select("companyGroupId")
+    .eq("id", companyId)
+    .single();
+  if (company.error || !company.data?.companyGroupId) {
+    logger.error("Failed to read the company of a table job", {
+      companyId,
+      error: company.error
+    });
+    throw new Error("Failed to read the company of a table job");
+  }
+  return systemContext({
+    companyId,
+    companyGroupId: company.data.companyGroupId,
+    onBehalfOf: userId
+  });
+}
 
 /** The `permissions` param of `users.permissions`, checked again in the job:
  *  a module name to its four switches, as the route validated it. */

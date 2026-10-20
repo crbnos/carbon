@@ -40,7 +40,7 @@ import {
   rentalAgreementLineValidator,
   rentalRateUnits
 } from "../../sales.models";
-import { getDefaultRentalRates } from "../../sales.service";
+import { getDefaultRentalRates } from "../../sales.utils";
 import type { LineLeaseClassification } from "./RentalLeaseClassification";
 import {
   LeaseClassificationOverrideModal,

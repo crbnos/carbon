@@ -27,7 +27,7 @@ import {
   QUALITY_DOCUMENTS_PAGING,
   REQUIRED_ACTIONS_PAGING,
   RISKS_PAGING
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import type { ListDefinition } from "./index.server";
 import { searchList } from "./index.server";
 

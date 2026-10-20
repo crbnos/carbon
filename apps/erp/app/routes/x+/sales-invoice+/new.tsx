@@ -13,12 +13,12 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
+import { salesInvoiceValidator } from "~/modules/invoicing/invoicing.models";
 import {
   createSalesInvoiceFromSalesOrder,
   createSalesInvoiceFromShipment,
-  insertSalesInvoice,
-  salesInvoiceValidator
-} from "~/modules/invoicing";
+  insertSalesInvoice
+} from "~/modules/invoicing/invoicing.service";
 import SalesInvoiceForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";

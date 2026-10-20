@@ -33,8 +33,8 @@ import { Enumerable } from "~/components/Enumerable";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
-import type { InventoryCountLine } from "~/modules/inventory";
-import { inventoryItemTypes } from "~/modules/inventory";
+import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
+import type { InventoryCountLine } from "~/modules/inventory/types";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 

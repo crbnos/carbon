@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { indexBy, indexByMapped, pluckUnique } from "@carbon/utils";
-import type { SupplierReportContacts } from "~/modules/purchasing";
 import {
   getLeases,
   getPurchaseOrders,
@@ -20,7 +19,8 @@ import {
   SUPPLIER_QUOTES_PAGING,
   SUPPLIER_TYPES_PAGING,
   SUPPLIERS_PAGING
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
+import type { SupplierReportContacts } from "~/modules/purchasing/types";
 import { SUPPLIER_CONTACT_VALUES } from "~/modules/purchasing/ui/Supplier/supplier-list-export";
 import { withExportValues } from "./export-values";
 import type { ListDefinition, ListRowsContext } from "./index.server";

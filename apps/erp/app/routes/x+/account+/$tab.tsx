@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { isAccountSettingsTab } from "@carbon/account";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { isAccountSettingsTab } from "~/modules/account";
 import { path } from "~/utils/path";
 
 // Account settings is a modal now. The old pages stay as links into it —

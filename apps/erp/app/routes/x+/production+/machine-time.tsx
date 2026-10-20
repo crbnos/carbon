@@ -15,11 +15,14 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import {
   getUnattributedMachineTimes,
   UNATTRIBUTED_MACHINE_TIMES_PAGING
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import MachineTimeTable from "~/modules/production/ui/MachineTime/MachineTimeTable.ee";
 import MachineTimeUpgradeOverlay from "~/modules/production/ui/MachineTime/MachineTimeUpgradeOverlay.ee";
 import { parseMachineTimeListFilters } from "~/modules/production/ui/MachineTime/machine-time-filters.ee";
-import { getLocationsList, getWorkCentersList } from "~/modules/resources";
+import {
+  getLocationsList,
+  getWorkCentersList
+} from "~/modules/resources/resources.service";
 import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
 import { listErrorPage } from "~/utils/list-registry/load.server";

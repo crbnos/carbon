@@ -16,7 +16,7 @@ import StorageRulesUpgradeOverlay from "~/modules/inventory/ui/StorageRules/Stor
 import {
   getEnforcementRuleAssignmentCounts,
   getEnforcementRules
-} from "~/modules/shared";
+} from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";

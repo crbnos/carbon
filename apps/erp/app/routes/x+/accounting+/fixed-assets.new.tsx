@@ -9,7 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { fixedAssetValidator, insertFixedAsset } from "~/modules/accounting";
+import { fixedAssetValidator } from "~/modules/accounting/accounting.models";
+import { insertFixedAsset } from "~/modules/accounting/accounting.service";
 import { FixedAssetForm } from "~/modules/accounting/ui/FixedAssets";
 import { path } from "~/utils/path";
 
