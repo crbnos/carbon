@@ -20,6 +20,25 @@ import {
 
 const RETRIES = 3;
 
+/** Best effort: a counter that fails to move is logged, never fails the delivery. */
+async function countOutcome(
+  webhookId: string,
+  outcome: "success" | "error",
+  logger: { error: (message: string) => void }
+) {
+  const { error } = await getCarbonServiceRole().rpc(
+    outcome === "success"
+      ? "increment_webhook_success"
+      : "increment_webhook_error",
+    { webhook_id: webhookId }
+  );
+  if (error) {
+    logger.error(
+      `Could not count the ${outcome} of webhook ${webhookId}: ${error.message}`
+    );
+  }
+}
+
 export const webhookFunction = inngest.createFunction(
   {
     id: "event-handler-webhook",
@@ -88,23 +107,20 @@ export const webhookFunction = inngest.createFunction(
 
       // A webhook may not reach into Carbon's own network (loopback, private
       // ranges, cloud metadata). A retry would be refused the same way, so a
-      // refusal counts one failure and stops.
+      // refusal counts one failure and stops. A failed lookup is retried.
       const verdict = await checkWebhookUrl(payload.url);
-      if (!verdict.ok) {
+      if (!verdict.ok && !verdict.retryable) {
         logger.warn(
           `Webhook ${webhookId ?? "<unknown>"} refused: ${verdict.reason}`
         );
-        if (webhookId) {
-          await getCarbonServiceRole().rpc("increment_webhook_error", {
-            webhook_id: webhookId
-          });
-        }
+        if (webhookId) await countOutcome(webhookId, "error", logger);
         throw new NonRetriableError(verdict.reason);
       }
 
       const timestamp = Math.floor(Date.now() / 1000);
 
       try {
+        if (!verdict.ok) throw new Error(verdict.reason);
         await axios.post(payload.url, raw, {
           headers: {
             "Content-Type": "application/json",
@@ -117,18 +133,12 @@ export const webhookFunction = inngest.createFunction(
         // Count one failure per event, not per attempt — otherwise retries
         // inflate errorCount 4x for a single undelivered event.
         if (webhookId && attempt >= RETRIES) {
-          await getCarbonServiceRole().rpc("increment_webhook_error", {
-            webhook_id: webhookId
-          });
+          await countOutcome(webhookId, "error", logger);
         }
         throw err;
       }
 
-      if (webhookId) {
-        await getCarbonServiceRole().rpc("increment_webhook_success", {
-          webhook_id: webhookId
-        });
-      }
+      if (webhookId) await countOutcome(webhookId, "success", logger);
     });
   }
 );

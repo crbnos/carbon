@@ -40,6 +40,25 @@ describe("webhookTransport", () => {
     expect(received).toBe(0);
   });
 
+  it("ignores a proxy from the environment", async () => {
+    let proxied = 0;
+    const proxy = await listen((_req, res) => {
+      proxied++;
+      res.end("{}");
+    });
+    const saved = process.env.HTTP_PROXY;
+    process.env.HTTP_PROXY = `http://127.0.0.1:${proxy}`;
+    try {
+      await expect(
+        axios.post("http://localhost:1/hook", "{}", webhookTransport)
+      ).rejects.toThrow("That address is inside a private network.");
+    } finally {
+      if (saved === undefined) delete process.env.HTTP_PROXY;
+      else process.env.HTTP_PROXY = saved;
+    }
+    expect(proxied).toBe(0);
+  });
+
   it("does not follow a redirect", async () => {
     let reached = 0;
     const target = await listen((_req, res) => {

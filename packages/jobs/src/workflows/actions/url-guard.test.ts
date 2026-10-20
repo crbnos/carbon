@@ -191,7 +191,8 @@ describe("checkWebhookUrl", () => {
   it("refuses a scheme other than http or https", async () => {
     expect(await checkWebhookUrl("ftp://example.com/hook")).toEqual({
       ok: false,
-      reason: "Only http and https addresses are allowed."
+      reason: "Only http and https addresses are allowed.",
+      retryable: false
     });
   });
 
@@ -203,13 +204,23 @@ describe("checkWebhookUrl", () => {
     resolvesTo({ address, family: 4 });
     expect(await checkWebhookUrl(url)).toEqual({
       ok: false,
-      reason: "That address is inside a private network."
+      reason: "That address is inside a private network.",
+      retryable: false
     });
   });
 
   it("refuses a public-looking name that resolves inward", async () => {
     resolvesTo({ address: "192.168.1.10", family: 4 });
     expect((await checkWebhookUrl("https://hooks.example.com")).ok).toBe(false);
+  });
+
+  it("marks a failed lookup retryable, since DNS can recover", async () => {
+    vi.spyOn(dns.promises, "lookup").mockRejectedValue(new Error("EAI_AGAIN"));
+    expect(await checkWebhookUrl("https://hooks.example.com")).toEqual({
+      ok: false,
+      reason: "That address could not be found.",
+      retryable: true
+    });
   });
 });
 

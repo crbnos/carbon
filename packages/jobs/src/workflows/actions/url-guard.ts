@@ -79,26 +79,38 @@ export async function checkOutboundUrl(raw: string): Promise<UrlVerdict> {
 }
 
 /**
+ * A webhook verdict also says whether a refusal is worth another attempt: a
+ * lookup can fail for a moment, a private address does not stop being one.
+ */
+export type WebhookUrlVerdict =
+  | { ok: true; url: URL }
+  | { ok: false; reason: string; retryable: boolean };
+
+/**
  * The guard for an event webhook (Settings → Webhooks). Looser than
  * `checkOutboundUrl` on two points, because those webhooks predate the guard and
  * their contract never forbade either: http is allowed, and so are credentials in
  * the URL (the person who typed them sees them in settings). The private-network
  * check is the same.
  */
-export async function checkWebhookUrl(raw: string): Promise<UrlVerdict> {
+export async function checkWebhookUrl(raw: string): Promise<WebhookUrlVerdict> {
   let url: URL;
   try {
     url = new URL(raw);
   } catch {
-    return { ok: false, reason: NOT_A_URL };
+    return { ok: false, reason: NOT_A_URL, retryable: false };
   }
 
   if (url.protocol !== "https:" && url.protocol !== "http:") {
-    return { ok: false, reason: NOT_HTTP };
+    return { ok: false, reason: NOT_HTTP, retryable: false };
   }
-  if (url.hostname.length === 0) return { ok: false, reason: NOT_A_URL };
+  if (url.hostname.length === 0) {
+    return { ok: false, reason: NOT_A_URL, retryable: false };
+  }
 
-  return checkResolvedHost(url);
+  const verdict = await checkResolvedHost(url);
+  if (verdict.ok) return verdict;
+  return { ...verdict, retryable: verdict.reason === NOT_FOUND };
 }
 
 async function checkResolvedHost(url: URL): Promise<UrlVerdict> {

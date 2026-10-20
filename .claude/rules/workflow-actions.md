@@ -343,8 +343,10 @@ The event-system handler shares only the guard with the workflow action, through
 credentials still allowed, since its customer contract never forbade them) and
 `outboundHttpAgent` / `outboundHttpsAgent` (`guardedLookup` for node's http client),
 both in `url-guard.ts`. `webhookTransport` (`events/webhook-body.ts`) holds its axios
-options: those agents and `maxRedirects: 0`, so a 3xx fails the attempt. A refused
-address counts one error and throws `NonRetriableError`. Do not go further and
+options: those agents, `maxRedirects: 0` (a 3xx fails the attempt) and `proxy: false`
+(through an `HTTP_PROXY` the guard would check the proxy, not the target). A refused
+address counts one error and throws `NonRetriableError`; a failed lookup is
+`retryable` and takes the ordinary retry path. Do not go further and
 "unify" the two: the event handler's contract (http, signing, retries, the 30 s
 timeout) is an existing customer integration. The matcher's subscription reconciler
 is careful never to touch a company's `WEBHOOK` rows (see `workflow-matcher.md`).
