@@ -130,7 +130,7 @@ export async function releaseTableJobLock(
   );
 }
 
-/** Sets the lock's TTL back to the full hour while it still holds `jobId`:
+/** Sets the lock's TTL back to `TABLE_JOB_LOCK_TTL_SECONDS` while it still holds `jobId`:
  *  a long run must not lose its lock to the next request. */
 export async function extendTableJobLock(
   kind: TableJobKind,

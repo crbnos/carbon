@@ -188,7 +188,8 @@ list and re-read every loaded page. The steps:
 | One part | `{companyId}/exports/{userId}/{exportId}.parts/{n}.csv` (`tableExportPartKey`) |
 
 **The lock.** One Redis key per company and job kind, value = the job id,
-TTL one hour (`TABLE_JOB_LOCK_TTL_SECONDS`). Take, release and extend are each
+TTL 15 minutes (`TABLE_JOB_LOCK_TTL_SECONDS`), so a run Inngest lost or
+cancelled (no `onFailure`) frees its lock and slot within 15 minutes. Take, release and extend are each
 one Lua script: `SET NX EX` that returns the TTL on refusal,
 compare-and-delete, compare-and-expire. A job deletes or extends only a lock
 that still holds its own id. `onFailure` also releases it and deletes the

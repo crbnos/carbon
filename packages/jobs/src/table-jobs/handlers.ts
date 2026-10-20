@@ -131,9 +131,13 @@ export function tableJobLockKey(kind: TableJobKind, companyId: string): string {
   return `table-job:${kind}:${companyId}`;
 }
 
-/** Seconds a lock lives if its job never deletes it (a crashed process). Each
- *  step of a running job sets it back to this (`extendTableJobLock`). */
-export const TABLE_JOB_LOCK_TTL_SECONDS = 60 * 60;
+/**
+ * Seconds a lock (and its slot) lives if its job never deletes it: a crashed
+ * process, or a run Inngest lost or cancelled (`onFailure` does not run then,
+ * and the cancel event does not name the job). Each step sets it back to this
+ * (`extendTableJobLock`), and a step ends within the load balancer's 600 s.
+ */
+export const TABLE_JOB_LOCK_TTL_SECONDS = 15 * 60;
 
 /**
  * The running table jobs of every company: a sorted set of job ids, scored by
