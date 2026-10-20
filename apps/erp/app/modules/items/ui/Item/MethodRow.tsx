@@ -89,7 +89,8 @@ export function MaterialRowTitle({
   itemId,
   itemType,
   supersessionMode,
-  hasRules
+  hasRules,
+  missingPullFrom
 }: {
   readableId?: string | null;
   description?: string | null;
@@ -97,12 +98,18 @@ export function MaterialRowTitle({
   itemType?: string | null;
   supersessionMode?: Parameters<typeof ItemLifecycleBadge>[0]["mode"];
   hasRules?: boolean;
+  missingPullFrom?: boolean;
 }) {
   return (
     <VStack spacing={0} className="py-1 cursor-pointer max-md:py-0">
       <div className="flex w-full min-w-0 items-center gap-2 group">
         <h3 className="font-semibold min-w-0 truncate">{readableId ?? ""}</h3>
         <ItemLifecycleBadge mode={supersessionMode} />
+        {missingPullFrom && (
+          <Badge variant="red" className="shrink-0">
+            <Trans>No storage unit</Trans>
+          </Badge>
+        )}
         {hasRules && (
           <LuSquareFunction className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
         )}

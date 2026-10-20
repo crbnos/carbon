@@ -8362,6 +8362,7 @@ export type Database = {
           operationsDispatchNotificationGroup: string[] | null
           otherDispatchNotificationGroup: string[] | null
           plmReleaseControl: string
+          preventNegativeBackflush: boolean
           printing: Json | null
           productLabelSize: string | null
           purchasePriceUpdateTiming: Database["public"]["Enums"]["purchasePriceUpdateTiming"]
@@ -8369,6 +8370,7 @@ export type Database = {
           qualityIssueTarget: number
           quoteLineCategoryMarkups: Json | null
           receiptQuantitiesStartAtZero: boolean
+          requireBackflushStorageUnit: boolean
           requireCustomerContactAndLocation: boolean
           requireMfa: boolean
           requireSupplierContactAndLocation: boolean
@@ -8436,6 +8438,7 @@ export type Database = {
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
           plmReleaseControl?: string
+          preventNegativeBackflush?: boolean
           printing?: Json | null
           productLabelSize?: string | null
           purchasePriceUpdateTiming?: Database["public"]["Enums"]["purchasePriceUpdateTiming"]
@@ -8443,6 +8446,7 @@ export type Database = {
           qualityIssueTarget?: number
           quoteLineCategoryMarkups?: Json | null
           receiptQuantitiesStartAtZero?: boolean
+          requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
           requireSupplierContactAndLocation?: boolean
@@ -8510,6 +8514,7 @@ export type Database = {
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
           plmReleaseControl?: string
+          preventNegativeBackflush?: boolean
           printing?: Json | null
           productLabelSize?: string | null
           purchasePriceUpdateTiming?: Database["public"]["Enums"]["purchasePriceUpdateTiming"]
@@ -8517,6 +8522,7 @@ export type Database = {
           qualityIssueTarget?: number
           quoteLineCategoryMarkups?: Json | null
           receiptQuantitiesStartAtZero?: boolean
+          requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
           requireSupplierContactAndLocation?: boolean

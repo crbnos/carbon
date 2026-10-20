@@ -186,6 +186,7 @@ import {
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
 import type { assignableTables } from "./shared.models";
+import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
 import type { ItemModelUpload } from "./types";
 
 const logger = getLogger("erp", "shared");
@@ -8029,6 +8030,10 @@ export async function convertDocument(
       if (makeMethod.error) throw new Error(makeMethod.error.message);
       if (!makeMethod.data) throw new NotFoundError("Make method not found");
 
+      if (await isStrictBackflush(db, companyId)) {
+        await assertMethodHasPullFrom(db, { makeMethodId, companyId });
+      }
+
       const [relatedMakeMethods, draftQuotes, draftJobs] = await inOrder([
         () =>
           many(db, "makeMethod", {
@@ -15814,7 +15819,9 @@ export async function getStorageUnitId(
   trx: Transaction<DB>,
   itemId: string,
   locationId: string,
-  storageUnitId?: string
+  storageUnitId?: string,
+  /** False under strict backflush: the fullest bin is a guess, not a choice. */
+  allowFullestBin = true
 ): Promise<string | undefined> {
   if (storageUnitId) return storageUnitId;
 
@@ -15826,6 +15833,7 @@ export async function getStorageUnitId(
     .executeTakeFirst();
 
   if (pickMethod?.defaultStorageUnitId) return pickMethod.defaultStorageUnitId;
+  if (!allowFullestBin) return undefined;
 
   const storageUnitWithHighestQuantity =
     await getStorageUnitWithHighestQuantity(trx, itemId, locationId);

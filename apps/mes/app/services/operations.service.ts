@@ -39,6 +39,7 @@ import type {
   scrapQuantityValidator,
   stepRecordValidator
 } from "./models";
+import { planStepBackflush } from "./step-backflush";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
 const log = getLogger("mes", "operations");
@@ -1388,18 +1389,8 @@ export async function getJobMaterialsByOperationId(
  * built one at a time; an untracked (not serial/batch) part is consumed as the
  * step that "owns" it is recorded, so recording that step issues one unit's worth
  * automatically instead of making the operator issue it by hand (tracked parts
- * still require a scan). Step ownership:
- *   • A step-assigned part (jobMaterialStep) is owned by its assigned step(s) and
- *     issues when any of those steps is recorded for a unit.
- *   • A loose part (no step assignment) is owned by the operation's FIRST step —
- *     that's where the operator sees it — matching the prior behavior.
- * Idempotent by construction: per material the target is
- * (distinct units that recorded an owning step) × per-unit quantity, and only the
- * shortfall vs quantityIssued is issued — re-records, undo/redo, manual issues,
- * and the completion-time backflush (backflush_job_materials, which tops up to
- * completed × per-unit) can all overlap without double-issuing. A part assigned to
- * several steps is still counted once per unit, so its requirement never
- * multiplies. Eligibility mirrors backflush_job_materials (Material/Part/Consumable,
+ * still require a scan). `planStepBackflush` decides which step owns a part and
+ * how much to issue. Eligibility mirrors backflush_job_materials (Material/Part/Consumable,
  * not Make to Order, untracked). Issue failures (e.g. insufficient stock) are
  * collected, not thrown — the part simply stays unissued and manually issuable.
  */
@@ -1438,7 +1429,7 @@ export async function backflushUntrackedMaterialsOnStepRecord(
 
   const materials = await client
     .from("jobMaterial")
-    .select("id, itemId, quantity, quantityIssued, methodType")
+    .select("id, itemId, quantity, quantityIssued, methodType, jobOperationId")
     .eq("jobMakeMethodId", operation.data.jobMakeMethodId)
     .eq("companyId", args.companyId)
     .in("itemType", ["Material", "Part", "Consumable"])
@@ -1449,8 +1440,6 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     return { error: materials.error };
   }
 
-  // Step ownership: materialId → the step ids it's assigned to (empty = loose),
-  // plus each link's per-step quantity (NULL = the full BOM line quantity).
   // Falls back to the bare links against a pre-migration schema.
   let stepLinks = await client
     .from("jobMaterialStep")
@@ -1469,98 +1458,46 @@ export async function backflushUntrackedMaterialsOnStepRecord(
       )) as unknown as typeof stepLinks;
   }
   if (stepLinks.error) return { error: stepLinks.error };
-  const ownedSteps = new Map<string, Set<string>>();
-  const linkQuantities = new Map<string, Map<string, number | null>>();
-  for (const link of stepLinks.data ?? []) {
-    const set = ownedSteps.get(link.jobMaterialId) ?? new Set<string>();
-    set.add(link.jobOperationStepId);
-    ownedSteps.set(link.jobMaterialId, set);
-    const quantities =
-      linkQuantities.get(link.jobMaterialId) ??
-      new Map<string, number | null>();
-    quantities.set(link.jobOperationStepId, link.quantity);
-    linkQuantities.set(link.jobMaterialId, quantities);
-  }
 
-  // Units (index) that have recorded each of the operation's steps, so we can
-  // count distinct started units per material from its owning step(s).
   const records = await client
     .from("jobOperationStepRecord")
     .select("jobOperationStepId, index")
     .in("jobOperationStepId", stepIds);
   if (records.error) return { error: records.error };
-  const unitsByStep = new Map<string, Set<number>>();
-  for (const r of records.data ?? []) {
-    const set = unitsByStep.get(r.jobOperationStepId) ?? new Set<number>();
-    set.add(r.index);
-    unitsByStep.set(r.jobOperationStepId, set);
-  }
+
+  const issues = planStepBackflush({
+    operationId,
+    stepIds,
+    materials: materials.data,
+    stepLinks: (stepLinks.data ?? []).map((link) => ({
+      jobMaterialId: link.jobMaterialId,
+      jobOperationStepId: link.jobOperationStepId,
+      quantity: link.quantity ?? null
+    })),
+    records: records.data ?? []
+  });
 
   const failures: string[] = [];
-  for (const material of materials.data) {
-    const perUnit = material.quantity ?? 0;
-    if (perUnit <= 0) continue;
-    // Owning steps: the material's assigned steps (scoped to this operation), or
-    // the first step when it's loose (unassigned).
-    const owning = ownedSteps.get(material.id);
-    const triggerStepIds =
-      owning && owning.size > 0
-        ? stepIds.filter((id) => owning.has(id))
-        : [firstStepId];
-    const quantities = linkQuantities.get(material.id);
-    const hasSplitQuantities = triggerStepIds.some(
-      (id) => (quantities?.get(id) ?? null) !== null
-    );
-    // Distinct units that recorded at least one owning step — the line-level
-    // requirement bound: a material can never owe more than units × per-unit.
-    const units = new Set<number>();
-    for (const id of triggerStepIds) {
-      for (const idx of unitsByStep.get(id) ?? []) units.add(idx);
-    }
-    let target: number;
-    if (hasSplitQuantities) {
-      // The line is SPLIT across steps (5 screws at step 1, 5 at step 2): each
-      // owning step consumes its own share as it is recorded, so the target is
-      // the per-step sum. A link left without an explicit quantity falls back
-      // to the full per-unit quantity for its step. The sum is capped at the
-      // line-level bound — the BOM line is the source of truth, so shares that
-      // over-allocate the line (2 + 10 on a 5-quantity line) must not issue
-      // more stock than the line requires.
-      target = Math.min(
-        triggerStepIds.reduce(
-          (sum, id) =>
-            sum +
-            (unitsByStep.get(id)?.size ?? 0) * (quantities?.get(id) ?? perUnit),
-          0
-        ),
-        units.size * perUnit
-      );
-    } else {
-      // Unsplit: distinct units counted once, so the requirement never
-      // multiplies across a material's several owning steps.
-      target = units.size * perUnit;
-    }
-    const delta = target - (material.quantityIssued ?? 0);
-    if (delta <= 0) continue;
+  for (const issue of issues) {
     const issued = await erpPosting(
       "issue",
       { client, companyId: args.companyId, userId: args.userId },
       {
         id: operationId,
         type: "partToOperation",
-        itemId: material.itemId,
-        materialId: material.id,
-        quantity: delta,
+        itemId: issue.itemId,
+        materialId: issue.materialId,
+        quantity: issue.quantity,
         adjustmentType: "Negative Adjmt."
       }
     );
-    if (issued.error) failures.push(material.itemId);
+    if (issued.error) failures.push(issued.error.message || issue.itemId);
   }
 
   return {
     error: failures.length
       ? new Error(
-          `Backflush failed for ${failures.length} material(s): ${failures.join(", ")}`
+          `Backflush failed for ${failures.length} material(s): ${failures.join("; ")}`
         )
       : null
   };

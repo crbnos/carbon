@@ -544,6 +544,9 @@ msgstr "{hiddenCount} daha: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
 
+msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
+msgstr "{jobsMissingStorageUnit, plural, one {# açık iş emirinin depolama birimi olmayan malzemeleri var} other {# açık iş emirlerinin depolama birimi olmayan malzemeleri var}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} belgeler, muhasebe fişleri veya varsayılan hesaplar tarafından kullanıldığından silinemez."
 
@@ -573,6 +576,9 @@ msgstr "{maxSizeMB}MB sınırı"
 
 msgid "{memberCount, plural, one {# step} other {# steps}}"
 msgstr "{memberCount, plural, one {# adım} other {# adım}}"
+
+msgid "{methodsMissingPullFrom, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{methodsMissingPullFrom, plural, one {# aktif yöntemin çekme kaynağı olmayan malzemeleri var} other {# aktif yöntemlerin çekme kaynağı olmayan malzemeleri var}}"
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} ay tutarları uyuşmazlığı"
@@ -752,6 +758,9 @@ msgstr "↩ {0} eski hale getirilen {1} kaynağından yönlendirildi"
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
 msgstr "+{0}s"
+
+msgid "+{more} more"
+msgstr "+{more} daha"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Bu ürün için bir tedarikçi parçası ekleyin</0> tercih edilen tedarikçi ayarlamak için."
@@ -1145,6 +1154,9 @@ msgstr "Malzeme, bir Parça yapmak için kullanılan ve birden fazla İş emirle
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "Ölçüm aleti (kumpas, mikrometre, pin ölçüm aleti, CMM) bir kayıt olarak izlenen ve yinelenen bir kalibrasyon çizelgesine tabi tutulan."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "Bir yöntem sürümü, aktif hale gelmeden önce her çekilen malzeme için çekilecek bir depolama birimine ihtiyaç duyar."
+
 msgid "A name is required to save a view"
 msgstr "Bir görünüm kaydetmek için bir isim gereklidir"
 
@@ -1465,6 +1477,12 @@ msgstr "Sevkiyatın durumu değişti"
 
 msgid "A shipment's tracking number changes"
 msgstr "Bir sevkiyatın takip numarası değişti"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "Yetersiz stoklu bir depolama birimi stok içeren başka bir depolama birimine geri döner."
+
+msgid "A short storage unit goes below zero, and the operation or job still completes."
+msgstr "Bir Depolama birimi sıfırın altına gidiyor ve Operasyon veya İş emri yine de tamamlanıyor."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "Kısa vadeli kıymet başlangıcından 12 aydan sonra devam edemez. Bunu bitirin ve uzantıyı yeni bir kiralama olarak girin."
@@ -1860,6 +1878,9 @@ msgstr "Aktif"
 
 msgid "Active Jobs"
 msgstr "Aktif İş emirleri"
+
+msgid "Active Methods Missing a Pull From"
+msgstr "Çekme Kaynağı Olmayan Aktif Yöntemler"
 
 msgid "Active Statuses"
 msgstr "Aktif Durumlar"
@@ -2667,6 +2688,9 @@ msgstr "Dış tedarikçi tarafından yapılan operasyon, bir taşeronluk satın 
 msgid "An operation on this job runs in this batch"
 msgstr "Bu işin bir operasyonu bu partide çalışıyor"
 
+msgid "An operation or job that would take its storage unit below zero is stopped until the stock is there."
+msgstr "Depolama birimini sıfırın altına alacak olan bir Operasyon veya İş emri, Stok gelene kadar durdurulur."
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "Bir operasyon'un iş merkezi'nin kuyruğundaki konumu — atölyenin işleri aldığı sıra. Motor, yerleştirme sırasından numaralandırır (en erken öngörülen başlangıç ilk); İş merkezleri panosundaki kartları yeniden sıralamak, tarihleri değiştirmeden bunu geçersiz kılar."
 
@@ -2845,6 +2869,9 @@ msgstr "Tüm iş merkezlerine uygulanır"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Kendi kuralı olmayan özelliklere ve bu kontrol planı bir muayene başlattığında lota uygulanır."
+
+msgid "Applies when strict backflush is on."
+msgstr "Katı Geriye dönük tüketim açık olduğunda geçerlidir."
 
 msgid "Apply"
 msgstr "Uygula"
@@ -3896,6 +3923,9 @@ msgstr "İzlenebilirliğe geri dön"
 
 msgid "Backflush"
 msgstr "Geriye dönük tüketim"
+
+msgid "Backflush each material only from the storage unit on its material line, never from another storage unit."
+msgstr "Her Malzemeyi yalnızca kendi Malzeme satırındaki Depolama biriminden Geriye dönük tüketin, asla başka bir Depolama biriminden değil."
 
 msgid "Background"
 msgstr "Arka plan"
@@ -6124,6 +6154,12 @@ msgstr "Bölge analiz edilemedi: {0}"
 
 msgid "Could not build PDF. Try again."
 msgstr "PDF oluşturulamadı. Lütfen tekrar deneyin."
+
+msgid "Could not check for active methods and open jobs with gaps. Reload the page to try again."
+msgstr "Boşluğu olan Aktif Yöntemler ve Açık İş emirleri kontrol edilemedi. Sayfayı yenileyerek yeniden deneyin."
+
+msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
+msgstr "Bu İş emrinin malzemelerin Depolama birimleri kontrol edilemedi. İletişim kutusunu kapatıp yeniden açmayı deneyin."
 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
@@ -9717,6 +9753,9 @@ msgstr "Satırlar ekleme başarısız oldu"
 msgid "Failed to apply pricing rules"
 msgstr "Fiyatlandırma kuralları uygulanamadı"
 
+msgid "Failed to check the batch's jobs"
+msgstr "Partinin iş emirleri kontrol edilemedi"
+
 msgid "Failed to convert image"
 msgstr "Resim dönüştürme başarısız oldu"
 
@@ -12068,6 +12107,9 @@ msgstr "Düzenlenme Tarihi"
 msgid "Issues"
 msgstr "Sorunlar"
 
+msgid "It is coming soon. Contact Carbon to have it set up for your company."
+msgstr "Yakında kullanıma sunulacak. Şirketiniz için kurulması için Carbon ile iletişime geçin."
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durdurur. Hiçbir şey silinmez."
 
@@ -13532,6 +13574,12 @@ msgstr "Malzemeler dahil"
 msgid "Materials are not included"
 msgstr "Malzemeler dahil değil"
 
+msgid "Materials missing a Pull From"
+msgstr "Çekme kaynağı olmayan malzemeler"
+
+msgid "Materials with no storage unit"
+msgstr "Depolama birimi olmayan malzemeler"
+
 msgid "Matrix"
 msgstr "Matris"
 
@@ -13727,6 +13775,9 @@ msgstr "Eksik operasyonlar"
 
 msgid "Missing Shipping Costs"
 msgstr "Eksik nakliye bedelleri"
+
+msgid "Missing Storage Units"
+msgstr "Eksik Depolama Birimleri"
 
 msgid "Missing Suppliers"
 msgstr "Tedarikçi Eksikleri"
@@ -14042,6 +14093,9 @@ msgstr "İncelemesi Gerekli"
 
 msgid "Negative Adjustment"
 msgstr "Negatif düzeltme"
+
+msgid "Negative stock setting updated"
+msgstr "Negatif stok ayarı güncellendi"
 
 msgid "Net book value"
 msgstr "Net Defter Değeri"
@@ -15828,6 +15882,9 @@ msgstr "Açık İş emirleri"
 msgid "Open Jobs"
 msgstr "Açık İş Emirleri"
 
+msgid "Open Jobs Missing a Storage Unit"
+msgstr "Depolama Birimi Olmayan Açık İş Emirleri"
+
 msgid "Open menu"
 msgstr "Menüyü aç"
 
@@ -17148,6 +17205,9 @@ msgstr "Komutlar için '/' tuşuna basın"
 
 msgid "Prev"
 msgstr "Önceki"
+
+msgid "Prevent negative stock"
+msgstr "Negatif Stoku Engelle"
 
 msgid "Preventive action"
 msgstr "Önleyici eylem"
@@ -20714,6 +20774,15 @@ msgstr "Oturum Kilitli"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Sevkiyattan eklemek için bu iade işlemine bir müşteri belirleyin."
 
+msgid "Set a Pull From on each one through a new version."
+msgstr "Her biri için yeni bir sürüm üzerinden çekme kaynağı belirleyin."
+
+msgid "set a Pull From storage unit on {names}"
+msgstr "{names} için Çekme Depolama Birimi ayarla"
+
+msgid "set a Pull From storage unit on {names} and {more} more"
+msgstr "{names} ve {more} diğer için Çekme Depolama Birimi ayarla"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Mal kabulünden eklemek için bu iade kaydında bir tedarikçi belirleyin."
 
@@ -21780,6 +21849,9 @@ msgstr "depolama birimleri"
 msgid "Storage Units"
 msgstr "Depolama Birimleri"
 
+msgid "Storage Units Not Checked"
+msgstr "Depolama Birimleri Kontrol Edilmedi"
+
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's created (or when the trigger process runs, if set)."
 msgstr "Bu öğe için sabit bir gün sayısı saklayın. Son kullanma tarihi başlangıç tarihi, her parti veya seri oluşturulduğunda (veya tetikleyici işlem ayarlanmışsa çalıştığında) belirlenir."
 
@@ -21797,6 +21869,21 @@ msgstr "Finansal kira kullanım hakkı varlıklarının doğrusal amortismanı"
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "İşletme kiralarının doğrusal kira gideri ve kısa vadeli kiralar ödemeleri"
+
+msgid "Strict Backflush"
+msgstr "Sıkı Geriye Dönük Tüketim"
+
+msgid "Strict backflush is off"
+msgstr "Sıkı geriye dönük tüketim kapalı"
+
+msgid "Strict backflush is on"
+msgstr "Sıkı geriye dönük tüketim açık"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "Kesin geriye dönük tüketim açık. Bu malzemeler için çekilecek bir depolama birimi serbest bırakmadan önce ayarla:"
+
+msgid "Strict backflush setting updated"
+msgstr "Sıkı geriye dönük tüketim ayarı güncellendi"
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23721,6 +23808,9 @@ msgstr "Çalışma saatleri ve planlama yöneten takvimler"
 msgid "Their dates and splits are planned again from the lines."
 msgstr "Tarihleri ve bölünüşleri satırlardan yeniden planlanır."
 
+msgid "Their next backflush will be refused until each material has a storage unit."
+msgstr "Her malzeme bir depolama birimine sahip olana kadar sonraki geriye dönük tüketim reddedilecektir."
+
 msgid "Theme"
 msgstr "Tema"
 
@@ -23894,6 +23984,9 @@ msgstr "Bu bilgi tüm kullanıcılara görünür olacak, bu nedenle paylaştığ
 
 msgid "this inspection plan"
 msgstr "bu kontrol planı"
+
+msgid "This integration isn't available yet"
+msgstr "Bu entegrasyon henüz kullanılamıyor"
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."

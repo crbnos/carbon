@@ -570,7 +570,10 @@ export async function postBulkCompletion(
       }
     );
     if (response.error) {
-      return { error: response.error, message: "Failed to complete units" };
+      return {
+        error: response.error,
+        message: response.error.message || "Failed to complete units"
+      };
     }
     return { error: null, message: null };
   }
@@ -603,10 +606,37 @@ export async function postBulkCompletion(
   if (issued.error) {
     return {
       error: issued.error,
-      message: "Units completed, but failed to issue materials"
+      message: `Units completed, but ${issued.error.message || "failed to issue materials"}`
     };
   }
 
+  return { error: null, message: null };
+}
+
+/** Strict backflush dry run of the operation's backflush. Call it before a
+ *  completion's first write; a no-op when the setting is off. */
+export async function checkStrictBackflush(args: {
+  jobOperationId: string;
+  quantity: number;
+  companyId: string;
+  userId: string;
+}): Promise<{ error: unknown | null; message: string | null }> {
+  if (args.quantity <= 0) return { error: null, message: null };
+  const check = await erpPosting(
+    "issue",
+    { companyId: args.companyId, userId: args.userId },
+    {
+      id: args.jobOperationId,
+      type: "jobOperationDryRun",
+      quantity: args.quantity
+    }
+  );
+  if (check.error) {
+    return {
+      error: check.error,
+      message: check.error.message || "Failed to issue materials"
+    };
+  }
   return { error: null, message: null };
 }
 

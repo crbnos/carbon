@@ -59,7 +59,10 @@ export async function action({ request }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(issued.error, "Failed to record scrap quantity")
+        error(
+          issued.error,
+          issued.error.message || "Failed to record scrap quantity"
+        )
       )
     );
   }

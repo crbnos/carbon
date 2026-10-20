@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { MESSAGE_LIST_LIMIT } from "@carbon/database/strict-backflush";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -19,7 +21,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuShoppingCart, LuTriangleAlert } from "react-icons/lu";
-import { Link, useFetcher } from "react-router";
+import { Link } from "react-router";
 import Select from "~/components/Select";
 import SupplierAvatar from "~/components/SupplierAvatar";
 import { path } from "~/utils/path";
@@ -45,22 +47,29 @@ export function BatchReleaseModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const readinessFetcher = useFetcher<
-    JobReleaseReadiness | { error: string }
-  >();
+  // A whole translated sentence, so "and N more" is translated too.
+  const storageUnitReason = (materials: { description: string }[]) => {
+    const names = materials
+      .slice(0, MESSAGE_LIST_LIMIT)
+      .map((material) => material.description)
+      .join(", ");
+    const more = materials.length - MESSAGE_LIST_LIMIT;
+    return more > 0
+      ? t`set a Pull From storage unit on ${names} and ${more} more`
+      : t`set a Pull From storage unit on ${names}`;
+  };
   const [purchaseOrders, setPurchaseOrders] = useState<Record<string, string>>(
     {}
   );
 
-  const url = path.to.api.batchReleaseReadiness(target);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: load once per target
-  useEffect(() => {
-    readinessFetcher.load(url);
-  }, [url]);
-
-  const result = readinessFetcher.data;
-  const readiness = result && "jobs" in result ? result : null;
-  const loadError = result && "error" in result ? result.error : null;
+  const readinessQuery = useLoaderQuery<JobReleaseReadiness>(
+    path.to.api.batchReleaseReadiness(target),
+    { staleTime: 0 }
+  );
+  const readiness = readinessQuery.data ?? null;
+  const loadError = readinessQuery.isError
+    ? t`Failed to check the batch's jobs`
+    : null;
 
   useEffect(() => {
     if (!readiness) return;
@@ -73,7 +82,8 @@ export function BatchReleaseModal({
     (job) =>
       job.manufacturingBlocked ||
       job.missingAssemblies.length > 0 ||
-      job.outsideOperationsWithoutSupplier.length > 0
+      job.outsideOperationsWithoutSupplier.length > 0 ||
+      job.materialsWithoutStorageUnit.length > 0
   );
   const jobIds = (readiness?.jobs ?? []).map((job) => job.jobId);
   const canRelease = !!readiness && blocked.length === 0 && !isSubmitting;
@@ -136,7 +146,9 @@ export function BatchReleaseModal({
                               op.missing === "choose"
                                 ? t`choose a supplier for ${op.description} on the job`
                                 : t`${op.description} has no supplier`
-                            )
+                            ),
+                            job.materialsWithoutStorageUnit.length > 0 &&
+                              storageUnitReason(job.materialsWithoutStorageUnit)
                           ]
                             .filter(Boolean)
                             .join("; ")}

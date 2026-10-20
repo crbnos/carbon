@@ -2,7 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { Plan } from "@carbon/utils";
+import { Edition, isInternalEmail, Plan } from "@carbon/utils";
 import type { IntegrationID } from "./index";
 
 /**
@@ -47,6 +47,26 @@ export const INTEGRATION_WHITELIST = new Set<IntegrationID>(["email"]);
 
 export function isIntegrationWhitelisted(id: string) {
   return INTEGRATION_WHITELIST.has(id as IntegrationID);
+}
+
+/**
+ * Whether this user sees an `internalOnly` integration as "Coming soon" and
+ * cannot install it. Carbon staff (`isInternalEmail`) can, in any company.
+ * Only Carbon Cloud gates it: a self-hosted instance configures its own OAuth
+ * app and has no Carbon staff to install it.
+ *
+ * It gates the install only. A company where staff installed it keeps it, so
+ * its own admins can open, reconnect and uninstall it.
+ */
+export function isIntegrationComingSoon(
+  integration: { id: string; internalOnly?: boolean },
+  { edition, email }: { edition: Edition; email: string | null | undefined }
+): boolean {
+  return (
+    integration.internalOnly === true &&
+    edition === Edition.Cloud &&
+    !isInternalEmail(email)
+  );
 }
 
 export type PlanRequirement = Plan | Plan[];

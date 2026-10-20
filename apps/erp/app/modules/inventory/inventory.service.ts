@@ -174,6 +174,15 @@ import {
   updatePickMethodDefaultStorageUnitIfNeeded,
   valueMovement
 } from "~/modules/shared/shared.service";
+import {
+  assertBinCovers,
+  binCoverProblem,
+  getStrictBackflushSettings,
+  isStrictBackflush,
+  lockStrictBins,
+  resolvePullFromStorageUnits,
+  strictBackflushRefusal
+} from "~/modules/shared/strict-backflush";
 import type { StorageItem } from "~/types";
 import type { Filter, GenericQueryFilters } from "~/utils/query";
 import {
@@ -18798,6 +18807,12 @@ export async function postInventoryAdjustment(
 }
 type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
 
+class DryRunRollback extends Error {
+  constructor(readonly plannedRows: ItemLedgerInsert[] = []) {
+    super("Dry run");
+  }
+}
+
 export const postPickingPermission = {} satisfies PermissionRule<
   z.output<typeof postPickingInput>
 >;
@@ -20837,7 +20852,9 @@ async function issueJobOperationMaterials(
     postingStatus,
     accountDefaults,
     dimensionMap,
-    db
+    db,
+    dryRun = false,
+    plannedElsewhere = []
   }: {
     jobOperationId: string;
     quantity: number;
@@ -20848,6 +20865,11 @@ async function issueJobOperationMaterials(
     accountDefaults: ConsumeAccountDefaults;
     dimensionMap: Map<string, string>;
     db: Kysely<KyselyDatabase>;
+    // Throw DryRunRollback after the strict check, before any ledger row.
+    dryRun?: boolean;
+    // Rows earlier operations of the same dry run plan to draw, so operations
+    // sharing a bin are checked against their combined demand.
+    plannedElsewhere?: ItemLedgerInsert[];
   }
 ) {
   const materialsToIssue = await trx
@@ -20934,6 +20956,28 @@ async function issueJobOperationMaterials(
     jobOperationId,
     companyId
   });
+  const { strict, preventNegative } = await getStrictBackflushSettings(
+    trx,
+    companyId,
+    job.locationId
+  );
+  const pullFrom = strict
+    ? await resolvePullFromStorageUnits(trx, companyId, materialsToIssue)
+    : new Map<string, string | null>();
+  // A dry run's locks would end with its rollback; the real issue takes them.
+  if (strict && preventNegative && !dryRun) {
+    await lockStrictBins(
+      trx,
+      companyId,
+      materialsToIssue
+        .filter((material) => itemIdIsTracked.get(material.itemId))
+        .map((material) => ({
+          storageUnitId: pullFrom.get(material.id),
+          itemId: material.itemId
+        }))
+    );
+  }
+  const strictProblems: string[] = [];
   const takenShared: SharedTakes = new Map();
   for await (const material of materialsToIssue) {
     // Cap the backflush at the material's remaining unissued requirement,
@@ -20986,7 +21030,35 @@ async function issueJobOperationMaterials(
       }
     }
 
-    if (remaining > 0) {
+    if (remaining > 0 && strict && itemIdIsTracked.get(material.itemId)) {
+      const storageUnitId = pullFrom.get(material.id) ?? null;
+      const problem = await binCoverProblem(trx, {
+        companyId,
+        itemId: material.itemId,
+        locationId: job.locationId,
+        storageUnitId,
+        quantity: remaining,
+        plannedRows: [...plannedElsewhere, ...itemLedgerInserts],
+        preventNegative,
+        jobReadableId: job.jobId,
+        lock: !dryRun
+      });
+      if (problem) strictProblems.push(problem);
+      // Kept when refused, so a later material on the bin counts this need.
+      itemLedgerInserts.push({
+        entryType: "Consumption",
+        documentType: "Job Consumption",
+        documentId: jobId,
+        documentLineId: jobOperationId,
+        companyId,
+        itemId: material.itemId,
+        quantity: -remaining,
+        locationId: job.locationId,
+        storageUnitId,
+        postingDate: today,
+        createdBy: userId
+      });
+    } else if (remaining > 0) {
       let proposedStorageUnitId = material.storageUnitId;
 
       if (!proposedStorageUnitId) {
@@ -21075,6 +21147,9 @@ async function issueJobOperationMaterials(
       .where("companyId", "=", companyId)
       .execute();
   }
+
+  if (strictProblems.length > 0) throw strictBackflushRefusal(strictProblems);
+  if (dryRun) throw new DryRunRollback(itemLedgerInserts);
 
   // Total material cost this call relieved from inventory into WIP — the
   // jobOperationScrap case posts its WIP→scrap journal from this figure so a
@@ -22512,6 +22587,7 @@ export const issueMaterialPermission = {
     jobCompleteMakeToOrder: {},
     jobOperation: { update: "production" },
     jobOperationBatchComplete: { update: "production" },
+    jobOperationDryRun: { update: "production" },
     jobOperationBatchOutput: { update: "production" },
     jobOperationSerialComplete: { update: "production" },
     jobOperationScrap: { update: "production" },
@@ -22532,6 +22608,61 @@ export const issueMaterialPermission = {
  * Issues material and records production against jobs, operations, tracked
  * entities and maintenance dispatches, per `type`.
  */
+/**
+ * The strict backflush check of issuing each operation's materials, with no
+ * writes. The operations are checked together, so two that draw the same Pull
+ * From bin are refused when their combined demand exceeds it. Throws the 409
+ * refusal; a no-op when strict backflush is off.
+ */
+export async function dryRunJobOperationIssues(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    operations: { id: string; quantity: number }[];
+  }
+): Promise<void> {
+  const { companyId, userId } = args;
+  const operations = args.operations.filter((op) => op.quantity > 0);
+  if (operations.length === 0) return;
+  if (!(await isStrictBackflush(db, companyId))) return;
+
+  const { accountDefaults, dimensionMap } = await loadConsumeAccountingContext(
+    db,
+    companyId
+  );
+  try {
+    await db.transaction().execute(async (trx) => {
+      const postingStatus = await journalPostingStatus(trx, companyId);
+      const planned: ItemLedgerInsert[] = [];
+      for (const op of operations) {
+        try {
+          await issueJobOperationMaterials(trx, {
+            jobOperationId: op.id,
+            quantity: op.quantity,
+            companyId,
+            userId,
+            postingStatus,
+            accountDefaults,
+            dimensionMap,
+            db,
+            dryRun: true,
+            plannedElsewhere: planned
+          });
+        } catch (err) {
+          if (!(err instanceof DryRunRollback)) throw err;
+          planned.push(...err.plannedRows);
+        }
+      }
+      // The material loop writes `quantityIssued` before the dry-run exit, so
+      // the transaction must never commit.
+      throw new DryRunRollback();
+    });
+  } catch (err) {
+    if (!(err instanceof DryRunRollback)) throw err;
+  }
+}
+
 export async function issueMaterial(
   ctx: ServiceContext,
   raw: z.input<typeof issueInput>
@@ -22572,6 +22703,15 @@ export async function issueMaterial(
         });
       });
 
+      break;
+    }
+    case "jobOperationDryRun": {
+      const { id, companyId, quantity, userId } = validatedPayload;
+      await dryRunJobOperationIssues(db, {
+        companyId,
+        userId,
+        operations: [{ id, quantity }]
+      });
       break;
     }
     case "jobOperationBatchComplete": {
@@ -23448,7 +23588,8 @@ export async function issueMaterial(
           trx
             .selectFrom("job")
             .where("id", "=", jobOperation?.jobId!)
-            .select("locationId")
+            .where("companyId", "=", companyId)
+            .select(["locationId", "jobId"])
             .executeTakeFirst(),
           trx
             .selectFrom("item")
@@ -23544,6 +23685,32 @@ export async function issueMaterial(
               }
             }
             if (item?.itemTrackingType === "Inventory" && remaining !== 0) {
+              const strictSettings =
+                adjustmentType !== "Positive Adjmt." && remaining > 0
+                  ? await getStrictBackflushSettings(
+                      trx,
+                      companyId,
+                      job?.locationId
+                    )
+                  : null;
+              if (strictSettings?.strict) {
+                storageUnitId =
+                  (
+                    await resolvePullFromStorageUnits(trx, companyId, [
+                      material
+                    ])
+                  ).get(material.id) ?? null;
+                await assertBinCovers(trx, {
+                  companyId,
+                  itemId: material.itemId,
+                  locationId: job?.locationId!,
+                  storageUnitId,
+                  quantity: remaining,
+                  plannedRows: itemLedgerInserts,
+                  preventNegative: strictSettings.preventNegative,
+                  jobReadableId: job?.jobId ?? material.jobId
+                });
+              }
               itemLedgerInserts.push({
                 entryType: "Consumption",
                 documentType: "Job Consumption",

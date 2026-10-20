@@ -58,37 +58,26 @@ function fakeStorage(
 }
 
 describe("removeCompanyFiles", () => {
-  it("drains the company bucket before deleting it, and the legacy folders", async () => {
+  it("drains the company bucket before deleting it", async () => {
     const { serviceRole, buckets } = fakeStorage({
       co1: ["parts/a.png", "job/j1/b.pdf"],
-      private: [
-        "co1/docs/c.pdf",
-        "co12/docs/keep.pdf",
-        "audit-logs/co1/2026/01/2026-01-31.jsonl.gz",
-        "audit-logs/co12/2026/01/keep.jsonl.gz"
-      ]
+      co12: ["docs/keep.pdf"]
     });
-    expect(await removeCompanyFiles(serviceRole, "co1")).toEqual([]);
-    expect(buckets).toEqual({
-      private: ["co12/docs/keep.pdf", "audit-logs/co12/2026/01/keep.jsonl.gz"]
-    });
+    expect(await removeCompanyFiles(serviceRole, "co1")).toBeNull();
+    expect(buckets).toEqual({ co12: ["docs/keep.pdf"] });
   });
 
   it("treats a bucket that is already gone as done", async () => {
-    const { serviceRole } = fakeStorage({ private: [] });
-    expect(await removeCompanyFiles(serviceRole, "co1")).toEqual([]);
+    const { serviceRole } = fakeStorage({});
+    expect(await removeCompanyFiles(serviceRole, "co1")).toBeNull();
   });
 
-  it("reports each part that failed, and leaves the bucket", async () => {
+  it("reports a failed drain, and leaves the bucket", async () => {
     const { serviceRole, calls } = fakeStorage(
-      { co1: ["a.png"], private: ["co1/b.pdf"] },
+      { co1: ["a.png"] },
       { failRemove: true }
     );
-    const failures = await removeCompanyFiles(serviceRole, "co1");
-    expect(failures.map((f) => f.part)).toEqual([
-      "company bucket",
-      "legacy private files"
-    ]);
+    expect(await removeCompanyFiles(serviceRole, "co1")).toBeInstanceOf(Error);
     expect(calls).not.toContain("deleteBucket co1");
   });
 });

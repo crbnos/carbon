@@ -4,6 +4,7 @@
 
 import {
   type CarbonError,
+  createServiceContext,
   defineServiceFn
 } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
@@ -15,7 +16,6 @@ import {
   isBlocked,
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
-import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
@@ -32,13 +32,15 @@ import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { getItemReplenishment } from "~/modules/items/items.service";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
+import { releaseCheckedJobs } from "~/modules/production/production.server";
 import {
   getActiveJobOperationByJobId,
+  getJobReleaseReadiness,
   insertJob,
-  runMRP,
   updateKanbanJob,
   upsertJobMethod
 } from "~/modules/production/production.service";
+import { jobReleaseProblems } from "~/modules/production/ui/Jobs/job-release-logic";
 import {
   insertPurchaseOrder,
   updatePurchasedPrices,
@@ -3371,12 +3373,15 @@ export type KanbanScan =
   /**
    * The job it made. `operationId` is its first operation when the kanban
    * releases the job; `startAs` how to start it when the kanban starts it.
+   * `message` says why the job was not released, or that its method could
+   * not be copied.
    */
   | {
       type: "job";
       jobId: string;
       operationId: string | null;
       startAs: "Setup" | "Labor" | "Machine" | null;
+      message: string | null;
     }
   | { type: "purchaseOrder"; purchaseOrderId: string }
   | { type: "stockTransfer"; stockTransferId: string };
@@ -3387,8 +3392,10 @@ export type KanbanScan =
  * @remarks
  * Make: creates a Hard Deadline job for the kanban's item and quantity, due
  * after the item's lead time, copies the item's method and links the job to
- * the kanban; with auto-release it recalculates, runs MRP and the location's
- * schedule, and sets the job Ready. A kanban that already has a job is a
+ * the kanban; with auto-release it runs the release checks, then releases the
+ * job (`releaseCheckedJobs`) and runs the location's schedule. A job that
+ * fails the checks, or whose method could not be copied, stays Draft and
+ * `message` names the problems. A kanban that already has a job is a
  * collision. Buy: adds a line to the supplier's open Draft or Planned purchase
  * order, or a new Draft one, priced from the supplier part in the order's
  * currency. Transfer: releases a stock transfer to the kanban's storage unit
@@ -3411,6 +3418,102 @@ export const scanKanban = defineServiceFn({
       return ctx.error("notFound", "Kanban is not active", kanban.error);
     }
     const card = kanban.data;
+
+    /** No one at a kanban card can choose a purchase order, so unlike
+     *  `releaseJobs` a supplier's newest Draft PO is reused rather than a
+     *  blocker. */
+    async function releaseKanbanJob(
+      jobId: string,
+      locationId: string
+    ): Promise<{ released: boolean; message: string | null }> {
+      const job = await serviceRole
+        .from("job")
+        .select("jobId")
+        .eq("id", jobId)
+        .eq("companyId", companyId)
+        .single();
+      const readiness = await getJobReleaseReadiness(
+        serviceRole,
+        [jobId],
+        companyId
+      );
+      const ready = readiness.data?.jobs[0];
+      if (job.error || readiness.error || !ready) {
+        logger.error("Failed to check a kanban job for release", {
+          companyId,
+          jobId,
+          error: job.error ?? readiness.error
+        });
+        return {
+          released: false,
+          message: `${job.data?.jobId ?? "The job"} was created but could not be checked for release. Release it from the job.`
+        };
+      }
+
+      const problems = jobReleaseProblems(ready);
+      if (problems.length > 0) {
+        return {
+          released: false,
+          message: `${job.data.jobId} was created but not released: ${problems.join("; ")}`
+        };
+      }
+
+      // As the system, like the job it releases: the scanner may not hold
+      // production update, and the status write runs on the caller's client.
+      const system = createServiceContext({
+        actor: { type: "system", onBehalfOf: userId },
+        company: ctx.company,
+        caller: serviceRole,
+        system: () => serviceRole,
+        pg: () => ctx.asSystem.pg,
+        kv: () => ctx.kv
+      });
+      const result = await releaseCheckedJobs(system, {
+        jobIds: [jobId],
+        purchaseOrdersBySupplierId: Object.fromEntries(
+          (readiness.data?.suppliers ?? []).map((supplier) => [
+            supplier.supplierId,
+            [...supplier.draftPurchaseOrders].sort((a, b) =>
+              b.purchaseOrderId.localeCompare(a.purchaseOrderId)
+            )[0]?.id ?? "new"
+          ])
+        ),
+        source: "kanban"
+      });
+      const failure = result.error ?? result.data.failure;
+      const released = result.data?.releasedJobIds.includes(jobId) ?? false;
+      if (failure) {
+        logger.error("Failed to release a kanban job", {
+          companyId,
+          jobId,
+          error: failure
+        });
+      }
+
+      // After the status is persisted: the scheduler only places released jobs.
+      if (released) {
+        try {
+          await runLocationSchedule({
+            db: ctx.asSystem.pg,
+            client: serviceRole,
+            locationId,
+            companyId,
+            userId
+          });
+        } catch (error) {
+          logger.error("Failed to schedule a kanban job", {
+            companyId,
+            jobId,
+            error
+          });
+        }
+      }
+
+      return {
+        released,
+        message: failure ? `${job.data.jobId}: ${failure.message}` : null
+      };
+    }
 
     if (card.replenishmentSystem === "Make") {
       if (card.jobReadableId) return { type: "collision" };
@@ -3453,10 +3556,10 @@ export const scanKanban = defineServiceFn({
         },
         { skipMethod: true, skipRecalculate: true, source: "kanban" }
       );
-      const jobId = createdJob.data?.id;
-      if (createdJob.error || !jobId) {
+      if (createdJob.error || !createdJob.data) {
         return ctx.error("internal", "Failed to create job", createdJob.error);
       }
+      const jobId = createdJob.data.id;
 
       const [method, associated] = await Promise.all([
         upsertJobMethod(serviceRole, ctx.asSystem.pg, "itemToJob", {
@@ -3483,51 +3586,27 @@ export const scanKanban = defineServiceFn({
 
       if (method.error) {
         logger.error("Kanban operation failed", { error: method.error });
-      } else if (card.autoRelease) {
-        await Promise.all([
-          trigger("recalculate", {
-            type: "jobRequirements",
-            id: jobId,
-            companyId,
-            userId
-          }),
-          runMRP(serviceRole, ctx.asSystem.pg, {
-            type: "job",
-            id: jobId,
-            companyId,
-            userId
-          }),
-          runLocationSchedule({
-            db: ctx.asSystem.pg,
-            client: serviceRole,
-            locationId: card.locationId!,
-            companyId,
-            userId
-          }),
-          serviceRole
-            .from("job")
-            .update({ status: "Ready" as const })
-            .eq("id", jobId)
-            .eq("companyId", companyId)
-        ]);
-
-        // This path writes job.status directly, so it never reaches
-        // updateJobStatus and its raiseMoment. The job was just created, so
-        // the prior status is always Draft.
-        trackWorkEvent("job_released", {
-          companyId,
-          userId,
-          jobId,
-          priorStatus: "Draft",
-          source: "kanban"
-        });
       }
+      const release = method.error
+        ? {
+            released: false,
+            message: `${createdJob.data.jobId} was created, but its method could not be copied. Use Get Method on the job before releasing it.`
+          }
+        : card.autoRelease
+          ? await releaseKanbanJob(jobId, card.locationId!)
+          : { released: false, message: null };
 
-      const operation = card.autoRelease
+      const operation = release.released
         ? await getActiveJobOperationByJobId(client, jobId, companyId)
         : null;
       if (!operation) {
-        return { type: "job", jobId, operationId: null, startAs: null };
+        return {
+          type: "job",
+          jobId,
+          operationId: null,
+          startAs: null,
+          message: release.message
+        };
       }
       const startAs = !card.autoStartJob
         ? null
@@ -3536,7 +3615,13 @@ export const scanKanban = defineServiceFn({
           : operation.machineTime && !operation.laborTime
             ? "Machine"
             : "Labor";
-      return { type: "job", jobId, operationId: operation.id, startAs };
+      return {
+        type: "job",
+        jobId,
+        operationId: operation.id,
+        startAs,
+        message: release.message
+      };
     }
 
     if (card.replenishmentSystem === "Buy") {

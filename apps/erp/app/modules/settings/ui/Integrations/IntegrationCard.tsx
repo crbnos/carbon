@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Integration } from "@carbon/ee";
-import { isIntegrationWhitelisted } from "@carbon/ee/plan";
+import {
+  isIntegrationComingSoon,
+  isIntegrationWhitelisted
+} from "@carbon/ee/plan";
 import { getLogger } from "@carbon/logger";
 import { useRevalidator } from "@carbon/query";
 import {
@@ -19,6 +22,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  useEdition,
   useRouteData
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -26,6 +30,7 @@ import { useEffect, useState } from "react";
 import { LuLock } from "react-icons/lu";
 import { Link, useFetcher, useNavigate } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
+import { useUser } from "~/hooks/useUser";
 import { getIntegrationError } from "~/modules/settings/integration-errors";
 import { isOAuthPopupResult } from "~/modules/settings/oauth-popup";
 import { path } from "~/utils/path";
@@ -87,6 +92,13 @@ export function IntegrationCard({
   const { isGated } = usePlanGate({ feature: "INTEGRATIONS" });
   const isWhitelisted = isIntegrationWhitelisted(integration.id);
   const isStarterPlan = isGated && !isWhitelisted;
+  const edition = useEdition();
+  const user = useUser();
+  // Only an install is withheld: a company where Carbon staff installed it
+  // keeps a working card.
+  const comingSoon =
+    !installed &&
+    isIntegrationComingSoon(integration, { edition, email: user.email });
 
   // At most one ACTIVE integration per provider role, enforced by a database
   // trigger. Surfacing it here is what keeps a customer from meeting that
@@ -206,6 +218,10 @@ export function IntegrationCard({
             <Badge className="flex-shrink-0" variant="green">
               <Trans>Installed</Trans>
             </Badge>
+          ) : comingSoon ? (
+            <Badge className="flex-shrink-0" variant="secondary">
+              <Trans>Coming soon</Trans>
+            </Badge>
           ) : null
         ) : (
           <Badge className="flex-shrink-0" variant="secondary">
@@ -271,6 +287,7 @@ export function IntegrationCard({
               <Button
                 isDisabled={
                   !integration.active ||
+                  comingSoon ||
                   !!conflictsWith ||
                   fetcher.state !== "idle"
                 }

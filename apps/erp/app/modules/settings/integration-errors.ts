@@ -166,6 +166,15 @@ export function integrationErrorSearch<T extends IntegrationWithErrors>(
   return `?integration=${integration}&error=${error}`;
 }
 
+/** Codes any integration's install can answer. */
+const sharedErrors = {
+  // `isIntegrationInstallWithheld`: an `internalOnly` integration.
+  "coming-soon": {
+    title: msg`This integration isn't available yet`,
+    description: msg`It is coming soon. Contact Carbon to have it set up for your company.`
+  }
+} satisfies Record<string, IntegrationErrorMessage>;
+
 /** Resolves those params back to copy. Unknown integration or code → nothing. */
 export function getIntegrationError(
   integration: string | null,
@@ -176,5 +185,8 @@ export function getIntegrationError(
   const messages =
     integrationErrors[integration as IntegrationWithErrors] ?? undefined;
 
-  return messages?.[error as keyof typeof messages];
+  return (
+    messages?.[error as keyof typeof messages] ??
+    sharedErrors[error as keyof typeof sharedErrors]
+  );
 }

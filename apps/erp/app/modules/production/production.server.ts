@@ -25,7 +25,8 @@ import { z } from "zod";
 import {
   cancelOpenPickingListsForJob,
   issueMaterial,
-  mergeTrackedEntities
+  mergeTrackedEntities,
+  serverFnFailure
 } from "~/modules/inventory/inventory.service";
 import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.utils";
 import {
@@ -240,11 +241,12 @@ export const planDraftJob = defineServiceFn({
 export const releaseCheckedJobs = defineServiceFn({
   input: z.object({
     jobIds: z.array(z.string()),
-    purchaseOrdersBySupplierId: z.record(z.string(), z.string())
+    purchaseOrdersBySupplierId: z.record(z.string(), z.string()),
+    source: z.enum(["erp", "kanban"]).default("erp")
   }),
   permission: { update: "production" },
 
-  async run(ctx, { jobIds, purchaseOrdersBySupplierId }) {
+  async run(ctx, { jobIds, purchaseOrdersBySupplierId, source }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
     const purchaseOrders = { ...purchaseOrdersBySupplierId };
@@ -290,13 +292,17 @@ export const releaseCheckedJobs = defineServiceFn({
       // Only a job still waiting for release flips: the caller checked the
       // status before the recalculation and MRP above, and someone may have
       // cancelled or released it since.
-      const update = await service.updateJobStatus(ctx.asCaller.supabase, {
-        id,
-        companyId,
-        status: "Ready",
-        updatedBy: userId,
-        fromStatuses: ["Draft", "Planned"]
-      });
+      const update = await service.updateJobStatus(
+        ctx.asCaller.supabase,
+        {
+          id,
+          companyId,
+          status: "Ready",
+          updatedBy: userId,
+          fromStatuses: ["Draft", "Planned"]
+        },
+        { source }
+      );
       if (update.error) {
         return report(
           ctx.error("internal", "The job could not be released", update.error)
@@ -2862,6 +2868,17 @@ export const completeOperation = defineServiceFn({
       );
     }
 
+    // Strict backflush: refuse before the quantity is recorded.
+    const check = await invokePosting(
+      ctx,
+      "issue",
+      { type: "jobOperationDryRun", id: operationId, quantity },
+      issueMaterial
+    );
+    if (check.error) {
+      return serverFnFailure(ctx, check.error, check.error.message);
+    }
+
     const recorded = await createProductionQuantity(ctx, {
       jobOperationId: operationId,
       type: "Production",
@@ -2878,7 +2895,7 @@ export const completeOperation = defineServiceFn({
     if (issued.error) {
       return ctx.error(
         "internal",
-        "The quantity is recorded, but its materials were not issued",
+        `The quantity is recorded, but its materials were not issued: ${issued.error.message}`,
         issued.error
       );
     }

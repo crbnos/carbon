@@ -4,6 +4,11 @@
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import {
+  activationRefusalMessage,
+  getMethodPartsMissingPullFrom,
+  getStrictBackflushSettings
+} from "@carbon/database/strict-backflush";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
   cancelPendingApprovals,
@@ -950,7 +955,9 @@ export const copyMethod = defineServiceFn({
  * The new version takes `copyFromId`'s header and, through get-method, its
  * whole bill of materials and process. `activeVersionId` must be `copyFromId`:
  * a Draft source is made Active first (the item's only version, when its
- * successor is drafted). A failed copy leaves no new version behind.
+ * successor is drafted). With strict backflush on, that activation is refused
+ * while a pulled line has no Pull From storage unit, as `methodVersionToActive`
+ * refuses it. A failed copy leaves no new version behind.
  *
  * @mcp
  */
@@ -959,6 +966,20 @@ export const createMethodVersion = defineServiceFn({
   permission: { create: "parts" },
 
   async run(ctx, input) {
+    if (input.activeVersionId) {
+      const db = ctx.asSystem.pg;
+      const { strict } = await getStrictBackflushSettings(db, ctx.company.id);
+      if (strict) {
+        const parts = await getMethodPartsMissingPullFrom(db, {
+          makeMethodId: input.activeVersionId,
+          companyId: ctx.company.id
+        });
+        if (parts.length > 0) {
+          return ctx.error("rule", activationRefusalMessage(parts));
+        }
+      }
+    }
+
     // get-method is gated on production update, so the copy runs as the system.
     const result = await service.createMakeMethodVersion(
       ctx.asCaller.supabase,

@@ -3703,6 +3703,56 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** `membership` and its interceptors in `packages/database/src/event-system/handlers/`, and any unique key with a nullable column.
 
+## A pick moves a job material's storage unit to lineside, so the line no longer names its Pull From
+
+**Context:** Strict backflush (2026-10-16) consumed what no pick covered from `jobMaterial.storageUnitId`.
+
+**Problem:** Posting a pick calls `pointJobMaterialAtLineside`, which overwrites `jobMaterial.storageUnitId` with the lineside bin. After a partial pick, the remainder was checked against lineside (already drawn) instead of the warehouse bin the BoM named. With negative stock prevented it refused a completion the shelf could cover. With it allowed, it drove lineside negative. The TypeScript and SQL paths had the same bug, and no test picked anything.
+
+**Rule:** Never read `jobMaterial.storageUnitId` as "the Pull From" once picking may have run. The pick line keeps the source (`pickingListLine.storageUnitId`). Use the oldest pick line into the line's current bin (`pullFromStorageUnit`, `@carbon/database/strict-backflush`). A later list is sourced from the fullest bin, so do not use the newest one. Any test of a bin rule needs a case with a partial pick.
+
+**Applies to:** strict backflush, and any rule keyed on a job material's bin (picking, returns, lineside credit, consumption).
+
+## A module the browser bundles must not reach the Kysely runtime, even through a helper
+
+**Context:** Strict backflush (2026-10-16). `@carbon/database/strict-backflush` is imported by BoM UI components and by `settings.service.ts`, which the module barrel bundles for the browser.
+
+**Problem:** Using `inOrder` from `@carbon/database/rows` there would have imported `kysely` at runtime into the client bundle; typecheck does not see it. Separately, `settings.server.ts` gained an import of `~/utils/query`, which imports the `@carbon/auth` barrel. That barrel runs a Lingui `msg` macro, which plain vitest cannot compile, so 2 unrelated test files stopped loading.
+
+**Rule:** In a client-bundled module, import only types from `kysely` and `./client`. Run two awaits instead of `inOrder`. Raw `sql` belongs in a server-only file. Before adding an import to a file that tests import, check what that import's barrel pulls in, then run the module's tests.
+
+**Applies to:** `@carbon/database` subpaths read by UI, `{module}.service.ts`, `{module}.server.ts` imported by vitest files.
+
+## A Lingui placeholder is named after its expression, so a refactor can silently drop translations
+
+**Context:** Strict backflush (2026-10-16) changed `<Plural value={methodsMissingPullFrom} …>` to `<Plural value={gaps.methods} …>`.
+
+**Problem:** A member expression has no name, so the message id changed from `{methodsMissingPullFrom, plural, …}` to `{0, plural, …}`. `lingui:extract --clean` then deleted the old id and its 12 translations, and the new id came back untranslated.
+
+**Rule:** Pass a plain, named variable to `Plural`, `t` and `Trans` placeholders, and keep the name when refactoring. If extract drops translations by mistake, restore the catalogs from git (`git checkout HEAD -- packages/locale/locales`), fix the name, and extract again.
+
+**Applies to:** every `Plural` / `t\`…${x}\`` / `<Trans>` with an interpolation.
+
+## Guard a state by listing everything that writes it, not by who calls the check
+
+**Context:** Strict backflush (2026-10-17). Release had to refuse a job with a line that had no storage unit. The check was added where the release check already ran: the Release dialog, bulk release, batch release.
+
+**Problem:** Two more paths set a job to Ready without any check. The kanban scan with auto-release wrote `status: "Ready"` straight to the job with the service role. The MCP / API tool `production_updateJobStatus` wrote any status. A search for callers of the release function cannot find a direct write. A self-review on a fixed file list did not look outside it, and the docs then claimed "every release path".
+
+**Rule:** To guard a state change, first list every writer of that state: grep for the value being written (`status: "Ready"`, `SET status = 'Ready'` in SQL) and for every caller of the write function, including MCP tools. Put the check where all writers meet, or give each writer the check. Keep the unchecked write out of the API (no `@mcp` tag). Do not claim "every path" without that list.
+
+**Applies to:** release, completion, posting, cancellation — any status a check must gate.
+
+## A flash returned with `data()` from a page loader never shows
+
+**Context:** The kanban scan (2026-10-19) returned `data(result, await flash(request, error(…)))` from its loader, and its page then navigated to the job with `window.location`.
+
+**Problem:** The message never appeared. The root's `flashMiddleware` reads and clears the flash on every request. It ran on the scan's own document request and cleared the cookie the loader had just set. Typecheck and unit tests cannot see this; only the browser did.
+
+**Rule:** To carry a message to another page, throw `redirect(path, await flash(request, …))` from the loader or action, as every other route does. Do not return a flash with `data()` from a page loader and expect a later page to show it.
+
+**Applies to:** any loader or action that sets a flash for the page it sends the user to.
+
 ## A flash on a fetcher's redirect back to the same page is never shown
 
 **Context:** Refusing a receipt post that still misses serial numbers (2026-10-16). The Post dialog submits through `useRuleViolations`, a fetcher.

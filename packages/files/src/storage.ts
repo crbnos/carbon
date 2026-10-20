@@ -26,8 +26,8 @@ import {
 /**
  * The URL segment `/file/preview/private/<path>` — a stored link format
  * (rich text, inspection documents) that the preview routes serve from the
- * caller's own company bucket. The shared `private` bucket it once named is
- * no longer read.
+ * caller's own company bucket. The shared `private` bucket it once named no
+ * longer exists.
  */
 export const PRIVATE_PREVIEW_ALIAS = "private";
 // Ephemeral staging for uploads too big for a company bucket's per-object cap

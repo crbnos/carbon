@@ -332,8 +332,10 @@ export const updateInvoicingSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: whether material ids are
  * generated from their properties, whether material sizes use metric units,
  * whether item ids may contain lowercase letters, whether the BoM explorer
- * shows readable ids, and how strictly a released revision controls changes
- * (off, warn or enforce).
+ * shows readable ids, how strictly a released revision controls changes
+ * (off, warn or enforce), whether a backflush consumes only from a line's Pull
+ * From storage unit (strict backflush), and whether a strict backflush refuses
+ * to take that storage unit below zero.
  *
  * @mcp
  */
@@ -343,6 +345,8 @@ export const updateItemsSettings = defineServiceFn({
     useMetric: z.boolean().optional(),
     allowLowercaseItemIds: z.boolean().optional(),
     showBomExplorerReadableId: z.boolean().optional(),
+    requireBackflushStorageUnit: z.boolean().optional(),
+    preventNegativeBackflush: z.boolean().optional(),
     plmReleaseControl: z.enum(plmReleaseControl).optional()
   }),
   permission: { update: "settings" },

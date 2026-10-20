@@ -7,8 +7,10 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Hidden, Select, Submit, ValidatedForm, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -16,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
   HStack,
+  RecordOutlet,
   ScrollArea,
   Switch,
   toast,
@@ -23,10 +26,11 @@ import {
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { useCallback } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
@@ -35,9 +39,15 @@ import {
   plmReleaseControlValidator,
   settingsToggle
 } from "~/modules/settings/settings.models";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+import {
+  getCompanySettings,
+  getStrictBackflushGapCounts
+} from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings-items");
 
 export const handle: Handle = {
   breadcrumb: msg`Items`,
@@ -58,7 +68,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
         error(companySettings.error, "Failed to get company settings")
       )
     );
-  return { companySettings: companySettings.data };
+
+  let gaps: { methods: number; jobs: number } | null = null;
+  let gapsError = false;
+  if (companySettings.data.requireBackflushStorageUnit) {
+    const counts = await getStrictBackflushGapCounts(
+      getDatabaseClient(),
+      companyId
+    );
+    if (counts.error) {
+      logger.error("Failed to count strict backflush gaps", {
+        companyId,
+        error: counts.error
+      });
+      gapsError = true;
+    }
+    gaps = counts.data;
+  }
+
+  return {
+    companySettings: companySettings.data,
+    gaps,
+    gapsError
+  };
 }
 
 // One form per card, told apart by its intent: each becomes the fields of
@@ -68,6 +100,8 @@ const itemsSettingsForm = z.discriminatedUnion("intent", [
   settingsToggle("materialUnits", "useMetric"),
   settingsToggle("allowLowercaseItemIds", "allowLowercaseItemIds"),
   settingsToggle("bomExplorerReadableId", "showBomExplorerReadableId"),
+  settingsToggle("requireBackflushStorageUnit", "requireBackflushStorageUnit"),
+  settingsToggle("preventNegativeBackflush", "preventNegativeBackflush"),
   plmReleaseControlValidator.extend({ intent: z.literal("plmReleaseControl") })
 ]);
 
@@ -80,7 +114,10 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function ItemsSettingsRoute() {
   const { t } = useLingui();
-  const { companySettings } = useLoaderData<typeof loader>();
+  const { companySettings, gaps, gapsError } = useLoaderData<typeof loader>();
+  // Named for the Plural messages' placeholders.
+  const methodsMissingPullFrom = gaps?.methods ?? 0;
+  const jobsMissingStorageUnit = gaps?.jobs ?? 0;
   const fetcher = useAction<typeof action>({
     onSuccess: ({ data }) => {
       if (!data) return;
@@ -92,6 +129,10 @@ export default function ItemsSettingsRoute() {
         toast.success(t`Item ID casing setting updated`);
       else if (data.showBomExplorerReadableId !== undefined)
         toast.success(t`BoM explorer setting updated`);
+      else if (data.requireBackflushStorageUnit !== undefined)
+        toast.success(t`Strict backflush setting updated`);
+      else if (data.preventNegativeBackflush !== undefined)
+        toast.success(t`Negative stock setting updated`);
       else toast.success(t`Release control setting updated`);
     }
   });
@@ -131,6 +172,26 @@ export default function ItemsSettingsRoute() {
     (checked: boolean) => {
       fetcher.submit(
         { intent: "allowLowercaseItemIds", enabled: String(checked) },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  const handleStrictBackflushToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        { intent: "requireBackflushStorageUnit", enabled: String(checked) },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  const handlePreventNegativeBackflushToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        { intent: "preventNegativeBackflush", enabled: String(checked) },
         { method: "POST" }
       );
     },
@@ -288,6 +349,125 @@ export default function ItemsSettingsRoute() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Strict Backflush</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Backflush each material only from the storage unit on its
+                material line, never from another storage unit.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <VStack spacing={4}>
+              <HStack className="justify-between items-center w-full">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    {companySettings.requireBackflushStorageUnit ? (
+                      <Trans>Strict backflush is on</Trans>
+                    ) : (
+                      <Trans>Strict backflush is off</Trans>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {companySettings.requireBackflushStorageUnit ? (
+                      <Trans>
+                        A method version needs a Pull From storage unit on each
+                        pulled material before it can be made active.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        A short storage unit falls back to another storage unit
+                        with stock.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={companySettings.requireBackflushStorageUnit ?? false}
+                  onCheckedChange={handleStrictBackflushToggle}
+                  disabled={isToggling}
+                />
+              </HStack>
+              <HStack className="justify-between items-center w-full border-t pt-4">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    <Trans>Prevent negative stock</Trans>
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {!companySettings.requireBackflushStorageUnit ? (
+                      <Trans>Applies when strict backflush is on.</Trans>
+                    ) : companySettings.preventNegativeBackflush ? (
+                      <Trans>
+                        An operation or job that would take its storage unit
+                        below zero is stopped until the stock is there.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        A short storage unit goes below zero, and the operation
+                        or job still completes.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={companySettings.preventNegativeBackflush}
+                  onCheckedChange={handlePreventNegativeBackflushToggle}
+                  disabled={
+                    isToggling || !companySettings.requireBackflushStorageUnit
+                  }
+                />
+              </HStack>
+              {gapsError && (
+                <p className="w-full border-t pt-4 text-sm text-destructive">
+                  <Trans>
+                    Could not check for active methods and open jobs with gaps.
+                    Reload the page to try again.
+                  </Trans>
+                </p>
+              )}
+              {methodsMissingPullFrom > 0 && (
+                <GapRow
+                  to={path.to.itemsSettingsMethodsMissingPullFrom}
+                  label={
+                    <Plural
+                      value={methodsMissingPullFrom}
+                      one="# active method has materials with no Pull From"
+                      other="# active methods have materials with no Pull From"
+                    />
+                  }
+                  description={
+                    <Trans>
+                      Set a Pull From on each one through a new version.
+                    </Trans>
+                  }
+                />
+              )}
+              {jobsMissingStorageUnit > 0 && (
+                <GapRow
+                  to={path.to.itemsSettingsJobsMissingStorageUnit}
+                  label={
+                    <Plural
+                      value={jobsMissingStorageUnit}
+                      one="# open job has materials with no storage unit"
+                      other="# open jobs have materials with no storage unit"
+                    />
+                  }
+                  description={
+                    <Trans>
+                      Their next backflush will be refused until each material
+                      has a storage unit.
+                    </Trans>
+                  }
+                />
+              )}
+            </VStack>
+          </CardContent>
+        </Card>
+
         <SettingsSectionHeader>
           <Trans>Units</Trans>
         </SettingsSectionHeader>
@@ -375,7 +555,32 @@ export default function ItemsSettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
+        <RecordOutlet />
       </SettingsPage>
     </ScrollArea>
+  );
+}
+
+function GapRow({
+  to,
+  label,
+  description
+}: {
+  to: string;
+  label: ReactNode;
+  description: ReactNode;
+}) {
+  return (
+    <HStack className="justify-between items-center w-full border-t pt-4 gap-4">
+      <VStack className="items-start min-w-0 flex-1" spacing={1}>
+        <span className="text-sm font-medium">{label}</span>
+        <span className="text-sm text-muted-foreground">{description}</span>
+      </VStack>
+      <Button variant="secondary" className="shrink-0" asChild>
+        <Link to={to}>
+          <Trans>Review</Trans>
+        </Link>
+      </Button>
+    </HStack>
   );
 }

@@ -171,7 +171,7 @@ export async function upsertDocument(
 }
 
 /**
- * Create a presigned upload URL for a document in the "private" bucket. First step
+ * Create a presigned upload URL for a document in the company's bucket. First step
  * of the two-step upload flow: PUT the file bytes to the returned `signedUrl` (or
  * use supabase-js `uploadToSignedUrl(path, token, file)`), then call
  * `insertUploadedDocument` with the returned `path` to register the metadata row.

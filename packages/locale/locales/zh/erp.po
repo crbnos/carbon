@@ -544,6 +544,9 @@ msgstr "还有{hiddenCount}个：{hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
 
+msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
+msgstr "{jobsMissingStorageUnit, plural, one {# 个未结工单的物料没有存储单元} other {# 个未结工单的物料没有存储单元}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} 被文档、凭证或默认账户使用，因此无法删除。"
 
@@ -573,6 +576,9 @@ msgstr "{maxSizeMB}MB 限制"
 
 msgid "{memberCount, plural, one {# step} other {# steps}}"
 msgstr "{memberCount, plural, one {# 步骤} other {# 步骤}}"
+
+msgid "{methodsMissingPullFrom, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{methodsMissingPullFrom, plural, one {# 个启用的方法有物料没有拉取来源} other {# 个启用的方法有物料没有拉取来源}}"
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount}个月的总计不匹配"
@@ -752,6 +758,9 @@ msgstr "↩ {0} 从已淘汰的 {1} 重定向"
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
 msgstr "+{0}h"
+
+msgid "+{more} more"
+msgstr "+{more} 更多"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>为此项目添加供应商零件</0>以设置首选供应商。"
@@ -1145,6 +1154,9 @@ msgstr "原材料是用于制造零件的物质物品，可跨多个工单使用
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "一个测量仪器（游标卡尺、千分尺、塞规、CMM）作为记录进行追踪，并按照周期性校准计划进行维护。"
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "方法版本需要在每个物料上设置取货存储单元，才能启用。"
+
 msgid "A name is required to save a view"
 msgstr "需要名称才能保存查看"
 
@@ -1465,6 +1477,12 @@ msgstr "发货单的状态已更改"
 
 msgid "A shipment's tracking number changes"
 msgstr "发货的跟踪号变更"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "当存储单元库存不足时，将使用另一个有库存的存储单元。"
+
+msgid "A short storage unit goes below zero, and the operation or job still completes."
+msgstr "存储单元降至零以下，工序或工单仍可完成。"
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "短期资产不能超过开始日期后的 12 个月。结束它并将延期作为新租赁输入。"
@@ -1860,6 +1878,9 @@ msgstr "启用"
 
 msgid "Active Jobs"
 msgstr "启用的工单"
+
+msgid "Active Methods Missing a Pull From"
+msgstr "启用的方法缺少拉取来源"
 
 msgid "Active Statuses"
 msgstr "启用的状态"
@@ -2667,6 +2688,9 @@ msgstr "一项由外部供应商而非内部工作中心执行的工序，由分
 msgid "An operation on this job runs in this batch"
 msgstr "此工作的一道工序在此批次中运行"
 
+msgid "An operation or job that would take its storage unit below zero is stopped until the stock is there."
+msgstr "若工序或工单会使存储单元降至零以下，将被停止，直到库存充足。"
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "工序在所在工作中心队列中的位置——车间人员拿工作的顺序。引擎按安排顺序编号（最早预计开始时间优先）；在工作中心看板上重新排列卡片会覆盖它，不会改变日期。"
 
@@ -2845,6 +2869,9 @@ msgstr "适用于所有工作中心"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "适用于没有自己规则的特性，以及当该计划驱动检验时适用于批次。"
+
+msgid "Applies when strict backflush is on."
+msgstr "当启用严格倒冲时适用。"
 
 msgid "Apply"
 msgstr "应用"
@@ -3896,6 +3923,9 @@ msgstr "返回可追溯性"
 
 msgid "Backflush"
 msgstr "倒冲"
+
+msgid "Backflush each material only from the storage unit on its material line, never from another storage unit."
+msgstr "仅从每项物料行所在的存储单元倒冲，不从其他存储单元倒冲。"
 
 msgid "Background"
 msgstr "背景"
@@ -6124,6 +6154,12 @@ msgstr "无法分析区域：{0}"
 
 msgid "Could not build PDF. Try again."
 msgstr "无法生成 PDF。请重试。"
+
+msgid "Could not check for active methods and open jobs with gaps. Reload the page to try again."
+msgstr "无法检查启用方法和未结工单中的缺口。请重新加载页面重试。"
+
+msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
+msgstr "无法检查此工单物料的存储单元。关闭此对话框并重新打开重试。"
 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
@@ -9717,6 +9753,9 @@ msgstr "添加行失败"
 msgid "Failed to apply pricing rules"
 msgstr "无法应用定价规则"
 
+msgid "Failed to check the batch's jobs"
+msgstr "无法检查生产批次的工单"
+
 msgid "Failed to convert image"
 msgstr "图像转换失败"
 
@@ -12068,6 +12107,9 @@ msgstr "签发日期"
 msgid "Issues"
 msgstr "问题"
 
+msgid "It is coming soon. Contact Carbon to have it set up for your company."
+msgstr "即将推出。请联系 Carbon 为您的公司进行设置。"
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "它将停止运行，直到您再次发布版本。不会删除任何内容。"
 
@@ -13532,6 +13574,12 @@ msgstr "已包含原材料"
 msgid "Materials are not included"
 msgstr "未包含原材料"
 
+msgid "Materials missing a Pull From"
+msgstr "缺少拉取来源的物料"
+
+msgid "Materials with no storage unit"
+msgstr "没有存储单元的物料"
+
 msgid "Matrix"
 msgstr "矩阵"
 
@@ -13727,6 +13775,9 @@ msgstr "缺失的工序"
 
 msgid "Missing Shipping Costs"
 msgstr "缺少运费"
+
+msgid "Missing Storage Units"
+msgstr "缺少存储单元"
 
 msgid "Missing Suppliers"
 msgstr "缺少供应商"
@@ -14042,6 +14093,9 @@ msgstr "需要评审"
 
 msgid "Negative Adjustment"
 msgstr "负调整"
+
+msgid "Negative stock setting updated"
+msgstr "负库存设置已更新"
 
 msgid "Net book value"
 msgstr "账面净值"
@@ -15828,6 +15882,9 @@ msgstr "未结工单"
 msgid "Open Jobs"
 msgstr "未结工单"
 
+msgid "Open Jobs Missing a Storage Unit"
+msgstr "未结工单缺少存储单元"
+
 msgid "Open menu"
 msgstr "打开菜单"
 
@@ -17148,6 +17205,9 @@ msgstr "按 '/' 查看命令"
 
 msgid "Prev"
 msgstr "上一页"
+
+msgid "Prevent negative stock"
+msgstr "防止库存为负"
 
 msgid "Preventive action"
 msgstr "预防性行动"
@@ -20714,6 +20774,15 @@ msgstr "会话已锁定"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "在此退货上设置客户以从发货中添加。"
 
+msgid "Set a Pull From on each one through a new version."
+msgstr "通过新版本为每个物料设置拉取来源。"
+
+msgid "set a Pull From storage unit on {names}"
+msgstr "在{names}上设置拉取存储单元"
+
+msgid "set a Pull From storage unit on {names} and {more} more"
+msgstr "在{names}和{more}个其他项目上设置拉取存储单元"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "为此退货指定供应商以从其收货中添加"
 
@@ -21780,6 +21849,9 @@ msgstr "存储单元"
 msgid "Storage Units"
 msgstr "存储单元"
 
+msgid "Storage Units Not Checked"
+msgstr "存储单元未检查"
+
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's created (or when the trigger process runs, if set)."
 msgstr "在此物料上存储固定天数。在创建每个生产批次或序列号时（或触发工艺运行时，如果已设置）设置有效期开始日期。"
 
@@ -21797,6 +21869,21 @@ msgstr "融资租赁使用权资产的直线摊销"
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "经营租赁直线租赁成本和短期租赁付款"
+
+msgid "Strict Backflush"
+msgstr "严格倒冲"
+
+msgid "Strict backflush is off"
+msgstr "严格倒冲已关闭"
+
+msgid "Strict backflush is on"
+msgstr "严格倒冲已启用"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "严格倒冲已启用。释放前，请为这些物料设置取货存储单元："
+
+msgid "Strict backflush setting updated"
+msgstr "严格倒冲设置已更新"
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23721,6 +23808,9 @@ msgstr "驱动日程安排的工作时间和日历"
 msgid "Their dates and splits are planned again from the lines."
 msgstr "其日期和拆分从行中重新计划。"
 
+msgid "Their next backflush will be refused until each material has a storage unit."
+msgstr "下一次倒冲将被拒绝,直到每个物料都有存储单元。"
+
 msgid "Theme"
 msgstr "主题"
 
@@ -23894,6 +23984,9 @@ msgstr "此信息将对所有用户可见，请谨慎分享。"
 
 msgid "this inspection plan"
 msgstr "这个检验计划"
+
+msgid "This integration isn't available yet"
+msgstr "此集成尚不可用"
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."

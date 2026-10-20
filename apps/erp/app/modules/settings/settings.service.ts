@@ -11,6 +11,7 @@ import type {
   ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
+  CarbonEdition,
   CONTROLLED_ENVIRONMENT,
   SUPABASE_INTERNAL_URL,
   SUPABASE_URL,
@@ -20,7 +21,7 @@ import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import type { Database, Json } from "@carbon/database";
-import { getCompanyTimeZone } from "@carbon/database";
+import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { single, updateRows } from "@carbon/database/rows";
@@ -47,6 +48,11 @@ import {
   sequences,
   unitOfMeasures
 } from "@carbon/database/seed-data";
+import {
+  getPullFromLocations,
+  missingPullFromLocations,
+  PULLED_ITEM_TYPES
+} from "@carbon/database/strict-backflush";
 import type {
   DocumentBlock,
   DocumentSectionPlacement,
@@ -82,6 +88,7 @@ import type {
   StandardFieldWriter
 } from "@carbon/ee";
 import {
+  integrations as availableIntegrations,
   bomLineItemType,
   CUSTOM_FIELD_TYPE_LABELS,
   changeNoticeDescriptionJson,
@@ -180,6 +187,7 @@ import {
   patchOnshapeOAuthGrant,
   patchOnshapeSettings
 } from "@carbon/ee/onshape.server";
+import { isIntegrationComingSoon } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
@@ -257,7 +265,11 @@ import {
   getQuoteLinePricesByQuoteId,
   getQuoteLines
 } from "~/modules/sales/sales.utils";
-import type { Integration } from "~/modules/settings/types";
+import type {
+  Integration,
+  JobMissingStorageUnit,
+  MethodMissingPullFrom
+} from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import * as sharedService from "~/modules/shared/shared.service";
 import { getPermissionCacheKey } from "~/modules/users/users.service";
@@ -564,6 +576,41 @@ export async function getIntegration(
     .eq("id", id)
     .eq("companyId", companyId)
     .maybeSingle();
+}
+
+const integrationInstallLogger = getLogger("erp", "settings", "integrations");
+
+/**
+ * Whether a new install is refused: an `internalOnly` integration this user
+ * sees as "Coming soon" (`isIntegrationComingSoon`), in a company that does not
+ * have it installed. A failed read refuses.
+ */
+export async function isIntegrationInstallWithheld(
+  client: SupabaseClient<Database>,
+  {
+    companyId,
+    integrationId,
+    email
+  }: { companyId: string; integrationId: string; email: string }
+): Promise<boolean> {
+  const integration = availableIntegrations.find((i) => i.id === integrationId);
+  if (
+    !integration ||
+    !isIntegrationComingSoon(integration, { edition: CarbonEdition, email })
+  ) {
+    return false;
+  }
+
+  const existing = await getIntegration(client, integrationId, companyId);
+  if (existing.error) {
+    integrationInstallLogger.error("Failed to read the integration install", {
+      companyId,
+      integrationId,
+      error: existing.error
+    });
+    return true;
+  }
+  return existing.data?.active !== true;
 }
 
 export async function getIntegrations(
@@ -8370,4 +8417,235 @@ export function panelResponse(
         { status: result.error.status, headers }
       )
     : data(result.data.body, { status: result.data.status, headers });
+}
+
+// Strict backflush gaps. Each count and its drawer list share one query, the
+// SQL form of `needsPullFrom`, so they cannot disagree.
+
+function methodLinesMissingPullFrom(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  locationIds: string[]
+) {
+  return db
+    .selectFrom("methodMaterial")
+    .innerJoin("makeMethod", (join) =>
+      join
+        .onRef("makeMethod.id", "=", "methodMaterial.makeMethodId")
+        .on("makeMethod.companyId", "=", companyId)
+        .on("makeMethod.status", "=", "Active")
+    )
+    .innerJoin("item as component", (join) =>
+      join
+        .onRef("component.id", "=", "methodMaterial.itemId")
+        .on("component.companyId", "=", companyId)
+    )
+    .where("methodMaterial.companyId", "=", companyId)
+    .where("methodMaterial.methodType", "!=", "Make to Order")
+    .where("methodMaterial.itemType", "in", [...PULLED_ITEM_TYPES])
+    .where(
+      sql<boolean>`COALESCE("component"."itemTrackingType", 'Inventory') <> 'Non-Inventory'`
+    )
+    .where(
+      sql<boolean>`EXISTS (SELECT 1 FROM unnest(${locationIds}::text[]) AS loc WHERE COALESCE("methodMaterial"."storageUnitIds" ->> loc, '') = '')`
+    );
+}
+
+function jobLinesMissingStorageUnit(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  locationIds: string[]
+) {
+  return db
+    .selectFrom("jobMaterial")
+    .innerJoin("job", (join) =>
+      join
+        .onRef("job.id", "=", "jobMaterial.jobId")
+        .on("job.companyId", "=", companyId)
+        .on("job.status", "in", [...activeJobStatuses])
+    )
+    .innerJoin("item as component", (join) =>
+      join
+        .onRef("component.id", "=", "jobMaterial.itemId")
+        .on("component.companyId", "=", companyId)
+    )
+    .where("job.locationId", "in", locationIds)
+    .where("jobMaterial.companyId", "=", companyId)
+    .where("jobMaterial.storageUnitId", "is", null)
+    .where("jobMaterial.methodType", "!=", "Make to Order")
+    .where("jobMaterial.itemType", "in", [...PULLED_ITEM_TYPES])
+    .where("jobMaterial.requiresBatchTracking", "=", false)
+    .where("jobMaterial.requiresSerialTracking", "=", false)
+    .where("jobMaterial.quantityToIssue", ">", 0)
+    .where(
+      sql<boolean>`COALESCE("component"."itemTrackingType", 'Inventory') <> 'Non-Inventory'`
+    );
+}
+
+export async function getStrictBackflushGapCounts(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<{
+  data: { methods: number; jobs: number } | null;
+  error: Error | null;
+}> {
+  try {
+    // One query at a time: each would otherwise take its own pooled connection.
+    const locationIds = (await getPullFromLocations(db, companyId)).map(
+      (location) => location.id
+    );
+    if (locationIds.length === 0) {
+      return { data: { methods: 0, jobs: 0 }, error: null };
+    }
+    const methods = await methodLinesMissingPullFrom(db, companyId, locationIds)
+      .select(
+        sql<string>`count(DISTINCT "methodMaterial"."makeMethodId")`.as("count")
+      )
+      .executeTakeFirst();
+    const jobs = await jobLinesMissingStorageUnit(db, companyId, locationIds)
+      .select(sql<string>`count(DISTINCT "job"."id")`.as("count"))
+      .executeTakeFirst();
+    return {
+      data: {
+        methods: Number(methods?.count ?? 0),
+        jobs: Number(jobs?.count ?? 0)
+      },
+      error: null
+    };
+  } catch (error) {
+    return { data: null, error: error as Error };
+  }
+}
+
+export async function getActiveMethodsMissingPullFrom(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<{ data: MethodMissingPullFrom[] | null; error: Error | null }> {
+  try {
+    const locations = await getPullFromLocations(db, companyId);
+    if (locations.length === 0) return { data: [], error: null };
+    const locationIds = locations.map((location) => location.id);
+    const locationName = new Map(
+      locations.map((location) => [location.id, location.name])
+    );
+
+    const lines = await methodLinesMissingPullFrom(db, companyId, locationIds)
+      .innerJoin("item as parent", (join) =>
+        join
+          .onRef("parent.id", "=", "makeMethod.itemId")
+          .on("parent.companyId", "=", companyId)
+      )
+      .select([
+        "makeMethod.id as makeMethodId",
+        "makeMethod.version",
+        "parent.id as itemId",
+        "parent.type as itemType",
+        "parent.readableIdWithRevision as readableId",
+        "parent.name",
+        "methodMaterial.storageUnitIds",
+        "component.id as componentId",
+        "component.readableIdWithRevision as componentReadableId"
+      ])
+      .execute();
+
+    const methods = new Map<
+      string,
+      Omit<MethodMissingPullFrom, "materials" | "locations"> & {
+        materials: Set<string>;
+        locations: Set<string>;
+      }
+    >();
+    for (const line of lines) {
+      const method = methods.get(line.makeMethodId) ?? {
+        makeMethodId: line.makeMethodId,
+        itemId: line.itemId,
+        itemType: line.itemType,
+        readableId: line.readableId ?? line.itemId,
+        name: line.name,
+        version: Number(line.version),
+        materials: new Set<string>(),
+        locations: new Set<string>()
+      };
+      method.materials.add(line.componentReadableId ?? line.componentId);
+      for (const id of missingPullFromLocations(
+        line.storageUnitIds,
+        locationIds
+      ))
+        method.locations.add(locationName.get(id) ?? id);
+      methods.set(line.makeMethodId, method);
+    }
+
+    return {
+      data: [...methods.values()]
+        .map((method) => ({
+          ...method,
+          materials: [...method.materials].sort(),
+          locations: [...method.locations].sort()
+        }))
+        .sort((a, b) => a.readableId.localeCompare(b.readableId)),
+      error: null
+    };
+  } catch (error) {
+    return { data: null, error: error as Error };
+  }
+}
+
+export async function getOpenJobsMissingStorageUnit(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<{ data: JobMissingStorageUnit[] | null; error: Error | null }> {
+  try {
+    const locationIds = (await getPullFromLocations(db, companyId)).map(
+      (location) => location.id
+    );
+    if (locationIds.length === 0) return { data: [], error: null };
+
+    const lines = await jobLinesMissingStorageUnit(db, companyId, locationIds)
+      .leftJoin("item as jobItem", (join) =>
+        join
+          .onRef("jobItem.id", "=", "job.itemId")
+          .on("jobItem.companyId", "=", companyId)
+      )
+      .leftJoin("location", (join) =>
+        join
+          .onRef("location.id", "=", "job.locationId")
+          .on("location.companyId", "=", companyId)
+      )
+      .select([
+        "job.id",
+        "job.jobId",
+        "job.status",
+        "jobItem.readableIdWithRevision as readableId",
+        "location.name as locationName",
+        "component.id as componentId",
+        "component.readableIdWithRevision as componentReadableId"
+      ])
+      .execute();
+
+    const jobs = new Map<
+      string,
+      Omit<JobMissingStorageUnit, "materials"> & { materials: Set<string> }
+    >();
+    for (const line of lines) {
+      const job = jobs.get(line.id) ?? {
+        id: line.id,
+        jobId: line.jobId,
+        status: line.status,
+        readableId: line.readableId,
+        locationName: line.locationName,
+        materials: new Set<string>()
+      };
+      job.materials.add(line.componentReadableId ?? line.componentId);
+      jobs.set(line.id, job);
+    }
+
+    return {
+      data: [...jobs.values()]
+        .map((job) => ({ ...job, materials: [...job.materials].sort() }))
+        .sort((a, b) => a.jobId.localeCompare(b.jobId)),
+      error: null
+    };
+  } catch (error) {
+    return { data: null, error: error as Error };
+  }
 }

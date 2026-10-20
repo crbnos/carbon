@@ -26,9 +26,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const job = await getEmployeeJob(client, personId, companyId);
   if (job.error) {
+    // PGRST116 = no rows: the person has no job record in this company.
+    const message =
+      job.error.code === "PGRST116"
+        ? "This person has no job record in this company"
+        : `Failed to load job: ${job.error.message}`;
     throw redirect(
       path.to.people,
-      await flash(request, error(job.error, "Failed to load job"))
+      await flash(request, error(job.error, message))
     );
   }
 

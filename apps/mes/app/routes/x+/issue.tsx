@@ -117,7 +117,10 @@ export async function action({ request }: ActionFunctionArgs) {
   if (issued.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.operations,
-      await flash(request, error(issued.error, "Failed to issue material"))
+      await flash(
+        request,
+        error(issued.error, issued.error.message || "Failed to issue material")
+      )
     );
   }
 
