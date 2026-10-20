@@ -24,6 +24,7 @@ import type { StorageItem } from "~/types";
 import type { Filter, GenericQueryFilters, Paging } from "~/utils/query";
 import {
   LIST_COUNT,
+  listCount,
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
@@ -358,7 +359,7 @@ export async function getInventoryItems(
     },
     {
       // Later pages (`cursor`) skip the count: the first page already has it.
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     }
   );
 
@@ -552,7 +553,7 @@ export async function getKanbans(
   let query = client
     .from("kanbans")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("locationId", locationId);
@@ -664,7 +665,7 @@ export async function getStockTransfers(
   let query = client
     .from("stockTransfer")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -752,7 +753,7 @@ export async function getReceipts(
   let query = client
     .from("receipt")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .neq("sourceDocumentId", "");
@@ -1179,7 +1180,7 @@ export async function getStorageUnitRoots(
 ) {
   let query = client
     .from("storageUnits_recursive")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("locationId", locationId)
     .eq("depth", 1);
@@ -1346,7 +1347,7 @@ export async function getStockMovements(
   let query = client
     .from("itemLedgers")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1379,7 +1380,7 @@ export async function getShipments(
   let query = client
     .from("shipment")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .neq("sourceDocumentId", "");
@@ -1594,7 +1595,7 @@ export async function getShippingMethods(
   let query = client
     .from("shippingMethod")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -1708,7 +1709,7 @@ export async function getTrackedEntities(
   let query = client
     .from("trackedEntity")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .neq("status", "Reserved");
@@ -1873,7 +1874,7 @@ export async function getWarehouseTransfers(
     .select(
       "*, fromLocation:location!fromLocationId(name), toLocation:location!toLocationId(name)",
       {
-        count: args.cursor ? undefined : LIST_COUNT
+        count: listCount(args)
       }
     )
     .eq("companyId", companyId);
@@ -2129,7 +2130,7 @@ export async function getInventoryCounts(
 ) {
   let query = client
     .from("inventoryCount")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -2173,7 +2174,7 @@ export async function getInventoryCountLines(
   // apply the same generic column filters the quantities screen does.
   let query = client
     .from("inventoryCountLines")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("inventoryCountId", inventoryCountId)
     .eq("companyId", companyId);
 
@@ -3051,7 +3052,7 @@ export async function getStorageTypes(
 ) {
   let query = client
     .from("storageType")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -3174,7 +3175,7 @@ export async function getPickingLists(
   let query = client
     .from("pickingLists")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 

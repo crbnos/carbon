@@ -8,7 +8,7 @@ import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import type { UserSelectGroupMembers } from "./types";
 
 const logger = getLogger("erp", "users");
@@ -265,7 +265,7 @@ export async function getEmployees(
 ) {
   let query = client
     .from("employees")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -308,7 +308,7 @@ export async function getConsoleOperators(
 ) {
   let query = client
     .from("employees")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .like("email", "%@console.internal");
 
@@ -344,7 +344,7 @@ export async function getEmployeeTypes(
 ) {
   let query = client
     .from("employeeType")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {

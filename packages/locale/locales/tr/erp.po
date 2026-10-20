@@ -480,6 +480,9 @@ msgstr "{count, plural, one {# satır} other {# satır}}"
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {yaklaşık # satır} other {yaklaşık # satır}}"
 
+msgid "{count, plural, one {All # matching row selected} other {All # matching rows selected}}"
+msgstr "{count, plural, one {Eşleşen # satır seçildi} other {Eşleşen # satırın tümü seçildi}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {# partiyi çöz} other {# partileri çöz}}"
 

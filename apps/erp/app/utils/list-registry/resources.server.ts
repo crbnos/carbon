@@ -73,7 +73,7 @@ export const maintenanceDispatchesList = {
   query: async (
     client,
     companyId,
-    { params, limit, cursor, sorts, filters }
+    { params, limit, cursor, exactCount, sorts, filters }
   ) => {
     const locationId = await resolveMaintenanceLocationId(
       client,
@@ -86,6 +86,7 @@ export const maintenanceDispatchesList = {
       status: params.get("status") ?? undefined,
       limit,
       cursor,
+      exactCount,
       sorts,
       filters
     });
@@ -99,7 +100,7 @@ export const maintenanceSchedulesList = {
   query: async (
     client,
     companyId,
-    { params, limit, cursor, sorts, filters }
+    { params, limit, cursor, exactCount, sorts, filters }
   ) => {
     const locationId = await resolveMaintenanceLocationId(
       client,
@@ -111,6 +112,7 @@ export const maintenanceSchedulesList = {
       search: params.get("search"),
       limit,
       cursor,
+      exactCount,
       sorts,
       filters
     });

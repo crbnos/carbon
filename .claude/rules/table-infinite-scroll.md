@@ -47,6 +47,31 @@ request's order gives an empty page, so the list ends rather than restarting.
 A list that pages by offset (printing jobs, the audit log) uses
 `encodeOffsetToken` / `decodeOffsetToken`, not a cursor.
 
+## The row count
+
+The header shows the number of matching rows ("2,345 rows"), exact at any size.
+
+1. Page 1 asks for `LIST_COUNT` (`estimated`). PostgREST counts exactly below
+   1,000 rows. From 1,000 rows up it gives the planner's estimate, because an
+   exact count (`COUNT(*) OVER ()`) reads every matching row.
+2. From 1,000 up, `useExactCount` (`components/Table/useExactCount.ts`) loads
+   the list route with `count=exact` in place of `after` (`getCountUrl`),
+   after page 1 shows and again after each revalidation. The rows never wait
+   for the count.
+3. `getGenericQueryFilters` reads `count=exact` as `exactCount: true` (and no
+   cursor). `listCount(args)` then asks for `exact`, and
+   `setGenericQueryFilters` reads one row (`.limit(1)`).
+4. `loadListPage` answers that request with the count only: no `firstPage`,
+   no `mapRows`, `{ [dataKey]: [], count, exactCount: true }`. A loader that
+   calls `fetchListPage` itself returns `exactCount: page.exactCount`.
+5. Until the answer comes, the copy says "about" (header, phone footer,
+   select-all bar). A failed request keeps the estimate.
+
+Only a list with `listKey` asks, and only an answer with `exactCount: true`
+counts. A loader that builds its own args from `getGenericQueryFilters`
+(`{ limit, cursor, sorts, filters }`) drops `exactCount`, so its count stays
+the estimate rather than showing an estimate as exact.
+
 ## Loader recipe (a registered list)
 
 ```ts
@@ -141,7 +166,7 @@ export const SALES_ORDERS_PAGING: Paging = {
 export async function getSalesOrders(client, companyId, args: GenericQueryFilters & { … }) {
   let query = client
     .from("salesOrders")
-    .select(SALES_ORDERS_LIST_COLUMNS, { count: args.cursor ? undefined : LIST_COUNT })
+    .select(SALES_ORDERS_LIST_COLUMNS, { count: listCount(args) })
     .eq("companyId", companyId);
   // filters, search …
   query = setGenericQueryFilters(query, args, SALES_ORDERS_PAGING);
@@ -165,7 +190,7 @@ Rules for the query:
 
 | Rule | Why |
 |---|---|
-| Ask for the count only when `args.cursor` is null | Later pages need no count. `fetchListPage` returns 0 for them. |
+| Count with `listCount(args)` | `LIST_COUNT` on page 1, no count on a later page (`fetchListPage` returns 0), `exact` for the count request (see "The row count"). |
 | Every sortable column, the default sorts and the id column are in the select | `toPage` reads the cursor values from the row. A missing one ends the list after the page and logs a warning. |
 | Never put an `.order()` before `setGenericQueryFilters` | The cursor follows only the sorts that `setGenericQueryFilters` applies. A fixed first order breaks it. |
 | A default sort on a `foreignTable` orders the embedded rows only | `resolveSorts` keeps it out of the keyset. |
@@ -240,7 +265,7 @@ shows no "loaded rows" footer label.
 | 600px | `PREFETCH_DISTANCE` | Start the next page this close to the end |
 | 20 pages | `MAX_REFRESH_PAGES` | At most 2,000 rows stay loaded after a revalidation, and in the Back memory |
 | 1,000 | `BROWSER_ROW_LIMIT` | The browser loads at most this many rows for "select all" and CSV export |
-| 1,000 | `EXACT_COUNT_LIMIT` | Below it the header count is exact ("245 rows"); from it "about N rows" (`LIST_COUNT` is an estimate there) |
+| 1,000 | `EXACT_COUNT_LIMIT` | Below it the page-1 count is exact ("245 rows"). From it, `LIST_COUNT` is an estimate: "about N rows" until `useExactCount` gets the exact count |
 | 1,000 | `SINGLE_LOAD_LIMIT` | Rows a single-load list reads |
 | 500 | `TABLE_JOB_PAGE_SIZE` (`packages/jobs/src/table-jobs/paging.ts`) | Rows per query in a job. `limit + 1` must stay at or below PostgREST `max_rows` (1,000) |
 | 10,000 | `TABLE_JOB_ROWS_PER_STEP` | Rows one job step reads (20 pages). One step is one HTTP request, and the load balancer cuts a request at 600 s |

@@ -124,7 +124,7 @@ The sticky header, pinned columns and edge shadows stay as they are. The prefetc
 The `<Pagination>` bar, page-size dropdown and Prev/Next buttons go away. The ArrowLeft / ArrowRight pagination shortcuts go away. The table header shows the total:
 
 - An exact number below 1,000 rows: "245 rows".
-- "about 2,300 rows" at 1,000 rows or more, because `LIST_COUNT` is an estimate there.
+- At 1,000 rows or more, "about 2,300 rows" while `LIST_COUNT` (an estimate there) is all the page has, then the exact number ("2,317 rows"). A second request (`?count=exact`) gets it after page 1 shows, so the rows never wait for it.
 
 ### 7. Selection and "Select all matching"
 
@@ -199,7 +199,7 @@ After every list is converted, delete `usePagination`, `<Pagination>`, `PAGE_SIZ
 | 4 | When to prefetch | 600px from the bottom | The user does not feel a wait. User decision. |
 | 5 | Page size | 100 rows, fixed | Matches `DEFAULT_PAGE_SIZE`. Below PostgREST `max_rows = 1000`. |
 | 6 | Sort by another table's column (7 tables) | Turn off those sorts | No database change. User decision. |
-| 7 | Row count in the header | Exact below 1,000, "about N" above | `LIST_COUNT` is an estimate past 1,000. User decision. |
+| 7 | Row count in the header | Exact at any size: "about N" only until the exact count arrives | Users need the exact number of records. An exact count reads every matching row, so it runs in its own request after page 1 (`useExactCount`) instead of slowing page 1. User decision (revised). |
 | 8 | Select all | Gmail-style "Select all N matching" bar, no cap. Exception: Jobs Release and Batches Release act on at most 2,000 rows in the background | User decision. The 2,000 cap: Review fix D, because each released job runs MRP. |
 | 9 | Browser or server for "all matching" work | Browser up to 1,000 rows; Inngest job above 1,000 | Small lists stay instant. Journals and ledgers pass 10,000 rows (research file). User decision. |
 | 10 | CSV export | All matching rows, visible columns only. Big exports hold plain DB values | The on-screen format code runs only in the browser. User decision. |
@@ -259,7 +259,7 @@ N/A for a record type. Code precedent:
 - [ ] Inline editing on a table with `withInlineEditing` keeps the selected cell while the user scrolls far away and back.
 - [ ] Pinned columns and the sticky header stay in place while rows load and scroll.
 - [ ] On a phone (< 48rem), the compact list loads more rows on scroll, with no "Load more" button.
-- [ ] The header shows "245 rows" for 245 rows and "about 2,300 rows" for an estimated 2,300.
+- [ ] The header shows "245 rows" for 245 rows. For 2,317 rows it shows "about 2,300 rows" at first, then "2,317 rows".
 - [ ] On Jobs with 800 matching jobs, "Select all 800 matching" then Release releases every Draft and Planned job in the browser path.
 - [ ] On Jobs with 3,000 matching jobs, "Select all 3,000 matching" then Release starts one background job. It releases only Draft and Planned jobs and notifies the user with the counts.
 - [ ] CSV export of 800 matching rows downloads at once, with on-screen formatting and only the visible columns.
@@ -306,7 +306,7 @@ Check in a browser after `crbn up`, in this order:
 - [x] Reuse the route loader or add API routes? — **Answer:** Reuse the route loader (option A). New API routes would duplicate the loaders.
 - [x] What replaces the pager's "1–100 of N"? — **Answer:** A row total in the table header.
 - [x] Sorts by another table's column? — **Answer:** Turn off those sorts.
-- [x] Row count wording? — **Answer:** Exact below 1,000, "about N" above.
+- [x] Row count wording? — **Answer:** Exact below 1,000, "about N" above. **Revised:** exact at any size; above 1,000 the exact count loads in a second request after page 1.
 - [x] What does "select all" select? — **Answer:** Every matching row, through a Gmail-style "Select all N matching" bar.
 - [x] What does CSV export download? — **Answer:** All matching rows. Columns stay WYSIWYG.
 - [x] Load-all cap? — **Answer:** First 5,000 rows in the browser. Then changed: the research suggests journals pass 10,000 rows, so work above 1,000 rows moves to the server.

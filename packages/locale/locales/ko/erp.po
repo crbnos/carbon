@@ -480,6 +480,9 @@ msgstr "{count, plural, one {#행} other {#행}}"
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {약 #행} other {약 #행}}"
 
+msgid "{count, plural, one {All # matching row selected} other {All # matching rows selected}}"
+msgstr "{count, plural, one {일치하는 #행 모두 선택됨} other {일치하는 #행 모두 선택됨}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {배치 # 해제} other {배치 # 해제}}"
 

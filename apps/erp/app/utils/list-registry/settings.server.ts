@@ -25,12 +25,13 @@ export const apiKeysList = {
   query: async (
     client,
     companyId,
-    { params, limit, cursor, sorts, filters }
+    { params, limit, cursor, exactCount, sorts, filters }
   ) => {
     const result = await getApiKeys(client, companyId, {
       search: params.get("search"),
       limit,
       cursor,
+      exactCount,
       sorts,
       filters
     });

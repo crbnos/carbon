@@ -480,6 +480,9 @@ msgstr "{count, plural, one {# wiersz} few {# wiersze} many {# wierszy} other {#
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {około # wiersz} few {około # wiersze} many {około # wierszy} other {około # wierszy}}"
 
+msgid "{count, plural, one {All # matching row selected} other {All # matching rows selected}}"
+msgstr "{count, plural, one {Zaznaczono # pasujący wiersz} few {Zaznaczono wszystkie # pasujące wiersze} many {Zaznaczono wszystkie # pasujących wierszy} other {Zaznaczono wszystkie # pasującego wiersza}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {Rozpuść # partię produkcyjną} few {Rozpuść # partie produkcyjne} many {Rozpuść # partii produkcyjnych} other {Rozpuść # partii produkcyjnych}}"
 

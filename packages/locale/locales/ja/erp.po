@@ -480,6 +480,9 @@ msgstr "{count, plural, one {# 行} other {# 行}}"
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {約# 行} other {約# 行}}"
 
+msgid "{count, plural, one {All # matching row selected} other {All # matching rows selected}}"
+msgstr "{count, plural, one {一致する#行をすべて選択しました} other {一致する#行をすべて選択しました}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {# バッチを解散} other {# バッチを解散}}"
 

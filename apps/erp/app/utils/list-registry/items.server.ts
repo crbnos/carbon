@@ -113,7 +113,7 @@ export const materialDimensionsList = {
   query: async (
     client,
     companyId,
-    { params, limit, cursor, sorts, filters }
+    { params, limit, cursor, exactCount, sorts, filters }
   ) => {
     const settings = await getCompanySettings(client, companyId);
     return getMaterialDimensions(client, companyId, {
@@ -121,6 +121,7 @@ export const materialDimensionsList = {
       isMetric: settings?.data?.useMetric ?? false,
       limit,
       cursor,
+      exactCount,
       sorts,
       filters
     });

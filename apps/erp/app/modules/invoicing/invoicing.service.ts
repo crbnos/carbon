@@ -47,7 +47,7 @@ import {
   insertSupplierInteraction
 } from "~/modules/purchasing";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
@@ -378,7 +378,7 @@ export async function getPurchaseInvoices(
   let query = client
     .from("purchaseInvoices")
     .select(PURCHASE_INVOICES_LIST_COLUMNS, {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -472,7 +472,7 @@ export async function getSalesInvoices(
   let query = client
     .from("salesInvoices")
     .select(SALES_INVOICES_LIST_COLUMNS, {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1391,7 +1391,7 @@ export async function getPayments(
 ) {
   let query = client
     .from("payment")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1452,7 +1452,7 @@ export async function getCharges(
 ) {
   let query = client
     .from("charge")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1505,7 +1505,7 @@ export async function getReimbursements(
 ) {
   let query = client
     .from("reimbursement")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -3932,7 +3932,7 @@ export async function getMemos(
 ) {
   let query = client
     .from("memo")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {

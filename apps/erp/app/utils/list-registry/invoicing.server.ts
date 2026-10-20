@@ -57,7 +57,11 @@ export const paymentsList = {
   key: "payments",
   permission: { view: "invoicing" },
   ...PAYMENTS_PAGING,
-  query: (client, companyId, { params, limit, cursor, sorts, filters }) => {
+  query: (
+    client,
+    companyId,
+    { params, limit, cursor, exactCount, sorts, filters }
+  ) => {
     const split = splitCounterpartyFilter(filters);
     return getPayments(client, companyId, {
       search: params.get("search"),
@@ -71,6 +75,7 @@ export const paymentsList = {
       counterpartyIds: split.counterpartyIds,
       limit,
       cursor,
+      exactCount,
       sorts,
       filters: split.filters
     });
@@ -84,7 +89,7 @@ function memosQuery(party: "customer" | "supplier") {
     ...[
       client,
       companyId,
-      { params, limit, cursor, sorts, filters }
+      { params, limit, cursor, exactCount, sorts, filters }
     ]: Parameters<ListDefinition["query"]>
   ) => {
     const split = splitCounterpartyFilter(filters);
@@ -96,6 +101,7 @@ function memosQuery(party: "customer" | "supplier") {
       counterpartyIds: split.counterpartyIds,
       limit,
       cursor,
+      exactCount,
       sorts,
       filters: split.filters
     });

@@ -124,6 +124,11 @@ export async function loadListPage<
   );
   const requestParams = new URL(request.url).searchParams;
   const after = requestParams.get("after");
+  // The Table's count request: the exact count only, after page 1 shows.
+  const countOnly = requestParams.get("count") === "exact";
+  // A request a fetcher reads (a later page or the count): an error must not
+  // throw, or the route's error screen replaces the list.
+  const fromFetcher = Boolean(after) || countOnly;
   const context: ListLoaderContext = {
     ...auth,
     request,
@@ -142,7 +147,7 @@ export async function loadListPage<
         undefined,
         { companyGroupId: auth.companyGroupId }
       ),
-      after ? undefined : options.firstPage?.(context)
+      fromFetcher ? undefined : options.firstPage?.(context)
     ]);
 
     if (page.error) {
@@ -150,15 +155,25 @@ export async function loadListPage<
         listKey: list.key,
         companyId: auth.companyId,
         laterPage: Boolean(after),
+        countOnly,
         error: page.error
       });
-      if (after) return listErrorPage(options.dataKey);
+      if (fromFetcher) return listErrorPage(options.dataKey);
       if (options.onError) {
         throw redirect(
           options.onError.redirectTo,
           await flash(request, error(page.error, options.onError.message))
         );
       }
+    }
+
+    if (countOnly) {
+      return {
+        [options.dataKey]: [],
+        count: page.count,
+        exactCount: page.exactCount,
+        nextCursor: null
+      } as unknown as ListLoaderData<TKey, TOut> & TExtra;
     }
 
     const rows =
@@ -174,11 +189,12 @@ export async function loadListPage<
     } as ListLoaderData<TKey, TOut> & TExtra;
   };
 
-  if (!after) return loadPage();
-  // A later page is read by the Table's fetcher, and a fetcher whose loader
-  // throws replaces the whole list with the route's error screen. So any
-  // error becomes `listError` ("Couldn't load more rows" with Retry). A thrown
-  // Response (a redirect, a refusal) is the router's to handle.
+  if (!fromFetcher) return loadPage();
+  // A later page or the count is read by the Table's fetcher, and a fetcher
+  // whose loader throws replaces the whole list with the route's error screen.
+  // So any error becomes `listError` ("Couldn't load more rows" with Retry; a
+  // failed count keeps the estimate). A thrown Response (a redirect, a
+  // refusal) is the router's to handle.
   try {
     return await loadPage();
   } catch (thrown) {
@@ -186,7 +202,8 @@ export async function loadListPage<
     logger.error("Failed to load a page of the list {listKey}", {
       listKey: list.key,
       companyId: auth.companyId,
-      laterPage: true,
+      laterPage: Boolean(after),
+      countOnly,
       error: thrown
     });
     return listErrorPage(options.dataKey);

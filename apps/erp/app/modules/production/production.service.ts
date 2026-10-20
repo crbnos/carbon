@@ -58,6 +58,7 @@ import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
   getGenericFilter,
   LIST_COUNT,
+  listCount,
   setGenericQueryFilters
 } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -1277,7 +1278,7 @@ export async function getJobs(
     .from("jobs")
     // Later pages (`cursor`) skip the count: the first page already has it.
     .select("*", {
-      count: args?.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1991,7 +1992,7 @@ export async function getJobOperations(
       "*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))",
       {
         // Later pages (`cursor`) skip the count: the first page already has it.
-        count: args?.cursor ? undefined : LIST_COUNT
+        count: listCount(args)
       }
     )
     .eq("jobId", jobId);
@@ -2215,7 +2216,7 @@ export async function getProcedures(
     .from("procedures")
     .select("*", {
       // Later pages (`cursor`) skip the count: the first page already has it.
-      count: args?.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2282,7 +2283,7 @@ export async function getProductionEvents(
       "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
         // Later pages (`cursor`) skip the count: the first page already has it.
-        count: args?.cursor ? undefined : LIST_COUNT
+        count: listCount(args)
       }
     )
     .in("jobOperationId", jobOperationIds);
@@ -2390,7 +2391,7 @@ export async function getProductionPlanning(
     },
     {
       // Later pages (`cursor`) skip the count: the first page already has it.
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     }
   );
 
@@ -2428,7 +2429,7 @@ export async function getProductionProjections(
     },
     {
       // Later pages (`cursor`) skip the count: the first page already has it.
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     }
   );
 
@@ -2471,7 +2472,7 @@ export async function getProductionQuantities(
       "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
         // Later pages (`cursor`) skip the count: the first page already has it.
-        count: args?.cursor ? undefined : LIST_COUNT
+        count: listCount(args)
       }
     )
     .in("jobOperationId", jobOperationIds);
@@ -2556,7 +2557,7 @@ export async function getScrapReasons(
     .from("scrapReason")
     // Later pages (`cursor`) skip the count: the first page already has it.
     .select("id, name, customFields", {
-      count: args?.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -6706,7 +6707,7 @@ export async function getJobOperationBatches(
     .from("jobOperationBatch")
     // Later pages (`cursor`) skip the count: the first page already has it.
     .select("*, process(name), workCenter(name)", {
-      count: args?.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -6785,7 +6786,7 @@ export async function getUnattributedMachineTimes(
       .select(
         "*, workCenter!inner(name, locationId, location(name, timezone))",
         {
-          count: args.cursor ? undefined : LIST_COUNT
+          count: listCount(args)
         }
       )
       .eq("companyId", companyId),
@@ -7387,7 +7388,7 @@ type AssemblyInstructionsScope = {
 function assemblyInstructionsQuery(
   client: SupabaseClient<Database>,
   args: AssemblyInstructionsScope,
-  count: typeof LIST_COUNT | undefined
+  count: ReturnType<typeof listCount>
 ) {
   let query = client
     // "assemblyInstructions" (plural) is the version-collapsing view: one row
@@ -7443,11 +7444,7 @@ export async function getAssemblyInstructionsPage(
   client: SupabaseClient<Database>,
   args: AssemblyInstructionsScope & Partial<GenericQueryFilters>
 ) {
-  let query = assemblyInstructionsQuery(
-    client,
-    args,
-    args.cursor ? undefined : LIST_COUNT
-  );
+  let query = assemblyInstructionsQuery(client, args, listCount(args));
   query = setGenericQueryFilters(query, args, ASSEMBLY_INSTRUCTIONS_PAGING);
   return query;
 }

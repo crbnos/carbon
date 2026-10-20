@@ -85,11 +85,12 @@ export const dimensionsList = {
       context
     );
     if (!companyGroupId) return { data: null, error };
-    const { params, limit, cursor, sorts, filters } = context;
+    const { params, limit, cursor, exactCount, sorts, filters } = context;
     return getDimensions(client, companyGroupId, {
       search: params.get("search"),
       limit,
       cursor,
+      exactCount,
       sorts,
       filters
     });
@@ -107,11 +108,12 @@ export const intercompanyTransactionsList = {
       context
     );
     if (!companyGroupId) return { data: null, error };
-    const { params, limit, cursor, sorts, filters } = context;
+    const { params, limit, cursor, exactCount, sorts, filters } = context;
     return getIntercompanyTransactions(client, companyGroupId, {
       status: params.get("status"),
       limit,
       cursor,
+      exactCount,
       sorts,
       filters
     });
@@ -139,13 +141,14 @@ function periodRunsQuery(type: RunType) {
     ...[
       client,
       companyId,
-      { params, limit, cursor, sorts, filters }
+      { params, limit, cursor, exactCount, sorts, filters }
     ]: Parameters<ListDefinition["query"]>
   ) =>
     getRevenueRecognitionRuns(client, companyId, type, {
       search: params.get("search"),
       limit,
       cursor,
+      exactCount,
       sorts,
       filters
     });

@@ -34,7 +34,7 @@ import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode, getExchangeRate } from "../accounting";
 import type {
@@ -958,7 +958,7 @@ export async function getCustomers(
   let query = client
     .from("customers")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1008,7 +1008,7 @@ export async function getCustomerStatuses(
   let query = client
     .from("customerStatus")
     .select("id, name, customFields", {
-      count: args?.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1059,7 +1059,7 @@ export async function getCustomerTypes(
 ) {
   let query = client
     .from("customerType")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1169,7 +1169,7 @@ export async function getNoQuoteReasons(
 ) {
   let query = client
     .from("noQuoteReason")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1305,7 +1305,7 @@ export async function getPricingRules(
 ) {
   let query = client
     .from("pricingRule")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1350,7 +1350,7 @@ export async function getQuotes(
   let query = client
     .from("quotes")
     .select(QUOTES_LIST_COLUMNS, {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1877,7 +1877,7 @@ export async function getSalesOrders(
     .from("salesOrders")
     // Later pages (`cursor`) skip the count: the first page already has it.
     .select(SALES_ORDERS_LIST_COLUMNS, {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2109,7 +2109,7 @@ export async function getSalesRFQs(
 ) {
   let query = client
     .from("salesRfqs")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -2606,7 +2606,7 @@ export async function resolvePriceList(
     .from("item")
     .select(
       "id, readableId, name, thumbnailPath, itemUnitSalePrice(unitSalePrice), itemCost(itemPostingGroupId)",
-      { count: args.cursor ? undefined : LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("active", true)
     .in("id", overriddenItemIds);
@@ -2894,7 +2894,7 @@ export async function getBaseCatalog(
     .from("item")
     .select(
       "id, readableId, name, thumbnailPath, itemUnitSalePrice(unitSalePrice), itemCost(itemPostingGroupId)",
-      { count: args.cursor ? undefined : LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId)
     .eq("active", true);
@@ -7095,7 +7095,7 @@ export async function getReturnReasons(
 ) {
   let query = client
     .from("returnReason")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -7191,7 +7191,7 @@ export async function getSalesReturnOrders(
 ) {
   let query = client
     .from("salesReturnOrders")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -8695,7 +8695,7 @@ export async function getRentalAgreements(
 ) {
   let query = client
     .from("rentalAgreements")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -9710,7 +9710,7 @@ export async function getContracts(
 ) {
   let query = client
     .from("customerContracts")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {

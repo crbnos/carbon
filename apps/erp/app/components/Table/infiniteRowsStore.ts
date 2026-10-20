@@ -22,7 +22,8 @@ export const BROWSER_ROW_LIMIT = 1000;
 
 /**
  * Below this many rows the list's count is exact. From it up, `LIST_COUNT` is
- * an estimate, and the copy says "about".
+ * an estimate: `useExactCount` asks for the exact count after page 1, and the
+ * copy says "about" until it arrives.
  */
 export const EXACT_COUNT_LIMIT = 1000;
 
@@ -148,6 +149,18 @@ export function getPageUrl(routeUrl: string, cursor: string): string {
   params.delete("after");
   params.set("after", cursor);
   // `index=` still reads as the naked `?index` React Router looks for.
+  return `${pathname}?${params.toString()}`;
+}
+
+/**
+ * The URL of the list's exact count (`useExactCount`): the list route's own
+ * URL with `count=exact` in place of `after`.
+ */
+export function getCountUrl(routeUrl: string): string {
+  const [pathname, search = ""] = routeUrl.split("?");
+  const params = new URLSearchParams(search);
+  params.delete("after");
+  params.set("count", "exact");
   return `${pathname}?${params.toString()}`;
 }
 

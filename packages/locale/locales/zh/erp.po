@@ -480,6 +480,9 @@ msgstr "{count, plural, one {# 行} other {# 行}}"
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {约 # 行} other {约 # 行}}"
 
+msgid "{count, plural, one {All # matching row selected} other {All # matching rows selected}}"
+msgstr "{count, plural, one {已选择全部 # 行匹配项} other {已选择全部 # 行匹配项}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {关闭 # 生产批次} other {关闭 # 生产批次}}"
 

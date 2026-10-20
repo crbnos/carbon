@@ -9,7 +9,7 @@ import { trigger } from "@carbon/jobs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getDocumentType } from "../shared/shared.service";
 import type {
@@ -91,7 +91,7 @@ export async function getDocuments(
   let query = client
     .from("documents")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", args.active);

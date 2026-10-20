@@ -11,7 +11,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   failureModeValidator,
@@ -248,7 +248,7 @@ export async function getAbilities(
   // rather than embedded, so the read never depends on a view→table embed.
   let query = client
     .from("abilities")
-    .select(`*`, { count: args.cursor ? undefined : LIST_COUNT })
+    .select(`*`, { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -375,7 +375,7 @@ export async function getContractors(
 ) {
   let query = client
     .from("contractors")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -441,7 +441,7 @@ export async function getFailureModes(
 ) {
   let query = client
     .from("maintenanceFailureMode")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -487,7 +487,7 @@ export async function getLocations(
 ) {
   let query = client
     .from("location")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -634,7 +634,7 @@ export async function getMaintenanceDispatchesByLocation(
       p_company_id: companyId,
       p_location_id: locationId
     },
-    { count: args?.cursor ? undefined : LIST_COUNT }
+    { count: listCount(args) }
   );
 
   if (args?.search) {
@@ -736,7 +736,7 @@ export async function getMaintenanceSchedulesByLocation(
       p_company_id: companyId,
       p_location_id: locationId
     },
-    { count: args?.cursor ? undefined : LIST_COUNT }
+    { count: listCount(args) }
   );
 
   if (args?.search) {
@@ -886,7 +886,7 @@ export async function getProcesses(
 ) {
   let query = client
     .from("processes")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -933,7 +933,7 @@ export async function getSuggestions(
 ) {
   let query = client
     .from("suggestions")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1104,7 +1104,7 @@ export async function getTrainings(
   let query = client
     .from("trainings")
     .select("*", {
-      count: args?.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1179,7 +1179,7 @@ export async function getWorkCenters(
   let query = client
     .from("workCenters")
     .select("*", {
-      count: args?.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 

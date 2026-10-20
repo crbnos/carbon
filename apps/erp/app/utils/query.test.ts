@@ -21,6 +21,8 @@ const {
   getGenericFilter,
   getGenericQueryFilters,
   getSearchTokens,
+  LIST_COUNT,
+  listCount,
   parseRangeFilter,
   setGenericQueryFilters,
   setSearchFilter
@@ -161,6 +163,35 @@ describe("cursor paging params", () => {
       getGenericQueryFilters(new URLSearchParams({ after: "garbage" })).cursor
     ).toBeNull();
   });
+
+  it("reads the Table's count request from ?count=exact, without a cursor", () => {
+    const cursor = { values: ["Bolt"], id: "it_1", keys: ["name:asc"] };
+    const params = new URLSearchParams({
+      after: encodeCursor(cursor),
+      count: "exact"
+    });
+    expect(getGenericQueryFilters(params)).toMatchObject({
+      cursor: null,
+      exactCount: true
+    });
+    expect(getGenericQueryFilters(new URLSearchParams())).not.toHaveProperty(
+      "exactCount"
+    );
+  });
+});
+
+describe("listCount", () => {
+  it("counts page 1 with LIST_COUNT, a later page not at all", () => {
+    expect(listCount({ cursor: null })).toBe(LIST_COUNT);
+    expect(listCount(undefined)).toBe(LIST_COUNT);
+    expect(
+      listCount({ cursor: { values: [], id: "a", keys: [] } })
+    ).toBeUndefined();
+  });
+
+  it("counts exactly for the count request", () => {
+    expect(listCount({ cursor: null, exactCount: true })).toBe("exact");
+  });
 });
 
 describe("getEffectiveSorts", () => {
@@ -207,6 +238,16 @@ describe("setGenericQueryFilters paging", () => {
     setGenericQueryFilters(query as never, { limit: 100, cursor: null }, sorts);
     expect(query.limit).toHaveBeenCalledWith(101);
     expect(query.range).not.toHaveBeenCalled();
+  });
+
+  it("asks for one row for the count request", () => {
+    const query = createQueryStub();
+    setGenericQueryFilters(
+      query as never,
+      { limit: 100, cursor: null, exactCount: true },
+      sorts
+    );
+    expect(query.limit).toHaveBeenCalledWith(1);
   });
 
   it("keeps exact offset paging when no cursor is given (MCP, v1 API)", () => {

@@ -480,6 +480,9 @@ msgstr "{count, plural, one {# Zeile} other {# Zeilen}}"
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {etwa # Zeile} other {etwa # Zeilen}}"
 
+msgid "{count, plural, one {All # matching row selected} other {All # matching rows selected}}"
+msgstr "{count, plural, one {# passende Zeile ausgewählt} other {Alle # passenden Zeilen ausgewählt}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {# Los auflösen} other {# Lose auflösen}}"
 

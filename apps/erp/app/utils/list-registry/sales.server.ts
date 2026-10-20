@@ -95,7 +95,7 @@ export const priceListList = {
   query: async (
     client,
     companyId,
-    { params, limit, cursor, sorts, filters }
+    { params, limit, cursor, exactCount, sorts, filters }
   ) => {
     const search = params.get("search") ?? undefined;
     const customerId = params.get("customerId") ?? undefined;
@@ -113,6 +113,7 @@ export const priceListList = {
             search,
             limit,
             cursor,
+            exactCount,
             sorts,
             filters
           })
@@ -120,6 +121,7 @@ export const priceListList = {
             search,
             limit,
             cursor,
+            exactCount,
             sorts,
             filters
           });

@@ -45,6 +45,17 @@ type GenericSchema = {
  */
 export const LIST_COUNT = "estimated" as const;
 
+/**
+ * The count mode of a list query: none on a later page, `exact` for the
+ * Table's count request (`?count=exact`), else `LIST_COUNT`.
+ */
+export function listCount(
+  args?: Pick<GenericQueryFilters, "cursor" | "exactCount">
+) {
+  if (args?.exactCount) return "exact" as const;
+  return args?.cursor ? undefined : LIST_COUNT;
+}
+
 export type Filter = {
   column: string;
   operator: string;
@@ -64,6 +75,11 @@ export interface GenericQueryFilters {
    * (`scripts/lib/service-metadata.ts`). Used only when `cursor` is absent.
    */
   offset?: number;
+  /**
+   * The Table's count request (`?count=exact`): an exact count and one row.
+   * `LIST_COUNT` is an estimate from 1,000 rows up.
+   */
+  exactCount?: boolean;
   sorts?: Sort[];
   filters?: Filter[];
 }
@@ -72,7 +88,8 @@ export function getGenericQueryFilters(
   params: URLSearchParams
 ): GenericQueryFilters {
   const limit = PAGE_SIZE;
-  const cursor = decodeCursor(params.get("after"));
+  const exactCount = params.get("count") === "exact";
+  const cursor = exactCount ? null : decodeCursor(params.get("after"));
 
   const sortParams = params.getAll("sort");
   const sorts: Sort[] =
@@ -103,7 +120,13 @@ export function getGenericQueryFilters(
           .filter((filter) => filter !== undefined) as Filter[])
       : [];
 
-  return { limit, cursor, sorts, filters };
+  return {
+    limit,
+    cursor,
+    sorts,
+    filters,
+    ...(exactCount ? { exactCount } : {})
+  };
 }
 
 /**
@@ -246,8 +269,10 @@ export function setGenericQueryFilters<
 
   if (args.cursor !== undefined) {
     // Cursor paging (list loaders). One extra row tells `toPage` that a next
-    // page exists.
-    if (typeof args.limit === "number") {
+    // page exists. A count request needs no rows.
+    if (args.exactCount) {
+      query = query.limit(1);
+    } else if (typeof args.limit === "number") {
       query = query.limit(args.limit + 1);
     }
   } else if (Number.isInteger(args.offset) && Number.isInteger(args.limit)) {

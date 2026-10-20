@@ -23,7 +23,7 @@ import type {
   SupabaseClient
 } from "@supabase/supabase-js";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import type {
   PriceBreak,
   SupplierPartPricing,
@@ -317,7 +317,7 @@ export async function getCustomerPortals(
 ) {
   let query = client
     .from("externalLink")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("documentType", "Customer");
 

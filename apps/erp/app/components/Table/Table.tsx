@@ -90,6 +90,7 @@ import type {
   InfiniteOptions,
   InfiniteRows
 } from "./types";
+import { useExactCount } from "./useExactCount";
 import { useGrowOnlyColumnWidths } from "./useGrowOnlyColumnWidths";
 import { useInfiniteRows } from "./useInfiniteRows";
 import { useInfiniteScroll } from "./useInfiniteScroll";
@@ -327,7 +328,7 @@ const Table = <T extends object>({
   data,
   columns,
   compact = false,
-  count = 0,
+  count: loaderCount = 0,
   defaultColumnOrder,
   defaultColumnPinning,
   defaultColumnVisibility,
@@ -409,6 +410,11 @@ const Table = <T extends object>({
   const infiniteOptions = infiniteRows.options;
   const isInfinite = !!infiniteOptions;
   const listKey = infiniteOptions?.listKey;
+  const { count, isExact: countIsExact } = useExactCount({
+    count: loaderCount,
+    data,
+    infinite: infiniteOptions
+  });
 
   // Key rows by their id when every row has a unique one, so a selection, an
   // expanded row or an edit stays on its row when pages are appended.
@@ -609,6 +615,7 @@ const Table = <T extends object>({
     <SelectAllMatchingBar
       selectedCount={selectedRows.length}
       count={count}
+      countIsExact={countIsExact}
       {...selection.bar}
     />
   );
@@ -1241,6 +1248,7 @@ const Table = <T extends object>({
         titleBadge={titleBadge}
         table={table}
         count={count}
+        countIsExact={countIsExact}
         title={currentView?.name ?? title}
         tableName={tableName}
         filters={filters}
@@ -1369,6 +1377,7 @@ const Table = <T extends object>({
           isEmpty={isTableEmpty}
           importCSV={importCSV}
           count={count}
+          countIsExact={countIsExact}
           primaryAction={headerPrimaryAction}
           headerActions={headerActions}
           renderActions={scopedRenderActions}

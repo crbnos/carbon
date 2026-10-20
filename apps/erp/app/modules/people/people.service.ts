@@ -13,7 +13,7 @@ import type { DataType } from "~/modules/shared";
 import type { Employee } from "~/modules/users";
 import { getEmployees } from "~/modules/users/users.service";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   departmentValidator,
@@ -117,7 +117,7 @@ export async function getAttributeCategories(
   let query = client
     .from("userAttributeCategory")
     .select("*, userAttribute(id, name, attributeDataType(id))", {
-      count: args?.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true)
@@ -269,7 +269,7 @@ export async function getHolidays(
   let query = client
     .from("holiday")
     .select("*", {
-      count: args?.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -445,7 +445,7 @@ export async function getShifts(
   let query = client
     .from("shifts")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -1038,7 +1038,7 @@ export async function getTimecardEntries(
 ) {
   let query = client
     .from("timeCardEntries")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {

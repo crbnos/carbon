@@ -6,8 +6,7 @@ import type { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Cursor, Paging } from "../cursor";
-import { decodeCursor, toPage } from "../cursor";
-import { PAGE_SIZE } from "../pagination";
+import { toPage } from "../cursor";
 import type { Filter, Sort } from "../query";
 import { getGenericQueryFilters } from "../query";
 import { accountingLists } from "./accounting.server";
@@ -34,8 +33,16 @@ import { workflowsLists } from "./workflows.server";
  * module batches can add entries without touching the same file.
  */
 
-/** Which page to read: `limit` rows after `cursor` (null: the first page). */
-export type ListPaging = { limit: number; cursor: Cursor | null };
+/**
+ * Which page to read: `limit` rows after `cursor` (null: the first page).
+ * `exactCount` is the Table's count request (`?count=exact`): an exact count
+ * and no rows to show.
+ */
+export type ListPaging = {
+  limit: number;
+  cursor: Cursor | null;
+  exactCount?: boolean;
+};
 
 export type ListPermission = Omit<
   Parameters<typeof requirePermissions>[1],
@@ -99,6 +106,8 @@ export type ListPage<TRow> = {
   rows: TRow[];
   /** The number of matching rows. Only the first page counts (0 later). */
   count: number;
+  /** Set when `count` is exact: the page was the Table's count request. */
+  exactCount?: true;
   nextCursor: string | null;
   error: unknown;
 };
@@ -127,7 +136,8 @@ export function getListDefinition(key: string): ListDefinition | undefined {
 
 /**
  * Runs a list's query for one page and cuts it with `toPage`. Without
- * `paging`, the page is the one the URL asks for: 100 rows after `?after=`.
+ * `paging`, the page is the one the URL asks for: 100 rows after `?after=`,
+ * or the exact count for `?count=exact`.
  * `options.companyGroupId` saves a group lookup for group-scoped lists.
  */
 export async function fetchListPage<TRow extends Record<string, unknown>>(
@@ -135,15 +145,18 @@ export async function fetchListPage<TRow extends Record<string, unknown>>(
   client: SupabaseClient<Database>,
   companyId: string,
   params: URLSearchParams,
-  paging: ListPaging = {
-    limit: PAGE_SIZE,
-    cursor: decodeCursor(params.get("after"))
-  },
+  paging?: ListPaging,
   options: { companyGroupId?: string } = {}
 ): Promise<ListPage<TRow>> {
-  const { sorts = [], filters = [] } = getGenericQueryFilters(params);
+  const {
+    limit,
+    cursor = null,
+    exactCount,
+    sorts = [],
+    filters = []
+  } = getGenericQueryFilters(params);
   const result = await definition.query(client, companyId, {
-    ...paging,
+    ...(paging ?? { limit, cursor, exactCount }),
     params,
     sorts,
     filters,
@@ -151,13 +164,14 @@ export async function fetchListPage<TRow extends Record<string, unknown>>(
   });
   const page = toPage(
     result.data ?? [],
-    { limit: paging.limit, sorts },
+    { limit: paging?.limit ?? limit, sorts },
     definition
   );
   return {
     rows: page.rows,
     count: result.count ?? 0,
     nextCursor: page.nextCursor,
+    ...(!paging && exactCount ? { exactCount: true as const } : {}),
     error: result.error
   };
 }
@@ -231,7 +245,11 @@ export function searchList<TRow extends Record<string, unknown>, TArgs>({
     permission,
     ...paging,
     ...(exportRows ? { exportRows } : {}),
-    query: (client, companyId, { params, limit, cursor, sorts, filters }) => {
+    query: (
+      client,
+      companyId,
+      { params, limit, cursor, exactCount, sorts, filters }
+    ) => {
       const named: Record<string, unknown> = { search: params.get("search") };
       for (const [arg, reader] of Object.entries(readers)) {
         named[arg] =
@@ -241,6 +259,7 @@ export function searchList<TRow extends Record<string, unknown>, TArgs>({
         ...named,
         limit,
         cursor,
+        exactCount,
         sorts,
         filters
       } as TArgs);

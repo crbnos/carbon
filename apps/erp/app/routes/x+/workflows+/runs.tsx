@@ -64,6 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       recordName: recordNames[`${run.triggerTable}:${run.triggerRecordId}`]
     })),
     count: runs.count,
+    exactCount: runs.exactCount,
     nextCursor: runs.nextCursor
   };
 }

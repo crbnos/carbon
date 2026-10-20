@@ -9,7 +9,7 @@ import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { Filter, GenericQueryFilters, Paging } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import type { workflowValidator } from "./workflows.models";
 
 export const WORKFLOWS_PAGING: Paging = {
@@ -25,7 +25,7 @@ export async function getWorkflows(
     .from("workflow")
     .select(
       "id, name, description, ownerId, publishedVersionId, createdAt, updatedAt",
-      { count: args?.cursor ? undefined : LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 
@@ -312,7 +312,7 @@ export async function getWorkflowRuns(
       "id, workflowId, workflowVersionId, eventId, sourceEventId, triggerTable, triggerRecordId, ownerId, status, statusReason, isTest, rootRunId, causedByRunId, depth, path, startedAt, completedAt, durationMs, error, createdAt, workflow(name)",
       // Estimated, not exact: this table grows with event volume, and `exact` is a
       // COUNT(*) over the company's whole retained history on every page load.
-      { count: args?.cursor ? undefined : LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 

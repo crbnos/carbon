@@ -5,6 +5,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   clearInfiniteRows,
+  getCountUrl,
   getInfiniteRows,
   getPageUrl,
   getRefreshPageCount,
@@ -156,6 +157,28 @@ describe("getPageUrl", () => {
 
   it("works for a URL with no search", () => {
     expect(getPageUrl("/x/items/parts", "c1")).toBe("/x/items/parts?after=c1");
+  });
+});
+
+describe("getCountUrl", () => {
+  it("asks for the exact count in place of a page, with the list's search", () => {
+    const parsed = new URL(
+      getCountUrl("/x/sales/orders?sort=name%3Aasc&after=old"),
+      "http://localhost"
+    );
+    expect(parsed.pathname).toBe("/x/sales/orders");
+    expect(parsed.searchParams.get("sort")).toBe("name:asc");
+    expect(parsed.searchParams.has("after")).toBe(false);
+    expect(parsed.searchParams.get("count")).toBe("exact");
+  });
+
+  it("keeps the naked `index` param of an index route", () => {
+    const parsed = new URL(
+      getCountUrl("/x/workflows?index&search=a"),
+      "http://localhost"
+    );
+    expect(parsed.searchParams.getAll("index")).toEqual([""]);
+    expect(parsed.searchParams.get("count")).toBe("exact");
   });
 });
 

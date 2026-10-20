@@ -65,11 +65,12 @@ export const supplierTypesList = {
   permission: { view: "purchasing", role: "employee" },
   ...SUPPLIER_TYPES_PAGING,
   // The list has no column filters: the loader never passed them.
-  query: (client, companyId, { params, limit, cursor, sorts }) =>
+  query: (client, companyId, { params, limit, cursor, exactCount, sorts }) =>
     getSupplierTypes(client, companyId, {
       search: params.get("search"),
       limit,
       cursor,
+      exactCount,
       sorts
     })
 } satisfies ListDefinition;

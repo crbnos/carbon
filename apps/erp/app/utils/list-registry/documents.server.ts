@@ -18,7 +18,7 @@ function documentsQuery(recent: boolean) {
     ...[
       client,
       companyId,
-      { params, limit, cursor, sorts, filters }
+      { params, limit, cursor, exactCount, sorts, filters }
     ]: Parameters<ListDefinition["query"]>
   ) => {
     const filter = params.get("q");
@@ -29,6 +29,7 @@ function documentsQuery(recent: boolean) {
       active: filter !== "trash",
       limit,
       cursor,
+      exactCount,
       sorts,
       filters
     });

@@ -9,7 +9,7 @@ import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router";
 import type { TableJobRefusal } from "~/utils/table-jobs";
-import { BROWSER_ROW_LIMIT, EXACT_COUNT_LIMIT } from "../infiniteRowsStore";
+import { BROWSER_ROW_LIMIT } from "../infiniteRowsStore";
 import type { AllMatchingSelection, InfiniteRows } from "../types";
 
 /**
@@ -24,6 +24,8 @@ type SelectAllMatchingBarProps = {
   selectedCount: number;
   /** The list's header count: exact below 1,000, else an estimate. */
   count: number;
+  /** False while `count` is an estimate (`useExactCount`). */
+  countIsExact: boolean;
   allMatching: AllMatchingSelection | null;
   offer: SelectAllOffer | null;
   isLoading: boolean;
@@ -39,6 +41,7 @@ type SelectAllMatchingBarProps = {
 export function SelectAllMatchingBar({
   selectedCount,
   count,
+  countIsExact,
   allMatching,
   offer,
   isLoading,
@@ -60,11 +63,19 @@ export function SelectAllMatchingBar({
       {allMatching ? (
         <>
           <span>
-            <Plural
-              value={allMatching.count}
-              one="All matching rows selected (about #)"
-              other="All matching rows selected (about #)"
-            />
+            {countIsExact ? (
+              <Plural
+                value={count}
+                one="All # matching row selected"
+                other="All # matching rows selected"
+              />
+            ) : (
+              <Plural
+                value={allMatching.count}
+                one="All matching rows selected (about #)"
+                other="All matching rows selected (about #)"
+              />
+            )}
           </span>
           <span aria-hidden>·</span>
           <Button variant="link" size="sm" onClick={onClear}>
@@ -85,7 +96,7 @@ export function SelectAllMatchingBar({
           >
             {offer === "first" ? (
               <Trans>Select the first {limit} rows</Trans>
-            ) : count < EXACT_COUNT_LIMIT ? (
+            ) : countIsExact ? (
               <Plural
                 value={count}
                 one="Select all # matching row"

@@ -24,7 +24,6 @@ import { BottomBar } from "~/components/Layout/Mobile/ChromeSlots";
 import { useSetAppBarOverride } from "~/components/Layout/Mobile/useAppBarOverride";
 import { useUrlParams } from "~/hooks";
 import type { fieldMappings } from "~/modules/shared/imports.models";
-import { EXACT_COUNT_LIMIT } from "../../infiniteRowsStore";
 import type { InfiniteRows } from "../../types";
 import { findScrollParent, useInfiniteScroll } from "../../useInfiniteScroll";
 import { useVirtualRows } from "../../useVirtualRows";
@@ -66,6 +65,8 @@ export type CompactListProps<T> = {
   table: Table<T>;
   titleBadge?: ReactNode;
   count: number;
+  /** False while `count` is an estimate (`useExactCount`). */
+  countIsExact: boolean;
   title?: string;
   tableName?: string;
   filters: ColumnFilter[];
@@ -115,6 +116,7 @@ export type CompactListProps<T> = {
 export function CompactList<T>({
   table,
   count,
+  countIsExact,
   title,
   tableName,
   filters,
@@ -272,14 +274,14 @@ export function CompactList<T>({
   const sentinelRef = useInfiniteScroll(infinite, { root: scrollElement });
   const isLoadingMore = infinite?.isLoadingMore ?? false;
 
-  // "245 of 245 rows" in place of the pager: exact below 1,000, else "about".
+  // "245 of 245 rows" in place of the pager: "about" until the exact count
+  // arrives (`useExactCount`).
   // An estimate can be below the rows already loaded; it never shows less.
   const total = Math.max(count, rows.length);
   const loadedLabel = numberFormatter.format(rows.length);
-  const loadedOfTotal =
-    total < EXACT_COUNT_LIMIT
-      ? t`${loadedLabel} of ${plural(total, { one: "# row", other: "# rows" })}`
-      : t`${loadedLabel} of about ${plural(total, { one: "# row", other: "# rows" })}`;
+  const loadedOfTotal = countIsExact
+    ? t`${loadedLabel} of ${plural(total, { one: "# row", other: "# rows" })}`
+    : t`${loadedLabel} of about ${plural(total, { one: "# row", other: "# rows" })}`;
 
   const toolbar = (
     <CompactToolbar

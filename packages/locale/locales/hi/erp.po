@@ -480,6 +480,9 @@ msgstr "{count, plural, one {# पंक्ति} other {# पंक्ति�
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {लगभग # पंक्ति} other {लगभग # पंक्तियाँ}}"
 
+msgid "{count, plural, one {All # matching row selected} other {All # matching rows selected}}"
+msgstr "{count, plural, one {मिलती हुई # पंक्ति चुनी गई} other {मिलती हुई सभी # पंक्तियाँ चुनी गईं}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {# बैच विघटित करें} other {# बैच विघटित करें}}"
 

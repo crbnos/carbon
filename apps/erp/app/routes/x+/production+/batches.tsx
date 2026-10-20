@@ -58,6 +58,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     count: batches.count,
+    exactCount: batches.exactCount,
     nextCursor: batches.nextCursor,
     batches: batches.rows.map((b) => ({
       ...b,

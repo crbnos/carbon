@@ -480,6 +480,9 @@ msgstr "{count, plural, one {# строка} few {# строки} many {# стр
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {около # строки} few {около # строк} many {около # строк} other {около # строк}}"
 
+msgid "{count, plural, one {All # matching row selected} other {All # matching rows selected}}"
+msgstr "{count, plural, one {Выбрана # подходящая строка} few {Выбраны все # подходящие строки} many {Выбраны все # подходящих строк} other {Выбраны все # подходящей строки}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {Расформировать # серию} few {Расформировать # серии} many {Расформировать # серий} other {Расформировать # серий}}"
 

@@ -37,7 +37,7 @@ import type { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -505,7 +505,7 @@ export async function getPurchaseOrders(
     .from("purchaseOrders")
     // Later pages (`cursor`) skip the count: the first page already has it.
     .select(PURCHASE_ORDERS_LIST_COLUMNS, {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -685,7 +685,7 @@ export async function getPurchasingPlanning(
     },
     {
       // Later pages (`cursor`) skip the count: the first page already has it.
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     }
   );
 
@@ -995,7 +995,7 @@ export async function getSupplierQuotes(
 ) {
   let query = client
     .from("supplierQuotes")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1148,7 +1148,7 @@ export async function getSuppliers(
   let query = client
     .from("suppliers")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1208,7 +1208,7 @@ export async function getSupplierTypes(
 ) {
   let query = client
     .from("supplierType")
-    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -3183,7 +3183,7 @@ export async function getPurchasingRFQs(
 ) {
   let query = client
     .from("purchasingRfqs")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -3890,7 +3890,7 @@ export async function getPurchaseReturnOrders(
 ) {
   let query = client
     .from("purchaseReturnOrders")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -5321,7 +5321,7 @@ export async function getLeases(
 ) {
   let query = client
     .from("leases")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {

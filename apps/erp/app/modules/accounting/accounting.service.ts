@@ -38,7 +38,7 @@ import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { Cursor } from "~/utils/cursor";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   AnalyticsAccountScope,
@@ -4388,7 +4388,7 @@ export async function getPaymentTerms(
   let query = client
     .from("paymentTerm")
     .select("*", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -4729,7 +4729,7 @@ export async function getProjects(
 ) {
   let query = client
     .from("project")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -4791,7 +4791,7 @@ export async function getDimensions(
   let query = client
     .from("dimension")
     .select("*, dimensionValue(id, name)", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyGroupId", companyGroupId)
     .eq("active", true);
@@ -5620,7 +5620,7 @@ export async function getIntercompanyTransactions(
     .from("intercompanyTransaction")
     .select(
       "*, sourceCompany:company!intercompanyTransaction_sourceCompanyId_fkey(name), targetCompany:company!intercompanyTransaction_targetCompanyId_fkey(name)",
-      { count: args.cursor ? undefined : LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyGroupId", companyGroupId);
 
@@ -5827,7 +5827,7 @@ export async function getJournalEntries(
 ) {
   let query = client
     .from("journalEntries")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -6799,7 +6799,7 @@ export async function getFixedAssetClasses(
     .from("fixedAssetClass")
     .select(
       "id, name, description, depreciationMethod, usefulLifeMonths, residualValuePercent, taxDepreciationMethod, taxUsefulLifeMonths, macrsPropertyClass",
-      { count: args.cursor ? undefined : LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 
@@ -6896,7 +6896,7 @@ export async function getFixedAssets(
   let query = client
     .from("fixedAsset")
     .select(FIXED_ASSETS_LIST_COLUMNS, {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -7468,7 +7468,7 @@ export async function getDepreciationRuns(
   let query = client
     .from("depreciationRun")
     .select("id, depreciationRunId, periodEnd, status, postedAt, createdAt", {
-      count: args.cursor ? undefined : LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -8571,7 +8571,7 @@ export async function getFleetAssets(
 ) {
   let query = client
     .from("fleetAssets")
-    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {

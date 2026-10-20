@@ -55,6 +55,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     data: projects.rows,
     count: projects.count,
+    exactCount: projects.exactCount,
     nextCursor: projects.nextCursor
   };
 }

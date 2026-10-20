@@ -108,12 +108,17 @@ export const assemblyInstructionsList = {
   key: "assembly-instructions",
   permission: { view: "production", role: "employee" },
   ...ASSEMBLY_INSTRUCTIONS_PAGING,
-  query: (client, companyId, { params, limit, cursor, sorts, filters }) =>
+  query: (
+    client,
+    companyId,
+    { params, limit, cursor, exactCount, sorts, filters }
+  ) =>
     getAssemblyInstructionsPage(client, {
       companyId,
       search: params.get("search") ?? undefined,
       limit,
       cursor,
+      exactCount,
       sorts,
       filters
     })

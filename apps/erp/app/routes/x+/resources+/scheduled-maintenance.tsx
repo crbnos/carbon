@@ -87,6 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     data: schedules.rows as MaintenanceSchedule[],
     count: schedules.count,
+    exactCount: schedules.exactCount,
     nextCursor: schedules.nextCursor,
     locations: locationsList,
     locationId: selectedLocationId

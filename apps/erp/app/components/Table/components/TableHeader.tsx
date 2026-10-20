@@ -53,7 +53,6 @@ import { useSavedViews } from "~/hooks/useSavedViews";
 import type { fieldMappings } from "~/modules/shared/imports.models";
 import type { action as savedViewAction } from "~/routes/x+/shared+/views";
 import { path } from "~/utils/path";
-import { EXACT_COUNT_LIMIT } from "../infiniteRowsStore";
 import Columns from "./Columns";
 import Download, { type InfiniteExport } from "./Download";
 import { ActiveFilters, Filter } from "./Filter";
@@ -71,8 +70,10 @@ type HeaderProps<T> = {
   columnVisibility: Record<string, boolean>;
   columns: Column<T, unknown>[];
   compact?: boolean;
-  // The number of matching rows. Exact below 1,000; above, an estimate.
+  // The number of matching rows. Exact below 1,000; above, an estimate
+  // until the exact count arrives (`useExactCount`).
   count: number;
+  countIsExact: boolean;
   data: object[];
   // Infinite lists: the export loads the rest first, or hands it to a job.
   infiniteExport?: InfiniteExport;
@@ -125,6 +126,7 @@ const TableHeader = <T extends object>({
   columnVisibility,
   columns,
   count,
+  countIsExact,
   data,
   infiniteExport,
   editMode,
@@ -407,7 +409,9 @@ const TableHeader = <T extends object>({
               />
             )}
 
-            {withPagination && count > 0 && <RowCount count={count} />}
+            {withPagination && count > 0 && (
+              <RowCount count={count} isExact={countIsExact} />
+            )}
 
             {withInlineEditing &&
               !forceEditMode &&
@@ -458,11 +462,11 @@ const TableHeader = <T extends object>({
 };
 
 // The list's total in place of the pager. `LIST_COUNT` is an estimate from
-// 1,000 rows up, so the number says "about" there.
-function RowCount({ count }: { count: number }) {
+// 1,000 rows up, so the number says "about" until the exact count arrives.
+function RowCount({ count, isExact }: { count: number; isExact: boolean }) {
   return (
     <span className="whitespace-nowrap px-2 text-sm text-muted-foreground tabular-nums">
-      {count < EXACT_COUNT_LIMIT ? (
+      {isExact ? (
         <Plural value={count} one="# row" other="# rows" />
       ) : (
         <Plural value={count} one="about # row" other="about # rows" />
