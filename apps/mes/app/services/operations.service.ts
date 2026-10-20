@@ -1008,12 +1008,14 @@ export async function getBatchWorkInstructions(
         slides: step.jobOperationStepSlide ?? [],
         perMember: []
       } satisfies BatchStep);
-    const records = step.jobOperationStepRecord ?? [];
-    const record = records.find((r) => r.index === 0) ?? records[0] ?? null;
+    // The batch records and checks record set 0 only (insertBatchStepRecords),
+    // so a record in another set must not mark or lock the member's cell.
+    const record =
+      (step.jobOperationStepRecord ?? []).find((r) => r.index === 0) ?? null;
     entry.perMember.push({
       jobOperationId: step.operationId,
       stepId: step.id,
-      recorded: records.length > 0,
+      recorded: record !== null,
       record: record
         ? {
             value: record.value ?? null,
