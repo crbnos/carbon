@@ -16916,6 +16916,9 @@ msgstr "Fijar {0}"
 msgid "Pin or unpin"
 msgstr "Fijar o desfijar"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Pellizque o desplácese para hacer zoom · arrastre para mover · toque dos veces para restablecer"
+
 msgid "Pinned"
 msgstr "Fijado"
 
@@ -18515,6 +18518,9 @@ msgstr "Reducido"
 
 msgid "Reference"
 msgstr "Referencia"
+
+msgid "Reference image"
+msgstr "Imagen de referencia"
 
 msgid "Refresh"
 msgstr "Actualizar"
@@ -25709,6 +25715,9 @@ msgstr "Ver Clientes"
 
 msgid "View Employees"
 msgstr "Ver Empleados"
+
+msgid "View full size"
+msgstr "Ver a tamaño completo"
 
 msgid "View History"
 msgstr "Ver Historial"

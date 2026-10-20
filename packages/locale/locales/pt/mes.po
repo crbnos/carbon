@@ -1470,6 +1470,9 @@ msgstr "Fixar ou desafixar"
 msgid "Pin Out"
 msgstr "Desconectar"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Pince ou role para ampliar · arraste para mover · toque duas vezes para redefinir"
+
 msgid "Planned"
 msgstr "Planejado"
 
@@ -1582,6 +1585,9 @@ msgstr "Registrar Parcial"
 
 msgid "Recorded"
 msgstr "Registrado"
+
+msgid "Reference image"
+msgstr "Imagem de referência"
 
 msgid "Registration failed"
 msgstr "Falha no registro"

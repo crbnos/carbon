@@ -1470,6 +1470,9 @@ msgstr "ピン留めまたはピン留め解除"
 msgid "Pin Out"
 msgstr "ピンアウト"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "ピンチまたはスクロールで拡大縮小 · ドラッグで移動 · ダブルタップでリセット"
+
 msgid "Planned"
 msgstr "計画済み"
 
@@ -1582,6 +1585,9 @@ msgstr "一部を記録"
 
 msgid "Recorded"
 msgstr "記録済"
+
+msgid "Reference image"
+msgstr "参照画像"
 
 msgid "Registration failed"
 msgstr "登録に失敗しました"

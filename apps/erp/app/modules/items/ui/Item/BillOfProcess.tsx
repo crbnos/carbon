@@ -30,6 +30,7 @@ import {
   generateHTML,
   HStack,
   IconButton,
+  ImageZoomViewer,
   Label,
   Loading,
   MENU_ITEM_SHORTCUTS,
@@ -3562,6 +3563,7 @@ function OperationPreview({
   const allTools = useTools();
   const [current, setCurrent] = useState(0);
   const [slideIdx, setSlideIdx] = useState(0);
+  const [isViewingSlide, setIsViewingSlide] = useState(false);
 
   // Move to a step and reset to its first slide.
   const goToStep = (next: number) => {
@@ -3713,11 +3715,19 @@ function OperationPreview({
           </>
         ) : slideImage ? (
           <div className="relative inline-block">
-            <img
-              src={slideImage}
-              alt={slide.caption ?? ""}
-              className="block max-h-[520px] w-auto max-w-full rounded-md"
-            />
+            <button
+              type="button"
+              aria-label={t`View full size`}
+              title={t`View full size`}
+              className="block cursor-zoom-in rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => setIsViewingSlide(true)}
+            >
+              <img
+                src={slideImage}
+                alt={slide.caption ?? ""}
+                className="block max-h-[520px] w-auto max-w-full rounded-md"
+              />
+            </button>
             <SlidePinOverlay pins={slide.annotations ?? []} />
           </div>
         ) : (
@@ -3730,6 +3740,19 @@ function OperationPreview({
       {slide?.caption ? (
         <p className="text-xs text-muted-foreground">{slide.caption}</p>
       ) : null}
+
+      <ImageZoomViewer
+        open={isViewingSlide && !!slideImage && !slide?.modelUploadId}
+        src={slideImage}
+        caption={slide?.caption}
+        annotations={slide?.annotations ?? []}
+        toolNameById={
+          isViewingSlide
+            ? new Map(allTools.map((tool) => [tool.id, tool.name]))
+            : undefined
+        }
+        onClose={() => setIsViewingSlide(false)}
+      />
 
       {pinLegend.length > 0 && (
         <div className="flex flex-col gap-1">

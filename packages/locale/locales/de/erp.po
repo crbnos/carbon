@@ -16916,6 +16916,9 @@ msgstr "Anheften {0}"
 msgid "Pin or unpin"
 msgstr "Anheften oder Abheften"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Zum Zoomen zusammenziehen oder scrollen · zum Verschieben ziehen · zum Zurücksetzen doppelt tippen"
+
 msgid "Pinned"
 msgstr "Angeheftet"
 
@@ -18515,6 +18518,9 @@ msgstr "Reduziert"
 
 msgid "Reference"
 msgstr "Referenz"
+
+msgid "Reference image"
+msgstr "Referenzbild"
 
 msgid "Refresh"
 msgstr "Aktualisieren"
@@ -25709,6 +25715,9 @@ msgstr "Kunden anzeigen"
 
 msgid "View Employees"
 msgstr "Mitarbeiter anzeigen"
+
+msgid "View full size"
+msgstr "In voller Größe anzeigen"
 
 msgid "View History"
 msgstr "Verlauf anzeigen"

@@ -23,6 +23,7 @@ import {
   generateHTML,
   HStack,
   IconButton,
+  ImageZoomViewer,
   Modal,
   ModalBody,
   ModalContent,
@@ -60,7 +61,6 @@ import {
 import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
-import { ImageZoomViewer } from "~/components/ImageZoomViewer";
 import ItemThumbnail from "~/components/ItemThumbnail";
 import { useUser } from "~/hooks";
 import { stepRecordValidator } from "~/services/models";

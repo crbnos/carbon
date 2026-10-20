@@ -1470,6 +1470,9 @@ msgstr "Pin or unpin"
 msgid "Pin Out"
 msgstr "Pin Out"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+
 msgid "Planned"
 msgstr "Planned"
 
@@ -1582,6 +1585,9 @@ msgstr "Record Partial"
 
 msgid "Recorded"
 msgstr "Recorded"
+
+msgid "Reference image"
+msgstr "Reference image"
 
 msgid "Registration failed"
 msgstr "Registration failed"

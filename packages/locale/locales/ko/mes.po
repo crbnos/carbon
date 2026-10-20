@@ -1470,6 +1470,9 @@ msgstr "고정 또는 고정 해제"
 msgid "Pin Out"
 msgstr "PIN 로그아웃"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "핀치하거나 스크롤하여 확대/축소 · 드래그하여 이동 · 두 번 탭하여 초기화"
+
 msgid "Planned"
 msgstr "계획됨"
 
@@ -1582,6 +1585,9 @@ msgstr "부분 기록"
 
 msgid "Recorded"
 msgstr "기록됨"
+
+msgid "Reference image"
+msgstr "참조 이미지"
 
 msgid "Registration failed"
 msgstr "등록 실패"

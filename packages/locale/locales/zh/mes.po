@@ -1470,6 +1470,9 @@ msgstr "固定或取消固定"
 msgid "Pin Out"
 msgstr "退出登录"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "双指捏合或滚动以缩放 · 拖动以平移 · 双击以重置"
+
 msgid "Planned"
 msgstr "已计划"
 
@@ -1582,6 +1585,9 @@ msgstr "记录部分"
 
 msgid "Recorded"
 msgstr "已记录"
+
+msgid "Reference image"
+msgstr "参考图像"
 
 msgid "Registration failed"
 msgstr "注册失败"

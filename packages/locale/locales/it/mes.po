@@ -1470,6 +1470,9 @@ msgstr "Fissa o scollega"
 msgid "Pin Out"
 msgstr "Disconnetti"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Pizzica o scorri per ingrandire · trascina per spostare · tocca due volte per ripristinare"
+
 msgid "Planned"
 msgstr "Pianificato"
 
@@ -1582,6 +1585,9 @@ msgstr "Registra Parziale"
 
 msgid "Recorded"
 msgstr "Registrato"
+
+msgid "Reference image"
+msgstr "Immagine di riferimento"
 
 msgid "Registration failed"
 msgstr "Registrazione fallita"

@@ -16916,6 +16916,9 @@ msgstr "固定{0}"
 msgid "Pin or unpin"
 msgstr "固定或取消固定"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "双指捏合或滚动以缩放 · 拖动以平移 · 双击以重置"
+
 msgid "Pinned"
 msgstr "已固定"
 
@@ -18515,6 +18518,9 @@ msgstr "放宽检验"
 
 msgid "Reference"
 msgstr "参考"
+
+msgid "Reference image"
+msgstr "参考图像"
 
 msgid "Refresh"
 msgstr "刷新"
@@ -25709,6 +25715,9 @@ msgstr "查看客户"
 
 msgid "View Employees"
 msgstr "查看员工"
+
+msgid "View full size"
+msgstr "查看原图"
 
 msgid "View History"
 msgstr "查看历史记录"

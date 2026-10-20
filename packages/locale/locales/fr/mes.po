@@ -1470,6 +1470,9 @@ msgstr "Épingler ou dépingler"
 msgid "Pin Out"
 msgstr "Déconnecter"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Pincez ou faites défiler pour zoomer · faites glisser pour déplacer · touchez deux fois pour réinitialiser"
+
 msgid "Planned"
 msgstr "Planifié"
 
@@ -1582,6 +1585,9 @@ msgstr "Enregistrer partiellement"
 
 msgid "Recorded"
 msgstr "Enregistré"
+
+msgid "Reference image"
+msgstr "Image de référence"
 
 msgid "Registration failed"
 msgstr "L'inscription a échoué"

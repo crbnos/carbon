@@ -1470,6 +1470,9 @@ msgstr "Przypnij lub odepnij"
 msgid "Pin Out"
 msgstr "Wyloguj PIN"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Zsuń palce lub przewiń, aby powiększyć · przeciągnij, aby przesunąć · stuknij dwukrotnie, aby zresetować"
+
 msgid "Planned"
 msgstr "Planowane"
 
@@ -1582,6 +1585,9 @@ msgstr "Zapisz częściowo"
 
 msgid "Recorded"
 msgstr "Zaraportowano"
+
+msgid "Reference image"
+msgstr "Obraz referencyjny"
 
 msgid "Registration failed"
 msgstr "Rejestracja nie powiodła się"

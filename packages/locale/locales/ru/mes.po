@@ -1470,6 +1470,9 @@ msgstr "Закрепить или открепить"
 msgid "Pin Out"
 msgstr "Выход по PIN"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Сведите пальцы или прокрутите для масштабирования · перетащите для перемещения · коснитесь дважды для сброса"
+
 msgid "Planned"
 msgstr "Плановое"
 
@@ -1582,6 +1585,9 @@ msgstr "Записать частичный результат"
 
 msgid "Recorded"
 msgstr "Записано"
+
+msgid "Reference image"
+msgstr "Справочное изображение"
 
 msgid "Registration failed"
 msgstr "Регистрация не удалась"

@@ -16916,6 +16916,9 @@ msgstr "Sabitle {0}"
 msgid "Pin or unpin"
 msgstr "Sabitle veya kaldır"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Yakınlaştırmak için kıstırın veya kaydırın · kaydırmak için sürükleyin · sıfırlamak için iki kez dokunun"
+
 msgid "Pinned"
 msgstr "Sabitlenmiş"
 
@@ -18515,6 +18518,9 @@ msgstr "Gevşetilmiş"
 
 msgid "Reference"
 msgstr "Referans"
+
+msgid "Reference image"
+msgstr "Referans görseli"
 
 msgid "Refresh"
 msgstr "Yenile"
@@ -25709,6 +25715,9 @@ msgstr "Müşterileri Görüntüle"
 
 msgid "View Employees"
 msgstr "Çalışanları Görüntüle"
+
+msgid "View full size"
+msgstr "Tam boyutta görüntüle"
 
 msgid "View History"
 msgstr "Geçmişi Görüntüle"

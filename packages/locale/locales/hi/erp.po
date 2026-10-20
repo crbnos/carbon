@@ -16916,6 +16916,9 @@ msgstr "{0} को पिन करें"
 msgid "Pin or unpin"
 msgstr "पिन करें या अनपिन करें"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "ज़ूम करने के लिए पिंच या स्क्रॉल करें · खिसकाने के लिए खींचें · रीसेट करने के लिए दो बार टैप करें"
+
 msgid "Pinned"
 msgstr "पिन किया गया"
 
@@ -18515,6 +18518,9 @@ msgstr "शिथिल"
 
 msgid "Reference"
 msgstr "संदर्भ"
+
+msgid "Reference image"
+msgstr "संदर्भ छवि"
 
 msgid "Refresh"
 msgstr "ताज़ा करें"
@@ -25709,6 +25715,9 @@ msgstr "ग्राहकों को देखें"
 
 msgid "View Employees"
 msgstr "कर्मचारियों को देखें"
+
+msgid "View full size"
+msgstr "पूरे आकार में देखें"
 
 msgid "View History"
 msgstr "इतिहास देखें"

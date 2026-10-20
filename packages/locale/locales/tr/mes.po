@@ -1470,6 +1470,9 @@ msgstr "Sabitle veya sabitliği kaldır"
 msgid "Pin Out"
 msgstr "Çıkış Yap"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Yakınlaştırmak için kıstırın veya kaydırın · kaydırmak için sürükleyin · sıfırlamak için iki kez dokunun"
+
 msgid "Planned"
 msgstr "Planlı"
 
@@ -1582,6 +1585,9 @@ msgstr "Kısmi Kaydı"
 
 msgid "Recorded"
 msgstr "Kaydedildi"
+
+msgid "Reference image"
+msgstr "Referans görseli"
 
 msgid "Registration failed"
 msgstr "Kayıt başarısız"

@@ -16916,6 +16916,9 @@ msgstr "{0} 고정"
 msgid "Pin or unpin"
 msgstr "고정 또는 고정 해제"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "핀치하거나 스크롤하여 확대/축소 · 드래그하여 이동 · 두 번 탭하여 초기화"
+
 msgid "Pinned"
 msgstr "고정됨"
 
@@ -18515,6 +18518,9 @@ msgstr "수월한 검사"
 
 msgid "Reference"
 msgstr "참조"
+
+msgid "Reference image"
+msgstr "참조 이미지"
 
 msgid "Refresh"
 msgstr "새로고침"
@@ -25709,6 +25715,9 @@ msgstr "고객 보기"
 
 msgid "View Employees"
 msgstr "직원 보기"
+
+msgid "View full size"
+msgstr "전체 크기로 보기"
 
 msgid "View History"
 msgstr "이력 보기"

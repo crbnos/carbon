@@ -16916,6 +16916,9 @@ msgstr "Закрепить {0}"
 msgid "Pin or unpin"
 msgstr "Прикрепить или открепить"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Сведите пальцы или прокрутите для масштабирования · перетащите для перемещения · коснитесь дважды для сброса"
+
 msgid "Pinned"
 msgstr "Закреплено"
 
@@ -18515,6 +18518,9 @@ msgstr "Ослабленный"
 
 msgid "Reference"
 msgstr "Ссылка"
+
+msgid "Reference image"
+msgstr "Справочное изображение"
 
 msgid "Refresh"
 msgstr "Обновить"
@@ -25709,6 +25715,9 @@ msgstr "Просмотр Покупателей"
 
 msgid "View Employees"
 msgstr "Просмотр сотрудников"
+
+msgid "View full size"
+msgstr "Открыть в полном размере"
 
 msgid "View History"
 msgstr "Просмотр истории"

@@ -1470,6 +1470,9 @@ msgstr "पिन करें या अनपिन करें"
 msgid "Pin Out"
 msgstr "पिन आउट"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "ज़ूम करने के लिए पिंच या स्क्रॉल करें · खिसकाने के लिए खींचें · रीसेट करने के लिए दो बार टैप करें"
+
 msgid "Planned"
 msgstr "नियोजित"
 
@@ -1582,6 +1585,9 @@ msgstr "आंशिक रिकॉर्ड करें"
 
 msgid "Recorded"
 msgstr "रिकॉर्ड किया गया"
+
+msgid "Reference image"
+msgstr "संदर्भ छवि"
 
 msgid "Registration failed"
 msgstr "पंजीकरण विफल"
