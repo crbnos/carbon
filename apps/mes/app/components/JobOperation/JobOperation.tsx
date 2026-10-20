@@ -126,6 +126,7 @@ import type {
   JobOperationBatch
 } from "~/services/operations.service";
 import { getFileType } from "~/services/operations.service";
+import { allStepsRecordedAt } from "~/services/step-records";
 import type {
   Job,
   JobMakeMethod,
@@ -2895,9 +2896,11 @@ export const JobOperation = ({
         <Suspense key={`finish-modal-${operationId}`}>
           <Await resolve={procedure}>
             {(resolvedProcedure) => {
-              const { attributes } = resolvedProcedure;
-              const allStepsRecorded = attributes.every(
-                (a) => a.jobOperationStepRecord !== null
+              // Every step needs a record in the record set on screen (the
+              // selected unit for a serial parent), as the Assembly view checks.
+              const allStepsRecorded = allStepsRecordedAt(
+                resolvedProcedure.attributes,
+                activeStep
               );
               return (
                 <QuantityModal
