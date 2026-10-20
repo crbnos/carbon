@@ -1603,9 +1603,24 @@ export async function getOperationEligibility(
 ): Promise<{ eligible: boolean; reason: string | null }> {
   const { operationId, employeeId, companyId } = args;
 
-  // NOTE: query failures here FAIL OPEN (eligible: true). An RLS/database
-  // error must not brick the shop floor — the scheduler is the primary
-  // enforcement of ability requirements; this gate is a best-effort backstop.
+  // A failed read FAILS CLOSED: an operator whose qualification could not be
+  // checked does not start, and is told to try again. Letting them start would
+  // put an unqualified operator on a process that requires an ability.
+  const checkFailed = (step: string, error: unknown) => {
+    log.error("Operation eligibility check failed", {
+      step,
+      operationId,
+      employeeId,
+      companyId,
+      error
+    });
+    return {
+      eligible: false,
+      reason:
+        "The qualification check for this operation could not run. Try again."
+    };
+  };
+
   // The requirement comes from the operation's PROCESS: process.requiresAbility
   // gates, and the ability linked 1:1 to the process (ability.processId) is
   // what the employee must be qualified for.
@@ -1617,7 +1632,7 @@ export async function getOperationEligibility(
     .maybeSingle();
 
   if (operation.error) {
-    return { eligible: true, reason: null };
+    return checkFailed("operation", operation.error);
   }
 
   if (!operation.data?.processId) {
@@ -1632,7 +1647,7 @@ export async function getOperationEligibility(
     .maybeSingle();
 
   if (process.error) {
-    return { eligible: true, reason: null };
+    return checkFailed("process", process.error);
   }
 
   if (!process.data?.requiresAbility) {
@@ -1648,7 +1663,7 @@ export async function getOperationEligibility(
     .maybeSingle();
 
   if (ability.error) {
-    return { eligible: true, reason: null };
+    return checkFailed("ability", ability.error);
   }
 
   if (!ability.data) {
@@ -1669,7 +1684,7 @@ export async function getOperationEligibility(
     .maybeSingle();
 
   if (employeeAbility.error) {
-    return { eligible: true, reason: null };
+    return checkFailed("employeeAbility", employeeAbility.error);
   }
 
   // Qualification is presence-based: the row existing means qualified, subject
