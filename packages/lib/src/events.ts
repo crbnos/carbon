@@ -787,7 +787,7 @@ export type Events = {
         action: string;
         data: {
           id: string;
-          assigneeId?: string;
+          assigneeId?: string | null;
           [key: string]: unknown;
         };
       };

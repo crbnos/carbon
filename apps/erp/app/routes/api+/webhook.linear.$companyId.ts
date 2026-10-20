@@ -121,6 +121,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ success: false, error: "Invalid JSON" }, { status: 400 });
   }
 
+  // Linear sends every event type the webhook subscribes to (comments,
+  // labels, the attachment our own link creates, issue creates). Only an
+  // issue update or remove syncs; the rest get a 200 and are ignored, since
+  // Linear disables a webhook that keeps failing.
+  const envelope = event as { type?: unknown; action?: unknown } | null;
+  if (
+    envelope?.type !== "Issue" ||
+    (envelope.action !== "update" && envelope.action !== "remove")
+  ) {
+    return { success: true, ignored: true };
+  }
+
   const parsed = syncIssueFromLinearSchema.safeParse({
     companyId,
     event

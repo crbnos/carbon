@@ -163,4 +163,29 @@ describe("Linear webhook without a signing secret", () => {
     expect(await run(payload(NOW - 3_600_000))).toEqual({ success: true });
     expect(trigger).toHaveBeenCalledOnce();
   });
+
+  it("syncs an unassigned issue (Linear sends assigneeId: null)", async () => {
+    const body = JSON.stringify({
+      type: "Issue",
+      action: "update",
+      data: { id: "issue-1", assigneeId: null },
+      webhookTimestamp: NOW
+    });
+    expect(await run(body)).toEqual({ success: true });
+    expect(trigger).toHaveBeenCalledOnce();
+  });
+
+  it("ignores an event that is not an issue update or remove", async () => {
+    for (const event of [
+      { type: "Comment", action: "create", data: { id: "c-1" } },
+      { type: "Attachment", action: "create", data: { id: "a-1" } },
+      { type: "Issue", action: "create", data: { id: "issue-1" } }
+    ]) {
+      const response = await run(
+        JSON.stringify({ ...event, webhookTimestamp: NOW })
+      );
+      expect(response).toEqual({ success: true, ignored: true });
+    }
+    expect(trigger).not.toHaveBeenCalled();
+  });
 });

@@ -69,7 +69,8 @@ export const syncIssueFromLinearSchema = z.object({
       action: z.enum(["update", "remove"]),
       data: z.object({
         id: z.string(),
-        assigneeId: z.string().optional()
+        // Linear sends null for an unassigned issue.
+        assigneeId: z.string().nullish()
       })
     })
   ])
