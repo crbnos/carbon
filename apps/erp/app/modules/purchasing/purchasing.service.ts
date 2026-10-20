@@ -67,6 +67,7 @@ import {
   datetime,
   EPSILON,
   escalatedLeasePayment,
+  getCompletionAfterQuantityChange,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
   groupBy,
@@ -2058,6 +2059,34 @@ function normalizePurchaseOrderLineReferences<
   return { ...line, itemId: null, accountId: null, assetId: null };
 }
 
+/**
+ * The completion flags an edit of the line's ordered quantity restates
+ * (`getCompletionAfterQuantityChange`), or nothing when the quantity is
+ * unchanged.
+ */
+async function completionForQuantityEdit(
+  client: SupabaseClient<Database>,
+  lineId: string,
+  purchaseQuantity: number | undefined
+) {
+  if (purchaseQuantity === undefined) return { data: {}, error: null };
+  const line = await client
+    .from("purchaseOrderLine")
+    .select(
+      "purchaseQuantity, quantityReceived, quantityInvoiced, receivedComplete"
+    )
+    .eq("id", lineId)
+    .single();
+  if (line.error) return { data: null, error: line.error };
+  if (equals(Number(line.data.purchaseQuantity ?? 0), purchaseQuantity)) {
+    return { data: {}, error: null };
+  }
+  return {
+    data: getCompletionAfterQuantityChange(line.data, purchaseQuantity),
+    error: null
+  };
+}
+
 export async function upsertPurchaseOrderLine(
   client: SupabaseClient<Database>,
   purchaseOrderLine:
@@ -2081,9 +2110,16 @@ export async function upsertPurchaseOrderLine(
   if (cleared.error) return { data: null, error: cleared.error };
 
   if ("id" in normalized) {
+    const completion = await completionForQuantityEdit(
+      client,
+      normalized.id,
+      normalized.purchaseQuantity
+    );
+    if (completion.error) return { data: null, error: completion.error };
+
     return client
       .from("purchaseOrderLine")
-      .update(sanitize(normalized))
+      .update(sanitize({ ...normalized, ...completion.data }))
       .eq("id", normalized.id)
       .select("id")
       .single();
@@ -2362,6 +2398,8 @@ export async function applyPurchasingPlanningActions(
             "pol.supplierShippingCost",
             "pol.purchaseQuantity",
             "pol.quantityReceived",
+            "pol.quantityInvoiced",
+            "pol.receivedComplete",
             "pol.taxPercent",
             "pol.supplierTaxAmount",
             "pol.conversionFactor",
@@ -2401,6 +2439,8 @@ export async function applyPurchasingPlanningActions(
         quantity: number;
         percent: number;
         amount: number;
+        receivedComplete: boolean;
+        invoicedComplete: boolean;
       }[] = [];
       const unheld: string[] = [];
       for (const action of quantities) {
@@ -2439,7 +2479,8 @@ export async function applyPurchasingPlanningActions(
           lineId: action.lineId,
           quantity,
           percent: pair.percent,
-          amount: pair.amount
+          amount: pair.amount,
+          ...getCompletionAfterQuantityChange(line, quantity)
         });
       }
       // a failed computation never holds its claim
@@ -2451,14 +2492,16 @@ export async function applyPurchasingPlanningActions(
           SET "purchaseQuantity" = v."purchaseQuantity"::numeric,
               "taxPercent" = v."taxPercent"::numeric,
               "supplierTaxAmount" = v."supplierTaxAmount"::numeric,
+              "receivedComplete" = v."receivedComplete"::boolean,
+              "invoicedComplete" = v."invoicedComplete"::boolean,
               "updatedBy" = ${userId},
               "updatedAt" = ${now}
           FROM (VALUES ${sql.join(
             values.map(
               (v) =>
-                sql`(${v.lineId}, ${v.quantity}, ${v.percent}, ${v.amount})`
+                sql`(${v.lineId}, ${v.quantity}, ${v.percent}, ${v.amount}, ${v.receivedComplete}, ${v.invoicedComplete})`
             )
-          )}) AS v("id", "purchaseQuantity", "taxPercent", "supplierTaxAmount")
+          )}) AS v("id", "purchaseQuantity", "taxPercent", "supplierTaxAmount", "receivedComplete", "invoicedComplete")
           WHERE l."id" = v."id"
             AND l."companyId" = ${companyId}
             AND l."purchaseOrderId" IN (${editablePurchaseOrders})
@@ -3474,12 +3517,15 @@ export async function updatePurchaseOrderLineSchedule(
   }
 ): Promise<{ updated: boolean; error: { message: string } | null }> {
   let tax: { taxPercent: number; supplierTaxAmount: number } | undefined;
+  let completion:
+    | { receivedComplete: boolean; invoicedComplete: boolean }
+    | undefined;
 
   if (args.purchaseQuantity !== undefined) {
     const line = await client
       .from("purchaseOrderLine")
       .select(
-        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!inner(currencyCode)"
+        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, quantityReceived, quantityInvoiced, receivedComplete, taxPercent, supplierTaxAmount, purchaseOrder!inner(currencyCode)"
       )
       .eq("id", args.lineId)
       .eq("companyId", args.companyId)
@@ -3523,6 +3569,10 @@ export async function updatePurchaseOrderLineSchedule(
       currency.data.decimalPlaces
     );
     tax = { taxPercent: pair.percent, supplierTaxAmount: pair.amount };
+    completion = getCompletionAfterQuantityChange(
+      line.data,
+      args.purchaseQuantity
+    );
   }
 
   try {
@@ -3536,6 +3586,7 @@ export async function updatePurchaseOrderLineSchedule(
           ? { purchaseQuantity: args.purchaseQuantity }
           : {}),
         ...(tax ?? {}),
+        ...(completion ?? {}),
         updatedBy: args.userId,
         updatedAt: datetime.timestamp()
       })
