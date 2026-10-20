@@ -2059,31 +2059,82 @@ function normalizePurchaseOrderLineReferences<
   return { ...line, itemId: null, accountId: null, assetId: null };
 }
 
+/** The columns a quantity edit's completion flags are derived from. */
+const COMPLETION_SOURCE_COLUMNS = [
+  "purchaseQuantity",
+  "quantityReceived",
+  "quantityInvoiced",
+  "receivedComplete"
+] as const;
+
+/** A quantity edit retries this many times when a receipt or invoice lands. */
+const COMPLETION_CAS_ATTEMPTS = 3;
+
 /**
- * The completion flags an edit of the line's ordered quantity restates
- * (`getCompletionAfterQuantityChange`), or nothing when the quantity is
- * unchanged.
+ * Update an existing line, restating its completion flags when the edit
+ * changes `purchaseQuantity` (`getCompletionAfterQuantityChange`). The flags
+ * are derived from a read, so the UPDATE is a compare-and-swap on the columns
+ * they came from: a receipt or invoice posted in between matches no row, and
+ * the edit re-reads and tries again rather than overwriting what it posted.
  */
-async function completionForQuantityEdit(
+async function updatePurchaseOrderLineRestatingCompletion(
   client: SupabaseClient<Database>,
-  lineId: string,
-  purchaseQuantity: number | undefined
+  companyId: string,
+  line: { id: string; purchaseQuantity?: number }
 ) {
-  if (purchaseQuantity === undefined) return { data: {}, error: null };
-  const line = await client
-    .from("purchaseOrderLine")
-    .select(
-      "purchaseQuantity, quantityReceived, quantityInvoiced, receivedComplete"
-    )
-    .eq("id", lineId)
-    .single();
-  if (line.error) return { data: null, error: line.error };
-  if (equals(Number(line.data.purchaseQuantity ?? 0), purchaseQuantity)) {
-    return { data: {}, error: null };
+  for (let attempt = 0; attempt < COMPLETION_CAS_ATTEMPTS; attempt++) {
+    const current = await client
+      .from("purchaseOrderLine")
+      .select(COMPLETION_SOURCE_COLUMNS.join(", "))
+      .eq("id", line.id)
+      .eq("companyId", companyId)
+      .single<
+        Pick<
+          Database["public"]["Tables"]["purchaseOrderLine"]["Row"],
+          (typeof COMPLETION_SOURCE_COLUMNS)[number]
+        >
+      >();
+    if (current.error) return { data: null, error: current.error };
+
+    const quantityChanged =
+      line.purchaseQuantity !== undefined &&
+      !equals(
+        Number(current.data.purchaseQuantity ?? 0),
+        line.purchaseQuantity
+      );
+
+    let update = client
+      .from("purchaseOrderLine")
+      .update(
+        sanitize({
+          ...line,
+          ...(quantityChanged
+            ? getCompletionAfterQuantityChange(
+                current.data,
+                line.purchaseQuantity!
+              )
+            : {})
+        })
+      )
+      .eq("id", line.id)
+      .eq("companyId", companyId);
+    if (quantityChanged) {
+      for (const column of COMPLETION_SOURCE_COLUMNS) {
+        const value = current.data[column];
+        update =
+          value === null ? update.is(column, null) : update.eq(column, value);
+      }
+    }
+
+    const updated = await update.select("id").maybeSingle();
+    if (updated.error) return { data: null, error: updated.error };
+    if (updated.data) return { data: updated.data, error: null };
   }
   return {
-    data: getCompletionAfterQuantityChange(line.data, purchaseQuantity),
-    error: null
+    data: null,
+    error: new Error(
+      "The line was received or invoiced while saving. Try again."
+    )
   };
 }
 
@@ -2097,6 +2148,7 @@ export async function upsertPurchaseOrderLine(
       })
     | (Omit<z.infer<typeof purchaseOrderLineValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -2110,19 +2162,8 @@ export async function upsertPurchaseOrderLine(
   if (cleared.error) return { data: null, error: cleared.error };
 
   if ("id" in normalized) {
-    const completion = await completionForQuantityEdit(
-      client,
-      normalized.id,
-      normalized.purchaseQuantity
-    );
-    if (completion.error) return { data: null, error: completion.error };
-
-    return client
-      .from("purchaseOrderLine")
-      .update(sanitize({ ...normalized, ...completion.data }))
-      .eq("id", normalized.id)
-      .select("id")
-      .single();
+    const { companyId, ...line } = normalized;
+    return updatePurchaseOrderLineRestatingCompletion(client, companyId, line);
   }
 
   const existing = await client
@@ -2408,6 +2449,8 @@ export async function applyPurchasingPlanningActions(
           ])
           .where("pol.id", "in", lineIds)
           .where("pol.companyId", "=", companyId)
+          // the completion flags below are derived from these rows
+          .forUpdate("pol")
           .execute()
       ).map(({ baseCurrencyCode, ...line }) => ({
         ...line,
@@ -3517,15 +3560,12 @@ export async function updatePurchaseOrderLineSchedule(
   }
 ): Promise<{ updated: boolean; error: { message: string } | null }> {
   let tax: { taxPercent: number; supplierTaxAmount: number } | undefined;
-  let completion:
-    | { receivedComplete: boolean; invoicedComplete: boolean }
-    | undefined;
 
   if (args.purchaseQuantity !== undefined) {
     const line = await client
       .from("purchaseOrderLine")
       .select(
-        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, quantityReceived, quantityInvoiced, receivedComplete, taxPercent, supplierTaxAmount, purchaseOrder!inner(currencyCode)"
+        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!inner(currencyCode)"
       )
       .eq("id", args.lineId)
       .eq("companyId", args.companyId)
@@ -3569,38 +3609,57 @@ export async function updatePurchaseOrderLineSchedule(
       currency.data.decimalPlaces
     );
     tax = { taxPercent: pair.percent, supplierTaxAmount: pair.amount };
-    completion = getCompletionAfterQuantityChange(
-      line.data,
-      args.purchaseQuantity
-    );
   }
 
   try {
-    const updated = await db
-      .updateTable("purchaseOrderLine")
-      .set({
-        ...(args.requiredDate !== undefined
-          ? { requiredDate: args.requiredDate }
-          : {}),
-        ...(args.purchaseQuantity !== undefined
-          ? { purchaseQuantity: args.purchaseQuantity }
-          : {}),
-        ...(tax ?? {}),
-        ...(completion ?? {}),
-        updatedBy: args.userId,
-        updatedAt: datetime.timestamp()
-      })
-      .where("id", "=", args.lineId)
-      .where("companyId", "=", args.companyId)
-      .where("purchaseOrderId", "in", (eb) =>
-        eb
-          .selectFrom("purchaseOrder")
-          .select("id")
-          .where("companyId", "=", args.companyId)
-          .where("status", "in", [...PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES])
-      )
-      .returning("id")
-      .execute();
+    const updated = await db.transaction().execute(async (trx) => {
+      // The completion flags are derived from the row locked here, so a
+      // receipt or invoice posted meanwhile is not overwritten.
+      const current =
+        args.purchaseQuantity !== undefined
+          ? await trx
+              .selectFrom("purchaseOrderLine")
+              .select([...COMPLETION_SOURCE_COLUMNS])
+              .where("id", "=", args.lineId)
+              .where("companyId", "=", args.companyId)
+              .forUpdate()
+              .executeTakeFirst()
+          : undefined;
+      const completion =
+        current &&
+        args.purchaseQuantity !== undefined &&
+        !equals(Number(current.purchaseQuantity ?? 0), args.purchaseQuantity)
+          ? getCompletionAfterQuantityChange(current, args.purchaseQuantity)
+          : {};
+
+      return trx
+        .updateTable("purchaseOrderLine")
+        .set({
+          ...(args.requiredDate !== undefined
+            ? { requiredDate: args.requiredDate }
+            : {}),
+          ...(args.purchaseQuantity !== undefined
+            ? { purchaseQuantity: args.purchaseQuantity }
+            : {}),
+          ...(tax ?? {}),
+          ...completion,
+          updatedBy: args.userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", args.lineId)
+        .where("companyId", "=", args.companyId)
+        .where("purchaseOrderId", "in", (eb) =>
+          eb
+            .selectFrom("purchaseOrder")
+            .select("id")
+            .where("companyId", "=", args.companyId)
+            .where("status", "in", [
+              ...PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES
+            ])
+        )
+        .returning("id")
+        .execute();
+    });
     return { updated: updated.length > 0, error: null };
   } catch (err) {
     return {

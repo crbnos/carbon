@@ -130,3 +130,16 @@ it("a short-closed line stays closed when its quantity changes", () => {
     getCompletionAfterQuantityChange({ ...l, quantityInvoiced: 2 }, 12)
   ).toEqual({ receivedComplete: true, invoicedComplete: true });
 });
+
+it("a short-close settled by matching the quantity reopens on a later raise", () => {
+  // Ordered 9, received 2, Stop Receiving, set to 2, then raised to 12.
+  const settled = line({
+    purchaseQuantity: 2,
+    quantityReceived: 2,
+    receivedComplete: true
+  });
+  expect(getCompletionAfterQuantityChange(settled, 12)).toEqual({
+    receivedComplete: false,
+    invoicedComplete: false
+  });
+});
