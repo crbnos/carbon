@@ -1377,6 +1377,8 @@ export const path = {
     gauges: `${x}/quality/gauges`,
     gaugeType: (id: string) => generatePath(`${x}/quality/gauge-types/${id}`),
     gaugeTypes: `${x}/quality/gauge-types`,
+    generalLedger: `${x}/reports/general-ledger`,
+    generalLedgerCsv: `${x}/reports/general-ledger.csv`,
     generateAssemblyInstructionSteps: (id: string) =>
       generatePath(`${x}/assembly/${id}/steps/generate`),
     getStarted: `${x}/get-started`,

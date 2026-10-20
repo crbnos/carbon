@@ -37,7 +37,7 @@
     {"name":"accounting_getAccountingPeriods","classification":"READ","schema":"31b84d65b2ac","response":"5de8ace458f4","permission":"accounting:view","paginates":false},
     {"name":"accounting_getAccountingSyncTieOut","classification":"READ","schema":"640626a59ffa","response":"5483e69d7515","permission":"accounting:view","paginates":false},
     {"name":"accounting_getAccountingSyncTieOutCell","classification":"READ","schema":"a520387e09b1","response":"a5febf12f4bd","permission":"accounting:view","paginates":false},
-    {"name":"accounting_getAccountLedger","classification":"READ","schema":"87322609d2e6","response":"ba2b28ce7bfa","permission":"accounting:view","paginates":true},
+    {"name":"accounting_getAccountLedger","classification":"READ","schema":"499320a6edfa","response":"ba2b28ce7bfa","permission":"accounting:view","paginates":true},
     {"name":"accounting_getAccountLedgerSummary","classification":"READ","schema":"758332a33a48","response":"0a28a92b28ff","permission":"accounting:view","paginates":false},
     {"name":"accounting_getAccountsInScope","classification":"READ","schema":"cbb92564d684","response":"4c52cef1b6ab","permission":"accounting:view","paginates":false},
     {"name":"accounting_getAccountsList","classification":"READ","schema":"8d4134f63d41","response":"814d9b75e8f1","permission":"accounting:view","paginates":false},

@@ -9397,6 +9397,9 @@ msgstr "Co 3 godziny"
 msgid "Every account default is set"
 msgstr "Każda domyślna wartość konta jest ustawiona"
 
+msgid "Every account is mapped"
+msgstr "Wszystkie konta są zmapowane"
+
 msgid "Every asset needs a payment row before activating."
 msgstr "Każde aktywo potrzebuje wiersza płatności przed aktywacją."
 
@@ -9432,6 +9435,9 @@ msgstr "Każda Pozycja ujmuje to, co faktury."
 
 msgid "Every match"
 msgstr "Każde dopasowanie"
+
+msgid "Every posted journal line in a period"
+msgstr "Każdy zaksięgowany wiersz dziennika w okresie"
 
 msgid "Every required action has already been added."
 msgstr "Każde wymagane działanie zostało już dodane."
@@ -13320,6 +13326,9 @@ msgstr "Zmapuj swój plan kont na plan kont dostawcy. Konta domyślne dla księg
 msgid "Map your current process, systems, and data"
 msgstr "Zmapuj swój obecny proces, systemy i dane"
 
+msgid "Mapped"
+msgstr "Zmapowane"
+
 #. placeholder {0}: data.mapped
 #. placeholder {1}: data.totalComponents
 msgid "Mapped {0} of {1} components to the bill of materials"
@@ -14585,6 +14594,9 @@ msgstr "Brak dodanych umiejętności"
 
 msgid "No Access"
 msgstr "Brak dostępu"
+
+msgid "No accounts are mapped yet"
+msgstr "Żadne konto nie jest jeszcze zmapowane"
 
 msgid "No accounts match your search"
 msgstr "Żadne konta nie pasują do Twojego wyszukiwania"
@@ -25091,6 +25103,9 @@ msgstr "Odblokuj"
 
 msgid "Unlock with passkey"
 msgstr "Odblokuj za pomocą klucza dostępu"
+
+msgid "Unmapped"
+msgstr "Niezmapowane"
 
 msgid "Unmapped dimension values"
 msgstr "Niezamapowane wartości wymiarów"

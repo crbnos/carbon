@@ -12,6 +12,7 @@ export {
   exportPeriodReport,
   exportTrialBalance
 } from "./exportReport";
+export { default as GeneralLedgerTable } from "./GeneralLedgerTable";
 export {
   default as MultiPeriodStatementTree,
   getPeriodColumnLabel

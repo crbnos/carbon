@@ -9397,6 +9397,9 @@ msgstr "Her 3 saatte bir"
 msgid "Every account default is set"
 msgstr "Her hesap varsayılanı ayarlandı"
 
+msgid "Every account is mapped"
+msgstr "Tüm hesaplar eşlendi"
+
 msgid "Every asset needs a payment row before activating."
 msgstr "Etkinleştirmeden önce her varlığın bir ödeme satırı olmalıdır."
 
@@ -9432,6 +9435,9 @@ msgstr "Her satır faturaladığı şeyi muhasebeleştirir."
 
 msgid "Every match"
 msgstr "Her eşleşme"
+
+msgid "Every posted journal line in a period"
+msgstr "Bir dönemdeki tüm kayıtlı yevmiye satırları"
 
 msgid "Every required action has already been added."
 msgstr "Gerekli olan tüm eylemler zaten eklendi."
@@ -13320,6 +13326,9 @@ msgstr "Hesap planınızı sağlayıcının hesap planına eşleyin. Muhasebele�
 msgid "Map your current process, systems, and data"
 msgstr "Mevcut sürecinizi, sistemlerinizi ve verilerinizi eşleyin"
 
+msgid "Mapped"
+msgstr "Eşlenmiş"
+
 #. placeholder {0}: data.mapped
 #. placeholder {1}: data.totalComponents
 msgid "Mapped {0} of {1} components to the bill of materials"
@@ -14585,6 +14594,9 @@ msgstr "Hiçbir yetkinlik eklenmedi"
 
 msgid "No Access"
 msgstr "Erişim Yok"
+
+msgid "No accounts are mapped yet"
+msgstr "Henüz eşlenmiş hesap yok"
 
 msgid "No accounts match your search"
 msgstr "Aramanızla eşleşen hesap yok"
@@ -25091,6 +25103,9 @@ msgstr "Kilidi Aç"
 
 msgid "Unlock with passkey"
 msgstr "Geçiş Anahtarı ile Kilit Aç"
+
+msgid "Unmapped"
+msgstr "Eşlenmemiş"
 
 msgid "Unmapped dimension values"
 msgstr "Eşlenmemiş boyut değerleri"

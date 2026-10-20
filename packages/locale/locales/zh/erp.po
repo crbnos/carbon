@@ -9397,6 +9397,9 @@ msgstr "每3小时"
 msgid "Every account default is set"
 msgstr "已设置每个账户默认值"
 
+msgid "Every account is mapped"
+msgstr "所有科目均已映射"
+
 msgid "Every asset needs a payment row before activating."
 msgstr "激活前每项资产需要一行付款。"
 
@@ -9432,6 +9435,9 @@ msgstr "每行都确认其计费内容"
 
 msgid "Every match"
 msgstr "每次匹配"
+
+msgid "Every posted journal line in a period"
+msgstr "某一期间内的所有已过账日记账明细"
 
 msgid "Every required action has already been added."
 msgstr "每个必需的操作已添加。"
@@ -13320,6 +13326,9 @@ msgstr "将您的会计科目表映射到提供商的。过账默认账户和费
 msgid "Map your current process, systems, and data"
 msgstr "映射您当前的流程、系统和数据"
 
+msgid "Mapped"
+msgstr "已映射"
+
 #. placeholder {0}: data.mapped
 #. placeholder {1}: data.totalComponents
 msgid "Mapped {0} of {1} components to the bill of materials"
@@ -14585,6 +14594,9 @@ msgstr "没有添加技能"
 
 msgid "No Access"
 msgstr "无权限"
+
+msgid "No accounts are mapped yet"
+msgstr "尚无已映射的科目"
 
 msgid "No accounts match your search"
 msgstr "没有账户与您的搜索匹配"
@@ -25091,6 +25103,9 @@ msgstr "解锁"
 
 msgid "Unlock with passkey"
 msgstr "使用通行密钥解锁"
+
+msgid "Unmapped"
+msgstr "未映射"
 
 msgid "Unmapped dimension values"
 msgstr "未映射的维度值"
