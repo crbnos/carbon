@@ -23862,6 +23862,9 @@ msgstr "許容値(日)"
 msgid "Tomorrow"
 msgstr "明日"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "現在、実行中のエクスポートと一括操作が多すぎます。数分後にもう一度お試しください。"
+
 msgid "tool"
 msgstr "ツール"
 

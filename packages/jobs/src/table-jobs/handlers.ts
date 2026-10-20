@@ -134,3 +134,18 @@ export function tableJobLockKey(kind: TableJobKind, companyId: string): string {
 /** Seconds a lock lives if its job never deletes it (a crashed process). Each
  *  step of a running job sets it back to this (`extendTableJobLock`). */
 export const TABLE_JOB_LOCK_TTL_SECONDS = 60 * 60;
+
+/**
+ * The running table jobs of every company: a sorted set of job ids, scored by
+ * when each one's slot expires. A job takes a slot with its company lock.
+ */
+export const TABLE_JOB_SLOTS_KEY = "table-job:running";
+
+/**
+ * The most table jobs (exports and bulk actions together) that run at once
+ * across all companies. They share CPU with web requests in the ERP
+ * containers, so a request past this is refused, never queued: a queue that
+ * many companies fill would make every user wait.
+ * TODO(scale): move the table jobs to a dedicated worker service, then raise this.
+ */
+export const MAX_RUNNING_TABLE_JOBS = 4;

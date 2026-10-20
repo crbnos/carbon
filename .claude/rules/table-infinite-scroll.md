@@ -302,7 +302,9 @@ A bulk route that gets `allMatching` in place of ids calls
    limit of 2,000. The menu item shows "Filter the list to 2,000 rows or fewer"
    (`useAllMatchingLimitLabel`).
 3. It takes the company's bulk lock (`takeTableJobLock("bulk", …)`, the same
-   Lua lock as the export). A busy lock answers the remaining time.
+   Lua lock as the export). A busy lock answers the remaining time. With all
+   `MAX_RUNNING_TABLE_JOBS` (4) slots across companies taken it refuses
+   (`refusal: { code: "full" }`, see `table-csv-export.md`).
 4. It triggers `table-bulk-action`
    (`packages/jobs/src/inngest/functions/tasks/table-bulk-action.ts`,
    `retries: 0`, one run per company at a time).
@@ -338,8 +340,11 @@ balancer cuts a request at 600 s.
 
 - `TODO(scale)` (`packages/jobs/src/inngest/functions/tasks/table-export.ts`):
   the table jobs run in the ERP containers (`api+/inngest.ts`) and share CPU
-  with web requests. One job per company runs at a time, but many companies
-  can run one each. A separate worker service removes this risk.
+  with web requests. One job per company runs at a time, and at most
+  `MAX_RUNNING_TABLE_JOBS` (4) across all companies; a request past that is
+  refused with a toast, not queued. While Redis is down the lock fails open
+  and neither limit holds there (Inngest still runs one per company). A
+  separate worker service removes this limit.
 - Footer totals (`meta.renderTotal`) add up the loaded rows only. The footer
   says "Total of N loaded rows".
 - 49 services put the raw search text into `.or()`. This is independent of

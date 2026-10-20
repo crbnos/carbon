@@ -23862,6 +23862,9 @@ msgstr "सहनशीलता (दिन)"
 msgid "Tomorrow"
 msgstr "कल"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "अभी बहुत सारे एक्सपोर्ट और बल्क एक्शन चल रहे हैं। कुछ मिनट बाद फिर से कोशिश करें।"
+
 msgid "tool"
 msgstr "उपकरण"
 

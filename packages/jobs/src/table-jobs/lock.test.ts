@@ -32,6 +32,10 @@ describe("decideTableJobLock", () => {
     });
   });
 
+  it("refuses while every slot across companies is taken", () => {
+    expect(decideTableJobLock([2, 0])).toEqual({ status: "full" });
+  });
+
   it("fails open when Redis answers nothing", () => {
     expect(decideTableJobLock(null)).toEqual({ status: "unavailable" });
     expect(decideTableJobLock([])).toEqual({ status: "unavailable" });

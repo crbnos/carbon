@@ -151,6 +151,12 @@ list and re-read every loaded page. The steps:
      `tableJobBusyMessage`: "An export is already running for your company.
      Try again when it ends, at the latest in N minutes." N comes from the
      lock's TTL.
+   - The same script takes one of `MAX_RUNNING_TABLE_JOBS` (4) slots shared by
+     every company's exports and bulk actions (`TABLE_JOB_SLOTS_KEY`, a sorted
+     set scored by expiry). With none free the route answers 503 with
+     `TABLE_JOBS_FULL_MESSAGE` ("Too many exports and bulk actions are running
+     right now…"). It refuses, never queues: a queue many companies fill
+     would make every user wait. Release and extend free and renew the slot.
    - If Redis does not answer, the route starts the job anyway and logs a
      warning. Inngest's per-company concurrency still runs one export at a time.
 4. It triggers `table-export` (`packages/jobs/src/inngest/functions/tasks/table-export.ts`,

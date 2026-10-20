@@ -13,6 +13,7 @@ import { z } from "zod";
 import { getListDefinition } from "~/utils/list-registry/index.server";
 import {
   newTableExportId,
+  TABLE_JOBS_FULL_MESSAGE,
   type TableJobRefusal,
   tableJobBusyMessage,
   tableJobBusyRefusal
@@ -84,6 +85,19 @@ export async function action({ request }: ActionFunctionArgs) {
         refusal: tableJobBusyRefusal("export", lock.retryAfterSeconds)
       },
       { status: 409 }
+    );
+  }
+  if (lock.status === "full") {
+    logger.warn("Refused a table export: every table-job slot is taken", {
+      companyId,
+      listKey
+    });
+    return data(
+      {
+        error: TABLE_JOBS_FULL_MESSAGE,
+        refusal: { code: "full" } satisfies TableJobRefusal
+      },
+      { status: 503 }
     );
   }
   if (lock.status === "unavailable") {

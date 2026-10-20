@@ -23862,6 +23862,9 @@ msgstr "허용치 (일)"
 msgid "Tomorrow"
 msgstr "내일"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "현재 실행 중인 내보내기와 일괄 작업이 너무 많습니다. 몇 분 후에 다시 시도하세요."
+
 msgid "tool"
 msgstr "공구"
 

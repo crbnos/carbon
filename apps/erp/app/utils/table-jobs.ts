@@ -65,6 +65,11 @@ export function tableJobBusyMessage(
   }.`;
 }
 
+/** The answer when every table-job slot across companies is taken
+ *  (`MAX_RUNNING_TABLE_JOBS`): the request is refused, never queued. */
+export const TABLE_JOBS_FULL_MESSAGE =
+  "Too many exports and bulk actions are running right now. Try again in a few minutes.";
+
 const LIST_KEY = /^[a-z0-9-]{1,64}$/;
 const EXPORT_TOKEN = /^[A-Za-z0-9_-]{10,64}$/;
 
@@ -161,6 +166,7 @@ export type AllMatchingRequest = { listKey: string; search: string };
  */
 export type TableJobRefusal =
   | { code: "busy"; kind: "export" | "bulk"; minutes: number }
+  | { code: "full" }
   | { code: "row-limit"; maxRows: number }
   | { code: "not-supported" }
   | { code: "no-permission" }

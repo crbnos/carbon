@@ -23862,6 +23862,9 @@ msgstr "Toleranz (Tage)"
 msgid "Tomorrow"
 msgstr "Morgen"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "Gerade laufen zu viele Exporte und Massenaktionen. Versuchen Sie es in ein paar Minuten erneut."
+
 msgid "tool"
 msgstr "Werkzeug"
 

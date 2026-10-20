@@ -23862,6 +23862,9 @@ msgstr "Допуск (дней)"
 msgid "Tomorrow"
 msgstr "Завтра"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "Сейчас выполняется слишком много экспортов и массовых действий. Повторите попытку через несколько минут."
+
 msgid "tool"
 msgstr "Инструмент"
 

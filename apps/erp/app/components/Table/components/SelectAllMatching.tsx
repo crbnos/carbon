@@ -157,6 +157,8 @@ export function useTableJobRefusalMessage() {
             ? t`A bulk action is already running for your company. Try again when it ends, at the latest in ${minutes} min.`
             : t`A bulk action is already running for your company. Try again when it ends.`;
         }
+        case "full":
+          return t`Too many exports and bulk actions are running right now. Try again in a few minutes.`;
         case "row-limit": {
           const rows = i18n.number(refusal.maxRows);
           return t`This action runs on at most ${rows} rows. Filter the list to ${rows} rows or fewer.`;

@@ -50,6 +50,7 @@ import {
   parseAllMatching,
   refreshingClientFactory,
   rowLimitRefusal,
+  TABLE_JOBS_FULL_MESSAGE,
   type TableBulkActionKey,
   type TableJobClaims,
   tableJobBusyMessage,
@@ -591,6 +592,17 @@ async function startBulkRun({
       success: false,
       message: tableJobBusyMessage("bulk", lock.retryAfterSeconds),
       refusal: tableJobBusyRefusal("bulk", lock.retryAfterSeconds)
+    };
+  }
+  if (lock.status === "full") {
+    logger.warn("Refused a table bulk action: every table-job slot is taken", {
+      companyId,
+      actionKey
+    });
+    return {
+      success: false,
+      message: TABLE_JOBS_FULL_MESSAGE,
+      refusal: { code: "full" }
     };
   }
   if (lock.status === "unavailable") {

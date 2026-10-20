@@ -23862,6 +23862,9 @@ msgstr "容差（天）"
 msgid "Tomorrow"
 msgstr "明天"
 
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "当前正在运行的导出和批量操作过多。请几分钟后重试。"
+
 msgid "tool"
 msgstr "工具"
 
