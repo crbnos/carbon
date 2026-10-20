@@ -211,9 +211,6 @@ msgstr "Approvals"
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 
-msgid "Are you sure you want to delete this step?"
-msgstr "Are you sure you want to delete this step?"
-
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "Are you sure you want to delete this timecard? This cannot be undone."
 
@@ -530,9 +527,6 @@ msgstr "Delete passkey"
 
 msgid "Delete Passkey"
 msgstr "Delete Passkey"
-
-msgid "Delete Step"
-msgstr "Delete Step"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Delete Timecard (<0/>)"
@@ -1609,6 +1603,12 @@ msgstr "Remove Inventory"
 
 msgid "Remove part"
 msgstr "Remove part"
+
+msgid "Remove recorded value"
+msgstr "Remove recorded value"
+
+msgid "Remove this recorded value? The step stays."
+msgstr "Remove this recorded value? The step stays."
 
 msgid "Remove two-factor authentication"
 msgstr "Remove two-factor authentication"

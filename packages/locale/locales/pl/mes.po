@@ -211,9 +211,6 @@ msgstr "Zatwierdzenia"
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Czy na pewno chcesz usunąć ten klucz dostępu? Nie będziesz już mógł go używać do logowania."
 
-msgid "Are you sure you want to delete this step?"
-msgstr "Czy na pewno chcesz usunąć ten krok?"
-
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć tę kartę czasu pracy? Tej operacji nie można cofnąć."
 
@@ -530,9 +527,6 @@ msgstr "Usuń klucz dostępu"
 
 msgid "Delete Passkey"
 msgstr "Usuń klucz dostępu"
-
-msgid "Delete Step"
-msgstr "Usuń krok"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Usuń kartę czasu (<0/>)"
@@ -1609,6 +1603,12 @@ msgstr "Usuń zapasy"
 
 msgid "Remove part"
 msgstr "Usuń część"
+
+msgid "Remove recorded value"
+msgstr "Usuń zarejestrowaną wartość"
+
+msgid "Remove this recorded value? The step stays."
+msgstr "Usunąć tę zarejestrowaną wartość? Krok pozostaje."
 
 msgid "Remove two-factor authentication"
 msgstr "Usuń uwierzytelnianie dwuskładnikowe"

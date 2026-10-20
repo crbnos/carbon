@@ -211,9 +211,6 @@ msgstr "承認"
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "このパスキーを削除してもよろしいですか？削除後、このパスキーを使ってサインインできなくなります。"
 
-msgid "Are you sure you want to delete this step?"
-msgstr "このステップを削除してもよろしいですか？"
-
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "このタイムカードを削除してもよろしいですか？この操作は元に戻せません。"
 
@@ -530,9 +527,6 @@ msgstr "パスキーを削除"
 
 msgid "Delete Passkey"
 msgstr "パスキーを削除"
-
-msgid "Delete Step"
-msgstr "ステップを削除"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "タイムカードを削除 (<0/>)"
@@ -1609,6 +1603,12 @@ msgstr "在庫を除去"
 
 msgid "Remove part"
 msgstr "部品を除去"
+
+msgid "Remove recorded value"
+msgstr "記録した値を除去"
+
+msgid "Remove this recorded value? The step stays."
+msgstr "この記録した値を除去しますか？ステップは残ります。"
 
 msgid "Remove two-factor authentication"
 msgstr "二要素認証を除去"

@@ -211,9 +211,6 @@ msgstr "अनुमोदन"
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "क्या आप निश्चित हैं कि आप इस पासकी को हटाना चाहते हैं? आप इसे साइन इन करने के लिए उपयोग नहीं कर पाएंगे।"
 
-msgid "Are you sure you want to delete this step?"
-msgstr "क्या आप वाकई इस चरण को हटाना चाहते हैं?"
-
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "क्या आप वाकई इस टाइमकार्ड को हटाना चाहते हैं? यह अपरिवर्तनीय है।"
 
@@ -530,9 +527,6 @@ msgstr "पासकी हटाएँ"
 
 msgid "Delete Passkey"
 msgstr "पासकी हटाएँ"
-
-msgid "Delete Step"
-msgstr "चरण हटाएं"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "टाइमकार्ड हटाएं (<0/>)"
@@ -1609,6 +1603,12 @@ msgstr "इन्वेंटरी निकालें"
 
 msgid "Remove part"
 msgstr "पार्ट निकालें"
+
+msgid "Remove recorded value"
+msgstr "रिकॉर्ड किया गया मान निकालें"
+
+msgid "Remove this recorded value? The step stays."
+msgstr "यह रिकॉर्ड किया गया मान निकालें? चरण बना रहेगा।"
 
 msgid "Remove two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण निकालें"

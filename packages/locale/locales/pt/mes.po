@@ -211,9 +211,6 @@ msgstr "Aprovações"
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Tem certeza que deseja excluir esta chave de acesso? Você não conseguirá usá-la para entrar mais."
 
-msgid "Are you sure you want to delete this step?"
-msgstr "Tem certeza de que deseja excluir esta etapa?"
-
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "Tem certeza de que deseja excluir este cartão de ponto? Esta ação não pode ser desfeita."
 
@@ -530,9 +527,6 @@ msgstr "Excluir chave de acesso"
 
 msgid "Delete Passkey"
 msgstr "Excluir Chave de Acesso"
-
-msgid "Delete Step"
-msgstr "Excluir Etapa"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Excluir Cartão de Ponto (<0/>)"
@@ -1609,6 +1603,12 @@ msgstr "Remover Estoque"
 
 msgid "Remove part"
 msgstr "Remover peça"
+
+msgid "Remove recorded value"
+msgstr "Remover valor registrado"
+
+msgid "Remove this recorded value? The step stays."
+msgstr "Remover este valor registrado? A etapa permanece."
 
 msgid "Remove two-factor authentication"
 msgstr "Remover autenticação de dois fatores"

@@ -211,9 +211,6 @@ msgstr "승인"
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "이 패스키를 삭제하시겠습니까? 더 이상 이 패스키로 로그인할 수 없습니다."
 
-msgid "Are you sure you want to delete this step?"
-msgstr "이 단계를 삭제하시겠습니까?"
-
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "이 근무기록을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
@@ -530,9 +527,6 @@ msgstr "패스키 삭제"
 
 msgid "Delete Passkey"
 msgstr "패스키 삭제"
-
-msgid "Delete Step"
-msgstr "단계 삭제"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "타임카드 삭제 (<0/>)"
@@ -1609,6 +1603,12 @@ msgstr "재고 제거"
 
 msgid "Remove part"
 msgstr "품목 제거"
+
+msgid "Remove recorded value"
+msgstr "기록된 값 제거"
+
+msgid "Remove this recorded value? The step stays."
+msgstr "기록된 이 값을 제거할까요? 단계는 그대로 남습니다."
 
 msgid "Remove two-factor authentication"
 msgstr "2단계 인증 제거"

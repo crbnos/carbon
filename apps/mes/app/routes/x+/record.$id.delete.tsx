@@ -33,7 +33,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
       { success: false },
       await flash(
         request,
-        error(attributeDelete.error, "Failed to delete step")
+        error(attributeDelete.error, "Failed to remove recorded value")
       )
     );
   }
@@ -49,6 +49,6 @@ export async function action({ params, request }: ActionFunctionArgs) {
 
   return data(
     { success: true },
-    await flash(request, success("Step deleted successfully"))
+    await flash(request, success("Recorded value removed"))
   );
 }

@@ -197,7 +197,7 @@ export function StepsListItem({
                   </Button>
                 ))}
               <IconButton
-                aria-label="Delete step"
+                aria-label="Remove recorded value"
                 variant="secondary"
                 size="lg"
                 icon={<LuTrash />}
@@ -755,7 +755,7 @@ export function DeleteStepRecordModal({
               type="submit"
               variant="destructive"
             >
-              <Trans>Delete</Trans>
+              <Trans>Remove</Trans>
             </Button>
           </fetcher.Form>
         </ModalFooter>

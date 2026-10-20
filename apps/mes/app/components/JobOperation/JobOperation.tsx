@@ -2965,8 +2965,8 @@ export const JobOperation = ({
               (r) => r.index === activeStep
             )?.id ?? ""
           }
-          title={t`Delete Step`}
-          description={t`Are you sure you want to delete this step?`}
+          title={t`Remove recorded value`}
+          description={t`Remove this recorded value? The step stays.`}
         />
       )}
 
