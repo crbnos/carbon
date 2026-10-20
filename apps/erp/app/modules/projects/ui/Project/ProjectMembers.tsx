@@ -6,13 +6,6 @@ import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   Button,
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  HStack,
   IconButton,
   Modal,
   ModalBody,
@@ -62,78 +55,70 @@ const ProjectMembers = ({
     remover.state !== "idle" ? remover.formData?.get("userId") : null;
 
   return (
-    <Card>
-      <HStack className="justify-between items-start">
-        <CardHeader>
-          <CardTitle>
+    <section className="flex w-full flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-col">
+          <h2 className="text-sm font-medium">
             <Trans>Members</Trans>
-          </CardTitle>
-          <CardDescription>
+          </h2>
+          <p className="text-xs text-muted-foreground">
             <Trans>
               Only these employees can charge time to the project in DCAA
               timekeeping.
             </Trans>
-          </CardDescription>
-        </CardHeader>
-        <CardAction>
-          <Button
-            variant="secondary"
-            leftIcon={<LuPlus />}
-            isDisabled={isDisabled}
-            onClick={() => setIsAdding(true)}
-          >
-            <Trans>Add Member</Trans>
-          </Button>
-        </CardAction>
-      </HStack>
-      <CardContent>
-        {members.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            <Trans>
-              No members yet. Nobody can charge time to the project.
-            </Trans>
           </p>
-        ) : (
-          <div className="flex flex-col rounded-lg border border-border">
-            {members.map((member) => {
-              const name = member.user?.fullName ?? member.userId;
-              return (
-                <div
-                  key={member.userId}
-                  className="flex items-center gap-3 border-b border-border px-3 py-2 last:border-b-0"
-                >
-                  <Avatar
-                    size="xs"
-                    name={name}
-                    path={member.user?.avatarUrl ?? undefined}
-                  />
-                  <span className="flex-1 min-w-0 truncate text-sm">
-                    {name}
-                  </span>
-                  <IconButton
-                    aria-label={t`Remove ${name}`}
-                    icon={<LuTrash />}
-                    variant="ghost"
-                    size="sm"
-                    isDisabled={isDisabled || remover.state !== "idle"}
-                    isLoading={removingId === member.userId}
-                    onClick={() =>
-                      remover.submit(
-                        {
-                          intent: "removeMember",
-                          projectId,
-                          userId: member.userId
-                        },
-                        { method: "post", action }
-                      )
-                    }
-                  />
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </CardContent>
+        </div>
+        <Button
+          variant="secondary"
+          leftIcon={<LuPlus />}
+          isDisabled={isDisabled}
+          onClick={() => setIsAdding(true)}
+        >
+          <Trans>Add Member</Trans>
+        </Button>
+      </div>
+      {members.length === 0 ? (
+        <p className="rounded-lg border border-border px-4 py-3 text-sm text-muted-foreground">
+          <Trans>No members yet. Nobody can charge time to the project.</Trans>
+        </p>
+      ) : (
+        <div className="flex flex-col rounded-lg border border-border">
+          {members.map((member) => {
+            const name = member.user?.fullName ?? member.userId;
+            return (
+              <div
+                key={member.userId}
+                className="flex items-center gap-3 border-b border-border px-3 py-2 last:border-b-0"
+              >
+                <Avatar
+                  size="xs"
+                  name={name}
+                  path={member.user?.avatarUrl ?? undefined}
+                />
+                <span className="flex-1 min-w-0 truncate text-sm">{name}</span>
+                <IconButton
+                  aria-label={t`Remove ${name}`}
+                  icon={<LuTrash />}
+                  variant="ghost"
+                  size="sm"
+                  isDisabled={isDisabled || remover.state !== "idle"}
+                  isLoading={removingId === member.userId}
+                  onClick={() =>
+                    remover.submit(
+                      {
+                        intent: "removeMember",
+                        projectId,
+                        userId: member.userId
+                      },
+                      { method: "post", action }
+                    )
+                  }
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {isAdding && (
         <ProjectMemberModal
@@ -142,7 +127,7 @@ const ProjectMembers = ({
           onClose={() => setIsAdding(false)}
         />
       )}
-    </Card>
+    </section>
   );
 };
 

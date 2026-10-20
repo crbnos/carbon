@@ -2,15 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  Button,
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  HStack
-} from "@carbon/react";
+import { Button } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { LuCalendarPlus, LuExternalLink, LuPencil } from "react-icons/lu";
 import { Link } from "react-router";
@@ -41,34 +33,26 @@ export default function VisitsList({
   canUpdateAny: boolean;
 }) {
   return (
-    <Card>
-      <HStack className="justify-between items-start">
-        <CardHeader>
-          <CardTitle>
-            <Trans>Visits</Trans>
-          </CardTitle>
-        </CardHeader>
-        <CardAction>
-          {canSchedule ? (
-            <Button variant="secondary" leftIcon={<LuCalendarPlus />} asChild>
-              <Link to={path.to.newServiceVisit(serviceOrderId)}>
-                <Trans>Schedule Visit</Trans>
-              </Link>
-            </Button>
-          ) : (
-            <Button
-              variant="secondary"
-              leftIcon={<LuCalendarPlus />}
-              isDisabled
-            >
+    <section className="flex w-full flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-sm font-medium">
+          <Trans>Visits</Trans>
+        </h2>
+        {canSchedule ? (
+          <Button variant="secondary" leftIcon={<LuCalendarPlus />} asChild>
+            <Link to={path.to.newServiceVisit(serviceOrderId)}>
               <Trans>Schedule Visit</Trans>
-            </Button>
-          )}
-        </CardAction>
-      </HStack>
-      <CardContent>
+            </Link>
+          </Button>
+        ) : (
+          <Button variant="secondary" leftIcon={<LuCalendarPlus />} isDisabled>
+            <Trans>Schedule Visit</Trans>
+          </Button>
+        )}
+      </div>
+      <div className="rounded-lg border border-border">
         {visits.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="px-4 py-3 text-sm text-muted-foreground">
             <Trans>No visits yet. Schedule one to send a technician.</Trans>
           </p>
         ) : (
@@ -78,7 +62,7 @@ export default function VisitsList({
               return (
                 <li
                   key={visit.id}
-                  className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 @container"
+                  className="flex flex-col gap-3 px-4 py-3 @container"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-3">
@@ -166,7 +150,7 @@ export default function VisitsList({
             })}
           </ul>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

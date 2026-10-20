@@ -5,20 +5,19 @@
 import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
-  Button,
   generateHTML,
   HStack,
   IconButton,
   Textarea,
   VStack
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuSend, LuTrash } from "react-icons/lu";
+import { LuArrowUp, LuTrash } from "react-icons/lu";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { useUser } from "~/hooks";
-import { path } from "~/utils/path";
 import type { ProjectElementPage } from "../../projects.server";
+import { useElementRoutes } from "../Elements/ElementRoutes";
 
 type Comment = ProjectElementPage["comments"][number];
 
@@ -48,7 +47,7 @@ export function ElementComments({
   const { t } = useLingui();
   const user = useUser();
   const [text, setText] = useState("");
-  const action = path.to.projectElementComments(projectId, elementId);
+  const action = useElementRoutes(projectId).comments(elementId);
   const fetcher = useAction<{ success?: boolean }>({
     onSuccess: () => setText("")
   });
@@ -64,54 +63,57 @@ export function ElementComments({
 
   return (
     <VStack spacing={3} className="w-full">
-      {comments.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
-          <Trans>No comments yet</Trans>
-        </p>
-      ) : (
-        <VStack spacing={3} className="w-full">
-          {comments.map((comment) => (
-            <div key={comment.id} className="group/comment flex w-full gap-3">
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <HStack spacing={2} className="text-xs text-muted-foreground">
-                  <EmployeeAvatar
-                    employeeId={comment.createdBy?.id ?? null}
-                    size="xxs"
-                  />
-                  <DateTime value={comment.createdAt} />
-                </HStack>
-                <div
-                  className="prose prose-sm dark:prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{
-                    __html: generateHTML((comment.content ?? {}) as JSONContent)
-                  }}
-                />
-              </div>
-              {comment.createdBy?.id === user.id && (
-                <IconButton
-                  aria-label={t`Delete comment`}
-                  icon={<LuTrash />}
-                  variant="ghost"
-                  size="sm"
-                  className="shrink-0 opacity-0 group-hover/comment:opacity-100 focus-visible:opacity-100"
-                  isDisabled={removeFetcher.isPending}
-                  onClick={() =>
-                    removeFetcher.submit(
-                      { intent: "delete", id: comment.id },
-                      { method: "post", action }
-                    )
-                  }
-                />
-              )}
-            </div>
-          ))}
-        </VStack>
-      )}
-      <VStack spacing={2} className="w-full">
+      {comments.map((comment) => (
+        // One card per comment: author and time, then the text.
+        <div
+          key={comment.id}
+          className="group/comment w-full rounded-lg border border-border bg-card"
+        >
+          <div className="flex items-start justify-between gap-2 px-4 pt-3">
+            <HStack spacing={2} className="min-w-0 text-sm">
+              <EmployeeAvatar
+                employeeId={comment.createdBy?.id ?? null}
+                size="xs"
+                className="font-medium"
+              />
+              <span className="text-xs text-muted-foreground">
+                <DateTime value={comment.createdAt} />
+              </span>
+            </HStack>
+            {comment.createdBy?.id === user.id && (
+              <IconButton
+                aria-label={t`Delete comment`}
+                icon={<LuTrash />}
+                variant="ghost"
+                size="sm"
+                className="-mr-2 -mt-1 shrink-0 opacity-0 group-hover/comment:opacity-100 focus-visible:opacity-100"
+                isDisabled={removeFetcher.isPending}
+                onClick={() =>
+                  removeFetcher.submit(
+                    { intent: "delete", id: comment.id },
+                    { method: "post", action }
+                  )
+                }
+              />
+            )}
+          </div>
+          <div
+            className="prose prose-sm dark:prose-invert max-w-none px-4 pb-3 pt-2"
+            dangerouslySetInnerHTML={{
+              __html: generateHTML((comment.content ?? {}) as JSONContent)
+            }}
+          />
+        </div>
+      ))}
+
+      {/* The composer is a card too: the text, then a round send button. */}
+      <div className="w-full rounded-lg border border-border bg-card focus-within:border-ring">
         <Textarea
-          placeholder={t`Add a comment...`}
+          aria-label={t`Leave a comment`}
+          placeholder={t`Leave a comment...`}
           value={text}
           rows={2}
+          className="resize-none border-0 bg-transparent px-4 pt-3 shadow-none focus-visible:ring-0"
           onChange={(event) => setText(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
@@ -120,17 +122,19 @@ export function ElementComments({
             }
           }}
         />
-        <HStack className="w-full justify-end">
-          <Button
-            leftIcon={<LuSend />}
+        <div className="flex justify-end px-3 pb-3">
+          <IconButton
+            aria-label={t`Comment`}
+            icon={<LuArrowUp />}
+            variant="secondary"
+            size="sm"
+            className="rounded-full"
             isDisabled={!text.trim() || fetcher.isPending}
             isLoading={fetcher.isPending}
             onClick={send}
-          >
-            <Trans>Comment</Trans>
-          </Button>
-        </HStack>
-      </VStack>
+          />
+        </div>
+      </div>
     </VStack>
   );
 }

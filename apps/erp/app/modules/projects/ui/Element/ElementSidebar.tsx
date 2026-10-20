@@ -41,6 +41,7 @@ import {
   useElementField,
   usePriorityLabels
 } from "../Elements/ElementProperties";
+import { useElementRoutes } from "../Elements/ElementRoutes";
 import { useElementTypeLabels } from "../Elements/ElementTypeIcon";
 import { StateIcon } from "../Project/StateIcon";
 import {
@@ -92,6 +93,7 @@ export function ElementSidebar({
   labels,
   milestones,
   typeBlock,
+  workFields,
   isDisabled,
   className
 }: {
@@ -107,6 +109,8 @@ export function ElementSidebar({
   milestones: ProjectMilestone[];
   /** The Requirement, Test Case or Parameter fields, when the type has them. */
   typeBlock?: ReactNode;
+  /** Fields added at the end of the Work group. */
+  workFields?: ReactNode;
   isDisabled: boolean;
   className?: string;
 }) {
@@ -120,6 +124,9 @@ export function ElementSidebar({
   // DCAA timekeeping AND the feature show the government fields; DCAA
   // without the feature shows only earned value's upgrade row.
   const governmentFields = useGovernmentContractingFields();
+  // A service element has no milestone, WBS code, budget or government
+  // fields; its costs are its charges, on the page itself.
+  const isProject = useElementRoutes(projectId).module === "projects";
   const common = { projectId, elementId: element.id, isDisabled };
   // Blank shows the code the element derives from its place in the tree.
   const wbsCodes = useMemo(() => elementWbsCodes(elements), [elements]);
@@ -208,17 +215,19 @@ export function ElementSidebar({
             )
           }))}
         />
-        <PropertySelect
-          {...common}
-          field="milestoneId"
-          label={t`Milestone`}
-          termId="milestone"
-          value={element.milestoneId}
-          options={milestones.map((milestone) => ({
-            value: milestone.id,
-            label: milestone.name
-          }))}
-        />
+        {isProject && (
+          <PropertySelect
+            {...common}
+            field="milestoneId"
+            label={t`Milestone`}
+            termId="milestone"
+            value={element.milestoneId}
+            options={milestones.map((milestone) => ({
+              value: milestone.id,
+              label: milestone.name
+            }))}
+          />
+        )}
         <PropertyDate
           {...common}
           field="startDate"
@@ -255,7 +264,7 @@ export function ElementSidebar({
       )}
 
       <PropertyGroup title={t`Work`}>
-        {element.type !== "Parameter" && (
+        {isProject && element.type !== "Parameter" && (
           <PropertyText
             {...common}
             field="wbsCode"
@@ -271,15 +280,17 @@ export function ElementSidebar({
           value={element.isChargeable}
           isDisabled={isDisabled || element.type === "Parameter"}
         />
-        <PropertyNumber
-          {...common}
-          field="budget"
-          label={t`Budget`}
-          value={element.budget === null ? null : Number(element.budget)}
-          formatOptions={INPUT_FORMAT.money(currency, decimals)}
-          step={INPUT_STEP.money(decimals)}
-          minValue={0}
-        />
+        {isProject && (
+          <PropertyNumber
+            {...common}
+            field="budget"
+            label={t`Budget`}
+            value={element.budget === null ? null : Number(element.budget)}
+            formatOptions={INPUT_FORMAT.money(currency, decimals)}
+            step={INPUT_STEP.money(decimals)}
+            minValue={0}
+          />
+        )}
         <PropertyNumber
           {...common}
           field="estimatedHours"
@@ -324,9 +335,10 @@ export function ElementSidebar({
             )}
           </>
         )}
+        {workFields}
       </PropertyGroup>
 
-      {hasCosts && (
+      {isProject && hasCosts && (
         <PropertyGroup title={t`Costs, with children`}>
           <PropertyField label={t`Plan`}>{money(costs.plan)}</PropertyField>
           <PropertyField label={t`Committed`}>
@@ -345,7 +357,8 @@ export function ElementSidebar({
         </PropertyGroup>
       )}
 
-      {element.type !== "Parameter" &&
+      {isProject &&
+        element.type !== "Parameter" &&
         governmentFields !== "hidden" &&
         (governmentFields === "upgrade" ? (
           <ElementEarnedValue

@@ -64,18 +64,17 @@ export default function MyVisits({
           <Trans>My Visits</Trans>
         </Heading>
       </div>
-      <div className="flex w-full max-w-xl flex-col gap-6">
-        {days.length === 0 ? (
-          <Empty
-            title={<Trans>No visits planned</Trans>}
-            description={
-              <Trans>
-                Your visits for today and the next 7 days show here.
-              </Trans>
-            }
-          />
-        ) : (
-          days.map(([day, list]) => (
+      {days.length === 0 ? (
+        <Empty
+          className="flex-1"
+          title={<Trans>No visits planned</Trans>}
+          description={
+            <Trans>Your visits for today and the next 7 days show here.</Trans>
+          }
+        />
+      ) : (
+        <div className="flex w-full max-w-xl flex-col gap-6">
+          {days.map(([day, list]) => (
             <section key={day} className="flex flex-col gap-2">
               <h2 className="text-sm font-medium text-muted-foreground">
                 {dayLabel(day)}
@@ -155,9 +154,9 @@ export default function MyVisits({
                 })}
               </ul>
             </section>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

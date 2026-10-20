@@ -39,7 +39,7 @@ Module guide: `apps/erp/app/modules/service/AGENTS.md`.
   subject serial, one customer asset (none for a Refurbishment), and its own **Service project**
   (`project.projectType = 'Service'`, `costTreatment = 'By Coverage'`, identifier = the
   order's readable id). The project's elements are the **work tree**. The UI says
-  "element"; code names still say "node" (`ServiceWorkNode`, `NodePeek`, `NodePicker`,
+  "element"; some code names still say "node" (`ServiceWorkNode`, `NodePicker`,
   `requireServiceOrderNode`). There is no order line table.
 - **Visit** (`serviceVisit`): technician, planned window (typed in the company's time
   zone: `ScheduleVisitModal` passes `useCompanyTimeZone()` to `DateTimePicker`'s
@@ -66,13 +66,14 @@ Ramp sync (`desiredProjectOptions`) list Standard projects only.
 **item** page (`x+/service+/`). The module's routes are `x+/service-orders+/` (list, My
 Visits, Schedule, assets, templates) and `x+/service-order+/` (the order workspace).
 Helpers are `serviceOrder*`, `customerAsset*`, `serviceVisit*`, `serviceTemplate*`,
-`myVisits` and `serviceSchedule`.
+`serviceWork*` (the element write routes below), `myVisits` and `serviceSchedule`.
 
-Three pages opt out of their parent layout with a trailing `_`, so they render as full
-pages: the visit page `service-order+/$id_.visits.$visitId.tsx` (not inside the order
-workspace), the template page `service-orders+/templates_.$id.tsx` (not under the
-list table) and the template element page `service-orders+/templates_.$id_.$elementId.tsx`
-(not under the template page). The asset page is its own folder,
+Four pages opt out of their parent layout with a trailing `_`, so they render as full
+pages: the visit page `service-order+/$id_.visits.$visitId.tsx` and the element page
+`service-order+/$id_.work.$elementId.tsx` (not inside the order workspace), the template
+page `service-orders+/templates_.$id.tsx` (not under the list table) and the template
+element page `service-orders+/templates_.$id_.$elementId.tsx` (not under the template
+page). The asset page is its own folder,
 `customer-asset+/$assetId.tsx`.
 
 ## The module UI
@@ -84,12 +85,38 @@ list table) and the template element page `service-orders+/templates_.$id_.$elem
   of the list, so the drawer opens over an empty page. The form reuses `FormSection`
   (the folded section that keeps its fields mounted) from the projects
   `ProjectForm.tsx`.
+- **The order is the project workspace** (Brad, 2026-10-19: "we want a whole layout
+  redesign"). `$id.tsx` copies `project+/$projectId.tsx`: the header line, the sidebar
+  (`ServiceOrderSidebar`: Overview, Work with the element tree, Visits, Billing) and the
+  page, with no tabs and no properties panel. Overview is an element page's two columns:
+  the subject, problem, resolution and documents, and `ServiceOrderProperties` beside
+  them. Pages use sections, not cards. The header's actions are buttons, the next step
+  primary and impossible moves hidden (`ServiceOrderHeader`).
+- **The work is the project Plan page** (Brad, 2026-10-19: "the service ui should be
+  similar to the projects ui"). The order's Work tab and the template page render
+  `ServiceWorkList`: the Plan page's `ElementsHeader` (List only, New Element offers
+  System / Task / Folder, Build from part in its menu on an order; Print estimate in the
+  ⋯ menu) and `ElementList` (grouped by state, with the state / owner / date pills and
+  the row menu). An element opens as a full page, the project `ElementView`: on an order
+  (`$id_.work.$elementId.tsx`) its charges show in place of Time & materials
+  (`ServiceCharges`: Override coverage and Reverse in the row menu), Log time, Issue part
+  and Add expense are its ⋯ menu's charge actions (`useServiceChargeActions`, posting to
+  `$id.charge.tsx`), and Fixed price and Last service sit in the sidebar's Work group.
+  A template element (`templates_.$id_.$elementId.tsx`) takes no charges. The sidebar
+  hides milestone, WBS code, budget, costs and the government fields for service.
+- **Shared components, separate routes.** The project components take their links and
+  actions from `ElementRoutesProvider` (`projects/ui/Elements/ElementRoutes.tsx`); its
+  default is the project's routes. Service passes `serviceOrderElementRoutes` /
+  `serviceTemplateElementRoutes` (`service/ui/Work/serviceElementRoutes.ts`), which point
+  at `x+/service-work+/$projectId.*`: `new`, `update` (`{ ids, field, value }`, only the
+  fields a service element shows), `move`, `$elementId.delete`, `$elementId.plan` and
+  `$elementId.comments`. They check `service` permissions, not `projects`, and call
+  `requireServiceWork` (`service.server.ts`) first: a Service project, not Closed, and
+  every element id in it. The project routes are untouched (Brad: "it's ok to have
+  different code in two places").
 - **Service template page** (`templates_.$id.tsx`): a standard `RecordHeader` with the
-  identifier, the name and the copy button at the right end (`toolsPlacement="end"`). It
-  has no ⋯ menu: no route renames or deletes a template. A template element opens as a
-  full page (`templates_.$id_.$elementId.tsx`): one header row (back, the breadcrumb,
-  Copy, a ⋯ menu with Add plan line and Delete), then the Plan section
-  (`ElementPlanLines`). Delete posts the template route's `intent=delete`.
+  identifier, the name and the copy button at the right end (`toolsPlacement="end"`),
+  then `ServiceWorkList`. No route renames or deletes a template.
 - **Empty states**: My Visits, the Schedule, a customer's Assets tab
   (`CustomerAssetsTable` with `customerId`) and the contract's Service Orders tab use
   `Empty`. The Service Orders and Service Templates lists pass `Empty` only when no
@@ -203,8 +230,8 @@ company's accounting cutover, Posted after it (`journalPostingStatus`). None rea
 | Reclass | `reclass-project-coverage` | Refuses Capitalized either way. |
 | Reverse | `post-timesheet` / `post-project-expense` | `reverseServiceCharge`, with a reason (`serviceChargeReversalValidator`). Time: `createTimesheetCorrection` to 0 hours (`correctionReason`; the correction keeps the entry's `serviceVisitId`), posted at once. Expense: `buildExpenseReversal`, a `projectExpenseEntry` with `reversalOfId` and `reversalReason`. Both post at the original's coverage and reverse its billable item. A reversal saved but not posted is posted again on the next Reverse, never written twice. |
 
-The element drawer (`NodePeek`, route `$id.work.$elementId.tsx`) shows **Reverse** on a
-time or expense row (`canReverseCharge`: not a reversal, not reversed since). A part has no Reverse: it is
+The element page's Charges section (`ServiceCharges`, route `$id_.work.$elementId.tsx`)
+offers **Reverse** in a time or expense row's menu (`canReverseCharge`: not a reversal, not reversed since). A part has no Reverse: it is
 returned with Issue Part. Reversing the last standing charge is what lets
 `cancelServiceOrder` through.
 
@@ -269,7 +296,7 @@ The company refurbishes a serial it owns. Labor, parts and expenses collect in W
 (coverage Capitalized), and the completion moves the WIP into that serial's cost.
 
 - **Create** (`createServiceOrder`): the New form picks an item, then a serial
-  (`SerialSelect`). The serial must be serial-tracked, Available or On Hold, with no open
+  (a form `Combobox` fed by `useSerialOptions`). The serial must be serial-tracked, Available or On Hold, with no open
   order. The order has no customer, asset, site or contract (`serviceOrder_customer_check`);
   `insertServiceOrder` takes null customer fields and names the project
   "<order id> — <serial>". The serial goes **On Hold** in the same transaction.

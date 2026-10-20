@@ -12,7 +12,7 @@ import {
   CommandList,
   cn,
   HStack,
-  IconButton,
+  InlineTrigger,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -21,7 +21,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useMemo, useState } from "react";
-import { LuSettings2, LuUser } from "react-icons/lu";
+import { LuUser } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { useFetcher, useFetchers } from "react-router";
 import { usePermissions, useUser } from "~/hooks";
@@ -115,26 +115,18 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
       ];
     }, [people, user, t]);
 
+    // Inline, as Linear's properties: an empty assignee the user can set
+    // reads "Add assignee" with no label above it.
+    const canAssign = !isReadOnly && permissions.is("employee");
+
     return (
       <VStack spacing={2}>
-        {variant === "inline" && (
+        {variant === "inline" && (value || !canAssign) && (
           <span className="text-xs text-muted-foreground">
             <Trans>Assignee</Trans>
           </span>
         )}
         <HStack className="w-full justify-between">
-          {variant === "inline" &&
-            (value ? (
-              <EmployeeAvatar
-                size={size === "sm" ? "xxs" : "xs"}
-                employeeId={value ?? null}
-              />
-            ) : (
-              <span className="text-sm">
-                <Trans>Unassigned</Trans>
-              </span>
-            ))}
-
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               {variant === "button" ? (
@@ -174,13 +166,17 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
                   )}
                 </button>
               ) : (
-                <IconButton
-                  aria-label={t`Toggle Assignee`}
-                  icon={<LuSettings2 />}
-                  size="sm"
-                  variant="secondary"
-                  isDisabled={isReadOnly || !permissions.is("employee")}
-                />
+                <InlineTrigger
+                  ref={ref}
+                  isEmpty={!value}
+                  placeholder={canAssign ? t`Add assignee` : t`Unassigned`}
+                  isDisabled={!canAssign}
+                >
+                  <EmployeeAvatar
+                    size={size === "sm" ? "xxs" : "xs"}
+                    employeeId={value ?? null}
+                  />
+                </InlineTrigger>
               )}
             </PopoverTrigger>
             <PopoverContent

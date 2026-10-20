@@ -18,13 +18,12 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { RefObject } from "react";
 import { useState } from "react";
-import { path } from "~/utils/path";
 import type { ProjectElementType } from "../../projects.models";
-import { projectElementTypes } from "../../projects.models";
 import {
   useActiveChangeRequestId,
   withChangeRequest
 } from "../ChangeRequests/useActiveChangeRequest";
+import { useElementRoutes } from "../Elements/ElementRoutes";
 import {
   ElementTypeIcon,
   useElementTypeLabels
@@ -58,6 +57,7 @@ export function QuickAddRow({
   const { t } = useLingui();
   const typeLabels = useElementTypeLabels();
   const changeRequestId = useActiveChangeRequestId();
+  const routes = useElementRoutes(projectId);
   const [name, setName] = useState("");
   const fetcher = useAction<{ id?: string; error?: { message: string } }>({
     onSuccess: () => setName(""),
@@ -75,10 +75,7 @@ export function QuickAddRow({
     if (stateId) formData.append("stateId", stateId);
     fetcher.submit(formData, {
       method: "post",
-      action: withChangeRequest(
-        path.to.newProjectElement(projectId),
-        changeRequestId
-      )
+      action: withChangeRequest(routes.create, changeRequestId)
     });
   };
 
@@ -101,7 +98,7 @@ export function QuickAddRow({
           />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
-          {projectElementTypes.map((value) => (
+          {routes.types.map((value) => (
             <DropdownMenuItem key={value} onClick={() => onTypeChange?.(value)}>
               <DropdownMenuIcon icon={<ElementTypeIcon type={value} />} />
               {typeLabels[value]}

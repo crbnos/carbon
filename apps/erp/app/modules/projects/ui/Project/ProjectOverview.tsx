@@ -18,11 +18,13 @@ import {
   useCurrencyFormatter,
   useDateFormatter,
   usePercentFormatter,
+  usePermissions,
   useRouteData
 } from "~/hooks";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import type { Project } from "../../types";
+import { ProjectDescription } from "./ProjectProperties";
 
 type ProjectOverviewProps = {
   figures: { budget: number | null; committed: number; actual: number };
@@ -35,6 +37,8 @@ type ProjectOverviewProps = {
     completedCount: number;
   } | null;
   openTimeCount: number;
+  /** Sections after Needs attention (the members, in DCAA timekeeping). */
+  children?: ReactNode;
 };
 
 /**
@@ -48,7 +52,8 @@ type ProjectOverviewProps = {
 export default function ProjectOverview({
   figures,
   nextMilestone,
-  openTimeCount
+  openTimeCount,
+  children
 }: ProjectOverviewProps) {
   const { t } = useLingui();
   const { projectId } = useParams();
@@ -56,6 +61,7 @@ export default function ProjectOverview({
   const { formatDate } = useDateFormatter();
   const money = useCurrencyFormatter();
   const percent = usePercentFormatter();
+  const permissions = usePermissions();
   const [people] = usePeople();
   const [customers] = useCustomers();
   const routeData = useRouteData<{
@@ -95,7 +101,7 @@ export default function ProjectOverview({
     attention.push(
       <AttentionRow
         key="stop-work"
-        to={path.to.projectSettings(projectId)}
+        to={path.to.project(projectId)}
         icon={<LuOctagonX className="text-red-500" />}
       >
         <Trans>
@@ -159,11 +165,22 @@ export default function ProjectOverview({
 
   return (
     <div className="@container mx-auto flex w-full max-w-[64rem] flex-col gap-8 px-6 py-8">
-      {facts.length > 0 && (
-        <p className="text-sm text-muted-foreground text-pretty">
-          {facts.join(" · ")}
-        </p>
-      )}
+      <div className="flex flex-col gap-2">
+        {facts.length > 0 && (
+          <p className="text-sm text-muted-foreground text-pretty">
+            {facts.join(" · ")}
+          </p>
+        )}
+        <ProjectDescription
+          key={project.id}
+          projectId={projectId}
+          description={project.description}
+          isDisabled={
+            !permissions.can("update", "projects") ||
+            project.status === "Closed"
+          }
+        />
+      </div>
 
       <div className="grid gap-8 @3xl:grid-cols-2">
         <OverviewSection title={t`Budget`}>
@@ -272,6 +289,7 @@ export default function ProjectOverview({
           )}
         </div>
       </OverviewSection>
+      {children}
     </div>
   );
 }

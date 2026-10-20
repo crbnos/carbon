@@ -72,6 +72,11 @@ type RecordDocumentsProps = {
   /** Permission module gating upload/delete */
   module: "purchasing" | "sales" | "service";
   isReadOnly?: boolean;
+  /**
+   * `section`: a small heading over a bordered box, as on a project's or a
+   * service order's Overview, instead of a card.
+   */
+  variant?: "card" | "section";
 };
 
 const RecordDocuments = ({
@@ -80,7 +85,8 @@ const RecordDocuments = ({
   bucketPrefix,
   sourceDocument,
   module,
-  isReadOnly
+  isReadOnly,
+  variant = "card"
 }: RecordDocumentsProps) => {
   const { t } = useLingui();
   const { canDelete, download, view, deleteAttachment, getPath, upload } =
@@ -109,6 +115,138 @@ const RecordDocuments = ({
     a.name.localeCompare(b.name)
   ) as FileObject[];
 
+  const table = (
+    <>
+      <Table>
+        <Thead className={cn(filesToRender.length === 0 && "max-md:hidden")}>
+          <Tr>
+            <Th>
+              <Trans>Name</Trans>
+            </Th>
+            <Th>
+              <Trans>Size</Trans>
+            </Th>
+            <Th>
+              <Trans>Created</Trans>
+            </Th>
+            <Th />
+          </Tr>
+        </Thead>
+        <Tbody>
+          {filesToRender.length ? (
+            filesToRender.map((file) => (
+              <Tr key={file.id}>
+                <Td>
+                  <HStack>
+                    <DocumentIcon type={getDocumentType(file.name)} />
+                    <span
+                      className="font-medium cursor-pointer"
+                      onClick={() => download(file)}
+                    >
+                      <DocumentPreview
+                        bucket="private"
+                        pathToFile={getPath(file)}
+                        // @ts-expect-error
+                        type={getDocumentType(file.name)}
+                      >
+                        {file.name}
+                      </DocumentPreview>
+                    </span>
+                  </HStack>
+                </Td>
+                <Td className="text-xs font-mono">
+                  {convertKbToString(
+                    Math.floor((file.metadata?.size ?? 0) / 1024)
+                  )}
+                </Td>
+                <Td className="text-xs font-mono">
+                  {file.created_at ? (
+                    <DateTime value={file.created_at} variant="date" />
+                  ) : (
+                    "--"
+                  )}
+                </Td>
+                <Td>
+                  <div className="flex justify-end gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <IconButton
+                          aria-label={t`More`}
+                          icon={<LuEllipsisVertical />}
+                          variant="secondary"
+                        />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {isViewableInBrowser(file.name) && (
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.view}
+                            onClick={() => view(file)}
+                          >
+                            <LuExternalLink className="mr-2" />
+                            <Trans>View in new tab</Trans>
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.download}
+                          onClick={() => download(file)}
+                        >
+                          <Trans>Download</Trans>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          destructive
+                          disabled={!effectiveCanDelete}
+                          onClick={() => deleteAttachment(file)}
+                        >
+                          <Trans>Delete</Trans>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </Td>
+              </Tr>
+            ))
+          ) : (
+            <Tr>
+              <Td
+                colSpan={24}
+                className="py-8 text-muted-foreground text-center"
+              >
+                <Trans>No documents</Trans>
+              </Td>
+            </Tr>
+          )}
+        </Tbody>
+      </Table>
+      {!isReadOnly && <FileDropzone onDrop={onDrop} />}
+    </>
+  );
+  const uploadButton = !isReadOnly && (
+    <RecordDocumentUpload
+      id={id}
+      bucketPrefix={bucketPrefix}
+      sourceDocument={sourceDocument}
+      module={module}
+    />
+  );
+
+  if (variant === "section") {
+    return (
+      <section className="flex w-full flex-col gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-medium">
+            <Trans>Documents</Trans>
+          </h2>
+          {uploadButton}
+        </div>
+        {/* Padding on every side, so the dropzone sits inside the box with
+            the same gap as the table, not against its bottom edge. */}
+        <div className="flex flex-col gap-2 rounded-lg border border-border p-2">
+          {table}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <Card>
       <HStack className="justify-between items-start">
@@ -117,120 +255,9 @@ const RecordDocuments = ({
             <Trans>Documents</Trans>
           </CardTitle>
         </CardHeader>
-        <CardAction>
-          {!isReadOnly && (
-            <RecordDocumentUpload
-              id={id}
-              bucketPrefix={bucketPrefix}
-              sourceDocument={sourceDocument}
-              module={module}
-            />
-          )}
-        </CardAction>
+        <CardAction>{uploadButton}</CardAction>
       </HStack>
-      <CardContent>
-        <Table>
-          <Thead className={cn(filesToRender.length === 0 && "max-md:hidden")}>
-            <Tr>
-              <Th>
-                <Trans>Name</Trans>
-              </Th>
-              <Th>
-                <Trans>Size</Trans>
-              </Th>
-              <Th>
-                <Trans>Created</Trans>
-              </Th>
-              <Th />
-            </Tr>
-          </Thead>
-          <Tbody>
-            {filesToRender.length ? (
-              filesToRender.map((file) => (
-                <Tr key={file.id}>
-                  <Td>
-                    <HStack>
-                      <DocumentIcon type={getDocumentType(file.name)} />
-                      <span
-                        className="font-medium cursor-pointer"
-                        onClick={() => download(file)}
-                      >
-                        <DocumentPreview
-                          bucket="private"
-                          pathToFile={getPath(file)}
-                          // @ts-expect-error
-                          type={getDocumentType(file.name)}
-                        >
-                          {file.name}
-                        </DocumentPreview>
-                      </span>
-                    </HStack>
-                  </Td>
-                  <Td className="text-xs font-mono">
-                    {convertKbToString(
-                      Math.floor((file.metadata?.size ?? 0) / 1024)
-                    )}
-                  </Td>
-                  <Td className="text-xs font-mono">
-                    {file.created_at ? (
-                      <DateTime value={file.created_at} variant="date" />
-                    ) : (
-                      "--"
-                    )}
-                  </Td>
-                  <Td>
-                    <div className="flex justify-end gap-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <IconButton
-                            aria-label={t`More`}
-                            icon={<LuEllipsisVertical />}
-                            variant="secondary"
-                          />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          {isViewableInBrowser(file.name) && (
-                            <DropdownMenuItem
-                              shortcut={MENU_ITEM_SHORTCUTS.view}
-                              onClick={() => view(file)}
-                            >
-                              <LuExternalLink className="mr-2" />
-                              <Trans>View in new tab</Trans>
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            shortcut={MENU_ITEM_SHORTCUTS.download}
-                            onClick={() => download(file)}
-                          >
-                            <Trans>Download</Trans>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            destructive
-                            disabled={!effectiveCanDelete}
-                            onClick={() => deleteAttachment(file)}
-                          >
-                            <Trans>Delete</Trans>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </Td>
-                </Tr>
-              ))
-            ) : (
-              <Tr>
-                <Td
-                  colSpan={24}
-                  className="py-8 text-muted-foreground text-center"
-                >
-                  <Trans>No documents</Trans>
-                </Td>
-              </Tr>
-            )}
-          </Tbody>
-        </Table>
-        {!isReadOnly && <FileDropzone onDrop={onDrop} />}
-      </CardContent>
+      <CardContent>{table}</CardContent>
     </Card>
   );
 };

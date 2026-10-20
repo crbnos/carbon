@@ -21,6 +21,7 @@ import { insertServiceOrder } from "@carbon/server-functions/lib/service-orders"
 import { datetime, openChargeIds, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
+import { path } from "~/utils/path";
 import { BUILD_FROM_PART_MAX_DEPTH } from "../projects/projects.models";
 import {
   insertElementsFromPart,
@@ -113,18 +114,7 @@ export async function createServiceOrder(
           `A refurbishment needs a serial in stock. Serial ${serialName} is ${serial.status}.`
         );
       }
-      const open = await trx
-        .selectFrom("serviceOrder")
-        .select("serviceOrderId")
-        .where("trackedEntityId", "=", serial.id)
-        .where("companyId", "=", companyId)
-        .where("status", "not in", ["Closed", "Cancelled"])
-        .executeTakeFirst();
-      if (open) {
-        throw new ServiceOrderError(
-          `Serial ${serialName} already has an open service order, ${open.serviceOrderId}`
-        );
-      }
+      await assertNoOpenServiceOrder(trx, companyId, serial.id, serialName);
 
       const order = await insertServiceOrder(trx, {
         companyId,
@@ -195,6 +185,12 @@ export async function createServiceOrder(
         `A field visit needs a unit in service. This unit is ${asset.status}.`
       );
     }
+    await assertNoOpenServiceOrder(
+      trx,
+      companyId,
+      asset.trackedEntityId,
+      asset.serial ?? asset.trackedEntityId
+    );
 
     const contracts = await trx
       .selectFrom("customerContract")
@@ -253,6 +249,30 @@ export async function createServiceOrder(
 
     return { id: order.id, serviceOrderId };
   });
+}
+
+/**
+ * Refuses a serial that already has an open order, so the user reads which
+ * order holds it instead of the `serviceOrder_open_subject_key` violation.
+ */
+async function assertNoOpenServiceOrder(
+  trx: KyselyTx,
+  companyId: string,
+  trackedEntityId: string,
+  serialName: string
+): Promise<void> {
+  const open = await trx
+    .selectFrom("serviceOrder")
+    .select("serviceOrderId")
+    .where("trackedEntityId", "=", trackedEntityId)
+    .where("companyId", "=", companyId)
+    .where("status", "not in", ["Closed", "Cancelled"])
+    .executeTakeFirst();
+  if (open) {
+    throw new ServiceOrderError(
+      `Serial ${serialName} already has an open service order, ${open.serviceOrderId}`
+    );
+  }
 }
 
 /**
@@ -894,6 +914,66 @@ export async function requireServiceOrderNode(
     }
   }
   return order;
+}
+
+/**
+ * The Service project a work route changes, a service order's or a service
+ * template's, and the page its work lives on. Refuses another project type
+ * (the Projects routes own those), a Closed one (its order is Closed or
+ * Cancelled), and any of `elementIds` that is not in the project.
+ */
+export async function requireServiceWork(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; projectId: string; elementIds?: string[] }
+): Promise<{ workPath: string; isTemplate: boolean }> {
+  const project = await client
+    .from("project")
+    .select("id, projectType, status, isTemplate")
+    .eq("id", args.projectId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (project.error || project.data?.projectType !== "Service") {
+    throw new ServiceOrderError("The service order was not found");
+  }
+  if (project.data.status === "Closed") {
+    throw new ServiceOrderError(
+      "A closed or cancelled service order cannot change"
+    );
+  }
+
+  const ids = [...new Set(args.elementIds ?? [])];
+  if (ids.length > 0) {
+    const elements = await client
+      .from("projectElement")
+      .select("id")
+      .in("id", ids)
+      .eq("projectId", args.projectId)
+      .eq("companyId", args.companyId);
+    if (elements.error || (elements.data ?? []).length !== ids.length) {
+      throw new ServiceOrderError(
+        "The element is not part of this service order"
+      );
+    }
+  }
+
+  if (project.data.isTemplate) {
+    return {
+      workPath: path.to.serviceTemplate(args.projectId),
+      isTemplate: true
+    };
+  }
+  const order = await client
+    .from("serviceOrder")
+    .select("id")
+    .eq("projectId", args.projectId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  return {
+    workPath: order.data
+      ? path.to.serviceOrderWork(order.data.id)
+      : path.to.serviceOrders,
+    isTemplate: false
+  };
 }
 
 /**

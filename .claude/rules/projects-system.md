@@ -52,7 +52,15 @@ opens in layers. Each layer shows the least that a user needs.
 - **Project workspace** (`project+/$projectId.tsx`). The left project sidebar
   (`ProjectSidebar`) starts with the change request picker and a Baselines (history)
   button. Then the page links (`useProjectSidebarLinks`): Overview, Plan, Schedule, Costs
-  and Time, with Settings pinned at the bottom. While a Plan page is open, the element tree
+  and Time. There is no Settings page (Brad, 2026-10-19): the Overview is two columns, as an
+  element page, with the summary (description, budget, next milestone, needs attention,
+  members) beside `ProjectProperties`, the project's fields each saved as it changes. A field
+  posts `intent=field` to `$projectId.details.tsx`, which fills in the rest from the stored
+  project and runs the same validation and rules as the old form; Project Control is a
+  group of that column (`ProjectControlSettings.ee`). `$projectId.settings.tsx` keeps only
+  its action (members, control settings) and redirects to the Overview. The property
+  fields save through `PropertySaveProvider` (`ui/Element/PropertyFields.tsx`); without
+  one they save the element. While a Plan page is open, the element tree
   and its "Search elements" box show under the links. Under Costs, each link shows only
   when it applies: Stock (the project has an `itemLedger` row), Pegging (a current
   `projectPeg`) and Billing (a Contract project that a contract line bills). The header
@@ -67,7 +75,7 @@ opens in layers. Each layer shows the least that a user needs.
   Earned value on the Costs page needs an element with `isControlAccount`. The government
   contracting fields of the project form need `useGovernmentContracting()` (DCAA
   timekeeping, or the `GOVERNMENT_CONTRACTING` feature); the element page's group needs DCAA
-  timekeeping. The planning group fields on Settings need at least one `planningGroup` row.
+  timekeeping. The planning group properties need at least one `planningGroup` row.
 
 ## Treatment is decided at the source
 
@@ -305,7 +313,7 @@ What it changes here:
 
 ## Project stock (Phase 2a)
 
-`project.projectStock` (set while Draft only; the Settings page posts to `$projectId.details.tsx`,
+`project.projectStock` (set while Draft only; the Overview's properties post to `$projectId.details.tsx`,
 which keeps the stored value after that) makes the project own the stock received for it. The stripes, the stripe set of a
 demand and the key order are in `inventory-system.md` → *Project stock*. What it changes here:
 
@@ -411,7 +419,7 @@ without groups.
   **Planning Groups** (`projects+/planning-groups*.tsx`). The list shows
   `PlanningGroupsUpgradeOverlay` through `usePlanGate`; the write routes call `requireFeature`.
 - **Membership.** `project.planningGroupId` and `project.planningPriority` (lower first), set on
-  an existing project's Settings page (shown only when the company has a group). The CHECK `project_planningGroup_stock_check` requires
+  an existing project's Overview properties (shown only when the company has a group). The CHECK `project_planningGroup_stock_check` requires
   project stock, and the `$projectId.details.tsx` action requires the group at the project's
   location. `project_planning_segment` returns the group id for a member of an active group.
 - **Grouped supply.** A PO line or job made for the group carries `planningGroupId` and no
@@ -593,6 +601,14 @@ Settings page has no states or labels. `seed-company` seeds the six default stat
 copying or building a project, a template or a service order seeds or copies none, and an
 element keeps its state id. `projectElement_state_fkey` is `("stateId", "companyId")`.
 
+**Shared with service.** `ElementsHeader`, `ElementList`, `ElementView` and their pieces
+(pills, `MoveElementModal`, `ElementChildren`, `QuickAddRow`, `ElementComments`,
+`ElementPlanLines`) take their links, write actions, element types and permission module
+from `ElementRoutesProvider` (`ui/Elements/ElementRoutes.tsx`); with no provider they use
+the project routes (`projectElementRoutes`). A service order's and a service template's
+work pass service routes (`field-service.md` → The module UI). Never hard-code a
+`path.to.projectElement*` in these components again: read `useElementRoutes(projectId)`.
+
 An element opens on its own page, `path.to.projectElement` → `/x/project/$id/element/$elementId`
 (`ElementView`), from the List, the Tree, the Reader, the sidebar tree, links and child rows.
 There is no element panel: the old `/elements/$elementId` URL only redirects to the page (its
@@ -632,7 +648,9 @@ item, labor category or description is set.
 - **Item change.** Choosing an item on a material line (saved or draft) reads
   `itemCost.unitCost` through the browser client, as `JobMaterialForm` does, and sets the line's
   unit cost and the item's unit, so Amount (quantity × unit cost) shows at once and is saved. A
-  labor line's Amount stays empty: the grid has no labor category cost rate.
+  labor line has no stored amount: its Amount is hours × the category's cost rate in effect today
+  (`getProjectElementPage` adds `costRate` to each labor category), read-only, as the plan cost of
+  `get_project_cost_summary` reads it. A category with no rate shows no amount.
 - **Plan lock.** With the plan locked and no Draft change request, Add line is disabled with
   `projectPlanLockedMessage` as its tooltip, as New Element is on the Plan page.
 

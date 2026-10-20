@@ -5,39 +5,46 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuCalendarDays,
-  LuFileText,
+  LuLayoutDashboard,
   LuListTree,
   LuReceipt
 } from "react-icons/lu";
 import { useParams } from "react-router";
+import type { ProjectSidebarLink } from "~/modules/projects/ui/Project/useProjectNavigation";
 import { path } from "~/utils/path";
 
-/** The route tabs of a service order. */
-export function useServiceOrderNavigation() {
+/**
+ * The service order sidebar's page links, as the project sidebar's:
+ * Overview (with the order's properties beside it), Work, Visits, Billing.
+ */
+export function useServiceOrderNavigation(): ProjectSidebarLink[] {
   const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("id not found");
+  const work = path.to.serviceOrderWork(id);
 
   return [
     {
-      name: t`Details`,
+      name: t`Overview`,
       to: path.to.serviceOrderDetails(id),
-      icon: LuFileText
+      icon: <LuLayoutDashboard />
     },
     {
       name: t`Work`,
-      to: path.to.serviceOrderWork(id),
-      icon: LuListTree
+      to: work,
+      icon: <LuListTree />,
+      // An element's own page belongs to the Work page.
+      isActive: (pathname) => pathname.startsWith(work)
     },
     {
       name: t`Visits`,
       to: path.to.serviceOrderVisits(id),
-      icon: LuCalendarDays
+      icon: <LuCalendarDays />
     },
     {
       name: t`Billing`,
       to: path.to.serviceOrderBilling(id),
-      icon: LuReceipt
+      icon: <LuReceipt />
     }
   ];
 }

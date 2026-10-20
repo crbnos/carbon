@@ -3,9 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  Button,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -25,8 +25,7 @@ import {
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 import { usePanels } from "~/components/Layout";
-import DetailTopbar from "~/components/Layout/Navigation/DetailsTopbar";
-import { RecordHeader } from "~/components/Layout/RecordHeader";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -39,22 +38,20 @@ import {
   WarrantyBadge
 } from "../ServiceStatus";
 import CompleteRefurbishmentModal from "./CompleteRefurbishmentModal";
-import { useServiceOrderNavigation } from "./useServiceOrderNavigation";
 
 /**
- * The order's header strip, as the project header: identity and status on
- * the left; the route tabs, the copy button and the ⋯ menu at the right
- * end. There is no primary button (Brad, 2026-10-13): the menu opens with
- * the status transitions, the next step first (Complete when it applies),
- * then the links. Every move posts to the status route, which checks the
- * move again.
+ * The order's header strip, as the project header: the id and what it is
+ * about, and the status, on the left; the order's actions (every move it can
+ * make, the next step the primary button, Brad 2026-10-19), the copy button
+ * and the ⋯ menu of links at the right end. Every move posts to the status
+ * route, which checks the move again.
  */
 const ServiceOrderHeader = () => {
   const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("id not found");
 
-  const { toggleProperties } = usePanels();
+  const { toggleExplorer } = usePanels();
   const routeData = useRouteData<{
     serviceOrder: ServiceOrder;
     unbilledCount: number;
@@ -69,7 +66,6 @@ const ServiceOrderHeader = () => {
   const canUpdate = permissions.can("update", "service");
   const canInvoice = canUpdate && permissions.can("create", "invoicing");
   const unbilledCount = routeData.unbilledCount ?? 0;
-  const navigation = useServiceOrderNavigation();
 
   const statusFetcher = useFetcher<{ success: boolean }>();
   const isMoving = statusFetcher.state !== "idle";
@@ -78,8 +74,6 @@ const ServiceOrderHeader = () => {
       { status: to },
       { method: "post", action: path.to.serviceOrderStatus(id) }
     );
-  const can = (to: ServiceOrderStatusAction) =>
-    canUpdate && !isMoving && canMoveServiceOrder(status, to);
 
   const completeDisclosure = useDisclosure();
   const cancelDisclosure = useDisclosure();
@@ -101,101 +95,146 @@ const ServiceOrderHeader = () => {
   const returnOrder = order.salesReturnOrderLine?.salesReturnOrder ?? null;
   const canShipBack = isDepotRepair && isReadyToShipBack(order);
 
-  // The next step first: Mark as Planned on a Draft order (its parts become
+  // Every move the order can make is a header button; a move it cannot make
+  // is not shown, and one the user may not make is disabled. The next step is
+  // the primary button: Mark as Planned on a Draft order (its parts become
   // MRP demand and it takes charges), Complete on an open order, Resume on
-  // hold, then Create Invoice or Close on a completed one.
-  const transitions = (
+  // hold, then Ship Back on a repaired unit, else Create Invoice or Close.
+  const shows = (to: ServiceOrderStatusAction) =>
+    canMoveServiceOrder(status, to);
+  const isDisabled = !canUpdate || isMoving;
+  const showInvoice = status === "Completed" && unbilledCount > 0;
+  const showClose =
+    status === "Completed" && unbilledCount === 0 && shows("Closed");
+  const showReopen =
+    status === "Completed" && !isRefurbishment && shows("Planned");
+  const shipsBack = canShipBack && !!returnOrder;
+
+  const actions = (
     <>
-      {status === "Draft" && (
-        <DropdownMenuItem
-          disabled={!can("Planned")}
-          onClick={() => move("Planned")}
-        >
-          <DropdownMenuIcon icon={<LuCheckCheck />} />
-          <Trans>Mark as Planned</Trans>
-        </DropdownMenuItem>
+      <RecordAction slot="overflow">
+        <Button variant="secondary" leftIcon={<LuPrinter />} asChild>
+          <a
+            href={path.to.serviceOrderEstimate(id)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Trans>Print Estimate</Trans>
+          </a>
+        </Button>
+      </RecordAction>
+      {isOpen && shows("On Hold") && (
+        <RecordAction slot="overflow">
+          <Button
+            variant="secondary"
+            leftIcon={<LuPause />}
+            isDisabled={isDisabled}
+            onClick={() => move("On Hold")}
+          >
+            <Trans>Put on Hold</Trans>
+          </Button>
+        </RecordAction>
       )}
-      {isOpen && (
-        <DropdownMenuItem
-          disabled={!can("Completed")}
-          onClick={completeDisclosure.onOpen}
-        >
-          <DropdownMenuIcon icon={<LuCircleCheck />} />
-          <Trans>Complete</Trans>
-        </DropdownMenuItem>
+      {(isOpen || status === "On Hold") && shows("Cancelled") && (
+        <RecordAction slot="overflow">
+          <Button
+            variant="secondary"
+            leftIcon={<LuCircleStop />}
+            isDisabled={isDisabled}
+            onClick={cancelDisclosure.onOpen}
+          >
+            <Trans>Cancel</Trans>
+          </Button>
+        </RecordAction>
       )}
-      {status === "On Hold" && (
-        <DropdownMenuItem
-          disabled={!can("Planned")}
-          onClick={() => move("Planned")}
-        >
-          <DropdownMenuIcon icon={<LuPlay />} />
-          <Trans>Resume</Trans>
-        </DropdownMenuItem>
+      {showReopen && (
+        <RecordAction slot="overflow">
+          <Button
+            variant="secondary"
+            leftIcon={<LuRotateCcw />}
+            isDisabled={isDisabled}
+            onClick={() => move("Planned")}
+          >
+            <Trans>Reopen</Trans>
+          </Button>
+        </RecordAction>
       )}
-      {status === "Completed" && unbilledCount > 0 && (
-        <DropdownMenuItem
-          disabled={!canInvoice || isMoving}
-          onClick={invoiceDisclosure.onOpen}
-        >
-          <DropdownMenuIcon icon={<LuFileText />} />
-          <Trans>Create Invoice</Trans>
-        </DropdownMenuItem>
+      {status === "Draft" && shows("Planned") && (
+        <RecordAction slot="primary">
+          <Button
+            variant="primary"
+            leftIcon={<LuCheckCheck />}
+            isDisabled={isDisabled}
+            onClick={() => move("Planned")}
+          >
+            <Trans>Mark as Planned</Trans>
+          </Button>
+        </RecordAction>
       )}
-      {status === "Completed" && unbilledCount === 0 && (
-        <DropdownMenuItem
-          disabled={!can("Closed")}
-          onClick={closeDisclosure.onOpen}
-        >
-          <DropdownMenuIcon icon={<LuLock />} />
-          <Trans>Close</Trans>
-        </DropdownMenuItem>
+      {isOpen && shows("Completed") && (
+        <RecordAction slot={status === "Draft" ? "overflow" : "primary"}>
+          <Button
+            variant={status === "Draft" ? "secondary" : "primary"}
+            leftIcon={<LuCircleCheck />}
+            isDisabled={isDisabled}
+            onClick={completeDisclosure.onOpen}
+          >
+            <Trans>Complete</Trans>
+          </Button>
+        </RecordAction>
       )}
-      {canShipBack && returnOrder && (
-        <DropdownMenuItem asChild>
-          <Link to={path.to.salesReturnOrderDetails(returnOrder.id)}>
-            <DropdownMenuIcon icon={<LuTruck />} />
-            <Trans>Ship Back</Trans>
-          </Link>
-        </DropdownMenuItem>
+      {status === "On Hold" && shows("Planned") && (
+        <RecordAction slot="primary">
+          <Button
+            variant="primary"
+            leftIcon={<LuPlay />}
+            isDisabled={isDisabled}
+            onClick={() => move("Planned")}
+          >
+            <Trans>Resume</Trans>
+          </Button>
+        </RecordAction>
       )}
-      {isOpen && (
-        <DropdownMenuItem
-          disabled={!can("On Hold")}
-          onClick={() => move("On Hold")}
-        >
-          <DropdownMenuIcon icon={<LuPause />} />
-          <Trans>Put on Hold</Trans>
-        </DropdownMenuItem>
+      {showInvoice && (
+        <RecordAction slot={shipsBack ? "overflow" : "primary"}>
+          <Button
+            variant={shipsBack ? "secondary" : "primary"}
+            leftIcon={<LuFileText />}
+            isDisabled={!canInvoice || isMoving}
+            onClick={invoiceDisclosure.onOpen}
+          >
+            <Trans>Create Invoice</Trans>
+          </Button>
+        </RecordAction>
       )}
-      {status === "Completed" && !isRefurbishment && (
-        <DropdownMenuItem
-          disabled={!can("Planned")}
-          onClick={() => move("Planned")}
-        >
-          <DropdownMenuIcon icon={<LuRotateCcw />} />
-          <Trans>Reopen</Trans>
-        </DropdownMenuItem>
+      {showClose && (
+        <RecordAction slot={shipsBack ? "overflow" : "primary"}>
+          <Button
+            variant={shipsBack ? "secondary" : "primary"}
+            leftIcon={<LuLock />}
+            isDisabled={isDisabled}
+            onClick={closeDisclosure.onOpen}
+          >
+            <Trans>Close</Trans>
+          </Button>
+        </RecordAction>
       )}
-      {(isOpen || status === "On Hold") && (
-        <DropdownMenuItem
-          destructive
-          disabled={!can("Cancelled")}
-          onClick={cancelDisclosure.onOpen}
-        >
-          <DropdownMenuIcon icon={<LuCircleStop />} />
-          <Trans>Cancel</Trans>
-        </DropdownMenuItem>
+      {shipsBack && returnOrder && (
+        <RecordAction slot="primary">
+          <Button variant="primary" leftIcon={<LuTruck />} asChild>
+            <Link to={path.to.salesReturnOrderDetails(returnOrder.id)}>
+              <Trans>Ship Back</Trans>
+            </Link>
+          </Button>
+        </RecordAction>
       )}
     </>
   );
-  const hasTransitions =
-    isOpen || status === "On Hold" || status === "Completed" || canShipBack;
 
-  const menu = (
+  // The ⋯ menu keeps the links to the order's other records.
+  const hasLinks = Boolean(order.customerAssetId || returnOrder);
+  const menu = hasLinks ? (
     <>
-      {transitions}
-      {hasTransitions && <DropdownMenuSeparator />}
       {order.customerAssetId && (
         <DropdownMenuItem asChild>
           <Link to={path.to.customerAsset(order.customerAssetId)}>
@@ -212,28 +251,31 @@ const ServiceOrderHeader = () => {
           </Link>
         </DropdownMenuItem>
       )}
-      <DropdownMenuItem asChild>
-        <a
-          href={path.to.serviceOrderEstimate(id)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <DropdownMenuIcon icon={<LuPrinter />} />
-          <Trans>Print Estimate</Trans>
-        </a>
-      </DropdownMenuItem>
     </>
-  );
+  ) : undefined;
 
   return (
     <>
       <RecordHeader
         title={
-          <span className="whitespace-nowrap">{order.serviceOrderId}</span>
+          // As the project header: the id, then what the order is about.
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="shrink-0 whitespace-nowrap">
+              {order.serviceOrderId}
+            </span>
+            <span className="min-w-0 truncate font-normal text-muted-foreground">
+              {[
+                order.customer?.name ?? order.item?.readableIdWithRevision,
+                order.trackedEntity?.readableId
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+          </span>
         }
-        titleTo={path.to.serviceOrderDetails(id)}
         copyValue={order.serviceOrderId}
         menu={menu}
+        actions={actions}
         status={
           <>
             <ServiceOrderStatus status={status} />
@@ -253,10 +295,7 @@ const ServiceOrderHeader = () => {
             )}
           </>
         }
-        aside={
-          navigation.length > 1 ? <DetailTopbar links={navigation} /> : null
-        }
-        onToggleProperties={toggleProperties}
+        onToggleExplorer={toggleExplorer}
         toolsPlacement="end"
       />
 

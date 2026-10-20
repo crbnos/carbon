@@ -30,6 +30,7 @@ import {
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuFactory,
@@ -86,6 +87,7 @@ import {
   useActiveChangeRequestId,
   withChangeRequest
 } from "../ChangeRequests/useActiveChangeRequest";
+import { useElementRoutes } from "../Elements/ElementRoutes";
 import { orderPlanRows, type PlanLineType } from "./plan-rows";
 
 type PlanLines = ProjectElementPage["planLines"];
@@ -159,6 +161,12 @@ function materialAmount(quantity: number | null, unitCost: number | null) {
   return unitCost === null ? null : (quantity ?? 0) * unitCost;
 }
 
+/** A labor line's amount: its hours at the category's cost rate today, as
+ *  the plan cost on the Costs page reads it. No rate, no amount. */
+function laborAmount(hours: number | null, costRate: number | null) {
+  return costRate === null ? null : (hours ?? 0) * costRate;
+}
+
 /** The id the plan route answers for a line it created. */
 function savedLineId(body: unknown) {
   const id = (body as { id?: unknown } | null)?.id;
@@ -217,12 +225,14 @@ export function ElementPlanLines({
   action: actionOverride,
   canSupply = true,
   addRequest,
-  addDisabledReason
+  addDisabledReason,
+  toolbarExtras
 }: {
   projectId: string;
   elementId: string;
   planLines: PlanLines;
-  laborCategories: { id: string; name: string }[];
+  /** The active categories, each with its cost rate in effect today. */
+  laborCategories: { id: string; name: string; costRate?: number | null }[];
   /** The project's location: where a job made from a material is built. */
   defaultLocationId?: string | null;
   isDisabled: boolean;
@@ -235,6 +245,8 @@ export function ElementPlanLines({
   addRequest?: number;
   /** Why "Add line" is off (a locked plan); shown as its tooltip. */
   addDisabledReason?: string | null;
+  /** Controls shown beside "Add line" (the Linear and Jira issue buttons). */
+  toolbarExtras?: ReactNode;
 }) {
   const { t } = useLingui();
   const save = useCellSave();
@@ -252,12 +264,10 @@ export function ElementPlanLines({
   const canCreateJob = permissions.can("create", "production");
   const canCreatePurchaseOrderLine = permissions.can("create", "purchasing");
   const changeRequestId = useActiveChangeRequestId();
+  const routes = useElementRoutes(projectId);
   const action =
     actionOverride ??
-    withChangeRequest(
-      path.to.projectElementPlan(projectId, elementId),
-      changeRequestId
-    );
+    withChangeRequest(routes.plan(elementId), changeRequestId);
 
   const [drafts, setDrafts] = useState<PlanRow[]>([]);
   const draftCount = useRef(0);
@@ -319,6 +329,11 @@ export function ElementPlanLines({
     }
   }, [drafts, savedIds]);
 
+  const costRateById = useMemo(
+    () => new Map(laborCategories.map((c) => [c.id, c.costRate ?? null])),
+    [laborCategories]
+  );
+
   const rows = useMemo<PlanRow[]>(
     () =>
       orderPlanRows([
@@ -363,7 +378,10 @@ export function ElementPlanLines({
           quantity: Number(line.hours),
           unitOfMeasureCode: null,
           unitCost: null,
-          amount: null,
+          amount: laborAmount(
+            Number(line.hours),
+            costRateById.get(line.laborCategoryId) ?? null
+          ),
           date: line.startDate ?? null,
           endDate: line.endDate ?? null
         })),
@@ -384,7 +402,7 @@ export function ElementPlanLines({
         })),
         ...drafts.filter((d) => d.id === null || !savedIds.has(d.id))
       ]),
-    [planLines, drafts, savedIds, itemChanges]
+    [planLines, drafts, savedIds, itemChanges, costRateById]
   );
 
   const itemsById = useMemo(
@@ -438,6 +456,12 @@ export function ElementPlanLines({
       if (row.type === "material") {
         next.amount = materialAmount(next.quantity, next.unitCost);
       }
+      if (row.type === "labor") {
+        next.amount = laborAmount(
+          next.quantity,
+          costRateById.get(String(next.line)) ?? null
+        );
+      }
       if (!row.draft) {
         const changesItem = accessorKey === "line" && row.type === "material";
         const id = row.id;
@@ -482,7 +506,7 @@ export function ElementPlanLines({
       }
       return result;
     },
-    [action, save, itemsById, loadItemUnitCost]
+    [action, save, itemsById, loadItemUnitCost, costRateById]
   );
 
   const stable = useStableEditableComponents(
@@ -775,22 +799,27 @@ export function ElementPlanLines({
           />
         </div>
       )}
-      {!isDisabled &&
-        (addDisabledReason ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {/* A disabled button fires no pointer events: the span does. */}
-              <span tabIndex={0} className="self-start">
-                {addLine}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-72">
-              {addDisabledReason}
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          addLine
-        ))}
+      {(!isDisabled || toolbarExtras) && (
+        <div className="flex items-center gap-1 self-start">
+          {!isDisabled &&
+            (addDisabledReason ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {/* A disabled button fires no pointer events: the span does. */}
+                  <span tabIndex={0} className="self-start">
+                    {addLine}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-72">
+                  {addDisabledReason}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              addLine
+            ))}
+          {toolbarExtras}
+        </div>
+      )}
 
       {editing && (
         <PlanLineModal

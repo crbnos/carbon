@@ -6,18 +6,24 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useParams } from "react-router";
+import { usePermissions, useRouteData } from "~/hooks";
 import {
   buildProjectCostFigures,
   getChildServiceProjectCosts,
   getProjectCostSummary,
   getProjectElements,
+  getProjectMembers,
   getProjectMilestones,
   getProjectOpenTimesheetEntries,
+  type Project,
   summarizeMilestones
 } from "~/modules/projects";
+import ProjectMembers from "~/modules/projects/ui/Project/ProjectMembers";
 import ProjectOverview from "~/modules/projects/ui/Project/ProjectOverview";
+import { ProjectProperties } from "~/modules/projects/ui/Project/ProjectProperties";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-overview");
 
@@ -35,14 +41,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     serviceCosts,
     milestones,
     openEntries,
-    timeZone
+    timeZone,
+    members
   ] = await Promise.all([
     getProjectElements(client, projectId, companyId),
     getProjectCostSummary(client, projectId, companyId),
     getChildServiceProjectCosts(client, projectId, companyId),
     getProjectMilestones(client, projectId, companyId),
     getProjectOpenTimesheetEntries(client, projectId, companyId),
-    getCompanyTimeZone(client, companyId)
+    getCompanyTimeZone(client, companyId),
+    getProjectMembers(client, projectId, companyId)
   ]);
 
   for (const [what, result] of [
@@ -50,7 +58,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ["cost summary", costSummary],
     ["service order costs", serviceCosts],
     ["milestones", milestones],
-    ["open time", openEntries]
+    ["open time", openEntries],
+    ["members", members]
   ] as const) {
     if (result.error) {
       logger.error("Failed to load a part of the project overview", {
@@ -109,18 +118,52 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       elementCount: nextMilestone.elementCount,
       completedCount: nextMilestone.completedCount
     },
-    openTimeCount: openEntries.data?.length ?? 0
+    openTimeCount: openEntries.data?.length ?? 0,
+    members: members.data ?? []
   };
 }
 
+/**
+ * The project's Overview, as an element's page: the summary in a readable
+ * main column, and the project's properties in a column beside it, each
+ * saved as it changes. There is no Settings page.
+ */
 export default function ProjectOverviewRoute() {
-  const { figures, nextMilestone, openTimeCount } =
+  const { projectId } = useParams();
+  if (!projectId) throw new Error("projectId not found");
+  const { figures, nextMilestone, openTimeCount, members } =
     useLoaderData<typeof loader>();
+  const routeData = useRouteData<{ project: Project }>(
+    path.to.project(projectId)
+  );
+  const permissions = usePermissions();
+  const project = routeData?.project;
+  const isDisabled =
+    !permissions.can("update", "projects") || project?.status === "Closed";
+
   return (
-    <ProjectOverview
-      figures={figures}
-      nextMilestone={nextMilestone}
-      openTimeCount={openTimeCount}
-    />
+    <div className="@container flex h-full min-h-0 w-full">
+      <div className="flex min-w-0 flex-1 flex-col @min-[56rem]:flex-row">
+        <main className="min-w-0 flex-1 @min-[56rem]:overflow-y-auto">
+          <ProjectOverview
+            figures={figures}
+            nextMilestone={nextMilestone}
+            openTimeCount={openTimeCount}
+          >
+            {project?.restrictCharging && (
+              <ProjectMembers
+                projectId={projectId}
+                members={members}
+                action={path.to.projectSettings(projectId)}
+                isDisabled={isDisabled}
+              />
+            )}
+          </ProjectOverview>
+        </main>
+        <aside className="shrink-0 border-t border-border px-5 py-6 @min-[56rem]:w-[300px] @min-[56rem]:overflow-y-auto @min-[56rem]:border-t-0 @min-[56rem]:border-l">
+          <ProjectProperties />
+        </aside>
+      </div>
+    </div>
   );
 }

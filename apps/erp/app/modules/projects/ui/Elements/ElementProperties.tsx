@@ -56,7 +56,6 @@ import {
 } from "~/hooks";
 import { getPriorityIcon } from "~/modules/quality/ui/Issue/IssueIcons";
 import { usePeople } from "~/stores";
-import { path } from "~/utils/path";
 import type {
   ProjectElementEditableField,
   ProjectElementPriority,
@@ -72,6 +71,7 @@ import {
   withChangeRequest
 } from "../ChangeRequests/useActiveChangeRequest";
 import { StateIcon } from "../Project/StateIcon";
+import { useElementRoutes } from "./ElementRoutes";
 
 // --- Saving one field ---------------------------------------------------------
 
@@ -92,6 +92,7 @@ export function useElementField(
   field: ElementUpdateField
 ) {
   const key = elementFieldKey(elementId, field);
+  const routes = useElementRoutes(projectId);
   const changeRequestId = useActiveChangeRequestId();
   const fetcher = useAction<{
     success?: boolean;
@@ -117,10 +118,7 @@ export function useElementField(
       { ids: elementId, field, value: value ?? "" },
       {
         method: "post",
-        action: withChangeRequest(
-          path.to.projectElementUpdate(projectId),
-          changeRequestId
-        )
+        action: withChangeRequest(routes.update, changeRequestId)
       }
     );
   };

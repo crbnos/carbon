@@ -3844,6 +3844,8 @@ export async function getProjectElementPage(
     planLines,
     costSummary,
     laborCategories,
+    laborCategoryRates,
+    timeZone,
     employeeJob,
     timeAndMaterials
   ] = await Promise.all([
@@ -3855,6 +3857,12 @@ export async function getProjectElementPage(
     getProjectElementPlanLines(client, args.elementId, args.companyId),
     getProjectCostSummary(client, args.projectId, args.companyId),
     getLaborCategoriesList(client, args.companyId),
+    client
+      .from("laborCategoryRate")
+      .select("laborCategoryId, costRate, effectiveFrom")
+      .eq("companyId", args.companyId)
+      .order("effectiveFrom", { ascending: false }),
+    getCompanyTimeZone(client, args.companyId),
     client
       .from("employeeJob")
       .select("laborCategoryId")
@@ -3871,10 +3879,22 @@ export async function getProjectElementPage(
     planLines.error ??
     costSummary.error ??
     laborCategories.error ??
+    laborCategoryRates.error ??
     employeeJob.error;
   if (error) return { data: null, error };
   if (!element.data || element.data.projectId !== args.projectId) {
     return { data: null, error: null };
+  }
+
+  // Each category's cost rate in effect today, as the plan cost uses it: a
+  // labor plan line's amount is its hours at that rate.
+  const today = datetime.today(timeZone).toString();
+  const costRates = new Map<string, number>();
+  for (const rate of laborCategoryRates.data ?? []) {
+    if (rate.effectiveFrom > today || costRates.has(rate.laborCategoryId)) {
+      continue;
+    }
+    costRates.set(rate.laborCategoryId, Number(rate.costRate));
   }
 
   const [verification, qualityDocuments, itemHistory] = await Promise.all([
@@ -3969,7 +3989,10 @@ export async function getProjectElementPage(
       comments: comments.data ?? [],
       planLines: planLines.data ?? { materials: [], labor: [], costs: [] },
       costSummary: costSummary.data ?? [],
-      laborCategories: laborCategories.data ?? [],
+      laborCategories: (laborCategories.data ?? []).map((category) => ({
+        ...category,
+        costRate: costRates.get(category.id) ?? null
+      })),
       defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null,
       ledger: timeAndMaterials.ledger,
       openTime: timeAndMaterials.openTime,

@@ -260,7 +260,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
           shortcut={MENU_ITEM_SHORTCUTS.edit}
           disabled={!permissions.can("update", "projects")}
           onClick={() => {
-            navigate(path.to.projectSettings(row.id));
+            navigate(path.to.project(row.id));
           }}
         >
           <MenuIcon icon={<LuPencil />} />

@@ -528,7 +528,7 @@ export function FormSection({
 }
 
 /** The company's active planning groups, read once when needed. */
-function usePlanningGroups(enabled: boolean) {
+export function usePlanningGroups(enabled: boolean) {
   const { carbon } = useCarbon();
   const { company } = useUser();
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
@@ -546,7 +546,7 @@ function usePlanningGroups(enabled: boolean) {
 }
 
 /** The company's Construction in Progress classes, read once when needed. */
-function useCipClasses(enabled: boolean) {
+export function useCipClasses(enabled: boolean) {
   const { carbon } = useCarbon();
   const { company } = useUser();
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);

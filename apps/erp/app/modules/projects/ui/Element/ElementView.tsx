@@ -54,6 +54,7 @@ import {
   withChangeRequest
 } from "../ChangeRequests/useActiveChangeRequest";
 import { useElementField } from "../Elements/ElementProperties";
+import { useElementRoutes } from "../Elements/ElementRoutes";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
 import { ElementChildren } from "./ElementChildren";
 import { ElementComments } from "./ElementComments";
@@ -77,6 +78,19 @@ type ElementViewProps = ProjectElementPage & {
   /** The element's Linear and Jira links (`externalIntegrationMapping.metadata`). */
   linearIssue?: unknown;
   jiraIssue?: unknown;
+  /**
+   * The charge actions of the ⋯ menu in place of Log time and Issue material
+   * (a service order's, which post through its charge route); null for none
+   * (a service template takes no charges).
+   */
+  chargeActions?: ReactNode | null;
+  /**
+   * The element's charges in place of Time & materials (a service order's);
+   * null while it has none.
+   */
+  charges?: ReactNode | null;
+  /** Fields added to the sidebar's Work group (a service element's fixed price). */
+  workFields?: ReactNode;
 };
 
 /**
@@ -108,13 +122,18 @@ export function ElementView({
   milestones,
   changeRequest,
   linearIssue,
-  jiraIssue
+  jiraIssue,
+  chargeActions,
+  charges,
+  workFields
 }: ElementViewProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
   const integrations = useIntegrations();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const routes = useElementRoutes(projectId);
+  const isProject = routes.module === "projects";
   const changeRequestId = useActiveChangeRequestId();
   const childQuickAddRef = useRef<HTMLInputElement>(null);
   const [addingChild, setAddingChild] = useState(false);
@@ -124,14 +143,18 @@ export function ElementView({
   const [issuing, setIssuing] = useState(false);
 
   const isClosed = project?.status === "Closed";
-  const canUpdate = permissions.can("update", "projects") && !isClosed;
-  const canCreate = permissions.can("create", "projects") && !isClosed;
-  const canDelete = permissions.can("delete", "projects") && !isClosed;
+  const canUpdate = permissions.can("update", routes.module) && !isClosed;
+  const canCreate = permissions.can("create", routes.module) && !isClosed;
+  const canDelete = permissions.can("delete", routes.module) && !isClosed;
   // Charges need a chargeable element of an open project; the posting
   // functions refuse anything else with the reason.
   const canCharge = element.isChargeable && !isClosed;
-  const canLogTime = canCharge && permissions.is("employee");
+  // A page with its own charge actions handles its own shortcuts.
+  const usesProjectCharges = chargeActions === undefined;
+  const canLogTime =
+    usesProjectCharges && canCharge && permissions.is("employee");
   const canIssue =
+    usesProjectCharges &&
     canCharge &&
     permissions.can("update", "inventory") &&
     permissions.can("update", "projects");
@@ -205,13 +228,36 @@ export function ElementView({
   // Plan with its "Add line" to a user who can edit, even with no lines.
   const showPlan =
     planLineCount > 0 || (canUpdate && element.type !== "Parameter");
-  const showLinks = elementLinkCount > 0 || addingLink;
+  // The Linear and Jira issue buttons sit beside "Add line" (issue-sync).
+  const issueButtons =
+    canUpdate && (integrations.has("linear") || integrations.has("jira")) ? (
+      <>
+        {integrations.has("linear") && (
+          <LinearIssueDialog
+            entityType="projectElement"
+            taskId={element.id}
+            linkedIssue={linearIssue}
+          />
+        )}
+        {integrations.has("jira") && (
+          <JiraIssueDialog
+            entityType="projectElement"
+            taskId={element.id}
+            linkedIssue={jiraIssue}
+          />
+        )}
+      </>
+    ) : null;
+  // Links trace requirements and tests: a project's, not a service order's.
+  const showLinks = isProject && (elementLinkCount > 0 || addingLink);
   const showChildren = children.length > 0 || addingChild;
-  const showTime = ledger.length > 0 || openTime.length > 0;
+  // A page with charges of its own shows them instead (null: none yet).
+  const showTime =
+    charges === undefined && (ledger.length > 0 || openTime.length > 0);
 
   // The Plan page with the layout and filters the element came from.
   const query = searchParams.toString();
-  const planPath = `${path.to.projectElements(projectId)}${query ? `?${query}` : ""}`;
+  const planPath = `${routes.list}${query ? `?${query}` : ""}`;
   const goBack = () => {
     // A page reached from inside the app goes back where it came from;
     // a page opened from a link goes to the Plan.
@@ -265,7 +311,7 @@ export function ElementView({
             <Fragment key={ancestor.id}>
               <LuChevronRight className="size-3 shrink-0 text-muted-foreground" />
               <Link
-                to={`${path.to.projectElement(projectId, ancestor.id)}${query ? `?${query}` : ""}`}
+                to={`${routes.element(ancestor.id)}${query ? `?${query}` : ""}`}
                 title={ancestor.name}
                 className="min-w-0 max-w-48 truncate rounded-md px-1.5 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               >
@@ -280,20 +326,8 @@ export function ElementView({
         </nav>
         <div className="flex shrink-0 items-center gap-2">
           <Copy text={element.readableId} />
-          {canUpdate && integrations.has("linear") && (
-            <LinearIssueDialog
-              entityType="projectElement"
-              taskId={element.id}
-              linkedIssue={linearIssue}
-            />
-          )}
-          {canUpdate && integrations.has("jira") && (
-            <JiraIssueDialog
-              entityType="projectElement"
-              taskId={element.id}
-              linkedIssue={jiraIssue}
-            />
-          )}
+          {/* An element with no Plan section (a Parameter) keeps them here. */}
+          {!showPlan && issueButtons}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
@@ -304,33 +338,41 @@ export function ElementView({
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem
-                disabled={!canLogTime}
-                onClick={() => setLoggingTime(true)}
-              >
-                <DropdownMenuIcon icon={<LuTimer />} />
-                <Trans>Log time</Trans>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!canIssue}
-                onClick={() => setIssuing(true)}
-              >
-                <DropdownMenuIcon icon={<LuPackageMinus />} />
-                <Trans>Issue material</Trans>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
+              {usesProjectCharges ? (
+                <>
+                  <DropdownMenuItem
+                    disabled={!canLogTime}
+                    onClick={() => setLoggingTime(true)}
+                  >
+                    <DropdownMenuIcon icon={<LuTimer />} />
+                    <Trans>Log time</Trans>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!canIssue}
+                    onClick={() => setIssuing(true)}
+                  >
+                    <DropdownMenuIcon icon={<LuPackageMinus />} />
+                    <Trans>Issue material</Trans>
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                chargeActions
+              )}
+              {chargeActions !== null && <DropdownMenuSeparator />}
               <DropdownMenuItem disabled={!canAddChild} onClick={addChild}>
                 <DropdownMenuIcon icon={<LuCornerDownRight />} />
                 <Trans>Add child</Trans>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!canUpdate}
-                onClick={() => setAddingLink(true)}
-              >
-                <DropdownMenuIcon icon={<LuLink />} />
-                <Trans>Add link</Trans>
-              </DropdownMenuItem>
-              {subtreeHasPinnedCode && (
+              {isProject && (
+                <DropdownMenuItem
+                  disabled={!canUpdate}
+                  onClick={() => setAddingLink(true)}
+                >
+                  <DropdownMenuIcon icon={<LuLink />} />
+                  <Trans>Add link</Trans>
+                </DropdownMenuItem>
+              )}
+              {isProject && subtreeHasPinnedCode && (
                 <DropdownMenuItem
                   disabled={!canUpdate}
                   onClick={() =>
@@ -416,7 +458,9 @@ export function ElementView({
                     laborCategories={laborCategories}
                     defaultLocationId={project?.locationId}
                     isDisabled={!canUpdate}
+                    canSupply={isProject}
                     addDisabledReason={planLockMessage}
+                    toolbarExtras={issueButtons}
                   />
                 </Section>
               )}
@@ -434,6 +478,8 @@ export function ElementView({
                   />
                 </Section>
               )}
+
+              {charges && <Section title={t`Charges`}>{charges}</Section>}
 
               {showTime && (
                 <Section title={t`Time & materials`}>
@@ -465,6 +511,7 @@ export function ElementView({
             labels={labels}
             milestones={milestones}
             isDisabled={!canUpdate}
+            workFields={workFields}
             typeBlock={
               hasTypeBlock(element.type) ? (
                 <ElementTypeBlock
@@ -504,10 +551,7 @@ export function ElementView({
       )}
       {deleting && (
         <ConfirmDelete
-          action={withChangeRequest(
-            path.to.deleteProjectElement(projectId, element.id),
-            changeRequestId
-          )}
+          action={withChangeRequest(routes.remove(element.id), changeRequestId)}
           name={element.readableId}
           text={t`Delete ${element.readableId} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted.`}
           onCancel={() => setDeleting(false)}

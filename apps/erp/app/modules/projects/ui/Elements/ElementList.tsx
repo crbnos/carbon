@@ -29,7 +29,6 @@ import {
 import { Link, useLocation } from "react-router";
 import { DiffBadge } from "~/components/Diff";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { path } from "~/utils/path";
 import type {
   ChangeOperationMark,
   ProjectElementType,
@@ -50,6 +49,7 @@ import {
   StatePill,
   sortStates
 } from "./ElementProperties";
+import { useElementRoutes } from "./ElementRoutes";
 import { ElementTypeIcon } from "./ElementTypeIcon";
 import { MoveElementModal } from "./MoveElementModal";
 import { VerificationIcon } from "./VerificationStatus";
@@ -103,6 +103,7 @@ export function ElementList({
 }: ElementListProps) {
   const { t } = useLingui();
   const { search } = useLocation();
+  const routes = useElementRoutes(projectId);
   const changeRequestId = useActiveChangeRequestId();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [moving, setMoving] = useState<ProjectElementListItem | null>(null);
@@ -224,7 +225,7 @@ export function ElementList({
                   states={states}
                   labelsById={labelsById}
                   requirementStatus={requirementStatus[element.id]}
-                  href={`${path.to.projectElement(projectId, element.id)}${search}`}
+                  href={`${routes.element(element.id)}${search}`}
                   isHighlighted={element.id === highlightId}
                   canUpdate={canUpdate}
                   idChars={idChars}
@@ -233,7 +234,7 @@ export function ElementList({
                   menu={
                     <ElementRowMenu
                       readableId={element.readableId}
-                      href={path.to.projectElement(projectId, element.id)}
+                      href={routes.element(element.id)}
                       canAddChild={canCreate && element.type !== "Parameter"}
                       canMove={canUpdate}
                       canDelete={canDelete}
@@ -258,7 +259,7 @@ export function ElementList({
       {deleting && (
         <ConfirmDelete
           action={withChangeRequest(
-            path.to.deleteProjectElement(projectId, deleting.id),
+            routes.remove(deleting.id),
             changeRequestId
           )}
           name={deleting.readableId}

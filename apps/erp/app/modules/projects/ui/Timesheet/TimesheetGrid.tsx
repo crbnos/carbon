@@ -667,40 +667,33 @@ export default function TimesheetGrid({
   );
 
   return (
-    <div className="flex w-full flex-col gap-4 p-4">
+    <div className="flex min-h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] w-full flex-col gap-4 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <HStack spacing={2}>
-          <h2 className="text-base font-medium">
-            {employee ? employee.name : <Trans>My Time</Trans>}
-          </h2>
-          <HStack spacing={1}>
-            <IconButton
-              aria-label={t`Previous week`}
-              icon={<LuChevronLeft />}
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(`${weekPath}?week=${weekOffset - 1}`)}
-            />
-            <span className="whitespace-nowrap text-sm tabular-nums">
-              {formatDate(weekStart)} – {formatDate(weekEnd)}
-            </span>
-            <IconButton
-              aria-label={t`Next week`}
-              icon={<LuChevronRight />}
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(`${weekPath}?week=${weekOffset + 1}`)}
-            />
-            {weekOffset !== 0 && (
-              <Button variant="ghost" size="sm" asChild>
-                <Link to={weekPath}>
-                  <Trans>This week</Trans>
-                </Link>
-              </Button>
-            )}
-          </HStack>
+          {/* My Time is named by the breadcrumb; another employee's week is not. */}
+          {employee && (
+            <h2 className="text-base font-medium">{employee.name}</h2>
+          )}
+          <span className="whitespace-nowrap text-sm tabular-nums">
+            {formatDate(weekStart)} – {formatDate(weekEnd)}
+          </span>
         </HStack>
         <HStack spacing={2}>
+          <IconButton
+            aria-label={t`Previous week`}
+            icon={<LuChevronLeft />}
+            variant="secondary"
+            onClick={() => navigate(`${weekPath}?week=${weekOffset - 1}`)}
+          />
+          <Button variant="secondary" onClick={() => navigate(weekPath)}>
+            <Trans>Today</Trans>
+          </Button>
+          <IconButton
+            aria-label={t`Next week`}
+            icon={<LuChevronRight />}
+            variant="secondary"
+            onClick={() => navigate(`${weekPath}?week=${weekOffset + 1}`)}
+          />
           {!isReadOnly && (
             <Button
               variant="ghost"
@@ -743,6 +736,7 @@ export default function TimesheetGrid({
 
       {gridRows.length === 0 ? (
         <Empty
+          className="flex-1"
           title={t`No time this week`}
           description={
             employee ? null : t`Add a row for each charge number you worked on.`

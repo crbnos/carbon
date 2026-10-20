@@ -10,8 +10,7 @@ import {
   FormErrorMessage,
   FormHelperText,
   FormLabel,
-  HStack,
-  IconButton,
+  InlineTrigger,
   Input as InputBase,
   InputGroup,
   InputLeftAddon,
@@ -21,9 +20,9 @@ import {
 } from "@carbon/react";
 import type { ChangeEvent, ReactNode } from "react";
 import { forwardRef, useEffect, useRef, useState } from "react";
-import { LuPlus, LuSettings2 } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 type FormInputControlledProps = Omit<InputProps, "value" | "onChange"> & {
   name: string;
@@ -111,27 +110,30 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
     };
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
+    const inlineField = useInlineField({
+      inline,
+      label,
+      isEmpty: !value,
+      isReadOnly: isReadOnly || isDisabled
+    });
 
     return inlineMode ? (
       <VStack>
-        {label && (
+        {label && inlineField.showLabel && (
           <span className="text-xs text-muted-foreground">{label}</span>
         )}
-        <HStack spacing={0} className="w-full justify-between">
-          {value && (
-            <span className="flex-grow text-sm line-clamp-1">
-              {renderInlineValue ? renderInlineValue(value) : value}
-            </span>
-          )}
-          <IconButton
-            icon={value ? <LuSettings2 /> : <LuPlus />}
-            aria-label={value ? "Edit" : "Add"}
-            size="sm"
-            variant="secondary"
+        <div className="flex w-full">
+          <InlineTrigger
+            isEmpty={!value}
+            placeholder={inlineField.placeholder}
             isDisabled={isReadOnly || isDisabled}
             onClick={() => setInlineMode(false)}
-          />
-        </HStack>
+          >
+            <span className="line-clamp-1">
+              {renderInlineValue ? renderInlineValue(value) : value}
+            </span>
+          </InlineTrigger>
+        </div>
       </VStack>
     ) : (
       <FormControl

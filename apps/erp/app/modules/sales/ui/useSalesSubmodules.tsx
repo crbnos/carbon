@@ -49,23 +49,6 @@ export default function useSalesSubmodules() {
       ]
     },
     {
-      name: t`Quoting`,
-      routes: [
-        {
-          name: t`RFQs`,
-          to: path.to.salesRfqs,
-          icon: <RiProgress2Line />,
-          table: "salesRfq"
-        },
-        {
-          name: t`Quotes`,
-          to: path.to.quotes,
-          icon: <RiProgress4Line />,
-          table: "quote"
-        }
-      ]
-    },
-    {
       name: t`Orders`,
       routes: [
         {
@@ -79,6 +62,23 @@ export default function useSalesSubmodules() {
           to: path.to.salesReturnOrders,
           icon: <LuUndo2 />,
           table: "salesReturnOrder"
+        }
+      ]
+    },
+    {
+      name: t`Quoting`,
+      routes: [
+        {
+          name: t`RFQs`,
+          to: path.to.salesRfqs,
+          icon: <RiProgress2Line />,
+          table: "salesRfq"
+        },
+        {
+          name: t`Quotes`,
+          to: path.to.quotes,
+          icon: <RiProgress4Line />,
+          table: "quote"
         }
       ]
     },

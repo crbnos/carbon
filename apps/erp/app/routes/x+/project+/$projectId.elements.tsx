@@ -481,7 +481,7 @@ export default function ProjectElementsRoute() {
             ? projectPlanLockedMessage(lockMilestone.name)
             : null
         }
-        wbsMenu={
+        menu={
           <WbsMenu
             projectId={projectId}
             canUpdate={canUpdate}

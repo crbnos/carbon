@@ -8,28 +8,17 @@ import { useMemo } from "react";
 import { useSerialNumbers } from "~/modules/inventory/ui/Shipments/ShipmentLines";
 
 /**
- * A combobox of one item's serials. It reads the serials through the
- * inventory serial numbers API. The current serial stays an option when the
- * list no longer has it, so a linked serial always shows its readable id.
+ * One item's serials as combobox options, read through the inventory serial
+ * numbers API. The current serial stays an option when the list no longer has
+ * it, so a linked serial always shows its readable id.
  */
-export function SerialSelect({
-  itemId,
-  value,
-  current,
-  isReadOnly,
-  onChange
-}: {
-  itemId: string;
-  value: string | null;
-  /** The linked serial as the element page loaded it. */
-  current?: { id: string; readableId: string | null } | null;
-  isReadOnly: boolean;
-  onChange: (trackedEntityId: string | null) => void;
-}) {
-  const { t } = useLingui();
+export function useSerialOptions(
+  itemId: string | undefined,
+  current?: { id: string; readableId: string | null } | null
+) {
   const { data } = useSerialNumbers(itemId, true);
 
-  const options = useMemo(() => {
+  return useMemo(() => {
     const rows: { value: string; label: string; helper?: string }[] = (
       data?.data ?? []
     ).map((serial) => ({
@@ -45,6 +34,25 @@ export function SerialSelect({
     }
     return rows;
   }, [data, current]);
+}
+
+/** A compact combobox of one item's serials, for use outside a form. */
+export function SerialSelect({
+  itemId,
+  value,
+  current,
+  isReadOnly,
+  onChange
+}: {
+  itemId: string;
+  value: string | null;
+  /** The linked serial as the element page loaded it. */
+  current?: { id: string; readableId: string | null } | null;
+  isReadOnly: boolean;
+  onChange: (trackedEntityId: string | null) => void;
+}) {
+  const { t } = useLingui();
+  const options = useSerialOptions(itemId, current);
 
   return (
     <Combobox

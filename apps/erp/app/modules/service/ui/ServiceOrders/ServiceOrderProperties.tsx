@@ -4,10 +4,9 @@
 
 import { Combobox, Select, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
-import { Copy, cn, HStack, toast, VStack } from "@carbon/react";
+import { cn, toast, VStack } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuKeySquare } from "react-icons/lu";
 import { useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -33,6 +32,7 @@ import {
 } from "~/hooks";
 import { projectElementPriorities } from "~/modules/projects/projects.models";
 import { hideOptionalTags } from "~/modules/projects/ui/Element/PropertyFields";
+import { ElementPriorityIcon } from "~/modules/projects/ui/Elements/ElementProperties";
 import { path } from "~/utils/path";
 import type { ServiceInvoiceDetail } from "../../service.models";
 import { serviceInvoiceDetails } from "../../service.models";
@@ -47,7 +47,8 @@ export type ServiceOrderContractOption = {
 const optionalText = z.object({ value: zfd.text(z.string().optional()) });
 
 /**
- * The order's facts, each saved as it changes. The unit decides the
+ * The order's properties, the right column of its Overview (as an
+ * element page's sidebar): each saved as it changes. The unit decides the
  * customer. Site, contact and coverage contract change only while the order
  * is Draft; the rest change until it is closed or cancelled. A Refurbishment
  * has no customer: it shows its serial, the expected selling price that caps
@@ -136,29 +137,7 @@ const ServiceOrderProperties = () => {
   ];
 
   return (
-    <VStack
-      spacing={4}
-      className={cn(
-        "w-96 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm",
-        hideOptionalTags
-      )}
-    >
-      <VStack spacing={2}>
-        <HStack className="w-full justify-between">
-          <h3 className="text-sm font-medium">
-            <Trans>Properties</Trans>
-          </h3>
-          <Copy
-            text={id}
-            label={t`Copy service order unique identifier`}
-            icon={<LuKeySquare className="size-3" />}
-            variant="ghost"
-            className="w-auto"
-          />
-        </HStack>
-        <span className="text-sm">{order.serviceOrderId}</span>
-      </VStack>
-
+    <VStack spacing={4} className={cn("w-full text-sm", hideOptionalTags)}>
       {!isRefurbishment && (
         <VStack spacing={2}>
           <span className="text-xs text-muted-foreground">
@@ -327,14 +306,23 @@ const ServiceOrderProperties = () => {
           label={t`Priority`}
           options={projectElementPriorities.map((priority) => ({
             value: priority,
-            label: priorityLabels[priority]
+            label: (
+              <span className="flex items-center gap-2">
+                <ElementPriorityIcon priority={priority} />
+                <span>{priorityLabels[priority]}</span>
+              </span>
+            )
           }))}
           isReadOnly={isDisabled}
-          inline={(value) => (
-            <span>
-              {priorityLabels[value as keyof typeof priorityLabels] ?? value}
-            </span>
-          )}
+          inline={(value) => {
+            const priority = value as keyof typeof priorityLabels;
+            return (
+              <span className="flex items-center gap-2">
+                <ElementPriorityIcon priority={priority} />
+                <span>{priorityLabels[priority] ?? value}</span>
+              </span>
+            );
+          }}
           onChange={(value) => {
             if (value?.value) onUpdate("priority", value.value);
           }}
@@ -366,7 +354,6 @@ const ServiceOrderProperties = () => {
           />
         </ValidatedForm>
       )}
-
       <VStack spacing={2}>
         <span className="text-xs text-muted-foreground">
           <Trans>Service Location</Trans>

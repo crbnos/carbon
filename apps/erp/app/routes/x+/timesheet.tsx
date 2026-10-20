@@ -20,7 +20,10 @@ const logger = getLogger("erp", "timesheet");
 // and needs only an employee role. It shows the user's time of every project
 // type; a service order's rows are read-only (the visit page posts them).
 export const handle: Handle = {
-  breadcrumb: msg`My Time`,
+  breadcrumb: [
+    { breadcrumb: msg`Projects`, to: path.to.projects },
+    { breadcrumb: msg`My Time`, to: path.to.timesheet }
+  ],
   to: path.to.timesheet
 };
 

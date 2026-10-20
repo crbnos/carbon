@@ -2616,6 +2616,18 @@ export const path = {
       generatePath(`${x}/service-order/${orderId}/visits/${visitId}/signature`),
     serviceVisitStatus: (orderId: string, visitId: string) =>
       generatePath(`${x}/service-order/${orderId}/visits/${visitId}/status`),
+    serviceWorkComments: (projectId: string, elementId: string) =>
+      generatePath(`${x}/service-work/${projectId}/${elementId}/comments`),
+    serviceWorkDelete: (projectId: string, elementId: string) =>
+      generatePath(`${x}/service-work/${projectId}/${elementId}/delete`),
+    serviceWorkMove: (projectId: string) =>
+      generatePath(`${x}/service-work/${projectId}/move`),
+    serviceWorkNew: (projectId: string) =>
+      generatePath(`${x}/service-work/${projectId}/new`),
+    serviceWorkPlan: (projectId: string, elementId: string) =>
+      generatePath(`${x}/service-work/${projectId}/${elementId}/plan`),
+    serviceWorkUpdate: (projectId: string) =>
+      generatePath(`${x}/service-work/${projectId}/update`),
     settings: `${x}/settings`,
     shift: (id: string) => generatePath(`${x}/people/shifts/${id}`),
     shifts: `${x}/people/shifts`,

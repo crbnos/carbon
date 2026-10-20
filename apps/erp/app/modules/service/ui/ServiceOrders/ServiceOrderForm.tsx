@@ -22,7 +22,6 @@ import type { z } from "zod";
 import {
   Combobox,
   CustomerContact,
-  Hidden,
   Item,
   Location,
   Select,
@@ -31,7 +30,8 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { projectElementPriorities } from "~/modules/projects/projects.models";
-import { SerialSelect } from "~/modules/projects/ui/Element/SerialSelect";
+import { useSerialOptions } from "~/modules/projects/ui/Element/SerialSelect";
+import { ElementPriorityIcon } from "~/modules/projects/ui/Elements/ElementProperties";
 import { FormSection } from "~/modules/projects/ui/Projects/ProjectForm";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
@@ -86,6 +86,9 @@ export default function ServiceOrderForm({
   } | null>(null);
   const trackedEntityId =
     serial && serial.itemId === itemId ? serial.trackedEntityId : "";
+  const serialOptions = useSerialOptions(
+    isRefurbishment && itemId ? itemId : undefined
+  );
 
   const [assetId, setAssetId] = useState(initialValues.customerAssetId ?? "");
   const asset = options.assets.find((a) => a.id === assetId) ?? null;
@@ -196,28 +199,22 @@ export default function ServiceOrderForm({
                       value={itemId}
                       onChange={(value) => setItemId(value?.value ?? "")}
                     />
-                    <div className="flex w-full flex-col gap-1.5 min-w-0">
-                      <span className="text-sm font-medium">
-                        <Trans>Serial</Trans>
-                      </span>
-                      {itemId ? (
-                        <SerialSelect
-                          itemId={itemId}
-                          value={trackedEntityId || null}
-                          isReadOnly={false}
-                          onChange={(next) =>
-                            setSerial(
-                              next ? { itemId, trackedEntityId: next } : null
-                            )
-                          }
-                        />
-                      ) : (
-                        <span className="text-sm text-muted-foreground">
-                          <Trans>Choose the item to see its serials.</Trans>
-                        </span>
-                      )}
-                      <Hidden name="trackedEntityId" value={trackedEntityId} />
-                    </div>
+                    <Combobox
+                      name="trackedEntityId"
+                      label={t`Serial`}
+                      isRequired
+                      isReadOnly={!itemId}
+                      placeholder={
+                        itemId ? t`Search by serial` : t`Choose the item first`
+                      }
+                      options={serialOptions}
+                      value={trackedEntityId}
+                      onChange={(next) =>
+                        setSerial(
+                          next ? { itemId, trackedEntityId: next.value } : null
+                        )
+                      }
+                    />
                   </>
                 ) : (
                   <>
@@ -300,7 +297,12 @@ export default function ServiceOrderForm({
                         label={t`Priority`}
                         options={projectElementPriorities.map((priority) => ({
                           value: priority,
-                          label: priorityLabels[priority]
+                          label: (
+                            <span className="flex items-center gap-2">
+                              <ElementPriorityIcon priority={priority} />
+                              <span>{priorityLabels[priority]}</span>
+                            </span>
+                          )
                         }))}
                       />
                       <Select

@@ -358,8 +358,7 @@ export const serviceOrderValidator = z
   })
   .refine((data) => data.type !== "Refurbishment" || !!data.trackedEntityId, {
     message: "Serial is required",
-    // The serial picker sits under the item; its error shows there.
-    path: ["itemId"]
+    path: ["trackedEntityId"]
   });
 
 /** The Draft fields of an order and its texts, saved from the order page. */
@@ -461,13 +460,6 @@ export function serviceTemplateIdentifier(projectId: string): string {
 /** The node types a service order's work tree offers (no engineering types). */
 export const serviceNodeTypes = ["System", "Task", "Folder"] as const;
 export type ServiceNodeType = (typeof serviceNodeTypes)[number];
-
-/** Adds a node to an order's work tree. */
-export const serviceNodeValidator = z.object({
-  type: z.enum(serviceNodeTypes, { error: "Type is required" }),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  parentId: zfd.text(z.string().optional())
-});
 
 /** An expense charged to a node: mileage, a meal, a part bought on a card. */
 export const serviceExpenseValidator = z.object({

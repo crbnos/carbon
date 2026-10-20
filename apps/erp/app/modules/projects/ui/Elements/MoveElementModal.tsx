@@ -16,12 +16,12 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
-import { path } from "~/utils/path";
 import type { ProjectElementType } from "../../projects.models";
 import {
   useActiveChangeRequestId,
   withChangeRequest
 } from "../ChangeRequests/useActiveChangeRequest";
+import { useElementRoutes } from "./ElementRoutes";
 
 /** Moves an element under another parent, or to the top level. */
 const TOP_LEVEL = "__top__";
@@ -45,6 +45,7 @@ export function MoveElementModal({
 }) {
   const { t } = useLingui();
   const changeRequestId = useActiveChangeRequestId();
+  const routes = useElementRoutes(projectId);
   const [target, setTarget] = useState<string>(element.parentId ?? TOP_LEVEL);
   const fetcher = useAction<{ success?: boolean }>({
     onSuccess: () => onClose()
@@ -113,10 +114,7 @@ export function MoveElementModal({
                 },
                 {
                   method: "post",
-                  action: withChangeRequest(
-                    path.to.projectElementMove(projectId),
-                    changeRequestId
-                  )
+                  action: withChangeRequest(routes.move, changeRequestId)
                 }
               )
             }

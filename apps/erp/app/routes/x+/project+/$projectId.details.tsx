@@ -24,14 +24,71 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "project-details");
 
 /**
- * The project's fields moved to its Settings page; this route keeps only the
- * action that saves them. An old link to Details lands on Settings.
+ * The project's fields are the properties column of its Overview; this route
+ * keeps only the action that saves them. An old link to Details lands on the
+ * Overview.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   await requirePermissions(request, { view: "projects" });
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
-  throw redirect(path.to.projectSettings(projectId));
+  throw redirect(path.to.project(projectId));
+}
+
+/** A field the properties column saves on its own (`intent=field`). */
+const PROJECT_PROPERTY_FIELDS = new Set([
+  "name",
+  "description",
+  "customerId",
+  "ownerId",
+  "locationId",
+  "priority",
+  "startDate",
+  "endDate",
+  "costTreatment",
+  "costAccountId",
+  "fixedAssetClassId",
+  "costObjective",
+  "projectStock",
+  "chargeAtReceipt",
+  "governmentFurnished",
+  "planningGroupId",
+  "planningPriority",
+  "restrictCharging",
+  "lockPlanAfterMilestoneId"
+]);
+const CHECKBOX_FIELDS = new Set([
+  "projectStock",
+  "chargeAtReceipt",
+  "governmentFurnished",
+  "restrictCharging"
+]);
+
+/**
+ * The project as the form would post it, with one field changed: the
+ * properties column saves one field, and every rule below still sees the
+ * whole project.
+ */
+function withOneField(
+  project: Record<string, unknown>,
+  field: string,
+  value: string
+) {
+  const formData = new FormData();
+  for (const name of PROJECT_PROPERTY_FIELDS) {
+    const raw = name === field ? value : project[name];
+    if (CHECKBOX_FIELDS.has(name)) {
+      if (raw === true || raw === "true" || raw === "on") {
+        formData.set(name, "on");
+      }
+    } else if (raw !== null && raw !== undefined && raw !== "") {
+      formData.set(name, String(raw));
+    }
+  }
+  formData.set("id", String(project.id));
+  if (project.identifier)
+    formData.set("identifier", String(project.identifier));
+  return formData;
 }
 
 export const middleware = [redirectBeforeLoaders(loader)];
@@ -45,10 +102,48 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
-  const validation = await validator(projectValidator).validate(
-    await request.formData()
-  );
+  // `intent=field` saves one field of the properties column; the Settings
+  // form posted every field.
+  const posted = await request.formData();
+  const isField = posted.get("intent") === "field";
+  const fail = (field: string, message: string) =>
+    isField
+      ? data({ error: { message } }, { status: 400 })
+      : validationError({ fieldErrors: { [field]: message } });
+
+  let formData = posted;
+  if (isField) {
+    const field = String(posted.get("field") ?? "");
+    if (!PROJECT_PROPERTY_FIELDS.has(field)) {
+      return data({ error: { message: "Invalid field" } }, { status: 400 });
+    }
+    const project = await getProject(client, companyId, projectId);
+    if (project.error || !project.data) {
+      logger.error("Failed to load the project", {
+        companyId,
+        projectId,
+        error: project.error
+      });
+      return data(
+        { error: { message: "Failed to load the project" } },
+        { status: 400 }
+      );
+    }
+    formData = withOneField(
+      project.data as Record<string, unknown>,
+      field,
+      String(posted.get("value") ?? "")
+    );
+  }
+
+  const validation = await validator(projectValidator).validate(formData);
   if (validation.error) {
+    if (isField) {
+      const message =
+        Object.values(validation.error.fieldErrors ?? {})[0] ??
+        "Failed to save the change";
+      return data({ error: { message } }, { status: 400 });
+    }
     return validationError(validation.error);
   }
 
@@ -60,9 +155,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!fields.costObjective) {
     const settings = await getCompanySettings(client, companyId);
     if (settings.data?.timekeepingControls === "DCAA") {
-      return validationError({
-        fieldErrors: { costObjective: COST_OBJECTIVE_REQUIRED }
-      });
+      return fail("costObjective", COST_OBJECTIVE_REQUIRED);
     }
   }
 
@@ -76,11 +169,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("companyId", companyId)
       .maybeSingle();
     if (milestone.error || !milestone.data) {
-      return validationError({
-        fieldErrors: {
-          lockPlanAfterMilestoneId: "Choose a milestone of this project"
-        }
-      });
+      return fail(
+        "lockPlanAfterMilestoneId",
+        "Choose a milestone of this project"
+      );
     }
   }
 
@@ -104,11 +196,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       : current.data.projectStock;
   if (planningGroupId) {
     if (!hasProjectStock) {
-      return validationError({
-        fieldErrors: {
-          planningGroupId: "Only a project with project stock can join a group"
-        }
-      });
+      return fail(
+        "planningGroupId",
+        "Only a project with project stock can join a group"
+      );
     }
     const group = await client
       .from("planningGroup")
@@ -117,16 +208,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("companyId", companyId)
       .maybeSingle();
     if (group.error || !group.data) {
-      return validationError({
-        fieldErrors: { planningGroupId: "Choose a planning group" }
-      });
+      return fail("planningGroupId", "Choose a planning group");
     }
     if (group.data.locationId !== fields.locationId) {
-      return validationError({
-        fieldErrors: {
-          planningGroupId: "The group must be at the project's location"
-        }
-      });
+      return fail(
+        "planningGroupId",
+        "The group must be at the project's location"
+      );
     }
   }
 
@@ -145,6 +233,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (update.error) {
+    logger.error("Failed to update the project", {
+      companyId,
+      projectId,
+      error: update.error
+    });
+    if (isField) {
+      return data(
+        { error: { message: "Failed to update the project" } },
+        { status: 400 }
+      );
+    }
     return data(
       {},
       await flash(request, error(update.error, "Failed to update the project"))
@@ -167,8 +266,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
           projectId,
           error: err
         });
+        if (isField) {
+          return data(
+            {
+              error: {
+                message: "Failed to create the assets under construction"
+              }
+            },
+            { status: 400 }
+          );
+        }
         throw redirect(
-          path.to.projectSettings(projectId),
+          path.to.project(projectId),
           await flash(
             request,
             error(err, "Failed to create the assets under construction")
@@ -178,8 +287,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
+  if (isField) return data({ success: true, error: null });
   throw redirect(
-    path.to.projectSettings(projectId),
+    path.to.project(projectId),
     await flash(request, success("Project updated"))
   );
 }

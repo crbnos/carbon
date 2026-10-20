@@ -24,6 +24,7 @@ import { useState } from "react";
 import { flushSync } from "react-dom";
 import { useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 type DateTimePickerProps = {
   name: string;
@@ -95,6 +96,12 @@ const DateTimePicker = ({
 
   // Convert the wall-clock time in `timeZone` to a UTC instant for storage
   const utcValue = date ? toZoned(date, timeZone).toAbsoluteString() : "";
+  const inlineField = useInlineField({
+    inline,
+    label,
+    isEmpty: !date,
+    isReadOnly: isDisabled
+  });
 
   const DateTimePickerPreview = (
     <span className="flex flex-grow line-clamp-1 items-center">
@@ -104,7 +111,7 @@ const DateTimePicker = ({
 
   return (
     <FormControl isInvalid={!!error}>
-      {label && (
+      {label && inlineField.showLabel && (
         <FormLabel htmlFor={name} isOptional={fieldIsOptional ?? false}>
           <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
         </FormLabel>
@@ -118,6 +125,7 @@ const DateTimePicker = ({
         minValue={minValue}
         maxValue={maxValue}
         inline={inline ? DateTimePickerPreview : undefined}
+        inlinePlaceholder={inlineField.placeholder}
         helperText={helperText}
       />
       {error && <FormErrorMessage>{error}</FormErrorMessage>}

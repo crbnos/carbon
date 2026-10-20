@@ -28,7 +28,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 
-  const job = await getEmployeeJob(client, personId, companyId);
+  // Project time and field service add fields to a job, shown only once the
+  // company uses them: a labor category, a service order.
+  const [job, laborCategories, serviceOrders] = await Promise.all([
+    getEmployeeJob(client, personId, companyId),
+    client
+      .from("laborCategory")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId),
+    client
+      .from("serviceOrder")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+  ]);
   if (job.error) {
     throw redirect(
       path.to.people,
@@ -37,7 +49,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    job: job.data
+    job: job.data,
+    usesProjectTime: (laborCategories.count ?? 0) > 0,
+    usesFieldService: (serviceOrders.count ?? 0) > 0
   };
 }
 
@@ -87,7 +101,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PersonJobRoute() {
-  const { job } = useLoaderData<typeof loader>();
+  const { job, usesProjectTime, usesFieldService } =
+    useLoaderData<typeof loader>();
   const { personId } = useParams();
 
   const initialValues = {
@@ -105,5 +120,12 @@ export default function PersonJobRoute() {
     ...getCustomFields(job.customFields)
   };
 
-  return <PersonJob key={personId} initialValues={initialValues} />;
+  return (
+    <PersonJob
+      key={personId}
+      initialValues={initialValues}
+      usesProjectTime={usesProjectTime}
+      usesFieldService={usesFieldService}
+    />
+  );
 }

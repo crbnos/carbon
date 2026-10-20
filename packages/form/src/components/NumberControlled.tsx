@@ -10,8 +10,7 @@ import {
   FormErrorMessage,
   FormHelperText,
   FormLabel,
-  HStack,
-  IconButton,
+  InlineTrigger,
   LabelWithHelp,
   NumberDecrementStepper,
   NumberField,
@@ -24,14 +23,10 @@ import {
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ReactNode } from "react";
 import { forwardRef, useEffect, useRef, useState } from "react";
-import {
-  LuChevronDown,
-  LuChevronUp,
-  LuPlus,
-  LuSettings2
-} from "react-icons/lu";
+import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 type FormNumberProps = NumberFieldProps & {
   name: string;
@@ -102,33 +97,29 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
     };
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
+    const hasValue = value !== undefined && !isNaN(value);
+    const inlineField = useInlineField({
+      inline,
+      label,
+      isEmpty: !hasValue,
+      isReadOnly: isReadOnly || isDisabled
+    });
 
     return inlineMode ? (
       <VStack>
-        {label && (
+        {label && inlineField.showLabel && (
           <span className="text-xs text-muted-foreground">{label}</span>
         )}
-        <HStack spacing={0} className="w-full justify-between">
-          {value !== undefined && !isNaN(value) && (
-            <span className="flex flex-grow line-clamp-1 items-center">
-              {rest.formatOptions ? formatter.format(value) : value}
-            </span>
-          )}
-          <IconButton
-            icon={
-              value !== undefined && !isNaN(value) ? (
-                <LuSettings2 />
-              ) : (
-                <LuPlus />
-              )
-            }
-            aria-label={value !== undefined && !isNaN(value) ? "Edit" : "Add"}
-            size="sm"
-            variant="secondary"
+        <div className="flex w-full">
+          <InlineTrigger
+            isEmpty={!hasValue}
+            placeholder={inlineField.placeholder}
             isDisabled={isReadOnly || isDisabled}
             onClick={() => setInlineMode(false)}
-          />
-        </HStack>
+          >
+            {hasValue && rest.formatOptions ? formatter.format(value) : value}
+          </InlineTrigger>
+        </div>
       </VStack>
     ) : (
       <FormControl

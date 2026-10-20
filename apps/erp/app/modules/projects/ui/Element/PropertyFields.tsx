@@ -6,6 +6,7 @@ import type { TermId } from "@carbon/content/glossary";
 import { ValidatedForm } from "@carbon/form";
 import { LabelWithHelp, VStack } from "@carbon/react";
 import type { ReactNode } from "react";
+import { createContext, useContext } from "react";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -24,8 +25,43 @@ import { useElementField } from "../Elements/ElementProperties";
  * panels (`IssueProperties`, `JobProperties`, `SalesOrderProperties`): a
  * muted label above the value, the form field's `inline` editor, one small
  * `ValidatedForm` per field, and a save on change through the element field
- * update route.
+ * update route. A `PropertySaveProvider` sends the saves elsewhere: the
+ * project's properties column saves to the project.
  */
+
+/** One property's save: the value on its way, and the send. */
+export type PropertySave = {
+  pending: string | null | undefined;
+  submit: (value: string | null) => void;
+};
+
+type UsePropertySave = (
+  projectId: string,
+  elementId: string,
+  field: string
+) => PropertySave;
+
+const PropertySaveContext = createContext<UsePropertySave | null>(null);
+
+/**
+ * Sends every property below to another save than the element's (a hook,
+ * called once per field). The element page needs no provider.
+ */
+export const PropertySaveProvider = PropertySaveContext.Provider;
+
+/** The save in effect: the provider's, else the element field route. */
+function usePropertySave(projectId: string, elementId: string, field: string) {
+  const useSave = useContext(PropertySaveContext) ?? useElementFieldSave;
+  return useSave(projectId, elementId, field);
+}
+
+function useElementFieldSave(
+  projectId: string,
+  elementId: string,
+  field: string
+): PropertySave {
+  return useElementField(projectId, elementId, field as ElementUpdateField);
+}
 
 /**
  * Hides the form labels' grey "Optional" tag inside a properties panel. An
@@ -38,7 +74,8 @@ export const hideOptionalTags = "[&_[data-optional-tag]]:hidden";
 type FieldProps = {
   projectId: string;
   elementId: string;
-  field: ElementUpdateField;
+  /** An element field, or a project field under a project save provider. */
+  field: string;
   label: string;
   termId?: TermId;
   isDisabled: boolean;
@@ -113,7 +150,7 @@ export function PropertySelect({
   /** Runs after the save is sent (a field that drives other fields). */
   onChange?: (value: string | null) => void;
 }) {
-  const { pending, submit } = useElementField(projectId, elementId, field);
+  const { pending, submit } = usePropertySave(projectId, elementId, field);
   const current = pending === undefined ? value : pending;
   return (
     <ValidatedForm
@@ -165,7 +202,7 @@ export function PropertyCombobox({
   options: { value: string; label: string; helper?: string }[];
   renderValue?: (value: string) => ReactNode;
 }) {
-  const { pending, submit } = useElementField(projectId, elementId, field);
+  const { pending, submit } = usePropertySave(projectId, elementId, field);
   const current = pending === undefined ? value : pending;
   return (
     <ValidatedForm
@@ -205,7 +242,7 @@ export function PropertyDate({
   value,
   isDisabled
 }: FieldProps & { value: string | null }) {
-  const { submit } = useElementField(projectId, elementId, field);
+  const { submit } = usePropertySave(projectId, elementId, field);
   return (
     <ValidatedForm
       key={`${field}:${value ?? ""}`}
@@ -247,7 +284,7 @@ export function PropertyNumber({
   minValue?: number;
   maxValue?: number;
 }) {
-  const { pending, submit } = useElementField(projectId, elementId, field);
+  const { pending, submit } = usePropertySave(projectId, elementId, field);
   const current =
     pending === undefined ? value : pending === null ? null : Number(pending);
   return (
@@ -292,7 +329,7 @@ export function PropertyText({
   placeholder,
   isDisabled
 }: FieldProps & { value: string | null; placeholder?: string }) {
-  const { submit } = useElementField(projectId, elementId, field);
+  const { submit } = usePropertySave(projectId, elementId, field);
   return (
     <ValidatedForm
       key={`${field}:${value ?? ""}`}
@@ -328,7 +365,7 @@ export function PropertySwitch({
   value,
   isDisabled
 }: FieldProps & { value: boolean }) {
-  const { pending, submit } = useElementField(projectId, elementId, field);
+  const { pending, submit } = usePropertySave(projectId, elementId, field);
   const checked = pending === undefined ? value : pending === "true";
   return (
     <ValidatedForm

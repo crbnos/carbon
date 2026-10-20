@@ -7,6 +7,7 @@ export * from "./hooks";
 export { useAdditionalValidatorsContext } from "./internal/AdditionalValidators";
 export type { FormStateContextValue } from "./internal/formStateContext";
 export { useFormStateContext } from "./internal/formStateContext";
+export { useInlineField } from "./internal/inlineField";
 export {
   FieldArray,
   type FieldArrayHelpers,

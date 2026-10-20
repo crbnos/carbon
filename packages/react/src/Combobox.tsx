@@ -6,10 +6,11 @@ import { useLingui } from "@lingui/react/macro";
 import { matchSorter, rankings } from "match-sorter";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useMemo, useState } from "react";
-import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
+import { LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
+import { InlineTrigger } from "./InlineTrigger";
 import type { PickerListOption } from "./PickerList";
 import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
@@ -53,6 +54,8 @@ export type ComboboxProps = Omit<
     value: string,
     options: { value: string; label: string | JSX.Element; helper?: string }[]
   ) => React.ReactNode;
+  /** Inline mode: what the empty field reads, "Add owner". */
+  inlinePlaceholder?: ReactNode;
   itemHeight?: number;
 };
 
@@ -72,6 +75,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
       emptyMessage,
       onChange,
       inline,
+      inlinePlaceholder,
       itemHeight = 40,
       ...props
     },
@@ -129,27 +133,20 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
         className={cn(isInlinePreview ? "w-full" : "min-w-0 flex-grow")}
         spacing={isInlinePreview ? 2 : 1}
       >
-        {isInlinePreview && value && (
-          <span className="flex flex-grow line-clamp-1 items-center">
-            {inline(value, options)}
-          </span>
-        )}
-
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger disabled={isReadOnly} asChild>
             {inline ? (
-              <IconButton
-                size={size ?? "sm"}
-                variant="secondary"
-                aria-label={value ? "Edit" : "Add"}
-                icon={value ? <LuSettings2 /> : <LuPlus />}
-                isDisabled={isReadOnly}
-                disabled={isReadOnly}
+              <InlineTrigger
                 ref={ref}
+                isEmpty={!value}
+                placeholder={inlinePlaceholder ?? t`Add`}
+                isDisabled={isReadOnly}
                 onClick={() => {
                   if (!isReadOnly) setOpen(true);
                 }}
-              />
+              >
+                {value ? inline(value, options) : null}
+              </InlineTrigger>
             ) : (
               <CommandTrigger
                 asButton={asButton}

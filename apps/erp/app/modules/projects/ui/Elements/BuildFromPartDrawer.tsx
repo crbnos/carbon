@@ -2,30 +2,36 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useControlField, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
   Button,
-  Combobox,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
   HStack,
+  ModalDrawer,
+  ModalDrawerBody,
+  ModalDrawerContent,
+  ModalDrawerDescription,
+  ModalDrawerFooter,
+  ModalDrawerHeader,
+  ModalDrawerProvider,
+  ModalDrawerTitle,
   Spinner,
-  Switch,
   toast,
   VStack
 } from "@carbon/react";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import {
+  Boolean,
+  Combobox,
+  NumberControlled,
+  Select,
+  Submit
+} from "~/components/Form";
 import type {
   BuildFromPartPreview,
   BuildFromPartResult
@@ -35,9 +41,9 @@ import { path } from "~/utils/path";
 import type { BuildFromPartSource } from "../../projects.models";
 import {
   BUILD_FROM_PART_MAX_DEPTH,
-  buildFromPartSources
+  buildFromPartValidator
 } from "../../projects.models";
-import { SerialSelect } from "../Element/SerialSelect";
+import { useSerialOptions } from "../Element/SerialSelect";
 import { ElementTypeIcon } from "./ElementTypeIcon";
 
 type ParentOption = {
@@ -47,13 +53,14 @@ type ParentOption = {
   type: string;
 };
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex w-full flex-col gap-1.5">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      {children}
-    </div>
-  );
+type ItemRow = ReturnType<typeof useItems>[0][number];
+
+/** A serial source lists serial-tracked items; an item source, made items. */
+function fitsSource(item: ItemRow, source: BuildFromPartSource) {
+  if (!item.active) return false;
+  return source === "Serial"
+    ? item.itemTrackingType === "Serial"
+    : item.replenishmentSystem !== "Buy";
 }
 
 /**
@@ -106,10 +113,14 @@ export function BuildFromPartDrawer({
       : null
   );
 
-  const sourceLabels: Record<BuildFromPartSource, string> = {
-    Serial: t`Serial`,
-    Item: t`Item`,
-    Template: t`Template`
+  const changeSource = (next: BuildFromPartSource) => {
+    setSource(next);
+    setTrackedEntityId(null);
+    // Keep the item when the new source lists it.
+    const item = items.find((row) => row.id === itemId);
+    if (next === "Template" || !item || !fitsSource(item, next)) {
+      setItemId(null);
+    }
   };
 
   const params = useMemo(() => {
@@ -160,17 +171,10 @@ export function BuildFromPartDrawer({
   const rows = data?.preview?.rows ?? [];
   const isLoading = previewFetcher.state !== "idle";
 
-  // Serial: items tracked by serial. Item: items with a make method.
   const itemOptions = useMemo(
     () =>
       items
-        .filter(
-          (item) =>
-            item.active &&
-            (source === "Serial"
-              ? item.itemTrackingType === "Serial"
-              : item.replenishmentSystem !== "Buy")
-        )
+        .filter((item) => fitsSource(item, source))
         .map((item) => ({
           value: item.id,
           label: item.readableIdWithRevision,
@@ -182,6 +186,26 @@ export function BuildFromPartDrawer({
     () => new Map(items.map((item) => [item.id, item.readableIdWithRevision])),
     [items]
   );
+  const serialOptions = useSerialOptions(
+    source === "Serial" && itemId ? itemId : undefined
+  );
+  const serialLabel =
+    serialOptions.find((option) => option.value === trackedEntityId)?.label ??
+    t`This serial`;
+
+  const sourceOptions: { value: BuildFromPartSource; label: string }[] = [
+    { value: "Serial", label: t`A serial's build history` },
+    { value: "Item", label: t`An item's bill of materials` },
+    { value: "Template", label: t`A template` }
+  ];
+
+  const parentOptions = elements
+    .filter((element) => element.type !== "Parameter")
+    .map((element) => ({
+      value: element.id,
+      label: element.readableId,
+      helper: element.name
+    }));
 
   const depthOf = useMemo(() => {
     const byId = new Map(rows.map((row) => [row.id, row]));
@@ -193,206 +217,239 @@ export function BuildFromPartDrawer({
     return depths;
   }, [rows]);
 
-  const parentOptions = [
-    { value: "", label: t`Top level` },
-    ...elements
-      .filter((element) => element.type !== "Parameter")
-      .map((element) => ({
-        value: element.id,
-        label: element.readableId,
-        helper: element.name
-      }))
-  ];
+  // Why a chosen source builds nothing, and what to try instead.
+  const emptyReason =
+    source === "Serial" ? (
+      <Trans>
+        {serialLabel} has no components recorded in Carbon. Build from the
+        item's bill of materials instead.
+      </Trans>
+    ) : !includeBought && source === "Item" ? (
+      <Trans>
+        The item has no made components at this depth. Include bought components
+        to add its purchased parts.
+      </Trans>
+    ) : (
+      <Trans>The source has nothing to build at this depth.</Trans>
+    );
 
   return (
-    <Drawer open onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent size="lg">
-        <DrawerHeader>
-          <DrawerTitle>
-            <Trans>Build from part</Trans>
-          </DrawerTitle>
-          <DrawerDescription>
-            <Trans>
-              Create System elements from a serial's build history, an item's
-              bill of materials or a template.
-            </Trans>
-          </DrawerDescription>
-        </DrawerHeader>
-        <DrawerBody>
-          <VStack spacing={4}>
-            <Field label={t`Source`}>
-              <Combobox
-                asButton
-                value={source}
-                options={buildFromPartSources.map((value) => ({
-                  value,
-                  label: sourceLabels[value]
-                }))}
-                onChange={(next) => {
-                  if (!next) return;
-                  setSource(next as BuildFromPartSource);
-                  setItemId(null);
-                  setTrackedEntityId(null);
-                }}
-              />
-            </Field>
-            {source !== "Template" && (
-              <Field label={t`Item`}>
-                <Combobox
-                  asButton
-                  value={itemId ?? ""}
-                  options={itemOptions}
-                  placeholder={t`Choose an item`}
+    <ModalDrawerProvider type="drawer">
+      <ModalDrawer open onOpenChange={(open) => !open && onClose()}>
+        <ModalDrawerContent>
+          <ValidatedForm
+            validator={buildFromPartValidator}
+            method="post"
+            action={buildPath}
+            fetcher={submitFetcher}
+            defaultValues={{
+              source,
+              itemId: itemId ?? "",
+              trackedEntityId: trackedEntityId ?? "",
+              depth,
+              includeBought,
+              parentId: parentId ?? ""
+            }}
+            className="flex flex-col h-full"
+          >
+            <ModalDrawerHeader>
+              <ModalDrawerTitle>
+                <Trans>Build from Part</Trans>
+              </ModalDrawerTitle>
+              <ModalDrawerDescription>
+                <Trans>
+                  Add the components of a serial, an item or a template as
+                  elements.
+                </Trans>
+              </ModalDrawerDescription>
+            </ModalDrawerHeader>
+            <ModalDrawerBody>
+              <VStack spacing={4}>
+                <Select
+                  name="source"
+                  label={t`Build from`}
+                  options={sourceOptions}
+                  onChange={(next) =>
+                    next && changeSource(next.value as BuildFromPartSource)
+                  }
+                />
+                {source !== "Template" && (
+                  <Combobox
+                    name="itemId"
+                    label={t`Item`}
+                    isRequired
+                    placeholder={t`Choose an item`}
+                    options={itemOptions}
+                    value={itemId ?? ""}
+                    onChange={(next) => {
+                      setItemId(next?.value ?? null);
+                      setTrackedEntityId(null);
+                    }}
+                  />
+                )}
+                {source === "Serial" && (
+                  <Combobox
+                    name="trackedEntityId"
+                    label={t`Serial`}
+                    isRequired
+                    isReadOnly={!itemId}
+                    placeholder={
+                      itemId ? t`Search by serial` : t`Choose the item first`
+                    }
+                    options={serialOptions}
+                    value={trackedEntityId ?? ""}
+                    onChange={(next) => setTrackedEntityId(next?.value ?? null)}
+                  />
+                )}
+                {source === "Template" && (
+                  <Combobox
+                    name="templateProjectId"
+                    label={t`Template`}
+                    isRequired
+                    placeholder={t`Choose a template`}
+                    options={(data?.templates ?? []).map((template) => ({
+                      value: template.id,
+                      label: template.name,
+                      helper: template.identifier ?? undefined
+                    }))}
+                    value={templateProjectId ?? ""}
+                    onChange={(next) =>
+                      setTemplateProjectId(next?.value ?? null)
+                    }
+                  />
+                )}
+                <NumberControlled
+                  name="depth"
+                  label={t`Levels`}
+                  isRequired
+                  helperText={t`How many levels of components below the part`}
+                  minValue={1}
+                  maxValue={BUILD_FROM_PART_MAX_DEPTH}
+                  value={depth}
                   onChange={(next) => {
-                    setItemId(next || null);
-                    setTrackedEntityId(null);
+                    if (Number.isFinite(next)) setDepth(next);
                   }}
                 />
-              </Field>
-            )}
-            {source === "Serial" && itemId && (
-              <Field label={t`Serial`}>
-                <SerialSelect
-                  itemId={itemId}
-                  value={trackedEntityId}
-                  isReadOnly={false}
-                  onChange={setTrackedEntityId}
-                />
-              </Field>
-            )}
-            {source === "Template" && (
-              <Field label={t`Template`}>
-                <Combobox
-                  asButton
-                  value={templateProjectId ?? ""}
-                  options={(data?.templates ?? []).map((template) => ({
-                    value: template.id,
-                    label: template.name,
-                    helper: template.identifier ?? undefined
-                  }))}
-                  placeholder={t`Choose a template`}
-                  onChange={(next) => setTemplateProjectId(next || null)}
-                />
-              </Field>
-            )}
-            <Field label={t`Depth`}>
-              <Combobox
-                asButton
-                value={String(depth)}
-                options={Array.from(
-                  { length: BUILD_FROM_PART_MAX_DEPTH },
-                  (_, index) => ({
-                    value: String(index + 1),
-                    label: String(index + 1)
-                  })
+                {source !== "Template" && (
+                  <Boolean
+                    name="includeBought"
+                    label={t`Include bought components`}
+                    onChange={setIncludeBought}
+                  />
                 )}
-                onChange={(next) => next && setDepth(Number(next))}
-              />
-            </Field>
-            {source !== "Template" && (
-              <Switch
-                variant="small"
-                label={t`Include bought components`}
-                checked={includeBought}
-                onCheckedChange={setIncludeBought}
-              />
-            )}
-            <Field label={t`Parent element`}>
-              <Combobox
-                asButton
-                value={parentId ?? ""}
-                options={parentOptions}
-                onChange={(next) => setParentId(next || null)}
-              />
-            </Field>
+                <Combobox
+                  name="parentId"
+                  label={t`Add under`}
+                  placeholder={t`Top level`}
+                  isOptional
+                  options={parentOptions}
+                  value={parentId ?? ""}
+                  onChange={(next) => setParentId(next?.value ?? null)}
+                />
 
-            {(data?.error || submitError) && (
-              <Alert variant="destructive">
-                <LuTriangleAlert />
-                <AlertDescription>
-                  {submitError ?? data?.error}
-                </AlertDescription>
-              </Alert>
-            )}
+                {(data?.error || submitError) && (
+                  <Alert variant="destructive">
+                    <LuTriangleAlert />
+                    <AlertDescription>
+                      {submitError ?? data?.error}
+                    </AlertDescription>
+                  </Alert>
+                )}
 
-            <Field label={t`Preview`}>
-              {isLoading && !data ? (
-                <div className="flex h-24 items-center justify-center">
-                  <Spinner />
-                </div>
-              ) : !data?.preview ? (
-                <p className="text-sm text-muted-foreground">
-                  <Trans>Choose a source to see the elements it creates.</Trans>
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm">
-                    <Plural
-                      value={rows.length}
-                      one="# element will be created"
-                      other="# elements will be created"
-                    />
-                  </p>
-                  {data.preview.skippedLines > 0 && (
-                    <p className="text-xs text-amber-600 dark:text-amber-500">
-                      <Plural
-                        value={data.preview.skippedLines}
-                        one="# bill of materials line is left out: its item has no cost record"
-                        other="# bill of materials lines are left out: their items have no cost record"
-                      />
+                <div className="flex w-full flex-col gap-2 border-t border-border pt-4">
+                  {isLoading && !data ? (
+                    <div className="flex h-24 items-center justify-center">
+                      <Spinner />
+                    </div>
+                  ) : !data?.preview ? (
+                    <p className="text-sm text-muted-foreground">
+                      <Trans>Choose what to build from to see a preview.</Trans>
                     </p>
-                  )}
-                  {rows.length > 0 && (
-                    <ul className="flex max-h-[40dvh] flex-col overflow-y-auto rounded-lg border border-border py-1 text-sm">
-                      {rows.map((row) => (
-                        <li
-                          key={row.id}
-                          className="flex min-w-0 items-center gap-2 py-1 pr-3"
-                          style={{
-                            paddingLeft: `${0.75 + (depthOf.get(row.id) ?? 0) * 1.25}rem`
-                          }}
-                        >
-                          <ElementTypeIcon type={row.type} />
-                          <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                            {row.readableId}
-                          </span>
-                          <span className="truncate">{row.name}</span>
-                          {row.itemId && (
-                            <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">
-                              {itemLabel.get(row.itemId)}
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                  ) : rows.length === 0 ? (
+                    <div className="flex flex-col items-start gap-2">
+                      <p className="text-sm font-medium">
+                        <Trans>Nothing to build</Trans>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {emptyReason}
+                      </p>
+                      {source === "Serial" && itemId && (
+                        <UseBillOfMaterialsButton
+                          onSwitch={() => changeSource("Item")}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium">
+                        <Plural
+                          value={rows.length}
+                          one="Creates # element"
+                          other="Creates # elements"
+                        />
+                      </p>
+                      {data.preview.skippedLines > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          <Plural
+                            value={data.preview.skippedLines}
+                            one="# bill of materials line is left out: its item has no cost record"
+                            other="# bill of materials lines are left out: their items have no cost record"
+                          />
+                        </p>
+                      )}
+                      <ul className="flex max-h-[40dvh] flex-col overflow-y-auto rounded-lg border border-border py-1 text-sm">
+                        {rows.map((row) => (
+                          <li
+                            key={row.id}
+                            className="flex min-w-0 items-center gap-2 py-1 pr-3"
+                            style={{
+                              paddingLeft: `${0.75 + (depthOf.get(row.id) ?? 0) * 1.25}rem`
+                            }}
+                          >
+                            <ElementTypeIcon type={row.type} />
+                            <span className="truncate">{row.name}</span>
+                            {row.itemId && (
+                              <span className="ml-auto shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+                                {itemLabel.get(row.itemId)}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
                   )}
                 </div>
-              )}
-            </Field>
-          </VStack>
-        </DrawerBody>
-        <DrawerFooter>
-          <HStack>
-            <Button
-              isLoading={submitFetcher.state !== "idle"}
-              isDisabled={
-                rows.length === 0 || isLoading || submitFetcher.state !== "idle"
-              }
-              onClick={() =>
-                submitFetcher.submit(params, {
-                  method: "post",
-                  action: buildPath
-                })
-              }
-            >
-              <Trans>Create elements</Trans>
-            </Button>
-            <Button size="md" variant="solid" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-          </HStack>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+              </VStack>
+            </ModalDrawerBody>
+            <ModalDrawerFooter>
+              <HStack>
+                <Submit isDisabled={rows.length === 0 || isLoading}>
+                  <Trans>Create Elements</Trans>
+                </Submit>
+                <Button size="md" variant="solid" onClick={onClose}>
+                  <Trans>Cancel</Trans>
+                </Button>
+              </HStack>
+            </ModalDrawerFooter>
+          </ValidatedForm>
+        </ModalDrawerContent>
+      </ModalDrawer>
+    </ModalDrawerProvider>
+  );
+}
+
+/** Switches the form's source to the item's bill of materials. */
+function UseBillOfMaterialsButton({ onSwitch }: { onSwitch: () => void }) {
+  const [, setSourceField] = useControlField<string>("source");
+  return (
+    <Button
+      variant="secondary"
+      onClick={() => {
+        setSourceField("Item");
+        onSwitch();
+      }}
+    >
+      <Trans>Use the Bill of Materials</Trans>
+    </Button>
   );
 }

@@ -6,7 +6,6 @@ import { Trans } from "@lingui/react/macro";
 import type { RefObject } from "react";
 import { useMemo, useState } from "react";
 import { LuPlus } from "react-icons/lu";
-import { path } from "~/utils/path";
 import type {
   ProjectElementType,
   RequirementStatus
@@ -14,6 +13,7 @@ import type {
 import type { ProjectElementListItem } from "../../projects.service";
 import type { ProjectLabel, ProjectState } from "../../types";
 import { ElementRow } from "../Elements/ElementList";
+import { useElementRoutes } from "../Elements/ElementRoutes";
 import { QuickAddRow } from "./QuickAddRow";
 
 /**
@@ -45,6 +45,7 @@ export function ElementChildren({
   onAddingChange: (adding: boolean) => void;
   quickAddRef: RefObject<HTMLInputElement>;
 }) {
+  const routes = useElementRoutes(projectId);
   const [type, setType] = useState<ProjectElementType>("Task");
   // A Parameter's children must be Parameters.
   const newType = parent.type === "Parameter" ? "Parameter" : type;
@@ -64,7 +65,7 @@ export function ElementChildren({
           states={states}
           labelsById={labelsById}
           requirementStatus={requirementStatus[child.id]}
-          href={path.to.projectElement(projectId, child.id)}
+          href={routes.element(child.id)}
           canUpdate={canUpdate}
           idChars={idChars}
           className="rounded-md px-3"

@@ -15,9 +15,9 @@ import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
 import { Link, useSearchParams } from "react-router";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
-import { path } from "~/utils/path";
 import type { ProjectElementType } from "../../projects.models";
 import { buildElementTree, elementWbsCodes } from "../../projects.models";
+import { useElementRoutes } from "../Elements/ElementRoutes";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
 import { WbsCode } from "../Elements/WbsCode";
 
@@ -58,11 +58,10 @@ export function ProjectElementTree({
   const location = useOptimisticLocation();
   const parentRef = useRef<HTMLDivElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const routes = useElementRoutes(projectId);
   // On the Plan page a row keeps every param; from the element's full page
   // only the change request travels.
-  const onPlanPage = location.pathname.startsWith(
-    path.to.projectElements(projectId)
-  );
+  const onPlanPage = location.pathname.startsWith(routes.list);
   const urlSearch = onPlanPage ? (searchParams.get("search") ?? "") : "";
   const [filterText, setFilterText] = useState(urlSearch);
   // What this box last wrote to the URL. A different value there came from
@@ -181,7 +180,7 @@ export function ProjectElementTree({
                   ))}
               </button>
               <Link
-                to={`${path.to.projectElement(projectId, element.id)}${search}`}
+                to={`${routes.element(element.id)}${search}`}
                 title={`${element.readableId} ${element.name}`}
                 className="flex min-w-0 flex-1 items-center gap-2"
               >

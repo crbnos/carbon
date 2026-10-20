@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ComboboxProps } from "@carbon/form";
-import { useControlField, useField } from "@carbon/form";
+import { useControlField, useField, useInlineField } from "@carbon/form";
 import {
   CreatableCombobox,
   cn,
@@ -76,6 +76,13 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
     }
   };
 
+  const inlineField = useInlineField({
+    inline: !!props.inline,
+    label,
+    isEmpty: !value,
+    isReadOnly: props.isReadOnly
+  });
+
   const emptyMessage = useEmptyState("tool", {
     onCreate: () => newToolsModal.onOpen()
   });
@@ -83,7 +90,9 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
   return (
     <>
       <FormControl isInvalid={!!error} className="w-full">
-        {label && <FormLabel isOptional={fieldIsOptional}>{label}</FormLabel>}
+        {label && inlineField.showLabel && (
+          <FormLabel isOptional={fieldIsOptional}>{label}</FormLabel>
+        )}
         <input
           {...getInputProps({
             id: name
@@ -102,7 +111,7 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
             emptyMessage={emptyMessage}
             {...props}
             inline={props.inline ? ToolPreview : undefined}
-            inlineAddLabel="Add Tool"
+            inlinePlaceholder={inlineField.placeholder}
             value={value?.replace(/"/g, '\\"')}
             onChange={(newValue) => {
               setValue(newValue?.replace(/"/g, '\\"') ?? "");

@@ -11,20 +11,14 @@ import { projectControlSettingsValidator } from "@carbon/ee/project-control";
 import { updateProjectControlSettings } from "@carbon/ee/project-control.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { VStack } from "@carbon/react";
+import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useParams } from "react-router";
-import { useRouteData } from "~/hooks";
-import type { Project, ProjectMilestone } from "~/modules/projects";
+import { data } from "react-router";
 import {
   addProjectMember,
-  getProjectMembers,
   projectMemberValidator,
   removeProjectMember
 } from "~/modules/projects";
-import ProjectControlSettings from "~/modules/projects/ui/Project/ProjectControlSettings.ee";
-import ProjectMembers from "~/modules/projects/ui/Project/ProjectMembers";
-import { ProjectForm } from "~/modules/projects/ui/Projects";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-settings");
@@ -34,23 +28,19 @@ const intents = ["addMember", "removeMember", "control-settings"] as const;
 type Intent = (typeof intents)[number];
 
 /** The project's members: who may charge time when charging is restricted. */
+/**
+ * The project's settings are the properties column of its Overview; this
+ * route keeps the action that saves the members and the project control
+ * settings. An old link to Settings lands on the Overview.
+ */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
-  });
+  await requirePermissions(request, { view: "projects" });
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
-
-  const members = await getProjectMembers(client, projectId, companyId);
-  if (members.error) {
-    logger.error("Failed to load the project members", {
-      companyId,
-      projectId,
-      error: members.error
-    });
-  }
-  return { members: members.data ?? [] };
+  throw redirect(path.to.project(projectId));
 }
+
+export const middleware = [redirectBeforeLoaders(loader)];
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -121,7 +111,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         client,
         companyId,
         feature: "GOVERNMENT_CONTRACTING",
-        redirectTo: path.to.projectSettings(projectId)
+        redirectTo: path.to.project(projectId)
       });
       formData.set("projectId", projectId);
       const validation = await validator(
@@ -155,78 +145,4 @@ export async function action({ request, params }: ActionFunctionArgs) {
     default:
       return refuse(null, "Unknown action");
   }
-}
-
-export default function ProjectSettingsRoute() {
-  const { members } = useLoaderData<typeof loader>();
-  const { projectId } = useParams();
-  if (!projectId) throw new Error("Could not find projectId");
-
-  const routeData = useRouteData<{
-    project: Project;
-    milestones: ProjectMilestone[];
-    hasPlanningGroups: boolean;
-  }>(path.to.project(projectId));
-  const project = routeData?.project;
-  if (!routeData || !project) return null;
-
-  const action = path.to.projectSettings(projectId);
-  const isDisabled = project.status === "Closed";
-
-  return (
-    <VStack spacing={4} className="p-4 max-w-[60rem] mx-auto">
-      <ProjectForm
-        key={project.id}
-        action={path.to.projectDetails(projectId)}
-        isDisabled={isDisabled}
-        hasPlanningGroups={routeData.hasPlanningGroups}
-        initialValues={{
-          id: project.id,
-          name: project.name,
-          identifier: project.identifier ?? undefined,
-          description: project.description ?? undefined,
-          // By Coverage belongs to Service projects, which never open here.
-          costTreatment:
-            project.costTreatment === "By Coverage"
-              ? "Expense"
-              : project.costTreatment,
-          costAccountId: project.costAccountId ?? undefined,
-          fixedAssetClassId: project.fixedAssetClassId ?? undefined,
-          customerId: project.customerId ?? undefined,
-          ownerId: project.ownerId ?? undefined,
-          locationId: project.locationId ?? undefined,
-          startDate: project.startDate ?? undefined,
-          endDate: project.endDate ?? undefined,
-          priority: project.priority ?? undefined,
-          lockPlanAfterMilestoneId:
-            project.lockPlanAfterMilestoneId ?? undefined,
-          projectStock: project.projectStock,
-          chargeAtReceipt: project.chargeAtReceipt,
-          governmentFurnished: project.governmentFurnished,
-          planningGroupId: project.planningGroupId ?? undefined,
-          planningPriority: project.planningPriority,
-          costObjective: project.costObjective ?? undefined,
-          restrictCharging: project.restrictCharging
-        }}
-        isProjectStockLocked={project.status !== "Draft"}
-        milestones={(routeData.milestones ?? []).map((milestone) => ({
-          value: milestone.id,
-          label: milestone.name
-        }))}
-      />
-      {project.restrictCharging && (
-        <ProjectMembers
-          projectId={projectId}
-          members={members}
-          action={action}
-          isDisabled={isDisabled}
-        />
-      )}
-      <ProjectControlSettings
-        project={project}
-        action={action}
-        isDisabled={isDisabled}
-      />
-    </VStack>
-  );
 }

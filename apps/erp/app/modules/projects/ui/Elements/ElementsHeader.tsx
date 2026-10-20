@@ -29,8 +29,8 @@ type ElementsHeaderProps = {
   filters: ColumnFilter[];
   /** Creates an element of the type; a Task when none is given. */
   onNew: (type?: ProjectElementType) => void;
-  /** Opens Build from part. */
-  onBuildFromPart: () => void;
+  /** Opens Build from part; New Element's menu has no entry without it. */
+  onBuildFromPart?: () => void;
   canCreate: boolean;
   /** True while a create is posting. */
   isCreating: boolean;
@@ -38,8 +38,12 @@ type ElementsHeaderProps = {
   exportHref?: string;
   /** The lock message while the plan is locked and no change request is open. */
   planLockMessage?: string | null;
-  /** The project's WBS menu (export, import, pin), after Export PDF. */
-  wbsMenu?: ReactNode;
+  /** A ⋯ menu after Export PDF (the project's WBS menu). */
+  menu?: ReactNode;
+  /** The types New Element offers; every type by default. */
+  types?: readonly ProjectElementType[];
+  /** The layouts to switch between; no switch with one. */
+  layouts?: readonly ProjectLayout[];
 };
 
 /**
@@ -57,7 +61,9 @@ export function ElementsHeader({
   isCreating,
   exportHref,
   planLockMessage,
-  wbsMenu
+  menu,
+  types = projectElementTypes,
+  layouts = projectLayouts
 }: ElementsHeaderProps) {
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
@@ -88,16 +94,20 @@ export function ElementsHeader({
       isDisabled={!canCreate}
       isLoading={isCreating}
       dropdownItems={[
-        ...projectElementTypes.map((value) => ({
+        ...types.map((value) => ({
           label: typeLabels[value],
           icon: <ElementTypeIcon type={value} />,
           onClick: () => onNew(value)
         })),
-        {
-          label: <Trans>Build from part</Trans>,
-          icon: <LuBoxes />,
-          onClick: onBuildFromPart
-        }
+        ...(onBuildFromPart
+          ? [
+              {
+                label: <Trans>Build from part</Trans>,
+                icon: <LuBoxes />,
+                onClick: onBuildFromPart
+              }
+            ]
+          : [])
       ]}
     >
       <Trans>New Element</Trans>
@@ -107,19 +117,21 @@ export function ElementsHeader({
   return (
     <div className="flex shrink-0 flex-col border-b border-border bg-card">
       <div className="flex items-center justify-between gap-2 px-4 py-2">
-        <Tabs
-          value={layout}
-          onValueChange={(next) => setParams({ layout: next })}
-        >
-          <TabsList aria-label={t`Layout`}>
-            {projectLayouts.map((value) => (
-              <TabsTrigger key={value} value={value}>
-                {layoutLabels[value]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-        <div className="flex shrink-0 items-center gap-2">
+        {layouts.length > 1 && (
+          <Tabs
+            value={layout}
+            onValueChange={(next) => setParams({ layout: next })}
+          >
+            <TabsList aria-label={t`Layout`}>
+              {layouts.map((value) => (
+                <TabsTrigger key={value} value={value}>
+                  {layoutLabels[value]}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        )}
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           {exportHref && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -139,7 +151,7 @@ export function ElementsHeader({
               </TooltipContent>
             </Tooltip>
           )}
-          {wbsMenu}
+          {menu}
           {!hasFilters && <Filter filters={filters} />}
           {planLockMessage ? (
             <Tooltip>

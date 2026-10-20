@@ -10,13 +10,19 @@ import {
   Drawer,
   DrawerBody,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import { useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import {
+  useLoaderData,
+  useNavigate,
+  useParams,
+  useSearchParams
+} from "react-router";
 import {
   elementSubtreeIds,
   getProjectElementCosts,
@@ -93,11 +99,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ProjectCostsElementRoute() {
-  const { t } = useLingui();
   const navigate = useNavigate();
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
   const { element, elements, ledger, count } = useLoaderData<typeof loader>();
+  // With a filter set, the table stays: its filter is how the user clears it.
+  const [searchParams] = useSearchParams();
+  const isEmpty = count === 0 && !searchParams.has("filter");
 
   return (
     <Drawer
@@ -114,15 +122,26 @@ export default function ProjectCostsElementRoute() {
             </span>
             {element.name}
           </DrawerTitle>
+          <DrawerDescription>
+            <Trans>Costs posted</Trans>
+          </DrawerDescription>
         </DrawerHeader>
-        <DrawerBody className="p-0">
-          <ProjectLedgerTable
-            data={ledger}
-            count={count}
-            elements={elements}
-            title={t`Costs posted`}
-          />
-        </DrawerBody>
+        {isEmpty ? (
+          // One quiet line, not a full-height empty state.
+          <DrawerBody>
+            <p className="text-sm text-muted-foreground">
+              <Trans>No costs have been posted to this element yet.</Trans>
+            </p>
+          </DrawerBody>
+        ) : (
+          <DrawerBody className="p-0">
+            <ProjectLedgerTable
+              data={ledger}
+              count={count}
+              elements={elements}
+            />
+          </DrawerBody>
+        )}
       </DrawerContent>
     </Drawer>
   );

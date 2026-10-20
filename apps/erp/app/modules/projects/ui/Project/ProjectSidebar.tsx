@@ -30,8 +30,8 @@ export type ProjectSidebarData = {
 /**
  * The project workspace's left panel (Layer 2), top to bottom: the plan on
  * screen (the live plan or a change request) with the baselines link; the
- * page links; the element tree while a Plan page is open; Settings pinned at
- * the bottom. The project name and switcher are in the header.
+ * page links, Settings last; the element tree while a Plan page is open. The
+ * project name and switcher are in the header.
  */
 export function ProjectSidebar() {
   const { t } = useLingui();
@@ -40,7 +40,7 @@ export function ProjectSidebar() {
   const location = useOptimisticLocation();
   const permissions = usePermissions();
   const data = useRouteData<ProjectSidebarData>(path.to.project(projectId));
-  const { links, settings } = useProjectSidebarLinks({
+  const links = useProjectSidebarLinks({
     hasBillingLines: data?.hasBillingLines ?? false,
     hasProjectStock: data?.hasProjectStock ?? false,
     hasPegs: data?.hasPegs ?? false
@@ -87,18 +87,13 @@ export function ProjectSidebar() {
       <nav aria-label={t`Project pages`} className="shrink-0">
         <DetailSidebar links={links} />
       </nav>
-      {isPlanPage ? (
+      {isPlanPage && (
         <ProjectElementTree
           projectId={projectId}
           elements={data.treeElements}
           className="flex-1 border-t border-border pt-2"
         />
-      ) : (
-        <div className="flex-1" />
       )}
-      <div className="shrink-0 border-t border-border pt-2">
-        <DetailSidebar links={[settings]} />
-      </div>
     </div>
   );
 }

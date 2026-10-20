@@ -6,10 +6,6 @@ import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -143,207 +139,193 @@ export default function BillableItemsTable({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <Trans>Billing</Trans>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
-            <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">
-                <Trans>Unbilled</Trans>
-              </span>
-              <span className="font-medium tabular-nums">
-                {formatCurrency.format(totals.unbilled)}
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">
-                <Trans>Billed</Trans>
-              </span>
-              <span className="font-medium tabular-nums">
-                {formatCurrency.format(totals.billed)}
-              </span>
-            </div>
+      <section className="flex w-full flex-col gap-4">
+        <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+          <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">
+              <Trans>Unbilled</Trans>
+            </span>
+            <span className="font-medium tabular-nums">
+              {formatCurrency.format(totals.unbilled)}
+            </span>
           </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">
+              <Trans>Billed</Trans>
+            </span>
+            <span className="font-medium tabular-nums">
+              {formatCurrency.format(totals.billed)}
+            </span>
+          </div>
+        </div>
 
-          {groups.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              <Trans>
-                Nothing to bill yet. Time, parts and expenses charged to the
-                work show here.
-              </Trans>
-            </p>
-          ) : (
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th className="w-full">
-                    <Trans>Item</Trans>
-                  </Th>
-                  <Th>
-                    <LabelWithHelp termId="coverage" variant="inline">
-                      <Trans>Coverage</Trans>
-                    </LabelWithHelp>
-                  </Th>
-                  <Th className="text-right">
-                    <Trans>Quantity</Trans>
-                  </Th>
-                  <Th className="text-right">
-                    <Trans>Unit Price</Trans>
-                  </Th>
-                  <Th className="text-right">
-                    <Trans>Amount</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Status</Trans>
-                  </Th>
-                  <Th />
-                </Tr>
-              </Thead>
-              <Tbody>
-                {groups.map((group) => (
-                  <Fragment key={group.key}>
-                    <Tr className="bg-muted/40">
-                      <Td colSpan={4}>
-                        <div
-                          className="flex min-w-0 items-center gap-2 font-medium"
-                          style={{ paddingLeft: `${group.depth * 16}px` }}
-                        >
-                          {group.node ? (
-                            <>
-                              <span className="shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground">
-                                {group.node.readableId}
-                              </span>
-                              <span className="truncate">
-                                {group.node.name}
-                              </span>
-                            </>
-                          ) : (
-                            <Trans>Other charges</Trans>
-                          )}
-                        </div>
-                      </Td>
-                      <Td className="text-right tabular-nums whitespace-nowrap">
-                        {group.node?.fixedPrice !== null &&
-                          group.node?.fixedPrice !== undefined && (
-                            <span className="font-medium">
-                              {formatCurrency.format(
-                                Number(group.node.fixedPrice)
-                              )}
+        {groups.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              Nothing to bill yet. Time, parts and expenses charged to the work
+              show here.
+            </Trans>
+          </p>
+        ) : (
+          <Table>
+            <Thead>
+              <Tr>
+                <Th className="w-full">
+                  <Trans>Item</Trans>
+                </Th>
+                <Th>
+                  <LabelWithHelp termId="coverage" variant="inline">
+                    <Trans>Coverage</Trans>
+                  </LabelWithHelp>
+                </Th>
+                <Th className="text-right">
+                  <Trans>Quantity</Trans>
+                </Th>
+                <Th className="text-right">
+                  <Trans>Unit Price</Trans>
+                </Th>
+                <Th className="text-right">
+                  <Trans>Amount</Trans>
+                </Th>
+                <Th>
+                  <Trans>Status</Trans>
+                </Th>
+                <Th />
+              </Tr>
+            </Thead>
+            <Tbody>
+              {groups.map((group) => (
+                <Fragment key={group.key}>
+                  <Tr className="bg-muted/40">
+                    <Td colSpan={4}>
+                      <div
+                        className="flex min-w-0 items-center gap-2 font-medium"
+                        style={{ paddingLeft: `${group.depth * 16}px` }}
+                      >
+                        {group.node ? (
+                          <>
+                            <span className="shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground">
+                              {group.node.readableId}
                             </span>
-                          )}
-                      </Td>
-                      <Td colSpan={2} className="whitespace-nowrap">
-                        {group.node?.fixedPrice !== null &&
-                          group.node?.fixedPrice !== undefined && (
-                            <span className="text-xs text-muted-foreground">
-                              <Trans>Fixed price</Trans>
-                            </span>
-                          )}
-                      </Td>
-                    </Tr>
-                    {group.items.map((item) => {
-                      const canReview =
-                        !isDisabled &&
-                        !item.reversalOfId &&
-                        (item.status === "Unbilled" ||
-                          item.status === "On Hold");
-                      return (
-                        <Tr key={item.id}>
-                          <Td>
-                            <div
-                              className="flex min-w-0 flex-col"
-                              style={{
-                                paddingLeft: `${group.depth * 16 + 16}px`
-                              }}
-                            >
-                              <span className="truncate">
-                                {item.description}
-                              </span>
-                              {item.statusReason && (
-                                <span className="truncate text-xs text-muted-foreground">
-                                  {item.statusReason}
-                                </span>
-                              )}
-                            </div>
-                          </Td>
-                          <Td>
-                            {item.coverage ? (
-                              <CoveragePill coverage={item.coverage} />
-                            ) : (
-                              "—"
+                            <span className="truncate">{group.node.name}</span>
+                          </>
+                        ) : (
+                          <Trans>Other charges</Trans>
+                        )}
+                      </div>
+                    </Td>
+                    <Td className="text-right tabular-nums whitespace-nowrap">
+                      {group.node?.fixedPrice !== null &&
+                        group.node?.fixedPrice !== undefined && (
+                          <span className="font-medium">
+                            {formatCurrency.format(
+                              Number(group.node.fixedPrice)
                             )}
-                          </Td>
-                          <Td className="text-right tabular-nums whitespace-nowrap">
-                            {formatQuantity(Number(item.quantity))}
-                          </Td>
-                          <Td className="text-right tabular-nums whitespace-nowrap">
-                            {formatCurrency.format(Number(item.unitPrice))}
-                          </Td>
-                          <Td className="text-right tabular-nums whitespace-nowrap">
-                            {formatCurrency.format(Number(item.amount))}
-                          </Td>
-                          <Td>
-                            <BillableItemStatus status={item.status} />
-                          </Td>
-                          <Td>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <IconButton
-                                  aria-label={t`Item actions`}
-                                  icon={<LuEllipsisVertical />}
-                                  variant="ghost"
-                                  size="sm"
-                                  isDisabled={!canReview}
-                                />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
+                          </span>
+                        )}
+                    </Td>
+                    <Td colSpan={2} className="whitespace-nowrap">
+                      {group.node?.fixedPrice !== null &&
+                        group.node?.fixedPrice !== undefined && (
+                          <span className="text-xs text-muted-foreground">
+                            <Trans>Fixed price</Trans>
+                          </span>
+                        )}
+                    </Td>
+                  </Tr>
+                  {group.items.map((item) => {
+                    const canReview =
+                      !isDisabled &&
+                      !item.reversalOfId &&
+                      (item.status === "Unbilled" || item.status === "On Hold");
+                    return (
+                      <Tr key={item.id}>
+                        <Td>
+                          <div
+                            className="flex min-w-0 flex-col"
+                            style={{
+                              paddingLeft: `${group.depth * 16 + 16}px`
+                            }}
+                          >
+                            <span className="truncate">{item.description}</span>
+                            {item.statusReason && (
+                              <span className="truncate text-xs text-muted-foreground">
+                                {item.statusReason}
+                              </span>
+                            )}
+                          </div>
+                        </Td>
+                        <Td>
+                          {item.coverage ? (
+                            <CoveragePill coverage={item.coverage} />
+                          ) : (
+                            "—"
+                          )}
+                        </Td>
+                        <Td className="text-right tabular-nums whitespace-nowrap">
+                          {formatQuantity(Number(item.quantity))}
+                        </Td>
+                        <Td className="text-right tabular-nums whitespace-nowrap">
+                          {formatCurrency.format(Number(item.unitPrice))}
+                        </Td>
+                        <Td className="text-right tabular-nums whitespace-nowrap">
+                          {formatCurrency.format(Number(item.amount))}
+                        </Td>
+                        <Td>
+                          <BillableItemStatus status={item.status} />
+                        </Td>
+                        <Td>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <IconButton
+                                aria-label={t`Item actions`}
+                                icon={<LuEllipsisVertical />}
+                                variant="ghost"
+                                size="sm"
+                                isDisabled={!canReview}
+                              />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => setEditing(item)}
+                              >
+                                <DropdownMenuIcon icon={<LuPencil />} />
+                                <Trans>Edit Price</Trans>
+                              </DropdownMenuItem>
+                              {item.status === "On Hold" ? (
                                 <DropdownMenuItem
-                                  onClick={() => setEditing(item)}
+                                  onClick={() => setStatus(item, "Unbilled")}
                                 >
-                                  <DropdownMenuIcon icon={<LuPencil />} />
-                                  <Trans>Edit Price</Trans>
+                                  <DropdownMenuIcon icon={<LuCirclePlay />} />
+                                  <Trans>Release</Trans>
                                 </DropdownMenuItem>
-                                {item.status === "On Hold" ? (
-                                  <DropdownMenuItem
-                                    onClick={() => setStatus(item, "Unbilled")}
-                                  >
-                                    <DropdownMenuIcon icon={<LuCirclePlay />} />
-                                    <Trans>Release</Trans>
-                                  </DropdownMenuItem>
-                                ) : (
-                                  <DropdownMenuItem
-                                    onClick={() => setStatus(item, "On Hold")}
-                                  >
-                                    <DropdownMenuIcon
-                                      icon={<LuCirclePause />}
-                                    />
-                                    <Trans>Hold</Trans>
-                                  </DropdownMenuItem>
-                                )}
+                              ) : (
                                 <DropdownMenuItem
-                                  destructive
-                                  onClick={() => setWritingOff(item)}
+                                  onClick={() => setStatus(item, "On Hold")}
                                 >
-                                  <DropdownMenuIcon icon={<LuBan />} />
-                                  <Trans>Write Off</Trans>
+                                  <DropdownMenuIcon icon={<LuCirclePause />} />
+                                  <Trans>Hold</Trans>
                                 </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </Td>
-                        </Tr>
-                      );
-                    })}
-                  </Fragment>
-                ))}
-              </Tbody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                              )}
+                              <DropdownMenuItem
+                                destructive
+                                onClick={() => setWritingOff(item)}
+                              >
+                                <DropdownMenuIcon icon={<LuBan />} />
+                                <Trans>Write Off</Trans>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </Td>
+                      </Tr>
+                    );
+                  })}
+                </Fragment>
+              ))}
+            </Tbody>
+          </Table>
+        )}
+      </section>
 
       {editing && (
         <EditPriceModal

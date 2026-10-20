@@ -415,6 +415,7 @@ import { VStack } from "./VStack";
 export * from "./Acknowledge";
 export * from "./ColorPicker";
 export * from "./hooks";
+export * from "./InlineTrigger";
 export * from "./RecordOutlet";
 export { createSignatureDrawing };
 export {

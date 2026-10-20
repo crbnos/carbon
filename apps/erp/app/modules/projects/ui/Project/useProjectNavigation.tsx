@@ -13,7 +13,6 @@ import {
   LuListTree,
   LuPackage,
   LuReceipt,
-  LuSettings2,
   LuTimer
 } from "react-icons/lu";
 import { useParams } from "react-router";
@@ -33,8 +32,8 @@ export type ProjectSidebarLink = {
 /**
  * The project sidebar's page links (Layer 2): Overview, Plan, Schedule,
  * Costs with Stock, Pegging and Billing under it when they apply, and Time.
- * Billing also needs the sales permission (contract billing).
- * Settings is returned on its own: the sidebar pins it to the bottom.
+ * Billing also needs the sales permission (contract billing). The project's
+ * settings are the properties column of its Overview.
  */
 export function useProjectSidebarLinks({
   hasBillingLines,
@@ -46,14 +45,14 @@ export function useProjectSidebarLinks({
   hasProjectStock: boolean;
   /** The project has a current peg. */
   hasPegs: boolean;
-}): { links: ProjectSidebarLink[]; settings: ProjectSidebarLink } {
+}): ProjectSidebarLink[] {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { projectId } = useParams();
   if (!projectId) throw new Error("projectId not found");
   const overview = path.to.project(projectId);
 
-  const links: ProjectSidebarLink[] = [
+  return [
     {
       name: t`Overview`,
       to: overview,
@@ -122,16 +121,4 @@ export function useProjectSidebarLinks({
       shortcut: PROJECT_TAB_SHORTCUTS.time
     }
   ];
-
-  return {
-    links,
-    settings: {
-      name: t`Settings`,
-      to: path.to.projectSettings(projectId),
-      icon: <LuSettings2 />,
-      shortcut: PROJECT_TAB_SHORTCUTS.settings,
-      isActive: (pathname) =>
-        pathname.startsWith(path.to.projectSettings(projectId))
-    }
-  };
 }

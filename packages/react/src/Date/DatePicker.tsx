@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { CalendarDate } from "@internationalized/date";
+import { useLingui } from "@lingui/react/macro";
 import { useDatePicker } from "@react-aria/datepicker";
 import { useDatePickerState } from "@react-stately/datepicker";
 import type { DatePickerProps } from "@react-types/datepicker";
@@ -13,6 +14,7 @@ import { cn } from "..";
 import { Button } from "../Button";
 import { HStack } from "../HStack";
 import { IconButton } from "../IconButton";
+import { InlineTrigger } from "../InlineTrigger";
 import { InputGroup } from "../Input";
 import {
   Popover,
@@ -29,6 +31,8 @@ import DateField from "./components/DateField";
 const DatePicker = (
   props: DatePickerProps<CalendarDate> & {
     inline?: ReactNode;
+    /** Inline mode: what the empty field reads, "Add start date". */
+    inlinePlaceholder?: ReactNode;
     isPreviewInline?: boolean;
     helperText?: string;
     closeOnSelect?: boolean;
@@ -37,6 +41,7 @@ const DatePicker = (
     isDateMarked?: (date: CalendarDate) => boolean;
   }
 ) => {
+  const { t } = useLingui();
   const state = useDatePickerState({
     ...props,
     shouldCloseOnSelect: props.closeOnSelect ?? false
@@ -67,34 +72,30 @@ const DatePicker = (
                   </Button>
                 </PopoverTrigger>
               ) : (
-                <>
-                  <div className="flex-grow">{props.inline}</div>
-                  <HStack spacing={0}>
-                    {props.helperText && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <IconButton
-                            icon={<LuInfo />}
-                            variant="ghost"
-                            size="sm"
-                            aria-label="Helper information"
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>{props.helperText}</TooltipContent>
-                      </Tooltip>
-                    )}
-                    <PopoverTrigger asChild>
-                      <IconButton
-                        icon={<LuCalendarClock />}
-                        variant="secondary"
-                        size="sm"
-                        aria-label="Open date picker"
-                        isDisabled={props.isDisabled}
-                        {...buttonProps}
-                      />
-                    </PopoverTrigger>
-                  </HStack>
-                </>
+                <div className="flex w-full min-w-0 items-center gap-1">
+                  <PopoverTrigger asChild>
+                    <InlineTrigger
+                      isEmpty={!state.value}
+                      placeholder={props.inlinePlaceholder ?? t`Add`}
+                      isDisabled={props.isDisabled}
+                    >
+                      {props.inline}
+                    </InlineTrigger>
+                  </PopoverTrigger>
+                  {props.helperText && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <IconButton
+                          icon={<LuInfo />}
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Helper information"
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>{props.helperText}</TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
               )}
             </>
           ) : (
