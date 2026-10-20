@@ -26,9 +26,11 @@ type Ability = Abilities[number];
 type AbilitiesTableProps = {
   data: Abilities;
   count: number;
+  nextCursor: string | null;
 };
 
-const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
+const AbilitiesTable = memo((props: AbilitiesTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const [params] = useUrlParams();
@@ -127,6 +129,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
   return (
     <Table<Ability>
       data={data}
+      infinite={{ dataKey: "abilities", nextCursor, listKey: "abilities" }}
       columns={columns}
       count={count ?? 0}
       primaryAction={

@@ -27,10 +27,11 @@ import type { AttributeCategory } from "../../types";
 type AttributeCategoriesTableProps = {
   data: AttributeCategory[];
   count: number;
+  nextCursor: string | null;
 };
 
 const AttributeCategoriesTable = memo(
-  ({ data, count }: AttributeCategoriesTableProps) => {
+  ({ data, count, nextCursor }: AttributeCategoriesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const [params] = useUrlParams();
@@ -183,6 +184,11 @@ const AttributeCategoriesTable = memo(
       <>
         <Table<AttributeCategory>
           data={data}
+          infinite={{
+            dataKey: "categories",
+            nextCursor,
+            listKey: "attribute-categories"
+          }}
           columns={columns}
           count={count ?? 0}
           primaryAction={

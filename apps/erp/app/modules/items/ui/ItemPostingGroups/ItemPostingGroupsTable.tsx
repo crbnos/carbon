@@ -18,9 +18,11 @@ import type { ItemPostingGroup } from "../../types";
 type ItemGroupsTableProps = {
   data: ItemPostingGroup[];
   count: number;
+  nextCursor: string | null;
 };
 
-const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
+const ItemGroupsTable = memo((props: ItemGroupsTableProps) => {
+  const { data, count, nextCursor } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -97,6 +99,11 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
   return (
     <Table<(typeof rows)[number]>
       data={data}
+      infinite={{
+        dataKey: "itemPostingGroups",
+        nextCursor,
+        listKey: "item-posting-groups"
+      }}
       columns={columns}
       count={count}
       importCSV={[

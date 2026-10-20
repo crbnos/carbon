@@ -17,10 +17,11 @@ import type { ChangeNoticeType } from "../../types";
 type ChangeNoticeTypesTableProps = {
   data: ChangeNoticeType[];
   count: number;
+  nextCursor: string | null;
 };
 
 const ChangeNoticeTypesTable = memo(
-  ({ data, count }: ChangeNoticeTypesTableProps) => {
+  ({ data, count, nextCursor }: ChangeNoticeTypesTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -84,6 +85,11 @@ const ChangeNoticeTypesTable = memo(
     return (
       <Table<ChangeNoticeType>
         data={data}
+        infinite={{
+          dataKey: "data",
+          nextCursor,
+          listKey: "change-notice-types"
+        }}
         columns={columns}
         count={count}
         primaryAction={

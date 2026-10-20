@@ -3,15 +3,22 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon } from "@carbon/api/carbon.server";
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import type { itemTrackingTypes } from "~/modules/items/items.models";
+import {
+  isItemBulkUpdateField,
+  type itemTrackingTypes
+} from "~/modules/items/items.models";
 import type { methodType, sourcingType } from "~/modules/shared/shared.models";
+import { bulkStartFormResponse } from "~/utils/table-jobs";
+import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
 
 // The items tables' bulk actions and the item properties panels: one field of
-// one or more items per post.
+// one or more items per post. The tables' Update posts `allMatching` in
+// place of the ids for every matching item.
 const updateForm = z.object({
   items: zfd.repeatableOfType(z.string()),
   field: z.enum([
@@ -37,7 +44,8 @@ const updateForm = z.object({
     "toolId",
     "serviceName"
   ]),
-  value: z.string()
+  value: z.string(),
+  allMatching: zfd.text(z.string().optional())
 });
 
 const invalid = (message: string) => ({ data: null, error: { message } });
@@ -52,7 +60,23 @@ const renumberType = {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(updateForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const { items: ids, field, value } = input.data;
+  const { items: ids, field, value, allMatching } = input.data;
+
+  // Every matching row: the background job updates them 100 at a time
+  // (bulkUpdateItems).
+  if (allMatching && isItemBulkUpdateField(field)) {
+    const { companyId, userId } = await requirePermissions(args.request, {
+      update: "parts"
+    });
+    const started = await startAllMatchingBulkAction(allMatching, {
+      companyId,
+      userId,
+      actionKey: "items.update",
+      params: { field, value }
+    });
+    if (started) return bulkStartFormResponse(started);
+  }
+
   const api = (await carbon(args.request)).items;
 
   switch (field) {

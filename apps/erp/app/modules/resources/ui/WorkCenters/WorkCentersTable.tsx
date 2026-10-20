@@ -65,6 +65,7 @@ const logger = getLogger("erp", "workcenterstable");
 type WorkCentersTableProps = {
   data: WorkCenter[];
   count: number;
+  nextCursor: string | null;
   departments: ListItem[];
   locations: ListItem[];
 };
@@ -78,7 +79,13 @@ const defaultColumnVisibility = {
 };
 
 const WorkCentersTable = memo(
-  ({ data, count, departments, locations }: WorkCentersTableProps) => {
+  ({
+    data,
+    count,
+    nextCursor,
+    departments,
+    locations
+  }: WorkCentersTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const [params] = useUrlParams();
@@ -348,6 +355,11 @@ const WorkCentersTable = memo(
       <>
         <Table<WorkCenter>
           data={data}
+          infinite={{
+            dataKey: "workCenters",
+            nextCursor,
+            listKey: "work-centers"
+          }}
           defaultColumnVisibility={defaultColumnVisibility}
           columns={columns}
           count={count ?? 0}

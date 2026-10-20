@@ -18,9 +18,11 @@ import type { FailureMode } from "../../types";
 type FailureModesTableProps = {
   data: FailureMode[];
   count: number;
+  nextCursor: string | null;
 };
 
-const FailureModesTable = memo(({ data, count }: FailureModesTableProps) => {
+const FailureModesTable = memo((props: FailureModesTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -96,6 +98,7 @@ const FailureModesTable = memo(({ data, count }: FailureModesTableProps) => {
   return (
     <Table<FailureMode>
       data={data}
+      infinite={{ dataKey: "data", nextCursor, listKey: "failure-modes" }}
       columns={columns}
       count={count}
       primaryAction={

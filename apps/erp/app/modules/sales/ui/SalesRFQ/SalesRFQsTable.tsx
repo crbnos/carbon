@@ -45,9 +45,12 @@ import { SalesRFQStatus } from ".";
 type SalesRFQsTableProps = {
   data: SalesRFQ[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
+const SalesRFQsTable = memo((props: SalesRFQsTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -275,6 +278,11 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
     <>
       <Table<SalesRFQ>
         count={count}
+        infinite={{
+          dataKey: "rfqs",
+          nextCursor,
+          listKey: "sales-rfqs"
+        }}
         columns={columns}
         data={data}
         defaultColumnPinning={{

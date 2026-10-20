@@ -31,10 +31,11 @@ import type { Form } from "../../types";
 type MaterialShapesTableProps = {
   data: Form[];
   count: number;
+  nextCursor: string | null;
 };
 
 const MaterialShapesTable = memo(
-  ({ data, count }: MaterialShapesTableProps) => {
+  ({ data, count, nextCursor }: MaterialShapesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -151,6 +152,11 @@ const MaterialShapesTable = memo(
     return (
       <Table<(typeof rows)[number]>
         data={data}
+        infinite={{
+          dataKey: "materialForms",
+          nextCursor,
+          listKey: "material-forms"
+        }}
         columns={columns}
         count={count}
         importCSV={[

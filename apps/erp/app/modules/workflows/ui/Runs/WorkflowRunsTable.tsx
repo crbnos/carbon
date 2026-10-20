@@ -29,9 +29,11 @@ export type WorkflowRunListItem = WorkflowRun & { recordName?: string };
 type WorkflowRunsTableProps = {
   data: WorkflowRunListItem[];
   count: number;
+  nextCursor: string | null;
 };
 
-const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
+const WorkflowRunsTable = memo((props: WorkflowRunsTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   // A fresh closure each render, so the columns memo reads it through a ref rather than
   // rebuilding every column on every render.
@@ -163,6 +165,7 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
       {hasInFlight && <RunsLiveUpdates />}
       <Table<WorkflowRunListItem>
         data={data}
+        infinite={{ dataKey: "data", nextCursor, listKey: "workflow-runs" }}
         columns={columns}
         count={count}
         title={t`Runs`}

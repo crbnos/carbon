@@ -21,10 +21,12 @@ import type { Holiday } from "../../types";
 type HolidaysTableProps = {
   data: Holiday[];
   count: number;
+  nextCursor: string | null;
   years: number[];
 };
 
-const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
+const HolidaysTable = memo((props: HolidaysTableProps) => {
+  const { data, count, nextCursor, years } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -113,6 +115,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
   return (
     <Table<(typeof data)[number]>
       data={data}
+      infinite={{ dataKey: "holidays", nextCursor, listKey: "holidays" }}
       count={count}
       columns={columns}
       primaryAction={

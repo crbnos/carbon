@@ -18,10 +18,12 @@ import type { NoQuoteReason } from "../../types";
 type NoQuoteReasonsTableProps = {
   data: NoQuoteReason[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const NoQuoteReasonsTable = memo(
-  ({ data, count }: NoQuoteReasonsTableProps) => {
+  ({ data, count, nextCursor }: NoQuoteReasonsTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -86,6 +88,11 @@ const NoQuoteReasonsTable = memo(
         data={data}
         columns={columns}
         count={count}
+        infinite={{
+          dataKey: "data",
+          nextCursor,
+          listKey: "no-quote-reasons"
+        }}
         primaryAction={
           permissions.can("create", "sales") && (
             <New

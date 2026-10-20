@@ -54,10 +54,12 @@ import StockMovementCorrectionModal from "./StockMovementCorrectionModal";
 type StockMovementsTableProps = {
   data: StockMovement[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const StockMovementsTable = memo(
-  ({ data, count }: StockMovementsTableProps) => {
+  ({ data, count, nextCursor }: StockMovementsTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const [correctionTarget, setCorrectionTarget] =
@@ -301,6 +303,11 @@ const StockMovementsTable = memo(
       <>
         <Table<(typeof data)[number]>
           data={data}
+          infinite={{
+            dataKey: "movements",
+            nextCursor,
+            listKey: "stock-movements"
+          }}
           columns={columns}
           count={count}
           defaultColumnPinning={{

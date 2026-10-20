@@ -4,22 +4,24 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import WorkflowRunsTable from "~/modules/workflows/ui/Runs/WorkflowRunsTable";
-import {
-  getWorkflowRunRecordNames,
-  getWorkflowRuns
-} from "~/modules/workflows/workflows.service";
+import { getWorkflowRunRecordNames } from "~/modules/workflows/workflows.service";
+import { fetchListPage } from "~/utils/list-registry/index.server";
+import { listErrorPage } from "~/utils/list-registry/load.server";
+import { workflowRunsList } from "~/utils/list-registry/workflows.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "workflow-runs");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "workflows",
-    role: "employee"
-  });
+  const { client, companyId } = await requirePermissions(
+    request,
+    workflowRunsList.permission
+  );
   await requireFeature({
     request,
     client,
@@ -28,19 +30,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     redirectTo: path.to.workflows
   });
 
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
+  const searchParams = new URL(request.url).searchParams;
+  const runs = await fetchListPage(
+    workflowRunsList,
+    client,
+    companyId,
+    searchParams
+  );
 
-  const runs = await getWorkflowRuns(client, companyId, {
-    limit,
-    offset,
-    sorts,
-    filters
-  });
+  if (runs.error && searchParams.get("after")) {
+    logger.error("Failed to load a later page of workflow runs", {
+      companyId,
+      error: runs.error
+    });
+    return listErrorPage("data");
+  }
 
-  const data = runs.data ?? [];
+  // The record names are read per page, so every loaded row carries its own.
+  const data = runs.rows;
   const recordNames = await getWorkflowRunRecordNames(
     client,
     companyId,
@@ -56,15 +63,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ...run,
       recordName: recordNames[`${run.triggerTable}:${run.triggerRecordId}`]
     })),
-    count: runs.count ?? 0
+    count: runs.count,
+    exactCount: runs.exactCount,
+    nextCursor: runs.nextCursor
   };
 }
 
 export default function WorkflowRunsRoute() {
-  const { data, count } = useLoaderData<typeof loader>();
+  const { data, count, nextCursor } = useLoaderData<typeof loader>();
   return (
     <VStack spacing={0} className="h-full">
-      <WorkflowRunsTable data={data} count={count} />
+      <WorkflowRunsTable data={data} count={count} nextCursor={nextCursor} />
       <RecordOutlet />
     </VStack>
   );

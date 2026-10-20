@@ -30,10 +30,11 @@ import { getPriorityIcon, getSourceIcon } from "../Issue/IssueIcons";
 type IssueWorkflowsTableProps = {
   data: IssueWorkflow[];
   count: number;
+  nextCursor: string | null;
 };
 
 const IssueWorkflowsTable = memo(
-  ({ data, count }: IssueWorkflowsTableProps) => {
+  ({ data, count, nextCursor }: IssueWorkflowsTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
@@ -128,6 +129,11 @@ const IssueWorkflowsTable = memo(
       <>
         <Table<IssueWorkflow>
           data={data}
+          infinite={{
+            dataKey: "procedures",
+            nextCursor,
+            listKey: "issue-workflows"
+          }}
           columns={columns}
           count={count}
           primaryAction={

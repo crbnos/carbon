@@ -184,9 +184,10 @@ import {
   strictBackflushRefusal
 } from "~/modules/shared/strict-backflush";
 import type { StorageItem } from "~/types";
-import type { Filter, GenericQueryFilters } from "~/utils/query";
+import type { Filter, GenericQueryFilters, Paging } from "~/utils/query";
 import {
   LIST_COUNT,
+  listCount,
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
@@ -445,6 +446,10 @@ export async function getBatchProperties(
     .order("sortOrder");
 }
 
+export const INVENTORY_ITEMS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getInventoryItems(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -460,7 +465,8 @@ export async function getInventoryItems(
       company_id: companyId
     },
     {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     }
   );
 
@@ -469,9 +475,7 @@ export async function getInventoryItems(
     "readableIdWithRevision"
   ]);
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, INVENTORY_ITEMS_PAGING);
 
   return query;
 }
@@ -639,6 +643,10 @@ export async function createInventoryReconciliationJournal(
   }
 }
 
+export const KANBANS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getKanbans(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -650,7 +658,7 @@ export async function getKanbans(
   let query = client
     .from("kanbans")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("locationId", locationId);
@@ -661,9 +669,7 @@ export async function getKanbans(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, KANBANS_PAGING);
   return query;
 }
 
@@ -742,6 +748,10 @@ export async function getStockTransferTracking(
     .eq("companyId", companyId);
 }
 
+export const STOCK_TRANSFERS_PAGING: Paging = {
+  defaultSorts: [{ column: "stockTransferId", ascending: false }]
+};
+
 export async function getStockTransfers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -753,7 +763,7 @@ export async function getStockTransfers(
   let query = client
     .from("stockTransfer")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -781,9 +791,11 @@ export async function getStockTransfers(
     }
   }
 
-  query = setGenericQueryFilters(query, { ...args, filters: columnFilters }, [
-    { column: "stockTransferId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(
+    query,
+    { ...args, filters: columnFilters },
+    STOCK_TRANSFERS_PAGING
+  );
   return query;
 }
 
@@ -823,6 +835,10 @@ export async function getDefaultStorageUnitOrStorageUnitWithHighestQuantity(
   return storageUnitWithHighestQuantity?.storageUnitId ?? null;
 }
 
+export const RECEIPTS_PAGING: Paging = {
+  defaultSorts: [{ column: "receiptId", ascending: false }]
+};
+
 export async function getReceipts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -833,7 +849,7 @@ export async function getReceipts(
   let query = client
     .from("receipt")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .neq("sourceDocumentId", "");
@@ -844,9 +860,7 @@ export async function getReceipts(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "receiptId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, RECEIPTS_PAGING);
   return query;
 }
 
@@ -1391,6 +1405,10 @@ export async function getEffectiveWorkCenterId(
 
 // Roots only (depth = 1). Honors search/filter/pagination so the table can
 // paginate top-level storage units while children load lazily on demand.
+export const STORAGE_UNIT_ROOTS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getStorageUnitRoots(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1399,7 +1417,7 @@ export async function getStorageUnitRoots(
 ) {
   let query = client
     .from("storageUnits_recursive")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("locationId", locationId)
     .eq("depth", 1);
@@ -1408,9 +1426,7 @@ export async function getStorageUnitRoots(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, STORAGE_UNIT_ROOTS_PAGING);
 
   return query;
 }
@@ -1444,15 +1460,29 @@ export async function getStorageUnitSubtrees(
   if (rootIds.length === 0) {
     return { data: [] as any[], error: null };
   }
-  return client
-    .from("storageUnits_recursive")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("locationId", locationId)
-    .gt("depth", 1)
-    .lte("depth", maxDepth)
-    .overlaps("ancestorPath", rootIds)
-    .order("name");
+  // `overlaps` writes each root id into the URL, so the ids go 100 per
+  // request. A descendant has one root, so each chunk keeps its own order.
+  const chunks: string[][] = [];
+  for (let i = 0; i < rootIds.length; i += 100) {
+    chunks.push(rootIds.slice(i, i + 100));
+  }
+  const results = await Promise.all(
+    chunks.map((ids) =>
+      client
+        .from("storageUnits_recursive")
+        .select("*")
+        .eq("companyId", companyId)
+        .eq("locationId", locationId)
+        .gt("depth", 1)
+        .lte("depth", maxDepth)
+        .overlaps("ancestorPath", ids)
+        .order("name")
+    )
+  );
+  return {
+    data: results.flatMap((result) => result.data ?? []),
+    error: results.find((result) => result.error)?.error ?? null
+  };
 }
 
 // Set of storageUnit ids that have at least one child in the given location.
@@ -1532,6 +1562,13 @@ export async function searchStorageUnitsWithAncestors(
   };
 }
 
+export const STOCK_MOVEMENTS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "createdAt", ascending: false },
+    { column: "entryNumber", ascending: false }
+  ]
+};
+
 export async function getStockMovements(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1542,7 +1579,7 @@ export async function getStockMovements(
   let query = client
     .from("itemLedgers")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1561,12 +1598,13 @@ export async function getStockMovements(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false },
-    { column: "entryNumber", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, STOCK_MOVEMENTS_PAGING);
   return query;
 }
+
+export const SHIPMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "shipmentId", ascending: false }]
+};
 
 export async function getShipments(
   client: SupabaseClient<Database>,
@@ -1578,7 +1616,7 @@ export async function getShipments(
   let query = client
     .from("shipment")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .neq("sourceDocumentId", "");
@@ -1589,9 +1627,7 @@ export async function getShipments(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "shipmentId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SHIPMENTS_PAGING);
   return query;
 }
 
@@ -1758,6 +1794,10 @@ export async function getShippingMethod(
     .single();
 }
 
+export const SHIPPING_METHODS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getShippingMethods(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1768,7 +1808,7 @@ export async function getShippingMethods(
   let query = client
     .from("shippingMethod")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -1788,9 +1828,7 @@ export async function getShippingMethods(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SHIPPING_METHODS_PAGING);
   return query;
 }
 
@@ -1844,6 +1882,10 @@ export async function mergeTrackedEntities(
   );
 }
 
+export const TRACKED_ENTITIES_PAGING: Paging = {
+  defaultSorts: [{ column: "sourceDocumentReadableId", ascending: true }]
+};
+
 export async function getTrackedEntities(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1854,7 +1896,7 @@ export async function getTrackedEntities(
   let query = client
     .from("trackedEntity")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .neq("status", "Reserved");
@@ -1868,9 +1910,7 @@ export async function getTrackedEntities(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "sourceDocumentReadableId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, TRACKED_ENTITIES_PAGING);
   return query;
 }
 
@@ -2003,6 +2043,10 @@ export async function getTrackedEntitiesByOperationId(
   );
 }
 
+export const WAREHOUSE_TRANSFERS_PAGING: Paging = {
+  defaultSorts: [{ column: "transferId", ascending: false }]
+};
+
 export async function getWarehouseTransfers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2015,7 +2059,7 @@ export async function getWarehouseTransfers(
     .select(
       "*, fromLocation:location!fromLocationId(name), toLocation:location!toLocationId(name)",
       {
-        count: LIST_COUNT
+        count: listCount(args)
       }
     )
     .eq("companyId", companyId);
@@ -2024,9 +2068,7 @@ export async function getWarehouseTransfers(
     query = query.or(searchFilter(["transferId", "reference"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "transferId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, WAREHOUSE_TRANSFERS_PAGING);
   return query;
 }
 
@@ -2227,6 +2269,10 @@ export async function getStockMovementEffectiveQuantity(
 // Inventory Count / Cycle Count
 // ===========================================================================
 
+export const INVENTORY_COUNTS_PAGING: Paging = {
+  defaultSorts: [{ column: "inventoryCountId", ascending: false }]
+};
+
 export async function getInventoryCounts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2234,16 +2280,14 @@ export async function getInventoryCounts(
 ) {
   let query = client
     .from("inventoryCount")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.ilike("inventoryCountId", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "inventoryCountId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, INVENTORY_COUNTS_PAGING);
   return query;
 }
 
@@ -2260,6 +2304,13 @@ export async function getInventoryCount(
     .single();
 }
 
+export const INVENTORY_COUNT_LINES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "itemReadableIdWithRevision", ascending: true },
+    { column: "id", ascending: true }
+  ]
+};
+
 export async function getInventoryCountLines(
   client: SupabaseClient<Database>,
   inventoryCountId: string,
@@ -2271,7 +2322,7 @@ export async function getInventoryCountLines(
   // apply the same generic column filters the quantities screen does.
   let query = client
     .from("inventoryCountLines")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("inventoryCountId", inventoryCountId)
     .eq("companyId", companyId);
 
@@ -2286,10 +2337,7 @@ export async function getInventoryCountLines(
   // Snapshot lines all share one insert timestamp, so order by the item's part
   // number for a readable count sheet and fall back to the line id for a stable,
   // deterministic order.
-  query = setGenericQueryFilters(query, args, [
-    { column: "itemReadableIdWithRevision", ascending: true },
-    { column: "id", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, INVENTORY_COUNT_LINES_PAGING);
   return query;
 }
 
@@ -3095,6 +3143,10 @@ export async function deleteStorageTypeWithCascade(
   });
 }
 
+export const STORAGE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getStorageTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3102,16 +3154,14 @@ export async function getStorageTypes(
 ) {
   let query = client
     .from("storageType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args ?? {}, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args ?? {}, STORAGE_TYPES_PAGING);
   return query;
 }
 
@@ -3204,6 +3254,10 @@ export async function getTrackedEntityExpirations(
 // Picking List CRUD
 // ----------------------------------------------------------------------------
 
+export const PICKING_LISTS_PAGING: Paging = {
+  defaultSorts: [{ column: "pickingListId", ascending: false }]
+};
+
 export async function getPickingLists(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3217,7 +3271,7 @@ export async function getPickingLists(
   let query = client
     .from("pickingLists")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -3240,9 +3294,7 @@ export async function getPickingLists(
     query = query.eq("locationId", args.locationId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "pickingListId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PICKING_LISTS_PAGING);
   return query;
 }
 

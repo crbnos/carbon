@@ -92,12 +92,19 @@ export function useMachineTimeZone() {
 type MachineTimeTableProps = {
   data: UnattributedMachineTime[];
   count: number;
+  nextCursor: string | null;
   workCenters: { id: string | null; name: string | null }[];
   locations: { id: string; name: string }[];
 };
 
 const MachineTimeTable = memo(
-  ({ data, count, workCenters, locations }: MachineTimeTableProps) => {
+  ({
+    data,
+    count,
+    nextCursor,
+    workCenters,
+    locations
+  }: MachineTimeTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
     const { locale } = useLocale();
@@ -279,6 +286,8 @@ const MachineTimeTable = memo(
         data={data}
         columns={columns}
         count={count}
+        // Filters are parsed by the loader, not the list registry: no `listKey`.
+        infinite={{ dataKey: "machineTimes", nextCursor }}
         // The review queue walks one fixed order (newest start, then id), so
         // the list offers no sort.
         sort={null}

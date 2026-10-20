@@ -3,17 +3,59 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon } from "@carbon/api/carbon.server";
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { releaseJobs } from "~/modules/production/production.server";
+import { bulkStartFormResponse, fitsOneRequest } from "~/utils/table-jobs";
+import {
+  startAllMatchingBulkAction,
+  startSelectedBulkAction
+} from "~/utils/table-jobs.server";
 
 // The jobs table's Release Jobs: no dialog, so a job with a choice to make is
 // refused and named rather than released with a guess.
+// `{ allMatching: { listKey, search } }` in place of `jobIds` releases every
+// matching job in the background job instead, up to 2,000 jobs. More than 25
+// selected jobs also go to the background job: each runs MRP, and one request
+// must end before the load balancer's 600 s.
 const selection = releaseJobs.input.pick({ jobIds: true });
 
 export async function action(args: ActionFunctionArgs) {
+  const json = await args.request
+    .clone()
+    .json()
+    .catch(() => null);
+  if (json?.allMatching) {
+    const { companyId, userId } = await requirePermissions(args.request, {
+      update: "production"
+    });
+    const started = await startAllMatchingBulkAction(json.allMatching, {
+      companyId,
+      userId,
+      actionKey: "jobs.release",
+      params: {}
+    });
+    if (started) return bulkStartFormResponse(started);
+  }
+
   const input = await validator(selection).request(args);
   if ("invalid" in input) return input.invalid;
+  if (!fitsOneRequest("jobs.release", input.data.jobIds.length)) {
+    const { companyId, userId } = await requirePermissions(args.request, {
+      update: "production"
+    });
+    return bulkStartFormResponse(
+      await startSelectedBulkAction({
+        companyId,
+        userId,
+        actionKey: "jobs.release",
+        params: {},
+        listKey: "jobs",
+        ids: input.data.jobIds
+      })
+    );
+  }
   const api = await carbon(args.request);
   return api.production.releaseJobs(input.data);
 }

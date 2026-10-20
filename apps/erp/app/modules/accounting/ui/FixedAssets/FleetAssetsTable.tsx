@@ -38,6 +38,8 @@ export type FleetAssetRow = NonNullable<
 type FleetAssetsTableProps = {
   data: FleetAssetRow[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   primaryAction?: ReactNode;
 };
 
@@ -47,7 +49,7 @@ const isOnBooks = (row: FleetAssetRow) =>
   row.status === "Active" || row.status === "Fully Depreciated";
 
 const FleetAssetsTable = memo(
-  ({ data, count, primaryAction }: FleetAssetsTableProps) => {
+  ({ data, count, primaryAction, nextCursor }: FleetAssetsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const fetcher = useFetcher();
@@ -229,6 +231,11 @@ const FleetAssetsTable = memo(
 
     return (
       <Table<FleetAssetRow>
+        infinite={{
+          dataKey: "data",
+          nextCursor,
+          listKey: "fleet-assets"
+        }}
         data={data}
         columns={columns}
         count={count}

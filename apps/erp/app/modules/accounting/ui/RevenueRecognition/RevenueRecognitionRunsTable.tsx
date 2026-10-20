@@ -27,11 +27,19 @@ type RevenueRecognitionRunsTableProps = {
   type: RunType;
   data: RevenueRecognitionRunListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   primaryAction?: ReactNode;
 };
 
 const RevenueRecognitionRunsTable = memo(
-  ({ type, data, count, primaryAction }: RevenueRecognitionRunsTableProps) => {
+  ({
+    type,
+    data,
+    count,
+    primaryAction,
+    nextCursor
+  }: RevenueRecognitionRunsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -121,6 +129,12 @@ const RevenueRecognitionRunsTable = memo(
     return (
       <>
         <Table<RevenueRecognitionRunListItem>
+          infinite={{
+            dataKey: "data",
+            nextCursor,
+            listKey:
+              type === "Lease" ? "lease-runs" : "revenue-recognition-runs"
+          }}
           data={data}
           columns={columns}
           count={count}

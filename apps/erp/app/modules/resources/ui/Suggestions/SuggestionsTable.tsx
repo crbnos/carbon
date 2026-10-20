@@ -33,12 +33,13 @@ type SuggestionsTableProps = {
   data: SuggestionListItem[];
   tags: { name: string }[];
   count: number;
+  nextCursor: string | null;
 };
 
 const defaultColumnVisibility = {};
 
 const SuggestionsTable = memo(
-  ({ data, tags, count }: SuggestionsTableProps) => {
+  ({ data, tags, count, nextCursor }: SuggestionsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -169,6 +170,11 @@ const SuggestionsTable = memo(
     return (
       <Table<SuggestionListItem>
         data={data}
+        infinite={{
+          dataKey: "suggestions",
+          nextCursor,
+          listKey: "suggestions"
+        }}
         count={count}
         columns={columns}
         defaultColumnVisibility={defaultColumnVisibility}

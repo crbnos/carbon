@@ -22,6 +22,7 @@ vi.mock("@carbon/content/glossary", () => ({
 import * as purchasingModels from "./purchasing.models";
 import {
   canCreatePurchaseOrderRevision,
+  isPurchaseOrderBulkDeletable,
   isPurchaseOrderLocked,
   leaseClassificationValidator,
   leaseDetailsValidator,
@@ -549,6 +550,18 @@ describe("lease action validators", () => {
         reason: " "
       }).success
     ).toBe(false);
+  });
+});
+
+describe("isPurchaseOrderBulkDeletable", () => {
+  it("accepts Draft and Planned only", () => {
+    expect(isPurchaseOrderBulkDeletable("Draft")).toBe(true);
+    expect(isPurchaseOrderBulkDeletable("Planned")).toBe(true);
+    for (const status of purchaseOrderStatusType) {
+      if (status === "Draft" || status === "Planned") continue;
+      expect(isPurchaseOrderBulkDeletable(status)).toBe(false);
+    }
+    expect(isPurchaseOrderBulkDeletable(null)).toBe(false);
   });
 });
 

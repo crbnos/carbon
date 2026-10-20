@@ -24,9 +24,12 @@ import type { Dimension } from "../../types";
 type DimensionsTableProps = {
   data: Dimension[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
+const DimensionsTable = memo((props: DimensionsTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -131,6 +134,11 @@ const DimensionsTable = memo(({ data, count }: DimensionsTableProps) => {
 
   return (
     <Table<Dimension>
+      infinite={{
+        dataKey: "data",
+        nextCursor,
+        listKey: "accounting-dimensions"
+      }}
       data={data}
       columns={columns}
       count={count}

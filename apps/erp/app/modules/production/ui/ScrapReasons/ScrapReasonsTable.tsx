@@ -18,9 +18,12 @@ import type { ScrapReason } from "../../types";
 type ScrapReasonsTableProps = {
   data: ScrapReason[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
+const ScrapReasonsTable = memo((props: ScrapReasonsTableProps) => {
+  const { data, count, nextCursor } = props;
   const [params] = useUrlParams();
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -83,6 +86,11 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={{
+        dataKey: "data",
+        nextCursor,
+        listKey: "scrap-reasons"
+      }}
       importCSV={[
         {
           table: "scrapReason" as const,

@@ -3,19 +3,23 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  getJobOperationBatches,
   getJobOperationBatchMemberStats,
   getJobOperationBatchMembers
 } from "~/modules/production/production.service";
 import BatchesTable from "~/modules/production/ui/Batches/BatchesTable";
 import type { Handle } from "~/utils/handle";
+import { fetchListPage } from "~/utils/list-registry/index.server";
+import { listErrorPage } from "~/utils/list-registry/load.server";
+import { operationBatchesList } from "~/utils/list-registry/production.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "batches");
 
 export const handle: Handle = {
   breadcrumb: msg`Batches`,
@@ -23,34 +27,40 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production",
-    role: "employee"
-  });
+  const { client, companyId } = await requirePermissions(
+    request,
+    operationBatchesList.permission
+  );
 
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
+  const searchParams = new URL(request.url).searchParams;
+  const batches = await fetchListPage(
+    operationBatchesList,
+    client,
+    companyId,
+    searchParams
+  );
 
-  const batches = await getJobOperationBatches(client, companyId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
+  if (batches.error && searchParams.get("after")) {
+    logger.error("Failed to load a later page of batches", {
+      companyId,
+      error: batches.error
+    });
+    return listErrorPage("batches");
+  }
 
-  const batchIds = (batches.data ?? []).map((b) => b.id);
+  // The member stats and rows of this page's batches only. A later page
+  // (`?after=`) brings its own, in its rows.
+  const batchIds = batches.rows.map((b) => b.id);
   const [stats, members] = await Promise.all([
     getJobOperationBatchMemberStats(client, companyId, batchIds),
     getJobOperationBatchMembers(client, companyId, batchIds)
   ]);
 
   return {
-    count: batches.count ?? 0,
-    batches: (batches.data ?? []).map((b) => ({
+    count: batches.count,
+    exactCount: batches.exactCount,
+    nextCursor: batches.nextCursor,
+    batches: batches.rows.map((b) => ({
       ...b,
       memberCount: stats.data[b.id]?.memberCount ?? 0,
       totalQuantity: stats.data[b.id]?.totalQuantity ?? 0,
@@ -66,11 +76,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function BatchesRoute() {
-  const { batches, count } = useLoaderData<typeof loader>();
+  const { batches, count, nextCursor } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <BatchesTable data={batches} count={count} />
+      <BatchesTable data={batches} count={count} nextCursor={nextCursor} />
       <RecordOutlet />
     </VStack>
   );

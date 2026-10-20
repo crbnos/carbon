@@ -96,6 +96,10 @@ msgstr "{0, plural, one {# riga si collega ai dati al di fuori di questa Azienda
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# settimana} other {# settimane}}"
 
+#. placeholder {0}: allMatching.count
+msgid "{0, plural, one {All matching rows selected (about #)} other {All matching rows selected (about #)}}"
+msgstr "{0, plural, one {Tutte le righe corrispondenti selezionate (circa #)} other {Tutte le righe corrispondenti selezionate (circa #)}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Completa o annulla l'# ordine di produzione che ha sostenuto costi prima che Carbon li registrasse.} other {Completa o annulla gli # ordini di produzione che hanno sostenuto costi prima che Carbon li registrasse.}}"
@@ -119,6 +123,10 @@ msgstr "{0, plural, one {Il pianificatore tratta questo componente come un corpo
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Questo articolo è in 1 avviso di modifica aperto} other {Questo articolo è in # avvisi di modifica aperti}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {Total of # loaded row} other {Total of # loaded rows}}"
+msgstr "{0, plural, one {Totale di # riga caricata} other {Totale di # righe caricate}}"
 
 #. placeholder {0}: file.name
 msgid "{0} · {count, plural, one {# row} other {# rows}}"
@@ -275,6 +283,10 @@ msgstr "{0} di {1}"
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
 msgstr "{0} di {1} conti di registrazione mappati"
+
+#. placeholder {0}: rows.length
+msgid "{0} of {count} operations"
+msgstr "{0} di {count} operazioni"
 
 #. placeholder {0}: rows.length
 msgid "{0} of {maxSlots} provider slots used"
@@ -479,6 +491,15 @@ msgstr "{count, plural, one {# corso} other {# corsi}}"
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# altri dopo {fenceLabel}} other {# altri dopo {fenceLabel}}}"
 
+msgid "{count, plural, one {# row} other {# rows}}"
+msgstr "{count, plural, one {# riga} other {# righe}}"
+
+msgid "{count, plural, one {about # row} other {about # rows}}"
+msgstr "{count, plural, one {circa # riga} other {circa # righe}}"
+
+msgid "{count, plural, one {All # matching row selected} other {All # matching rows selected}}"
+msgstr "{count, plural, one {# riga corrispondente selezionata} other {Tutte le # righe corrispondenti selezionate}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {Sciogli # lotto di produzione} other {Sciogli # lotti di produzione}}"
 
@@ -493,6 +514,12 @@ msgstr "{count, plural, one {Liberato # lotto di produzione} other {Liberati # l
 
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {Rilasciato # ordine di produzione} other {Rilasciati # ordini di produzione}}"
+
+msgid "{count, plural, one {Select all # matching row} other {Select all # matching rows}}"
+msgstr "{count, plural, one {Seleziona # riga corrispondente} other {Seleziona tutte le # righe corrispondenti}}"
+
+msgid "{count, plural, one {Select all matching rows (about #)} other {Select all matching rows (about #)}}"
+msgstr "{count, plural, one {Seleziona tutte le righe corrispondenti (circa #)} other {Seleziona tutte le righe corrispondenti (circa #)}}"
 
 msgid "{count} of {total} units"
 msgstr "{count} di {total} unità"
@@ -527,12 +554,6 @@ msgstr ""
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# riga esclusa} other {# righe escluse}}"
 
-msgid "{from}–{to} of {count}"
-msgstr "{from}–{to} di {count}"
-
-msgid "{from}–{to} of {count} operations"
-msgstr "{from}–{to} di {count} operazioni"
-
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {E # altro record.} other {E # altri record.}}"
 
@@ -561,6 +582,12 @@ msgstr "{linesCount, plural, one {# riga} other {# righe}}"
 
 msgid "{load} in queue"
 msgstr "{load} in coda"
+
+msgid "{loadedLabel} of {total, plural, one {# row} other {# rows}}"
+msgstr "{loadedLabel} di {total, plural, one {# riga} other {# righe}}"
+
+msgid "{loadedLabel} of about {total, plural, one {# row} other {# rows}}"
+msgstr "{loadedLabel} di circa {total, plural, one {# riga} other {# righe}}"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (del leasing)"
@@ -672,6 +699,9 @@ msgstr "{scopeCount} autorizzazioni"
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} righe"
 
+msgid "{selectedCount, plural, one {# selected} other {# selected}}"
+msgstr "{selectedCount, plural, one {# selezionato} other {# selezionati}}"
+
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} selezionati"
 
@@ -692,6 +722,9 @@ msgstr "{total} fasi per andare live"
 
 msgid "{totalCount} results"
 msgstr "{totalCount} risultati"
+
+msgid "{totalLoaded} of {count}"
+msgstr "{totalLoaded} di {count}"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# unità} other {# unità}}"
@@ -937,6 +970,12 @@ msgstr "Un PIN a 4 cifre viene generato quando l'operatore viene creato."
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Un lotto di produzione richiede almeno un'operazione. Per dividere l'intero lotto di produzione, utilizza Dissolvi."
+
+msgid "A bulk action is already running for your company. Try again when it ends, at the latest in {minutes} min."
+msgstr ""
+
+msgid "A bulk action is already running for your company. Try again when it ends."
+msgstr ""
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Una migrazione dati gestita da Carbon — tu carichi i tuoi dati"
@@ -2443,6 +2482,9 @@ msgstr "Tutte le Ubicazioni"
 msgid "all make {0}"
 msgstr "Produzione di {0}"
 
+msgid "All matching rows selected"
+msgstr "Tutte le righe corrispondenti selezionate"
+
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Tutti i membri dei gruppi selezionati e gli individui selezionati potranno approvare le richieste"
 
@@ -2591,6 +2633,12 @@ msgstr "Una modifica tecnica: gli articoli interessati i cui metodi sono revisio
 
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "Un metodo di accesso aziendale in cui tutti gli utenti con domini email registrati dall'azienda si autenticano tramite il provider di identità SAML della propria azienda invece di un link magico, consentendo all'IT di concedere e revocare l'accesso centralmente."
+
+msgid "An export is already running for your company. Try again when it ends, at the latest in {minutes} min."
+msgstr ""
+
+msgid "An export is already running for your company. Try again when it ends."
+msgstr ""
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "Una richiesta https che Carbon invia a un tuo sistema quando un flusso di lavoro raggiunge quel passaggio, portando i header e il corpo che hai configurato."
@@ -6204,6 +6252,9 @@ msgstr "Impossibile completare la connessione Onshape Government"
 msgid "Couldn't load documents"
 msgstr "Impossibile caricare i documenti"
 
+msgid "Couldn't load more rows"
+msgstr "Impossibile caricare altre righe"
+
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "Impossibile caricare i documenti correlati. Aggiorna prima di crearne uno nuovo per evitare duplicati."
 
@@ -8069,6 +8120,9 @@ msgstr "Elimina batch"
 msgid "Dissolve Batch"
 msgstr "Sciogliere Lotto"
 
+msgid "Dissolve batches"
+msgstr "Scioglie lotti di produzione"
+
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "Lo scioglimento di {0} restituisce le sue {memberCount} operazioni al programma in sospeso ed elimina il lotto. Un lotto con produzione registrata deve essere completato."
@@ -9445,6 +9499,9 @@ msgstr "Ogni riga è stata importata correttamente."
 msgid "Every unit has a rate."
 msgstr "Ogni unità ha un tasso."
 
+msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
+msgstr "Ogni utente che corrisponde ai filtri dell'elenco. Gli utenti a cui questa azione non si applica vengono saltati."
+
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Tutti devono configurare un'app autenticatore prima di aprire questa azienda."
 
@@ -9688,6 +9745,9 @@ msgstr "Esporta Righe in CSV"
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Esporta il piano dei conti dal sistema attuale come CSV, una riga per conto, con numero, nome, classe, tipo e gruppo, oppure parti dal modello del piano attuale. Carbon conserva solo i conti presenti in questo file."
+
+msgid "Exported the first {exportedCount} rows."
+msgstr "Esportate le prime {exportedCount} righe."
 
 msgid "Extended Price"
 msgstr "Prezzo Esteso"
@@ -10243,6 +10303,12 @@ msgstr "Filtra e ordina"
 
 msgid "Filter by…"
 msgstr "Filtra per…"
+
+msgid "Filter the list to {limit} rows or fewer"
+msgstr "Filtra l'elenco a {limit} righe o meno"
+
+msgid "Filter the list to {rows} rows or fewer"
+msgstr "Filtra l'elenco a {rows} righe o meno"
 
 msgid "Filters"
 msgstr "Filtri"
@@ -12107,6 +12173,9 @@ msgstr "Data di Emissione"
 msgid "Issues"
 msgstr "Problemi"
 
+msgid "It could not start. Try again."
+msgstr ""
+
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "Sarà disponibile presto. Contatta Carbon per farla configurare per la tua azienda."
 
@@ -12925,9 +12994,6 @@ msgstr "Ricaricamento in tempo reale"
 msgid "Load"
 msgstr "Carico"
 
-msgid "Load more"
-msgstr "Carica altri"
-
 msgid "Load newer"
 msgstr "Carica più recenti"
 
@@ -12951,6 +13017,9 @@ msgstr "Caricamento della quantità attuale…"
 
 msgid "Loading item details..."
 msgstr "Caricamento dettagli articolo..."
+
+msgid "Loading more rows"
+msgstr "Caricamento di altre righe in corso"
 
 msgid "Loading returnable lines..."
 msgstr "Caricamento linee restituibili in corso..."
@@ -18636,6 +18705,9 @@ msgstr "Rilascia lotto"
 msgid "Release batch {0}"
 msgstr "Rilascia lotto di produzione {0}"
 
+msgid "Release batches"
+msgstr "Rilascia lotti di produzione"
+
 msgid "Release change notice"
 msgstr "Rilascia avviso di modifica"
 
@@ -19255,9 +19327,6 @@ msgstr "Risultato"
 msgid "Results"
 msgstr "Risultati"
 
-msgid "Results per page"
-msgstr "Risultati per pagina"
-
 msgid "Resume"
 msgstr "Riprendi"
 
@@ -19671,9 +19740,6 @@ msgstr "Ciclo di lavorazione"
 msgid "Routing Number (ABA)"
 msgstr "Numero di instradamento (ABA)"
 
-msgid "rows"
-msgstr "righe"
-
 msgid "Rows left out of this backup"
 msgstr "Righe escluse da questo backup"
 
@@ -19748,6 +19814,9 @@ msgstr "Eseguire questo workflow ora?"
 
 msgid "Running"
 msgstr "In esecuzione"
+
+msgid "Running in the background. We'll notify you when it's done."
+msgstr "In esecuzione in background. Ti avviseremo quando sarà completata."
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Giacenza corrente dopo la copertura e il fabbisogno di ogni settimana — la riga."
@@ -20566,6 +20635,9 @@ msgstr "Seleziona Tipo Fornitore"
 msgid "Select surfaces"
 msgstr "Seleziona superfici"
 
+msgid "Select the first {limit} rows"
+msgstr "Seleziona le prime {limit} righe"
+
 msgid "Select the groups that should complete this training"
 msgstr "Seleziona i gruppi che dovrebbero completare questa formazione"
 
@@ -21240,11 +21312,11 @@ msgstr "Mostrando {0} di {totalCount} — raffina la tua ricerca"
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Visualizzazione {0} di {totalFiltered} — perfeziona la ricerca"
 
-msgid "Showing {firstShown}–{lastShown} of {total}"
-msgstr "Mostra {firstShown}–{lastShown} di {total}"
-
 msgid "Showing in {parentCurrency}"
 msgstr "Visualizzazione in {parentCurrency}"
+
+msgid "Showing the first {limit} rows. Search or filter to see the rest."
+msgstr "Vengono mostrate le prime {limit} righe. Cerca o filtra per vedere le altre."
 
 msgid "Showing the first 500 lines"
 msgstr "Visualizzazione delle prime 500 righe"
@@ -23018,6 +23090,9 @@ msgstr "La percentuale prevista di produzione di questo articolo persa durante l
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Il conto spese a cui questa riga di spesa indiretta viene contabilizzata; obbligatorio perché le righe indirette non hanno una voce di inventario da cui derivare il conto."
 
+msgid "The export could not start. Try again."
+msgstr "Impossibile avviare l'esportazione. Riprova."
+
 msgid "The file could not be read"
 msgstr "Non è stato possibile leggere il file"
 
@@ -23211,6 +23286,9 @@ msgstr "Lo stato del ciclo di vita di questo cliente - Attivo, Prospect, Inattiv
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "Lo stato del ciclo di vita di questo fornitore — Attivo, Inattivo, In attesa di approvazione, ecc.; solo i fornitori attivi compaiono nei selettori di ordine di acquisto / offerta."
+
+msgid "The list changed while the export loaded. Try again."
+msgstr "L'elenco è cambiato durante il caricamento dell'esportazione. Riprova."
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "Il fuso orario locale in cui questa ubicazione riporta l'ora; i programmi, la rilevazione tempi e gli orari di turno in questa ubicazione vengono interpretati in questo fuso orario indipendentemente dalla locale del browser dell'utente."
@@ -23901,6 +23979,12 @@ msgstr "Non sono nel tuo Piano dei conti, ma Documenti o Prima nota li utilizzan
 msgid "this ability"
 msgstr "questa competenza"
 
+msgid "This action cannot run on this list."
+msgstr ""
+
+msgid "This action runs on at most {rows} rows. Filter the list to {rows} rows or fewer."
+msgstr ""
+
 #. placeholder {0}: jobIds.length
 #. placeholder {1}: jobIds.join(", ")
 msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
@@ -24503,6 +24587,9 @@ msgstr "Tolleranza (giorni)"
 
 msgid "Tomorrow"
 msgstr "Domani"
+
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "Ci sono troppe esportazioni e azioni di massa in corso. Riprova tra qualche minuto."
 
 msgid "tool"
 msgstr "Strumento"
@@ -25264,6 +25351,9 @@ msgstr "Aggiorna le quantità dell'ordine di reso"
 
 msgid "Updated"
 msgstr "Aggiornato"
+
+msgid "Updated {done}. Could not update {failed}: {message}"
+msgstr "Aggiornati {done}. Impossibile aggiornare {failed}: {message}"
 
 msgid "Updated account"
 msgstr "Account aggiornato"
@@ -26730,6 +26820,9 @@ msgid "You completed {leftoverQuantity} more \n"
 "                        to do with the extra parts?"
 msgstr "Hai completato {leftoverQuantity} {0} in più rispetto alla quantità ordinata di {1}. Cosa vorresti fare con i componenti extra?"
 
+msgid "You do not have permission to do this on every matching row."
+msgstr ""
+
 msgid "You do not have permission to edit workflows"
 msgstr "Non hai l'autorizzazione per modificare i flussi di lavoro"
 
@@ -26823,6 +26916,9 @@ msgstr "Il tuo provider DNS potrebbe aggiungere automaticamente il tuo dominio a
 
 msgid "Your Email"
 msgstr "La tua email"
+
+msgid "Your export is being prepared. We'll notify you when it's ready."
+msgstr "La tua esportazione è in preparazione. Ti avviseremo quando sarà pronta."
 
 msgid "Your GL accounts"
 msgstr "I tuoi conti di contabilità generale"

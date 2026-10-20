@@ -18,9 +18,11 @@ import { path } from "~/utils/path";
 type EmployeeTypesTableProps = {
   data: EmployeeType[];
   count: number;
+  nextCursor: string | null;
 };
 
-const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
+const EmployeeTypesTable = memo((props: EmployeeTypesTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -92,6 +94,7 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
   return (
     <Table<(typeof data)[number]>
       data={data}
+      infinite={{ dataKey: "data", nextCursor, listKey: "employee-types" }}
       columns={columns}
       count={count}
       primaryAction={

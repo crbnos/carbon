@@ -31,10 +31,11 @@ import type { MaterialDimension } from "../../types";
 type MaterialDimensionsTableProps = {
   data: MaterialDimension[];
   count: number;
+  nextCursor: string | null;
 };
 
 const MaterialDimensionsTable = memo(
-  ({ data, count }: MaterialDimensionsTableProps) => {
+  ({ data, count, nextCursor }: MaterialDimensionsTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -160,6 +161,11 @@ const MaterialDimensionsTable = memo(
     return (
       <Table<(typeof rows)[number]>
         data={data}
+        infinite={{
+          dataKey: "materialDimensions",
+          nextCursor,
+          listKey: "material-dimensions"
+        }}
         columns={columns}
         count={count}
         importCSV={[

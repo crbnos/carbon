@@ -51,6 +51,7 @@ import RiskType from "./RiskType";
 type RiskRegistersTableProps = {
   data: Risk[];
   count: number;
+  nextCursor: string | null;
 };
 
 const defaultColumnVisibility = {
@@ -60,7 +61,8 @@ const defaultColumnVisibility = {
   updatedAt: false
 };
 
-const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
+const RiskRegistersTable = memo((props: RiskRegistersTableProps) => {
+  const { data, count, nextCursor } = props;
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const workCenters = useWorkCenters({});
@@ -284,6 +286,11 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
     <>
       <Table<Risk>
         data={data}
+        infinite={{
+          dataKey: "risks",
+          nextCursor,
+          listKey: "risks"
+        }}
         defaultColumnVisibility={defaultColumnVisibility}
         columns={columns}
         count={count ?? 0}

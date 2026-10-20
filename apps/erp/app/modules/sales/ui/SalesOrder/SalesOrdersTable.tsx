@@ -75,6 +75,8 @@ import { useSalesOrder } from "./useSalesOrder";
 type SalesOrdersTableProps = {
   data: SalesOrderListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const IconWithTooltip = ({
@@ -96,7 +98,8 @@ const IconWithTooltip = ({
   </Tooltip>
 );
 
-const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
+const SalesOrdersTable = memo((props: SalesOrdersTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const currencyFormatter = useCurrencyFormatter();
@@ -583,6 +586,11 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         count={count}
         columns={columns}
         data={data}
+        infinite={{
+          dataKey: "salesOrders",
+          nextCursor,
+          listKey: "sales-orders"
+        }}
         defaultColumnPinning={{
           left: ["salesOrderId"]
         }}

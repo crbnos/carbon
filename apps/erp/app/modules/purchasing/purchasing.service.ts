@@ -17,6 +17,7 @@ import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import {
+  Constants,
   fetchAllByIds,
   fetchAllFromTable,
   fetchAllRecords,
@@ -117,9 +118,13 @@ import {
   getCompanySettings
 } from "~/modules/settings/settings.service";
 import { getUser } from "~/modules/users/users.service";
+import {
+  type BulkDeleteResult,
+  bulkDeleteByStatus
+} from "~/utils/bulk-delete.server";
 import { path } from "~/utils/path";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
@@ -170,6 +175,7 @@ import type {
   supplierValidator
 } from "./purchasing.models";
 import {
+  isPurchaseOrderBulkDeletable,
   leaseDetailFields,
   leaseLineColumns,
   leaseLinePaymentFields,
@@ -538,6 +544,10 @@ export async function getPurchaseOrder(
     .single();
 }
 
+export const PURCHASE_ORDERS_PAGING: Paging = {
+  defaultSorts: [{ column: "purchaseOrderId", ascending: false }]
+};
+
 export async function getPurchaseOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -549,7 +559,10 @@ export async function getPurchaseOrders(
 ) {
   let query = client
     .from("purchaseOrders")
-    .select(PURCHASE_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
+    // Later pages (`cursor`) skip the count: the first page already has it.
+    .select(PURCHASE_ORDERS_LIST_COLUMNS, {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -566,9 +579,7 @@ export async function getPurchaseOrders(
     query = query.eq("status", args.status as never);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "purchaseOrderId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASE_ORDERS_PAGING);
 
   return query;
 }
@@ -681,6 +692,16 @@ export async function getPurchasingDocumentsAssignedToMe(
   return merged;
 }
 
+// What the row's Order / Make button offers (the grid RPC's orderQuantity,
+// from MRP's open new-supply actions), then the part number so a page is
+// stable when many rows have nothing to order.
+export const PURCHASING_PLANNING_PAGING: Paging = {
+  defaultSorts: [
+    { column: "orderQuantity", ascending: false },
+    { column: "readableIdWithRevision", ascending: true }
+  ]
+};
+
 export async function getPurchasingPlanning(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -715,7 +736,8 @@ export async function getPurchasingPlanning(
       action_assignees: args.actionAssignees
     },
     {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     }
   );
 
@@ -725,13 +747,7 @@ export async function getPurchasingPlanning(
     );
   }
 
-  // What the row's Order / Make button offers (the grid RPC's orderQuantity,
-  // from MRP's open new-supply actions), then the part number so a page is
-  // stable when many rows have nothing to order.
-  query = setGenericQueryFilters(query, args, [
-    { column: "orderQuantity", ascending: false },
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASING_PLANNING_PAGING);
 
   return query;
 }
@@ -1005,6 +1021,10 @@ export async function getSupplierQuoteByExternalLinkId(
     .single();
 }
 
+export const SUPPLIER_QUOTES_PAGING: Paging = {
+  defaultSorts: [{ column: "supplierQuoteId", ascending: false }]
+};
+
 export async function getSupplierQuotes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1014,7 +1034,7 @@ export async function getSupplierQuotes(
 ) {
   let query = client
     .from("supplierQuotes")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1023,9 +1043,7 @@ export async function getSupplierQuotes(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "supplierQuoteId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SUPPLIER_QUOTES_PAGING);
   return query;
 }
 
@@ -1108,33 +1126,46 @@ export async function getSupplierReportContacts(
   supplierIds: string[]
 ) {
   return Promise.all([
-    client
-      .from("supplier")
-      .select(
-        `id, purchasingContact:supplierContact!supplier_purchasingContactId_fkey(contact(fullName, email, workPhone))`
-      )
-      .eq("companyId", companyId)
-      .in("id", supplierIds),
-    client
-      .from("supplierPayment")
-      .select(
-        `supplierId,
+    fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplier")
+        .select(
+          `id, purchasingContact:supplierContact!supplier_purchasingContactId_fkey(contact(fullName, email, workPhone))`
+        )
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id", { ascending: true })
+    ),
+    fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplierPayment")
+        .select(
+          `supplierId,
          invoiceContact:supplierContact!supplierPayment_invoiceSupplierContactId_fkey(contact(fullName, email, workPhone)),
          invoiceLocation:supplierLocation!supplierPayment_invoiceSupplierLocationId_fkey(address(addressLine1, addressLine2, city, stateProvince, postalCode, country(name)))`
-      )
-      .eq("companyId", companyId)
-      .in("supplierId", supplierIds),
-    client
-      .from("supplierShipping")
-      .select(
-        `supplierId,
+        )
+        .eq("companyId", companyId)
+        .in("supplierId", batch)
+        .order("supplierId", { ascending: true })
+    ),
+    fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplierShipping")
+        .select(
+          `supplierId,
          shippingContact:supplierContact!supplierShipping_shippingSupplierContactId_fkey(contact(fullName, email, workPhone)),
          shippingLocation:supplierLocation!supplierShipping_shippingSupplierLocationId_fkey(address(addressLine1, addressLine2, city, stateProvince, postalCode, country(name)))`
-      )
-      .eq("companyId", companyId)
-      .in("supplierId", supplierIds)
+        )
+        .eq("companyId", companyId)
+        .in("supplierId", batch)
+        .order("supplierId", { ascending: true })
+    )
   ]);
 }
+
+export const SUPPLIERS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
 
 export async function getSuppliers(
   client: SupabaseClient<Database>,
@@ -1148,7 +1179,7 @@ export async function getSuppliers(
   let query = client
     .from("suppliers")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1167,9 +1198,7 @@ export async function getSuppliers(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SUPPLIERS_PAGING);
   return query;
 }
 
@@ -1196,6 +1225,10 @@ export async function getSupplierType(
     .single();
 }
 
+export const SUPPLIER_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getSupplierTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1203,7 +1236,7 @@ export async function getSupplierTypes(
 ) {
   let query = client
     .from("supplierType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1211,9 +1244,7 @@ export async function getSupplierTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, SUPPLIER_TYPES_PAGING);
   }
 
   return query;
@@ -2921,6 +2952,10 @@ export async function getPurchasingRFQ(
   return client.from("purchasingRfqs").select("*").eq("id", id).single();
 }
 
+export const PURCHASING_RFQS_PAGING: Paging = {
+  defaultSorts: [{ column: "rfqId", ascending: false }]
+};
+
 export async function getPurchasingRFQs(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2930,16 +2965,14 @@ export async function getPurchasingRFQs(
 ) {
   let query = client
     .from("purchasingRfqs")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.ilike("rfqId", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "rfqId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASING_RFQS_PAGING);
   return query;
 }
 
@@ -3563,6 +3596,10 @@ export async function updatePurchaseOrderLineSchedule(
 
 // ─── Purchase Return Orders (Supplier Returns) ───
 
+export const PURCHASE_RETURN_ORDERS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getPurchaseReturnOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3574,7 +3611,7 @@ export async function getPurchaseReturnOrders(
 ) {
   let query = client
     .from("purchaseReturnOrders")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -3594,9 +3631,7 @@ export async function getPurchaseReturnOrders(
     query = query.eq("supplierId", args.supplierId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASE_RETURN_ORDERS_PAGING);
   return query;
 }
 
@@ -4957,6 +4992,10 @@ function leaseRefusal(code: string, message: string) {
   };
 }
 
+export const LEASES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getLeases(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4964,7 +5003,7 @@ export async function getLeases(
 ) {
   let query = client
     .from("leases")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -4973,9 +5012,7 @@ export async function getLeases(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, LEASES_PAGING);
   return query;
 }
 
@@ -10545,5 +10582,39 @@ export async function createLeaseInvoices(
     userId,
     asOf,
     leaseId
+  });
+}
+
+export type BulkDeletePurchaseOrdersResult = BulkDeleteResult;
+
+/** The statuses the bulk Delete deletes, from the table's own rule. */
+const BULK_DELETABLE_PURCHASE_ORDER_STATUSES =
+  Constants.public.Enums.purchaseOrderStatus.filter(
+    isPurchaseOrderBulkDeletable
+  );
+
+/**
+ * The purchase orders table's bulk Delete: deletes the Draft and Planned
+ * orders of the company, 100 ids per request. The status filter is part of
+ * the DELETE, so an order that moved on since it was selected stays. Called
+ * by `x+/purchase-order+/update.tsx` and by the background bulk-action job.
+ * The caller checks the `delete: purchasing` permission.
+ */
+export function bulkDeletePurchaseOrders(
+  client: SupabaseClient<Database>,
+  args: { purchaseOrderIds: string[]; companyId: string }
+): Promise<BulkDeletePurchaseOrdersResult> {
+  return bulkDeleteByStatus({
+    ids: args.purchaseOrderIds,
+    companyId: args.companyId,
+    label: "purchase orders",
+    deleteChunk: (ids) =>
+      client
+        .from("purchaseOrder")
+        .delete()
+        .in("id", ids)
+        .eq("companyId", args.companyId)
+        .in("status", BULK_DELETABLE_PURCHASE_ORDER_STATUSES)
+        .select("id")
   });
 }

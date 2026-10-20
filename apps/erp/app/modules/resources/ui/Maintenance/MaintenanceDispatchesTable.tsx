@@ -47,6 +47,7 @@ import MaintenanceStatus from "./MaintenanceStatus";
 type MaintenanceDispatchesTableProps = {
   data: MaintenanceDispatch[];
   count: number;
+  nextCursor: string | null;
   failureModes: ListItem[];
   locations: { id: string; name: string }[];
   locationId: string | null;
@@ -56,6 +57,7 @@ const MaintenanceDispatchesTable = memo(
   ({
     data,
     count,
+    nextCursor,
     failureModes,
     locations,
     locationId
@@ -378,6 +380,11 @@ const MaintenanceDispatchesTable = memo(
     return (
       <Table<MaintenanceDispatch>
         data={data}
+        infinite={{
+          dataKey: "dispatches",
+          nextCursor,
+          listKey: "maintenance-dispatches"
+        }}
         columns={columns}
         defaultColumnPinning={{
           left: ["maintenanceDispatchId"]

@@ -15,10 +15,11 @@ import { getPathToMakeMethod } from "./utils";
 type MethodMaterialsTableProps = {
   data: MethodMaterial[];
   count: number;
+  nextCursor: string | null;
 };
 
 const MethodMaterialsTable = memo(
-  ({ data, count }: MethodMaterialsTableProps) => {
+  ({ data, count, nextCursor }: MethodMaterialsTableProps) => {
     const { t } = useLingui();
     const parts = useParts();
     const tools = useTools();
@@ -144,6 +145,11 @@ const MethodMaterialsTable = memo(
         count={count}
         columns={columns}
         data={data}
+        infinite={{
+          dataKey: "materials",
+          nextCursor,
+          listKey: "method-materials"
+        }}
         title={t`Method Materials`}
       />
     );

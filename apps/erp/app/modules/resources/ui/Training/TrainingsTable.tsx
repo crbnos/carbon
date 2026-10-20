@@ -38,10 +38,12 @@ import TrainingStatus from "./TrainingStatus";
 type TrainingsTableProps = {
   data: TrainingListItem[];
   count: number;
+  nextCursor: string | null;
   tags: Array<{ name: string }>;
 };
 
-const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
+const TrainingsTable = memo((props: TrainingsTableProps) => {
+  const { data, count, nextCursor, tags } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -241,6 +243,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
     <>
       <Table<TrainingListItem>
         data={data}
+        infinite={{ dataKey: "trainings", nextCursor, listKey: "trainings" }}
         columns={columns}
         count={count}
         primaryAction={

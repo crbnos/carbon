@@ -24,11 +24,13 @@ import DepreciationRunStatus from "./DepreciationRunStatus";
 type DepreciationRunTableProps = {
   data: DepreciationRunListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   primaryAction?: ReactNode;
 };
 
 const DepreciationRunTable = memo(
-  ({ data, count, primaryAction }: DepreciationRunTableProps) => {
+  ({ data, count, primaryAction, nextCursor }: DepreciationRunTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -126,6 +128,11 @@ const DepreciationRunTable = memo(
     return (
       <>
         <Table<DepreciationRunListItem>
+          infinite={{
+            dataKey: "data",
+            nextCursor,
+            listKey: "depreciation-runs"
+          }}
           data={data}
           columns={columns}
           count={count}

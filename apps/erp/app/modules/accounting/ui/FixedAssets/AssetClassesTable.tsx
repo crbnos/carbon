@@ -30,6 +30,8 @@ import type { FixedAssetClassListItem } from "../../types";
 type AssetClassesTableProps = {
   data: FixedAssetClassListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   taxDepreciationEnabled: boolean;
   primaryAction?: ReactNode;
 };
@@ -39,7 +41,8 @@ const AssetClassesTable = memo(
     data,
     count,
     taxDepreciationEnabled,
-    primaryAction
+    primaryAction,
+    nextCursor
   }: AssetClassesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -150,6 +153,11 @@ const AssetClassesTable = memo(
     return (
       <>
         <Table<FixedAssetClassListItem>
+          infinite={{
+            dataKey: "data",
+            nextCursor,
+            listKey: "asset-classes"
+          }}
           data={data}
           columns={columns}
           count={count}

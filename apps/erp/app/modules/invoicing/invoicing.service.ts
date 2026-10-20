@@ -210,8 +210,8 @@ import {
   syncDraftRecognitionRuns
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
@@ -546,6 +546,10 @@ export async function getPurchaseInvoice(
     .single();
 }
 
+export const PURCHASE_INVOICES_PAGING: Paging = {
+  defaultSorts: [{ column: "invoiceId", ascending: false }]
+};
+
 export async function getPurchaseInvoices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -556,7 +560,9 @@ export async function getPurchaseInvoices(
 ) {
   let query = client
     .from("purchaseInvoices")
-    .select(PURCHASE_INVOICES_LIST_COLUMNS, { count: LIST_COUNT })
+    .select(PURCHASE_INVOICES_LIST_COLUMNS, {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -567,9 +573,7 @@ export async function getPurchaseInvoices(
     query = query.eq("supplierId", args.supplierId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "invoiceId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASE_INVOICES_PAGING);
   return query;
 }
 
@@ -630,6 +634,10 @@ export async function getSalesInvoiceCustomerDetails(
     .single();
 }
 
+export const SALES_INVOICES_PAGING: Paging = {
+  defaultSorts: [{ column: "invoiceId", ascending: false }]
+};
+
 export async function getSalesInvoices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -640,7 +648,9 @@ export async function getSalesInvoices(
 ) {
   let query = client
     .from("salesInvoices")
-    .select(SALES_INVOICES_LIST_COLUMNS, { count: LIST_COUNT })
+    .select(SALES_INVOICES_LIST_COLUMNS, {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -651,9 +661,7 @@ export async function getSalesInvoices(
     query = query.eq("customerId", args.customerId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "invoiceId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SALES_INVOICES_PAGING);
   return query;
 }
 
@@ -1522,6 +1530,13 @@ export async function getPayment(
   return query.single();
 }
 
+// Newest first by the sequential paymentId (PAY-yyyy-mm-NNNNNN), matching the
+// sales/purchase invoice lists (invoiceId desc), so the most recently created
+// payment is at the top (paymentDate ties otherwise).
+export const PAYMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "paymentId", ascending: false }]
+};
+
 export async function getPayments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1538,7 +1553,7 @@ export async function getPayments(
 ) {
   let query = client
     .from("payment")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1563,12 +1578,7 @@ export async function getPayments(
     query = query.or(`customerId.in.(${csv}),supplierId.in.(${csv})`);
   }
 
-  // Default to newest first by the sequential paymentId (PAY-yyyy-mm-NNNNNN),
-  // matching the sales/purchase invoice lists (invoiceId desc) and guaranteeing
-  // the most recently created payment is at the top (paymentDate ties otherwise).
-  query = setGenericQueryFilters(query, args, [
-    { column: "paymentId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PAYMENTS_PAGING);
   return query;
 }
 
@@ -1585,6 +1595,12 @@ export async function getCharge(
     .single();
 }
 
+// Newest first by the sequential chargeId (CHG-yyyy-mm-NNNNNN), mirroring the
+// payments' paymentId desc default.
+export const CHARGES_PAGING: Paging = {
+  defaultSorts: [{ column: "chargeId", ascending: false }]
+};
+
 export async function getCharges(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1596,7 +1612,7 @@ export async function getCharges(
 ) {
   let query = client
     .from("charge")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1609,11 +1625,7 @@ export async function getCharges(
     query = query.eq("status", args.status);
   }
 
-  // Default to newest first by the sequential chargeId
-  // (CHG-yyyy-mm-NNNNNN), mirroring getPayments' paymentId desc default.
-  query = setGenericQueryFilters(query, args, [
-    { column: "chargeId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, CHARGES_PAGING);
   return query;
 }
 
@@ -1632,6 +1644,12 @@ export async function getReimbursement(
     .single();
 }
 
+// Newest first by the sequential reimbursementId (REIMB-yyyy-mm-NNNNNN),
+// mirroring the charges' chargeId desc default.
+export const REIMBURSEMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "reimbursementId", ascending: false }]
+};
+
 export async function getReimbursements(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1643,7 +1661,7 @@ export async function getReimbursements(
 ) {
   let query = client
     .from("reimbursement")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1658,11 +1676,7 @@ export async function getReimbursements(
     query = query.eq("employeeId", args.employeeId);
   }
 
-  // Newest first by the sequential reimbursementId (REIMB-yyyy-mm-NNNNNN),
-  // mirroring getCharges' chargeId desc default.
-  query = setGenericQueryFilters(query, args, [
-    { column: "reimbursementId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, REIMBURSEMENTS_PAGING);
   return query;
 }
 
@@ -4031,6 +4045,13 @@ export async function getMemo(
   return query.single();
 }
 
+// Newest first by creation date (not the readable memoId — Credit and Debit
+// share the table but use separate CR-/DR- sequences, so a memoId sort
+// interleaves them oddly).
+export const MEMOS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getMemos(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4047,7 +4068,7 @@ export async function getMemos(
 ) {
   let query = client
     .from("memo")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -4071,12 +4092,7 @@ export async function getMemos(
     query = query.or(`customerId.in.(${csv}),supplierId.in.(${csv})`);
   }
 
-  // Newest first by creation date (not the readable memoId — Credit and Debit
-  // share the table but use separate CR-/DR- sequences, so a memoId sort
-  // interleaves them oddly).
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, MEMOS_PAGING);
   return query;
 }
 

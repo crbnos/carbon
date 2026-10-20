@@ -117,9 +117,7 @@ const ChartOfAccountsTree = memo(
     const [params] = useUrlParams();
 
     const openLedger = (accountId: string) => {
-      const nextParams = new URLSearchParams(params);
-      nextParams.delete("offset");
-      const qs = nextParams.toString();
+      const qs = params.toString();
       const to = path.to.chartOfAccountsLedger(accountId);
       navigate(qs ? `${to}?${qs}` : to);
     };

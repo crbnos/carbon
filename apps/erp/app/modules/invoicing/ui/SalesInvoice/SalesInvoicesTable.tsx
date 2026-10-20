@@ -39,7 +39,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { salesInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
 import type { SalesInvoiceListItem } from "~/modules/invoicing/types";
@@ -50,10 +50,12 @@ import SalesInvoiceStatus from "./SalesInvoiceStatus";
 type SalesInvoicesTableProps = {
   data: SalesInvoiceListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
-  useRealtime("salesInvoice", `id=in.(${data.map((d) => d.id).join(",")})`);
+const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
+  const { data, count, nextCursor } = props;
 
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -376,6 +378,11 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
         count={count}
         columns={columns}
         data={data}
+        infinite={{
+          dataKey: "salesInvoices",
+          nextCursor,
+          listKey: "sales-invoices"
+        }}
         defaultColumnPinning={{
           left: ["invoiceId"]
         }}

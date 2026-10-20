@@ -3,12 +3,33 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, respond } from "@carbon/api/carbon.server";
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { deactivateUsersValidator } from "~/modules/users/users.models";
 import { originOf } from "~/modules/users/users.service";
+import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
 
 export async function action(args: ActionFunctionArgs) {
+  // Every matching user of the Employees list: the background job picks the
+  // active users other than the actor and queues their deactivation.
+  const allMatching = (await args.request.clone().formData()).get(
+    "allMatching"
+  );
+  if (allMatching) {
+    const { companyId, userId } = await requirePermissions(args.request, {
+      delete: "users"
+    });
+    const { ip } = originOf(args.request);
+    const started = await startAllMatchingBulkAction(allMatching, {
+      companyId,
+      userId,
+      actionKey: "users.deactivate",
+      params: ip ? { ip } : {}
+    });
+    if (started) return started;
+  }
+
   const input = await validator(deactivateUsersValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const { users, redirectTo } = input.data;

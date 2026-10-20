@@ -52,9 +52,11 @@ type IssuesTableProps = {
   data: Issue[];
   types: ListItem[];
   count: number;
+  nextCursor: string | null;
 };
 
-const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
+const IssuesTable = memo((props: IssuesTableProps) => {
+  const { data, types, count, nextCursor } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -358,6 +360,11 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
     <>
       <Table<Issue>
         data={data}
+        infinite={{
+          dataKey: "issues",
+          nextCursor,
+          listKey: "issues"
+        }}
         columns={columns}
         count={count}
         primaryAction={

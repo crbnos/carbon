@@ -50,6 +50,7 @@ type ChangeNoticesTableProps = {
   data: ChangeNoticeListItem[];
   types: ListItem[];
   count: number;
+  nextCursor: string | null;
 };
 
 // One entry of the changeOrders view's `affectedItems` jsonb rollup — enough to
@@ -63,7 +64,7 @@ type AffectedItemSummary = {
 };
 
 const ChangeNoticesTable = memo(
-  ({ data, types, count }: ChangeNoticesTableProps) => {
+  ({ data, types, count, nextCursor }: ChangeNoticesTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
@@ -321,6 +322,11 @@ const ChangeNoticesTable = memo(
       <>
         <Table<ChangeNoticeListItem>
           data={data}
+          infinite={{
+            dataKey: "changeNotices",
+            nextCursor,
+            listKey: "change-notices"
+          }}
           columns={columns}
           count={count}
           primaryAction={

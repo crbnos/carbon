@@ -27,10 +27,11 @@ import { path } from "~/utils/path";
 type ItemSerialSequencesTableProps = {
   data: ItemSerialSequence[];
   count: number;
+  nextCursor: string | null;
 };
 
 const ItemSerialSequencesTable = memo(
-  ({ data, count }: ItemSerialSequencesTableProps) => {
+  ({ data, count, nextCursor }: ItemSerialSequencesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -149,6 +150,7 @@ const ItemSerialSequencesTable = memo(
     return (
       <Table<(typeof data)[number]>
         data={data}
+        infinite={{ dataKey: "data", nextCursor, listKey: "serial-numbers" }}
         columns={columns}
         count={count}
         primaryAction={

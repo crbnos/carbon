@@ -18,9 +18,11 @@ import type { GaugeType } from "../../types";
 type GaugeTypesTableProps = {
   data: GaugeType[];
   count: number;
+  nextCursor: string | null;
 };
 
-const GaugeTypesTable = memo(({ data, count }: GaugeTypesTableProps) => {
+const GaugeTypesTable = memo((props: GaugeTypesTableProps) => {
+  const { data, count, nextCursor } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -82,6 +84,11 @@ const GaugeTypesTable = memo(({ data, count }: GaugeTypesTableProps) => {
   return (
     <Table<GaugeType>
       data={data}
+      infinite={{
+        dataKey: "data",
+        nextCursor,
+        listKey: "gauge-types"
+      }}
       columns={columns}
       count={count}
       primaryAction={

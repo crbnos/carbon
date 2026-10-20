@@ -94,6 +94,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **UI & Forms** | |
 | Building forms (ValidatedForm + zod) | `.claude/rules/conventions-forms.md` + `packages/form/AGENTS.md` |
 | UI components and conventions | `.claude/rules/conventions-ui.md` + `packages/react/AGENTS.md` |
+| List tables: cursor paging, infinite scroll, list registry | `.claude/rules/table-infinite-scroll.md` + `.claude/rules/table-csv-export.md` |
 | i18n / translations (Lingui) | `.claude/rules/i18n-lingui-system.md` + `packages/locale/AGENTS.md` |
 | Flash messages and toasts | `.claude/rules/flash-system.md` |
 | Document templates / customizer | `.claude/rules/document-template-customizer.md` |

@@ -149,8 +149,8 @@ import {
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
@@ -1046,6 +1046,10 @@ function pickBestBreak(
   return best;
 }
 
+export const CUSTOMERS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getCustomers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1056,7 +1060,7 @@ export async function getCustomers(
   let query = client
     .from("customers")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1064,9 +1068,7 @@ export async function getCustomers(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, CUSTOMERS_PAGING);
   return query;
 }
 
@@ -1093,6 +1095,10 @@ export async function getCustomerStatus(
     .single();
 }
 
+export const CUSTOMER_STATUSES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getCustomerStatuses(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1100,7 +1106,9 @@ export async function getCustomerStatuses(
 ) {
   let query = client
     .from("customerStatus")
-    .select("id, name, customFields", { count: LIST_COUNT })
+    .select("id, name, customFields", {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1108,9 +1116,7 @@ export async function getCustomerStatuses(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, CUSTOMER_STATUSES_PAGING);
   }
 
   return query;
@@ -1138,6 +1144,10 @@ export async function getCustomerType(
     .single();
 }
 
+export const CUSTOMER_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getCustomerTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1145,7 +1155,7 @@ export async function getCustomerTypes(
 ) {
   let query = client
     .from("customerType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1153,9 +1163,7 @@ export async function getCustomerTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, CUSTOMER_TYPES_PAGING);
   }
 
   return query;
@@ -1195,9 +1203,12 @@ export async function getExternalSalesOrderLines(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "orderDate", ascending: true }
-    ]);
+    // The RPC returns no `id`, so `salesOrderId` is the last order term. The
+    // share page loads one page only and never follows a cursor.
+    query = setGenericQueryFilters(query, args, {
+      defaultSorts: [{ column: "orderDate", ascending: true }],
+      idColumn: "salesOrderId"
+    });
   }
 
   return query;
@@ -1240,6 +1251,10 @@ export async function getNoQuoteReason(
     .single();
 }
 
+export const NO_QUOTE_REASONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getNoQuoteReasons(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1247,7 +1262,7 @@ export async function getNoQuoteReasons(
 ) {
   let query = client
     .from("noQuoteReason")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1255,9 +1270,7 @@ export async function getNoQuoteReasons(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, NO_QUOTE_REASONS_PAGING);
   }
 
   return query;
@@ -1370,6 +1383,9 @@ export async function getPricingRule(
   return client.from("pricingRule").select("*").eq("id", id).single();
 }
 
+// No default order: without a sort the list follows the id.
+export const PRICING_RULES_PAGING: Paging = { defaultSorts: [] };
+
 export async function getPricingRules(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1377,7 +1393,7 @@ export async function getPricingRules(
 ) {
   let query = client
     .from("pricingRule")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1385,7 +1401,7 @@ export async function getPricingRules(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args);
+    query = setGenericQueryFilters(query, args, PRICING_RULES_PAGING);
   }
 
   return query;
@@ -1406,6 +1422,10 @@ export async function getQuote(
   return client.from("quotes").select("*").eq("id", quoteId).single();
 }
 
+export const QUOTES_PAGING: Paging = {
+  defaultSorts: [{ column: "quoteId", ascending: false }]
+};
+
 export async function getQuotes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1415,7 +1435,9 @@ export async function getQuotes(
 ) {
   let query = client
     .from("quotes")
-    .select(QUOTES_LIST_COLUMNS, { count: LIST_COUNT })
+    .select(QUOTES_LIST_COLUMNS, {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1424,9 +1446,7 @@ export async function getQuotes(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "quoteId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, QUOTES_PAGING);
   return query;
 }
 
@@ -1846,6 +1866,10 @@ export async function getSalesOrderRelatedItems(
   };
 }
 
+export const SALES_ORDERS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getSalesOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1857,7 +1881,10 @@ export async function getSalesOrders(
 ) {
   let query = client
     .from("salesOrders")
-    .select(SALES_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
+    // Later pages (`cursor`) skip the count: the first page already has it.
+    .select(SALES_ORDERS_LIST_COLUMNS, {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1874,9 +1901,7 @@ export async function getSalesOrders(
     query = query.eq("status", args.status as never);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SALES_ORDERS_PAGING);
 
   return query;
 }
@@ -2057,6 +2082,10 @@ export async function getSalesRFQ(
   return client.from("salesRfqs").select("*").eq("id", id).single();
 }
 
+export const SALES_RFQS_PAGING: Paging = {
+  defaultSorts: [{ column: "rfqId", ascending: false }]
+};
+
 export async function getSalesRFQs(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2066,16 +2095,14 @@ export async function getSalesRFQs(
 ) {
   let query = client
     .from("salesRfqs")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.or(searchFilter(["rfqId", "customerReference"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "rfqId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SALES_RFQS_PAGING);
   return query;
 }
 
@@ -2470,6 +2497,15 @@ async function resolvePostingGroupFilter(
   return { itemIds, filters: remaining };
 }
 
+// The price list (`resolvePriceList`, `getBaseCatalog`) has no default order:
+// without a sort it follows the item id. Its rows are computed per item, so
+// a row's tie-breaker is `itemId`; the item query itself breaks ties on the
+// item's own `id`, the same value.
+export const PRICE_LIST_PAGING: Paging = {
+  defaultSorts: [],
+  idColumn: "itemId"
+};
+
 export async function resolvePriceList(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2509,7 +2545,7 @@ export async function resolvePriceList(
     .from("item")
     .select(
       "id, readableId, name, thumbnailPath, itemUnitSalePrice(unitSalePrice), itemCost(itemPostingGroupId)",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("active", true)
     .in("id", overriddenItemIds);
@@ -2527,10 +2563,11 @@ export async function resolvePriceList(
     itemQuery = itemQuery.in("id", postingGroupItemIds);
   }
 
-  itemQuery = setGenericQueryFilters(itemQuery, {
-    ...args,
-    filters: filtersWithoutPostingGroup
-  });
+  itemQuery = setGenericQueryFilters(
+    itemQuery,
+    { ...args, filters: filtersWithoutPostingGroup },
+    PRICE_LIST_PAGING.defaultSorts
+  );
 
   const { data: items, count } = await itemQuery;
   if (!items || items.length === 0) {
@@ -2793,7 +2830,7 @@ export async function getBaseCatalog(
     .from("item")
     .select(
       "id, readableId, name, thumbnailPath, itemUnitSalePrice(unitSalePrice), itemCost(itemPostingGroupId)",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId)
     .eq("active", true);
@@ -2811,10 +2848,11 @@ export async function getBaseCatalog(
     query = query.in("id", postingGroupItemIds);
   }
 
-  query = setGenericQueryFilters(query, {
-    ...args,
-    filters: filtersWithoutPostingGroup
-  });
+  query = setGenericQueryFilters(
+    query,
+    { ...args, filters: filtersWithoutPostingGroup },
+    PRICE_LIST_PAGING.defaultSorts
+  );
 
   const { data: items, count } = await query;
   if (!items || items.length === 0) {
@@ -6576,6 +6614,10 @@ export async function updateSalesRFQLineOrder(
 
 // ─── Sales Return Orders (RMAs) ───
 
+export const RETURN_REASONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getReturnReasons(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6583,7 +6625,7 @@ export async function getReturnReasons(
 ) {
   let query = client
     .from("returnReason")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -6591,9 +6633,7 @@ export async function getReturnReasons(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, RETURN_REASONS_PAGING);
   }
 
   return query;
@@ -6661,6 +6701,10 @@ export async function deleteReturnReason(
   return client.from("returnReason").delete().eq("id", returnReasonId);
 }
 
+export const SALES_RETURN_ORDERS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getSalesReturnOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6672,7 +6716,7 @@ export async function getSalesReturnOrders(
 ) {
   let query = client
     .from("salesReturnOrders")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -6692,9 +6736,7 @@ export async function getSalesReturnOrders(
     query = query.eq("customerId", args.customerId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SALES_RETURN_ORDERS_PAGING);
   return query;
 }
 
@@ -8121,6 +8163,10 @@ export async function createOpportunityLineDocumentUploadUrl(
 // the Draft-stage writes.
 // ----------------------------------------------------------------------
 
+export const RENTAL_AGREEMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getRentalAgreements(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -8130,7 +8176,7 @@ export async function getRentalAgreements(
 ) {
   let query = client
     .from("rentalAgreements")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -8139,9 +8185,7 @@ export async function getRentalAgreements(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, RENTAL_AGREEMENTS_PAGING);
 
   return query;
 }
@@ -9024,6 +9068,10 @@ export async function getRentalAgreementRelatedDocuments(
 // carry their own guards and build every row from an explicit field picker.
 // ----------------------------------------------------------------------
 
+export const CONTRACTS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 /**
  * Lists contracts with their customer, value invoiced to date and next invoice date.
  */
@@ -9036,7 +9084,7 @@ export async function getContracts(
 ) {
   let query = client
     .from("customerContracts")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -9045,9 +9093,7 @@ export async function getContracts(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, CONTRACTS_PAGING);
 
   return query;
 }

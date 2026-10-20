@@ -37,6 +37,7 @@ import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
 import { NotificationEvent } from "@carbon/notifications";
 import {
+  chunkArray,
   datetime,
   getReadableIdWithRevision,
   isUniqueViolation,
@@ -53,9 +54,9 @@ import { data } from "react-router";
 import { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
-  LIST_COUNT,
+  listCount,
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
@@ -94,8 +95,10 @@ import {
   type configurationRuleValidator,
   type consumableValidator,
   type customerPartValidator,
+  deriveItemMethodUpdate,
   EACH_UNIT_OF_MEASURE_CODE,
   type getMethodValidator,
+  type ItemBulkUpdateField,
   ItemTrackingType,
   isAllowedChangeNoticeTransition,
   type itemCostValidator,
@@ -858,6 +861,10 @@ export async function getConsumable(
     .single();
 }
 
+export const CONSUMABLES_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getConsumables(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -869,7 +876,7 @@ export async function getConsumables(
   let query = client
     .from("consumables")
     .select(CONSUMABLES_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -885,9 +892,7 @@ export async function getConsumables(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, CONSUMABLES_PAGING);
   return query;
 }
 
@@ -1120,6 +1125,10 @@ export async function getItemPostingGroup(
   return client.from("itemPostingGroup").select("*").eq("id", id).single();
 }
 
+export const ITEM_POSTING_GROUPS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getItemPostingGroups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1128,7 +1137,7 @@ export async function getItemPostingGroups(
   let query = client
     .from("itemPostingGroup")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1137,9 +1146,7 @@ export async function getItemPostingGroups(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ITEM_POSTING_GROUPS_PAGING);
   }
 
   return query;
@@ -1420,6 +1427,10 @@ export async function getMaterial(
     .single();
 }
 
+export const MATERIALS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getMaterials(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1431,7 +1442,7 @@ export async function getMaterials(
   let query = client
     .from("materials")
     .select(MATERIALS_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1447,9 +1458,7 @@ export async function getMaterials(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, MATERIALS_PAGING);
   return query;
 }
 
@@ -1465,6 +1474,13 @@ export async function getMaterialDimension(
   return client.from("materialDimension").select("*").eq("id", id).single();
 }
 
+export const MATERIAL_DIMENSIONS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "formName", ascending: true },
+    { column: "name", ascending: true }
+  ]
+};
+
 export async function getMaterialDimensions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1473,7 +1489,7 @@ export async function getMaterialDimensions(
   let query = client
     .from("materialDimensions")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("isMetric", args?.isMetric ?? false)
     .or(`companyId.eq.${companyId},companyId.is.null`);
@@ -1485,10 +1501,7 @@ export async function getMaterialDimensions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "formName", ascending: true },
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_DIMENSIONS_PAGING);
   }
 
   return query;
@@ -1515,6 +1528,13 @@ export async function getMaterialFinish(
   return client.from("materialFinish").select("*").eq("id", id).single();
 }
 
+export const MATERIAL_FINISHES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "substanceName", ascending: true },
+    { column: "name", ascending: true }
+  ]
+};
+
 export async function getMaterialFinishes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1523,7 +1543,7 @@ export async function getMaterialFinishes(
   let query = client
     .from("materialFinishes")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1534,10 +1554,7 @@ export async function getMaterialFinishes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "substanceName", ascending: true },
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_FINISHES_PAGING);
   }
 
   return query;
@@ -1562,6 +1579,10 @@ export async function getMaterialForm(
   return client.from("materialForm").select("*").eq("id", id).single();
 }
 
+export const MATERIAL_FORMS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getMaterialForms(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1570,7 +1591,7 @@ export async function getMaterialForms(
   let query = client
     .from("materialForm")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1579,9 +1600,7 @@ export async function getMaterialForms(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_FORMS_PAGING);
   }
 
   return query;
@@ -1598,6 +1617,13 @@ export async function getMaterialFormsList(
     .order("name");
 }
 
+export const MATERIAL_GRADES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "substanceName", ascending: true },
+    { column: "name", ascending: true }
+  ]
+};
+
 export async function getMaterialGrades(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1606,7 +1632,7 @@ export async function getMaterialGrades(
   let query = client
     .from("materialGrades")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1617,10 +1643,7 @@ export async function getMaterialGrades(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "substanceName", ascending: true },
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_GRADES_PAGING);
   }
 
   return query;
@@ -1652,6 +1675,10 @@ export async function getMaterialSubstance(
   return client.from("materialSubstance").select("*").eq("id", id).single();
 }
 
+export const MATERIAL_SUBSTANCES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getMaterialSubstances(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1660,7 +1687,7 @@ export async function getMaterialSubstances(
   let query = client
     .from("materialSubstance")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1669,9 +1696,7 @@ export async function getMaterialSubstances(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_SUBSTANCES_PAGING);
   }
 
   return query;
@@ -1688,6 +1713,19 @@ export async function getMaterialSubstancesList(
     .order("name");
 }
 
+export async function getMethodMaterial(
+  client: SupabaseClient<Database>,
+  materialId: string
+) {
+  return client
+    .from("methodMaterial")
+    .select("*, item(name)")
+    .eq("id", materialId)
+    .single();
+}
+
+export const METHOD_MATERIALS_PAGING: Paging = { defaultSorts: [] };
+
 export async function getMethodMaterials(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1698,7 +1736,7 @@ export async function getMethodMaterials(
     .select(
       "*, item(name, readableIdWithRevision), makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
       {
-        count: LIST_COUNT
+        count: listCount(args)
       }
     )
     .eq("companyId", companyId);
@@ -1708,7 +1746,7 @@ export async function getMethodMaterials(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, []);
+    query = setGenericQueryFilters(query, args, METHOD_MATERIALS_PAGING);
   }
 
   return query;
@@ -1749,6 +1787,10 @@ export async function getMethodMaterialsByMakeMethod(
   return result;
 }
 
+export const METHOD_OPERATIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "order", ascending: true }]
+};
+
 export async function getMethodOperations(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1759,7 +1801,7 @@ export async function getMethodOperations(
     .select(
       "*, makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
       {
-        count: LIST_COUNT
+        count: listCount(args)
       }
     )
     .eq("companyId", companyId);
@@ -1769,9 +1811,7 @@ export async function getMethodOperations(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "order", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, METHOD_OPERATIONS_PAGING);
   }
 
   return query;
@@ -2026,6 +2066,10 @@ export async function getPart(
     .single();
 }
 
+export const PARTS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getParts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2036,8 +2080,9 @@ export async function getParts(
 ) {
   let query = client
     .from("parts")
+    // Later pages (`cursor`) skip the count: the first page already has it.
     .select(PARTS_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2053,9 +2098,7 @@ export async function getParts(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PARTS_PAGING);
   return query;
 }
 
@@ -2210,6 +2253,10 @@ export async function getPickMethods(
     .eq("companyId", companyId);
 }
 
+export const SERVICES_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getServices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2222,7 +2269,7 @@ export async function getServices(
   let query = client
     .from("services")
     .select(SERVICES_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2241,9 +2288,7 @@ export async function getServices(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SERVICES_PAGING);
   return query;
 }
 
@@ -2324,6 +2369,10 @@ export async function getTool(
     .single();
 }
 
+export const TOOLS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getTools(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2335,7 +2384,7 @@ export async function getTools(
   let query = client
     .from("tools")
     .select(TOOLS_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2351,9 +2400,7 @@ export async function getTools(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, TOOLS_PAGING);
   return query;
 }
 
@@ -2382,6 +2429,10 @@ export async function getUnitOfMeasureUsage(
   return client.rpc("get_unit_of_measure_usage", { p_id: id });
 }
 
+export const UNIT_OF_MEASURES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getUnitOfMeasures(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2390,7 +2441,7 @@ export async function getUnitOfMeasures(
   let query = client
     .from("unitOfMeasure")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2398,9 +2449,7 @@ export async function getUnitOfMeasures(
     query = query.or(searchFilter(["name", "code"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, UNIT_OF_MEASURES_PAGING);
   return query;
 }
 
@@ -5820,6 +5869,8 @@ export async function deleteMaterialType(
   return client.from("materialType").delete().eq("id", id);
 }
 
+export const MATERIAL_TYPES_PAGING: Paging = { defaultSorts: [] };
+
 export async function getMaterialTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5827,7 +5878,7 @@ export async function getMaterialTypes(
 ) {
   let query = client
     .from("materialTypes")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
   if (args?.search) {
@@ -5841,7 +5892,7 @@ export async function getMaterialTypes(
     );
   }
 
-  query = setGenericQueryFilters(query, args ?? {});
+  query = setGenericQueryFilters(query, args ?? {}, MATERIAL_TYPES_PAGING);
   return query;
 }
 
@@ -6313,6 +6364,10 @@ export async function getChangeNotice(
     .single();
 }
 
+export const CHANGE_NOTICES_PAGING: Paging = {
+  defaultSorts: [{ column: "changeOrderId", ascending: false }]
+};
+
 export async function getChangeNotices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6320,7 +6375,7 @@ export async function getChangeNotices(
 ) {
   let query = client
     .from("changeOrders")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -6328,9 +6383,7 @@ export async function getChangeNotices(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "changeOrderId", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, CHANGE_NOTICES_PAGING);
   }
 
   return query;
@@ -6580,6 +6633,10 @@ export async function updateChangeNoticeStatus(
 // -----------------------------------------------------------------------------
 // Change Notice Types (the "Category" lookup — configured like Issue Types)
 // -----------------------------------------------------------------------------
+export const CHANGE_NOTICE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getChangeNoticeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6587,7 +6644,7 @@ export async function getChangeNoticeTypes(
 ) {
   let query = client
     .from("changeOrderType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -6595,9 +6652,7 @@ export async function getChangeNoticeTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, CHANGE_NOTICE_TYPES_PAGING);
   }
 
   return query;
@@ -7734,6 +7789,10 @@ export async function updateChangeNoticeActionOrder(
 // Change Notice Required Actions (the configurable default-action templates the
 // config CRUD page manages, and the source new change notices are seeded from).
 // =============================================================================
+export const CHANGE_NOTICE_REQUIRED_ACTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getChangeNoticeRequiredActions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -7741,7 +7800,7 @@ export async function getChangeNoticeRequiredActions(
 ) {
   let query = client
     .from("changeOrderRequiredAction")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -7749,9 +7808,11 @@ export async function getChangeNoticeRequiredActions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(
+      query,
+      args,
+      CHANGE_NOTICE_REQUIRED_ACTIONS_PAGING
+    );
   }
 
   return query;
@@ -11106,4 +11167,200 @@ export async function saveMethodRefusal(ctx: ServiceContext, targetId: string) {
     companyId: ctx.company.id
   });
   return lock.ok ? null : ctx.error("rule", lock.message);
+}
+
+/**
+ * The bulk Update of the item tables (Parts, Materials, Tools, Consumables,
+ * Services). Called by `x+/items+/update.tsx` with the selected items and by
+ * the background bulk-action job (`~/utils/table-jobs.server`) with up to 100
+ * items at a time.
+ */
+
+export type BulkUpdateItemsResult = {
+  /** Items updated. */
+  done: number;
+  /** Ids that are not an item of the company. */
+  skipped: number;
+  /** Items whose chunk failed. */
+  failed: number;
+  /** The first failure's message, or null. */
+  error: string | null;
+};
+
+/** An `.in()` filter rides in the request URL, so items go 100 at a time. */
+const ITEM_BULK_CHUNK = 100;
+
+/**
+ * Sets one field on many items. Writes as `client` (the user), and the
+ * cascades through `db`. Each chunk commits on its own: a failed chunk leaves
+ * the chunks before it applied, and the result counts both, so the caller can
+ * say what was done.
+ */
+export async function bulkUpdateItems(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    itemIds: string[];
+    field: ItemBulkUpdateField;
+    value: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<BulkUpdateItemsResult> {
+  const result: BulkUpdateItemsResult = {
+    done: 0,
+    skipped: 0,
+    failed: 0,
+    error: null
+  };
+  const ids = [...new Set(args.itemIds.filter(Boolean))];
+  for (const chunk of chunkArray(ids, ITEM_BULK_CHUNK)) {
+    // The writes below trust these ids (the itemCost insert names them), so
+    // keep only the company's own items.
+    const items = await client
+      .from("item")
+      .select("id")
+      .in("id", chunk)
+      .eq("companyId", args.companyId);
+    if (items.error) {
+      logger.error("Failed to read the items of a bulk update", {
+        companyId: args.companyId,
+        error: items.error
+      });
+      result.failed += chunk.length;
+      result.error ??= items.error.message;
+      continue;
+    }
+    const itemIds = items.data.map((item) => item.id);
+    result.skipped += chunk.length - itemIds.length;
+    if (itemIds.length === 0) continue;
+
+    const error = await updateItemsChunk(client, db, { ...args, itemIds });
+    if (error) {
+      logger.error("Failed to bulk update items", {
+        companyId: args.companyId,
+        field: args.field,
+        error
+      });
+      result.failed += itemIds.length;
+      result.error ??= error;
+    } else {
+      result.done += itemIds.length;
+    }
+  }
+  return result;
+}
+
+/** One chunk of `bulkUpdateItems`. Answers the error message, or null. */
+async function updateItemsChunk(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  {
+    itemIds,
+    field,
+    value,
+    companyId,
+    userId
+  }: {
+    itemIds: string[];
+    field: ItemBulkUpdateField;
+    value: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<string | null> {
+  const updatedAt = datetime.timestamp();
+  switch (field) {
+    case "itemTrackingType": {
+      const newType = value as InventoryItemType;
+      const update = await client
+        .from("item")
+        .update({ itemTrackingType: newType, updatedBy: userId, updatedAt })
+        .in("id", itemIds)
+        .eq("companyId", companyId);
+      if (update.error) return update.error.message;
+      try {
+        await cascadeItemTrackingType(db, {
+          itemIds,
+          companyId,
+          newType,
+          userId
+        });
+      } catch (err) {
+        logger.error("Failed to cascade item tracking type", {
+          companyId,
+          error: err
+        });
+        return "Failed to cascade tracking flags";
+      }
+      return null;
+    }
+    case "replenishmentSystem":
+    case "defaultMethodType":
+    case "sourcingType": {
+      // These three fields are interlocked and each mirror down to the item's
+      // method materials. updateItemMethodAndSourcing applies the item write
+      // and the cascade in one transaction, so they can't be left half-applied.
+      const { itemUpdate, cascade } = deriveItemMethodUpdate(field, value);
+      try {
+        await updateItemMethodAndSourcing(db, {
+          itemIds,
+          companyId,
+          userId,
+          itemUpdate,
+          cascade
+        });
+      } catch (err) {
+        logger.error("Failed to update item method/sourcing", {
+          companyId,
+          field,
+          error: err
+        });
+        return "Failed to update item";
+      }
+      return null;
+    }
+    case "itemPostingGroupId": {
+      // One read for the chunk, then one update of the items that have an
+      // itemCost row and one insert for the rest.
+      const existing = await client
+        .from("itemCost")
+        .select("itemId")
+        .in("itemId", itemIds)
+        .eq("companyId", companyId);
+      if (existing.error) return existing.error.message;
+      const withCost = new Set(existing.data.map((row) => row.itemId));
+      const itemPostingGroupId = value || null;
+
+      if (withCost.size > 0) {
+        const update = await client
+          .from("itemCost")
+          .update({ itemPostingGroupId, updatedBy: userId, updatedAt })
+          .in("itemId", [...withCost])
+          .eq("companyId", companyId);
+        if (update.error) return update.error.message;
+      }
+
+      const missing = itemIds.filter((itemId) => !withCost.has(itemId));
+      if (missing.length > 0) {
+        const insert = await client.from("itemCost").insert(
+          missing.map((itemId) => ({
+            itemId,
+            itemPostingGroupId,
+            costingMethod: "Standard" as const,
+            standardCost: 0,
+            unitCost: 0,
+            costIsAdjusted: false,
+            companyId,
+            createdBy: userId,
+            updatedBy: userId,
+            createdAt: updatedAt,
+            updatedAt
+          }))
+        );
+        if (insert.error) return insert.error.message;
+      }
+      return null;
+    }
+  }
 }

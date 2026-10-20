@@ -220,8 +220,12 @@ import {
 } from "~/modules/invoicing/invoicing.service";
 import { getOnRentLineForAsset } from "~/modules/sales/sales.service";
 import { getNextSequence } from "~/modules/settings/settings.service";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { Cursor } from "~/utils/cursor";
+import { decodeCursor, toPage } from "~/utils/cursor";
+import { listErrorPage } from "~/utils/list-registry/list-error";
+import { PAGE_SIZE } from "~/utils/pagination";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import {
   allocateJournalLineIds,
@@ -416,25 +420,34 @@ export async function getTrialBalance(
   });
 }
 
-export async function getAccountLedger(
+// Newest first. `setGenericQueryFilters` breaks ties on `id` ascending.
+export const ACCOUNT_LEDGER_PAGING: Paging = {
+  defaultSorts: [
+    { column: "postingDate", ascending: false },
+    { column: "journalEntryId", ascending: false }
+  ]
+};
+
+type AccountLedgerScope = {
+  accountId: string;
+  companyId: string | null;
+  // Consolidated drill-down: restrict to an explicit set of companies (the
+  // group's operating companies + elimination entities) so a service-role read
+  // doesn't leak across tenants. Ignored when companyId is set.
+  companyIds?: string[];
+  startDate: string | null;
+  endDate: string | null;
+};
+
+function accountLedgerQuery(
   client: SupabaseClient<Database>,
-  args: {
-    accountId: string;
-    companyId: string | null;
-    // Consolidated drill-down: restrict to an explicit set of companies (the
-    // group's operating companies + elimination entities) so a service-role read
-    // doesn't leak across tenants. Ignored when companyId is set.
-    companyIds?: string[];
-    startDate: string | null;
-    endDate: string | null;
-    limit: number;
-    offset: number;
-  }
+  args: AccountLedgerScope,
+  count: "exact" | undefined
 ) {
   // TODO: remove the cast once cloud-generated DB types include the view.
   let query = client
     .from("journalLines" as any)
-    .select("*", { count: "exact" })
+    .select("*", { count })
     .eq("accountId", args.accountId)
     .gte(
       "postingDate",
@@ -447,18 +460,53 @@ export async function getAccountLedger(
   } else if (args.companyIds && args.companyIds.length > 0) {
     query = query.in("companyId", args.companyIds);
   }
+  return query;
+}
 
-  const result = await query
-    .order("postingDate", { ascending: false })
-    .order("journalEntryId", { ascending: false })
-    .order("id", { ascending: false })
-    .range(args.offset, args.offset + args.limit - 1);
+type AccountLedgerResult = {
+  data: AccountLedgerLine[] | null;
+  count: number | null;
+  error: PostgrestError | null;
+};
 
-  return result as unknown as {
-    data: AccountLedgerLine[] | null;
-    count: number | null;
-    error: PostgrestError | null;
-  };
+export async function getAccountLedger(
+  client: SupabaseClient<Database>,
+  args: {
+    accountId: string;
+    companyId: string | null;
+    // Consolidated drill-down: restrict to an explicit set of companies (the
+    // group's operating companies + elimination entities) so a service-role read
+    // doesn't leak across tenants. Ignored when companyId is set.
+    companyIds?: string[];
+    startDate: string | null;
+    endDate: string | null;
+    limit: number;
+    offset?: number;
+  }
+) {
+  const result = await setGenericQueryFilters(
+    accountLedgerQuery(client, args, "exact"),
+    { limit: args.limit, offset: args.offset ?? 0 },
+    ACCOUNT_LEDGER_PAGING
+  );
+  return result as unknown as AccountLedgerResult;
+}
+
+/**
+ * One cursor page of an account's ledger lines (`limit + 1` rows for
+ * `toPage`), for the ledger drawers. Not an MCP tool: MCP and the API page
+ * by offset through `getAccountLedger`. Only the first page counts.
+ */
+export async function getAccountLedgerLines(
+  client: SupabaseClient<Database>,
+  args: AccountLedgerScope & { limit: number; cursor: Cursor | null }
+) {
+  const result = await setGenericQueryFilters(
+    accountLedgerQuery(client, args, args.cursor ? undefined : "exact"),
+    { limit: args.limit, cursor: args.cursor },
+    ACCOUNT_LEDGER_PAGING
+  );
+  return result as unknown as AccountLedgerResult;
 }
 
 export async function getAccountLedgerSummary(
@@ -4495,6 +4543,10 @@ export async function getPaymentTerm(
     .single();
 }
 
+export const PAYMENT_TERMS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getPaymentTerms(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4505,7 +4557,7 @@ export async function getPaymentTerms(
   let query = client
     .from("paymentTerm")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -4514,9 +4566,7 @@ export async function getPaymentTerms(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PAYMENT_TERMS_PAGING);
   return query;
 }
 
@@ -4822,6 +4872,10 @@ export async function getProject(
     .single();
 }
 
+export const PROJECTS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getProjects(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4829,7 +4883,7 @@ export async function getProjects(
 ) {
   let query = client
     .from("project")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -4837,9 +4891,7 @@ export async function getProjects(
     query = query.or(searchFilter(["name", "description"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PROJECTS_PAGING);
 
   return query;
 }
@@ -4875,6 +4927,10 @@ export async function upsertProject(
     .single();
 }
 
+export const DIMENSIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getDimensions(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -4885,7 +4941,7 @@ export async function getDimensions(
   let query = client
     .from("dimension")
     .select("*, dimensionValue(id, name)", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyGroupId", companyGroupId)
     .eq("active", true);
@@ -4894,9 +4950,7 @@ export async function getDimensions(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, DIMENSIONS_PAGING);
   return query;
 }
 
@@ -5694,6 +5748,10 @@ export async function getConsolidatedBalances(
 
 // -- Intercompany --
 
+export const INTERCOMPANY_TRANSACTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getIntercompanyTransactions(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -5703,7 +5761,7 @@ export async function getIntercompanyTransactions(
     .from("intercompanyTransaction")
     .select(
       "*, sourceCompany:company!intercompanyTransaction_sourceCompanyId_fkey(name), targetCompany:company!intercompanyTransaction_targetCompanyId_fkey(name)",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyGroupId", companyGroupId);
 
@@ -5711,9 +5769,7 @@ export async function getIntercompanyTransactions(
     query = query.eq("status", args.status);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, INTERCOMPANY_TRANSACTIONS_PAGING);
   return query;
 }
 
@@ -5889,6 +5945,15 @@ export async function getExchangeRateHistory(
 // Manual JEs start as Draft and are posted by flipping status to Posted.
 // amount > 0 = debit, amount < 0 = credit.
 
+// The enable writes many journals in one transaction, so they share a
+// createdAt; the entry number breaks the tie.
+export const JOURNAL_ENTRIES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "createdAt", ascending: false },
+    { column: "journalEntryId", ascending: false }
+  ]
+};
+
 export async function getJournalEntries(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5896,7 +5961,7 @@ export async function getJournalEntries(
 ) {
   let query = client
     .from("journalEntries")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -5923,12 +5988,7 @@ export async function getJournalEntries(
     query = query.neq("status", "Superseded");
   }
 
-  // The enable writes many journals in one transaction, so they share a
-  // createdAt; the entry number breaks the tie.
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false },
-    { column: "journalEntryId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, JOURNAL_ENTRIES_PAGING);
 
   return query;
 }
@@ -6855,6 +6915,10 @@ export async function reverseJournalEntry(
 
 // -- Asset Classes --
 
+export const FIXED_ASSET_CLASSES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getFixedAssetClasses(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6864,7 +6928,7 @@ export async function getFixedAssetClasses(
     .from("fixedAssetClass")
     .select(
       "id, name, description, depreciationMethod, usefulLifeMonths, residualValuePercent, taxDepreciationMethod, taxUsefulLifeMonths, macrsPropertyClass",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 
@@ -6877,9 +6941,7 @@ export async function getFixedAssetClasses(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, FIXED_ASSET_CLASSES_PAGING);
   return query;
 }
 
@@ -6938,6 +7000,15 @@ export async function deleteFixedAssetClass(
 
 // -- Fixed Assets --
 
+// `createdAt` and `updatedAt` are selected for a sort the URL can ask for:
+// `toPage` reads every sort column from the row.
+const FIXED_ASSETS_LIST_COLUMNS =
+  "id,fixedAssetId,fixedAssetClassId,name,serialNumber,status,depreciationMethod,acquisitionCost,accumulatedDepreciation,createdAt,updatedAt,fixedAssetClass:fixedAssetClassId(id, name),location:locationId(id, name)" as const;
+
+export const FIXED_ASSETS_PAGING: Paging = {
+  defaultSorts: [{ column: "fixedAssetId", ascending: true }]
+};
+
 export async function getFixedAssets(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6948,10 +7019,9 @@ export async function getFixedAssets(
 ) {
   let query = client
     .from("fixedAsset")
-    .select(
-      "id, fixedAssetId, fixedAssetClassId, name, serialNumber, status, depreciationMethod, acquisitionCost, accumulatedDepreciation, fixedAssetClass:fixedAssetClassId(id, name), location:locationId(id, name)",
-      { count: LIST_COUNT }
-    )
+    .select(FIXED_ASSETS_LIST_COLUMNS, {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -6964,9 +7034,7 @@ export async function getFixedAssets(
     query = query.eq("status", args.status);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "fixedAssetId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, FIXED_ASSETS_PAGING);
   return query;
 }
 
@@ -7504,6 +7572,10 @@ export async function deleteDepreciationRun(
 
 // -- Depreciation --
 
+export const DEPRECIATION_RUNS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getDepreciationRuns(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -7511,8 +7583,8 @@ export async function getDepreciationRuns(
 ) {
   let query = client
     .from("depreciationRun")
-    .select("id, depreciationRunId, periodEnd, status, postedAt", {
-      count: LIST_COUNT
+    .select("id, depreciationRunId, periodEnd, status, postedAt, createdAt", {
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -7520,9 +7592,7 @@ export async function getDepreciationRuns(
     query = query.ilike("depreciationRunId", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, DEPRECIATION_RUNS_PAGING);
   return query;
 }
 
@@ -7553,6 +7623,33 @@ export async function getDepreciationRunLines(
 }
 
 // -- Revenue Recognition --
+
+export const PERIOD_RUNS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
+export async function getRevenueRecognitionRuns(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  type: Database["public"]["Enums"]["runType"],
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("revenueRecognitionRun")
+    .select(
+      "id, runId, type, periodEnd, status, postedAt, journalId, createdAt",
+      { count: args.cursor ? undefined : "exact" }
+    )
+    .eq("companyId", companyId)
+    .eq("type", type);
+
+  if (args.search) {
+    query = query.ilike("runId", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, PERIOD_RUNS_PAGING);
+  return query;
+}
 
 export async function getRevenueRecognitionRun(
   client: SupabaseClient<Database>,
@@ -8561,6 +8658,10 @@ export async function upsertFixedAssetUsageLog(
 
 // -- Fleet --
 
+export const FLEET_ASSETS_PAGING: Paging = {
+  defaultSorts: [{ column: "fixedAssetId", ascending: true }]
+};
+
 export async function getFleetAssets(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -8571,7 +8672,7 @@ export async function getFleetAssets(
 ) {
   let query = client
     .from("fleetAssets")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -8587,9 +8688,7 @@ export async function getFleetAssets(
     query = query.eq("fleetStatus", args.fleetStatus);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "fixedAssetId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, FLEET_ASSETS_PAGING);
   return query;
 }
 
@@ -9685,47 +9784,88 @@ export function getConsolidatedBalancesForReport(
   );
 }
 
-// Consolidated account drill-down ("All Companies"). Reads via service role so
-// the synthetic elimination entities' journal lines (invisible to the user's
-// RLS session — no user is a member of them) appear in the ledger and the
-// summary ties to the consolidated report. Scoped to the group's own companies
-// so a service-role read cannot cross tenants.
-export async function getConsolidatedAccountLedger(
-  companyGroupId: string,
+/**
+ * One page of an account's ledger lines for the ledger drawers (the chart of
+ * accounts and the three statement reports), with the drawer's summary on
+ * the first page.
+ *
+ * "All Companies" (`consolidated`) reads via service role so the synthetic
+ * elimination entities' journal lines (invisible to the user's RLS session —
+ * no user is a member of them) appear in the ledger and the summary ties to
+ * the consolidated report. It is scoped to the group's own companies so a
+ * service-role read cannot cross tenants.
+ *
+ * A failed later page (`after`) returns `listError` for the drawer's list.
+ */
+export async function getAccountLedgerPage(
+  client: SupabaseClient<Database>,
   args: {
     accountId: string;
+    companyGroupId: string;
+    /** One company's lines; null reads every company the client can see. */
+    companyId: string | null;
+    consolidated?: boolean;
     startDate: string | null;
     endDate: string | null;
-    limit: number;
-    offset: number;
+    /** The `?after=` token; a later page reads its lines only. */
+    after: string | null;
   }
 ) {
-  const serviceRole = getCarbonServiceRole();
-  const { data: groupCompanies } = await serviceRole
-    .from("company")
-    .select("id")
-    .eq("companyGroupId", companyGroupId)
-    .eq("active", true);
-  const companyIds = (groupCompanies ?? []).map((c) => c.id);
+  const cursor = decodeCursor(args.after);
+  let readClient = client;
+  let companyIds: string[] | undefined;
+  if (args.consolidated) {
+    readClient = getCarbonServiceRole();
+    const { data: groupCompanies } = await readClient
+      .from("company")
+      .select("id")
+      .eq("companyGroupId", args.companyGroupId)
+      .eq("active", true);
+    companyIds = (groupCompanies ?? []).map((c) => c.id);
+  }
+  const companyId = args.consolidated ? null : args.companyId;
+  const { accountId, startDate, endDate } = args;
 
   const [ledger, summary] = await Promise.all([
-    getAccountLedger(serviceRole, {
-      accountId: args.accountId,
-      companyId: null,
+    getAccountLedgerLines(readClient, {
+      accountId,
+      companyId,
       companyIds,
-      startDate: args.startDate,
-      endDate: args.endDate,
-      limit: args.limit,
-      offset: args.offset
+      startDate,
+      endDate,
+      limit: PAGE_SIZE,
+      cursor
     }),
-    getAccountLedgerSummary(serviceRole, companyGroupId, null, {
-      accountId: args.accountId,
-      startDate: args.startDate,
-      endDate: args.endDate
-    })
+    cursor
+      ? null
+      : getAccountLedgerSummary(readClient, args.companyGroupId, companyId, {
+          accountId,
+          startDate,
+          endDate
+        })
   ]);
 
-  return { ledger, summary };
+  const emptySummary = { opening: 0, netChange: 0, closing: 0 };
+  if (ledger.error) {
+    logger.error("Failed to load an account ledger page", {
+      accountId,
+      companyGroupId: args.companyGroupId,
+      error: ledger.error
+    });
+    if (cursor) return listErrorPage("lines");
+  }
+
+  const page = toPage(
+    ledger.data ?? [],
+    { limit: PAGE_SIZE },
+    ACCOUNT_LEDGER_PAGING
+  );
+  return {
+    lines: page.rows,
+    count: ledger.count ?? 0,
+    nextCursor: page.nextCursor,
+    summary: summary?.data ?? emptySummary
+  };
 }
 
 /**
@@ -11782,31 +11922,6 @@ export async function outOfServiceRefusal(
   return null;
 }
 
-// -- Revenue Recognition --
-
-export async function getRevenueRecognitionRuns(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  type: Database["public"]["Enums"]["runType"],
-  args: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("revenueRecognitionRun")
-    .select("id, runId, type, periodEnd, status, postedAt, journalId", {
-      count: "exact"
-    })
-    .eq("companyId", companyId)
-    .eq("type", type);
-
-  if (args.search) {
-    query = query.ilike("runId", `%${args.search}%`);
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
-  return query;
-}
 /**
  * Input contract and pure helpers for `post-asset-transfer`. No I/O and no
  * imports beyond zod, the generated types and `@carbon/utils`, so the server function's own

@@ -45,6 +45,7 @@ type PeopleTableProps = {
   attributeCategories: AttributeCategory[];
   data: Person[];
   count: number;
+  nextCursor: string | null;
   employeeTypes: Partial<EmployeeType>[];
   shifts: { id: string; name: string }[];
 };
@@ -54,6 +55,7 @@ const PeopleTable = memo(
     attributeCategories,
     data,
     count,
+    nextCursor,
     employeeTypes,
     shifts
   }: PeopleTableProps) => {
@@ -308,6 +310,7 @@ const PeopleTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infinite={{ dataKey: "people", nextCursor, listKey: "people" }}
           defaultColumnPinning={{
             left: ["Select", "User"]
           }}

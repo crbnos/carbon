@@ -32,6 +32,7 @@ import type { InspectionDocument } from "../../types";
 type InspectionDocumentTableProps = {
   data: InspectionDocument[];
   count: number;
+  nextCursor: string | null;
 };
 
 const defaultColumnVisibility = {
@@ -41,7 +42,7 @@ const defaultColumnVisibility = {
 };
 
 const InspectionDocumentTable = memo(
-  ({ data, count }: InspectionDocumentTableProps) => {
+  ({ data, count, nextCursor }: InspectionDocumentTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -94,6 +95,8 @@ const InspectionDocumentTable = memo(
           accessorKey: "name",
           header: t`Name`,
           cell: ({ row }) => row.original.name,
+          // The service computes `name`; the view has no such column to sort.
+          enableSorting: false,
           meta: { mobile: "P3", icon: <LuTarget /> }
         },
         {
@@ -170,6 +173,11 @@ const InspectionDocumentTable = memo(
       <>
         <Table<InspectionDocument>
           data={data}
+          infinite={{
+            dataKey: "diagrams",
+            nextCursor,
+            listKey: "inspection-plans"
+          }}
           columns={columns}
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}

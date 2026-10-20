@@ -31,10 +31,11 @@ import type { MaterialGrade } from "../../types";
 type MaterialGradesTableProps = {
   data: MaterialGrade[];
   count: number;
+  nextCursor: string | null;
 };
 
 const MaterialGradesTable = memo(
-  ({ data, count }: MaterialGradesTableProps) => {
+  ({ data, count, nextCursor }: MaterialGradesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -158,6 +159,11 @@ const MaterialGradesTable = memo(
     return (
       <Table<(typeof rows)[number]>
         data={data}
+        infinite={{
+          dataKey: "materialGrades",
+          nextCursor,
+          listKey: "material-grades"
+        }}
         columns={columns}
         count={count}
         importCSV={[

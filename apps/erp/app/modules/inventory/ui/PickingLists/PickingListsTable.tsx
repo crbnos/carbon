@@ -52,9 +52,12 @@ export type PickingList = {
 type PickingListsTableProps = {
   data: PickingList[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
+const PickingListsTable = memo((props: PickingListsTableProps) => {
+  const { data, count, nextCursor } = props;
   const [params] = useUrlParams();
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -217,6 +220,11 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
     <>
       <Table<PickingList>
         data={data}
+        infinite={{
+          dataKey: "pickingLists",
+          nextCursor,
+          listKey: "picking-lists"
+        }}
         columns={columns}
         count={count}
         defaultColumnPinning={{

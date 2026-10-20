@@ -43,7 +43,7 @@ function recordingClient() {
   return { client: { from: () => builder } as any, calls };
 }
 
-const listArgs = { search: null, status: null, limit: 25, offset: 0 };
+const listArgs = { search: null, status: null, limit: 25, cursor: null };
 
 describe("getJournalEntries", () => {
   it("hides Superseded journals when no status is asked for", async () => {

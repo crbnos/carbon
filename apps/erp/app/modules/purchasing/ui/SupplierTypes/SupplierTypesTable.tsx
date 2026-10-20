@@ -19,9 +19,12 @@ import { path } from "~/utils/path";
 type SupplierTypesTableProps = {
   data: SupplierType[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
+const SupplierTypesTable = memo((props: SupplierTypesTableProps) => {
+  const { data, count, nextCursor } = props;
   const [params] = useUrlParams();
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -96,6 +99,11 @@ const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={{
+        dataKey: "data",
+        nextCursor,
+        listKey: "supplier-types"
+      }}
       primaryAction={
         permissions.can("create", "purchasing") && (
           <New

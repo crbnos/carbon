@@ -29,10 +29,12 @@ type ReimbursementRow = Database["public"]["Tables"]["reimbursement"]["Row"];
 type ReimbursementsTableProps = {
   data: ReimbursementRow[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const ReimbursementsTable = memo(
-  ({ data, count }: ReimbursementsTableProps) => {
+  ({ data, count, nextCursor }: ReimbursementsTableProps) => {
     const { t } = useLingui();
     const { locale } = useLocale();
     // Each reimbursement carries its own currencyCode, so the amount is
@@ -135,6 +137,11 @@ const ReimbursementsTable = memo(
 
     return (
       <Table<ReimbursementRow>
+        infinite={{
+          dataKey: "data",
+          nextCursor,
+          listKey: "reimbursements"
+        }}
         count={count}
         columns={columns}
         data={data}

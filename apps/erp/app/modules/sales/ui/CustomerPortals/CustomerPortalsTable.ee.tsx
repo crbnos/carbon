@@ -24,10 +24,12 @@ type CustomerPortalsTableProps = {
   appUrl: string;
   data: CustomerPortal[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const CustomerPortalsTable = memo(
-  ({ appUrl, data, count }: CustomerPortalsTableProps) => {
+  ({ appUrl, data, count, nextCursor }: CustomerPortalsTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -59,6 +61,8 @@ const CustomerPortalsTable = memo(
         {
           accessorKey: "portalLink",
           header: t`Portal Link`,
+          // The link is built from the id; `externalLink` has no such column to sort by.
+          enableSorting: false,
           cell: ({ row }) => {
             const portalUrl = `${appUrl}/share/customer/${row.original.id}`;
             return (
@@ -123,6 +127,11 @@ const CustomerPortalsTable = memo(
         data={data}
         columns={columns}
         count={count}
+        infinite={{
+          dataKey: "data",
+          nextCursor,
+          listKey: "customer-portals"
+        }}
         primaryAction={
           permissions.can("create", "sales") && (
             <New

@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   const job = await getJob(client, jobId);
@@ -54,7 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getJobMaterialsWithQuantityOnHand(client, jobId, companyId, locationId, {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
       // orderStatus is filtered client-side — not a column the RPC can filter on.
       // readableIdWithRevision was the Item filter's column before it moved to

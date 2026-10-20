@@ -65,6 +65,23 @@ export const itemReplenishmentSystems = [
   "Buy and Make"
 ] as const;
 
+/** The fields the item tables' bulk Update sets on many items at once. */
+export const itemBulkUpdateFields = [
+  "itemPostingGroupId",
+  "replenishmentSystem",
+  "defaultMethodType",
+  "sourcingType",
+  "itemTrackingType"
+] as const;
+
+export type ItemBulkUpdateField = (typeof itemBulkUpdateFields)[number];
+
+export function isItemBulkUpdateField(
+  field: unknown
+): field is ItemBulkUpdateField {
+  return itemBulkUpdateFields.some((allowed) => allowed === field);
+}
+
 // Maps an edit of ONE of the three interlocked item-level fields
 // (replenishmentSystem, defaultMethodType, sourcingType) to the columns that must
 // change together on the item, plus the values to mirror down to method materials.

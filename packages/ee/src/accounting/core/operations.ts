@@ -789,12 +789,20 @@ export async function transitionOperation(
   return { data: updated.data as SyncOperation, error: null };
 }
 
+// A value quoted for a PostgREST `or=(...)` filter: the escape of
+// `apps/erp/app/utils/cursor.ts` (`quoteFilterValue`), which ee cannot import.
+function quoteFilterValue(value: string) {
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
 /**
  * List sync operations for the activity/error-inbox UI, newest first, with
  * an optional status filter and offset pagination. `count` is the total for
  * the current filter. `entityType` narrows to one entity type — the
  * consolidation and reconciliation crons page journalEntry operations
- * without wading through every other entity's history.
+ * without wading through every other entity's history. `after` reads the
+ * rows after a previous page's last row instead (keyset on createdAt DESC,
+ * id), like `getSyncOperationsExportPage`.
  */
 export async function getSyncOperations(
   client: SupabaseClient<Database>,
@@ -805,6 +813,7 @@ export async function getSyncOperations(
     entityType?: string;
     limit?: number;
     offset?: number;
+    after?: SyncOperationCursor;
   }
 ): Promise<{
   data: SyncOperation[];
@@ -815,7 +824,11 @@ export async function getSyncOperations(
   const offset = args.offset ?? 0;
 
   let query = syncOperationTable(client)
-    .select("*", { count: "exact" })
+    // Only the first page counts: a later page (`after`, or an offset) does
+    // not need the total again.
+    .select("*", {
+      count: args.after || offset > 0 ? undefined : "exact"
+    })
     .eq("companyId", args.companyId)
     .eq("integration", args.integration);
 
@@ -829,8 +842,21 @@ export async function getSyncOperations(
     query = query.eq("entityType", args.entityType);
   }
 
+  if (args.after) {
+    // Quoted: a timestamp carries `.`, `:` and `+`, all reserved in an
+    // or-filter. The cursor comes from the URL, so a `"` or `\` in it is
+    // escaped too.
+    const createdAt = quoteFilterValue(args.after.createdAt);
+    const id = quoteFilterValue(args.after.id);
+    query = query.or(
+      `createdAt.lt.${createdAt},and(createdAt.eq.${createdAt},id.gt.${id})`
+    );
+  }
+
+  // `id` ascending breaks createdAt ties, so every row has one place.
   const result = await query
     .order("createdAt", { ascending: false })
+    .order("id", { ascending: true })
     .range(offset, offset + limit - 1);
 
   if (result.error) {

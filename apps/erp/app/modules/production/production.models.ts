@@ -90,7 +90,8 @@ export {
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM,
-  resolvePlanningActionScope
+  resolvePlanningActionScope,
+  withPlanningActions
 } from "./ui/Planning/planning-action-scope";
 
 /**
@@ -108,6 +109,37 @@ export function isJobEditableFromPlanning(
 
 // The one definition lives in @carbon/utils, shared with the OEE sync.
 export { isJobLocked, JOB_LOCKED_STATUSES } from "@carbon/utils";
+
+/** The statuses the jobs table's bulk Delete acts on. "Due Today" and
+ *  "Overdue" are deprecated statuses that old jobs can still hold. */
+export const JOB_BULK_DELETABLE_STATUSES = [
+  "Draft",
+  "Planned",
+  "Due Today",
+  "Overdue"
+] as const;
+
+export function isJobBulkDeletable(status: string | null | undefined): boolean {
+  return JOB_BULK_DELETABLE_STATUSES.some((allowed) => allowed === status);
+}
+
+/** The statuses the jobs table's bulk Release acts on. */
+export function isJobBulkReleasable(
+  status: string | null | undefined
+): boolean {
+  return status === "Draft" || status === "Planned";
+}
+
+/** Release is the Planned → Active flip of an operation batch. */
+export function isBatchReleasable(status: string | null | undefined): boolean {
+  return status === "Planned";
+}
+
+/** A started batch must be completed, not dissolved; a completed one is
+ *  history. */
+export function isBatchDissolvable(status: string | null | undefined): boolean {
+  return status === "Planned" || status === "Active";
+}
 
 export const JOB_LOCKED_MESSAGE =
   "Cannot modify a locked job. Reopen it first.";

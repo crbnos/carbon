@@ -59,13 +59,16 @@ type MemoRow = {
 type MemosTableProps = {
   data: MemoRow[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   // Which party this list is scoped to. "customer" → Credit Memos (AR),
   // "supplier" → Supplier Credits (AP). Drives the counterparty column, the
   // title, and the New-button label/default party.
   party: "customer" | "supplier";
 };
 
-const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
+const MemosTable = memo((props: MemosTableProps) => {
+  const { data, count, party, nextCursor } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -242,6 +245,11 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
   return (
     <>
       <Table<MemoRow>
+        infinite={{
+          dataKey: "memos",
+          nextCursor,
+          listKey: party === "customer" ? "credit-memos" : "supplier-credits"
+        }}
         count={count}
         columns={columns}
         data={data}

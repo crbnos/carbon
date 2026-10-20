@@ -24,10 +24,12 @@ import { path } from "~/utils/path";
 type ContractorsTableProps = {
   data: Contractor[];
   count: number;
+  nextCursor: string | null;
   // abilities: Partial<Ability>[];
 };
 
-const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
+const ContractorsTable = memo((props: ContractorsTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -162,6 +164,12 @@ const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
       data={data}
       count={count}
       columns={columns}
+      infinite={{
+        dataKey: "contractors",
+        nextCursor,
+        listKey: "contractors"
+      }}
+      getRowId={(row) => String(row.supplierContactId)}
       primaryAction={
         permissions.can("create", "resources") && (
           <New label={t`Contractor`} to={`new?${params.toString()}`} />
