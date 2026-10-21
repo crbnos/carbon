@@ -954,6 +954,24 @@ export const projectIssueValidator = z.object({
   })
 });
 
+/**
+ * A cost charged straight to an element (a test chamber rental, a fee, a
+ * part bought on a card): a `projectExpenseEntry` posted by
+ * `post-project-expense`. The Estimated tab's cost cards prefill the
+ * description, which is how a charge finds its plan line.
+ */
+export const projectExpenseValidator = z.object({
+  projectId: z.string().min(1, { message: "Project is required" }),
+  projectElementId: z.string().min(1, { message: "Element is required" }),
+  entryDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date is required" }),
+  description: z.string().trim().min(1, { message: "Description is required" }),
+  amount: zfd.numeric(
+    z.number().gt(0, { message: "The amount must be greater than 0" })
+  )
+});
+
 // --- Project stock transfers ---------------------------------------------------
 
 export const projectStockTransferTypes = [
@@ -1293,6 +1311,8 @@ export type TimesheetCell = {
   entryId: string;
   hours: number;
   status: TimesheetEntryStatus;
+  /** When the cell's first entry was made: My Time stacks a day's bars by it. */
+  createdAt?: string | null;
 };
 
 export type TimesheetRow<T> = {
@@ -1325,6 +1345,7 @@ export function groupTimesheetRows<
     entryDate: string;
     hours: number;
     status: TimesheetEntryStatus;
+    createdAt?: string | null;
   }
 >(entries: T[]): TimesheetRow<T>[] {
   const rows = new Map<string, TimesheetRow<T>>();
@@ -1351,10 +1372,17 @@ export function groupTimesheetRows<
       row.cells[entry.entryDate] = {
         entryId: entry.id,
         hours,
-        status: entry.status
+        status: entry.status,
+        ...(entry.createdAt ? { createdAt: entry.createdAt } : {})
       };
     } else {
       cell.hours += hours;
+      if (
+        entry.createdAt &&
+        (!cell.createdAt || entry.createdAt < cell.createdAt)
+      ) {
+        cell.createdAt = entry.createdAt;
+      }
       if (entry.status === "Draft") {
         cell.entryId = entry.id;
         cell.status = entry.status;

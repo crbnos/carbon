@@ -28,6 +28,7 @@ import {
   LuLink,
   LuListOrdered,
   LuPackageMinus,
+  LuReceipt,
   LuTimer,
   LuTrash
 } from "react-icons/lu";
@@ -60,6 +61,7 @@ import {
 import { useElementField } from "../Elements/ElementProperties";
 import { useElementRoutes } from "../Elements/ElementRoutes";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
+import { ChargeCostModal } from "./ChargeCostModal";
 import { ElementChildren } from "./ElementChildren";
 import { ElementComments } from "./ElementComments";
 import { ElementDescription } from "./ElementDescription";
@@ -117,6 +119,7 @@ export function ElementView({
   defaultLaborCategoryId,
   ledger,
   openTime,
+  planActuals,
   links,
   verification,
   requirementStatus,
@@ -144,8 +147,19 @@ export function ElementView({
   const [addingChild, setAddingChild] = useState(false);
   const [addingLink, setAddingLink] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [loggingTime, setLoggingTime] = useState(false);
-  const [issuing, setIssuing] = useState(false);
+  // Each charge modal opens empty (the ⋯ menu, the Actual tab, a shortcut)
+  // or set to a plan line (its card on the Estimated tab).
+  const [loggingTime, setLoggingTime] = useState<{
+    laborCategoryId?: string;
+  } | null>(null);
+  const [issuing, setIssuing] = useState<{
+    itemId?: string;
+    quantity?: number;
+  } | null>(null);
+  const [charging, setCharging] = useState<{
+    description?: string;
+    amount?: number;
+  } | null>(null);
   const [costView, setCostView] = useState<CostView | null>(null);
 
   const isClosed = project?.status === "Closed";
@@ -164,6 +178,8 @@ export function ElementView({
     canCharge &&
     permissions.can("update", "inventory") &&
     permissions.can("update", "projects");
+  const canChargeCost =
+    usesProjectCharges && canCharge && permissions.can("update", "projects");
   const canAddChild = canCreate && element.type !== "Parameter";
   // After the lock milestone completes, the plan changes only through a
   // Draft change request: "Add line" is off, with the Plan page's reason.
@@ -185,7 +201,7 @@ export function ElementView({
       action: (event) => {
         if (!canLogTime) return;
         event.preventDefault();
-        setLoggingTime(true);
+        setLoggingTime({});
       }
     },
     {
@@ -193,7 +209,7 @@ export function ElementView({
       action: (event) => {
         if (!canIssue) return;
         event.preventDefault();
-        setIssuing(true);
+        setIssuing({});
       }
     }
   ]);
@@ -355,17 +371,24 @@ export function ElementView({
                 <>
                   <DropdownMenuItem
                     disabled={!canLogTime}
-                    onClick={() => setLoggingTime(true)}
+                    onClick={() => setLoggingTime({})}
                   >
                     <DropdownMenuIcon icon={<LuTimer />} />
                     <Trans>Log time</Trans>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     disabled={!canIssue}
-                    onClick={() => setIssuing(true)}
+                    onClick={() => setIssuing({})}
                   >
                     <DropdownMenuIcon icon={<LuPackageMinus />} />
                     <Trans>Issue material</Trans>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!canChargeCost}
+                    onClick={() => setCharging({})}
+                  >
+                    <DropdownMenuIcon icon={<LuReceipt />} />
+                    <Trans>Charge cost</Trans>
                   </DropdownMenuItem>
                 </>
               ) : (
@@ -416,9 +439,13 @@ export function ElementView({
         </div>
       </div>
 
-      <div className="@container flex min-h-0 flex-1 overflow-y-auto @min-[56rem]:overflow-hidden">
+      {/* Each scroll box is `relative`: a switch's hidden input and a label's
+          sr-only text are absolutely positioned, and without a positioned
+          scroll box they belong to the app shell's scroller, which then
+          scrolls the whole page to them on focus. */}
+      <div className="@container relative flex min-h-0 flex-1 overflow-y-auto @min-[56rem]:overflow-hidden">
         <div className="flex min-w-0 flex-1 flex-col @min-[56rem]:flex-row">
-          <main className="min-w-0 flex-1 @min-[56rem]:overflow-y-auto">
+          <main className="relative min-w-0 flex-1 @min-[56rem]:overflow-y-auto">
             <div className="mx-auto flex w-full max-w-[800px] flex-col gap-8 px-8 py-8">
               <div className="flex flex-col gap-2">
                 <div className="flex min-h-8 items-center justify-between gap-2">
@@ -490,11 +517,15 @@ export function ElementView({
                           projectId={projectId}
                           elementId={element.id}
                           planLines={planLines}
+                          planActuals={planActuals}
                           laborCategories={laborCategories}
                           defaultLocationId={project?.locationId}
                           isDisabled={!canUpdate}
                           canSupply={isProject}
                           addDisabledReason={planLockMessage}
+                          onIssue={canIssue ? setIssuing : undefined}
+                          onLogTime={canLogTime ? setLoggingTime : undefined}
+                          onCharge={canChargeCost ? setCharging : undefined}
                         />
                       ) : (
                         <EmptyCosts>
@@ -509,19 +540,20 @@ export function ElementView({
                             <Trans>Nothing has been charged yet.</Trans>
                           </EmptyCosts>
                         ))
-                      ) : showTime ? (
+                      ) : (
                         <ElementTimeAndMaterials
                           ledger={ledger}
                           openTime={openTime}
+                          elementReadableId={element.readableId}
+                          laborCategories={laborCategories}
+                          onIssue={canIssue ? () => setIssuing({}) : undefined}
+                          onLogTime={
+                            canLogTime ? () => setLoggingTime({}) : undefined
+                          }
+                          onCharge={
+                            canChargeCost ? () => setCharging({}) : undefined
+                          }
                         />
-                      ) : (
-                        <EmptyCosts>
-                          <Trans>
-                            Nothing has been charged yet. Log time, issue
-                            material, or charge a job or purchase order to this
-                            element.
-                          </Trans>
-                        </EmptyCosts>
                       )}
                     </TabsContent>
                   </Tabs>
@@ -579,7 +611,7 @@ export function ElementView({
                 />
               ) : undefined
             }
-            className="shrink-0 border-t border-border px-5 py-6 @min-[56rem]:w-[300px] @min-[56rem]:overflow-y-auto @min-[56rem]:border-t-0 @min-[56rem]:border-l"
+            className="relative shrink-0 border-t border-border px-5 py-6 @min-[56rem]:w-[300px] @min-[56rem]:overflow-y-auto @min-[56rem]:border-t-0 @min-[56rem]:border-l"
           />
         </div>
       </div>
@@ -589,8 +621,10 @@ export function ElementView({
           projectId={projectId}
           element={element}
           laborCategories={laborCategories}
-          defaultLaborCategoryId={defaultLaborCategoryId}
-          onClose={() => setLoggingTime(false)}
+          defaultLaborCategoryId={
+            loggingTime.laborCategoryId ?? defaultLaborCategoryId
+          }
+          onClose={() => setLoggingTime(null)}
         />
       )}
       {issuing && (
@@ -598,7 +632,18 @@ export function ElementView({
           projectId={projectId}
           element={element}
           defaultLocationId={project?.locationId}
-          onClose={() => setIssuing(false)}
+          defaultItemId={issuing.itemId}
+          defaultQuantity={issuing.quantity}
+          onClose={() => setIssuing(null)}
+        />
+      )}
+      {charging && (
+        <ChargeCostModal
+          projectId={projectId}
+          element={element}
+          defaultDescription={charging.description}
+          defaultAmount={charging.amount || undefined}
+          onClose={() => setCharging(null)}
         />
       )}
       {deleting && (

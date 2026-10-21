@@ -70,8 +70,9 @@ opens in layers. Each layer shows the least that a user needs.
   group of that column (`ProjectControlSettings.ee`). `$projectId.settings.tsx` keeps only
   its action (members, control settings) and redirects to the Overview. The property
   fields save through `PropertySaveProvider` (`ui/Element/PropertyFields.tsx`); without
-  one they save the element. While a Plan page is open, the element tree
-  and its "Search elements" box show under the links. Under Costs, each link shows only
+  one they save the element. On every page with the sidebar, the element tree
+  and its "Search elements" box show under the links (the search writes `?search=`
+  only on the Plan page; elsewhere it filters the tree). Under Costs, each link shows only
   when it applies: Stock (the project has an `itemLedger` row), Pegging (a current
   `projectPeg`) and Billing (a Contract project that a contract line bills). The header
   (`ProjectHeader`, on `RecordHeader`) is one line: the identifier and the name (a button
@@ -512,8 +513,27 @@ employee's own DCAA Draft, Rejected or Pending Employee Review entry → **Open 
 its week (the certification and the review stay there). Another employee's Draft has none.
 
 **My Time** is personal and lives at `x+/timesheet` (`path.to.timesheet`), outside
-the Projects layout; `x+/projects+/timesheet.tsx` redirects there. A Service row is
-read-only there: service time posts from Draft at Stop Work or Add Time on the order,
+the Projects layout; `x+/projects+/timesheet.tsx` redirects there. It is a week of bars
+(`TimesheetWeek`, Brad 2026-10-20, after the JOLT timesheet; the chart is
+`WeekHoursChart` from `@carbon/react/WeekHours`, which the MES My Time uses too, with
+`size="lg"` for touch): the week's charge numbers
+as cards on the left (**Add**, **PTO**, **Remove**, the week total), and seven day
+columns on a fixed 0–24 h scale (`MAX_DAY_HOURS`; the chart scrolls) with one
+bar per charge number, stacked in the order the time was entered (`stackDay` on the
+cell's `createdAt`, so new time lands at the bottom where it was clicked). One hover state
+for the whole week drives the one preview. Clocked timecard time shows as a duration
+("8h, 32m"), never as decimal hours beside the logged total. A click below a day's bars
+gives the selected card time up to the click (`fillToPointer`, half-hour steps, with a
+dashed preview); dragging a bar's lower edge or its arrow keys change its hours
+(`snapHours`); × or Delete saves 0, which deletes the Draft entry. Every change is one
+`save-timesheet-entry` cell save, so the DCAA reasons, the future-day lock (leave
+excepted) and the status locks are the grid's. A Posted bar's menu has **Correct**.
+**PTO** is Add with `pto`: the charge number picker lists only leave elements
+(`ChargeNumber leaveOnly`), and says how to set one up when there is none. **Remove**
+deletes a card's Draft hours (Standard mode; in DCAA only an empty card), and **Submit
+week** shows its checks in a tooltip. The manager's view of another employee's week
+(`projects+/timesheets.$employeeId.tsx`) keeps `TimesheetGrid`. A Service row is
+read-only on both: service time posts from Draft at Stop Work or Add Time on the order,
 so `submit-timesheet-week` submits Standard entries only and `post-timesheet` posts a
 Service project's Draft entry.
 
@@ -633,15 +653,15 @@ There is no element panel: the old `/elements/$elementId` URL only redirects to 
 plan, job, purchase order line, comment and delete action routes stay under it), and the project
 layout hides the project header and the project sidebar on the page. The page has one header
 row: back, the project and the ancestors, a copy button for the readable id, and one ⋯ menu (Log
-time, Issue material, Add child, Add link, Delete). Below it are a main column of at most 800 px
+time, Issue material, Charge cost, Add child, Add link, Delete). Below it are a main column of at most 800 px
 (the readable id with the Linear and Jira issue buttons at its right, title, description, then
 Children, Costs, Links, each only when it applies, then Activity) and a 300 px properties
 column (`ElementSidebar`, inline fields from
 `ui/Element/PropertyFields.tsx`: the properties, the type's fields from `ElementTypeBlock`, Work,
 Costs with children, and the Government contracting group, shown only with DCAA timekeeping).
-Costs is one block with two tabs: **Estimated** (the plan grid, `ElementPlanLines`) and
-**Actual** (`ElementTimeAndMaterials`: the ledger rows and the open time; on a service order
-the `charges` prop instead). It opens on Estimated while the project is Draft (or has no
+Costs is one block with two tabs: **Estimated** (the plan line cards, `ElementPlanLines`) and
+**Actual** (`ElementTimeAndMaterials`: the ledger rows and the open time as cards; on a service
+order the `charges` prop instead). It opens on Estimated while the project is Draft (or has no
 project row) and on Actual after; the user's choice holds until the page remounts. Every
 type but a Parameter shows it, so an empty Task shows Estimated with its Add line button.
 The earned value form posts to the page route's action.
@@ -653,30 +673,52 @@ Parameter. It posts `field=isBilling` to the element update route
 one branch (an element and its ancestor), a Parameter, and turning the flag off while a contract
 line bills the element. It is a live write, not a plan-layer field.
 
-All plan lines are ONE grid (`ElementPlanLines`: Type, Line, Quantity, Unit Cost, Amount), the
-**Estimated** tab. A material's Unit Cost edits in place (Amount is quantity × unit
-cost); a labor line's shows its category's cost rate, read-only. The row ⋯ menu's
-**Edit** opens `PlanLineModal` for the whole line. A cell posts the whole line with `quiet=true`
-to the plan route (the service template element route answers the same), and a draft row from
-"Add line" (a ghost split button: Material by default, Labor and Cost in its menu) saves once its
-item, labor category or description is set.
+Both tabs are lists of cards, not tables (Brad 2026-10-21), each with one toolbar row
+(`CostToolbar`, `ui/Element/CostCards.tsx`): a search box, a type menu (Material, Labor,
+Cost) and a sort menu, all local state (the element page's query string belongs to the Plan
+page it came from), then the tab's action at the right. Filtering and sorting are the pure
+helpers of `ui/Element/cost-cards.ts` (tested).
 
-- **Order.** `orderPlanRows` (`ui/Element/plan-rows.ts`, pure, tested): materials, labor, costs,
-  each by `createdAt` then `id`, drafts last in their own type. Drafts used to sit after every row
-  and left the drafts as soon as the save answered, so a new material vanished and came back
-  above the labor line (Brad 2026-10-13: "shouldn't reorder"). A quiet upsert now answers the
-  line's `id` (`useCellSave` returns the route's body as `data`); the draft keeps that id, so a
-  second edit updates the line, and stays in place until the revalidated line is back.
-- **Height.** The grid has no fixed height: `Table` `autoHeight` (opt-in) drops block-axis size
-  containment (`contain: inline-size`) and the empty footer row, so the box follows its rows.
-- **Item change.** Choosing an item on a material line (saved or draft) reads
-  `itemCost.unitCost` through the browser client, as `JobMaterialForm` does, and sets the line's
-  unit cost and the item's unit, so Amount (quantity × unit cost) shows at once and is saved. A
-  labor line has no stored amount: its Amount is hours × the category's cost rate in effect today
-  (`getProjectElementPage` adds `costRate` to each labor category), read-only, as the plan cost of
-  `get_project_cost_summary` reads it. A category with no rate shows no amount.
+**Estimated** (`ElementPlanLines`) is one card per plan line: the estimate, what has been
+charged against it, a thin progress bar (red when over the estimate), and one button that
+charges more. **Issue** (material, stocked items only) opens `IssueMaterialModal` with the
+item and the quantity still to issue; **Log time** (labor) opens `LogTimeModal` with the
+category; **Charge** (cost) opens `ChargeCostModal` with the description and the amount
+left. A click on the card, or **Edit** in its ⋯ menu, opens `PlanLineModal`; **Add line**
+(Material, Labor, Cost) opens the same modal for a new line. Both post the upsert intent to
+the plan route.
+
+- **Actuals by key.** `getElementTimeAndMaterials` returns `planActuals`, the element's OWN
+  rows (not its subtree), summed by plan-line key with no row limit: material cost by item
+  (`Material` and `Material Variance` ledger rows), labor hours by category from the
+  timesheet entries (Posted, and not posted yet) with the cost from the `Labor` ledger rows,
+  and Posted expenses by `LOWER(BTRIM(description))`. A cost line therefore finds its
+  charges by description, which the Charge button prefills. When two lines share a key, the
+  oldest takes the whole actual (`keyOwners`), as `post-project-issue` raises the oldest
+  line's `quantityIssued`. The material quantity is `quantityIssued` itself.
+- **Order.** `orderPlanRows` (`ui/Element/plan-rows.ts`, pure, tested): materials, labor,
+  costs, each by `createdAt` then `id`. The sort menu reorders from there (`sortPlanCards`).
+- **Item change.** Choosing an item in `PlanLineModal` reads `itemCost.unitCost` through the
+  browser client, as `JobMaterialForm` does, and sets the line's unit cost and the item's
+  unit. A labor line has no stored amount: its estimate is hours × the category's cost rate
+  in effect today (`getProjectElementPage` adds `costRate` to each labor category), as the
+  plan cost of `get_project_cost_summary` reads it. A line with no cost shows money only once
+  something is charged.
 - **Plan lock.** With the plan locked and no Draft change request, Add line is disabled with
   `projectPlanLockedMessage` as its tooltip, as New Element is on the Plan page.
+
+**Actual** (`ElementTimeAndMaterials`) is one card per ledger row of the element's subtree
+(an expense shows its own description; a row of an element below names it), then the time
+not posted yet with its next step (`OpenTimeAction`). Its **Charge** menu has Issue
+material, Log time and Charge cost; with nothing charged it shows the empty text and the
+same menu. On a service order the `charges` prop replaces the tab, and the Estimated cards
+have no charge buttons (the order posts through its own charge route).
+
+**Charge cost** (`x+/projects+/expense.tsx`, `path.to.projectExpense`, `update: projects`)
+checks the budget (source `purchase`: Block refuses, Warn flashes), then `addProjectExpense`
+(`projects.server.ts`) inserts a `projectExpenseEntry` and posts it through
+`post-project-expense` (Dr the project account / Cr GRNI, one Other Direct ledger row). An
+entry that does not post is deleted again, so a refusal leaves nothing behind.
 
 The Tree layout draws one box per parent. `layoutElementTree` (`graph/tree-layout.ts`,
 pure, tested) gives a box to each parent that has matching descendants. Dagre places the

@@ -32,6 +32,12 @@ msgstr "{0} fa"
 msgid "{0} customers"
 msgstr "{0} clienti"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
+#. placeholder {0}: formatQuantity(rowTotal(row))
+msgid "{0} h"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} non ha alcun numero di Lotto. Impostalo sul Lotto di produzione o sull'Ordine di produzione in Carbon, quindi completa."
@@ -93,12 +99,19 @@ msgstr "{completions} unità superate verranno completate."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} errore(i) campionato(i) registrato(i) e NON sarà(sarranno) completato(i) — risolvere(li) dal menu azioni."
 
+msgid "{hour} h"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limite"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "Registrato/{0} ordini di produzione"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr ""
 
 msgid "+{overflow} more"
 msgstr "+{overflow} altri"
@@ -152,9 +165,6 @@ msgstr "Aggiungi e Preleva"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Aggiungi una stampante nelle impostazioni di stampa per stampare le etichette direttamente."
 
-msgid "Add a row for each job or task you worked on."
-msgstr "Aggiungi una riga per ogni ordine di produzione o attività su cui hai lavorato."
-
 msgid "Add Authenticator App"
 msgstr "Aggiungi App Autenticatore"
 
@@ -164,14 +174,20 @@ msgstr "Aggiungi Inventario"
 msgid "Add Passkey"
 msgstr "Aggiungi Passkey"
 
-msgid "Add row"
-msgstr "Aggiungi riga"
+msgid "Add PTO"
+msgstr ""
 
 msgid "Add Sample"
 msgstr "Aggiungi Campione"
 
 msgid "Add Spare Part"
 msgstr "Aggiungi Ricambio"
+
+msgid "Add what you worked on this week, then tap a day to log time."
+msgstr ""
+
+msgid "Add what you worked on to start logging time."
+msgstr ""
 
 msgid "Added"
 msgstr "Aggiunto"
@@ -363,8 +379,8 @@ msgstr "Caratteristica"
 msgid "Characteristics"
 msgstr "Caratteristiche"
 
-msgid "Charge Number"
-msgstr "Numero di imputazione"
+msgid "Charge numbers"
+msgstr ""
 
 msgid "Chat"
 msgstr "Chat"
@@ -413,6 +429,9 @@ msgstr "Timbrato"
 
 msgid "Clocked in since <0/>"
 msgstr "Connesso da <0/>"
+
+msgid "Clocked on your timecard"
+msgstr ""
 
 msgid "Close"
 msgstr "Chiudi"
@@ -566,15 +585,6 @@ msgstr "Descrizione"
 msgid "Details"
 msgstr "Dettagli"
 
-msgid "Direct Research"
-msgstr "Ricerca Diretta"
-
-msgid "Direct Supervision"
-msgstr "Supervisione Diretta"
-
-msgid "Direct Support"
-msgstr "Supporto Diretto"
-
 msgid "Dispatch not found"
 msgstr "Intervento di manutenzione non trovato"
 
@@ -682,9 +692,6 @@ msgstr "Termina Operazioni"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Inserisci il valore di ogni ordine di produzione, o compila ogni ordine di produzione tutto insieme dalla prima riga. Le righe vuote vengono saltate."
-
-msgid "Enter hours from 0 to 24"
-msgstr "Inserisci le ore da 0 a 24"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -840,9 +847,6 @@ msgstr "Intestazione {level}"
 
 msgid "Hide description"
 msgstr "Nascondi descrizione"
-
-msgid "Hours on {label}"
-msgstr "Ore su {label}"
 
 msgid "How Carbon looks in this browser."
 msgstr "Come appare Carbon in questo browser."
@@ -1231,6 +1235,9 @@ msgstr "Nessun Impatto"
 msgid "No issue types configured"
 msgstr "Nessun tipo di problema configurato"
 
+msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
+msgstr ""
+
 msgid "No maintenance scheduled for today"
 msgstr "Nessuna manutenzione programmata per oggi"
 
@@ -1306,9 +1313,6 @@ msgstr "Nessun stock"
 msgid "No time entries for this week"
 msgstr "Nessuna registrazione oraria per questa settimana"
 
-msgid "No time this week"
-msgstr "Nessun orario questa settimana"
-
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Non è registrata giacenza di deposito per questo articolo. Puoi comunque effettuare il prelievo — la giacenza disponibile diventerà negativa fino al riconciliamento dell'inventario."
 
@@ -1323,9 +1327,6 @@ msgstr "Nessun centro di lavoro esistente"
 
 msgid "None"
 msgstr "Nessuno"
-
-msgid "Not Qualified"
-msgstr "Non qualificato"
 
 msgid "Notes"
 msgstr "Note"
@@ -1490,6 +1491,9 @@ msgstr "Prelievo {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "Scegli uno stile e un avatar, o mescola per ottenere quelli nuovi."
 
+msgid "Pick the leave for your time off."
+msgstr ""
+
 msgid "Pick tracked item"
 msgstr "Seleziona articolo tracciato"
 
@@ -1591,6 +1595,9 @@ msgstr "Avanzamento"
 
 msgid "Project"
 msgstr "Progetto"
+
+msgid "PTO"
+msgstr ""
 
 msgid "Purchasing"
 msgstr "Acquisti"
@@ -2058,6 +2065,10 @@ msgstr "Sistema"
 msgid "Tag"
 msgstr "Etichetta"
 
+#. placeholder {0}: selected.readableId
+msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Il colore di accento utilizzato in Carbon."
 
@@ -2176,6 +2187,9 @@ msgstr "Argomenti"
 
 msgid "Total"
 msgstr "Totale"
+
+msgid "Total hours"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "Quantità Totale"

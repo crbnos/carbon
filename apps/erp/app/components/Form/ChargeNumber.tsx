@@ -47,6 +47,8 @@ type ChargeNumberProps = Omit<
   /** Form field names of the two hidden inputs. */
   projectName?: string;
   projectElementName?: string;
+  /** Only the leave elements (PTO on My Time). */
+  leaveOnly?: boolean;
   onChange?: (selected: ChargeNumberRow | null) => void;
 };
 
@@ -54,8 +56,15 @@ type ChargeNumberProps = Omit<
  * The picker's options, the most recent 8 picks first, and `remember` to
  * record a pick.
  */
-function useChargeNumberOptions() {
-  const chargeNumbers = useChargeNumbers();
+function useChargeNumberOptions(leaveOnly = false) {
+  const allChargeNumbers = useChargeNumbers();
+  const chargeNumbers = useMemo(
+    () =>
+      leaveOnly
+        ? allChargeNumbers.filter((row) => row.isLeave)
+        : allChargeNumbers,
+    [allChargeNumbers, leaveOnly]
+  );
   const [recent, setRecent] = useLocalStorage<string[]>(RECENT_KEY, []);
   const options = useMemo(() => {
     const rank = new Map(recent.map((value, index) => [value, index]));
@@ -139,9 +148,11 @@ const ChargeNumber = ({
   label,
   onChange,
   inline = false,
+  leaveOnly = false,
   ...props
 }: ChargeNumberProps) => {
-  const { chargeNumbers, options, remember } = useChargeNumberOptions();
+  const { chargeNumbers, options, remember } =
+    useChargeNumberOptions(leaveOnly);
 
   const [projectId, setProjectId] = useControlField<string | undefined>(
     projectName

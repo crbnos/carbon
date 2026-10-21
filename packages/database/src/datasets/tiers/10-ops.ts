@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { resolveDate, resolveTimestamp } from "../dates.ts";
+import {
+  resolveDate,
+  resolveLocalTimestamp,
+  resolveTimestamp,
+  workdayBefore
+} from "../dates.ts";
 import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import {
   insertId,
@@ -59,11 +64,13 @@ export async function runTier10(ctx: Ctx): Promise<void> {
   }
 
   ctx.log(`timecards — ${data.timecards.length}`);
+  // Working days only, on the company's clock: a 7 am shift is 7 am there.
   for (const card of data.timecards) {
+    const day = workdayBefore(ctx.anchor, card.workdaysBack);
     await insertRow(ctx, "timeCardEntry", {
       employeeId: ctx.userId,
-      clockIn: resolveTimestamp(ctx.anchor, card.dayOffset, card.clockIn),
-      clockOut: resolveTimestamp(ctx.anchor, card.dayOffset, card.clockOut),
+      clockIn: resolveLocalTimestamp(day, card.clockIn, ctx.timeZone),
+      clockOut: resolveLocalTimestamp(day, card.clockOut, ctx.timeZone),
       note: card.note
     });
   }

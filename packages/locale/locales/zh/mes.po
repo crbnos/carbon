@@ -32,6 +32,12 @@ msgstr "{0} 前"
 msgid "{0} customers"
 msgstr "{0} 个客户"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
+#. placeholder {0}: formatQuantity(rowTotal(row))
+msgid "{0} h"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0}没有批次号。在Carbon中的生产批次或工单上设置，然后完成。"
@@ -93,12 +99,19 @@ msgstr "{completions} 个已通过的件将被完成。"
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操作菜单解决它们。"
 
+msgid "{hour} h"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 个工单"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr ""
 
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
@@ -152,9 +165,6 @@ msgstr "添加并发放"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
 
-msgid "Add a row for each job or task you worked on."
-msgstr "为您工作过的每个工单或任务添加一行。"
-
 msgid "Add Authenticator App"
 msgstr "添加身份验证应用"
 
@@ -164,14 +174,20 @@ msgstr "添加库存管理"
 msgid "Add Passkey"
 msgstr "添加通行密钥"
 
-msgid "Add row"
-msgstr "添加行"
+msgid "Add PTO"
+msgstr ""
 
 msgid "Add Sample"
 msgstr "添加样本"
 
 msgid "Add Spare Part"
 msgstr "添加备件"
+
+msgid "Add what you worked on this week, then tap a day to log time."
+msgstr ""
+
+msgid "Add what you worked on to start logging time."
+msgstr ""
 
 msgid "Added"
 msgstr "已添加"
@@ -363,8 +379,8 @@ msgstr "特性"
 msgid "Characteristics"
 msgstr "特性"
 
-msgid "Charge Number"
-msgstr "费用代码"
+msgid "Charge numbers"
+msgstr ""
 
 msgid "Chat"
 msgstr "聊天"
@@ -413,6 +429,9 @@ msgstr "已打卡"
 
 msgid "Clocked in since <0/>"
 msgstr "自 <0/> 起打卡"
+
+msgid "Clocked on your timecard"
+msgstr ""
 
 msgid "Close"
 msgstr "关闭"
@@ -566,15 +585,6 @@ msgstr "描述"
 msgid "Details"
 msgstr "详情"
 
-msgid "Direct Research"
-msgstr "直接研究"
-
-msgid "Direct Supervision"
-msgstr "直接监督"
-
-msgid "Direct Support"
-msgstr "直接支持"
-
 msgid "Dispatch not found"
 msgstr "找不到维护工单"
 
@@ -682,9 +692,6 @@ msgstr "结束工序"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "为每个工单输入值，或从第一行同时填充所有工单。空行将被跳过。"
-
-msgid "Enter hours from 0 to 24"
-msgstr "输入 0 到 24 之间的小时数"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -840,9 +847,6 @@ msgstr "标题 {level}"
 
 msgid "Hide description"
 msgstr "隐藏描述"
-
-msgid "Hours on {label}"
-msgstr "{label}的工时"
 
 msgid "How Carbon looks in this browser."
 msgstr "Carbon 在此浏览器中的外观。"
@@ -1231,6 +1235,9 @@ msgstr "无影响"
 msgid "No issue types configured"
 msgstr "未配置问题类型"
 
+msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
+msgstr ""
+
 msgid "No maintenance scheduled for today"
 msgstr "今天没有计划的维护"
 
@@ -1306,9 +1313,6 @@ msgstr "无库存"
 msgid "No time entries for this week"
 msgstr "本周无考勤记录"
 
-msgid "No time this week"
-msgstr "本周没有时间"
-
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负数，直到数量被核对。"
 
@@ -1323,9 +1327,6 @@ msgstr "无工作中心"
 
 msgid "None"
 msgstr "无"
-
-msgid "Not Qualified"
-msgstr "不合格"
 
 msgid "Notes"
 msgstr "备注"
@@ -1490,6 +1491,9 @@ msgstr "拣货 {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "选择一个风格和头像，或者随机生成新的。"
 
+msgid "Pick the leave for your time off."
+msgstr ""
+
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
 
@@ -1591,6 +1595,9 @@ msgstr "进度"
 
 msgid "Project"
 msgstr "项目"
+
+msgid "PTO"
+msgstr ""
 
 msgid "Purchasing"
 msgstr "采购"
@@ -2058,6 +2065,10 @@ msgstr "系统"
 msgid "Tag"
 msgstr "标签"
 
+#. placeholder {0}: selected.readableId
+msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "整个 Carbon 中使用的强调色。"
 
@@ -2176,6 +2187,9 @@ msgstr "话题"
 
 msgid "Total"
 msgstr "总计"
+
+msgid "Total hours"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "总数量"

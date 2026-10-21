@@ -109,6 +109,7 @@ export function TimesheetChangeModal({
                   name="reason"
                   label={t`Reason for change`}
                   isRequired
+                  autoFocus
                 />
               )}
               {requiresLateReason && (
@@ -116,6 +117,7 @@ export function TimesheetChangeModal({
                   name="lateReason"
                   label={t`Reason for late entry`}
                   isRequired
+                  autoFocus={!requiresReason}
                 />
               )}
             </VStack>

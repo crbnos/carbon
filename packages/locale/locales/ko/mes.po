@@ -32,6 +32,12 @@ msgstr "{0} 전"
 msgid "{0} customers"
 msgstr "{0} 고객"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
+#. placeholder {0}: formatQuantity(rowTotal(row))
+msgid "{0} h"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0}에 로트 번호가 없습니다. Carbon에서 배치 또는 작업 지시에 설정한 다음 완료 처리하세요."
@@ -93,12 +99,19 @@ msgstr "{completions}개의 통과 단위가 완료 처리될 예정입니다."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니다 — 작업 메뉴에서 해결하세요."
 
+msgid "{hour} h"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 작업 지시"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr ""
 
 msgid "+{overflow} more"
 msgstr "+{overflow} 더 보기"
@@ -152,9 +165,6 @@ msgstr "추가 및 출고"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
 
-msgid "Add a row for each job or task you worked on."
-msgstr "근무한 각 작업 지시 또는 작업마다 행을 추가하세요."
-
 msgid "Add Authenticator App"
 msgstr "인증 앱 추가"
 
@@ -164,14 +174,20 @@ msgstr "재고 추가"
 msgid "Add Passkey"
 msgstr "패스키 추가"
 
-msgid "Add row"
-msgstr "행 추가"
+msgid "Add PTO"
+msgstr ""
 
 msgid "Add Sample"
 msgstr "샘플 추가"
 
 msgid "Add Spare Part"
 msgstr "예비 부품 추가"
+
+msgid "Add what you worked on this week, then tap a day to log time."
+msgstr ""
+
+msgid "Add what you worked on to start logging time."
+msgstr ""
 
 msgid "Added"
 msgstr "추가됨"
@@ -363,8 +379,8 @@ msgstr "특성"
 msgid "Characteristics"
 msgstr "특성"
 
-msgid "Charge Number"
-msgstr "청구 번호"
+msgid "Charge numbers"
+msgstr ""
 
 msgid "Chat"
 msgstr "채팅"
@@ -413,6 +429,9 @@ msgstr "작업 중"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>부터 근무 중"
+
+msgid "Clocked on your timecard"
+msgstr ""
 
 msgid "Close"
 msgstr "닫기"
@@ -566,15 +585,6 @@ msgstr "설명"
 msgid "Details"
 msgstr "상세 정보"
 
-msgid "Direct Research"
-msgstr "직접 연구"
-
-msgid "Direct Supervision"
-msgstr "직접 감독"
-
-msgid "Direct Support"
-msgstr "직접 지원"
-
 msgid "Dispatch not found"
 msgstr "유지보수 지시를 찾을 수 없습니다"
 
@@ -682,9 +692,6 @@ msgstr "공정작업 종료"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "각 작업 지시의 값을 입력하거나, 첫 번째 행에서 모든 작업 지시를 한 번에 채우세요. 빈 행은 건너뜁니다."
-
-msgid "Enter hours from 0 to 24"
-msgstr "0에서 24 사이의 시간을 입력하세요"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -840,9 +847,6 @@ msgstr "{level} 제목"
 
 msgid "Hide description"
 msgstr "설명 숨기기"
-
-msgid "Hours on {label}"
-msgstr "{label}의 시간"
 
 msgid "How Carbon looks in this browser."
 msgstr "이 브라우저에서 Carbon이 표시되는 방식입니다."
@@ -1231,6 +1235,9 @@ msgstr "영향 없음"
 msgid "No issue types configured"
 msgstr "구성된 문제 유형이 없음"
 
+msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
+msgstr ""
+
 msgid "No maintenance scheduled for today"
 msgstr "오늘 예정된 유지보수가 없습니다"
 
@@ -1306,9 +1313,6 @@ msgstr "재고 없음"
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
 
-msgid "No time this week"
-msgstr "이번 주 시간이 없습니다"
-
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
 
@@ -1323,9 +1327,6 @@ msgstr "존재하는 작업장이 없습니다"
 
 msgid "None"
 msgstr "없음"
-
-msgid "Not Qualified"
-msgstr "부적격"
 
 msgid "Notes"
 msgstr "메모"
@@ -1490,6 +1491,9 @@ msgstr "피킹 {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "스타일과 아바타를 선택하거나 새로운 것으로 섞으세요."
 
+msgid "Pick the leave for your time off."
+msgstr ""
+
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
 
@@ -1591,6 +1595,9 @@ msgstr "진행 상황"
 
 msgid "Project"
 msgstr "프로젝트"
+
+msgid "PTO"
+msgstr ""
 
 msgid "Purchasing"
 msgstr "구매"
@@ -2058,6 +2065,10 @@ msgstr "시스템"
 msgid "Tag"
 msgstr "태그"
 
+#. placeholder {0}: selected.readableId
+msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Carbon 전체에서 사용되는 강조 색상입니다."
 
@@ -2176,6 +2187,9 @@ msgstr "주제"
 
 msgid "Total"
 msgstr "총계"
+
+msgid "Total hours"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "총 수량"

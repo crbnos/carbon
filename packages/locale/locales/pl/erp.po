@@ -274,10 +274,24 @@ msgstr "{0} wpisów do zaksięgowania · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} wpisów do rozpoznania · {amount}"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rate.baseAmount, locale)
-#. placeholder {0}: formatQuantity(value)
 msgid "{0} h"
 msgstr "{0} h"
+
+#. placeholder {0}: formatQuantity(card.openQuantity)
+msgid "{0} h not posted yet"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(weekTotal)
+#. placeholder {1}: formatQuantity(timecardTotal)
+msgid "{0} h of {1} h on your timecards"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(draftHours)
+msgid "{0} h of draft time to submit"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -342,6 +356,17 @@ msgstr "{0} miesięcy"
 msgid "{0} of {1}"
 msgstr "{0} z {1}"
 
+#. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
+#. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
+#. placeholder {2}: card.unitOfMeasureCode ?? ""
+msgid "{0} of {1} {2} issued"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
+#. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
+msgid "{0} of {1} h"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -357,6 +382,10 @@ msgstr "{0} z {memberCount} zleceń produkcyjnych nie zostały jeszcze zakończo
 
 #. placeholder {0}: progress.done
 msgid "{0} of {whole} done"
+msgstr ""
+
+#. placeholder {0}: formatClocked(timecardTotal)
+msgid "{0} on your timecards"
 msgstr ""
 
 #. placeholder {0}: selected.length
@@ -649,6 +678,9 @@ msgstr "{hidden, plural, one {I jeszcze # rekord.} other {I jeszcze # rekordy.}}
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} więcej: {hiddenNames}"
 
+msgid "{hour} h"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -870,6 +902,10 @@ msgstr "% całości"
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} przekierowano z wycofanych {1}"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr ""
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
@@ -2210,6 +2246,9 @@ msgstr ""
 msgid "Add & Issue"
 msgstr "Dodaj i wydaj"
 
+msgid "Add a charge number to start logging time."
+msgstr ""
+
 msgid "Add a column below to sort the view"
 msgstr "Dodaj kolumnę poniżej, aby posortować widok"
 
@@ -2321,6 +2360,9 @@ msgstr "Dodaj charakterystykę"
 msgid "Add Charge"
 msgstr "Dodaj Opłatę"
 
+msgid "Add Charge Number"
+msgstr ""
+
 msgid "Add child"
 msgstr "Dodaj dziecko"
 
@@ -2344,6 +2386,9 @@ msgstr "Dodaj operatora konsoli"
 
 msgid "Add Contractor"
 msgstr "Dodaj Pracownika zewnętrznego"
+
+msgid "Add cost"
+msgstr ""
 
 msgid "Add cost center"
 msgstr "Dodaj miejsce powstawania kosztów"
@@ -2393,6 +2438,9 @@ msgstr "Dodaj element"
 msgid "Add Journal Entry"
 msgstr "Dodaj zapis księgowy"
 
+msgid "Add labor"
+msgstr ""
+
 msgid "Add line"
 msgstr "Dodaj pozycję"
 
@@ -2419,6 +2467,9 @@ msgstr "Dodaj ręcznie"
 
 msgid "Add match"
 msgstr "Dodaj dopasowanie"
+
+msgid "Add material"
+msgstr ""
 
 msgid "Add Member"
 msgstr "Dodaj Członka"
@@ -2487,6 +2538,9 @@ msgstr "Dodaj drukarkę"
 msgid "Add Property"
 msgstr "Dodaj właściwość"
 
+msgid "Add PTO"
+msgstr ""
+
 msgid "Add Question"
 msgstr "Dodaj pytanie"
 
@@ -2504,9 +2558,6 @@ msgstr "Dodaj ryzyko"
 
 msgid "Add row"
 msgstr "Dodaj wiersz"
-
-msgid "Add Row"
-msgstr "Dodaj Wiersz"
 
 msgid "Add rule"
 msgstr "Dodaj regułę"
@@ -2558,6 +2609,9 @@ msgstr "Dodaj transfer magazynowy"
 
 msgid "Add Supplier"
 msgstr "Dodaj dostawcę"
+
+msgid "Add the charge numbers you worked on this week, then click a day to log time."
+msgstr ""
 
 msgid "Add the components of a serial, an item or a template as elements."
 msgstr ""
@@ -2850,6 +2904,9 @@ msgstr "Wszystkie narzędzia"
 
 msgid "All transfers"
 msgstr "Wszystkie przesunięcia"
+
+msgid "All types"
+msgstr ""
 
 msgid "All Types"
 msgstr "Wszystkie typy"
@@ -4593,6 +4650,9 @@ msgstr "Przed aktywowaniem"
 msgid "Before You Confirm"
 msgstr "Zanim potwierdzisz"
 
+msgid "Before you submit"
+msgstr ""
+
 msgid "Beginning"
 msgstr "Początek"
 
@@ -5600,6 +5660,12 @@ msgstr "Opłata"
 msgid "Charge at receipt"
 msgstr "Obciąż przy przyjęciu"
 
+msgid "Charge cost"
+msgstr ""
+
+msgid "Charge Cost"
+msgstr ""
+
 msgid "Charge Date"
 msgstr "Data Opłaty"
 
@@ -5611,6 +5677,9 @@ msgstr "Numer obciążenia"
 
 msgid "Charge number (optional)"
 msgstr "Numer obciążenia (opcjonalnie)"
+
+msgid "Charge numbers"
+msgstr ""
 
 msgid "Charge Numbers"
 msgstr "Numery obciążenia"
@@ -5703,9 +5772,6 @@ msgstr "Wybierz numer partii"
 
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Wybierz proces wsadowy, aby zobaczyć operacje, które mogą działać razem."
-
-msgid "Choose a labor category"
-msgstr "Wybierz kategorię pracy"
 
 msgid "Choose a labor category or an employee"
 msgstr "Wybierz kategorię pracy lub pracownika"
@@ -5864,6 +5930,10 @@ msgstr "Konto rozliczeniowe dla odboru towaru / dopasowania odboru faktury"
 msgid "Clearing demo data"
 msgstr "Czyszczenie danych demonstracyjnych"
 
+#. placeholder {0}: selected.readableId
+msgid "Click a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgstr ""
+
 msgid "Click again to disconnect"
 msgstr "Kliknij ponownie, aby rozłączyć"
 
@@ -5899,6 +5969,9 @@ msgstr "Zalogowany"
 
 msgid "Clocked in since <0/>"
 msgstr "Zalogowany od <0/>"
+
+msgid "Clocked on your timecard"
+msgstr ""
 
 msgid "Close"
 msgstr "Zamknij"
@@ -6656,6 +6729,9 @@ msgstr "Pracownik zewnętrzny"
 
 msgid "Contractors"
 msgstr "Pracownicy zewnętrzni"
+
+msgid "Contracts"
+msgstr ""
 
 msgid "Control"
 msgstr "Kontrola"
@@ -8950,9 +9026,6 @@ msgstr "Pochodzi"
 
 msgid "Descending"
 msgstr "Malejąco"
-
-msgid "Describe the cost"
-msgstr "Opisz koszt"
 
 msgid "Description"
 msgstr "Opis"
@@ -12404,9 +12477,6 @@ msgstr "Wspomagane"
 msgid "Guided implementation"
 msgstr "Wdrożenie z przewodnikiem"
 
-msgid "h"
-msgstr "h"
-
 msgid "Handle recurring and reversing journal entries"
 msgstr "Obsługuj powtarzające się i odwracające dowody księgowe"
 
@@ -13731,6 +13801,9 @@ msgstr "Problemy"
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "Jest zatwierdzone, ale nie może być zastosowane. Otwórz je ponownie, sprawdź te wiersze, a następnie prześlij je ponownie."
 
+msgid "It shows with no hours until you add some."
+msgstr ""
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "To przestanie działać, dopóki nie opublikujesz wersji ponownie. Nic nie jest usunięte."
 
@@ -13839,6 +13912,10 @@ msgstr "Elementy w tym oknie otrzymują żółty znaczek."
 
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Artykuły: wzorzec artykułów, BOM, Lista operacji, zmiany konstrukcyjne, CAD"
+
+#. placeholder {0}: formatQuantity(rowTotal(removing))
+msgid "Its {0} h of draft time this week are deleted."
+msgstr ""
 
 msgid "Its amounts go back to what each line has left to invoice."
 msgstr "Jego kwoty wracają do pozostałej do zafakturowania kwoty każdej Pozycji."
@@ -15827,6 +15904,10 @@ msgstr "Potrzebujesz odpowiednich kolumn?"
 msgid "Need-by target"
 msgstr "Termin zapotrzebowania"
 
+#. placeholder {0}: formatDate(card.date)
+msgid "Needed {0}"
+msgstr ""
+
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "Potrzebne = godziny pracy przypadające tego dnia podzielone przez {personDayHours}h, zaokrąglone w górę — zmiana, którą filtrujesz, lub najczęstsza długość zmiany w tej lokalizacji."
 
@@ -16323,6 +16404,9 @@ msgstr "Nowe Stanowisko robocze"
 msgid "New Workflow"
 msgstr "Nowy przepływ pracy"
 
+msgid "Newest"
+msgstr ""
+
 msgid "Newest first"
 msgstr "Najnowsze najpierw"
 
@@ -16573,6 +16657,9 @@ msgstr "Brak zmian."
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "Brak zmian. Gdy leasing będzie aktywny, Modyfikuj znajduje się w nagłówku, a Zakończ i Kup znajdują się na stronie każdego zasobu."
 
+msgid "No charges match the filters."
+msgstr ""
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Brak opłat. Opłaty za przebieg, uszkodzenie, dostawę lub czyszczenie pojawią się na następnej fakturze."
 
@@ -16686,6 +16773,9 @@ msgstr "Brak dokumentów"
 
 msgid "No draft make method for this item yet."
 msgstr "Brak wersji roboczej metody produkcji dla tego artykułu."
+
+msgid "No draft time this week"
+msgstr ""
 
 msgid "No draft versions available"
 msgstr "Brak dostępnych wersji roboczych"
@@ -16867,8 +16957,14 @@ msgstr "Brak kategorii robocizny"
 msgid "No lease run is posted yet"
 msgstr "Żadne uruchomienie leasingu nie zostało jeszcze zaksięgowane."
 
+msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
+msgstr ""
+
 msgid "No lines"
 msgstr "Brak wierszy"
+
+msgid "No lines match the filters."
+msgstr ""
 
 msgid "No lines to map"
 msgstr "Brak linii do mapowania"
@@ -17715,6 +17811,9 @@ msgstr "OK"
 msgid "Old Value"
 msgstr "Stara wartość"
 
+msgid "Oldest"
+msgstr ""
+
 msgid "Oldest first"
 msgstr "Najstarsze najpierw"
 
@@ -18444,6 +18543,9 @@ msgstr "Kooperacja"
 
 msgid "Outstanding"
 msgstr "Do zapłaty"
+
+msgid "Over estimate first"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "Przekroczone o"
@@ -19210,6 +19312,9 @@ msgstr "Planuj z wyprzedzeniem, projektując zapotrzebowanie dla każdego artyku
 msgid "Plan lock"
 msgstr "Blokada planu"
 
+msgid "Plan order"
+msgstr ""
+
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "Zaplanuj wiele projektów razem, kup raz dla wszystkich i zobacz, dla którego projektu każde zamówienie jest."
 
@@ -19454,6 +19559,9 @@ msgstr "Opublikowane przez"
 
 msgid "Posted By"
 msgstr "Opublikowano przez"
+
+msgid "Posted from the service order"
+msgstr ""
 
 msgid "Posted hours"
 msgstr "Godziny zaksięgowane"
@@ -20011,6 +20119,9 @@ msgstr "Wstępny dowód księgowy"
 
 msgid "Provisional rate"
 msgstr "Stawka tymczasowa"
+
+msgid "PTO"
+msgstr ""
 
 msgid "Public"
 msgstr "Publiczny"
@@ -21168,6 +21279,10 @@ msgstr "Usuń {0} z tego kroku"
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "Usuń z listy {0} z {memberCount} operacji z {1}?"
 
+#. placeholder {0}: removing.readableId
+msgid "Remove {0}?"
+msgstr ""
+
 msgid "Remove {deletingName} from the plan?"
 msgstr "Usuń {deletingName} z planu?"
 
@@ -22011,6 +22126,9 @@ msgstr "Przejrzyj i utwórz"
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Przejrzyj zmiany w każdym artykule, a następnie potwierdź — uwolnienie nie może być cofnięte."
 
+msgid "Review the changes to your timesheet first"
+msgstr ""
+
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Przejrzyj bilans i rachunek zysków i strat za okres i potwierdź, że liczby wyglądają prawidłowo. Jest to ręczne podpisanie — oznacz jako gotowe po ich przejrzeniu."
 
@@ -22751,6 +22869,9 @@ msgstr "Szukaj po numerze seryjnym"
 
 msgid "Search by shipment, sales order, or item"
 msgstr "Szukaj po wysyłce, zamówieniu sprzedaży lub artykule"
+
+msgid "Search costs"
+msgstr ""
 
 msgid "Search customers and types..."
 msgstr "Wyszukaj klientów i typy..."
@@ -26328,9 +26449,6 @@ msgstr "Numer rewizji części"
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "Prawo do użytku składnika aktywów i zobowiązanie z tytułu leasingu są w bilansie, a jeden liniowy koszt leasingu jest księgowany każdego miesiąca."
 
-msgid "The row shows empty until you enter hours."
-msgstr "Wiersz pokazuje się pusty, dopóki nie wpiszesz godzin."
-
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Pozycja zamówienia sprzedaży, do której to zlecenie zostało utworzone, wiążące zlecenie z zapotrzebowaniem klienta stojącym za tym."
 
@@ -27195,6 +27313,9 @@ msgstr "Pora dnia"
 msgid "Time off"
 msgstr "Wolny czas"
 
+msgid "Time off is charged to a leave element."
+msgstr ""
+
 msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
 msgstr "Czas w tej kategorii nie może być zaksięgowany do projektu Wydatek lub Umowa, dopóki nie będzie miał stawki."
 
@@ -27433,6 +27554,9 @@ msgstr "Całkowity szacunkowy koszt"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Całkowita oczekiwana liczba jednostek produkcji do amortyzacji jednostek produkcji; koszt jest rozłożony na wyprodukowaną jednostkę."
+
+msgid "Total hours"
+msgstr ""
 
 msgid "Total Hours"
 msgstr "Łącznie godzin"

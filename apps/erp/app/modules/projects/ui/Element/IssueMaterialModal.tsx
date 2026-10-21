@@ -230,6 +230,8 @@ export function IssueMaterialModal({
   action = path.to.projectIssue,
   hiddenFields,
   variant = "project",
+  defaultItemId,
+  defaultQuantity,
   onClose
 }: {
   /** Fixed charge number; leave both out to pick one (Inventory). */
@@ -248,12 +250,15 @@ export function IssueMaterialModal({
   hiddenFields?: Record<string, string>;
   /** A service order speaks of the order, never of a project. */
   variant?: "project" | "service";
+  /** A plan line's item and the quantity still to issue (its card's Issue). */
+  defaultItemId?: string;
+  defaultQuantity?: number;
   onClose: () => void;
 }) {
   const { t } = useLingui();
   const user = useUser();
   const [items] = useItems();
-  const [itemId, setItemId] = useState<string | null>(null);
+  const [itemId, setItemId] = useState<string | null>(defaultItemId ?? null);
   const [locationId, setLocationId] = useState<string | null>(
     defaultLocationId ?? user.defaults.locationId ?? null
   );
@@ -307,11 +312,11 @@ export function IssueMaterialModal({
           defaultValues={{
             projectId: projectId ?? "",
             projectElementId: element?.id,
-            itemId: "",
+            itemId: defaultItemId ?? "",
             locationId: locationId ?? "",
             storageUnitId: undefined,
             trackedEntityId: undefined,
-            quantity: 1,
+            quantity: defaultQuantity || 1,
             direction: "Issue"
           }}
         >
@@ -362,10 +367,12 @@ export function IssueMaterialModal({
                   setDirection((option?.value as Direction) ?? "Issue")
                 }
               />
-              <BomMaterialPicks
-                itemIds={stockedBomItemIds}
-                onPick={setItemId}
-              />
+              {!defaultItemId && (
+                <BomMaterialPicks
+                  itemIds={stockedBomItemIds}
+                  onPick={setItemId}
+                />
+              )}
               <Item
                 name="itemId"
                 label={t`Item`}

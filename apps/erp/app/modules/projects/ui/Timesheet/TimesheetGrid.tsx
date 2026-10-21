@@ -2,27 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
 import {
-  Alert,
-  AlertDescription,
   Button,
   cn,
   HStack,
   IconButton,
   MenuIcon,
-  MenuItem,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  ModalTitle,
-  Switch,
-  VStack
+  MenuItem
 } from "@carbon/react";
 import {
   equals,
@@ -35,13 +21,11 @@ import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
 import {
-  LuChevronDown,
   LuChevronLeft,
   LuChevronRight,
   LuPencil,
   LuPlus,
-  LuSend,
-  LuTriangleAlert
+  LuSend
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigate } from "react-router";
 import { Table } from "~/components";
@@ -52,35 +36,13 @@ import {
 } from "~/components/Editable";
 import Empty from "~/components/Empty";
 import {
-  ChargeNumber,
-  Hidden,
-  Location,
-  Number as NumberFormField,
-  Select,
-  SelectControlled,
-  Submit,
-  TextArea,
-  useChargeNumbers
-} from "~/components/Form";
-import { useLocations } from "~/components/Form/Location";
-import {
   rowMenuColumn,
   setupGridHeight,
   useCellSave
 } from "~/components/Setup";
 import { useDateFormatter, useQuantityFormatter } from "~/hooks";
 import { path } from "~/utils/path";
-import type {
-  RdActivityRole,
-  TimesheetCell,
-  TimesheetEntryStatus as TimesheetEntryStatusType
-} from "../../projects.models";
-import {
-  rdActivityRoles,
-  timesheetCorrectionValidator,
-  timesheetRowKey,
-  timesheetRowValidator
-} from "../../projects.models";
+import type { TimesheetEntryStatus as TimesheetEntryStatusType } from "../../projects.models";
 import { TimesheetEntryStatus } from "../Element/TimesheetEntryStatus";
 import { useRdActivityRoleLabels } from "../RdTax/useRdTaxLabels";
 import { CertificationModal } from "./CertificationModal";
@@ -88,82 +50,17 @@ import {
   TimesheetChangeModal,
   type TimesheetChangeReasons
 } from "./TimesheetChangeModal";
+import { type AddedRow, AddRowModal, CorrectionModal } from "./TimesheetModals";
 import {
   type PendingReviewEntry,
   TimesheetReviewBanner
 } from "./TimesheetReviewBanner";
 import { TimesheetRevisionsPopover } from "./TimesheetRevisionsPopover";
-
-type GridRow = {
-  key: string;
-  projectId: string;
-  projectElementId: string | null;
-  laborCategoryId: string;
-  /** R&D tax: where the work took place, and its research role. */
-  workLocationId: string | null;
-  workLocationName: string | null;
-  rdActivityRole: RdActivityRole | null;
-  /**
-   * The project identifier, or the element's readable id; on a service
-   * order, the order's readable id.
-   */
-  readableId: string;
-  name: string;
-  /** Where the charge number opens. */
-  to: string | null;
-  /** A service order's time: read-only here, its visit page posts it. */
-  isService: boolean;
-  /** A leave element (5a): DCAA mode takes time for a future date on it. */
-  isLeave: boolean;
-  laborCategory: string;
-  cells: Record<string, TimesheetCell>;
-  total: number;
-};
-
-type TimesheetGridProps = {
-  weekOffset: number;
-  weekStart: string;
-  weekEnd: string;
-  days: string[];
-  rows: {
-    key: string;
-    projectId: string;
-    projectElementId: string | null;
-    laborCategoryId: string;
-    workLocationId: string | null;
-    rdActivityRole: RdActivityRole | null;
-    cells: Record<string, TimesheetCell>;
-    total: number;
-    entry: {
-      project: {
-        identifier: string | null;
-        name: string;
-        projectType: "Standard" | "Service";
-        serviceOrder: { id: string; serviceOrderId: string }[];
-      } | null;
-      element: { readableId: string; name: string; isLeave?: boolean } | null;
-      laborCategory: { name: string } | null;
-      workLocation?: { id: string; name: string } | null;
-    };
-  }[];
-  timecardHours: Record<string, number>;
-  laborCategories: {
-    id: string;
-    name: string;
-    /** R&D tax: the default research role of the category's time. */
-    rdActivityRole?: RdActivityRole | null;
-  }[];
-  /** R&D tax: the employee's job location, a new row's default. */
-  jobLocationId?: string | null;
-  /** DCAA mode's controls (5a); null in Standard mode. */
-  controls: TimesheetControls | null;
-  /**
-   * A manager's view of another employee's week (5a). Every change needs a
-   * reason and waits for the employee's review; only the employee submits.
-   * Standard mode shows the week read-only: only the owner changes time.
-   */
-  employee?: { id: string; name: string; absenceDays: string[] } | null;
-};
+import {
+  type GridRow,
+  type TimesheetGridProps,
+  useTimesheetRows
+} from "./useTimesheetRows";
 
 /** What DCAA mode adds to the grid (5a). */
 export type TimesheetControls = {
@@ -251,11 +148,9 @@ export default function TimesheetGrid({
 }: TimesheetGridProps) {
   const { t } = useLingui();
   const roleLabels = useRdActivityRoleLabels();
-  const locations = useLocations();
   const { formatDate } = useDateFormatter();
   const formatQuantity = useQuantityFormatter();
   const navigate = useNavigate();
-  const chargeNumbers = useChargeNumbers();
   const submitFetcher = useFetcher();
   const [addingRow, setAddingRow] = useState(false);
   const [addedRows, setAddedRows] = useState<AddedRow[]>([]);
@@ -295,75 +190,16 @@ export default function TimesheetGrid({
     [controls?.revisedEntryIds]
   );
 
-  const gridRows = useMemo<TableRow[]>(() => {
-    const serverRows: GridRow[] = rows.map((row) => {
-      const project = row.entry.project;
-      const serviceOrder =
-        project?.projectType === "Service"
-          ? (project.serviceOrder[0] ?? null)
-          : null;
-      const isService = project?.projectType === "Service";
-      return {
-        key: row.key,
-        projectId: row.projectId,
-        projectElementId: row.projectElementId,
-        laborCategoryId: row.laborCategoryId,
-        workLocationId: row.workLocationId,
-        workLocationName: row.entry.workLocation?.name ?? null,
-        rdActivityRole: row.rdActivityRole,
-        readableId: isService
-          ? (serviceOrder?.serviceOrderId ?? "")
-          : (row.entry.element?.readableId ?? project?.identifier ?? ""),
-        name: row.entry.element?.name ?? project?.name ?? "",
-        to: isService
-          ? serviceOrder
-            ? path.to.serviceOrder(serviceOrder.id)
-            : null
-          : row.projectElementId
-            ? path.to.projectElement(row.projectId, row.projectElementId)
-            : path.to.project(row.projectId),
-        isService,
-        isLeave: row.entry.element?.isLeave ?? false,
-        laborCategory: row.entry.laborCategory?.name ?? "",
-        cells: row.cells,
-        total: row.total
-      };
-    });
-    const keys = new Set(serverRows.map((row) => row.key));
-    const localRows: GridRow[] = addedRows
-      .map((row) => ({ ...row, key: timesheetRowKey(row) }))
-      .filter((row) => !keys.has(row.key))
-      .map((row) => {
-        const chargeNumber = chargeNumbers.find(
-          (option) =>
-            option.projectId === row.projectId &&
-            (option.projectElementId ?? null) === row.projectElementId
-        );
-        return {
-          ...row,
-          workLocationName:
-            locations.find((location) => location.value === row.workLocationId)
-              ?.label ?? null,
-          readableId: chargeNumber?.readableId ?? "",
-          name: chargeNumber?.name ?? "",
-          to: row.projectElementId
-            ? path.to.projectElement(row.projectId, row.projectElementId)
-            : path.to.project(row.projectId),
-          isService: false,
-          isLeave: chargeNumber?.isLeave ?? false,
-          laborCategory:
-            laborCategories.find((c) => c.id === row.laborCategoryId)?.name ??
-            "",
-          cells: {},
-          total: 0
-        };
-      });
-    return [...serverRows, ...localRows].map((row) => {
-      const tableRow: TableRow = { ...row };
-      for (const day of days) tableRow[day] = row.cells[day]?.hours ?? null;
-      return tableRow;
-    });
-  }, [rows, addedRows, chargeNumbers, laborCategories, locations, days]);
+  const weekRows = useTimesheetRows({ rows, addedRows, laborCategories });
+  const gridRows = useMemo<TableRow[]>(
+    () =>
+      weekRows.map((row) => {
+        const tableRow: TableRow = { ...row };
+        for (const day of days) tableRow[day] = row.cells[day]?.hours ?? null;
+        return tableRow;
+      }),
+    [weekRows, days]
+  );
 
   const dayTotals = days.map((day) =>
     gridRows.reduce((sum, row) => sum + (row.cells[day]?.hours ?? 0), 0)
@@ -835,251 +671,5 @@ export default function TimesheetGrid({
         />
       )}
     </div>
-  );
-}
-
-/** A row added in the grid, empty until hours are entered. */
-type AddedRow = {
-  projectId: string;
-  projectElementId: string | null;
-  laborCategoryId: string;
-  workLocationId: string | null;
-  rdActivityRole: RdActivityRole | null;
-};
-
-function AddRowModal({
-  laborCategories,
-  jobLocationId,
-  onAdd,
-  onClose
-}: {
-  laborCategories: TimesheetGridProps["laborCategories"];
-  jobLocationId: string | null;
-  onAdd: (row: AddedRow) => void;
-  onClose: () => void;
-}) {
-  const { t } = useLingui();
-  const roleLabels = useRdActivityRoleLabels();
-  const [showMore, setShowMore] = useState(false);
-  // The user's picks; the defaults follow the chosen labor category.
-  const [categoryChoice, setCategoryChoice] = useState<string | null>(null);
-  const [roleChoice, setRoleChoice] = useState<RdActivityRole | "" | null>(
-    null
-  );
-  const categoryId = categoryChoice ?? laborCategories[0]?.id ?? "";
-  const role =
-    roleChoice ??
-    laborCategories.find((category) => category.id === categoryId)
-      ?.rdActivityRole ??
-    "";
-
-  return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ValidatedForm
-          validator={timesheetRowValidator}
-          defaultValues={{
-            projectId: "",
-            projectElementId: "",
-            laborCategoryId: laborCategories[0]?.id ?? "",
-            workLocationId: jobLocationId ?? "",
-            rdActivityRole: role
-          }}
-          onSubmit={(values, event) => {
-            event.preventDefault();
-            onAdd({
-              projectId: values.projectId,
-              projectElementId: values.projectElementId || null,
-              laborCategoryId: values.laborCategoryId,
-              workLocationId: values.workLocationId || null,
-              rdActivityRole: values.rdActivityRole || null
-            });
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Add Row</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>The row shows empty until you enter hours.</Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <ChargeNumber label={t`Charge Number`} />
-              <Select
-                name="laborCategoryId"
-                label={t`Labor Category`}
-                options={laborCategories.map((category) => ({
-                  value: category.id,
-                  label: category.name
-                }))}
-                onChange={(option) => {
-                  setCategoryChoice(option?.value ?? null);
-                  // A new category brings its own default role.
-                  setRoleChoice(null);
-                }}
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="self-start"
-                rightIcon={showMore ? <LuChevronDown /> : <LuChevronRight />}
-                onClick={() => setShowMore((open) => !open)}
-              >
-                <Trans>More</Trans>
-              </Button>
-              {/* Hidden, not unmounted: the defaults still submit. */}
-              <div
-                className={cn(
-                  "flex w-full flex-col gap-4",
-                  !showMore && "hidden"
-                )}
-              >
-                <Location
-                  name="workLocationId"
-                  label={t`Work location`}
-                  helperText={t`Where the work took place. Decides domestic or foreign research for R&D tax.`}
-                />
-                <SelectControlled
-                  name="rdActivityRole"
-                  label={t`Research role`}
-                  isOptional
-                  value={role}
-                  options={rdActivityRoles.map((value) => ({
-                    value,
-                    label: roleLabels[value]
-                  }))}
-                  onChange={(option) =>
-                    setRoleChoice((option?.value as RdActivityRole) ?? "")
-                  }
-                />
-              </div>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false}>
-              <Trans>Add</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
-  );
-}
-
-/**
- * Corrects posted time: a reversal and the new hours. **Move to another
- * charge number** makes it a labor transfer, with the new charge number and
- * labor category defaulted to the original's.
- */
-function CorrectionModal({
-  entryId,
-  hours,
-  label,
-  original,
-  laborCategories,
-  onClose
-}: {
-  entryId: string;
-  hours: number;
-  label: string;
-  original: {
-    projectId: string;
-    projectElementId: string | null;
-    laborCategoryId: string;
-  };
-  laborCategories: { id: string; name: string }[];
-  onClose: () => void;
-}) {
-  const { t } = useLingui();
-  const [moving, setMoving] = useState(false);
-  const fetcher = useAction<{
-    success?: boolean;
-    error?: { message: string } | null;
-  }>({ onSuccess: () => onClose() });
-  const errorMessage =
-    fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
-
-  return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ValidatedForm
-          validator={timesheetCorrectionValidator}
-          method="post"
-          action={path.to.timesheetCorrect}
-          fetcher={fetcher}
-          defaultValues={{
-            timesheetEntryId: entryId,
-            hours,
-            correctionReason: "",
-            projectId: original.projectId,
-            projectElementId: original.projectElementId ?? "",
-            laborCategoryId: original.laborCategoryId
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Correct Posted Time</Trans>
-            </ModalTitle>
-            <ModalDescription>{label}</ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="timesheetEntryId" />
-            <VStack spacing={4}>
-              {errorMessage && (
-                <Alert variant="destructive">
-                  <LuTriangleAlert />
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-              <NumberFormField
-                name="hours"
-                label={t`Correct hours`}
-                minValue={0}
-                maxValue={24}
-                formatOptions={INPUT_FORMAT.quantity}
-                step={INPUT_STEP.quantity}
-                helperText={t`The posted hours are reversed and these hours are charged instead`}
-              />
-              <Switch
-                variant="small"
-                label={t`Move to another charge number`}
-                checked={moving}
-                onCheckedChange={setMoving}
-              />
-              {/* Unrendered, the fields send nothing: the original's stay. */}
-              {moving && (
-                <>
-                  <ChargeNumber label={t`Charge Number`} />
-                  <Select
-                    name="laborCategoryId"
-                    label={t`Labor Category`}
-                    options={laborCategories.map((category) => ({
-                      value: category.id,
-                      label: category.name
-                    }))}
-                  />
-                </>
-              )}
-              <TextArea name="correctionReason" label={t`Reason`} />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false}>
-              <Trans>Submit Correction</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
   );
 }

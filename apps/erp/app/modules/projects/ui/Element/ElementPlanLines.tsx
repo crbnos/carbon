@@ -11,11 +11,11 @@ import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  MENU_ITEM_SHORTCUTS,
-  MenuIcon,
-  MenuItem,
+  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -32,10 +32,11 @@ import {
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuChevronDown,
+  LuEllipsis,
   LuFactory,
   LuPencil,
   LuPlus,
@@ -44,30 +45,23 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
-import { Table } from "~/components";
-import {
-  EditableByRow,
-  EditableList,
-  EditableNumber,
-  EditableText,
-  useStableEditableComponents
-} from "~/components/Editable";
 import {
   Combobox,
   DatePicker,
   Hidden,
   Input,
   Location,
+  NumberControlled,
   Number as NumberField,
   Select,
   Submit,
   Supplier
 } from "~/components/Form";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { rowMenuColumn, useCellSave } from "~/components/Setup";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
+  useDateFormatter,
   usePermissions,
   useQuantityFormatter,
   useUser
@@ -91,29 +85,40 @@ import {
   withChangeRequest
 } from "../ChangeRequests/useActiveChangeRequest";
 import { useElementRoutes } from "../Elements/ElementRoutes";
+import {
+  CostCard,
+  CostToolbar,
+  FigureSeparator,
+  NoMatchingCosts,
+  useCostTypeLabels
+} from "./CostCards";
+import {
+  type CostTypeFilter,
+  costDescriptionKey,
+  type EstimatedSort,
+  isOverBudget,
+  keyOwners,
+  matchesSearch,
+  planProgress,
+  sortPlanCards
+} from "./cost-cards";
 import { orderPlanRows, type PlanLineType } from "./plan-rows";
 
 type PlanLines = ProjectElementPage["planLines"];
+type PlanActuals = ProjectElementPage["planActuals"];
 type MaterialLine = PlanLines["materials"][number];
-type LaborLine = PlanLines["labor"][number];
-type CostLine = PlanLines["costs"][number];
 
 export type { PlanLineType };
 type MethodType = (typeof methodType)[number];
 
 /**
- * One row of the plan grid. `line` is the item (material), the labor
- * category (labor) or the description (cost); `quantity` is a material's
- * quantity or a labor line's hours; `date` is a material's required date or
- * a labor line's start. A `draft` row comes from "Add line": it saves once
- * its line is set, and keeps its place (with the new `id`) until the saved
- * line is back from the server.
+ * One plan line as the edit modal reads it. `line` is the item (material),
+ * the labor category (labor) or the description (cost); `quantity` is a
+ * material's quantity or a labor line's hours; `date` is a material's
+ * required date or a labor line's start. A line with no `id` is new.
  */
 type PlanRow = {
-  key: string;
   id: string | null;
-  draft: boolean;
-  createdAt: string | null;
   type: PlanLineType;
   line: string;
   methodType: MethodType | null;
@@ -123,10 +128,25 @@ type PlanRow = {
   amount: number | null;
   date: string | null;
   endDate: string | null;
-  material?: MaterialLine;
 };
 
-const dash = <span className="text-muted-foreground">—</span>;
+/** One Estimated card: the plan line, its estimate and what it has had. */
+type PlanCard = PlanRow & {
+  key: string;
+  id: string;
+  createdAt: string | null;
+  draft: false;
+  title: string;
+  subtitle: string | null;
+  searchText: (string | null | undefined)[];
+  plannedQuantity: number | null;
+  actualQuantity: number | null;
+  /** Labor only: hours logged but not posted yet. */
+  openQuantity: number;
+  plannedAmount: number | null;
+  actualAmount: number;
+  material?: MaterialLine;
+};
 
 const INTENT = {
   material: "upsertMaterial",
@@ -141,655 +161,431 @@ const DELETE_INTENT = {
 } as const;
 
 /** A new line: one each of quantity and hours, pulled from inventory. */
-function draftRow(type: PlanLineType, key: string): PlanRow {
+function newRow(type: PlanLineType): PlanRow {
   return {
-    key,
     id: null,
-    draft: true,
-    createdAt: null,
     type,
     line: "",
     methodType: type === "material" ? "Pull from Inventory" : null,
     quantity: type === "cost" ? null : 1,
     unitOfMeasureCode: null,
     unitCost: null,
-    amount: type === "cost" ? 0 : null,
+    amount: null,
     date: null,
     endDate: null
   };
 }
 
-/** A material line's amount: quantity × unit cost, unrounded (display rounds). */
-function materialAmount(quantity: number | null, unitCost: number | null) {
-  return unitCost === null ? null : (quantity ?? 0) * unitCost;
-}
-
-/** A labor line's amount: its hours at the category's cost rate today, as
- *  the plan cost on the Costs page reads it. No rate, no amount. */
-function laborAmount(hours: number | null, costRate: number | null) {
-  return costRate === null ? null : (hours ?? 0) * costRate;
-}
-
-/** The id the plan route answers for a line it created. */
-function savedLineId(body: unknown) {
-  const id = (body as { id?: unknown } | null)?.id;
-  return typeof id === "string" && id ? id : null;
-}
-
-/** The fields a row posts: the whole line, so a save never clears a column. */
-function rowFields(row: PlanRow): Record<string, string> {
-  const text = (value: string | number | null) =>
-    value === null || value === undefined ? "" : String(value);
-  const fields: Record<string, string> = {
-    intent: INTENT[row.type],
-    id: row.id ?? ""
-  };
-  switch (row.type) {
-    case "material":
-      return {
-        ...fields,
-        itemId: row.line,
-        methodType: row.methodType ?? "Pull from Inventory",
-        quantity: text(row.quantity),
-        unitOfMeasureCode: text(row.unitOfMeasureCode),
-        unitCost: text(row.unitCost),
-        requiredDate: text(row.date)
-      };
-    case "labor":
-      return {
-        ...fields,
-        laborCategoryId: row.line,
-        hours: text(row.quantity),
-        startDate: text(row.date),
-        endDate: text(row.endDate)
-      };
-    case "cost":
-      return {
-        ...fields,
-        description: row.line,
-        amount: text(row.amount)
-      };
-  }
-}
-
 /**
- * The plan of one element in ONE grid: materials, labor and other costs,
- * with a Type column. Each cell saves on its own through the plan route
- * (`quiet`), posting the whole line. "Add line" appends a draft row, which
- * saves once its line (item, labor category or description) is set.
+ * The plan of one element as cards: materials, labor and other costs, each
+ * with its estimate, what has been charged against it, and the button that
+ * charges more (Issue, Log time, Charge). A card opens its line's edit
+ * modal; "Add line" opens the same modal for a new line. Each line posts
+ * to the plan route.
+ *
+ * A charge finds its line by key: a material by its item, labor by its
+ * category, a cost by its description. When two lines share a key, the
+ * oldest takes the whole actual (`keyOwners`), as `post-project-issue`
+ * raises the oldest line's issued quantity.
  */
 export function ElementPlanLines({
   projectId,
   elementId,
   planLines,
+  planActuals,
   laborCategories,
   defaultLocationId,
   isDisabled,
-  action: actionOverride,
   canSupply = true,
-  addRequest,
-  addDisabledReason
+  addDisabledReason,
+  onIssue,
+  onLogTime,
+  onCharge
 }: {
   projectId: string;
   elementId: string;
   planLines: PlanLines;
+  planActuals: PlanActuals;
   /** The active categories, each with its cost rate in effect today. */
   laborCategories: { id: string; name: string; costRate?: number | null }[];
   /** The project's location: where a job made from a material is built. */
   defaultLocationId?: string | null;
   isDisabled: boolean;
-  /** The plan route; a service template posts to its own. */
-  action?: string;
   /** Offers Create Job and Create PO Line on a material (not on a template). */
   canSupply?: boolean;
-  /** Each new value adds a draft material row (a service template's
-   *  "Add plan line" menu item). */
-  addRequest?: number;
   /** Why "Add line" is off (a locked plan); shown as its tooltip. */
   addDisabledReason?: string | null;
+  /** Issue material against a line; absent when the user cannot. */
+  onIssue?: (line: { itemId: string; quantity: number }) => void;
+  /** Log time against a labor line; absent when the user cannot. */
+  onLogTime?: (line: { laborCategoryId: string }) => void;
+  /** Charge a cost against a cost line; absent when the user cannot. */
+  onCharge?: (line: { description: string; amount: number }) => void;
 }) {
   const { t } = useLingui();
-  const save = useCellSave();
   const formatMoney = useCurrencyFormatter();
-  const formatRate = useCurrencyFormatter({ rate: true });
   const formatQuantity = useQuantityFormatter();
-  const { company } = useUser();
-  const currency = company.baseCurrencyCode;
-  const decimals = useCurrencyDecimals(currency);
-  const typeLabels = useMemo<Record<PlanLineType, string>>(
-    () => ({ material: t`Material`, labor: t`Labor`, cost: t`Cost` }),
-    [t]
-  );
+  const { formatDate } = useDateFormatter();
+  const typeLabels = useCostTypeLabels();
+  const methodLabels = useMethodTypeLabels();
   const [items] = useItems();
   const permissions = usePermissions();
   const canCreateJob = permissions.can("create", "production");
   const canCreatePurchaseOrderLine = permissions.can("create", "purchasing");
   const changeRequestId = useActiveChangeRequestId();
   const routes = useElementRoutes(projectId);
-  const action =
-    actionOverride ??
-    withChangeRequest(routes.plan(elementId), changeRequestId);
+  const action = withChangeRequest(routes.plan(elementId), changeRequestId);
 
-  const [drafts, setDrafts] = useState<PlanRow[]>([]);
-  const draftCount = useRef(0);
-  const addDraft = useCallback((type: PlanLineType) => {
-    draftCount.current += 1;
-    setDrafts((previous) => [
-      ...previous,
-      draftRow(type, `draft-${draftCount.current}`)
-    ]);
-  }, []);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once per request
-  useEffect(() => {
-    if (addRequest) addDraft("material");
-  }, [addRequest]);
-
-  // A saved material line whose item just changed: its new unit and cost
-  // show at once, until the saved line is back from the server.
-  const [itemChanges, setItemChanges] = useState<
-    Record<string, Pick<PlanRow, "line" | "unitOfMeasureCode" | "unitCost">>
-  >({});
-
-  const [deleting, setDeleting] = useState<PlanRow | null>(null);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<CostTypeFilter>("all");
+  const [sort, setSort] = useState<EstimatedSort>("plan");
+  const [deleting, setDeleting] = useState<PlanCard | null>(null);
   const [editing, setEditing] = useState<PlanRow | null>(null);
   const [creatingJob, setCreatingJob] = useState<MaterialLine | null>(null);
   const [creatingLine, setCreatingLine] = useState<MaterialLine | null>(null);
-
-  // The ids of the saved lines: a saved draft leaves the drafts once its
-  // line is among them.
-  const savedIds = useMemo(
-    () =>
-      new Set([
-        ...planLines.materials.map((line) => line.id),
-        ...planLines.labor.map((line) => line.id),
-        ...planLines.costs.map((line) => line.id)
-      ]),
-    [planLines]
-  );
-  const landedItemIds = useMemo(
-    () => new Map(planLines.materials.map((line) => [line.id, line.itemId])),
-    [planLines]
-  );
-  useEffect(() => {
-    const landed = Object.entries(itemChanges).filter(
-      ([id, change]) => landedItemIds.get(id) === change.line
-    );
-    if (landed.length > 0) {
-      setItemChanges((previous) => {
-        const next = { ...previous };
-        for (const [id] of landed) delete next[id];
-        return next;
-      });
-    }
-  }, [itemChanges, landedItemIds]);
-  useEffect(() => {
-    if (drafts.some((d) => d.id !== null && savedIds.has(d.id))) {
-      setDrafts((previous) =>
-        previous.filter((d) => d.id === null || !savedIds.has(d.id))
-      );
-    }
-  }, [drafts, savedIds]);
-
-  const costRateById = useMemo(
-    () => new Map(laborCategories.map((c) => [c.id, c.costRate ?? null])),
-    [laborCategories]
-  );
-
-  const rows = useMemo<PlanRow[]>(
-    () =>
-      orderPlanRows([
-        ...planLines.materials.map<PlanRow>((line) => {
-          const change =
-            itemChanges[line.id]?.line !== line.itemId
-              ? itemChanges[line.id]
-              : undefined;
-          const quantity = Number(line.quantity);
-          const unitCost = change
-            ? change.unitCost
-            : line.unitCost === null
-              ? null
-              : Number(line.unitCost);
-          return {
-            key: line.id,
-            id: line.id,
-            draft: false,
-            createdAt: line.createdAt ?? null,
-            type: "material",
-            line: change?.line ?? line.itemId,
-            methodType: line.methodType,
-            quantity,
-            unitOfMeasureCode: change
-              ? change.unitOfMeasureCode
-              : (line.unitOfMeasureCode ?? null),
-            unitCost,
-            amount: materialAmount(quantity, unitCost),
-            date: line.requiredDate ?? null,
-            endDate: null,
-            material: line
-          };
-        }),
-        ...planLines.labor.map<PlanRow>((line: LaborLine) => ({
-          key: line.id,
-          id: line.id,
-          draft: false,
-          createdAt: line.createdAt ?? null,
-          type: "labor",
-          line: line.laborCategoryId,
-          methodType: null,
-          quantity: Number(line.hours),
-          unitOfMeasureCode: null,
-          unitCost: costRateById.get(line.laborCategoryId) ?? null,
-          amount: laborAmount(
-            Number(line.hours),
-            costRateById.get(line.laborCategoryId) ?? null
-          ),
-          date: line.startDate ?? null,
-          endDate: line.endDate ?? null
-        })),
-        ...planLines.costs.map<PlanRow>((line: CostLine) => ({
-          key: line.id,
-          id: line.id,
-          draft: false,
-          createdAt: line.createdAt ?? null,
-          type: "cost",
-          line: line.description,
-          methodType: null,
-          quantity: null,
-          unitOfMeasureCode: null,
-          unitCost: null,
-          amount: Number(line.amount),
-          date: null,
-          endDate: null
-        })),
-        ...drafts.filter((d) => d.id === null || !savedIds.has(d.id))
-      ]),
-    [planLines, drafts, savedIds, itemChanges, costRateById]
-  );
 
   const itemsById = useMemo(
     () => new Map(items.map((item) => [item.id, item])),
     [items]
   );
   const categoriesById = useMemo(
-    () => new Map(laborCategories.map((c) => [c.id, c.name])),
+    () => new Map(laborCategories.map((c) => [c.id, c])),
     [laborCategories]
   );
 
-  // The item's current cost (`itemCost.unitCost`), as the job and quote
-  // material forms read it; null when the item has no cost row.
-  const { carbon } = useCarbon();
-  const loadItemUnitCost = useCallback(
-    async (itemId: string) => {
-      if (!carbon) return null;
-      const cost = await carbon
-        .from("itemCost")
-        .select("unitCost")
-        .eq("itemId", itemId)
-        .eq("companyId", company.id)
-        .maybeSingle();
-      if (cost.error || cost.data?.unitCost == null) return null;
-      return Number(cost.data.unitCost);
-    },
-    [carbon, company.id]
+  const cards = useMemo<PlanCard[]>(() => {
+    const materialOwners = keyOwners(planLines.materials, (l) => l.itemId);
+    const laborOwners = keyOwners(planLines.labor, (l) => l.laborCategoryId);
+    const costOwners = keyOwners(planLines.costs, (l) =>
+      costDescriptionKey(l.description)
+    );
+    const materialActuals = new Map(
+      planActuals.materials.map((a) => [a.itemId, a.amount])
+    );
+    const laborActuals = new Map(
+      planActuals.labor.map((a) => [a.laborCategoryId, a])
+    );
+    const costActuals = new Map(
+      planActuals.costs.map((a) => [a.description, a.amount])
+    );
+
+    return orderPlanRows<PlanCard>([
+      ...planLines.materials.map<PlanCard>((line) => {
+        const item = itemsById.get(line.itemId);
+        const quantity = Number(line.quantity);
+        const unitCost = line.unitCost === null ? null : Number(line.unitCost);
+        const title =
+          item?.readableIdWithRevision ??
+          line.item?.readableIdWithRevision ??
+          "";
+        const name = item?.name ?? line.item?.name ?? null;
+        return {
+          key: line.id,
+          id: line.id,
+          createdAt: line.createdAt ?? null,
+          draft: false,
+          type: "material",
+          line: line.itemId,
+          methodType: line.methodType,
+          quantity,
+          unitOfMeasureCode: line.unitOfMeasureCode ?? null,
+          unitCost,
+          amount: unitCost === null ? null : quantity * unitCost,
+          date: line.requiredDate ?? null,
+          endDate: null,
+          title,
+          subtitle: name,
+          searchText: [title, name, methodLabels[line.methodType]],
+          plannedQuantity: quantity,
+          actualQuantity: Number(line.quantityIssued ?? 0),
+          openQuantity: 0,
+          plannedAmount: unitCost === null ? null : quantity * unitCost,
+          actualAmount: materialOwners.has(line.id)
+            ? (materialActuals.get(line.itemId) ?? 0)
+            : 0,
+          material: line
+        };
+      }),
+      ...planLines.labor.map<PlanCard>((line) => {
+        const category = categoriesById.get(line.laborCategoryId);
+        const hours = Number(line.hours);
+        const costRate = category?.costRate ?? null;
+        const actual = laborOwners.has(line.id)
+          ? laborActuals.get(line.laborCategoryId)
+          : undefined;
+        const title =
+          category?.name ?? line.laborCategory?.name ?? line.laborCategoryId;
+        return {
+          key: line.id,
+          id: line.id,
+          createdAt: line.createdAt ?? null,
+          draft: false,
+          type: "labor",
+          line: line.laborCategoryId,
+          methodType: null,
+          quantity: hours,
+          unitOfMeasureCode: null,
+          unitCost: costRate,
+          amount: costRate === null ? null : hours * costRate,
+          date: line.startDate ?? null,
+          endDate: line.endDate ?? null,
+          title,
+          subtitle: null,
+          searchText: [title],
+          plannedQuantity: hours,
+          actualQuantity: actual?.hours ?? 0,
+          openQuantity: actual?.openHours ?? 0,
+          plannedAmount: costRate === null ? null : hours * costRate,
+          actualAmount: actual?.amount ?? 0
+        };
+      }),
+      ...planLines.costs.map<PlanCard>((line) => ({
+        key: line.id,
+        id: line.id,
+        createdAt: line.createdAt ?? null,
+        draft: false,
+        type: "cost",
+        line: line.description,
+        methodType: null,
+        quantity: null,
+        unitOfMeasureCode: null,
+        unitCost: null,
+        amount: Number(line.amount),
+        date: null,
+        endDate: null,
+        title: line.description,
+        subtitle: null,
+        searchText: [line.description],
+        plannedQuantity: null,
+        actualQuantity: null,
+        openQuantity: 0,
+        plannedAmount: Number(line.amount),
+        actualAmount: costOwners.has(line.id)
+          ? (costActuals.get(costDescriptionKey(line.description)) ?? 0)
+          : 0
+      }))
+    ]);
+  }, [planLines, planActuals, itemsById, categoriesById, methodLabels]);
+
+  const visibleCards = useMemo(
+    () =>
+      sortPlanCards(
+        cards.filter(
+          (card) =>
+            (typeFilter === "all" || card.type === typeFilter) &&
+            matchesSearch([...card.searchText, typeLabels[card.type]], search)
+        ),
+        sort
+      ),
+    [cards, typeFilter, search, sort, typeLabels]
   );
 
-  // A cell edit posts the whole row with the change. A draft keeps each
-  // change; once its line is set it posts, takes the new line's id (so a
-  // second edit updates that line), and stays in its place until the saved
-  // line is back from the server.
-  const onCellEdit = useCallback(
-    async (accessorKey: string, value: unknown, row: PlanRow) => {
-      const raw = value === null || value === undefined ? null : value;
-      const next: PlanRow = { ...row, [accessorKey]: raw };
-      if (accessorKey === "quantity" || accessorKey === "unitCost") {
-        next[accessorKey] = raw === null || raw === "" ? null : Number(raw);
-      }
-      if (accessorKey === "amount") {
-        next.amount = raw === null || raw === "" ? 0 : Number(raw);
-      }
-      // A new item brings its own unit and its current cost.
-      if (accessorKey === "line" && row.type === "material" && raw) {
-        const itemId = String(raw);
-        next.unitOfMeasureCode =
-          itemsById.get(itemId)?.unitOfMeasureCode ?? null;
-        next.unitCost = await loadItemUnitCost(itemId);
-      }
-      if (row.type === "material") {
-        next.amount = materialAmount(next.quantity, next.unitCost);
-      }
-      if (row.type === "labor") {
-        next.unitCost = costRateById.get(String(next.line)) ?? null;
-        next.amount = laborAmount(next.quantity, next.unitCost);
-      }
-      if (!row.draft) {
-        const changesItem = accessorKey === "line" && row.type === "material";
-        const id = row.id;
-        if (changesItem && id) {
-          setItemChanges((previous) => ({
-            ...previous,
-            [id]: {
-              line: next.line,
-              unitOfMeasureCode: next.unitOfMeasureCode,
-              unitCost: next.unitCost
-            }
-          }));
-        }
-        const result = await save(action, rowFields(next));
-        if (result.error && changesItem && id) {
-          setItemChanges((previous) => {
-            const { [id]: _failed, ...rest } = previous;
-            return rest;
-          });
-        }
-        return result;
-      }
-
-      const putDraft = (draft: PlanRow) =>
-        setDrafts((previous) =>
-          previous.map((d) => (d.key === row.key ? draft : d))
-        );
-      putDraft(next);
-      if (!next.line) {
-        return { data: null, error: null } as Awaited<ReturnType<typeof save>>;
-      }
-      const result = await save(action, rowFields(next));
-      if (result.error) {
-        putDraft(row);
-      } else if (next.id === null) {
-        const savedId = savedLineId(result.data);
-        if (savedId) {
-          putDraft({ ...next, id: savedId });
-        } else {
-          setDrafts((previous) => previous.filter((d) => d.key !== row.key));
-        }
-      }
-      return result;
-    },
-    [action, save, itemsById, loadItemUnitCost, costRateById]
-  );
-
-  const stable = useStableEditableComponents(
-    (latest) => {
-      const edit = (key: string, value: unknown, row: PlanRow) =>
-        latest.current.onCellEdit(key, value, row);
-      return {
-        description: EditableText<PlanRow>(edit),
-        quantity: EditableNumber<PlanRow>(edit, {
-          minValue: 0,
-          formatOptions: INPUT_FORMAT.quantity,
-          step: INPUT_STEP.quantity
-        }),
-        unitCost: EditableNumber<PlanRow>(edit, {
-          minValue: 0,
-          formatOptions: INPUT_FORMAT.rate(currency, decimals),
-          step: INPUT_STEP.rate
-        }),
-        amount: EditableNumber<PlanRow>(edit, {
-          formatOptions: INPUT_FORMAT.money(currency, decimals),
-          step: INPUT_STEP.money(decimals)
-        })
-      };
-    },
-    { onCellEdit }
-  );
-
-  // A list editor takes its options when it is built: rebuilt only when the
-  // options change (a pick commits at once; nothing is typed).
-  const latestOnCellEdit = useRef(onCellEdit);
-  useEffect(() => {
-    latestOnCellEdit.current = onCellEdit;
-  });
-  const lists = useMemo(() => {
-    const edit = (key: string, value: string, row: PlanRow) =>
-      latestOnCellEdit.current(key, value, row);
-    return {
-      item: EditableList<PlanRow>(
-        edit,
-        items.map((item) => ({
-          value: item.id,
-          label: `${item.readableIdWithRevision} ${item.name}`
-        }))
-      ),
-      laborCategory: EditableList<PlanRow>(
-        edit,
-        laborCategories.map((c) => ({ value: c.id, label: c.name }))
-      )
-    };
-  }, [items, laborCategories]);
-
-  const editableComponents = useMemo(() => {
-    const none = () => <span className="text-muted-foreground">—</span>;
-    return {
-      line: EditableByRow<PlanRow>(
-        (row) =>
-          row.type === "material"
-            ? lists.item
-            : row.type === "labor"
-              ? lists.laborCategory
-              : stable.description,
-        none
-      ),
-      quantity: EditableByRow<PlanRow>(
-        (row) => (row.type === "cost" ? null : stable.quantity),
-        none
-      ),
-      // A material's unit cost is typed; a labor line's is its category's
-      // cost rate, read-only; a cost line has none.
-      unitCost: EditableByRow<PlanRow>(
-        (row) => (row.type === "material" ? stable.unitCost : null),
-        ({ row }) =>
-          row.unitCost === null ? (
-            <span className="text-muted-foreground">—</span>
-          ) : (
-            <span className="tabular-nums">
-              {formatRate.format(row.unitCost)}
-            </span>
-          )
-      ),
-      amount: EditableByRow<PlanRow>(
-        (row) => (row.type === "cost" ? stable.amount : null),
-        ({ row }) =>
-          row.amount === null ? (
-            <span className="text-muted-foreground">—</span>
-          ) : (
-            <span className="tabular-nums">
-              {formatMoney.format(row.amount)}
-            </span>
-          )
-      )
-    };
-  }, [lists, stable, formatMoney, formatRate]);
-
-  const columns = useMemo<ColumnDef<PlanRow>[]>(
+  const sorts = useMemo<{ value: EstimatedSort; label: string }[]>(
     () => [
-      {
-        accessorKey: "type",
-        header: t`Type`,
-        cell: ({ row }) => (
-          <span className="text-muted-foreground">
-            {typeLabels[row.original.type]}
-          </span>
-        )
-      },
-      {
-        accessorKey: "line",
-        header: t`Line`,
-        cell: ({ row }) => {
-          const { type, line } = row.original;
-          if (!line) {
-            return (
-              <span className="text-muted-foreground">
-                {type === "material"
-                  ? t`Choose an item`
-                  : type === "labor"
-                    ? t`Choose a labor category`
-                    : t`Describe the cost`}
-              </span>
-            );
-          }
-          if (type === "material") {
-            const item = itemsById.get(line);
-            const material = row.original.material;
-            const purchaseOrder = material?.purchaseOrderLine?.purchaseOrder;
-            // Capped, so a long item name truncates instead of pushing
-            // Amount and the row menu past the grid's edge.
-            return (
-              <span
-                className="flex min-w-0 max-w-56 items-center gap-2"
-                title={item?.name ?? material?.item?.name}
-              >
-                <span className="shrink-0 whitespace-nowrap">
-                  {item?.readableIdWithRevision ??
-                    material?.item?.readableIdWithRevision}
-                </span>
-                <span className="min-w-0 truncate text-muted-foreground">
-                  {item?.name ?? material?.item?.name}
-                </span>
-                {material?.job && (
-                  <Link
-                    to={path.to.job(material.job.id)}
-                    className="shrink-0 text-xs text-muted-foreground hover:underline"
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    {material.job.jobId}
-                  </Link>
-                )}
-                {purchaseOrder && (
-                  <Link
-                    to={path.to.purchaseOrderDetails(purchaseOrder.id)}
-                    className="shrink-0 text-xs text-muted-foreground hover:underline"
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    {purchaseOrder.purchaseOrderId}
-                  </Link>
-                )}
-              </span>
-            );
-          }
-          return (
-            <span className="block max-w-56 truncate">
-              {type === "labor" ? (categoriesById.get(line) ?? line) : line}
-            </span>
-          );
-        }
-      },
-      {
-        accessorKey: "quantity",
-        header: t`Quantity`,
-        cell: ({ row }) =>
-          row.original.quantity === null ? (
-            dash
-          ) : (
-            <span className="whitespace-nowrap tabular-nums">
-              {formatQuantity(row.original.quantity)}{" "}
-              <span className="text-muted-foreground">
-                {row.original.type === "labor"
-                  ? t`h`
-                  : (row.original.unitOfMeasureCode ?? "")}
-              </span>
-            </span>
-          )
-      },
-      {
-        accessorKey: "unitCost",
-        header: t`Unit Cost`,
-        cell: ({ row }) =>
-          row.original.unitCost === null ? (
-            dash
-          ) : (
-            <span className="tabular-nums">
-              {formatRate.format(row.original.unitCost)}
-            </span>
-          )
-      },
-      {
-        accessorKey: "amount",
-        header: t`Amount`,
-        cell: ({ row }) =>
-          row.original.amount === null ? (
-            dash
-          ) : (
-            <span className="tabular-nums">
-              {formatMoney.format(row.original.amount)}
-            </span>
-          )
-      }
+      { value: "plan", label: t`Plan order` },
+      { value: "amount", label: t`Estimate` },
+      { value: "remaining", label: t`Remaining` },
+      { value: "over", label: t`Over estimate first` }
     ],
-    [
-      t,
-      typeLabels,
-      itemsById,
-      categoriesById,
-      formatQuantity,
-      formatMoney,
-      formatRate
-    ]
+    [t]
   );
 
-  const renderMenu = useCallback(
-    (row: PlanRow) => {
-      const material = row.material;
-      const canMakeJob =
-        canSupply &&
-        material?.methodType === "Make to Order" &&
-        !material.jobId;
-      const canMakeLine =
-        canSupply &&
-        material?.methodType === "Purchase to Order" &&
-        !material.purchaseOrderLineId;
+  const chargeButton = useCallback(
+    (card: PlanCard) => {
+      if (card.type === "material") {
+        const item = itemsById.get(card.line);
+        // Only stocked items can be issued: Non-Inventory items have no stock.
+        if (!onIssue || item?.itemTrackingType === "Non-Inventory") return null;
+        return (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              onIssue({
+                itemId: card.line,
+                quantity: card.material
+                  ? remainingMaterialQuantity(card.material)
+                  : 0
+              })
+            }
+          >
+            <Trans>Issue</Trans>
+          </Button>
+        );
+      }
+      if (card.type === "labor") {
+        if (!onLogTime) return null;
+        return (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onLogTime({ laborCategoryId: card.line })}
+          >
+            <Trans>Log time</Trans>
+          </Button>
+        );
+      }
+      if (!onCharge) return null;
       return (
-        <>
-          {row.id !== null && (
-            <MenuItem disabled={isDisabled} onClick={() => setEditing(row)}>
-              <MenuIcon icon={<LuPencil />} />
-              <Trans>Edit</Trans>
-            </MenuItem>
-          )}
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() =>
+            onCharge({
+              description: card.line,
+              amount: Math.max(0, (card.plannedAmount ?? 0) - card.actualAmount)
+            })
+          }
+        >
+          <Trans>Charge</Trans>
+        </Button>
+      );
+    },
+    [itemsById, onIssue, onLogTime, onCharge]
+  );
+
+  const menu = (card: PlanCard) => {
+    const material = card.material;
+    const canMakeJob =
+      canSupply && material?.methodType === "Make to Order" && !material.jobId;
+    const canMakeLine =
+      canSupply &&
+      material?.methodType === "Purchase to Order" &&
+      !material.purchaseOrderLineId;
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <IconButton
+            aria-label={t`More options`}
+            icon={<LuEllipsis />}
+            variant="ghost"
+            size="sm"
+          />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem
+            disabled={isDisabled}
+            onClick={() => setEditing(card)}
+          >
+            <DropdownMenuIcon icon={<LuPencil />} />
+            <Trans>Edit</Trans>
+          </DropdownMenuItem>
           {canMakeJob && material && (
-            <MenuItem
+            <DropdownMenuItem
               disabled={!canCreateJob}
               onClick={() => setCreatingJob(material)}
             >
-              <MenuIcon icon={<LuFactory />} />
+              <DropdownMenuIcon icon={<LuFactory />} />
               <Trans>Create Job</Trans>
-            </MenuItem>
+            </DropdownMenuItem>
           )}
           {canMakeLine && material && (
-            <MenuItem
+            <DropdownMenuItem
               disabled={!canCreatePurchaseOrderLine}
               onClick={() => setCreatingLine(material)}
             >
-              <MenuIcon icon={<LuShoppingCart />} />
+              <DropdownMenuIcon icon={<LuShoppingCart />} />
               <Trans>Create PO Line</Trans>
-            </MenuItem>
+            </DropdownMenuItem>
           )}
-          <MenuItem
-            shortcut={MENU_ITEM_SHORTCUTS.delete}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
             destructive
             disabled={isDisabled}
-            onClick={() => {
-              if (row.id === null) {
-                setDrafts((previous) =>
-                  previous.filter((d) => d.key !== row.key)
-                );
-              } else {
-                setDeleting(row);
-              }
-            }}
+            onClick={() => setDeleting(card)}
           >
-            <MenuIcon icon={<LuTrash />} />
+            <DropdownMenuIcon icon={<LuTrash />} />
             <Trans>Delete</Trans>
-          </MenuItem>
-        </>
-      );
-    },
-    [canSupply, canCreateJob, canCreatePurchaseOrderLine, isDisabled]
-  );
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
-  const gridColumns = useMemo(
-    () => [...columns, rowMenuColumn(renderMenu, t`Actions`)],
-    [columns, renderMenu, t]
-  );
+  const figures = (card: PlanCard) => {
+    const money = (value: number) => formatMoney.format(value);
+    const parts: ReactNode[] = [];
+    if (card.type === "material") {
+      parts.push(
+        <span key="quantity">
+          {t`${formatQuantity(card.actualQuantity ?? 0)} of ${formatQuantity(
+            card.plannedQuantity ?? 0
+          )} ${card.unitOfMeasureCode ?? ""} issued`}
+        </span>
+      );
+    }
+    if (card.type === "labor") {
+      parts.push(
+        <span key="hours">
+          {t`${formatQuantity(card.actualQuantity ?? 0)} of ${formatQuantity(
+            card.plannedQuantity ?? 0
+          )} h`}
+        </span>
+      );
+    }
+    // A line with no cost (a material with no unit cost, a category with no
+    // rate) shows money only once something is charged.
+    if (card.plannedAmount !== null || card.actualAmount !== 0) {
+      parts.push(
+        <span key="amount">
+          {card.plannedAmount === null
+            ? money(card.actualAmount)
+            : t`${money(card.actualAmount)} of ${money(card.plannedAmount)}`}
+        </span>
+      );
+    }
+    if (card.openQuantity > 0) {
+      parts.push(
+        <span key="open">
+          {t`${formatQuantity(card.openQuantity)} h not posted yet`}
+        </span>
+      );
+    }
+    if (card.type === "material" && card.date) {
+      parts.push(<span key="date">{t`Needed ${formatDate(card.date)}`}</span>);
+    }
+    if (card.type === "labor" && (card.date || card.endDate)) {
+      parts.push(
+        <span key="dates">
+          {[card.date, card.endDate]
+            .map((date) => (date ? formatDate(date) : "…"))
+            .join(" – ")}
+        </span>
+      );
+    }
+    return parts.flatMap((part, index) =>
+      index === 0 ? [part] : [<FigureSeparator key={`sep-${index}`} />, part]
+    );
+  };
+
+  const badges = (card: PlanCard) => {
+    const material = card.material;
+    if (!material) return null;
+    const purchaseOrder = material.purchaseOrderLine?.purchaseOrder;
+    const showMethod = material.methodType !== "Pull from Inventory";
+    if (!showMethod && !material.job && !purchaseOrder) return null;
+    return (
+      <>
+        {showMethod && <span>{methodLabels[material.methodType]}</span>}
+        {material.job && (
+          <Link
+            to={path.to.job(material.job.id)}
+            className="hover:text-foreground hover:underline"
+          >
+            {material.job.jobId}
+          </Link>
+        )}
+        {purchaseOrder && (
+          <Link
+            to={path.to.purchaseOrderDetails(purchaseOrder.id)}
+            className="hover:text-foreground hover:underline"
+          >
+            {purchaseOrder.purchaseOrderId}
+          </Link>
+        )}
+      </>
+    );
+  };
 
   const addLine = (
     <DropdownMenu>
@@ -799,71 +595,86 @@ export function ElementPlanLines({
           size="sm"
           leftIcon={<LuPlus />}
           rightIcon={<LuChevronDown />}
-          className="self-start"
           isDisabled={Boolean(addDisabledReason)}
         >
           <Trans>Add line</Trans>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="end">
         {(["material", "labor", "cost"] as const).map((type) => (
-          <DropdownMenuItem key={type} onClick={() => addDraft(type)}>
+          <DropdownMenuItem key={type} onClick={() => setEditing(newRow(type))}>
             {typeLabels[type]}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
+  const addAction = isDisabled ? null : addDisabledReason ? (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {/* A disabled button fires no pointer events: the span does. */}
+        <span tabIndex={0} className="inline-flex">
+          {addLine}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-72">{addDisabledReason}</TooltipContent>
+    </Tooltip>
+  ) : (
+    addLine
+  );
 
   const deletingName =
-    deleting === null
-      ? ""
-      : deleting.type === "material"
-        ? (itemsById.get(deleting.line)?.readableIdWithRevision ?? t`Material`)
-        : deleting.type === "labor"
-          ? (categoriesById.get(deleting.line) ?? t`Labor`)
-          : deleting.line;
+    deleting === null ? "" : deleting.title || typeLabels[deleting.type];
 
   return (
-    <div className="flex w-full flex-col gap-2">
-      {rows.length > 0 && (
-        <div className="w-full overflow-hidden rounded-lg border border-border">
-          <Table<PlanRow>
-            autoHeight
-            compact
-            columns={gridColumns}
-            data={rows}
-            count={rows.length}
-            getRowId={(row) => row.key}
-            editableComponents={editableComponents}
-            withInlineEditing={!isDisabled}
-            forceEditMode={!isDisabled}
-            withPagination={false}
-            withSearch={false}
-            withSimpleSorting={false}
-            withSidebarTrigger={false}
-            withColumnOrdering={false}
-            withCsvExport={false}
-            sort={null}
-          />
+    <div className="flex w-full flex-col gap-3">
+      {cards.length > 0 ? (
+        <CostToolbar
+          search={search}
+          onSearchChange={setSearch}
+          type={typeFilter}
+          onTypeChange={setTypeFilter}
+          sort={sort}
+          sorts={sorts}
+          onSortChange={setSort}
+          action={addAction}
+        />
+      ) : (
+        addAction && <div className="self-start">{addAction}</div>
+      )}
+
+      {cards.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          {visibleCards.map((card) => {
+            const isOver = isOverBudget(card);
+            const charge = chargeButton(card);
+            return (
+              <CostCard
+                key={card.key}
+                type={card.type}
+                title={card.title}
+                subtitle={card.subtitle}
+                badges={badges(card)}
+                figures={figures(card)}
+                isOver={isOver}
+                progress={planProgress(card)}
+                onOpen={isDisabled ? undefined : () => setEditing(card)}
+                actions={
+                  <>
+                    {charge}
+                    {menu(card)}
+                  </>
+                }
+              />
+            );
+          })}
+          {visibleCards.length === 0 && (
+            <NoMatchingCosts>
+              <Trans>No lines match the filters.</Trans>
+            </NoMatchingCosts>
+          )}
         </div>
       )}
-      {!isDisabled &&
-        (addDisabledReason ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {/* A disabled button fires no pointer events: the span does. */}
-              <span tabIndex={0} className="self-start">
-                {addLine}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-72">
-              {addDisabledReason}
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          addLine
-        ))}
 
       {editing && (
         <PlanLineModal
@@ -891,20 +702,14 @@ export function ElementPlanLines({
           onClose={() => setCreatingLine(null)}
         />
       )}
-      {deleting && deleting.id && (
+      {deleting && (
         <ConfirmDelete
           action={action}
           name={deletingName}
           text={t`Remove ${deletingName} from the plan?`}
           fields={{ intent: DELETE_INTENT[deleting.type], id: deleting.id }}
           onCancel={() => setDeleting(null)}
-          onSubmit={() => {
-            // A saved draft whose line is not back yet goes with it.
-            setDrafts((previous) =>
-              previous.filter((d) => d.key !== deleting.key)
-            );
-            setDeleting(null);
-          }}
+          onSubmit={() => setDeleting(null)}
         />
       )}
     </div>
@@ -924,9 +729,10 @@ function useMethodTypeLabels(): Record<MethodType, string> {
 }
 
 /**
- * The whole plan line, for the fields the grid leaves out: a material's
- * method and unit cost and required date, a labor line's dates. It posts
- * the same upsert intent as a grid cell, without `quiet`.
+ * One whole plan line, new or saved: a material's item, method, quantity,
+ * unit cost and required date; a labor line's category, hours and dates; a
+ * cost's description and amount. It posts the line's upsert intent to the
+ * plan route.
  */
 function PlanLineModal({
   row,
@@ -951,12 +757,45 @@ function PlanLineModal({
     onSuccess: () => onClose()
   });
 
+  // A new item brings its own unit and its current cost
+  // (`itemCost.unitCost`), as the job and quote material forms read it.
+  const { carbon } = useCarbon();
+  const [unitCost, setUnitCost] = useState<number | null>(row.unitCost);
+  const [unitOfMeasureCode, setUnitOfMeasureCode] = useState(
+    row.unitOfMeasureCode ?? ""
+  );
+  const onItemChange = async (itemId: string | undefined) => {
+    if (!itemId) return;
+    setUnitOfMeasureCode(
+      items.find((item) => item.id === itemId)?.unitOfMeasureCode ?? ""
+    );
+    if (!carbon) return;
+    const cost = await carbon
+      .from("itemCost")
+      .select("unitCost")
+      .eq("itemId", itemId)
+      .eq("companyId", company.id)
+      .maybeSingle();
+    setUnitCost(
+      cost.error || cost.data?.unitCost == null
+        ? null
+        : Number(cost.data.unitCost)
+    );
+  };
+
+  const isNew = row.id === null;
   const title =
     row.type === "material"
-      ? t`Edit material`
+      ? isNew
+        ? t`Add material`
+        : t`Edit material`
       : row.type === "labor"
-        ? t`Edit labor`
-        : t`Edit cost`;
+        ? isNew
+          ? t`Add labor`
+          : t`Edit labor`
+        : isNew
+          ? t`Add cost`
+          : t`Edit cost`;
 
   const form = (() => {
     switch (row.type) {
@@ -983,6 +822,7 @@ function PlanLineModal({
                   label: item.readableIdWithRevision,
                   helper: item.name
                 }))}
+                onChange={(option) => onItemChange(option?.value)}
               />
               <Select
                 name="methodType"
@@ -999,15 +839,19 @@ function PlanLineModal({
                 formatOptions={INPUT_FORMAT.quantity}
                 step={INPUT_STEP.quantity}
               />
-              <NumberField
+              <NumberControlled
                 name="unitCost"
                 label={t`Unit Cost`}
+                value={unitCost ?? Number.NaN}
+                onChange={(value) =>
+                  setUnitCost(Number.isNaN(value) ? null : value)
+                }
                 minValue={0}
                 formatOptions={INPUT_FORMAT.rate(currency, decimals)}
                 step={INPUT_STEP.rate}
               />
               <DatePicker name="requiredDate" label={t`Required Date`} />
-              <Hidden name="unitOfMeasureCode" />
+              <Hidden name="unitOfMeasureCode" value={unitOfMeasureCode} />
             </>
           )
         };
@@ -1017,7 +861,7 @@ function PlanLineModal({
           defaultValues: {
             id: row.id ?? undefined,
             projectElementId: elementId,
-            laborCategoryId: row.line,
+            laborCategoryId: row.line || laborCategories[0]?.id || "",
             hours: row.quantity ?? 1,
             startDate: row.date ?? undefined,
             endDate: row.endDate ?? undefined
@@ -1052,7 +896,7 @@ function PlanLineModal({
             id: row.id ?? undefined,
             projectElementId: elementId,
             description: row.line,
-            amount: row.amount ?? 0
+            amount: row.amount ?? undefined
           },
           fields: (
             <>
@@ -1095,7 +939,7 @@ function PlanLineModal({
               <Trans>Cancel</Trans>
             </Button>
             <Submit withBlocker={false}>
-              <Trans>Save</Trans>
+              {isNew ? <Trans>Add</Trans> : <Trans>Save</Trans>}
             </Submit>
           </ModalFooter>
         </ValidatedForm>

@@ -6565,19 +6565,24 @@ export function workforce(ctx: ValidationCtx): void {
   const spans: { where: string; start: number; end: number }[] = [];
   ops.timecards.forEach((card, index) => {
     const where = `ops.timecards[${index}]`;
-    if (card.dayOffset > -1 || card.dayOffset < -7) {
+    if (
+      !Number.isInteger(card.workdaysBack) ||
+      card.workdaysBack < 1 ||
+      card.workdaysBack > 5
+    ) {
       fail(
-        `${where}: dayOffset ${card.dayOffset} is outside the past week (-7…-1)`
+        `${where}: workdaysBack ${card.workdaysBack} is outside the past working week (1…5)`
       );
     }
     const clockIn = secondsOfDay(card.clockIn);
     const clockOut = secondsOfDay(card.clockOut);
     if (clockIn === null || clockOut === null) {
-      fail(`${where}: clockIn/clockOut must be UTC "HH:MM:SS"`);
+      fail(`${where}: clockIn/clockOut must be "HH:MM:SS"`);
       return;
     }
     if (clockOut <= clockIn) fail(`${where}: clockOut must be after clockIn`);
-    const day = card.dayOffset * 86_400;
+    // Further back is earlier: workday 1 is the latest.
+    const day = -card.workdaysBack * 86_400;
     spans.push({ where, start: day + clockIn, end: day + clockOut });
   });
   spans.sort((a, b) => a.start - b.start);

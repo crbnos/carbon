@@ -14,14 +14,52 @@
 import {
   type CalendarDate,
   endOfMonth,
+  getDayOfWeek,
+  parseDateTime,
   startOfMonth,
-  startOfWeek
+  startOfWeek,
+  toZoned
 } from "@internationalized/date";
 import type { DayOffset } from "./types.ts";
 
 /** "YYYY-MM-DD" for a DATE column. */
 export function resolveDate(anchor: CalendarDate, offset: DayOffset): string {
   return anchor.add({ days: offset }).toString();
+}
+
+/**
+ * The working day `workdaysBack` working days before the anchor, skipping
+ * Saturday and Sunday: 1 is the last weekday before today. A timecard seeded
+ * by calendar offset landed on the weekend whenever the anchor was early in
+ * the week.
+ */
+export function workdayBefore(
+  anchor: CalendarDate,
+  workdaysBack: number
+): string {
+  let day = anchor;
+  let left = workdaysBack;
+  while (left > 0) {
+    day = day.subtract({ days: 1 });
+    const weekday = getDayOfWeek(day, "en-US"); // 0 = Sunday, 6 = Saturday
+    if (weekday !== 0 && weekday !== 6) left -= 1;
+  }
+  return day.toString();
+}
+
+/**
+ * The ISO instant of a wall-clock time on a date in `timeZone`: "07:00:00"
+ * is 7 am at the company, not 7 am UTC.
+ */
+export function resolveLocalTimestamp(
+  date: string,
+  timeOfDay: string,
+  timeZone: string
+): string {
+  return toZoned(
+    parseDateTime(`${date}T${timeOfDay}`),
+    timeZone
+  ).toAbsoluteString();
 }
 
 /**

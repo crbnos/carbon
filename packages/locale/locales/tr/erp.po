@@ -274,10 +274,24 @@ msgstr "{0} muhasebe fişi muhasebeleştirilecek · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} muhasebeleştirilecek kayıt · {amount}"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rate.baseAmount, locale)
-#. placeholder {0}: formatQuantity(value)
 msgid "{0} h"
 msgstr "{0} s"
+
+#. placeholder {0}: formatQuantity(card.openQuantity)
+msgid "{0} h not posted yet"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(weekTotal)
+#. placeholder {1}: formatQuantity(timecardTotal)
+msgid "{0} h of {1} h on your timecards"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(draftHours)
+msgid "{0} h of draft time to submit"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -342,6 +356,17 @@ msgstr "{0} ay"
 msgid "{0} of {1}"
 msgstr "{0} / {1}"
 
+#. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
+#. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
+#. placeholder {2}: card.unitOfMeasureCode ?? ""
+msgid "{0} of {1} {2} issued"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
+#. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
+msgid "{0} of {1} h"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -357,6 +382,10 @@ msgstr "{0} / {memberCount} üye iş emirlerinin henüz tamamlanmadığı — bu
 
 #. placeholder {0}: progress.done
 msgid "{0} of {whole} done"
+msgstr ""
+
+#. placeholder {0}: formatClocked(timecardTotal)
+msgid "{0} on your timecards"
 msgstr ""
 
 #. placeholder {0}: selected.length
@@ -649,6 +678,9 @@ msgstr "{hidden, plural, one {Ve # daha fazla kayıt.} other {Ve # daha fazla ka
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} daha: {hiddenNames}"
 
+msgid "{hour} h"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -870,6 +902,10 @@ msgstr "% Toplam"
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} eski hale getirilen {1} kaynağından yönlendirildi"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr ""
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
@@ -2210,6 +2246,9 @@ msgstr ""
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
 
+msgid "Add a charge number to start logging time."
+msgstr ""
+
 msgid "Add a column below to sort the view"
 msgstr "Görünümü sıralamak için aşağı bir sütun ekleyin"
 
@@ -2321,6 +2360,9 @@ msgstr "Özellik Ekle"
 msgid "Add Charge"
 msgstr "Ücret Ekle"
 
+msgid "Add Charge Number"
+msgstr ""
+
 msgid "Add child"
 msgstr "Alt öğe Ekle"
 
@@ -2344,6 +2386,9 @@ msgstr "Konsol operatörü ekle"
 
 msgid "Add Contractor"
 msgstr "Taşeron Ekle"
+
+msgid "Add cost"
+msgstr ""
 
 msgid "Add cost center"
 msgstr "Maliyet Merkezi Ekle"
@@ -2393,6 +2438,9 @@ msgstr "Öğe Ekle"
 msgid "Add Journal Entry"
 msgstr "Yevmiye Kaydı Ekle"
 
+msgid "Add labor"
+msgstr ""
+
 msgid "Add line"
 msgstr "Satır ekle"
 
@@ -2419,6 +2467,9 @@ msgstr "Manuel olarak ekle"
 
 msgid "Add match"
 msgstr "Eşleştirme ekle"
+
+msgid "Add material"
+msgstr ""
 
 msgid "Add Member"
 msgstr "Üye Ekle"
@@ -2487,6 +2538,9 @@ msgstr "Yazıcı Ekle"
 msgid "Add Property"
 msgstr "Özellik Ekle"
 
+msgid "Add PTO"
+msgstr ""
+
 msgid "Add Question"
 msgstr "Soru Ekle"
 
@@ -2503,9 +2557,6 @@ msgid "Add Risk"
 msgstr "Risk Ekle"
 
 msgid "Add row"
-msgstr "Satır Ekle"
-
-msgid "Add Row"
 msgstr "Satır Ekle"
 
 msgid "Add rule"
@@ -2558,6 +2609,9 @@ msgstr "Stok Transferi Ekle"
 
 msgid "Add Supplier"
 msgstr "Tedarikçi Ekle"
+
+msgid "Add the charge numbers you worked on this week, then click a day to log time."
+msgstr ""
 
 msgid "Add the components of a serial, an item or a template as elements."
 msgstr ""
@@ -2850,6 +2904,9 @@ msgstr "Tüm araçlar"
 
 msgid "All transfers"
 msgstr "Tüm transferler"
+
+msgid "All types"
+msgstr ""
 
 msgid "All Types"
 msgstr "Tüm Türler"
@@ -4593,6 +4650,9 @@ msgstr "Etkinleştirmeden Önce"
 msgid "Before You Confirm"
 msgstr "Onaylamadan Önce"
 
+msgid "Before you submit"
+msgstr ""
+
 msgid "Beginning"
 msgstr "Başlangıç"
 
@@ -5600,6 +5660,12 @@ msgstr "Masraf"
 msgid "Charge at receipt"
 msgstr "Makbuzda yükle"
 
+msgid "Charge cost"
+msgstr ""
+
+msgid "Charge Cost"
+msgstr ""
+
 msgid "Charge Date"
 msgstr "Ücret Tarihi"
 
@@ -5611,6 +5677,9 @@ msgstr "Harcama Numarası"
 
 msgid "Charge number (optional)"
 msgstr "Harcama numarası (isteğe bağlı)"
+
+msgid "Charge numbers"
+msgstr ""
 
 msgid "Charge Numbers"
 msgstr "Harcama Numaraları"
@@ -5703,9 +5772,6 @@ msgstr "Bir parti numarası seçin"
 
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Birlikte çalışabilecek operasyonları görmek için toplu işlenebilir bir işlem seçin."
-
-msgid "Choose a labor category"
-msgstr "Bir işçilik kategorisi seç"
 
 msgid "Choose a labor category or an employee"
 msgstr "Bir işçilik kategorisi veya bir çalışan seç"
@@ -5864,6 +5930,10 @@ msgstr "Mal alımı / fatura alımı eşleştirmesi için mahsup hesabı"
 msgid "Clearing demo data"
 msgstr "Demo verisi temizleniyor"
 
+#. placeholder {0}: selected.readableId
+msgid "Click a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgstr ""
+
 msgid "Click again to disconnect"
 msgstr "Bağlantıyı kesmek için yeniden tıklayın"
 
@@ -5899,6 +5969,9 @@ msgstr "Giriş yapıldı"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/> tarihinden beri saatlenmiş"
+
+msgid "Clocked on your timecard"
+msgstr ""
 
 msgid "Close"
 msgstr "Kapat"
@@ -6656,6 +6729,9 @@ msgstr "Taşeron"
 
 msgid "Contractors"
 msgstr "Taşeronlar"
+
+msgid "Contracts"
+msgstr ""
 
 msgid "Control"
 msgstr "Kontrol"
@@ -8950,9 +9026,6 @@ msgstr "Türetir"
 
 msgid "Descending"
 msgstr "Azalan"
-
-msgid "Describe the cost"
-msgstr "Maliyeti açıkla"
 
 msgid "Description"
 msgstr "Açıklama"
@@ -12404,9 +12477,6 @@ msgstr "Rehberli"
 msgid "Guided implementation"
 msgstr "Rehberli uygulama"
 
-msgid "h"
-msgstr "s"
-
 msgid "Handle recurring and reversing journal entries"
 msgstr "Tekrarlanan ve tersine çevirme muhasebe fişi girişlerini yönetin."
 
@@ -13731,6 +13801,9 @@ msgstr "Sorunlar"
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "Onaylandı ama uygulanamıyor. Yeniden açın, bu satırları kontrol edin, ardından yeniden gönderin."
 
+msgid "It shows with no hours until you add some."
+msgstr ""
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durdurur. Hiçbir şey silinmez."
 
@@ -13839,6 +13912,10 @@ msgstr "Bu aralıktaki ürünler sarı bir rozet alır."
 
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Stok kartları: stok kartı veritabanı, BOM'lar, operasyon listesi, mühendislik değişiklikleri, CAD"
+
+#. placeholder {0}: formatQuantity(rowTotal(removing))
+msgid "Its {0} h of draft time this week are deleted."
+msgstr ""
 
 msgid "Its amounts go back to what each line has left to invoice."
 msgstr "Tutarları, her satırın faturalandırılacak kalanına geri döner."
@@ -15827,6 +15904,10 @@ msgstr "Doğru sütunlara ihtiyacınız var mı?"
 msgid "Need-by target"
 msgstr "Gerek duyulan hedef"
 
+#. placeholder {0}: formatDate(card.date)
+msgid "Needed {0}"
+msgstr ""
+
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "Gerekli olan, o gün vadesi gelen iş saatleri {personDayHours}s'ye bölünmüş, yuvarlanmıştır — filtrelediğiniz vardiya veya bu konumdaki en yaygın vardiya uzunluğu."
 
@@ -16323,6 +16404,9 @@ msgstr "Yeni İş Merkezi"
 msgid "New Workflow"
 msgstr "Yeni İş Akışı"
 
+msgid "Newest"
+msgstr ""
+
 msgid "Newest first"
 msgstr "En yeniden önce"
 
@@ -16573,6 +16657,9 @@ msgstr "Henüz değişiklik yok."
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "Henüz değişiklik yok. Kiralama aktif olduktan sonra, Değiştir başlık kısmında ve Sonlandır ile Satın Al her varlığın sayfasında yer alır."
 
+msgid "No charges match the filters."
+msgstr ""
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Herhangi bir ücret yok. Kilometre, hasar, teslimat veya temizlik ücretleri sonraki faturaya dahil edilir."
 
@@ -16686,6 +16773,9 @@ msgstr "Belge yok"
 
 msgid "No draft make method for this item yet."
 msgstr "Bu stok kartı için henüz taslak üretim yöntemi yok."
+
+msgid "No draft time this week"
+msgstr ""
 
 msgid "No draft versions available"
 msgstr "Kullanılabilir taslak sürüm yok"
@@ -16867,8 +16957,14 @@ msgstr "Henüz işçilik kategorileri yok"
 msgid "No lease run is posted yet"
 msgstr "Henüz kiralama çalıştırması muhasebeleştirilmedi"
 
+msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
+msgstr ""
+
 msgid "No lines"
 msgstr "Satır yok"
+
+msgid "No lines match the filters."
+msgstr ""
 
 msgid "No lines to map"
 msgstr "Eşlenecek satır yok"
@@ -17715,6 +17811,9 @@ msgstr "Tamam"
 msgid "Old Value"
 msgstr "Eski Değer"
 
+msgid "Oldest"
+msgstr ""
+
 msgid "Oldest first"
 msgstr "En eski önce"
 
@@ -18444,6 +18543,9 @@ msgstr "Fason işlem"
 
 msgid "Outstanding"
 msgstr "Ödenmemiş"
+
+msgid "Over estimate first"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "Fazla uygulandı"
@@ -19210,6 +19312,9 @@ msgstr "Stok kartı ve lokasyon başına talep projeksiyonu yaparak önceden pla
 msgid "Plan lock"
 msgstr "Plan Kilidi"
 
+msgid "Plan order"
+msgstr ""
+
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "Birkaç projeyi bir olarak planlayın, hepsi için bir kez satın alın ve her siparişin hangi proje için olduğunu görün."
 
@@ -19454,6 +19559,9 @@ msgstr "Yayınlayan"
 
 msgid "Posted By"
 msgstr "Gönderen"
+
+msgid "Posted from the service order"
+msgstr ""
 
 msgid "Posted hours"
 msgstr "Muhasebeleştirilmiş saatler"
@@ -20011,6 +20119,9 @@ msgstr "Geçici muhasebe fişi"
 
 msgid "Provisional rate"
 msgstr "Geçici Oran"
+
+msgid "PTO"
+msgstr ""
 
 msgid "Public"
 msgstr "Herkese açık"
@@ -21168,6 +21279,10 @@ msgstr "Bu adımdan {0}'ı kaldır"
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "{1}'den {memberCount} operasyondan {0}'ını kaldırılsın mı?"
 
+#. placeholder {0}: removing.readableId
+msgid "Remove {0}?"
+msgstr ""
+
 msgid "Remove {deletingName} from the plan?"
 msgstr "{deletingName} planından kaldırılsın mı?"
 
@@ -22011,6 +22126,9 @@ msgstr "İncele ve oluştur"
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Her stok kartın değişikliklerini incele, sonra onayla — serbest bırakma geri alınamaz."
 
+msgid "Review the changes to your timesheet first"
+msgstr ""
+
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Dönemin bilançosunu ve gelir tablosunu incele ve rakamların doğru göründüğünü onayla. Bu manuel bir onay işlemi — bunları inceledikten sonra bitti olarak işaretle."
 
@@ -22751,6 +22869,9 @@ msgstr "Seri Numarasına Göre Ara"
 
 msgid "Search by shipment, sales order, or item"
 msgstr "Sevkiyat, satış siparişi veya stok kartı ile ara"
+
+msgid "Search costs"
+msgstr ""
 
 msgid "Search customers and types..."
 msgstr "Müşterileri ve türleri ara..."
@@ -26328,9 +26449,6 @@ msgstr "Parçanın revizyon numarası"
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "Kullanım hakkı kıymeti ve kiralama yükümlülüğü bilançoda gösterilir ve her ay bir düz çizgi kiralama maliyeti muhasebeleştirilir."
 
-msgid "The row shows empty until you enter hours."
-msgstr "Saat girene kadar satır boş görünür."
-
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Bu iş emrinin arzulanacak satış siparişi satırı, iş emrini arkasındaki müşteri talebine bağlayan."
 
@@ -27195,6 +27313,9 @@ msgstr "Günün saati"
 msgid "Time off"
 msgstr "Ara"
 
+msgid "Time off is charged to a leave element."
+msgstr ""
+
 msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
 msgstr "Bu kategorideki zaman, bir orana sahip olana kadar Gider veya Sözleşme projesine muhasebeleştirilemez."
 
@@ -27433,6 +27554,9 @@ msgstr "Toplam Tahmini Maliyet"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Üretim birimleri amortismanı için toplam beklenen üretim birimleri; maliyet üretilen birim başına dağıtılır."
+
+msgid "Total hours"
+msgstr ""
 
 msgid "Total Hours"
 msgstr "Toplam Saat"

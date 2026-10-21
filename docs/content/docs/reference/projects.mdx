@@ -41,7 +41,7 @@ The project sidebar has, from the top:
 
 - The plan picker. It reads **Current plan**, or the change request you work in. The history icon next to it opens [Baselines](#baselines).
 - **Overview**: the owner, customer, dates and cost treatment on one line, the budget used, the next milestone, and **Needs attention**. That list names a stop-work order, borrows past their payback date, open change requests and time not posted yet.
-- **Plan**: the [elements](#the-plan-page). While a Plan page is open, the element tree and its **Search elements** box show below the links.
+- **Plan**: the [elements](#the-plan-page). The element tree and its **Search elements** box show below the links on every project page.
 - **Schedule**: the [milestones](#milestones) on a timeline.
 - **Costs**: the [cost of each element](#costs-and-the-project-ledger). Below it, **Stock** shows once the project holds stock of its own, **Pegging** once it has a peg, and **Billing** when it is a Contract project that a contract line bills.
 - **Time**: the time not posted yet, then the costs posted to the project.
@@ -117,17 +117,19 @@ The **Plan** page shows the elements in one of three layouts. Pick it in the too
 
 ### The element page
 
-Click an element in any layout or in the sidebar tree to open its page. Its header has **Back**, the project and the parent elements, a copy button and a **⋯** menu: **Log time**, **Issue material**, **Add child**, **Add link**, **Add plan line** and **Delete**.
+Click an element in any layout or in the sidebar tree to open its page. Its header has **Back**, the project and the parent elements, a copy button and a **⋯** menu: **Log time**, **Issue material**, **Charge cost**, **Add child**, **Add link**, **Add plan line** and **Delete**.
 
 The main column has the readable id, the name and the description, then **Children**, the costs, **Links** and **Activity**. Children and Links show only once they have content. With Linear or Jira connected, **Sync** sits to the right of the readable id. The costs have two tabs: **Estimated** holds the plan lines, and **Actual** lists the costs and the open time charged to the element. The page opens on Estimated while the project is Draft, and on Actual once it is released. **Activity** holds the comments, and the change history when the audit log is on.
 
 The properties column on the right edits the state, owner, priority, labels, milestone and dates in place. The **Work** group holds **Chargeable**, the budget, the hours estimate and the linked part. **Costs, with children** shows plan, committed, actual and remaining, and **View costs** opens the element on the Costs page.
 
-**Estimated** is one grid of plan lines, with **Type**, **Line**, **Quantity**, **Unit Cost** and **Amount** columns. A material's amount is its quantity times its unit cost; a labor line's unit cost is its category's cost rate. Type in a cell to change a line, and use **Edit** in a row's menu to see the whole line:
+**Estimated** shows each plan line as a card: its estimate, what has been charged against it so far, and a bar that turns red once the line is over its estimate. Each card has one button to charge more: **Issue** on a material, **Log time** on a labor line and **Charge** on a cost. A material's estimate is its quantity times its unit cost; a labor line's is its hours at its category's cost rate. Click a card to edit the line, and use **Add line** to add one:
 
 - **Material:** an item, a method (Pull from Inventory, Purchase to Order or Make to Order), a quantity, a unit cost and a required date. **Create Job** on a Make to Order line and **Create PO Line** on a Purchase to Order line, both in the row's menu, make the job or purchase order line with the element's charge number.
 - **Labor:** a <Term>labor category</Term>, hours and dates.
-- **Cost:** a description and an amount.
+- **Cost:** a description and an amount. **Charge** posts a cost to the element with that description, which is how the card counts what has been charged against it.
+
+**Actual** shows each cost and each open time entry charged to the element and the elements below it as a card. Its **Charge** menu issues material, logs time or charges a cost. On both tabs you can search the cards, filter them by type and change their order.
 
 ### Milestones
 
@@ -237,15 +239,15 @@ The switch turns on by itself for an Expense or Contract project. It is not avai
 Employees record hours against a charge number and a labor category. Each hour costs the category's rate on the entry date.
 
 - **Log time**, in the element page's **⋯** menu, records hours on one date.
-- **My Time** is a grid of one week: one row per charge number and labor category, one cell per day, a **Total** column and a footer row of day totals. Type the hours in a cell. **Add row** adds a charge number, and **Submit week** sends the Draft hours. When the week has time cards, the footer adds a **Timecard** line with your clocked hours, in orange where they differ. My Time is also in the user menu, and needs only an employee role.
-- **My Time** in the MES shows the same grid for operators on the shop floor.
+- **My Time** shows one week. The charge numbers you worked on are on the left, each with its hours for the week, and the week total is under them. Each day is a column with one bar per charge number, as tall as its hours. Select a charge number, then click a day below its bars to add time up to that point. Drag the lower edge of a bar to change its hours, in half-hour steps, or click **×** to delete it. Every change saves at once. **Add** adds a charge number, **PTO** adds a leave element for time off, and **Submit week** sends the Draft hours; its tooltip says what the week still needs. When the week has time cards, each day shows your clocked hours, in orange where they differ. My Time is also in the user menu, and needs only an employee role.
+- **My Time** in the MES shows the same week of bars for operators on the shop floor, sized for touch: tap a charge number, then tap a day to add time.
 
 A <Term>timesheet</Term> entry moves through **"Draft"**, **"Submitted"**, **"Approved"** and **"Posted"**. A **"Rejected"** entry is editable again.
 
 Time that is not posted yet lists on the project's **Time** page and on an element's **Actual** tab, each row with its next step: **Submit week** on your own draft time, **Approve** on submitted time (**Post** when approval is off), or **Open My Time** when the weekly certification or a review must handle it.
 
 <Callout type="warn" title="You correct posted time. You do not edit it.">
-A Posted entry is locked. On **My Time** in the ERP, open the row's menu and choose **Correct** for that day, then give the new hours and a reason. Carbon reverses the posted hours and charges the new hours instead.
+A Posted entry is locked. On **My Time** in the ERP, open the posted bar's menu and choose **Correct**, then give the new hours and a reason. Carbon reverses the posted hours and charges the new hours instead.
 </Callout>
 
 ### Approvals
@@ -468,7 +470,7 @@ An issue to a Statistical project posts to the Indirect Materials & Services acc
 Expense and Contract time needs a cost rate effective on or before the entry date. Add one on the labor category (Projects → Labor Categories). Rates cannot be deleted; add a new one with a later Effective From date to change it.
 
 ### "This time is posted. Use a correction to change posted hours."
-Posted timesheet entries are locked. Use Correct in the row's menu on ERP My Time. A correction writes a negative reversal and a replacement entry, both Submitted. An entry can be corrected once ("Only a posted entry needs a correction" for anything else).
+Posted timesheet entries are locked. Use Correct in the posted bar's menu on ERP My Time. A correction writes a negative reversal and a replacement entry, both Submitted. An entry can be corrected once ("Only a posted entry needs a correction" for anything else).
 
 ### "The time is logged but did not post: ..."
 Log time saved the entry as Submitted, but posting refused it with the reason shown. The entry stays Submitted and does not post.

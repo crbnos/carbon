@@ -10,7 +10,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { getPendingReviewEntries } from "~/modules/projects";
 import { getTimesheetWeekView } from "~/modules/projects/projects.server";
-import TimesheetGrid from "~/modules/projects/ui/Timesheet/TimesheetGrid";
+import TimesheetWeek from "~/modules/projects/ui/Timesheet/TimesheetWeek";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -77,10 +77,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }
     : null;
 
-  return { ...view.week, controls };
+  return { ...view.week, today: view.today, controls };
 }
 
 export default function TimesheetRoute() {
   const data = useLoaderData<typeof loader>();
-  return <TimesheetGrid {...data} />;
+  return <TimesheetWeek {...data} />;
 }

@@ -419,17 +419,17 @@ export const TRAININGS: TrainingSpec[] = [
 ];
 
 export const TIMECARDS: TimecardSpec[] = [
-  { dayOffset: -5, clockIn: "07:02:00", clockOut: "15:34:00" },
+  { workdaysBack: 5, clockIn: "07:02:00", clockOut: "15:34:00" },
   {
-    dayOffset: -4,
+    workdaysBack: 4,
     clockIn: "06:57:00",
     clockOut: "17:20:00",
     note: "Stayed for the cell integration FAT with Lakeshore."
   },
-  { dayOffset: -3, clockIn: "07:05:00", clockOut: "15:31:00" },
-  { dayOffset: -2, clockIn: "06:59:00", clockOut: "15:28:00" },
-  { dayOffset: -1, clockIn: "07:01:00", clockOut: "11:32:00" },
-  { dayOffset: -1, clockIn: "12:02:00", clockOut: "15:36:00" }
+  { workdaysBack: 3, clockIn: "07:05:00", clockOut: "15:31:00" },
+  { workdaysBack: 2, clockIn: "06:59:00", clockOut: "15:28:00" },
+  { workdaysBack: 1, clockIn: "07:01:00", clockOut: "11:32:00" },
+  { workdaysBack: 1, clockIn: "12:02:00", clockOut: "15:36:00" }
 ];
 
 // None on today, so the MES schedule opens on every work center, not one station.

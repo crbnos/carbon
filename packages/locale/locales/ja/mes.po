@@ -32,6 +32,12 @@ msgstr "{0}前"
 msgid "{0} customers"
 msgstr "{0}件の得意先"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
+#. placeholder {0}: formatQuantity(rowTotal(row))
+msgid "{0} h"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0}にはロット番号がありません。Carbonでバッチまたは製造指図に設定してから、完了してください。"
@@ -93,12 +99,19 @@ msgstr "{completions}個の合格ユニットが完了します。"
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}件のサンプル不良が記録されており、完了されません — アクションメニューから対応してください。"
 
+msgid "{hour} h"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB の制限"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0}件の製造指図"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr ""
 
 msgid "+{overflow} more"
 msgstr "+{overflow} その他"
@@ -152,9 +165,6 @@ msgstr "追加して払出"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "印刷設定でプリンターを追加して、ラベルを直接印刷します。"
 
-msgid "Add a row for each job or task you worked on."
-msgstr "作業した製造指図またはタスクをそれぞれ行として追加してください"
-
 msgid "Add Authenticator App"
 msgstr "認証アプリを追加"
 
@@ -164,14 +174,20 @@ msgstr "在庫追加"
 msgid "Add Passkey"
 msgstr "パスキーを追加"
 
-msgid "Add row"
-msgstr "行を追加"
+msgid "Add PTO"
+msgstr ""
 
 msgid "Add Sample"
 msgstr "サンプルを追加"
 
 msgid "Add Spare Part"
 msgstr "予備品を追加"
+
+msgid "Add what you worked on this week, then tap a day to log time."
+msgstr ""
+
+msgid "Add what you worked on to start logging time."
+msgstr ""
 
 msgid "Added"
 msgstr "追加完了"
@@ -363,8 +379,8 @@ msgstr "特性"
 msgid "Characteristics"
 msgstr "特性"
 
-msgid "Charge Number"
-msgstr "チャージ番号"
+msgid "Charge numbers"
+msgstr ""
 
 msgid "Chat"
 msgstr "チャット"
@@ -413,6 +429,9 @@ msgstr "作業中"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>からクロックイン中"
+
+msgid "Clocked on your timecard"
+msgstr ""
 
 msgid "Close"
 msgstr "閉じる"
@@ -566,15 +585,6 @@ msgstr "説明"
 msgid "Details"
 msgstr "詳細"
 
-msgid "Direct Research"
-msgstr "直接研究"
-
-msgid "Direct Supervision"
-msgstr "直接監督"
-
-msgid "Direct Support"
-msgstr "直接サポート"
-
 msgid "Dispatch not found"
 msgstr "保全指示が見つかりません"
 
@@ -682,9 +692,6 @@ msgstr "工程を終了"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "各製造指図の値を入力するか、最初の行からすべての製造指図を一度に入力します。空の行はスキップされます。"
-
-msgid "Enter hours from 0 to 24"
-msgstr "0～24の時間を入力してください"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -840,9 +847,6 @@ msgstr "見出し {level}"
 
 msgid "Hide description"
 msgstr "説明を非表示"
-
-msgid "Hours on {label}"
-msgstr "{label}の時間"
 
 msgid "How Carbon looks in this browser."
 msgstr "このブラウザでのCarbonの表示方法。"
@@ -1231,6 +1235,9 @@ msgstr "影響なし"
 msgid "No issue types configured"
 msgstr "構成されたイシュータイプがありません"
 
+msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
+msgstr ""
+
 msgid "No maintenance scheduled for today"
 msgstr "本日の保全予定はありません。"
 
@@ -1306,9 +1313,6 @@ msgstr "在庫なし"
 msgid "No time entries for this week"
 msgstr "今週のタイムエントリーはありません"
 
-msgid "No time this week"
-msgstr "今週の時間なし"
-
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
 
@@ -1323,9 +1327,6 @@ msgstr "作業区が存在しません。"
 
 msgid "None"
 msgstr "なし"
-
-msgid "Not Qualified"
-msgstr "適格でない"
 
 msgid "Notes"
 msgstr "メモ"
@@ -1490,6 +1491,9 @@ msgstr "ピッキング {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "スタイルとアバターを選択するか、新しいものにシャッフルしてください。"
 
+msgid "Pick the leave for your time off."
+msgstr ""
+
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
 
@@ -1591,6 +1595,9 @@ msgstr "進捗"
 
 msgid "Project"
 msgstr "プロジェクト"
+
+msgid "PTO"
+msgstr ""
 
 msgid "Purchasing"
 msgstr "購買"
@@ -2058,6 +2065,10 @@ msgstr "システム"
 msgid "Tag"
 msgstr "タグ"
 
+#. placeholder {0}: selected.readableId
+msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Carbon全体で使用されるアクセントカラー。"
 
@@ -2176,6 +2187,9 @@ msgstr "トピック"
 
 msgid "Total"
 msgstr "合計"
+
+msgid "Total hours"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "合計数量"

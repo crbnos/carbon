@@ -3437,7 +3437,7 @@ export async function deletePlanningGroup(
 // --- Timesheets --------------------------------------------------------------
 
 const TIMESHEET_ENTRY_COLUMNS =
-  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), hours, note, status, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name, projectType, serviceOrder!serviceOrder_project_fkey(id, serviceOrderId)), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), hours, note, status, createdAt, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name, projectType, serviceOrder!serviceOrder_project_fkey(id, serviceOrderId)), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
 
 /**
  * Gets an employee's timesheet entries between two dates (inclusive), with

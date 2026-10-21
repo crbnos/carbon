@@ -114,7 +114,7 @@ export default function useProjectsSubmodules() {
       ]
     },
     {
-      name: t`Setup`,
+      name: t`Configure`,
       routes: [
         {
           name: t`Labor Categories`,

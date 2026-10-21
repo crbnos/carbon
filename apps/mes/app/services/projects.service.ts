@@ -141,7 +141,7 @@ export async function getLaborCategoriesList(
 }
 
 const TIMESHEET_ENTRY_COLUMNS =
-  "id, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, hours, status, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), project:project!timesheetEntry_project_fkey(id, identifier, name), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+  "id, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, hours, status, createdAt, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), project:project!timesheetEntry_project_fkey(id, identifier, name), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
 
 function timesheetWeekQuery(client: Client) {
   return client.from("timesheetEntry").select(TIMESHEET_ENTRY_COLUMNS);
@@ -168,6 +168,8 @@ export async function getTimesheetWeek(
 export type TimesheetCell = {
   hours: number;
   status: TimesheetEntryStatus;
+  /** When the cell's first entry was made: My Time stacks a day's bars by it. */
+  createdAt?: string | null;
 };
 
 export type TimesheetRow = {
@@ -243,10 +245,20 @@ export function groupTimesheetRows(
     const hours = Number(entry.hours);
     const cell = row.cells[entry.entryDate];
     if (!cell) {
-      row.cells[entry.entryDate] = { hours, status: entry.status };
+      row.cells[entry.entryDate] = {
+        hours,
+        status: entry.status,
+        ...(entry.createdAt ? { createdAt: entry.createdAt } : {})
+      };
     } else {
       cell.hours += hours;
       if (entry.status === "Draft") cell.status = entry.status;
+      if (
+        entry.createdAt &&
+        (!cell.createdAt || entry.createdAt < cell.createdAt)
+      ) {
+        cell.createdAt = entry.createdAt;
+      }
     }
     row.total += hours;
   }

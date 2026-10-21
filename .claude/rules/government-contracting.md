@@ -137,10 +137,11 @@ approval off the route posts the week and the toast says "Week submitted and pos
 
 **The MES enforces the same controls** (`apps/mes/app/routes/x+/timesheet.tsx`). Its
 loader returns `controls` (today, the window, the certification text) only under
-DCAA, so Standard mode is unchanged. A future day is read-only except on a leave
-element. A cell that needs a reason opens `TimesheetReasonModal`
+DCAA, so Standard mode is unchanged. It shows the week as the ERP's
+My Time does (`WeekHoursChart`, `@carbon/react/WeekHours`). A future day is read-only
+except on a leave element. A bar change that needs a reason opens `TimesheetReasonModal`
 (`apps/mes/app/components/Timesheet/`), which posts the cell with `reason` /
-`lateReason`; a refusal keeps it open and Cancel reverts the cell. **Submit week**
+`lateReason`; a refusal keeps it open and Cancel puts the bar back. **Submit week**
 opens `WeekCertificationModal`, which posts `certificationText` to the action's
 `submit` intent. The MES does not show `TimesheetReviewBanner`: an entry another user
 changed (Pending Employee Review) is locked there, and the server refuses to submit
@@ -259,11 +260,11 @@ Community code, no feature gate. The tags are columns
 `employeeJob.locationId` and the labor category's role; an explicit null is none. Both
 are part of the cell's key, so two entries on one day may differ only by location or
 role. A DCAA revision records both. `createTimesheetCorrection` copies both to the
-reversal and the replacement (unless the correction names new values). Both grids
-group rows by those two fields too and post each row's own values (`""` for none),
+reversal and the replacement (unless the correction names new values). My Time, the
+manager's grid and the MES group rows by those two fields too and post each row's own values (`""` for none),
 so a save edits the row's own entry. A new row starts at the defaults (the job
 location and the category's role): the ERP from Add row, the MES from the loader's
-`jobLocationId` and the category's `rdActivityRole`. Add row on My Time has a **More**
+`jobLocationId` and the category's `rdActivityRole`. **Add** (and **PTO**) on My Time has a **More**
 toggle with **Work location** and **Research role**.
 
 **Pure rules** (`@carbon/utils` `rd-tax.ts`, pinned by `rd-tax.test.ts`):

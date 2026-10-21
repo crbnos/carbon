@@ -32,6 +32,12 @@ msgstr "{0} पहले"
 msgid "{0} customers"
 msgstr "{0} ग्राहक"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
+#. placeholder {0}: formatQuantity(rowTotal(row))
+msgid "{0} h"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} के पास लॉट संख्या नहीं है। इसे Carbon में बैच या जॉब पर सेट करें, फिर पूर्ण करें।"
@@ -93,12 +99,19 @@ msgstr "{completions} उत्तीर्ण इकाई(यों) को �
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} नमूना विफलता(एं) दर्ज की गई है और पूर्ण नहीं की जाएगी — उन्हें क्रियाएं मेनू से हल करें।"
 
+msgid "{hour} h"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} जॉब्स"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr ""
 
 msgid "+{overflow} more"
 msgstr "+{overflow} अधिक"
@@ -152,9 +165,6 @@ msgstr "जोड़ें और जारी करें"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि आप सीधे लेबल प्रिंट कर सकें।"
 
-msgid "Add a row for each job or task you worked on."
-msgstr "प्रत्येक जॉब या कार्य के लिए जो आपने काम किया है, एक पंक्ति जोड़ें।"
-
 msgid "Add Authenticator App"
 msgstr "ऑथेंटिकेटर ऐप जोड़ें"
 
@@ -164,14 +174,20 @@ msgstr "इन्वेंटरी जोड़ें"
 msgid "Add Passkey"
 msgstr "पासकी जोड़ें"
 
-msgid "Add row"
-msgstr "पंक्ति जोड़ें"
+msgid "Add PTO"
+msgstr ""
 
 msgid "Add Sample"
 msgstr "नमूना जोड़ें"
 
 msgid "Add Spare Part"
 msgstr "स्पेयर पार्ट जोड़ें"
+
+msgid "Add what you worked on this week, then tap a day to log time."
+msgstr ""
+
+msgid "Add what you worked on to start logging time."
+msgstr ""
 
 msgid "Added"
 msgstr "जोड़ा गया"
@@ -363,8 +379,8 @@ msgstr "विशेषता"
 msgid "Characteristics"
 msgstr "विशेषताएं"
 
-msgid "Charge Number"
-msgstr "चार्ज संख्या"
+msgid "Charge numbers"
+msgstr ""
 
 msgid "Chat"
 msgstr "चैट"
@@ -413,6 +429,9 @@ msgstr "समय दर्ज"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/> से घड़ी चालू है"
+
+msgid "Clocked on your timecard"
+msgstr ""
 
 msgid "Close"
 msgstr "बंद करें"
@@ -566,15 +585,6 @@ msgstr "विवरण"
 msgid "Details"
 msgstr "विवरण"
 
-msgid "Direct Research"
-msgstr "प्रत्यक्ष अनुसंधान"
-
-msgid "Direct Supervision"
-msgstr "प्रत्यक्ष पर्यवेक्षण"
-
-msgid "Direct Support"
-msgstr "प्रत्यक्ष सहायता"
-
 msgid "Dispatch not found"
 msgstr "रखरखाव कार्य नहीं मिला"
 
@@ -682,9 +692,6 @@ msgstr "ऑपरेशन समाप्त करें"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "प्रत्येक जॉब का मान दर्ज करें, या पहली पंक्ति से सभी जॉब्स को एक बार में भरें। खाली पंक्तियां छोड़ दी जाती हैं।"
-
-msgid "Enter hours from 0 to 24"
-msgstr "0 से 24 तक घंटे दर्ज करें"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -840,9 +847,6 @@ msgstr "शीर्षक {level}"
 
 msgid "Hide description"
 msgstr "विवरण छिपाएं"
-
-msgid "Hours on {label}"
-msgstr "{label} पर घंटे"
 
 msgid "How Carbon looks in this browser."
 msgstr "इस ब्राउज़र में Carbon कैसा दिखता है।"
@@ -1231,6 +1235,9 @@ msgstr "कोई प्रभाव नहीं"
 msgid "No issue types configured"
 msgstr "कोई समस्या प्रकार कॉन्फ़िगर नहीं किया गया"
 
+msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
+msgstr ""
+
 msgid "No maintenance scheduled for today"
 msgstr "आज के लिए कोई रखरखाव निर्धारित नहीं है"
 
@@ -1306,9 +1313,6 @@ msgstr "कोई स्टॉक नहीं"
 msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
 
-msgid "No time this week"
-msgstr "इस सप्ताह कोई समय नहीं"
-
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — ऑन-हैंड नकारात्मक हो जाएगा जब तक गिनती समेकित नहीं हो जाती।"
 
@@ -1323,9 +1327,6 @@ msgstr "कोई वर्क सेंटर मौजूद नहीं ह�
 
 msgid "None"
 msgstr "कोई नहीं"
-
-msgid "Not Qualified"
-msgstr "योग्य नहीं"
 
 msgid "Notes"
 msgstr "नोट्स"
@@ -1490,6 +1491,9 @@ msgstr "पिकिंग {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "एक शैली और अवतार चुनें, या नए के लिए शफल करें।"
 
+msgid "Pick the leave for your time off."
+msgstr ""
+
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
 
@@ -1591,6 +1595,9 @@ msgstr "प्रगति"
 
 msgid "Project"
 msgstr "प्रकल्प"
+
+msgid "PTO"
+msgstr ""
 
 msgid "Purchasing"
 msgstr "क्रय"
@@ -2058,6 +2065,10 @@ msgstr "सिस्टम"
 msgid "Tag"
 msgstr "टैग"
 
+#. placeholder {0}: selected.readableId
+msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Carbon में उपयोग किया जाने वाला उच्चारण रंग।"
 
@@ -2176,6 +2187,9 @@ msgstr "विषय"
 
 msgid "Total"
 msgstr "कुल"
+
+msgid "Total hours"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "कुल मात्रा"

@@ -276,16 +276,23 @@ plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
   (the Tree), `ElementReader`, `MoveElementModal`, `BuildFromPartDrawer`.
 - `ui/Element/` — the element's full page (`/x/project/$id/element/$elementId`): `ElementView`,
   `ElementSidebar` with `PropertyFields.tsx` (inline fields, the **Billing element** switch),
-  `ElementPlanLines` (one grid for every plan line, with `PlanLineModal` behind the row's
-  **Edit**), `ElementChildren`, `ElementLinks`, `ElementTimeAndMaterials`, `LogTimeModal`,
-  `IssueMaterialModal`, `ElementEarnedValue.ee`.
+  `ElementPlanLines` (the Estimated tab: one card per plan line with its actual and its
+  Issue / Log time / Charge button, `PlanLineModal` behind a click), `ElementTimeAndMaterials`
+  (the Actual tab: one card per ledger row and open time entry), both on `CostCards.tsx` and
+  the pure `cost-cards.ts`; `ElementChildren`, `ElementLinks`, `LogTimeModal`,
+  `IssueMaterialModal`, `ChargeCostModal` (a `projectExpenseEntry` through
+  `x+/projects+/expense.tsx`), `ElementEarnedValue.ee`.
 - `ui/Milestones/` — the Schedule page (`MilestoneSchedule`, `schedule-scale.ts`, the burn
   chart). `ui/Costs/`, `ui/Stock/`, `ui/Pegging/`, `ui/Billing/` — the Costs page and the
   pages under it. `ui/Transfers/` — the stock transfer list and document. `ui/Baselines/`,
   `ui/ChangeRequests/` — baselines, change requests and the sidebar's `ChangeRequestPicker`.
-- `ui/Timesheet/` — `TimesheetGrid` (My Time at `x+/timesheet.tsx`, and the manager's
-  `projects+/timesheets.$employeeId.tsx`), `TimesheetApprovals` (the Time tab of
-  `projects+/approvals.tsx`; its Billing tab is the billing review).
+- `ui/Timesheet/` — `TimesheetWeek` (My Time at `x+/timesheet.tsx`: the week as stacked
+  bars per day), `TimesheetGrid` (the manager's `projects+/timesheets.$employeeId.tsx`),
+  both reading rows through `useTimesheetRows`; `TimesheetModals` (`AddRowModal`, with a
+  `pto` mode, and `CorrectionModal`). The chart itself is `WeekHoursChart`
+  (`@carbon/react/WeekHours`, shared with the MES, its pure layout tested there);
+  `TimesheetApprovals` (the Time tab of `projects+/approvals.tsx`; its Billing tab is the
+  billing review).
 - `ui/Settings/` — `ProjectStatesGrid`, `ProjectLabelsGrid`, `ColorCell`: the company-wide
   states and labels on Settings → Projects (`settings+/projects.tsx`).
 - `ui/LaborCategories/`, `ui/PlanningGroups/`, `ui/RdTax/` — the Setup pages and the R&D

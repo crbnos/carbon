@@ -62,6 +62,7 @@ import type {
   ProjectStateGroup,
   projectElementLinkValidator,
   projectElementValidator,
+  projectExpenseValidator,
   projectIssueValidator,
   projectValidator,
   RdActivityRole,
@@ -3996,6 +3997,7 @@ export async function getProjectElementPage(
       defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null,
       ledger: timeAndMaterials.ledger,
       openTime: timeAndMaterials.openTime,
+      planActuals: timeAndMaterials.planActuals,
       ...verification.data,
       qualityDocuments: qualityDocuments.data ?? [],
       itemFields,
@@ -4293,6 +4295,64 @@ export async function postProjectIssue(
 }
 
 /**
+ * Charges a cost to an element: inserts a `projectExpenseEntry` and posts it
+ * through `post-project-expense` (Dr the project account / Cr GRNI, one
+ * Other Direct ledger row). An entry that does not post is deleted again, so
+ * a refusal (a closed element, a Capitalize project) leaves nothing behind.
+ * Returns an error message, or null.
+ */
+export async function addProjectExpense(
+  db: Kysely<KyselyDatabase>,
+  args: z.infer<typeof projectExpenseValidator> & {
+    companyId: string;
+    userId: string;
+  }
+): Promise<string | null> {
+  const { companyId, userId } = args;
+  const entry = await db
+    .insertInto("projectExpenseEntry")
+    .values({
+      companyId,
+      projectId: args.projectId,
+      projectElementId: args.projectElementId,
+      employeeId: userId,
+      entryDate: args.entryDate,
+      description: args.description,
+      amount: args.amount,
+      createdBy: userId
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+
+  const posting = await serverFns
+    .system({ db, companyId, userId })
+    .invoke("post-project-expense", { projectExpenseEntryId: entry.id });
+  if (!posting.error) return null;
+
+  logger.error("Failed to post a project expense", {
+    companyId,
+    projectExpenseEntryId: entry.id,
+    error: posting.error
+  });
+  // The posting rolled back, so the entry has no journal or ledger row.
+  try {
+    await db
+      .deleteFrom("projectExpenseEntry")
+      .where("id", "=", entry.id)
+      .where("companyId", "=", companyId)
+      .where("journalId", "is", null)
+      .execute();
+  } catch (deleteError) {
+    logger.error("Failed to delete an expense that did not post", {
+      companyId,
+      projectExpenseEntryId: entry.id,
+      error: deleteError
+    });
+  }
+  return posting.error.message || "Failed to charge the cost";
+}
+
+/**
  * A project's own stock: on-hand per item, location, storage unit and lot,
  * summed from its stripe of `itemLedger` in one query. Rows that net to zero
  * drop out.
@@ -4368,6 +4428,11 @@ export type ElementLedgerRow = {
   quantity: number | null;
   unitOfMeasureCode: string | null;
   amount: number;
+  itemId: string | null;
+  laborCategoryId: string | null;
+  employeeId: string | null;
+  /** An expense's own description (`projectExpenseEntry`). */
+  description: string | null;
   readableId: string | null;
 };
 
@@ -4375,9 +4440,27 @@ export type ElementOpenTimeRow = {
   id: string;
   entryDate: string;
   employeeId: string;
+  laborCategoryId: string;
   hours: number;
   status: string;
   readableId: string | null;
+};
+
+/**
+ * What has been charged to the element itself (not its subtree), summed by
+ * the key a plan line has: a material's item, a labor category, and an
+ * expense's description (lower case, trimmed). The element page's Estimated
+ * cards show each plan line's share beside its estimate.
+ */
+export type ElementPlanActuals = {
+  materials: { itemId: string; amount: number }[];
+  labor: {
+    laborCategoryId: string;
+    hours: number;
+    openHours: number;
+    amount: number;
+  }[];
+  costs: { description: string; amount: number }[];
 };
 
 /** The most recent rows each list of the Time & materials section shows. */
@@ -4391,7 +4474,11 @@ const TIME_AND_MATERIALS_LIMIT = 200;
 export async function getElementTimeAndMaterials(
   db: Kysely<KyselyDatabase>,
   args: { companyId: string; projectId: string; elementId: string }
-): Promise<{ ledger: ElementLedgerRow[]; openTime: ElementOpenTimeRow[] }> {
+): Promise<{
+  ledger: ElementLedgerRow[];
+  openTime: ElementOpenTimeRow[];
+  planActuals: ElementPlanActuals;
+}> {
   const subtree = sql`
     WITH RECURSIVE subtree AS (
       SELECT "id" FROM "projectElement"
@@ -4406,14 +4493,19 @@ export async function getElementTimeAndMaterials(
     )
   `;
 
-  const [ledger, openTime] = await Promise.all([
-    sql<ElementLedgerRow>`
+  const [ledger, openTime, ledgerByLine, timeByCategory, expenses] =
+    await Promise.all([
+      sql<ElementLedgerRow>`
       ${subtree}
       SELECT l."id", l."postingDate", l."costType", l."documentType",
         l."documentId", l."quantity", l."unitOfMeasureCode", l."amount",
+        l."itemId", l."laborCategoryId", l."employeeId", x."description",
         e."readableId"
       FROM "projectLedger" l
       JOIN subtree s ON s."id" = l."projectElementId"
+      LEFT JOIN "projectExpenseEntry" x
+        ON l."documentType" = 'Project Expense'
+        AND x."id" = l."documentId" AND x."companyId" = l."companyId"
       LEFT JOIN "projectElement" e
         ON e."id" = l."projectElementId" AND e."companyId" = l."companyId"
       WHERE l."companyId" = ${args.companyId}
@@ -4421,10 +4513,10 @@ export async function getElementTimeAndMaterials(
       ORDER BY l."postingDate" DESC, l."createdAt" DESC
       LIMIT ${TIME_AND_MATERIALS_LIMIT}
     `.execute(db),
-    sql<ElementOpenTimeRow>`
+      sql<ElementOpenTimeRow>`
       ${subtree}
-      SELECT t."id", t."entryDate", t."employeeId", t."hours", t."status",
-        e."readableId"
+      SELECT t."id", t."entryDate", t."employeeId", t."laborCategoryId",
+        t."hours", t."status", e."readableId"
       FROM "timesheetEntry" t
       JOIN subtree s ON s."id" = t."projectElementId"
       LEFT JOIN "projectElement" e
@@ -4434,8 +4526,68 @@ export async function getElementTimeAndMaterials(
         AND t."status" <> 'Posted'
       ORDER BY t."entryDate" DESC, t."createdAt" DESC
       LIMIT ${TIME_AND_MATERIALS_LIMIT}
+    `.execute(db),
+      // The plan-line keys, on the element's own rows and with no limit:
+      // material cost by item, labor cost by category.
+      sql<{ kind: "material" | "labor"; key: string; amount: number }>`
+      SELECT
+        CASE WHEN l."costType" = 'Labor' THEN 'labor' ELSE 'material' END
+          AS "kind",
+        CASE WHEN l."costType" = 'Labor' THEN l."laborCategoryId"
+          ELSE l."itemId" END AS "key",
+        SUM(l."amount") AS "amount"
+      FROM "projectLedger" l
+      WHERE l."companyId" = ${args.companyId}
+        AND l."projectId" = ${args.projectId}
+        AND l."projectElementId" = ${args.elementId}
+        AND (
+          (l."costType" = 'Labor' AND l."laborCategoryId" IS NOT NULL)
+          OR (l."costType" IN ('Material', 'Material Variance')
+            AND l."itemId" IS NOT NULL)
+        )
+      GROUP BY 1, 2
+    `.execute(db),
+      // Hours by category: Posted (a correction's reversal is negative) and
+      // not posted yet. A Statistical project posts time with no ledger row,
+      // so the hours come from the entries.
+      sql<{ laborCategoryId: string; hours: number; openHours: number }>`
+      SELECT t."laborCategoryId",
+        COALESCE(SUM(t."hours") FILTER (WHERE t."status" = 'Posted'), 0)
+          AS "hours",
+        COALESCE(SUM(t."hours") FILTER (
+          WHERE t."status" NOT IN ('Posted', 'Rejected')
+        ), 0) AS "openHours"
+      FROM "timesheetEntry" t
+      WHERE t."companyId" = ${args.companyId}
+        AND t."projectId" = ${args.projectId}
+        AND t."projectElementId" = ${args.elementId}
+      GROUP BY t."laborCategoryId"
+    `.execute(db),
+      // Posted expenses by description (a reversal carries a negative amount).
+      sql<{ description: string; amount: number }>`
+      SELECT LOWER(BTRIM(x."description")) AS "description",
+        SUM(x."amount") AS "amount"
+      FROM "projectExpenseEntry" x
+      WHERE x."companyId" = ${args.companyId}
+        AND x."projectId" = ${args.projectId}
+        AND x."projectElementId" = ${args.elementId}
+        AND x."journalId" IS NOT NULL
+      GROUP BY 1
     `.execute(db)
+    ]);
+
+  const laborAmounts = new Map(
+    ledgerByLine.rows
+      .filter((row) => row.kind === "labor")
+      .map((row) => [row.key, Number(row.amount)])
+  );
+  const laborCategoryIds = new Set([
+    ...laborAmounts.keys(),
+    ...timeByCategory.rows.map((row) => row.laborCategoryId)
   ]);
+  const hoursByCategory = new Map(
+    timeByCategory.rows.map((row) => [row.laborCategoryId, row])
+  );
 
   return {
     ledger: ledger.rows.map((row) => ({
@@ -4446,7 +4598,22 @@ export async function getElementTimeAndMaterials(
     openTime: openTime.rows.map((row) => ({
       ...row,
       hours: Number(row.hours)
-    }))
+    })),
+    planActuals: {
+      materials: ledgerByLine.rows
+        .filter((row) => row.kind === "material")
+        .map((row) => ({ itemId: row.key, amount: Number(row.amount) })),
+      labor: [...laborCategoryIds].map((laborCategoryId) => ({
+        laborCategoryId,
+        hours: Number(hoursByCategory.get(laborCategoryId)?.hours ?? 0),
+        openHours: Number(hoursByCategory.get(laborCategoryId)?.openHours ?? 0),
+        amount: laborAmounts.get(laborCategoryId) ?? 0
+      })),
+      costs: expenses.rows.map((row) => ({
+        description: row.description,
+        amount: Number(row.amount)
+      }))
+    }
   };
 }
 

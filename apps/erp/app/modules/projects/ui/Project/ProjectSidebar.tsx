@@ -32,8 +32,8 @@ export type ProjectSidebarData = {
 /**
  * The project workspace's left panel (Layer 2), top to bottom: the plan on
  * screen (the live plan or a change request) with the baselines link; the
- * page links, Settings last; the element tree while a Plan page is open. The
- * project name and switcher are in the header.
+ * page links; the element tree. The project name and switcher are in the
+ * header.
  */
 export function ProjectSidebar() {
   const { t } = useLingui();
@@ -51,9 +51,6 @@ export function ProjectSidebar() {
   if (!data) return null;
   const { project } = data;
   const isClosed = project.status === "Closed";
-  const isPlanPage =
-    location.pathname.startsWith(path.to.projectElements(projectId)) ||
-    location.pathname.startsWith(`${path.to.project(projectId)}/element/`);
   // A move is a plan-layer write: a Draft change request takes it, and a
   // locked plan takes it only that way (the move route's own check).
   const lockMilestone = data.milestones.find(
@@ -100,14 +97,12 @@ export function ProjectSidebar() {
       <nav aria-label={t`Project pages`} className="shrink-0">
         <DetailSidebar links={links} />
       </nav>
-      {isPlanPage && (
-        <ProjectElementTree
-          projectId={projectId}
-          elements={data.treeElements}
-          canMove={canMoveElements}
-          className="flex-1 border-t border-border pt-2"
-        />
-      )}
+      <ProjectElementTree
+        projectId={projectId}
+        elements={data.treeElements}
+        canMove={canMoveElements}
+        className="flex-1 border-t border-border pt-2"
+      />
     </div>
   );
 }

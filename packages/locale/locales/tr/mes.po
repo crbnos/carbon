@@ -32,6 +32,12 @@ msgstr "{0} önce"
 msgid "{0} customers"
 msgstr "{0} müşteri"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
+#. placeholder {0}: formatQuantity(rowTotal(row))
+msgid "{0} h"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} Lot numarasına sahip değil. Bunu Carbon'da Partide veya İş emrinde ayarla, sonra Tamamla."
@@ -93,12 +99,19 @@ msgstr "{completions} geçti birim(ler) tamamlanacak."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları işlemler menüsünden çözün."
 
+msgid "{hour} h"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} iş emirleri"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr ""
 
 msgid "+{overflow} more"
 msgstr "+{overflow} daha fazla"
@@ -152,9 +165,6 @@ msgstr "Ekle ve Çıkış Yap"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
 
-msgid "Add a row for each job or task you worked on."
-msgstr "Çalıştığınız her iş emri veya görev için bir satır ekleyin."
-
 msgid "Add Authenticator App"
 msgstr "Doğrulayıcı Uygulaması Ekle"
 
@@ -164,14 +174,20 @@ msgstr "Envantere Ekle"
 msgid "Add Passkey"
 msgstr "Geçiş Anahtarı Ekle"
 
-msgid "Add row"
-msgstr "Satır Ekle"
+msgid "Add PTO"
+msgstr ""
 
 msgid "Add Sample"
 msgstr "Örnek Ekle"
 
 msgid "Add Spare Part"
 msgstr "Yedek Parça Ekle"
+
+msgid "Add what you worked on this week, then tap a day to log time."
+msgstr ""
+
+msgid "Add what you worked on to start logging time."
+msgstr ""
 
 msgid "Added"
 msgstr "Eklendi"
@@ -363,8 +379,8 @@ msgstr "Özellik"
 msgid "Characteristics"
 msgstr "Özellikler"
 
-msgid "Charge Number"
-msgstr "Yükleme Numarası"
+msgid "Charge numbers"
+msgstr ""
 
 msgid "Chat"
 msgstr "Sohbet"
@@ -413,6 +429,9 @@ msgstr "İşe başlandı"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>'den beri kaydedilmiş"
+
+msgid "Clocked on your timecard"
+msgstr ""
 
 msgid "Close"
 msgstr "Kapat"
@@ -566,15 +585,6 @@ msgstr "Açıklama"
 msgid "Details"
 msgstr "Detaylar"
 
-msgid "Direct Research"
-msgstr "Doğrudan Araştırma"
-
-msgid "Direct Supervision"
-msgstr "Doğrudan Gözetim"
-
-msgid "Direct Support"
-msgstr "Doğrudan Destek"
-
 msgid "Dispatch not found"
 msgstr "Bakım emri bulunamadı"
 
@@ -682,9 +692,6 @@ msgstr "Operasyonları Sonlandır"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Her iş emrinin değerini girin veya ilk satırdan tüm iş emirlerini bir kez doldurun. Boş satırlar atlanır."
-
-msgid "Enter hours from 0 to 24"
-msgstr "0 ile 24 arasında saat girin"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -840,9 +847,6 @@ msgstr "Başlık {level}"
 
 msgid "Hide description"
 msgstr "Açıklamayı gizle"
-
-msgid "Hours on {label}"
-msgstr "{label} Saatleri"
 
 msgid "How Carbon looks in this browser."
 msgstr "Bu tarayıcıda Carbon'un görünüşü."
@@ -1231,6 +1235,9 @@ msgstr "Etki Yok"
 msgid "No issue types configured"
 msgstr "Sorun türü yapılandırılmadı"
 
+msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
+msgstr ""
+
 msgid "No maintenance scheduled for today"
 msgstr "Bugün planlanmış bakım yok"
 
@@ -1306,9 +1313,6 @@ msgstr "Stok yok"
 msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
 
-msgid "No time this week"
-msgstr "Bu hafta hiç zaman yok"
-
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
 
@@ -1323,9 +1327,6 @@ msgstr "Çalışma merkezi bulunmamaktadır"
 
 msgid "None"
 msgstr "Hiçbiri"
-
-msgid "Not Qualified"
-msgstr "Yeterli Değil"
 
 msgid "Notes"
 msgstr "Notlar"
@@ -1490,6 +1491,9 @@ msgstr "Toplama {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "Bir stil ve avatar seçin, veya yenileri için karıştırın."
 
+msgid "Pick the leave for your time off."
+msgstr ""
+
 msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
 
@@ -1591,6 +1595,9 @@ msgstr "İlerleme"
 
 msgid "Project"
 msgstr "Proje"
+
+msgid "PTO"
+msgstr ""
 
 msgid "Purchasing"
 msgstr "Satın alma"
@@ -2058,6 +2065,10 @@ msgstr "Sistem"
 msgid "Tag"
 msgstr "Etiket"
 
+#. placeholder {0}: selected.readableId
+msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Carbon'da kullanılan vurgu rengi."
 
@@ -2176,6 +2187,9 @@ msgstr "Konular"
 
 msgid "Total"
 msgstr "Toplam"
+
+msgid "Total hours"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "Toplam Miktar"

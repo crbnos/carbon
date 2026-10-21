@@ -253,7 +253,7 @@ const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
           )
         }
         renderContextMenu={renderContextMenu}
-        title={t`Service Contracts`}
+        title={t`Contracts`}
         table="customerContract"
         withSavedView
       />

@@ -82,14 +82,16 @@ type Drop = {
 };
 
 /**
- * The element tree in the project sidebar, shown while a Plan page is open:
- * a search over name and readable id, then one 32 px row per element. A row
- * opens the element in the Plan page's right panel and keeps the page's
- * params (layout, filters, `?cr=`).
+ * The element tree in the project sidebar, on every project page: a search
+ * over name and readable id, then one 32 px row per element. A row opens the
+ * element's page; from the Plan page it keeps the page's params (layout,
+ * filters, `?cr=`), from any other page only `?cr=`.
  *
  * The search is the Plan page's only search: it filters the tree at once and,
  * on the Plan page, writes the page's `search` param 500 ms after the last
- * key, so the Table, Tree and Reader filter on the server too.
+ * key, so the List, Tree and Reader filter on the server too. On another page
+ * it filters the tree only; arriving on the Plan page, the URL's `search`
+ * replaces it.
  *
  * With `canMove`, a row drags onto another: its top quarter puts the element
  * before it, its bottom quarter after it, and its middle makes it the row's
@@ -123,8 +125,9 @@ export function ProjectElementTree({
   const [filterText, setFilterText] = useState(urlSearch);
   // What this box last wrote to the URL. A different value there came from
   // elsewhere (back/forward, a link) and replaces the text; our own write
-  // arriving late must not undo what was typed since.
-  const written = useRef(urlSearch);
+  // arriving late must not undo what was typed since. Null after typing on
+  // another page, so the Plan page's URL replaces that text on arrival.
+  const written = useRef<string | null>(urlSearch);
   const writeSearch = useDebounce((text: string) => {
     written.current = text.trim();
     setSearchParams(
@@ -353,6 +356,7 @@ export function ProjectElementTree({
           onChange={(event) => {
             setFilterText(event.target.value);
             if (onPlanPage) writeSearch(event.target.value);
+            else written.current = null;
           }}
         />
       </InputGroup>

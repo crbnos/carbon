@@ -2355,10 +2355,11 @@ export type TrainingSpec = {
 
 /** Clock-in and clock-out on the same day. */
 export type TimecardSpec = {
-  dayOffset: DayOffset;
-  /** UTC "HH:MM:SS". */
+  /** Working days before the anchor, Saturday and Sunday skipped: 1 = the last weekday. */
+  workdaysBack: number;
+  /** "HH:MM:SS" on the company's clock (its time zone). */
   clockIn: string;
-  /** UTC "HH:MM:SS", after clockIn. */
+  /** "HH:MM:SS" on the company's clock, after clockIn. */
   clockOut: string;
   note?: string;
 };
@@ -2651,6 +2652,8 @@ export type Ctx = {
   dataset: Dataset;
   /** Today in the company's timezone — every dated row is an offset from this. */
   anchor: CalendarDate;
+  /** The company's time zone, for a wall-clock time (a timecard's clock-in). */
+  timeZone: string;
   refs: SeedRefs;
   log: (message: string) => void;
 };
@@ -2722,6 +2725,7 @@ export async function buildCtx(
   userId: string,
   dataset: Dataset,
   anchor: CalendarDate,
+  timeZone: string,
   log: (message: string) => void = (message) => console.log(`  ${message}`)
 ): Promise<Ctx> {
   const company = await one<{ id: string; companyGroupId: string }>(
@@ -2750,6 +2754,7 @@ export async function buildCtx(
     locationId: location.id,
     dataset,
     anchor,
+    timeZone,
     refs: emptyRefs(),
     log
   };

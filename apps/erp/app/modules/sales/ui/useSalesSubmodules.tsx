@@ -86,7 +86,7 @@ export default function useSalesSubmodules() {
       name: t`Agreements`,
       routes: [
         {
-          name: t`Service Contracts`,
+          name: t`Contracts`,
           to: path.to.contracts,
           icon: <LuSection />,
           table: "customerContract"

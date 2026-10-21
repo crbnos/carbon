@@ -2159,6 +2159,7 @@ export const path = {
       generatePath(`${x}/project/${id}/elements/build`),
     projectElementUpdate: (id: string) =>
       generatePath(`${x}/project/${id}/elements/update`),
+    projectExpense: `${x}/projects/expense`,
     projectIssue: `${x}/projects/issue`,
     projectLogTime: `${x}/projects/log-time`,
     projectMilestones: (id: string) =>

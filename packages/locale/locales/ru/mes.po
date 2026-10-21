@@ -32,6 +32,12 @@ msgstr "{0} назад"
 msgid "{0} customers"
 msgstr "{0} покупателей"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
+#. placeholder {0}: formatQuantity(rowTotal(row))
+msgid "{0} h"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} не имеет номера партии. Установите его в серии или производственном заказе в Carbon, затем завершите."
@@ -93,12 +99,19 @@ msgstr "{completions} пройденных единиц будут заверш�
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} записанных отказов будут НЕ завершены — разрешите их из меню действий."
 
+msgid "{hour} h"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "Ограничение {maxSizeMB}МБ"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} производственных заказов"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr ""
 
 msgid "+{overflow} more"
 msgstr "+{overflow} ещё"
@@ -152,9 +165,6 @@ msgstr "Добавить и выдать"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в настройки печати, чтобы печатать наклейки непосредственно."
 
-msgid "Add a row for each job or task you worked on."
-msgstr "Добавьте строку для каждого производственного заказа или задачи, над которыми вы работали."
-
 msgid "Add Authenticator App"
 msgstr "Добавить приложение аутентификатора"
 
@@ -164,14 +174,20 @@ msgstr "Добавить запас"
 msgid "Add Passkey"
 msgstr "Добавить ключ доступа"
 
-msgid "Add row"
-msgstr "Добавить строку"
+msgid "Add PTO"
+msgstr ""
 
 msgid "Add Sample"
 msgstr "Добавить образец"
 
 msgid "Add Spare Part"
 msgstr "Добавить запасную часть"
+
+msgid "Add what you worked on this week, then tap a day to log time."
+msgstr ""
+
+msgid "Add what you worked on to start logging time."
+msgstr ""
 
 msgid "Added"
 msgstr "Добавлено"
@@ -363,8 +379,8 @@ msgstr "Характеристика"
 msgid "Characteristics"
 msgstr "Характеристики"
 
-msgid "Charge Number"
-msgstr "Номер заказа"
+msgid "Charge numbers"
+msgstr ""
 
 msgid "Chat"
 msgstr "Чат"
@@ -413,6 +429,9 @@ msgstr "На работе"
 
 msgid "Clocked in since <0/>"
 msgstr "Отметился в системе с <0/>"
+
+msgid "Clocked on your timecard"
+msgstr ""
 
 msgid "Close"
 msgstr "Закрыть"
@@ -566,15 +585,6 @@ msgstr "Описание"
 msgid "Details"
 msgstr "Детали"
 
-msgid "Direct Research"
-msgstr "Прямые исследования"
-
-msgid "Direct Supervision"
-msgstr "Прямой надзор"
-
-msgid "Direct Support"
-msgstr "Прямая поддержка"
-
 msgid "Dispatch not found"
 msgstr "Заявка на техобслуживание не найдена"
 
@@ -682,9 +692,6 @@ msgstr "Завершить операции"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Введите значение для каждого производственного заказа или заполните все производственные заказы одновременно из первой строки. Пустые строки пропускаются."
-
-msgid "Enter hours from 0 to 24"
-msgstr "Введите часы от 0 до 24"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -840,9 +847,6 @@ msgstr "Заголовок {level}"
 
 msgid "Hide description"
 msgstr "Скрыть описание"
-
-msgid "Hours on {label}"
-msgstr "Часы на {label}"
 
 msgid "How Carbon looks in this browser."
 msgstr "Внешний вид Carbon в этом браузере."
@@ -1231,6 +1235,9 @@ msgstr "Без влияния"
 msgid "No issue types configured"
 msgstr "Типы проблем не настроены"
 
+msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
+msgstr ""
+
 msgid "No maintenance scheduled for today"
 msgstr "На сегодня техобслуживание не запланировано"
 
@@ -1306,9 +1313,6 @@ msgstr "Нет запасов"
 msgid "No time entries for this week"
 msgstr "Нет записей учёта времени за эту неделю"
 
-msgid "No time this week"
-msgstr "На этой неделе нет времени"
-
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его подобрать — количество в наличии станет отрицательным до тех пор, пока инвентаризация не будет согласована."
 
@@ -1323,9 +1327,6 @@ msgstr "Рабочие центры отсутствуют"
 
 msgid "None"
 msgstr "Нет"
-
-msgid "Not Qualified"
-msgstr "Не квалифицирован"
 
 msgid "Notes"
 msgstr "Примечания"
@@ -1490,6 +1491,9 @@ msgstr "Отобрать {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "Выберите стиль и аватар или перемешайте для новых."
 
+msgid "Pick the leave for your time off."
+msgstr ""
+
 msgid "Pick tracked item"
 msgstr "Выбрать отслеживаемый товар"
 
@@ -1591,6 +1595,9 @@ msgstr "Прогресс"
 
 msgid "Project"
 msgstr "Проект"
+
+msgid "PTO"
+msgstr ""
 
 msgid "Purchasing"
 msgstr "Закупки"
@@ -2058,6 +2065,10 @@ msgstr "Система"
 msgid "Tag"
 msgstr "Тег"
 
+#. placeholder {0}: selected.readableId
+msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgstr ""
+
 msgid "The accent color used across Carbon."
 msgstr "Цвет акцента, используемый во всём Carbon."
 
@@ -2176,6 +2187,9 @@ msgstr "Темы"
 
 msgid "Total"
 msgstr "Итого"
+
+msgid "Total hours"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "Общее количество"

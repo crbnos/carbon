@@ -299,6 +299,12 @@ against `ctx.anchor` (today in the company's timezone). A template seeded next y
 orders from last month, not from 2025. The satellite offsets were derived against a
 reference date of 2026-08-13, so every interval between two dates is preserved exactly.
 
+Timecards are the other exception: `TimecardSpec.workdaysBack` counts working days
+back from the anchor (`workdayBefore`, Saturday and Sunday skipped), and their clock
+times are wall-clock times in the company's time zone (`resolveLocalTimestamp`, with
+`Ctx.timeZone`). Seeded by calendar offset and as UTC, they landed on the weekend and at
+2 am Chicago time, and My Time showed clocked hours on Saturday and Sunday.
+
 `previousMonthEnd(anchor)` and `monthBack(anchor, n)` are the exception-shaped helpers:
 depreciation period ends, the 12 seeded `accountingPeriod` months and fixed-asset usage
 logs must land on real month boundaries, so they are derived rather than offset.

@@ -274,10 +274,24 @@ msgstr "{0}件の仕訳を転記 · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0}件の認識対象明細 · {amount}"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rate.baseAmount, locale)
-#. placeholder {0}: formatQuantity(value)
 msgid "{0} h"
 msgstr "{0} 時間"
+
+#. placeholder {0}: formatQuantity(card.openQuantity)
+msgid "{0} h not posted yet"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(weekTotal)
+#. placeholder {1}: formatQuantity(timecardTotal)
+msgid "{0} h of {1} h on your timecards"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(draftHours)
+msgid "{0} h of draft time to submit"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -342,6 +356,17 @@ msgstr "{0} ヶ月"
 msgid "{0} of {1}"
 msgstr "{0}/{1}"
 
+#. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
+#. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
+#. placeholder {2}: card.unitOfMeasureCode ?? ""
+msgid "{0} of {1} {2} issued"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
+#. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
+msgid "{0} of {1} h"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -357,6 +382,10 @@ msgstr "{memberCount}個の製造指図のうち{0}件がまだ完了してい�
 
 #. placeholder {0}: progress.done
 msgid "{0} of {whole} done"
+msgstr ""
+
+#. placeholder {0}: formatClocked(timecardTotal)
+msgid "{0} on your timecards"
 msgstr ""
 
 #. placeholder {0}: selected.length
@@ -649,6 +678,9 @@ msgstr "{hidden, plural, one {他に # 件のレコード} other {他に # 件�
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
 
+msgid "{hour} h"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -870,6 +902,10 @@ msgstr "総量比"
 #. placeholder {1}: redirectedParts.join(", ")
 msgid "↩ {0} redirected from superseded {1}"
 msgstr "↩ {0} は廃止された {1} からリダイレクトされました"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr ""
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
@@ -2210,6 +2246,9 @@ msgstr ""
 msgid "Add & Issue"
 msgstr "追加して発行"
 
+msgid "Add a charge number to start logging time."
+msgstr ""
+
 msgid "Add a column below to sort the view"
 msgstr "下のカラムを追加してビューをソートします"
 
@@ -2321,6 +2360,9 @@ msgstr "特性を追加"
 msgid "Add Charge"
 msgstr "料金を追加"
 
+msgid "Add Charge Number"
+msgstr ""
+
 msgid "Add child"
 msgstr "子を追加"
 
@@ -2344,6 +2386,9 @@ msgstr "コンソールオペレーターを追加"
 
 msgid "Add Contractor"
 msgstr "外部作業者を追加"
+
+msgid "Add cost"
+msgstr ""
 
 msgid "Add cost center"
 msgstr "原価センターを追加"
@@ -2393,6 +2438,9 @@ msgstr "アイテムを追加"
 msgid "Add Journal Entry"
 msgstr "仕訳行を追加"
 
+msgid "Add labor"
+msgstr ""
+
 msgid "Add line"
 msgstr "明細を追加"
 
@@ -2419,6 +2467,9 @@ msgstr "手動で追加"
 
 msgid "Add match"
 msgstr "マッチを追加"
+
+msgid "Add material"
+msgstr ""
 
 msgid "Add Member"
 msgstr "メンバーを追加"
@@ -2487,6 +2538,9 @@ msgstr "プリンターを追加"
 msgid "Add Property"
 msgstr "プロパティを追加"
 
+msgid "Add PTO"
+msgstr ""
+
 msgid "Add Question"
 msgstr "質問を追加"
 
@@ -2503,9 +2557,6 @@ msgid "Add Risk"
 msgstr "リスクを追加"
 
 msgid "Add row"
-msgstr "行を追加"
-
-msgid "Add Row"
 msgstr "行を追加"
 
 msgid "Add rule"
@@ -2558,6 +2609,9 @@ msgstr "在庫移動を追加"
 
 msgid "Add Supplier"
 msgstr "仕入先を追加"
+
+msgid "Add the charge numbers you worked on this week, then click a day to log time."
+msgstr ""
 
 msgid "Add the components of a serial, an item or a template as elements."
 msgstr ""
@@ -2850,6 +2904,9 @@ msgstr "すべてのツール"
 
 msgid "All transfers"
 msgstr "全転送"
+
+msgid "All types"
+msgstr ""
 
 msgid "All Types"
 msgstr "すべてのタイプ"
@@ -4593,6 +4650,9 @@ msgstr "活性化する前に"
 msgid "Before You Confirm"
 msgstr "確認前に"
 
+msgid "Before you submit"
+msgstr ""
+
 msgid "Beginning"
 msgstr "開始"
 
@@ -5600,6 +5660,12 @@ msgstr "料金"
 msgid "Charge at receipt"
 msgstr "入荷時に請求"
 
+msgid "Charge cost"
+msgstr ""
+
+msgid "Charge Cost"
+msgstr ""
+
 msgid "Charge Date"
 msgstr "料金日付"
 
@@ -5611,6 +5677,9 @@ msgstr "チャージ番号"
 
 msgid "Charge number (optional)"
 msgstr "チャージ番号(オプション)"
+
+msgid "Charge numbers"
+msgstr ""
 
 msgid "Charge Numbers"
 msgstr "チャージ番号"
@@ -5703,9 +5772,6 @@ msgstr "バッチ番号を選択"
 
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "バッチ可能な工法を選択して、一緒に実行できる工程を確認してください。"
-
-msgid "Choose a labor category"
-msgstr "労務カテゴリを選択してください"
 
 msgid "Choose a labor category or an employee"
 msgstr "労務カテゴリまたは従業員を選択してください"
@@ -5864,6 +5930,10 @@ msgstr "商品受領/請求書受領照合用相殺勘定"
 msgid "Clearing demo data"
 msgstr "デモデータをクリア中"
 
+#. placeholder {0}: selected.readableId
+msgid "Click a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgstr ""
+
 msgid "Click again to disconnect"
 msgstr "再度クリックして切断"
 
@@ -5899,6 +5969,9 @@ msgstr "打刻済み"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>からクロックイン中"
+
+msgid "Clocked on your timecard"
+msgstr ""
 
 msgid "Close"
 msgstr "閉じる"
@@ -6656,6 +6729,9 @@ msgstr "外部作業者"
 
 msgid "Contractors"
 msgstr "外部作業者"
+
+msgid "Contracts"
+msgstr ""
 
 msgid "Control"
 msgstr "管理"
@@ -8950,9 +9026,6 @@ msgstr "派生"
 
 msgid "Descending"
 msgstr "降順"
-
-msgid "Describe the cost"
-msgstr "原価を説明する"
 
 msgid "Description"
 msgstr "説明"
@@ -12404,9 +12477,6 @@ msgstr "ガイド付き"
 msgid "Guided implementation"
 msgstr "ガイド付き実施"
 
-msgid "h"
-msgstr "時間"
-
 msgid "Handle recurring and reversing journal entries"
 msgstr "繰り返しおよび逆仕訳の処理"
 
@@ -13731,6 +13801,9 @@ msgstr "問題"
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "承認済ですが適用できません。再オープンしてこれらの行を確認してから、もう一度提出してください。"
 
+msgid "It shows with no hours until you add some."
+msgstr ""
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "バージョンを再度公開するまで実行は停止します。削除されるものはありません。"
 
@@ -13839,6 +13912,10 @@ msgstr "このウィンドウ内のアイテムは黄色いバッジが表示さ
 
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "品目：品目マスター、BOM、工程表、設計変更、CAD"
+
+#. placeholder {0}: formatQuantity(rowTotal(removing))
+msgid "Its {0} h of draft time this week are deleted."
+msgstr ""
 
 msgid "Its amounts go back to what each line has left to invoice."
 msgstr "その金額は各明細が請求待ちしている金額に戻ります。"
@@ -15827,6 +15904,10 @@ msgstr "正しい列が必要ですか？"
 msgid "Need-by target"
 msgstr "所要日目標"
 
+#. placeholder {0}: formatDate(card.date)
+msgid "Needed {0}"
+msgstr ""
+
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "必要人数は、その日の予定作業時間を{personDayHours}hで除した値を四捨五入したものです。フィルタリングしているシフト、またはこの場所で最も一般的なシフト長です。"
 
@@ -16323,6 +16404,9 @@ msgstr "新規作業区"
 msgid "New Workflow"
 msgstr "新規ワークフロー"
 
+msgid "Newest"
+msgstr ""
+
 msgid "Newest first"
 msgstr "最新順"
 
@@ -16573,6 +16657,9 @@ msgstr "まだ変更がありません。"
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "変更がまだありません。リースが有効になると、「修正」はヘッダーに、「終了」と「購入」は各資産のページにあります。"
 
+msgid "No charges match the filters."
+msgstr ""
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "請求がありません。走行距離、損傷、配送、クリーニング料金は次の請求書に含まれます。"
 
@@ -16686,6 +16773,9 @@ msgstr "ドキュメントがありません"
 
 msgid "No draft make method for this item yet."
 msgstr "この品目の下書き製造方法はまだありません。"
+
+msgid "No draft time this week"
+msgstr ""
 
 msgid "No draft versions available"
 msgstr "利用可能な下書きバージョンはありません"
@@ -16867,8 +16957,14 @@ msgstr "労務カテゴリがまだありません"
 msgid "No lease run is posted yet"
 msgstr "リース実行はまだ転記済ではありません。"
 
+msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
+msgstr ""
+
 msgid "No lines"
 msgstr "ラインなし"
+
+msgid "No lines match the filters."
+msgstr ""
 
 msgid "No lines to map"
 msgstr "マップするラインがありません"
@@ -17715,6 +17811,9 @@ msgstr "OK"
 msgid "Old Value"
 msgstr "古い値"
 
+msgid "Oldest"
+msgstr ""
+
 msgid "Oldest first"
 msgstr "最も古いものから"
 
@@ -18444,6 +18543,9 @@ msgstr "外注加工"
 
 msgid "Outstanding"
 msgstr "未払い"
+
+msgid "Over estimate first"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "超過適用額"
@@ -19210,6 +19312,9 @@ msgstr "品目と拠点ごとの所要量を予測して先行計画を立て、
 msgid "Plan lock"
 msgstr "計画ロック"
 
+msgid "Plan order"
+msgstr ""
+
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "複数のプロジェクトを1つとして計画し、すべて一度に購入し、各注文がどのプロジェクト用かを確認します。"
 
@@ -19454,6 +19559,9 @@ msgstr "投稿者"
 
 msgid "Posted By"
 msgstr "投稿者"
+
+msgid "Posted from the service order"
+msgstr ""
 
 msgid "Posted hours"
 msgstr "転記済時間"
@@ -20011,6 +20119,9 @@ msgstr "仮仕訳"
 
 msgid "Provisional rate"
 msgstr "暫定レート"
+
+msgid "PTO"
+msgstr ""
 
 msgid "Public"
 msgstr "公開"
@@ -21168,6 +21279,10 @@ msgstr "このステップから{0}を除去"
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "{1} から {memberCount} 工程中 {0} 個を除去しますか？"
 
+#. placeholder {0}: removing.readableId
+msgid "Remove {0}?"
+msgstr ""
+
 msgid "Remove {deletingName} from the plan?"
 msgstr "計画から {deletingName} を除去しますか？"
 
@@ -22011,6 +22126,9 @@ msgstr "確認と作成"
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
 
+msgid "Review the changes to your timesheet first"
+msgstr ""
+
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "期間の貸借対照表と損益計算書をレビューして、数字が正しいことを確認してください。これは手動の承認です。レビュー後、完了にマークしてください。"
 
@@ -22751,6 +22869,9 @@ msgstr "シリアル番号で検索"
 
 msgid "Search by shipment, sales order, or item"
 msgstr "出荷、受注、または品目で検索"
+
+msgid "Search costs"
+msgstr ""
 
 msgid "Search customers and types..."
 msgstr "得意先とタイプを検索..."
@@ -26328,9 +26449,6 @@ msgstr "部品のリビジョン番号"
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "使用権資産とリース負債は貸借対照表に計上され、1つの定額リースコストが毎月計上されます。"
 
-msgid "The row shows empty until you enter hours."
-msgstr "時間を入力するまで行は空のままです。"
-
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "この製造指図が供給するために作成された受注明細であり、製造指図を背後の得意先所要量に結びつけます。"
 
@@ -27195,6 +27313,9 @@ msgstr "時間"
 msgid "Time off"
 msgstr "休み時間"
 
+msgid "Time off is charged to a leave element."
+msgstr ""
+
 msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
 msgstr "このカテゴリの時間は、料金が設定されるまで費用またはコントラクトプロジェクトに転記できません。"
 
@@ -27433,6 +27554,9 @@ msgstr "推定総原価"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "生産単位による減価償却に対する予想生産数。原価は生産単位当たりに配分されます。"
+
+msgid "Total hours"
+msgstr ""
 
 msgid "Total Hours"
 msgstr "合計時間"
