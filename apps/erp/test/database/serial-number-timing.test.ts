@@ -257,10 +257,17 @@ describe.skipIf(!client)("serial number timing", () => {
     }
   });
 
-  it("leaves a job alone under the default timing", async () => {
+  it("leaves the units of an item with no serial sequence alone", async () => {
     const f = await alwaysPostFixture();
     try {
       await serialSetup(f, "jobCreation");
+      await seed(f, async (trx) => {
+        await trx
+          .deleteFrom("itemSerialSequence")
+          .where("itemId", "=", f.assemblyId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
       const job = await untouchedSerialJob(f, "3", 3);
 
       const numbered = await numberSerialUnitsForCompletion(f.db, {
@@ -273,6 +280,34 @@ describe.skipIf(!client)("serial number timing", () => {
       expect(await units(f, job.makeMethodId)).toEqual([
         expect.objectContaining({ readableId: null, quantity: 3 })
       ]);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("numbers a job left unnumbered when its timing changed back to job creation", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      // Created under production, so its units are still one unnumbered seed.
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "3b", 3);
+      await itemTiming(f, "jobCreation");
+
+      // Through PostgREST, as the ERP and MES write it, so the interceptors run.
+      const done = await client!
+        .from("jobOperation")
+        .update({ status: "Done" })
+        .eq("id", job.operationId)
+        .eq("companyId", f.companyId);
+      expect(done.error).toBeNull();
+
+      expect(await receivedUnits(f, job.jobId)).toEqual([
+        { readableId: "SN-001", quantity: 1 },
+        { readableId: "SN-002", quantity: 1 },
+        { readableId: "SN-003", quantity: 1 }
+      ]);
+      expect(await units(f, job.makeMethodId)).toHaveLength(3);
     } finally {
       await f.cleanup();
     }
@@ -509,7 +544,7 @@ describe.skipIf(!client)("serial number timing", () => {
       ).toEqual({ numbered: 2 });
 
       // The company numbers at production; this item at creation, so the
-      // completion leaves its units to the creation path.
+      // job's units are numbered when it is created.
       await seed(f, async (trx) => {
         await trx
           .updateTable("companySettings")
@@ -519,13 +554,21 @@ describe.skipIf(!client)("serial number timing", () => {
       });
       await itemTiming(f, "jobCreation");
       const second = await untouchedSerialJob(f, "10", 2);
+      await assignJobSerialNumbers(client!, f.db, {
+        jobId: second.jobId,
+        itemId: f.assemblyId,
+        companyId: f.companyId,
+        userId: USER
+      });
+      const numberedAtCreation = await units(f, second.makeMethodId);
       expect(
-        await numberSerialUnitsForCompletion(f.db, {
-          jobId: second.jobId,
-          quantityComplete: 2,
-          companyId: f.companyId
-        })
-      ).toEqual({ numbered: 0 });
+        numberedAtCreation
+          .map((unit) => [unit.readableId, Number(unit.quantity)])
+          .sort()
+      ).toEqual([
+        ["SN-003", 1],
+        ["SN-004", 1]
+      ]);
     } finally {
       await f.cleanup();
     }

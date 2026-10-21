@@ -3860,6 +3860,40 @@ export async function assignJobSerialNumbers(
   }
 }
 
+/**
+ * Number a job's units when `releaseCheckedJobs` releases it, under the
+ * `jobRelease` timing (the item's, else the company's). Best-effort: the job is
+ * already Ready, so a failure is logged and the release goes on; the units then
+ * draw their numbers at their first touch or at completion
+ * (`number_serial_units_for_completion`).
+ */
+export async function assignJobSerialNumbersAtRelease(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; userId: string }
+) {
+  try {
+    const job = await db
+      .selectFrom("job")
+      .select(["itemId"])
+      .where("id", "=", args.jobId)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (!job?.itemId) return;
+    await assignJobSerialNumbers(client, db, {
+      ...args,
+      itemId: job.itemId,
+      moment: "release"
+    });
+  } catch (error) {
+    logger.error("Failed to number serial units at release", {
+      error,
+      jobId: args.jobId,
+      companyId: args.companyId
+    });
+  }
+}
+
 /** The row write only; `updateJobDetails` also checks the job and recalculates it. */
 export async function updateJob(
   client: SupabaseClient<Database>,
@@ -12747,18 +12781,21 @@ export async function assignSerialNumbers(
 }
 
 /**
- * Receipt as first touch (the item's serial number timing is `jobRelease` or
- * `production`):
- * before `complete_job_to_inventory` takes `quantityComplete` units of a serial
- * job, split what it needs off the job's unsplit seed and number every unit it
- * takes. Without this an untouched job would be received as one unnumbered
- * entity holding every unit.
+ * Receipt as first touch: before `complete_job_to_inventory` takes
+ * `quantityComplete` units of a serial job, split what it needs off the job's
+ * unsplit seed and number every unit it takes. Without this an untouched job
+ * would be received as one unnumbered entity holding every unit.
+ *
+ * Under the `jobRelease` and `production` timings that is the normal case.
+ * Under `jobCreation` every unit is numbered at creation, so it numbers
+ * nothing, unless the job was created under another timing before the item or
+ * company switched back. The timing is not read here for that reason.
  *
  * The SQL `number_serial_units_for_completion` does the work, so this path and
  * the `sync_finish_job_operation` interceptor (an operation marked Done) share
- * one implementation. It is a no-op under the default `jobCreation` timing, for
- * an item with no serial sequence, and when the job cannot cover the
- * completion. It commits on its own, before the RPC.
+ * one implementation. It is a no-op when every unit taken is numbered, for an
+ * item with no serial sequence, and when the job cannot cover the completion.
+ * It commits on its own, before the RPC.
  */
 export async function numberSerialUnitsForCompletion(
   db: Kysely<KyselyDatabase>,

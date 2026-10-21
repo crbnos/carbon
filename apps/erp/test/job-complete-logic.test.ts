@@ -171,37 +171,37 @@ describe("getSerialCompleteChoice", () => {
   const seed = unit({ id: "seed", quantity: 3 });
   const none = new Set<string>();
 
-  it("lists the serials when every unit left is numbered, under either timing", () => {
+  it("lists the serials when every unit left is numbered, with or without a sequence", () => {
     const units = [unit({ readableId: "SN-0001" }), unit({ readableId: "SN-0002" })];
-    for (const serialNumberTiming of ["jobCreation", "production"] as const) {
+    for (const hasSerialSequence of [false, true]) {
       expect(
         getSerialCompleteChoice({
           trackedEntities: units,
           receivedEntityIds: none,
-          serialNumberTiming,
+          hasSerialSequence,
           jobQuantity: 2
         })
       ).toEqual({ mode: "serials", serials: ["SN-0001", "SN-0002"] });
     }
   });
 
-  it("stays locked for an unsplit seed under the default timing", () => {
+  it("stays locked for an unsplit seed when the item has no serial sequence", () => {
     expect(
       getSerialCompleteChoice({
         trackedEntities: [seed],
         receivedEntityIds: none,
-        serialNumberTiming: "jobCreation",
+        hasSerialSequence: false,
         jobQuantity: 3
       })
     ).toEqual({ mode: "locked" });
   });
 
-  it("unlocks an unsplit seed when serials are numbered at production", () => {
+  it("unlocks an unsplit seed when the item has a serial sequence", () => {
     expect(
       getSerialCompleteChoice({
         trackedEntities: [seed],
         receivedEntityIds: none,
-        serialNumberTiming: "production",
+        hasSerialSequence: true,
         jobQuantity: 3
       })
     ).toEqual({ mode: "numberOnReceipt", receivableCount: 3 });
@@ -219,7 +219,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: new Set(["received"]),
-        serialNumberTiming: "production",
+        hasSerialSequence: true,
         jobQuantity: 4
       })
     ).toEqual({ mode: "numberOnReceipt", receivableCount: 2 });
@@ -227,7 +227,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: new Set(["received"]),
-        serialNumberTiming: "jobCreation",
+        hasSerialSequence: false,
         jobQuantity: 4
       })
     ).toEqual({ mode: "locked" });
@@ -238,7 +238,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: [seed],
         receivedEntityIds: null,
-        serialNumberTiming: "production",
+        hasSerialSequence: true,
         jobQuantity: 3
       })
     ).toEqual({ mode: "locked" });
@@ -249,7 +249,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: [unit({ id: "received", status: "Available" })],
         receivedEntityIds: new Set(["received"]),
-        serialNumberTiming: "production",
+        hasSerialSequence: true,
         jobQuantity: 1
       })
     ).toEqual({ mode: "locked" });
@@ -265,7 +265,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: none,
-        serialNumberTiming: "production",
+        hasSerialSequence: true,
         jobQuantity: 3
       })
     ).toEqual({ mode: "numberOnReceipt", receivableCount: 3 });
@@ -273,13 +273,13 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: none,
-        serialNumberTiming: "jobCreation",
+        hasSerialSequence: false,
         jobQuantity: 3
       })
     ).toEqual({ mode: "locked" });
   });
 
-  it("does not list the serials while units are still missing at production", () => {
+  it("does not list the serials while units are still missing", () => {
     const units = [
       unit({ id: "done", status: "Available", readableId: "SN-0001" }),
       unit({ id: "started", status: "Reserved", readableId: "SN-0002" })
@@ -288,7 +288,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: none,
-        serialNumberTiming: "production",
+        hasSerialSequence: true,
         jobQuantity: 3
       })
     ).toEqual({ mode: "numberOnReceipt", receivableCount: 3 });
@@ -296,7 +296,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: none,
-        serialNumberTiming: "jobCreation",
+        hasSerialSequence: false,
         jobQuantity: 3
       })
     ).toEqual({ mode: "serials", serials: ["SN-0001", "SN-0002"] });
@@ -311,19 +311,20 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: none,
-        serialNumberTiming: "production",
+        hasSerialSequence: true,
         jobQuantity: 3
       })
     ).toEqual({ mode: "numberOnReceipt", receivableCount: 3 });
   });
 
-  it("numbers on receipt under the release timing, as under production", () => {
-    // A job completed before it was released still holds its unsplit seed.
+  it("numbers on receipt a seed left by a timing that changed back to job creation", () => {
+    // Created under a deferred timing, the job still holds its unsplit seed
+    // after the item switched to jobCreation: only the receipt can number it.
     expect(
       getSerialCompleteChoice({
         trackedEntities: [seed],
         receivedEntityIds: none,
-        serialNumberTiming: "jobRelease",
+        hasSerialSequence: true,
         jobQuantity: 3
       })
     ).toEqual({ mode: "numberOnReceipt", receivableCount: 3 });
@@ -339,7 +340,7 @@ describe("getSerialCompleteChoice", () => {
       getSerialCompleteChoice({
         trackedEntities: units,
         receivedEntityIds: none,
-        serialNumberTiming: "jobRelease",
+        hasSerialSequence: true,
         jobQuantity: 3
       })
     ).toEqual({ mode: "serials", serials: ["SN-0001", "SN-0002", "SN-0003"] });

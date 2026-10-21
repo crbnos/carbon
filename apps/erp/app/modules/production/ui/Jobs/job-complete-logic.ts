@@ -10,8 +10,6 @@
 // works on the units the job has not received yet, so the dialog and the
 // database always agree on which units a completion takes.
 
-import type { SerialNumberTiming } from "~/modules/settings/settings.models";
-
 export type JobSerialUnit = {
   id: string;
   status: string;
@@ -84,15 +82,17 @@ export function getReceivableSerialUnits(
  * How the Complete dialog lets the quantity be chosen for a serial job.
  *
  * - `serials`: every unit left to receive is a numbered single unit, so the
- *   dialog lists the serials a completion takes (any timing).
- * - `numberOnReceipt`: the item's serial number timing (its own, else the
- *   company's) is `jobRelease` or `production`, and some units are unnumbered,
- *   still one unsplit seed, or held by no row yet. The completion numbers the
- *   units it receives and creates the missing ones
+ *   dialog lists the serials a completion takes.
+ * - `numberOnReceipt`: the item has a serial sequence and some units are
+ *   unnumbered, still one unsplit seed, or held by no row yet. The completion
+ *   numbers the units it receives and creates the missing ones
  *   (`number_serial_units_for_completion`), so the quantity can be chosen up to
- *   `receivableCount` even though the serials cannot be named yet.
- * - `locked`: the quantity stays what the shop floor finished — the default
- *   timing with unnumbered units, or receipts that could not be read.
+ *   `receivableCount` even though the serials cannot be named yet. This does
+ *   not depend on the serial number timing: a job left unnumbered by a timing
+ *   that has since changed to `jobCreation` is numbered on receipt too.
+ * - `locked`: the quantity stays what the shop floor finished — unnumbered
+ *   units of an item with no serial sequence, or receipts that could not be
+ *   read.
  */
 export type SerialCompleteChoice =
   | { mode: "serials"; serials: string[] }
@@ -102,22 +102,22 @@ export type SerialCompleteChoice =
 export function getSerialCompleteChoice({
   trackedEntities,
   receivedEntityIds,
-  serialNumberTiming,
+  hasSerialSequence,
   jobQuantity
 }: {
   trackedEntities: JobSerialUnit[];
   /** Null when the job's receipts could not be read. */
   receivedEntityIds: ReadonlySet<string> | null;
-  serialNumberTiming: SerialNumberTiming;
+  /** Whether the item has a serial sequence the completion can draw from. */
+  hasSerialSequence: boolean;
   jobQuantity: number;
 }): SerialCompleteChoice {
   // Without the receipts the dialog could offer a unit the job already
   // received, whatever the timing.
   if (!receivedEntityIds) return { mode: "locked" };
 
-  // Under the default timing every unit was numbered when the job was created;
-  // under the other two the completion numbers what it receives.
-  const numbersOnReceipt = serialNumberTiming !== "jobCreation";
+  // With a sequence the completion numbers whatever it receives unnumbered.
+  const numbersOnReceipt = hasSerialSequence;
 
   // The shop floor's first completion or scrap of an unsplit seed leaves it
   // holding one unit and spawns the rest one at a time, so the rows can hold

@@ -124,9 +124,10 @@ BEGIN
     -- received, and refusing here would block the Done update itself.
     v_quantity_complete := GREATEST(v_quantity_complete, COALESCE(v_quantity_received, 0));
 
-    -- Under serialNumberTiming = 'production' the units this completion takes
-    -- may be unnumbered, or still one unsplit seed: the receipt is their first
-    -- touch, so split and number them first, as completeJob does.
+    -- The units this completion takes may be unnumbered, or still one unsplit
+    -- seed (a deferred serial number timing, or a job left so when its timing
+    -- changed): the receipt is their first touch, so split and number them
+    -- first, as completeJob does.
     PERFORM number_serial_units_for_completion(
       p_new->>'jobId',
       v_quantity_complete,

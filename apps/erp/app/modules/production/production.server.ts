@@ -323,26 +323,12 @@ export const releaseCheckedJobs = defineServiceFn({
       releasedJobIds.push(id);
 
       // Under the jobRelease serial number timing (the item's, else the
-      // company's) every unit is numbered now. Best-effort, as at creation.
-      const releasedJob = await ctx.asSystem.pg
-        .selectFrom("job")
-        .select(["itemId"])
-        .where("id", "=", id)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (releasedJob?.itemId) {
-        await service.assignJobSerialNumbers(
-          ctx.asSystem.supabase,
-          ctx.asSystem.pg,
-          {
-            jobId: id,
-            itemId: releasedJob.itemId,
-            companyId,
-            userId,
-            moment: "release"
-          }
-        );
-      }
+      // company's) every unit is numbered now. Best-effort: a failure is logged.
+      await service.assignJobSerialNumbersAtRelease(
+        ctx.asSystem.supabase,
+        ctx.asSystem.pg,
+        { jobId: id, companyId, userId }
+      );
 
       const purchaseOrder = await invokeCreate(
         { db: ctx.asSystem.pg, companyId, userId },
@@ -909,10 +895,10 @@ export const completeJob = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
-    // Under the release or production serial number timing the units this
-    // completion takes may be unnumbered, or still one unsplit seed: the
-    // receipt is their first touch, so split and number them before the RPC
-    // receives them.
+    // The units this completion takes may be unnumbered, or still one unsplit
+    // seed (a deferred serial number timing, or a job left so when its timing
+    // changed): the receipt is their first touch, so split and number them
+    // before the RPC receives them.
     try {
       await service.numberSerialUnitsForCompletion(ctx.asSystem.pg, {
         jobId,

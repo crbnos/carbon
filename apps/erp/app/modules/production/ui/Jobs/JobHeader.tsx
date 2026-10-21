@@ -88,7 +88,6 @@ import {
 } from "~/hooks";
 import { useCompanySettings } from "~/hooks/useCompanySettings";
 import { usePullFromLocationIds } from "~/hooks/usePullFromLocationIds";
-import type { SerialNumberTiming } from "~/modules/settings/settings.models";
 import type { action as cancelAction } from "~/routes/x+/job+/$jobId.cancel";
 import type { action as completeAction } from "~/routes/x+/job+/$jobId.complete";
 import type { action as statusAction } from "~/routes/x+/job+/$jobId.status";
@@ -1415,12 +1414,6 @@ function JobCompleteModal({
 }) {
   const { carbon } = useCarbon();
   const { company } = useUser();
-  // The company's serial number timing; an item's serial sequence can
-  // override it (read with the job's data below).
-  const companySerialNumberTiming =
-    (useCompanySettings()?.serialNumberTiming as
-      | SerialNumberTiming
-      | undefined) ?? "jobCreation";
   const [loading, setLoading] = useState(true);
   const { t } = useLingui();
   const [defaultStorageUnitId, setDefaultStorageUnitId] = useState<
@@ -1437,8 +1430,9 @@ function JobCompleteModal({
   const [receivableSerials, setReceivableSerials] = useState<string[] | null>(
     null
   );
-  // Under the jobRelease or production timing: how many units the completion can
-  // still receive and number as it receives them. Null otherwise.
+  // For an item with a serial sequence whose units are not all numbered: how
+  // many units the completion can still receive and number as it receives
+  // them. Null otherwise.
   const [unitsNumberedOnReceipt, setUnitsNumberedOnReceipt] = useState<
     number | null
   >(null);
@@ -1494,7 +1488,7 @@ function JobCompleteModal({
         getJobReceipts(job?.id!),
         carbon
           .from("itemSerialSequence")
-          .select("serialNumberTiming")
+          .select("id")
           .eq("itemId", job?.itemId!)
           .eq("companyId", company.id)
           .maybeSingle()
@@ -1539,13 +1533,10 @@ function JobCompleteModal({
           ? getSerialCompleteChoice({
               trackedEntities: trackedEntities.data,
               receivedEntityIds: receipts ? receivedEntityIds : null,
-              // The item's own timing, else the company's, as
-              // getSerialNumberTiming resolves it on the server.
-              serialNumberTiming:
-                (serialSequence.data?.serialNumberTiming as
-                  | SerialNumberTiming
-                  | null
-                  | undefined) ?? companySerialNumberTiming,
+              // number_serial_units_for_completion numbers what the
+              // completion takes whenever the item has a sequence. A failed
+              // read keeps the quantity locked.
+              hasSerialSequence: !serialSequence.error && !!serialSequence.data,
               jobQuantity: job?.quantity ?? 0
             })
           : ({ mode: "locked" } as const);

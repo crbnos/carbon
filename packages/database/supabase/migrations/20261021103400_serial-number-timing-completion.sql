@@ -3,9 +3,13 @@
 -- Under the 'production' timing a job's units stay unnumbered until they are
 -- first touched, and the completion that receives them is a first touch. Under
 -- 'jobRelease' they are numbered at release, so the completion only numbers what
--- release did not (a job completed before release, or units added since). The
--- timing is the item's serial sequence's, else the company's. Both completion paths call number_serial_units_for_completion
--- before complete_job_to_inventory: the ERP's completeJob, and the
+-- release did not (a job completed before release, or units added since). Under
+-- 'jobCreation' every unit is numbered at creation, so it numbers nothing, unless
+-- a job still holds unnumbered units: one created under another timing before
+-- the item or company switched back. The completion numbers whatever it takes
+-- unnumbered, whatever the timing. Both completion paths call
+-- number_serial_units_for_completion before complete_job_to_inventory: the
+-- ERP's completeJob, and the
 -- sync_finish_job_operation interceptor when the last operation is marked Done.
 -- It splits what the completion takes off the job's unsplit seed and numbers
 -- every unit it takes, so the receipt never takes one unnumbered entity holding
@@ -114,10 +118,12 @@ $function$;
 -- Receipt as first touch. Takes the units complete_job_to_inventory will take
 -- for p_quantity_complete, in its own order (the receipt branch, or the Make to
 -- Asset branch), splits what is missing off the unsplit seed and numbers every
--- unit taken. Returns how many numbers it drew. Writes nothing when the timing
--- is 'jobCreation', the item is not serial-tracked or has no sequence, or the
--- job cannot cover the completion (the completion then refuses with its own
--- message).
+-- unit taken. Returns how many numbers it drew. Writes nothing when every unit
+-- taken is already numbered, the item is not serial-tracked or has no sequence,
+-- or the job cannot cover the completion (the completion then refuses with its
+-- own message). It does not read the serial number timing: a job left
+-- unnumbered by a timing that has since changed to 'jobCreation' is numbered
+-- here too, rather than received as one unnumbered entity.
 --
 -- A unit can also have no row at all. The shop floor's first completion or
 -- scrap of the seed leaves it holding one unit and adds the next units one at a
@@ -137,7 +143,6 @@ AS $function$
 DECLARE
   v_job record;
   v_make_method record;
-  v_timing text;
   v_delta numeric;
   v_target text;
   v_taken text[];
@@ -166,19 +171,12 @@ BEGIN
   IF NOT FOUND OR v_job."itemTrackingType" IS DISTINCT FROM 'Serial' THEN
     RETURN 0;
   END IF;
-  SELECT "serialNumberTiming"
-  INTO v_timing
+  -- An item with no sequence has nothing to draw from: the completion takes
+  -- its units as it always has.
+  PERFORM 1
   FROM "itemSerialSequence"
   WHERE "itemId" = v_job."itemId" AND "companyId" = p_company_id;
   IF NOT FOUND THEN
-    RETURN 0;
-  END IF;
-  -- Under 'jobCreation' every unit was numbered when the job was created.
-  IF COALESCE(
-    v_timing,
-    (SELECT "serialNumberTiming" FROM "companySettings" WHERE "id" = p_company_id),
-    'jobCreation'
-  ) = 'jobCreation' THEN
     RETURN 0;
   END IF;
 

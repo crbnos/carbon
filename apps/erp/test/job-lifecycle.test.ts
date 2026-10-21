@@ -58,6 +58,8 @@ vi.mock("../app/modules/shared/shared.service", async (importOriginal) => {
 vi.mock("@carbon/planning", () => ({ runLocationSchedule: vi.fn() }));
 vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
+  // The SQL numbering needs a database; serial-number-timing.test.ts covers it.
+  numberSerialUnitsForCompletion: vi.fn(async () => ({ numbered: 0 })),
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
   runMRP: vi.fn(async () => ({ data: null, error: null })),
   returnPickedRemaindersForJob: vi.fn(async () => ({ data: {}, error: null })),
