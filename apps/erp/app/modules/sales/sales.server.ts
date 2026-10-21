@@ -774,7 +774,10 @@ export async function deleteSalesInvoiceLineReleasingRentals(
 
 /** The contract page's "Invoice": drafts the invoices the contract has due,
  *  exactly as the daily job would — the `create-contract-invoices` server
- *  function. */
+ *  function. A project contract also drafts its project billing invoice
+ *  (`create-project-billing-invoices`) FIRST, in the job's order: the
+ *  contract step ends a contract past its end date, and an Ended contract's
+ *  last period would then never bill. */
 export async function generateContractInvoicesNow(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -783,17 +786,31 @@ export async function generateContractInvoicesNow(
     /** `YYYY-MM-DD` in the company's timezone. */
     asOf: string;
     customerContractId: string;
+    billingBasis: Database["public"]["Enums"]["contractBillingBasis"];
   }
 ): Promise<{ invoices: DraftedContractInvoice[]; invoiceIds: string[] }> {
-  const { companyId, userId, asOf, customerContractId } = args;
-  const { invoices, invoiceIds, failures } = await serverFns
-    .system({ db, companyId, userId })
-    .invokeOrThrow("create-contract-invoices", { asOf, customerContractId });
+  const { companyId, userId, asOf, customerContractId, billingBasis } = args;
+  const fns = serverFns.system({ db, companyId, userId });
+  const project =
+    billingBasis === "Project"
+      ? await fns.invokeOrThrow("create-project-billing-invoices", {
+          asOf,
+          customerContractId
+        })
+      : { invoices: [], invoiceIds: [], failures: [] };
+  const schedule = await fns.invokeOrThrow("create-contract-invoices", {
+    asOf,
+    customerContractId
+  });
   // One contract is billed here, so its failure is the action's failure.
+  const failures = [...project.failures, ...schedule.failures];
   if (failures.length > 0) {
     throw new Error(failures.map((f) => f.error).join("; "));
   }
-  return { invoices, invoiceIds };
+  return {
+    invoices: [...project.invoices, ...schedule.invoices],
+    invoiceIds: [...project.invoiceIds, ...schedule.invoiceIds]
+  };
 }
 
 /** A new contract's invoicing terms from its customer: the bill-to

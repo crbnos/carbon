@@ -120,6 +120,20 @@ export default function ContractDetailsRoute() {
     revenueResiduals
   } = routeData;
 
+  // A project contract bills mostly from project cost, so its Project
+  // Billing card leads; its invoice schedule holds only the billing events.
+  const isProject = contract.billingBasis === "Project";
+  const projectBillingCard = projectBilling && (
+    <ContractProjectBilling
+      contractId={id}
+      lines={lines}
+      funding={projectBilling.funding}
+      invoices={projectBilling.invoices}
+      revenue={projectBilling.revenue}
+      currencyCode={contract.currencyCode}
+    />
+  );
+
   return (
     <>
       <ContractSummary
@@ -128,6 +142,7 @@ export default function ContractDetailsRoute() {
         schedule={schedule}
         computedSchedule={computedSchedule}
       />
+      {isProject && projectBillingCard}
       <ContractInvoices
         contract={contract}
         lines={lines}
@@ -135,16 +150,7 @@ export default function ContractDetailsRoute() {
         credits={credits}
         computedSchedule={computedSchedule}
       />
-      {projectBilling && (
-        <ContractProjectBilling
-          contractId={id}
-          lines={lines}
-          funding={projectBilling.funding}
-          invoices={projectBilling.invoices}
-          revenue={projectBilling.revenue}
-          currencyCode={contract.currencyCode}
-        />
-      )}
+      {!isProject && projectBillingCard}
       <ContractRevenue
         contract={contract}
         lines={lines}

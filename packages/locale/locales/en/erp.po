@@ -12060,6 +12060,9 @@ msgstr "Function"
 msgid "Functional"
 msgstr "Functional"
 
+msgid "funded"
+msgstr "funded"
+
 msgid "Funded"
 msgstr "Funded"
 
@@ -16466,6 +16469,9 @@ msgstr "Next 30 days"
 msgid "Next 7 days"
 msgstr "Next 7 days"
 
+msgid "Next billing event"
+msgstr "Next billing event"
+
 msgid "Next Calibration"
 msgstr "Next Calibration"
 
@@ -17016,8 +17022,8 @@ msgstr "No lines to map"
 msgid "No lines yet"
 msgstr "No lines yet"
 
-msgid "No lines yet. Add a service line before confirming the contract."
-msgstr "No lines yet. Add a service line before confirming the contract."
+msgid "No lines yet. Add a line before confirming the contract."
+msgstr "No lines yet. Add a line before confirming the contract."
 
 msgid "No list variables available upstream."
 msgstr "No list variables available upstream."

@@ -49,9 +49,12 @@ export default function ContractLineSummary({
   });
   const formatPercent = usePercentFormatter();
   const formatQuantity = useQuantityFormatter();
-  const billingMethodLabels = useBillingMethodLabels();
   const routeData = useRouteData<ContractRouteData>(
     path.to.contract(line.customerContractId)
+  );
+  // "Fixed Price" on a project contract, as its Lines step names it.
+  const billingMethodLabels = useBillingMethodLabels(
+    routeData?.contract.billingBasis
   );
 
   const revenueTypeLabels: Record<

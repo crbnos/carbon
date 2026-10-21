@@ -199,6 +199,10 @@ const ContractProperties = () => {
     (contract.notes ?? null) as Parameters<typeof tiptapToText>[0]
   );
   const renewalUpliftPoints = round(Number(contract.renewalUplift ?? 0) * 100);
+  // A project contract has a period of performance instead of a term, and
+  // only its billing period is the user's choice: alignment and timing are
+  // set by the basis, and it never renews.
+  const isProject = contract.billingBasis === "Project";
 
   return (
     <VStack
@@ -363,7 +367,7 @@ const ContractProperties = () => {
       <PropertyForm name="customerReference" value={contract.customerReference}>
         <InputControlled
           name="customerReference"
-          label={t`PO Number`}
+          label={isProject ? t`Contract Number` : t`PO Number`}
           size="sm"
           inline
           isReadOnly={isDisabled}
@@ -399,7 +403,11 @@ const ContractProperties = () => {
 
       <VStack spacing={4} className="w-full border-t border-border pt-4">
         <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
-          <Trans>Term</Trans>
+          {isProject ? (
+            <Trans>Period of Performance</Trans>
+          ) : (
+            <Trans>Term</Trans>
+          )}
         </h3>
         <PropertyForm name="closeDate" value={contract.closeDate}>
           <DatePicker
@@ -423,78 +431,88 @@ const ContractProperties = () => {
             }}
           />
         </PropertyForm>
-        <PropertyForm name="duration" value={storedDuration}>
-          <Select
-            name="duration"
-            label={t`Duration`}
-            inline={(value) => (
-              <span>{labels.duration[value as ContractDuration] ?? value}</span>
-            )}
-            isReadOnly={isDisabled}
-            options={contractDurations.map((value) => ({
-              value,
-              label: labels.duration[value]
-            }))}
-            onChange={(option) => {
-              if (!option?.value) return;
-              const next = option.value as ContractDuration;
-              setDuration(next);
-              if (next !== "custom" && next !== storedDuration) {
-                onUpdate("duration", next);
-              }
-            }}
-          />
-        </PropertyForm>
+        {!isProject && (
+          <PropertyForm name="duration" value={storedDuration}>
+            <Select
+              name="duration"
+              label={t`Duration`}
+              inline={(value) => (
+                <span>
+                  {labels.duration[value as ContractDuration] ?? value}
+                </span>
+              )}
+              isReadOnly={isDisabled}
+              options={contractDurations.map((value) => ({
+                value,
+                label: labels.duration[value]
+              }))}
+              onChange={(option) => {
+                if (!option?.value) return;
+                const next = option.value as ContractDuration;
+                setDuration(next);
+                if (next !== "custom" && next !== storedDuration) {
+                  onUpdate("duration", next);
+                }
+              }}
+            />
+          </PropertyForm>
+        )}
         <PropertyForm name="endDate" value={contract.endDate}>
           <DatePicker
             name="endDate"
             label={t`End Date`}
             inline
-            // Derived from the duration unless the term is custom.
-            isDisabled={isDisabled || duration !== "custom"}
+            // Derived from the duration unless the term is custom; a
+            // project contract's end date is always its own.
+            isDisabled={isDisabled || (!isProject && duration !== "custom")}
             onChange={(date) => {
               if (date) onUpdate("endDate", date);
             }}
           />
         </PropertyForm>
-        <PropertyForm name="renewal" value={contract.renewal}>
-          <Select
-            name="renewal"
-            label={t`Action on Completion`}
-            inline={(value) => (
-              <span>
-                {labels.renewal[value as (typeof contractRenewals)[number]] ??
-                  value}
-              </span>
-            )}
-            isReadOnly={isDisabled}
-            options={contractRenewals.map((value) => ({
-              value,
-              label: labels.renewal[value]
-            }))}
-            onChange={(option) => {
-              if (option?.value) onUpdate("renewal", option.value);
-            }}
-          />
-        </PropertyForm>
-        <PropertyForm name="renewalUplift" value={renewalUpliftPoints}>
-          <NumberControlled
-            name="renewalUplift"
-            label={t`Renewal Uplift (%)`}
-            inline
-            isReadOnly={isDisabled}
-            value={renewalUpliftPoints}
-            minValue={0}
-            step={INPUT_STEP.percent}
-            formatOptions={INPUT_FORMAT.percentPoints}
-            onChange={(value) => {
-              const points = Number.isNaN(value) ? 0 : value;
-              if (points !== renewalUpliftPoints) {
-                submit({ field: "renewalUplift", value: String(points) });
-              }
-            }}
-          />
-        </PropertyForm>
+        {!isProject && (
+          <>
+            <PropertyForm name="renewal" value={contract.renewal}>
+              <Select
+                name="renewal"
+                label={t`Action on Completion`}
+                inline={(value) => (
+                  <span>
+                    {labels.renewal[
+                      value as (typeof contractRenewals)[number]
+                    ] ?? value}
+                  </span>
+                )}
+                isReadOnly={isDisabled}
+                options={contractRenewals.map((value) => ({
+                  value,
+                  label: labels.renewal[value]
+                }))}
+                onChange={(option) => {
+                  if (option?.value) onUpdate("renewal", option.value);
+                }}
+              />
+            </PropertyForm>
+            <PropertyForm name="renewalUplift" value={renewalUpliftPoints}>
+              <NumberControlled
+                name="renewalUplift"
+                label={t`Renewal Uplift (%)`}
+                inline
+                isReadOnly={isDisabled}
+                value={renewalUpliftPoints}
+                minValue={0}
+                step={INPUT_STEP.percent}
+                formatOptions={INPUT_FORMAT.percentPoints}
+                onChange={(value) => {
+                  const points = Number.isNaN(value) ? 0 : value;
+                  if (points !== renewalUpliftPoints) {
+                    submit({ field: "renewalUplift", value: String(points) });
+                  }
+                }}
+              />
+            </PropertyForm>
+          </>
+        )}
       </VStack>
 
       <VStack spacing={4} className="w-full border-t border-border pt-4">
@@ -504,7 +522,7 @@ const ContractProperties = () => {
         <PropertyForm name="billingFrequency" value={contract.billingFrequency}>
           <Select
             name="billingFrequency"
-            label={t`Billing Frequency`}
+            label={isProject ? t`Billing Period` : t`Billing Frequency`}
             inline={(value) => (
               <span>
                 {labels.billingFrequency[
@@ -522,85 +540,95 @@ const ContractProperties = () => {
             }}
           />
         </PropertyForm>
-        <PropertyForm name="billingAlignment" value={contract.billingAlignment}>
-          <Select
-            name="billingAlignment"
-            label={t`Billing Alignment`}
-            inline={(value) => (
-              <span>
-                {labels.billingAlignment[
-                  value as (typeof contractBillingAlignments)[number]
-                ] ?? value}
-              </span>
-            )}
-            isReadOnly={isDisabled}
-            options={contractBillingAlignments.map((value) => ({
-              value,
-              label: labels.billingAlignment[value]
-            }))}
-            onChange={(option) => {
-              if (option?.value) onUpdate("billingAlignment", option.value);
-            }}
-          />
-        </PropertyForm>
-        <PropertyForm name="billingTiming" value={contract.billingTiming}>
-          <Select
-            name="billingTiming"
-            label={t`Billing Timing`}
-            termId="billing-timing"
-            inline={(value) => (
-              <span>
-                {labels.billingTiming[
-                  value as (typeof contractBillingTimings)[number]
-                ] ?? value}
-              </span>
-            )}
-            isReadOnly={isDisabled}
-            options={contractBillingTimings.map((value) => ({
-              value,
-              label: labels.billingTiming[value]
-            }))}
-            onChange={(option) => {
-              if (option?.value) onUpdate("billingTiming", option.value);
-            }}
-          />
-        </PropertyForm>
-        <PropertyForm name="firstInvoiceDate" value={contract.firstInvoiceDate}>
-          <DatePicker
-            name="firstInvoiceDate"
-            label={t`First Invoice`}
-            inline
-            isDisabled={isDisabled}
-            onChange={(date) => {
-              onUpdate("firstInvoiceDate", date || null);
-            }}
-          />
-        </PropertyForm>
-        <PropertyForm name="billedThrough" value={contract.billedThrough}>
-          <DatePicker
-            name="billedThrough"
-            label={t`Billed Through`}
-            inline
-            isDisabled={isDisabled}
-            onChange={(date) => {
-              onUpdate("billedThrough", date || null);
-            }}
-          />
-        </PropertyForm>
-        <PropertyForm
-          name="recognizeRevenueFrom"
-          value={contract.recognizeRevenueFrom}
-        >
-          <DatePicker
-            name="recognizeRevenueFrom"
-            label={t`Recognize Revenue From`}
-            inline
-            isDisabled={isDisabled}
-            onChange={(date) => {
-              onUpdate("recognizeRevenueFrom", date || null);
-            }}
-          />
-        </PropertyForm>
+        {!isProject && (
+          <>
+            <PropertyForm
+              name="billingAlignment"
+              value={contract.billingAlignment}
+            >
+              <Select
+                name="billingAlignment"
+                label={t`Billing Alignment`}
+                inline={(value) => (
+                  <span>
+                    {labels.billingAlignment[
+                      value as (typeof contractBillingAlignments)[number]
+                    ] ?? value}
+                  </span>
+                )}
+                isReadOnly={isDisabled}
+                options={contractBillingAlignments.map((value) => ({
+                  value,
+                  label: labels.billingAlignment[value]
+                }))}
+                onChange={(option) => {
+                  if (option?.value) onUpdate("billingAlignment", option.value);
+                }}
+              />
+            </PropertyForm>
+            <PropertyForm name="billingTiming" value={contract.billingTiming}>
+              <Select
+                name="billingTiming"
+                label={t`Billing Timing`}
+                termId="billing-timing"
+                inline={(value) => (
+                  <span>
+                    {labels.billingTiming[
+                      value as (typeof contractBillingTimings)[number]
+                    ] ?? value}
+                  </span>
+                )}
+                isReadOnly={isDisabled}
+                options={contractBillingTimings.map((value) => ({
+                  value,
+                  label: labels.billingTiming[value]
+                }))}
+                onChange={(option) => {
+                  if (option?.value) onUpdate("billingTiming", option.value);
+                }}
+              />
+            </PropertyForm>
+            <PropertyForm
+              name="firstInvoiceDate"
+              value={contract.firstInvoiceDate}
+            >
+              <DatePicker
+                name="firstInvoiceDate"
+                label={t`First Invoice`}
+                inline
+                isDisabled={isDisabled}
+                onChange={(date) => {
+                  onUpdate("firstInvoiceDate", date || null);
+                }}
+              />
+            </PropertyForm>
+            <PropertyForm name="billedThrough" value={contract.billedThrough}>
+              <DatePicker
+                name="billedThrough"
+                label={t`Billed Through`}
+                inline
+                isDisabled={isDisabled}
+                onChange={(date) => {
+                  onUpdate("billedThrough", date || null);
+                }}
+              />
+            </PropertyForm>
+            <PropertyForm
+              name="recognizeRevenueFrom"
+              value={contract.recognizeRevenueFrom}
+            >
+              <DatePicker
+                name="recognizeRevenueFrom"
+                label={t`Recognize Revenue From`}
+                inline
+                isDisabled={isDisabled}
+                onChange={(date) => {
+                  onUpdate("recognizeRevenueFrom", date || null);
+                }}
+              />
+            </PropertyForm>
+          </>
+        )}
         <PropertyForm
           name="invoiceAutomation"
           value={contract.invoiceAutomation ?? COMPANY_DEFAULT}

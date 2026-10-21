@@ -12060,6 +12060,9 @@ msgstr "功能"
 msgid "Functional"
 msgstr "功能性"
 
+msgid "funded"
+msgstr ""
+
 msgid "Funded"
 msgstr "已资助"
 
@@ -16466,6 +16469,9 @@ msgstr "接下来30天"
 msgid "Next 7 days"
 msgstr "接下来7天"
 
+msgid "Next billing event"
+msgstr ""
+
 msgid "Next Calibration"
 msgstr "下次校准"
 
@@ -17016,8 +17022,8 @@ msgstr "没有行需要映射"
 msgid "No lines yet"
 msgstr "还没有行"
 
-msgid "No lines yet. Add a service line before confirming the contract."
-msgstr "暂无行。确认合约前请添加服务行。"
+msgid "No lines yet. Add a line before confirming the contract."
+msgstr ""
 
 msgid "No list variables available upstream."
 msgstr "上游没有可用的列表变量。"

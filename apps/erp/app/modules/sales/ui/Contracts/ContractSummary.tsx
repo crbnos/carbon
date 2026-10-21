@@ -25,6 +25,11 @@ import {
   useQuantityFormatter
 } from "~/hooks";
 import { path } from "~/utils/path";
+import {
+  isProjectBillingMethod,
+  projectContractFunded
+} from "../../sales.models";
+import { useBillingMethodLabels } from "./ContractLineBillingFields";
 import { scheduleRows, toContractLineTerms } from "./contractTerms";
 import type { Contract, ContractLine, ContractRouteData } from "./types";
 
@@ -35,7 +40,9 @@ type ContractSummaryProps = Pick<
 
 /** The contract at a glance: its lines, each with its amount in a right-hand
  *  column, then the recurring value per billing period, the next invoice and
- *  the contract value in the same column. */
+ *  the contract value in the same column. A project contract shows what it is
+ *  funded for instead: its Time & Materials and Cost Plus lines bill from
+ *  project cost, so the schedule holds only its billing events. */
 const ContractSummary = ({
   contract,
   lines,
@@ -47,6 +54,8 @@ const ContractSummary = ({
   const { currencyCode } = contract;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const frequency = contract.billingFrequency ?? "Month";
+  const isProject = contract.billingBasis === "Project";
+  const hasFixedLine = lines.some((line) => line.billingMethod === "Fixed");
 
   // Σ the schedule — planned live for an unedited Draft, else persisted.
   const contractValue = scheduleRows({
@@ -122,7 +131,7 @@ const ContractSummary = ({
         {lines.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             <Trans>
-              No lines yet. Add a service line before confirming the contract.
+              No lines yet. Add a line before confirming the contract.
             </Trans>
           </p>
         ) : (
@@ -151,40 +160,50 @@ const ContractSummary = ({
               />
             </HStack>
           )}
-          <HStack className="w-full justify-between text-sm text-muted-foreground">
-            <span>
-              <Trans>Next invoice</Trans>
-              {nextInvoice && (
-                <>
-                  {" · "}
-                  <DateTime value={nextInvoice.invoiceDate} variant="date" />
-                </>
+          {(!isProject || hasFixedLine) && (
+            <HStack className="w-full justify-between text-sm text-muted-foreground">
+              <span>
+                {isProject ? (
+                  <Trans>Next billing event</Trans>
+                ) : (
+                  <Trans>Next invoice</Trans>
+                )}
+                {nextInvoice && (
+                  <>
+                    {" · "}
+                    <DateTime value={nextInvoice.invoiceDate} variant="date" />
+                  </>
+                )}
+              </span>
+              {nextInvoice ? (
+                <MotionMoney
+                  className="tabular-nums"
+                  value={nextInvoice.total}
+                  currency={currencyCode}
+                  decimalPlaces={currencyDecimals}
+                />
+              ) : (
+                <span>—</span>
               )}
-            </span>
-            {nextInvoice ? (
-              <MotionMoney
-                className="tabular-nums"
-                value={nextInvoice.total}
-                currency={currencyCode}
-                decimalPlaces={currencyDecimals}
-              />
-            ) : (
-              <span>—</span>
-            )}
-          </HStack>
+            </HStack>
+          )}
           <div className="my-2 h-px w-full bg-border" />
           <HStack className="w-full justify-between text-lg font-semibold">
             <span>
-              <Trans>Contract value</Trans>
+              {isProject ? (
+                <Trans>Funded</Trans>
+              ) : (
+                <Trans>Contract value</Trans>
+              )}
             </span>
             <MotionMoney
               className="tabular-nums"
-              value={contractValue}
+              value={isProject ? projectContractFunded(lines) : contractValue}
               currency={currencyCode}
               decimalPlaces={currencyDecimals}
             />
           </HStack>
-          {!contract.endDate && (
+          {!isProject && !contract.endDate && (
             <p className="text-xs text-muted-foreground w-full">
               <Trans>
                 Open-ended: the value of the invoices planned so far.
@@ -239,9 +258,18 @@ function SummaryLine({
     Year: t`per year`
   };
   const isRecurring = line.revenueType === "Recurring";
+  const isProject = contract.billingBasis === "Project";
+  const billingMethodLabels = useBillingMethodLabels(contract.billingBasis);
+  const isBillingLine = isProjectBillingMethod(line.billingMethod);
 
-  const details: string[] = [isRecurring ? t`Recurring` : t`One-time`];
-  if (quantity !== 1) {
+  // A project contract line: its CLIN and billing method; a billing line's
+  // amount is what it is funded for, a Fixed Price line's is its price.
+  const details: string[] = isProject
+    ? [line.lineItemNumber, billingMethodLabels[line.billingMethod]].filter(
+        (part): part is string => !!part
+      )
+    : [isRecurring ? t`Recurring` : t`One-time`];
+  if (!isProject && quantity !== 1) {
     details.push(`${formatQuantity(quantity)} × ${rateFormatter.format(rate)}`);
   }
   if (discount > 0) {
@@ -282,8 +310,17 @@ function SummaryLine({
             isReplaced && "line-through text-muted-foreground"
           )}
         >
-          {money.format(amount)}
+          {isBillingLine
+            ? line.fundedAmount === null
+              ? "—"
+              : money.format(Number(line.fundedAmount))
+            : money.format(amount)}
         </span>
+        {isBillingLine && line.fundedAmount !== null && (
+          <span className="text-xs text-muted-foreground">
+            <Trans>funded</Trans>
+          </span>
+        )}
         {isRecurring && line.rateUnit && (
           <span className="text-xs text-muted-foreground">
             {perUnit[line.rateUnit]}

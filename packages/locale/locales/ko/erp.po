@@ -12060,6 +12060,9 @@ msgstr "함수"
 msgid "Functional"
 msgstr "기능적"
 
+msgid "funded"
+msgstr ""
+
 msgid "Funded"
 msgstr "자금 조성됨"
 
@@ -16466,6 +16469,9 @@ msgstr "다음 30일"
 msgid "Next 7 days"
 msgstr "다음 7일"
 
+msgid "Next billing event"
+msgstr ""
+
 msgid "Next Calibration"
 msgstr "다음 교정"
 
@@ -17016,8 +17022,8 @@ msgstr "매핑할 라인이 없습니다"
 msgid "No lines yet"
 msgstr "아직 줄이 없습니다"
 
-msgid "No lines yet. Add a service line before confirming the contract."
-msgstr "아직 라인이 없습니다. 계약을 확인하기 전에 서비스 라인을 추가하세요."
+msgid "No lines yet. Add a line before confirming the contract."
+msgstr ""
 
 msgid "No list variables available upstream."
 msgstr "업스트림에서 사용 가능한 목록 변수가 없습니다."

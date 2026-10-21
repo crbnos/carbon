@@ -2115,6 +2115,27 @@ export function isProjectBillingMethod(
   return billingMethod === "Time & Materials" || billingMethod === "Cost Plus";
 }
 
+/** What a project contract is funded for: each billing line's funded amount
+ *  and each Fixed Price line's price (its rate, at quantity 1). A billing
+ *  line with no funded amount adds nothing. */
+export function projectContractFunded(
+  lines: {
+    billingMethod: (typeof contractBillingMethods)[number];
+    fundedAmount: number | null;
+    quantity: number;
+    rate: number;
+  }[]
+): number {
+  return lines.reduce(
+    (sum, line) =>
+      sum +
+      (isProjectBillingMethod(line.billingMethod)
+        ? Number(line.fundedAmount ?? 0)
+        : Number(line.quantity) * Number(line.rate)),
+    0
+  );
+}
+
 /** The default accounts a project contract posts through. An empty one does
  *  not stop Confirm, but its first posting fails. */
 export const projectContractAccountDefaults = [

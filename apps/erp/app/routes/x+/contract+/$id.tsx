@@ -56,11 +56,21 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "contract");
 
+const serviceContractsCrumb = detailBreadcrumb(
+  { breadcrumb: msg`Service Contracts`, to: path.to.contracts },
+  (data) => data?.contract?.customerContractId
+);
+const projectContractsCrumb = detailBreadcrumb(
+  { breadcrumb: msg`Project Contracts`, to: path.to.projectContracts },
+  (data) => data?.contract?.customerContractId
+);
+
 export const handle: Handle = {
-  breadcrumb: detailBreadcrumb(
-    { breadcrumb: msg`Service Contracts`, to: path.to.contracts },
-    (data) => data?.contract?.customerContractId
-  ),
+  // The list the contract belongs to, by its billing basis.
+  breadcrumb: (params: unknown, data: ContractRouteData | undefined) =>
+    data?.contract?.billingBasis === "Project"
+      ? projectContractsCrumb(params, data)
+      : serviceContractsCrumb(params, data),
   module: "sales"
 };
 

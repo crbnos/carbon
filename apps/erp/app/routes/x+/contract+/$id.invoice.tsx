@@ -56,7 +56,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         companyId,
         asOf: datetime.today(timeZone).toString(),
         customerContractId: id,
-        userId
+        userId,
+        billingBasis: contract.data.billingBasis ?? "Schedule"
       }
     ));
   } catch (err) {

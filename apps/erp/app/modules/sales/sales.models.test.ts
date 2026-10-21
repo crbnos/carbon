@@ -24,6 +24,7 @@ const {
   contractTermFromServicePeriods,
   customerContractValidator,
   laborCategoriesWithoutBillRate,
+  projectContractFunded,
   projectContractGaps,
   quoteLineValidator,
   quoteValidator,
@@ -570,5 +571,27 @@ describe("laborCategoriesWithoutBillRate", () => {
         lineRates: []
       })
     ).toEqual([]);
+  });
+});
+
+describe("projectContractFunded", () => {
+  it("adds billing lines' funding and Fixed Price lines' prices", () => {
+    expect(
+      projectContractFunded([
+        {
+          billingMethod: "Time & Materials",
+          fundedAmount: 50000,
+          quantity: 1,
+          rate: 0
+        },
+        {
+          billingMethod: "Cost Plus",
+          fundedAmount: null,
+          quantity: 1,
+          rate: 0
+        },
+        { billingMethod: "Fixed", fundedAmount: null, quantity: 1, rate: 90000 }
+      ])
+    ).toBe(140000);
   });
 });

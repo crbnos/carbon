@@ -12060,6 +12060,9 @@ msgstr "फंक्शन"
 msgid "Functional"
 msgstr "कार्यात्मक"
 
+msgid "funded"
+msgstr ""
+
 msgid "Funded"
 msgstr "फंडित"
 
@@ -16466,6 +16469,9 @@ msgstr "अगले 30 दिन"
 msgid "Next 7 days"
 msgstr "अगले 7 दिन"
 
+msgid "Next billing event"
+msgstr ""
+
 msgid "Next Calibration"
 msgstr "अगला अंशांकन"
 
@@ -17016,8 +17022,8 @@ msgstr "मैप करने के लिए कोई लाइनें न
 msgid "No lines yet"
 msgstr "अभी तक कोई लाइन नहीं"
 
-msgid "No lines yet. Add a service line before confirming the contract."
-msgstr "अभी तक कोई पंक्ति नहीं। अनुबंध की पुष्टि करने से पहले एक सेवा पंक्ति जोड़ें।"
+msgid "No lines yet. Add a line before confirming the contract."
+msgstr ""
 
 msgid "No list variables available upstream."
 msgstr "कोई सूची चर अपस्ट्रीम उपलब्ध नहीं है।"
