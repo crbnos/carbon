@@ -49,7 +49,7 @@ export interface AllowlistPropOverride {
    * `omit`, and pinned with the version: it asserts how THIS vendor renders text. */
   links?: {
     format: "slack" | "html";
-    when?: { prop: string; equals: readonly string[] };
+    when?: { input: string; equals: readonly string[] };
   };
 }
 
@@ -119,7 +119,7 @@ export interface AllowlistEntry {
  *     `integration` row FAILS the consent callback on its "installed" write — after
  *     the token is already in the vault. Every piece needs the one-row migration
  *     (the `INSERT INTO "integration"` at the end of
- *     `20261020120101_workflow-integration-connections.sql`). Gmail, 2026-09-01.
+ *     `20261021123101_workflow-integration-connections.sql`). Gmail, 2026-09-01.
  *  2. Google canonicalises scopes: request `email` and the token response's `scope`
  *     says `https://www.googleapis.com/auth/userinfo.email` (plus an unrequested
  *     `openid`). `missingScopes(granted, required)` then never matches, and the
@@ -328,7 +328,7 @@ export const PIECE_ALLOWLIST: Record<ActivepiecesPiece, AllowlistEntry> = {
           template: true,
           links: {
             format: "html",
-            when: { prop: "body_type", equals: ["html"] }
+            when: { input: "body_type", equals: ["html"] }
           }
         },
         // An array of {data,name} FILE objects; Carbon would send list<string>.

@@ -11,7 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * Separate from `secrets.ts`: that module serves `companyIntegration`, which holds
  * one row per integration per company and so cannot carry several named accounts.
  * These functions target `integrationConnection` and its own `connection:`-prefixed
- * vault RPCs. The 12 existing integrations keep their path untouched.
+ * vault RPCs.
  *
  * Tokens live in Supabase Vault and NEVER in `metadata`.
  */
@@ -92,6 +92,16 @@ export class ConnectionNameTakenError extends Error {
   }
 }
 
+/** The vendor workspace (`metadata.team_id`) is already connected to another
+ * company. An inbound vendor event names only its workspace, so two companies on
+ * one workspace would make every such event ambiguous for both. */
+export class ConnectionWorkspaceTakenError extends Error {
+  constructor(pieceName: string) {
+    super(`This ${pieceName} workspace is connected to another company.`);
+    this.name = "ConnectionWorkspaceTakenError";
+  }
+}
+
 const SELECT_COLUMNS =
   "id, companyId, pieceName, name, authType, accountLabel, metadata, expiresAt, status, lastError";
 
@@ -102,11 +112,6 @@ const CLAIM_STALE_SECONDS = 30;
 const POLL_INTERVAL_MS = 250;
 const POLL_ATTEMPTS = 20;
 
-/**
- * The two readers. `SELECT_COLUMNS` is a string, so supabase-js cannot infer the row
- * shape from it — these are the ONLY place that gap is bridged, rather than every
- * caller asserting the same shape for itself.
- */
 /**
  * THE definition of an account a workflow step can actually act as.
  *
@@ -189,6 +194,11 @@ export function missingScopes(
   return required.filter((scope) => !have.has(scope));
 }
 
+/**
+ * The readers. `SELECT_COLUMNS` is a string, so supabase-js cannot infer the row
+ * shape from it — these are the ONLY place that gap is bridged, rather than every
+ * caller asserting the same shape for itself.
+ */
 export async function readConnections(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -224,9 +234,31 @@ export async function readConnection(
   return (data ?? null) as unknown as IntegrationConnection | null;
 }
 
+/**
+ * Every company's connections of one piece to one vendor workspace
+ * (`metadata.team_id`), oldest first. The one read that crosses companies: an
+ * inbound vendor event names only its workspace, so the caller must check the
+ * rows agree on a company before acting. Service role only.
+ */
+export async function readConnectionsByTeamId(
+  serviceClient: SupabaseClient<Database>,
+  pieceName: string,
+  teamId: string
+): Promise<IntegrationConnection[]> {
+  // A failed read must not look like "no connection for this workspace".
+  const { data, error } = await serviceClient
+    .from("integrationConnection")
+    .select(SELECT_COLUMNS)
+    .eq("pieceName", pieceName)
+    .eq("metadata->>team_id", teamId)
+    .order("createdAt", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as unknown as IntegrationConnection[];
+}
+
 /** Which vendor account a connection acts as: the workspace for Slack, otherwise
  * the account label read back after consent. `null` when nothing identifies it. */
-function accountIdentity(
+export function accountIdentity(
   accountLabel: string | null | undefined,
   metadata: Record<string, unknown> | null | undefined
 ): string | null {
@@ -236,7 +268,7 @@ function accountIdentity(
 }
 
 /** Best-effort: when either side cannot be identified, the consent is accepted. */
-function sameAccount(
+export function sameAccount(
   stored: { accountLabel: string | null; metadata: unknown },
   incoming: {
     accountLabel?: string | null;
@@ -267,6 +299,25 @@ export async function createConnection(
     createdBy: string;
   }
 ): Promise<{ id: string }> {
+  // Refuse a workspace another company already uses. Only a usable connection
+  // counts: a Revoked or Expired one no longer answers inbound events. Not
+  // race-proof (no unique index spans companies), but it closes the ordinary path.
+  const teamId = args.metadata?.team_id;
+  if (typeof teamId === "string" && teamId !== "") {
+    const sameWorkspace = await readConnectionsByTeamId(
+      serviceClient,
+      args.pieceName,
+      teamId
+    );
+    if (
+      sameWorkspace.some(
+        (row) => row.companyId !== args.companyId && connectionUsable(row)
+      )
+    ) {
+      throw new ConnectionWorkspaceTakenError(args.pieceName);
+    }
+  }
+
   // A consent REVIVES an existing row (by id for Reconnect, by name otherwise) so
   // saved workflow nodes keep their reference — but only for the SAME account, or
   // every workflow on the row would silently start acting as someone else.
@@ -368,36 +419,26 @@ export async function renameConnection(
 }
 
 /**
- * Drops the token and marks the row revoked. The row itself SURVIVES: a saved
- * workflow node may reference the id, and a dangling id produces a worse error
- * than a clear "reconnect this" message.
+ * Drops the token and marks the row revoked, in one statement
+ * (`revoke_connections`): an Active row whose secret is already gone reads as a
+ * usable account that fails every use. The row itself SURVIVES: a saved workflow
+ * node may reference the id, and a dangling id produces a worse error than a
+ * clear "reconnect this" message.
  */
 export async function disconnectConnection(
   serviceClient: SupabaseClient<Database>,
   companyId: string,
+  pieceName: string,
   connectionId: string,
   updatedBy: string
 ) {
-  const { error } = await serviceClient.rpc("delete_connection_secret", {
+  const { error } = await serviceClient.rpc("revoke_connections", {
     p_company_id: companyId,
+    p_piece_name: pieceName,
+    p_updated_by: updatedBy,
     p_connection_id: connectionId
   });
-  if (error) throw error;
-
-  // The row update is part of the same transition: an Active row whose secret is
-  // already gone reads as a usable account that fails every use, so a failure here
-  // must surface rather than let an uninstall report success.
-  const updated = await serviceClient
-    .from("integrationConnection")
-    .update({
-      status: "Revoked",
-      secretRef: null,
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("companyId", companyId)
-    .eq("id", connectionId);
-  if (updated.error) throw new Error(updated.error.message);
+  if (error) throw new Error(error.message);
 }
 
 /**
@@ -405,29 +446,18 @@ export async function disconnectConnection(
  * Generic rather than per-vendor, so a new piece registers this instead of adding a
  * hooks file of its own. Leaving live tokens behind would hand the customer
  * credentials they can no longer see.
- *
- * Serial: each disconnect is a vault RPC plus a row update, and a company has a
- * handful of accounts, not thousands.
  */
 export async function revokeConnectionsForPiece(
   serviceClient: SupabaseClient<Database>,
   pieceName: string,
   companyId: string
 ): Promise<void> {
-  const connections = await readConnections(
-    serviceClient,
-    companyId,
-    pieceName
-  );
-  for (const connection of connections) {
-    if (connection.status === "Revoked") continue;
-    await disconnectConnection(
-      serviceClient,
-      companyId,
-      connection.id,
-      "system"
-    );
-  }
+  const { error } = await serviceClient.rpc("revoke_connections", {
+    p_company_id: companyId,
+    p_piece_name: pieceName,
+    p_updated_by: "system"
+  });
+  if (error) throw new Error(error.message);
 }
 
 async function writeTokens(
@@ -464,7 +494,8 @@ async function readTokens(
   return { accessToken: bag.accessToken, refreshToken: bag.refreshToken };
 }
 
-function expiringSoon(expiresAt: string | null): boolean {
+/** Inside the refresh window, so a use must refresh first. No expiry never expires. */
+export function expiringSoon(expiresAt: string | null): boolean {
   if (expiresAt === null) return false;
   return Date.parse(expiresAt) - Date.now() <= REFRESH_WINDOW_MS;
 }
@@ -579,9 +610,45 @@ export async function resolveConnectionAuth(
   // leaves a live 30-second claim: every later request loses the claim, polls for
   // the full 5 seconds, and fails with a timeout that names nothing. Only the token
   // exchange used to be guarded — a vault write that threw stranded the claim.
+  //
+  // Re-read the row and its tokens AFTER winning: the reads above happened before
+  // the claim, so another worker may have refreshed in between. Exchanging the
+  // refresh token read earlier would send a rotated-away token, get `invalid_grant`
+  // and condemn a healthy connection.
+  let current: IntegrationConnection | null;
+  let currentTokens: ConnectionTokens | null = null;
+  try {
+    current = await readConnection(serviceClient, companyId, connectionId);
+    if (current !== null && current.status === "Active") {
+      currentTokens = await readTokens(serviceClient, companyId, connectionId);
+    }
+  } catch (cause) {
+    await releaseClaim(serviceClient, companyId, connectionId);
+    throw cause;
+  }
+  if (current === null || currentTokens === null) {
+    await releaseClaim(serviceClient, companyId, connectionId);
+    throw new ConnectionRevokedError(connectionId);
+  }
+  if (!expiringSoon(current.expiresAt)) {
+    // Someone refreshed between our first read and our claim.
+    await releaseClaim(serviceClient, companyId, connectionId);
+    return { accessToken: currentTokens.accessToken, connection: current };
+  }
+  const refreshToken = currentTokens.refreshToken;
+  if (refreshToken === undefined) {
+    await markExpired(
+      serviceClient,
+      companyId,
+      connectionId,
+      "No refresh token was stored for this connection."
+    );
+    throw new ConnectionRevokedError(connectionId);
+  }
+
   let refreshed: ExchangedTokens;
   try {
-    refreshed = await exchangeRefreshToken(oauth, tokens.refreshToken);
+    refreshed = await exchangeRefreshToken(oauth, refreshToken);
   } catch (cause) {
     // Only a definitive vendor rejection condemns the connection; a network error
     // or vendor 5xx is transient, so release the claim and let the next use retry.
@@ -597,7 +664,7 @@ export async function resolveConnectionAuth(
     await writeTokens(serviceClient, companyId, connectionId, {
       accessToken: refreshed.accessToken,
       // Google omits the refresh token on a refresh response; keep the stored one.
-      refreshToken: refreshed.refreshToken ?? tokens.refreshToken
+      refreshToken: refreshed.refreshToken ?? refreshToken
     });
 
     const settled = await serviceClient
@@ -622,36 +689,36 @@ export async function resolveConnectionAuth(
 
   return {
     accessToken: refreshed.accessToken,
-    connection: { ...connection, expiresAt: refreshed.expiresAt }
+    connection: { ...current, expiresAt: refreshed.expiresAt }
   };
 }
 
 /**
  * The stored access token for a vendor whose tokens do not expire (Slack bot tokens),
  * for callers outside a workflow step — the Assistant's slash commands and thread
- * sync. Refuses anything it cannot vouch for: a non-Active connection, or one that
- * carries an expiry inside the refresh window (a refreshable vendor must go through
- * `resolveConnectionAuth`, which owns the refresh claim).
+ * sync. Takes the row the caller already read, so the guard below judges exactly
+ * the connection it picked. Refuses anything it cannot vouch for: a non-Active
+ * connection, or one that carries an expiry inside the refresh window (a
+ * refreshable vendor must go through `resolveConnectionAuth`, which owns the
+ * refresh claim).
  */
 export async function readConnectionAccessToken(
   serviceClient: SupabaseClient<Database>,
-  companyId: string,
-  connectionId: string
+  connection: Pick<
+    IntegrationConnection,
+    "id" | "companyId" | "status" | "expiresAt"
+  >
 ): Promise<string> {
-  const connection = await readConnection(
-    serviceClient,
-    companyId,
-    connectionId
-  );
-  if (connection === null || connection.status !== "Active") {
-    throw new ConnectionRevokedError(connectionId);
+  if (!connectionUsable(connection)) {
+    throw new ConnectionRevokedError(connection.id);
   }
   if (expiringSoon(connection.expiresAt)) {
     throw new Error(
-      `Connection ${connectionId} carries an expiring token; use resolveConnectionAuth.`
+      `Connection ${connection.id} carries an expiring token; use resolveConnectionAuth.`
     );
   }
-  return (await readTokens(serviceClient, companyId, connectionId)).accessToken;
+  return (await readTokens(serviceClient, connection.companyId, connection.id))
+    .accessToken;
 }
 
 async function awaitRefreshedToken(
@@ -719,15 +786,15 @@ export interface ExchangedTokens {
   body: Record<string, unknown>;
 }
 
+/** How long any call to a vendor's OAuth endpoints may take. A stalled endpoint
+ * would otherwise hang the OAuth callback or a step's refresh with it. */
+export const TOKEN_REQUEST_TIMEOUT_MS = 10_000;
+
 /**
  * The one token-endpoint call. Server-side only — `client_secret` must never reach
- * the browser.
- *
- * The OAuth callback matches on this rejection message to pick its error code, so
- * the string is a contract between two files and is written here once.
+ * the browser. A failure throws; the OAuth callback picks its error code by which
+ * stage threw, never by reading this message.
  */
-const TOKEN_REQUEST_TIMEOUT_MS = 10_000;
-
 async function postTokenRequest(
   tokenUrl: string,
   body: Record<string, string>
@@ -736,9 +803,8 @@ async function postTokenRequest(
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams(body),
-    // A stalled token endpoint would otherwise hang the OAuth callback or a
-    // step's refresh with it. The abort throws, which every caller treats as
-    // transient — exactly right for a vendor that stopped answering.
+    // The abort throws, which every caller treats as transient — exactly right
+    // for a vendor that stopped answering.
     signal: AbortSignal.timeout(TOKEN_REQUEST_TIMEOUT_MS)
   });
 
@@ -804,7 +870,7 @@ function readTokenResponse(payload: unknown): ExchangedTokens {
   };
   if (typeof body.access_token !== "string") {
     // Slack rejects with HTTP 200 and `{ ok: false, error }`; name it for the server
-    // log. The callback maps this message to a code — the browser never sees it.
+    // log. The browser never sees it — the callback answers a code.
     throw new Error(
       typeof body.error === "string"
         ? `The connection returned no access token (${body.error}).`

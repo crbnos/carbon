@@ -26,6 +26,7 @@ export function PairsField({
   required,
   helpTermId,
   help,
+  hint,
   value,
   onChange,
   context,
@@ -63,6 +64,7 @@ export function PairsField({
       helpTermId={helpTermId}
       help={help}
       issue={issue}
+      hint={hint}
     >
       <div className="flex w-full min-w-0 flex-col gap-2">
         {entries.map((entry, index) => {

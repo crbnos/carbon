@@ -80,7 +80,7 @@ export function fieldNotices(
       }
       if (!holdsRecord(value, node.id, context.typeOf)) continue;
 
-      const state = linkState(node, declared, name);
+      const state = linkState(node.data.inputs, declared, name);
       if (state.kind === "linked") continue;
       notices.push(
         state.kind === "gated"
@@ -90,7 +90,7 @@ export function fieldNotices(
               field: `inputs.${name}`,
               params: {
                 input: state.gate.input,
-                equals: String(state.gate.equals[0] ?? "")
+                equals: state.gate.equals[0] ?? ""
               }
             }
           : {

@@ -8230,9 +8230,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
@@ -8436,9 +8433,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
@@ -8594,9 +8588,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
@@ -23947,6 +23938,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.jobs.productionQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobs.projectedCompletionAt"
           },
           {
@@ -23954,9 +23948,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobs.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobs.productionQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.jobs.fixedAssetClassId"
@@ -38956,6 +38947,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
@@ -38963,9 +38957,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.job.fixedAssetClassId"
@@ -39144,6 +39135,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
@@ -39151,9 +39145,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.job.fixedAssetClassId"
@@ -39286,6 +39277,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
@@ -39293,9 +39287,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.job.fixedAssetClassId"
@@ -50221,10 +50212,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -50430,10 +50421,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -50593,10 +50584,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -93058,9 +93049,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.readyAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.inspectionDocumentId"
           },
           {
@@ -102559,9 +102547,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -102569,6 +102554,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -102628,9 +102616,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.leaseIncrementalBorrowingRate"
           },
           {
@@ -102638,6 +102623,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.preventNegativeBackflush"
@@ -102840,9 +102828,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -102850,6 +102835,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -102909,9 +102897,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.leaseIncrementalBorrowingRate"
           },
           {
@@ -102919,6 +102904,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.preventNegativeBackflush"
@@ -103075,9 +103063,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -103085,6 +103070,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -103144,9 +103132,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.leaseIncrementalBorrowingRate"
           },
           {
@@ -103154,6 +103139,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.preventNegativeBackflush"
@@ -110370,6 +110358,45 @@ export default {
         tags: ["(rpc) upsert_to_search_index"]
       }
     },
+    "/rpc/get_connection_secret": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_connection_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_connection_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_connection_secret"]
+      }
+    },
     "/rpc/translateTrialBalance": {
       post: {
         parameters: [
@@ -113350,6 +113377,45 @@ export default {
           }
         },
         tags: ["(rpc) users_for_groups"]
+      }
+    },
+    "/rpc/delete_connection_secret": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_connection_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_connection_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) delete_connection_secret"]
       }
     },
     "/rpc/get_recent_job_operations_by_employee": {
@@ -116384,6 +116450,53 @@ export default {
         tags: ["(rpc) get_next_prefixed_sequence"]
       }
     },
+    "/rpc/revoke_connections": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_connection_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_piece_name: {
+                  format: "text",
+                  type: "string"
+                },
+                p_updated_by: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_piece_name", "p_updated_by"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) revoke_connections"]
+      }
+    },
     "/rpc/get_maintenance_schedules_by_location": {
       post: {
         parameters: [
@@ -116755,6 +116868,48 @@ export default {
           }
         },
         tags: ["(rpc) get_material_details"]
+      }
+    },
+    "/rpc/upsert_connection_secret": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_connection_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_secret: {
+                  format: "jsonb"
+                }
+              },
+              required: ["p_company_id", "p_connection_id", "p_secret"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) upsert_connection_secret"]
       }
     },
     "/rpc/xid_counter": {
@@ -122035,10 +122190,6 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
           format: "text",
-          type: "string"
-        },
-        readyAt: {
-          format: "timestamp with time zone",
           type: "string"
         },
         inspectionDocumentId: {
@@ -129555,6 +129706,10 @@ export default {
           format: "double precision",
           type: "number"
         },
+        productionQuantity: {
+          format: "numeric",
+          type: "number"
+        },
         projectedCompletionAt: {
           format: "timestamp with time zone",
           type: "string"
@@ -129566,10 +129721,6 @@ export default {
         scheduleOutdatedAt: {
           format: "timestamp with time zone",
           type: "string"
-        },
-        productionQuantity: {
-          format: "numeric",
-          type: "number"
         },
         fixedAssetClassId: {
           description:
@@ -136874,6 +137025,10 @@ export default {
           format: "double precision",
           type: "number"
         },
+        productionQuantity: {
+          format: "numeric",
+          type: "number"
+        },
         projectedCompletionAt: {
           description:
             "Simulated finish of the job's last operation (forward-ASAP finite schedule). Null until first regen.",
@@ -136889,10 +137044,6 @@ export default {
         scheduleOutdatedAt: {
           format: "timestamp with time zone",
           type: "string"
-        },
-        productionQuantity: {
-          format: "numeric",
-          type: "number"
         },
         fixedAssetClassId: {
           description:
@@ -142308,14 +142459,14 @@ export default {
           format: "text",
           type: "string"
         },
-        readyAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        readyAt: {
+          format: "timestamp with time zone",
           type: "string"
         },
         projectedCompletionAt: {
@@ -162626,10 +162777,6 @@ export default {
           format: "text",
           type: "string"
         },
-        readyAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
@@ -167094,10 +167241,10 @@ export default {
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
-        "salesRuleNotificationGroup",
         "showCurrencyTrailingZeros",
         "requireMfa",
         "allowLowercaseItemIds",
+        "salesRuleNotificationGroup",
         "includeOperationsOnTraveler",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
@@ -167111,10 +167258,10 @@ export default {
         "leaseDefaultDiscountRate",
         "invoiceAutomation",
         "invoiceNotificationGroup",
-        "requireBackflushStorageUnit",
         "leaseIncrementalBorrowingRate",
         "leaseShortTermExpedient",
         "leaseReminderDays",
+        "requireBackflushStorageUnit",
         "preventNegativeBackflush",
         "receiptQuantitiesStartAtZero"
       ],
@@ -167363,13 +167510,6 @@ export default {
           format: "text",
           type: "string"
         },
-        salesRuleNotificationGroup: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
         showCurrencyTrailingZeros: {
           default: true,
           format: "boolean",
@@ -167384,6 +167524,13 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        salesRuleNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         },
         includeOperationsOnTraveler: {
           default: true,
@@ -167490,11 +167637,6 @@ export default {
           format: "text",
           type: "string"
         },
-        requireBackflushStorageUnit: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
         leaseIncrementalBorrowingRate: {
           default: 6,
           format: "numeric",
@@ -167509,6 +167651,11 @@ export default {
           default: 90,
           format: "integer",
           type: "integer"
+        },
+        requireBackflushStorageUnit: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         },
         preventNegativeBackflush: {
           default: true,
@@ -172479,12 +172626,6 @@ export default {
     },
     "rowFilter.jobOperationsWithDependencies.assemblyInstructionId": {
       name: "assemblyInstructionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.jobOperationsWithDependencies.readyAt": {
-      name: "readyAt",
       required: false,
       in: "query",
       type: "string"
@@ -180881,6 +181022,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobs.productionQuantity": {
+      name: "productionQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.jobs.projectedCompletionAt": {
       name: "projectedCompletionAt",
       required: false,
@@ -180895,12 +181042,6 @@ export default {
     },
     "rowFilter.jobs.scheduleOutdatedAt": {
       name: "scheduleOutdatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.jobs.productionQuantity": {
-      name: "productionQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -189114,6 +189255,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.job.productionQuantity": {
+      name: "productionQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.job.projectedCompletionAt": {
       name: "projectedCompletionAt",
       description:
@@ -189132,12 +189279,6 @@ export default {
     },
     "rowFilter.job.scheduleOutdatedAt": {
       name: "scheduleOutdatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.job.productionQuantity": {
-      name: "productionQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -194981,14 +195122,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperation.readyAt": {
-      name: "readyAt",
+    "rowFilter.jobOperation.inspectionDocumentId": {
+      name: "inspectionDocumentId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperation.inspectionDocumentId": {
-      name: "inspectionDocumentId",
+    "rowFilter.jobOperation.readyAt": {
+      name: "readyAt",
       required: false,
       in: "query",
       type: "string"
@@ -217808,12 +217949,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperationsWithMakeMethods.readyAt": {
-      name: "readyAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.jobOperationsWithMakeMethods.inspectionDocumentId": {
       name: "inspectionDocumentId",
       required: false,
@@ -223053,12 +223188,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.salesRuleNotificationGroup": {
-      name: "salesRuleNotificationGroup",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.showCurrencyTrailingZeros": {
       name: "showCurrencyTrailingZeros",
       required: false,
@@ -223073,6 +223202,12 @@ export default {
     },
     "rowFilter.companySettings.allowLowercaseItemIds": {
       name: "allowLowercaseItemIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.salesRuleNotificationGroup": {
+      name: "salesRuleNotificationGroup",
       required: false,
       in: "query",
       type: "string"
@@ -223195,12 +223330,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.requireBackflushStorageUnit": {
-      name: "requireBackflushStorageUnit",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.leaseIncrementalBorrowingRate": {
       name: "leaseIncrementalBorrowingRate",
       required: false,
@@ -223215,6 +223344,12 @@ export default {
     },
     "rowFilter.companySettings.leaseReminderDays": {
       name: "leaseReminderDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireBackflushStorageUnit": {
+      name: "requireBackflushStorageUnit",
       required: false,
       in: "query",
       type: "string"

@@ -3,10 +3,65 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { NodeDetail } from "@carbon/ee/workflows";
-import { Trans } from "@lingui/react/macro";
+import { Plural, Trans } from "@lingui/react/macro";
 import { useDataOperationLabel } from "../Builder/dataOperationLabels";
 
 type DataCards = Extract<NodeDetail, { kind: "data" }>["cards"];
+type DataCard = DataCards[number];
+
+/** The card's outcome in the reader's language, from the numbers the engine
+ * stored. A skipped card's reason, and any row written before `counts` existed,
+ * shows the engine's own text. */
+function CardSummary({ card }: { card: DataCard }) {
+  const counts = card.counts;
+  if (card.status !== "Succeeded" || counts === undefined) {
+    return <>{card.summary}</>;
+  }
+  const total = counts.input;
+  const kept = counts.output ?? 0;
+  const unresolved = counts.unresolved ?? 0;
+  switch (card.operation) {
+    case "filter":
+      return unresolved === 0 ? (
+        <Trans>
+          Kept {kept} of {total}.
+        </Trans>
+      ) : (
+        <Trans>
+          Kept {kept} of {total}; {unresolved} could not be checked.
+        </Trans>
+      );
+    case "count":
+      return <Trans>Counted {total}.</Trans>;
+    case "first":
+      return total === 0 ? (
+        <Trans>That list was empty.</Trans>
+      ) : (
+        <Trans>Took the first of {total}.</Trans>
+      );
+    case "last":
+      return total === 0 ? (
+        <Trans>That list was empty.</Trans>
+      ) : (
+        <Trans>Took the last of {total}.</Trans>
+      );
+    case "pluck": {
+      const dropped = counts.dropped ?? 0;
+      const took = kept + dropped;
+      return dropped === 0 ? (
+        <Plural value={kept} one="Took # value." other="Took # values." />
+      ) : (
+        <Trans>
+          Took {took} values; kept the first {kept}.
+        </Trans>
+      );
+    }
+    case "join":
+      return (
+        <Plural value={total} one="Joined # value." other="Joined # values." />
+      );
+  }
+}
 
 /**
  * A data node's chain, one row per operation card, in run order — how a
@@ -35,7 +90,7 @@ export function DataDetail({ detail }: { detail: unknown }) {
           </span>
           <span className="font-medium">{operationLabel(card.operation)}</span>
           <span className="min-w-0 shrink text-muted-foreground">
-            {card.summary}
+            <CardSummary card={card} />
           </span>
           {card.status === "Skipped" && (
             <span className="ml-auto self-center rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">

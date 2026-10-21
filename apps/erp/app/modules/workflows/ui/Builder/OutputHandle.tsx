@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ValueType } from "@carbon/ee/workflows";
 import { Popover, PopoverAnchor, PopoverContent } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Handle, Position } from "@xyflow/react";
@@ -21,6 +22,20 @@ const HOVER_DELAY_MS = 500;
 /** How long the panel survives after the pointer leaves — long enough to cross the
  * gap between the handle and the panel, short enough not to linger. */
 const CLOSE_DELAY_MS = 220;
+
+/** The first few fields of a record row, so the author sees what is inside it. */
+function FieldList({ type }: { type: ValueType }) {
+  const fields = fieldsOf(type);
+  if (fields.length === 0) return null;
+  const shownFields = fields.slice(0, MAX_FIELDS);
+  const more = fields.length - shownFields.length;
+  return (
+    <div className="truncate font-mono text-[10px] leading-snug text-muted-foreground/80">
+      {shownFields.join(", ")}
+      {more > 0 ? `, +${more}` : ""}
+    </div>
+  );
+}
 
 function OutputList({
   variables,
@@ -44,11 +59,10 @@ function OutputList({
   const groups = groupOutputs(variables);
 
   return (
-    // `pointer-events-auto` re-enables interaction the panel disables wholesale, so
-    // a long list can be scrolled; `onWheel` keeps that scroll off the canvas, which
-    // would otherwise zoom underneath it.
+    // A long list scrolls inside the panel; `onWheel` keeps that scroll off the
+    // canvas, which would otherwise zoom underneath it.
     <div
-      className="pointer-events-auto max-h-80 overflow-y-auto overscroll-contain p-1"
+      className="max-h-80 overflow-y-auto overscroll-contain p-1"
       onWheel={(event) => event.stopPropagation()}
     >
       {groups.map((group, index) => (
@@ -72,18 +86,7 @@ function OutputList({
               <div className="text-[10px] leading-snug text-muted-foreground">
                 {describeVariable(row.type, row.guaranteed, labelFor)}
               </div>
-              {(() => {
-                const fields = fieldsOf(row.type);
-                if (fields.length === 0) return null;
-                const shownFields = fields.slice(0, MAX_FIELDS);
-                const more = fields.length - shownFields.length;
-                return (
-                  <div className="truncate font-mono text-[10px] leading-snug text-muted-foreground/80">
-                    {shownFields.join(", ")}
-                    {more > 0 ? `, +${more}` : ""}
-                  </div>
-                );
-              })()}
+              <FieldList type={row.type} />
             </div>
           ))}
         </div>
@@ -125,7 +128,7 @@ export function OutputHandle({
         closeDelayMs: CLOSE_DELAY_MS,
         onOpen: () => setPreview(previewRef.current()),
         onClose: () => setPreview(null),
-        setTimer: (fn, ms) => setTimeout(fn, ms) as unknown as number,
+        setTimer: (fn, ms) => setTimeout(fn, ms),
         clearTimer: (id) => clearTimeout(id)
       }),
     []

@@ -1418,6 +1418,8 @@ export const path = {
     inspections: `${x}/quality/inspections`,
     integration: (id: string) =>
       generatePath(`${x}/settings/integrations/${id}`),
+    integrationAccounts: (id: string) =>
+      `${generatePath(`${x}/settings/integrations/${id}`)}?tab=connections`,
     integrationConnections: `${x}/settings/integrations/connections`,
     integrationDeactivate: (id: string) =>
       generatePath(`${x}/settings/integrations/deactivate/${id}`),

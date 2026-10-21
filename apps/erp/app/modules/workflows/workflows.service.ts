@@ -9,13 +9,8 @@ import type { Database, Json } from "@carbon/database";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
-  ConnectionRefreshTimeoutError,
-  ConnectionRevokedError,
-  ConnectionSecretUnavailableError,
   needsReconnect,
-  readConnection,
   readConnections,
-  resolveConnectionAuth,
   usableConnections
 } from "@carbon/ee/integrations/connections";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
@@ -23,6 +18,7 @@ import { companyHasFeature } from "@carbon/ee/plan.server";
 import type { CompanyLock, WorkflowIssue } from "@carbon/ee/workflows";
 import {
   createWorkflowCatalog,
+  INTEGRATION_CONNECTION_INPUT,
   readWorkflowVersion,
   syncWorkflowTriggers,
   validateDefinition
@@ -30,11 +26,11 @@ import {
 import { requireWorkflowsEntitlement } from "@carbon/ee/workflows.server";
 import { trigger } from "@carbon/jobs";
 import {
-  buildRefreshConfig,
   CONNECTION_PROVIDER,
   getPieceAction,
   PROPERTY_PROVIDER,
-  requiredScopesFor
+  requiredScopesFor,
+  resolvePieceAuth
 } from "@carbon/jobs/integrations";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -44,6 +40,7 @@ import type { z } from "zod";
 import { path } from "~/utils/path";
 import type { Filter, GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { OptionsErrorCode } from "./types";
 import type { workflowValidator } from "./workflows.models";
 import { MAX_RUN_STEPS } from "./workflows.utils";
 
@@ -736,33 +733,17 @@ export async function refuseUnlessWorkflowsEnabled(ctx: ServiceContext) {
   );
 }
 
-/**
- * Every list the workflow builder fetches while a node is being edited.
- *
- * A catalog input names a provider by id and the builder forwards it verbatim, so
- * this registry is the only place that knows what a provider id MEANS. Nothing here
- * is integration-specific by construction: a provider backed by Carbon's own data
- * is one more entry, and needs no change to the catalog format, the endpoint or the
- * field that renders it.
- */
-
 const optionsLogger = getLogger("erp", "workflows", "options");
 
 export type OptionsProviderContext = {
-  /** The requester's own client — RLS applies, so it is what scopes a lookup. */
-  client: SupabaseClient<Database>;
   companyId: string;
   /** Fixed arguments from the catalog entry. */
   params: Record<string, string>;
   /** Current values of the input's `dependsOn` inputs. */
   values: Record<string, string>;
-  search?: string;
 };
 
 export type ProviderOption = { label: string; value: string };
-
-/** Why a dropdown could not be filled. Resolved to words in the builder. */
-export type OptionsErrorCode = "reconnect" | "refreshing" | "failed";
 
 export type OptionsProviderResult = {
   options: ProviderOption[];
@@ -801,11 +782,6 @@ export type OptionsProvider = {
  * Only USABLE accounts are offered. A revoked account in a dropdown is a trap —
  * picking it builds a workflow that cannot run.
  */
-/** The app's Accounts tab, where a broken connection is reconnected. */
-function integrationAccountsHref(piece: string) {
-  return `${path.to.integration(piece)}?tab=connections`;
-}
-
 const connectionProvider: OptionsProvider = {
   permission: { view: "workflows" },
   resolve: async ({ companyId, params }) => {
@@ -817,7 +793,7 @@ const connectionProvider: OptionsProvider = {
     );
     const required = await requiredScopesFor(piece);
     const ready = usable.filter((row) => !needsReconnect(row, required));
-    const accountsHref = integrationAccountsHref(piece);
+    const accountsHref = path.to.integrationAccounts(piece);
 
     // Connected, but every account predates a scope this piece now needs: the fix
     // is a re-consent, not a new account — say so instead of offering nothing.
@@ -847,23 +823,60 @@ const connectionProvider: OptionsProvider = {
  */
 const propertyProvider: OptionsProvider = {
   permission: { update: "workflows" },
-  resolve: async ({ companyId, params, values, search }) => {
+  resolve: async ({ companyId, params, values }) => {
     const { piece, action: actionName, prop } = params;
-    const connectionId = values.connectionId;
+    const connectionId = values[INTEGRATION_CONNECTION_INPUT];
     if (!piece || !actionName || !prop || !connectionId) return { options: [] };
 
-    // Scope the connection to this company before touching the vault RPCs below,
-    // which are service-role only and would skip that check. Read through the
-    // SERVICE role for the same reason `connectionProvider` does: the row's RLS
-    // demands `settings_view`, this provider is gated on `workflows_update`, and
-    // a workflow author without Settings access would otherwise see every
-    // dependent list come back empty. `companyId` came from `requirePermissions`.
-    const owned = await readConnection(
+    // Read through the SERVICE role for the same reason `connectionProvider` does:
+    // the row's RLS demands `settings_view`, this provider is gated on
+    // `workflows_update`, and a workflow author without Settings access would
+    // otherwise see every dependent list come back empty. `companyId` came from
+    // `requirePermissions`, and scopes every read the resolver makes.
+    const auth = await resolvePieceAuth(
       getCarbonServiceRole(),
       companyId,
+      piece,
       connectionId
     );
-    if (owned === null || owned.pieceName !== piece) return { options: [] };
+    if (!auth.ok) {
+      switch (auth.reason) {
+        case "no-connection":
+          return { options: [] };
+        // A connection problem is not a generic lookup failure: the author cannot
+        // fix "couldn't load the choices", but they can reconnect an account.
+        // An under-scoped account reads the same way it does in the connection
+        // dropdown, which leaves it out for that reason.
+        case "missing-scopes":
+        case "reconnect":
+          return {
+            options: [],
+            errorCode: "reconnect",
+            errorHref: path.to.integrationAccounts(piece)
+          };
+        case "refreshing":
+          return { options: [], errorCode: "refreshing" };
+        // Loading the piece to read its token URL failed for a reason that has
+        // nothing to do with the account — a missing package, an unset OAuth env
+        // var. Named in the log rather than swallowed: it looks identical to a
+        // dead account from the outside, and telling them apart is the whole
+        // difference between "reconnect" and "fix the server's OAuth config".
+        case "misconfigured":
+          optionsLogger.error(
+            "Could not build the refresh config for {piece}: {cause}",
+            {
+              piece,
+              cause:
+                auth.cause instanceof Error
+                  ? auth.cause.message
+                  : String(auth.cause)
+            }
+          );
+          return { options: [], errorCode: "failed" };
+        case "failed":
+          throw auth.cause;
+      }
+    }
 
     const action = await getPieceAction(piece, actionName);
     const property = action.props[prop];
@@ -873,83 +886,58 @@ const propertyProvider: OptionsProvider = {
       );
     }
 
-    // OUTSIDE the try below. Loading the piece to read its token URL can fail for
-    // reasons that have nothing to do with the account — a missing package, an
-    // unset OAuth env var — and inside that catch such a failure fell through to
-    // `throw cause` and became a 500, or worse, read to the author as "reconnect
-    // this account". Reconnecting cannot fix a piece that will not load.
-    //
-    // Named in the log rather than swallowed: this failure looks identical to a
-    // dead account from the outside, and telling them apart is the whole
-    // difference between "reconnect" and "fix the server's OAuth config".
-    let refreshConfig: Awaited<ReturnType<typeof buildRefreshConfig>>;
-    try {
-      refreshConfig = await buildRefreshConfig(piece);
-    } catch (cause) {
-      optionsLogger.error(
-        "Could not build the refresh config for {piece}: {cause}",
-        {
-          piece,
-          cause: cause instanceof Error ? cause.message : String(cause)
-        }
-      );
-      return { options: [], errorCode: "failed" };
-    }
-
-    // A connection problem is not a generic lookup failure: the author cannot fix
-    // "couldn't load the choices", but they can reconnect an account. Naming it is
-    // the difference between a dead end and one click.
-    let accessToken: string;
-    try {
-      ({ accessToken } = await resolveConnectionAuth(
-        getCarbonServiceRole(),
-        companyId,
-        connectionId,
-        refreshConfig
-      ));
-    } catch (cause) {
-      if (
-        cause instanceof ConnectionRevokedError ||
-        cause instanceof ConnectionSecretUnavailableError
-      ) {
-        return {
-          options: [],
-          errorCode: "reconnect",
-          errorHref: integrationAccountsHref(piece)
-        };
-      }
-      if (cause instanceof ConnectionRefreshTimeoutError) {
-        return {
-          options: [],
-          errorCode: "refreshing"
-        };
-      }
-      throw cause;
-    }
-
     // A dropdown's `refreshers` may name sibling props, so pass what the node has.
     const propsValue: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(values)) {
       if (key in action.props) propsValue[key] = value;
     }
 
-    const resolved = (await (
+    const resolved = await (
       property.options as (context: unknown) => Promise<unknown>
     )({
-      auth: { access_token: accessToken },
-      propsValue,
-      searchValue: search
-    })) as { options?: { label: string; value: unknown }[] };
+      auth: { access_token: auth.accessToken },
+      propsValue
+    });
 
-    return {
-      options: (resolved.options ?? []).map((option) => ({
-        label: option.label,
-        value: String(option.value)
-      }))
-    };
+    return { options: optionRows(resolved) };
   }
 };
 
+/**
+ * A piece's `options()` answer as dropdown rows. A stored choice is text, so only
+ * a scalar value can be one: an object value would be stored as
+ * "[object Object]", which the piece could never read back, so that row is left
+ * out rather than offered.
+ */
+function optionRows(answer: unknown): ProviderOption[] {
+  if (answer === null || typeof answer !== "object" || !("options" in answer))
+    return [];
+  const rows = answer.options;
+  if (!Array.isArray(rows)) return [];
+  return rows.flatMap((row: unknown) => {
+    if (row === null || typeof row !== "object") return [];
+    if (!("label" in row) || typeof row.label !== "string") return [];
+    const value = "value" in row ? row.value : undefined;
+    if (typeof value === "string") return [{ label: row.label, value }];
+    if (
+      (typeof value === "number" && Number.isFinite(value)) ||
+      typeof value === "boolean"
+    ) {
+      return [{ label: row.label, value: String(value) }];
+    }
+    return [];
+  });
+}
+
+/**
+ * Every list the workflow builder fetches while a node is being edited.
+ *
+ * A catalog input names a provider by id and the builder forwards it verbatim, so
+ * this registry is the only place that knows what a provider id MEANS. Nothing here
+ * is integration-specific by construction: a provider backed by Carbon's own data
+ * is one more entry, and needs no change to the catalog format, the endpoint or the
+ * field that renders it.
+ */
 export const OPTIONS_PROVIDERS: Record<string, OptionsProvider> = {
   [CONNECTION_PROVIDER]: connectionProvider,
   [PROPERTY_PROVIDER]: propertyProvider

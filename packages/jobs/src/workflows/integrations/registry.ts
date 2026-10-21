@@ -94,15 +94,10 @@ export async function getPieceAction(
   name: string,
   action: string
 ): Promise<PieceAction> {
-  const entry = allowlistEntry(name);
-  if (entry === undefined) throw new UnknownPieceError(name);
-  // The allowlist decides what we expose, not the piece.
-  if (!entry.actions.includes(action)) {
-    throw new UnknownPieceActionError(name, action);
-  }
-
-  const piece = await loadPiece(name);
-  const found = piece.actions()[action];
+  // The allowlist decides what we expose, not the piece — `getPieceActions` is
+  // that list. Own keys only: an action named `constructor` is not an action.
+  const exposed = await getPieceActions(name);
+  const found = Object.hasOwn(exposed, action) ? exposed[action] : undefined;
   if (found === undefined) throw new UnknownPieceActionError(name, action);
   return found;
 }

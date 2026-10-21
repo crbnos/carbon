@@ -12,7 +12,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { IntegrationConnection } from "../../integrations/connections";
 import {
   readConnectionAccessToken,
-  readConnections
+  readConnections,
+  readConnectionsByTeamId,
+  usableConnections
 } from "../../integrations/connections";
 import { createSlackWebClient } from "./client";
 
@@ -241,17 +243,13 @@ export async function getSlackWorkspace(
   serviceRole: SupabaseClient<Database>,
   companyId: string
 ): Promise<SlackWorkspace | null> {
-  const active = (
+  const active = usableConnections(
     await readConnections(serviceRole, companyId, "slack")
-  ).filter((c) => c.status === "Active");
+  );
   const connection =
     active.find((c) => workspaceFacts(c).channelId !== undefined) ?? active[0];
   if (connection === undefined) return null;
-  const token = await readConnectionAccessToken(
-    serviceRole,
-    companyId,
-    connection.id
-  );
+  const token = await readConnectionAccessToken(serviceRole, connection);
   return {
     connectionId: connection.id,
     companyId,
@@ -275,28 +273,15 @@ export async function getSlackWorkspaceByTeamId(
   serviceRole: SupabaseClient<Database>,
   teamId: string
 ): Promise<SlackWorkspace | null> {
-  // A failed read must not look like "no connection for this workspace".
-  const { data, error } = await serviceRole
-    .from("integrationConnection")
-    .select(
-      "id, companyId, pieceName, name, authType, accountLabel, metadata, expiresAt, status, lastError"
-    )
-    .eq("pieceName", "slack")
-    .eq("status", "Active")
-    .eq("metadata->>team_id", teamId)
-    .order("createdAt", { ascending: true });
-  if (error) throw error;
-  const rows = (data ?? []) as unknown as IntegrationConnection[];
+  const rows = usableConnections(
+    await readConnectionsByTeamId(serviceRole, "slack", teamId)
+  );
   const connection = rows[0];
   if (connection === undefined) return null;
   if (rows.some((row) => row.companyId !== connection.companyId)) {
     throw new AmbiguousSlackWorkspaceError(teamId);
   }
-  const token = await readConnectionAccessToken(
-    serviceRole,
-    connection.companyId,
-    connection.id
-  );
+  const token = await readConnectionAccessToken(serviceRole, connection);
   return {
     connectionId: connection.id,
     companyId: connection.companyId,

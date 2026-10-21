@@ -24,8 +24,9 @@ import { IssueList } from "../IssueList";
 import { useDefinition } from "../useDefinition";
 
 /** The result of a manual test run, in the application's standard drawer — the
- * same shell as an integration's details or a saved run. Nothing was written,
- * so this drawer is the only place the run exists: closing it discards it. */
+ * same shell as an integration's details or a saved run. A test run is a real
+ * run with real side effects: it is recorded as a `workflowRun` row with
+ * `isTest = true`, so it stays in the run history after this drawer closes. */
 export function TestRunPanel() {
   const label = useWorkflowLabel();
   const definition = useDefinition();
@@ -112,7 +113,7 @@ export function TestRunPanel() {
         <DrawerFooter>
           <p className="text-xs text-muted-foreground">
             <Trans>
-              Test runs are not saved. Close this panel and the result is gone.
+              Test runs are saved to the run history, marked as tests.
             </Trans>
           </p>
         </DrawerFooter>

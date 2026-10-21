@@ -3,32 +3,32 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-// The deep subpath, not the `@carbon/ee` root: that barrel pulls in integration
-// config files whose `msg` macro is untransformed outside a Vite build.
-import {
-  ConnectionRefreshTimeoutError,
-  ConnectionRevokedError,
-  ConnectionSecretUnavailableError,
-  missingScopes,
-  readConnection,
-  resolveConnectionAuth
-} from "@carbon/ee/integrations/connections";
 import type { ActionOutcome, RuntimeValue } from "@carbon/ee/workflows";
+import { redactForLog } from "../engine/ledger";
 import { allowlistEntry } from "../integrations/allowlist";
 import { buildPieceContext } from "../integrations/context";
-import { buildRefreshConfig, requiredScopesFor } from "../integrations/oauth";
+import {
+  type PieceAuthFailure,
+  resolvePieceAuth
+} from "../integrations/piece-auth";
 import { projectOutputs } from "../integrations/project";
 import { toPropsValue } from "../integrations/properties";
 import { getPieceAction } from "../integrations/registry";
-import { omittedProps, pinnedValues } from "../integrations/visibility";
 
 const NO_CONNECTION = "This step needs a connection.";
 /** A workspace connected before this piece needed a scope. The fix is one click,
  * so the words name it — a bare `missing_scope` reads as a bug report. */
 const reconnectCopy = (label: string) =>
   `The ${label} connection needs to be reconnected to grant the permissions this step uses — Settings → Integrations → ${label} → Accounts → Reconnect.`;
-const SCOPE_ERROR =
-  /missing_scope|insufficient_scope|insufficient.?permission/i;
+/** The codes vendors use for "this token lacks a scope": Slack's Web API
+ * (`missing_scope`), OAuth 2.0 (`insufficient_scope`) and Google
+ * (`insufficientPermissions`, `ACCESS_TOKEN_SCOPE_INSUFFICIENT`). */
+const SCOPE_CODES = new Set([
+  "missing_scope",
+  "insufficient_scope",
+  "insufficientPermissions",
+  "ACCESS_TOKEN_SCOPE_INSUFFICIENT"
+]);
 /** A vendor message is theirs, not ours — keep it short enough to read in a step row. */
 const MAX_VENDOR_MESSAGE = 300;
 
@@ -36,6 +36,67 @@ function truncate(message: string): string {
   return message.length <= MAX_VENDOR_MESSAGE
     ? message
     : `${message.slice(0, MAX_VENDOR_MESSAGE)}…`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function parsedBody(body: unknown): unknown {
+  if (typeof body !== "string") return body;
+  try {
+    return JSON.parse(body);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Read off the vendor's structured error, never its message: an Activepieces
+ * `HttpError` message embeds the REQUEST body, so an email that merely says
+ * "insufficient permission" read as a scope error. Three shapes reach here:
+ * Slack's Web API error (`data.error`), the Activepieces `HttpError`
+ * (`responseBody`) and a googleapis `GaxiosError` (`response.data`). */
+function isScopeError(cause: unknown): boolean {
+  if (!isRecord(cause)) return false;
+  const codes: unknown[] = [];
+  if (isRecord(cause.data)) codes.push(cause.data.error);
+  const response = isRecord(cause.response) ? cause.response : undefined;
+  for (const raw of [cause.responseBody, response?.data]) {
+    const body = parsedBody(raw);
+    if (!isRecord(body)) continue;
+    const error = body.error;
+    if (!isRecord(error)) {
+      codes.push(error);
+      continue;
+    }
+    for (const list of [error.errors, error.details]) {
+      if (!Array.isArray(list)) continue;
+      for (const entry of list) if (isRecord(entry)) codes.push(entry.reason);
+    }
+  }
+  return codes.some(
+    (code) => typeof code === "string" && SCOPE_CODES.has(code)
+  );
+}
+
+/** A googleapis response carries the request it was made with under `config`
+ * (the base64 email body included) and `request`; neither is the result. */
+function dropTransport(key: string, value: unknown): unknown {
+  return key === "config" || key === "request" ? undefined : value;
+}
+
+/** The raw result as JSON for the `result` output. Called only after the vendor
+ * call returned, so a result that cannot be serialized (circular, BigInt) is
+ * `null` — never a failure: the message has already been sent. */
+function serializeResult(result: unknown): string | null {
+  if (typeof result === "string") return result;
+  try {
+    const plain = JSON.stringify(result, dropTransport);
+    if (plain === undefined) return null;
+    return JSON.stringify(redactForLog(JSON.parse(plain))) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function connectionIdFrom(
@@ -46,6 +107,27 @@ function connectionIdFrom(
   if (value.value === null) return undefined;
   const id = String(value.value).trim();
   return id === "" ? undefined : id;
+}
+
+/** What the step row says when the connection cannot act. A busy refresh is
+ * transient and a retry fixes it; a revoked or unreadable token needs a person —
+ * telling the customer to reconnect in the first case would send them to do work
+ * that changes nothing. */
+function authFailureCopy(failure: PieceAuthFailure, label: string): string {
+  switch (failure.reason) {
+    case "no-connection":
+      return NO_CONNECTION;
+    case "missing-scopes":
+      return reconnectCopy(label);
+    case "refreshing":
+      return `The ${label} connection was busy refreshing. Try again.`;
+    case "reconnect":
+      return `The ${label} connection needs to be reconnected.`;
+    // Ours, not theirs — a missing OAuth app reaches here.
+    case "misconfigured":
+    case "failed":
+      return `The ${label} connection is unavailable.`;
+  }
 }
 
 export async function runIntegrationAction(args: {
@@ -63,93 +145,57 @@ export async function runIntegrationAction(args: {
   // Service role, scoped by the run's `companyId`: RLS on the row asks for
   // `settings_view`, but the builder offers connections to anyone who can edit
   // workflows, so an owner-client read refused an account the author could pick.
-  const owned = await readConnection(
+  const auth = await resolvePieceAuth(
     getCarbonServiceRole(),
     companyId,
+    pieceName,
     connectionId
   );
-  if (owned === null || owned.pieceName !== pieceName) {
-    return { ok: false, error: NO_CONNECTION };
-  }
+  if (!auth.ok) return { ok: false, error: authFailureCopy(auth, label) };
 
-  // Deterministic first: an under-scoped account fails here, without a vendor
-  // call and without partial side effects.
-  if (missingScopes(owned, await requiredScopesFor(pieceName)).length > 0) {
-    return { ok: false, error: reconnectCopy(label) };
-  }
-
-  let accessToken: string;
+  let action: Awaited<ReturnType<typeof getPieceAction>>;
+  let propsValue: Record<string, unknown>;
   try {
-    const oauth = await buildRefreshConfig(pieceName);
-    // The vault RPCs are granted to service_role only — no user client may
-    // decrypt a token. Every query inside is scoped by the run's `companyId`.
-    ({ accessToken } = await resolveConnectionAuth(
-      getCarbonServiceRole(),
-      companyId,
-      connectionId,
-      oauth
-    ));
-  } catch (cause) {
-    // A busy refresh is transient and a retry fixes it; a revoked or unreadable
-    // token needs a person. Telling the customer to reconnect in the first case
-    // would send them to do work that changes nothing.
-    if (cause instanceof ConnectionRefreshTimeoutError) {
-      return {
-        ok: false,
-        error: `The ${label} connection was busy refreshing. Try again.`
-      };
-    }
-    if (
-      cause instanceof ConnectionRevokedError ||
-      cause instanceof ConnectionSecretUnavailableError
-    ) {
-      return {
-        ok: false,
-        error: `The ${label} connection needs to be reconnected.`
-      };
-    }
-    // Anything else is ours, not theirs — a missing OAuth app reaches here.
-    return { ok: false, error: `The ${label} connection is unavailable.` };
+    action = await getPieceAction(pieceName, actionName);
+    propsValue = toPropsValue(pieceName, actionName, action.props, inputs);
+  } catch {
+    // Ours, before any vendor call: nothing was sent.
+    return { ok: false, error: `The ${label} step is not available.` };
   }
 
+  // Only a throw from the vendor call is the vendor's failure. Everything after it
+  // runs once the call has already had its effect, so it must not report a sent
+  // message as rejected — a re-run would send it twice.
+  let result: unknown;
   try {
-    const action = await getPieceAction(pieceName, actionName);
-    // An omitted prop is not part of the step, whatever a saved node says: the
-    // catalog never offered it, so a value for it is stale or hand-posted.
-    const omitted = omittedProps(pieceName, actionName, action.props);
-    const offered = Object.fromEntries(
-      Object.entries(inputs).filter(([name]) => !omitted.has(name))
+    result = await action.run(
+      buildPieceContext({
+        auth: { access_token: auth.accessToken },
+        propsValue
+      })
     );
-    const propsValue = toPropsValue(
-      action.props,
-      offered,
-      pinnedValues(pieceName, actionName, action.props)
-    );
-    const result = await action.run(
-      buildPieceContext({ auth: { access_token: accessToken }, propsValue })
-    );
-
-    return {
-      ok: true,
-      outputs: {
-        ...projectOutputs(action.outputSchema, result, {
-          sortItemsBy: allowlistEntry(pieceName)?.sortItemsBy?.[actionName]
-        }),
-        result: {
-          kind: "primitive",
-          of: "string",
-          value: typeof result === "string" ? result : JSON.stringify(result)
-        }
-      },
-      summary: `${label}: ${action.displayName} ran.`
-    };
   } catch (cause) {
-    const message =
-      cause instanceof Error ? cause.message : "The step did not complete.";
     // A vendor scope error still reads as "reconnect", not as a bug.
-    if (SCOPE_ERROR.test(message)) {
+    if (isScopeError(cause)) {
       return { ok: false, error: reconnectCopy(label) };
     }
+    const message =
+      cause instanceof Error ? cause.message : "The step did not complete.";
     return { ok: false, error: `${label} rejected this: ${truncate(message)}` };
   }
+
+  return {
+    ok: true,
+    outputs: {
+      ...projectOutputs(action.outputSchema, result, {
+        sortItemsBy: allowlistEntry(pieceName)?.sortItemsBy?.[actionName]
+      }),
+      result: {
+        kind: "primitive",
+        of: "string",
+        value: serializeResult(result)
+      }
+    },
+    summary: `${label}: ${action.displayName} ran.`
+  };
 }

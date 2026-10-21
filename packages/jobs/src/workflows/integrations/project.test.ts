@@ -140,6 +140,65 @@ describe("projectOutputs", () => {
       });
     });
 
+    // Vendor JSON is checked by `typeof`, never coerced: `Boolean("false")` is
+    // true and `String({})` is "[object Object]", both of which used to land here.
+    it("nulls a string where a boolean or number was declared", () => {
+      const outputs = projectOutputs(
+        {
+          fields: [
+            { key: "done", label: "Done", format: "boolean" },
+            { key: "size", label: "Size", format: "number" }
+          ]
+        },
+        { done: "false", size: "42" }
+      );
+      expect(outputs.done).toEqual({
+        kind: "primitive",
+        of: "null",
+        value: null
+      });
+      expect(outputs.size).toEqual({
+        kind: "primitive",
+        of: "null",
+        value: null
+      });
+    });
+
+    it("nulls an object where text was declared, and keeps a numeric id", () => {
+      const outputs = projectOutputs(
+        {
+          fields: [
+            { key: "name", label: "Name" },
+            { key: "id", label: "Id" }
+          ]
+        },
+        { name: { first: "Sam" }, id: 1234 }
+      );
+      expect(outputs.name).toEqual({
+        kind: "primitive",
+        of: "null",
+        value: null
+      });
+      expect(outputs.id).toEqual({
+        kind: "primitive",
+        of: "string",
+        value: "1234"
+      });
+    });
+
+    it("reads an offset-less vendor time as UTC, never as server time", () => {
+      const outputs = projectOutputs(
+        GET_EVENTS,
+        response([{ ...ONE_EVENT, start: { dateTime: "2026-08-31T09:00:00" } }])
+      );
+      const [first] = items(outputs) as { fields: Record<string, unknown> }[];
+      expect(first?.fields.startDateTime).toEqual({
+        kind: "primitive",
+        of: "date",
+        value: "2026-08-31T09:00:00.000Z"
+      });
+    });
+
     it("treats a missing list as empty rather than throwing", () => {
       const outputs = projectOutputs(GET_EVENTS, { status: 200 });
       expect(items(outputs)).toEqual([]);
@@ -240,7 +299,7 @@ describe("projectOutputs", () => {
   it("counts nothing when the response could not be shaped at all", () => {
     // The catch-all reported 1, so a projection failure read as "one item came
     // back" to every downstream step. A getter that throws is the only way to
-    // reach it — `readPath` itself degrades rather than raising.
+    // reach it — reading a path itself degrades rather than raising.
     const hostile = {
       get body() {
         throw new Error("vendor sent something unreadable");

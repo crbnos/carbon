@@ -2,7 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import type { LinkFormat } from "../definition/catalog";
+import type { CatalogInput, LinkFormat } from "../definition/catalog";
+import { linkState } from "../definition/links";
 import type {
   ItemRef,
   Pairs,
@@ -262,4 +263,48 @@ export async function walk(
   }
 
   return { ok: true, value: current };
+}
+
+/**
+ * A step's inputs, resolved for one run of it — shared by the action and the
+ * integration executors so the two kinds cannot drift apart. `declared` is every
+ * input the step declares.
+ *
+ * A record in prose becomes a link only where the catalog declares `links` (and
+ * its gate holds — see `linkState`) and the engine supplied a resolver; everything
+ * else renders as plain text, so a link can never ship to a field that would show
+ * it as literal markup (a webhook body, a vendor's plain-text field).
+ */
+export async function resolveStepInputs(
+  inputs: Record<string, ValueOrRef>,
+  declared: Record<string, CatalogInput>,
+  ctx: RuntimeContext
+): Promise<
+  | { ok: true; inputs: Record<string, RuntimeValue> }
+  | { ok: false; reason: string }
+> {
+  const resolved: Record<string, RuntimeValue> = {};
+  for (const [name, value] of Object.entries(inputs)) {
+    const link = linkState(inputs, declared, name);
+    const result =
+      link.kind === "linked" && value.kind === "template"
+        ? await renderTemplate(value, ctx, {
+            linkFor: ctx.linkFor,
+            format: link.format
+          })
+        : await resolveValue(value, ctx);
+    if (!result.ok) return result;
+    // In a batch the one list input stands for the item this turn is on. Only a
+    // slot declared single-valued can be that input (`batchCandidates`); a slot
+    // declared as a list keeps its list, or a real list input on the same step
+    // would be replaced by the item on every turn.
+    resolved[name] =
+      ctx.item !== undefined &&
+      result.value.kind === "list" &&
+      declared[name]?.type.kind !== "list"
+        ? ctx.item
+        : result.value;
+    ctx.record?.(name, resolved[name]);
+  }
+  return { ok: true, inputs: resolved };
 }

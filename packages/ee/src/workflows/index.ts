@@ -197,6 +197,7 @@ export {
   filterExecutor,
   filterSummary,
   fromColumn,
+  fromJson,
   fromLiteral,
   isNull,
   itemKeyFor,

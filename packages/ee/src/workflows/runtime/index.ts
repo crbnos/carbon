@@ -35,6 +35,7 @@ export type {
 export {
   entityValue,
   fromColumn,
+  fromJson,
   fromLiteral,
   isNull,
   listValue,

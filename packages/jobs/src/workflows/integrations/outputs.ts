@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getPath } from "@carbon/ee/integrations/secrets";
 import { t, type ValueType } from "@carbon/ee/workflows";
 import type { PieceOutputField, PieceOutputSchema } from "./types";
 
@@ -35,11 +36,6 @@ function primitiveFor(format: string | undefined): ValueType {
     default:
       return t.string;
   }
-}
-
-/** Where a field's value sits, relative to its container. */
-function pathOf(field: PieceOutputField): string[] {
-  return (field.value ?? field.key).split(".");
 }
 
 /**
@@ -87,58 +83,55 @@ function shapeOf(
   return Object.keys(shape).length === 0 ? undefined : shape;
 }
 
-/** The step's declared outputs, keyed as the author will see them. */
-export function toOutputTypes(
-  schema: PieceOutputSchema
-): Record<string, ValueType> {
-  return shapeOf(schema.fields, false) ?? {};
-}
-
-/** One emitted output and where to read it from the response. */
-export interface OutputPath {
-  /** Path from the response root to this output's container. */
-  path: string[];
-  /** For a list output, how to read each element's fields off one item. */
-  items?: Record<string, string[]>;
+/** One declared output: its Carbon type, and the declared field it is read by. */
+export interface OutputDescription {
+  type: ValueType;
+  field: PieceOutputField;
 }
 
 /**
- * Where each output declared by `toOutputTypes` lives in the real response.
- *
- * Kept beside the type mapping rather than derived separately, so the two can never
- * disagree about which fields exist — a projection reading a field the type does not
- * declare would land untyped data in a step's output.
+ * The step's declared outputs, keyed as the author will see them, each with the
+ * field that says where it lives in the real response.
  */
-export function toOutputPaths(
+export function describeOutputs(
   schema: PieceOutputSchema
-): Record<string, OutputPath> {
-  const paths: Record<string, OutputPath> = {};
-
+): Record<string, OutputDescription> {
+  const outputs: Record<string, OutputDescription> = {};
   for (const field of schema.fields) {
-    if (typeOf(field, false) === undefined) continue;
-
-    if (field.listItems !== undefined) {
-      const items: Record<string, string[]> = {};
-      for (const item of field.listItems) {
-        if (typeOf(item, true) === undefined) continue;
-        items[item.key] = pathOf(item);
-      }
-      paths[field.key] = { path: pathOf(field), items };
-      continue;
-    }
-
-    paths[field.key] = { path: pathOf(field) };
+    const type = typeOf(field, false);
+    if (type !== undefined) outputs[field.key] = { type, field };
   }
-
-  return paths;
+  return outputs;
 }
 
-/** Reads a dotted path off a plain response object; anything missing is `undefined`. */
-export function readPath(source: unknown, path: string[]): unknown {
-  let current = source;
-  for (const segment of path) {
-    if (current === null || typeof current !== "object") return undefined;
-    current = (current as Record<string, unknown>)[segment];
+/**
+ * A declared field's value, read from its own path (`value`, else `key`) inside
+ * its container and rebuilt keyed as the type names it — at every depth, so a
+ * remapped field inside `children` or `listItems` lands where its type says.
+ *
+ * A field the type dropped (a `dynamicKey`, a list inside a list) is still read
+ * here, but it never reaches a step: `fromJson` walks only the declared fields.
+ */
+export function readField(
+  field: PieceOutputField,
+  container: unknown
+): unknown {
+  const raw = getPath(container, field.value ?? field.key);
+  const { listItems, children } = field;
+  if (listItems !== undefined) {
+    return Array.isArray(raw)
+      ? raw.map((item) => readFields(listItems, item))
+      : raw;
   }
-  return current;
+  if (children !== undefined) return readFields(children, raw);
+  return raw;
+}
+
+function readFields(
+  fields: readonly PieceOutputField[],
+  container: unknown
+): Record<string, unknown> {
+  return Object.fromEntries(
+    fields.map((field) => [field.key, readField(field, container)])
+  );
 }

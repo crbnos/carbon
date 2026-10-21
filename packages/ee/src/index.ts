@@ -304,31 +304,6 @@ export const getIntegrationConfigById = (id: IntegrationID) => {
   return integrations.find((integration) => integration.id === id);
 };
 
-export type {
-  ConnectionStatus,
-  ConnectionTokens,
-  ExchangedTokens,
-  IntegrationConnection,
-  OAuth2RefreshConfig
-} from "./integrations/connections";
-export {
-  ConnectionRefreshTimeoutError,
-  ConnectionRevokedError,
-  ConnectionSecretUnavailableError,
-  connectionsHealthy,
-  connectionUsable,
-  createConnection,
-  disconnectConnection,
-  exchangeAuthorizationCode,
-  exchangeRefreshToken,
-  readConnection,
-  readConnections,
-  renameConnection,
-  resolveConnectionAuth,
-  revokeConnectionsForPiece,
-  usableConnections
-} from "./integrations/connections";
-
 /**
  * Every integration declaring a behavioural role (see `IntegrationConfig`).
  *

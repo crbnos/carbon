@@ -2,19 +2,19 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { walkPath } from "../definition/catalog";
-import { cardsOf, DATA_OPERATIONS } from "../definition/data-operations";
+import {
+  type CardRefusal,
+  cardResultType,
+  cardsOf,
+  DATA_OPERATIONS
+} from "../definition/data-operations";
 import {
   DEFAULT_HANDLE,
   DEFAULT_OUTPUT,
   type FilterNode,
   type OperationCard
 } from "../definition/schema";
-import {
-  assertNever,
-  rendersAsText,
-  type ScalarType
-} from "../definition/types";
+import type { ScalarType } from "../definition/types";
 import { evaluateClauses } from "./compare";
 import { renderPart, resolveRef, walk } from "./resolve";
 import type {
@@ -24,7 +24,7 @@ import type {
   RuntimeContext,
   RuntimeValue
 } from "./types";
-import { isNull, listValue, nullValue, primitiveValue } from "./values";
+import { listValue, nullValue, primitiveValue } from "./values";
 
 export function filterSummary(
   kept: number,
@@ -90,29 +90,51 @@ async function runFilterCard(
   return {
     ok: true,
     value: listValue(of, kept).value,
-    summary: filterSummary(kept.length, items.length, unresolved)
+    summary: filterSummary(kept.length, items.length, unresolved),
+    counts: { input: items.length, output: kept.length, unresolved }
   };
 }
 
 /** One card's verdict: a value handed to the next card, or the reason it could
  * not run — which skips the whole node, since everything after it is starved. */
 type CardOutcome =
-  | { ok: true; value: RuntimeValue; summary: string }
+  | { ok: true; value: RuntimeValue; summary: string; counts: CardCounts }
   | { ok: false; reason: string };
 
-/** One operation against one incoming value. Every guard here mirrors a refusal
- * the validator already makes — but a draft is never validated, so the runtime
- * must hold the same line itself. */
+type CardCounts = NonNullable<
+  Extract<NodeDetail, { kind: "data" }>["cards"][number]["counts"]
+>;
+
+/** The skip reason for each refusal, worded for the run history. */
+const REFUSAL_REASONS: Record<CardRefusal, string> = {
+  "not-a-list": "This step expected a list.",
+  "no-fields": "The items in that list have no fields to take.",
+  "no-field-chosen": "No field was chosen to take.",
+  "unknown-field": "The items in that list have no field by that name.",
+  "nested-list":
+    "That field holds a list of its own. Turn on flattening to take it.",
+  "not-text": "The items in that list have no reading as text."
+};
+
+/** One operation against one incoming value. A draft is never validated, so the
+ * runtime asks `cardResultType` the validator's own question before it runs. */
 async function runCard(
   card: OperationCard,
   input: RuntimeValue,
   ctx: RuntimeContext
 ): Promise<CardOutcome> {
   if (input.kind !== "list") {
-    return { ok: false, reason: "This step expected a list." };
+    return { ok: false, reason: REFUSAL_REASONS["not-a-list"] };
   }
   const items = input.items;
   const of = input.of;
+  // The declared type decides up front, not the data: an EMPTY source has no
+  // item to trip a per-value guard, so an unflattened list field would otherwise
+  // slip through as an empty list instead of the same refusal.
+  const typed = cardResultType(card, { kind: "list", of }, ctx.catalog);
+  if ("refusal" in typed) {
+    return { ok: false, reason: REFUSAL_REASONS[typed.refusal] };
+  }
 
   switch (card.operation) {
     case "filter":
@@ -122,7 +144,8 @@ async function runCard(
       return {
         ok: true,
         value: primitiveValue("number", items.length),
-        summary: `Counted ${items.length}.`
+        summary: `Counted ${items.length}.`,
+        counts: { input: items.length }
       };
 
     case "first":
@@ -136,35 +159,13 @@ async function runCard(
         summary:
           item === undefined
             ? "That list was empty."
-            : `Took the ${card.operation} of ${items.length}.`
+            : `Took the ${card.operation} of ${items.length}.`,
+        counts: { input: items.length }
       };
     }
 
     case "pluck": {
-      // The validator refuses a pluck over plain values, but a draft is never
-      // validated — without this it produced a list of nulls that no downstream
-      // step was typed against.
-      if (of.kind !== "record" && of.kind !== "entity") {
-        return {
-          ok: false,
-          reason: "The items in that list have no fields to take."
-        };
-      }
-      if ((card.field ?? "").trim() === "") {
-        return { ok: false, reason: "No field was chosen to take." };
-      }
       const path = (card.field ?? "").split(".");
-      // The declared type decides up front, not the data: an EMPTY source has no
-      // item to trip the per-value list guard below, so without this an unflattened
-      // list field slipped through as an empty list instead of the same refusal.
-      const declared = walkPath(of, path, ctx.catalog);
-      if (declared?.kind === "list" && !card.flatten) {
-        return {
-          ok: false,
-          reason:
-            "That field holds a list of its own. Turn on flattening to take it."
-        };
-      }
       const picked: RuntimeValue[] = [];
       for (const item of items) {
         const value = await pick(item, path, ctx);
@@ -175,45 +176,36 @@ async function runCard(
             picked.push(...value.items);
             continue;
           }
-          // Unflattened, this would BE that unrepresentable `list<list<T>>`. The
-          // validator refuses it, but a draft is never validated — same reason as
-          // the two guards above.
-          return {
-            ok: false,
-            reason:
-              "That field holds a list of its own. Turn on flattening to take it."
-          };
+          // The data disagrees with the declared type: unflattened, this would
+          // BE that unrepresentable `list<list<T>>`.
+          return { ok: false, reason: REFUSAL_REASONS["nested-list"] };
         }
         picked.push(value);
       }
-      // The declared type the builder promised, not one guessed from the data:
-      // when every picked value is null, sampling typed the list `null` and
-      // disagreed with the type every downstream step was built against. A
-      // declared list is flattened (the guard above), so its element type is the
-      // list's own `of` — sampling there typed an empty flatten `list<null>`.
-      const sample = picked.find((value) => !isNull(value));
+      // The declared element type the builder promised, not one guessed from the
+      // data. A pluck is always typed as a list.
       const elementType: ScalarType =
-        declared !== undefined
-          ? declared.kind === "list"
-            ? declared.of
-            : declared
-          : sample === undefined
-            ? { kind: "primitive", of: "null" }
-            : typeOfValue(sample);
+        typed.type.kind === "list" ? typed.type.of : typed.type;
+      // Flattening can grow the list past MAX_LIST_ITEMS; say so rather than
+      // report values the output no longer holds.
+      const { value, dropped } = listValue(elementType, picked);
+      const kept = picked.length - dropped;
       return {
         ok: true,
-        value: listValue(elementType, picked).value,
-        summary: `Took ${picked.length} values.`
+        value,
+        summary:
+          dropped === 0
+            ? `Took ${picked.length} values.`
+            : `Took ${picked.length} values; kept the first ${kept}.`,
+        counts: {
+          input: items.length,
+          output: kept,
+          ...(dropped === 0 ? {} : { dropped })
+        }
       };
     }
 
     case "join": {
-      if (!rendersAsText(of)) {
-        return {
-          ok: false,
-          reason: "The items in that list have no reading as text."
-        };
-      }
       // `renderPart`, not `renderValue`: a Carbon record reads as its display name
       // through the loader, exactly as it would inside a message. The synchronous
       // renderer only sees an inline snapshot, so entities joined as raw ids.
@@ -223,7 +215,8 @@ async function runCard(
       return {
         ok: true,
         value: primitiveValue("string", text),
-        summary: `Joined ${items.length} values.`
+        summary: `Joined ${items.length} values.`,
+        counts: { input: items.length }
       };
     }
   }
@@ -247,7 +240,7 @@ export const filterExecutor: NodeExecutor<FilterNode> = {
     const source = await resolveRef(node.data.source, ctx);
     if (!source.ok) return { status: "Skipped", reason: source.reason };
     if (source.value.kind !== "list") {
-      return { status: "Skipped", reason: "This step expected a list." };
+      return { status: "Skipped", reason: REFUSAL_REASONS["not-a-list"] };
     }
     ctx.record?.("source", source.value);
 
@@ -281,7 +274,8 @@ export const filterExecutor: NodeExecutor<FilterNode> = {
         id: card.id,
         operation: card.operation,
         summary: outcome.summary,
-        status: "Succeeded"
+        status: "Succeeded",
+        counts: outcome.counts
       });
       current = outcome.value;
       summary = outcome.summary;
@@ -293,22 +287,3 @@ export const filterExecutor: NodeExecutor<FilterNode> = {
     };
   }
 };
-
-/** The declared type of a resolved value, for re-wrapping picked items in a list. */
-function typeOfValue(value: RuntimeValue): ScalarType {
-  switch (value.kind) {
-    case "primitive":
-      return { kind: "primitive", of: value.of };
-    case "entity":
-      return { kind: "entity", of: value.of };
-    case "record":
-      return value.of;
-    // A list cannot nest: the pluck branch skips before building one, so a list
-    // never reaches here. `pairs` is not a scalar and cannot be an element type.
-    case "list":
-    case "pairs":
-      return { kind: "primitive", of: "null" };
-    default:
-      return assertNever(value);
-  }
-}

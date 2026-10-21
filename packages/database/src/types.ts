@@ -23368,6 +23368,13 @@ export type Database = {
             foreignKeyName: "integrationConnection_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -23376,13 +23383,6 @@ export type Database = {
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "integrationConnection_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
@@ -23403,6 +23403,13 @@ export type Database = {
             foreignKeyName: "integrationConnection_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -23411,13 +23418,6 @@ export type Database = {
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "integrationConnection_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
@@ -23433,7 +23433,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
+          }
         ]
       }
       intercompanyEliminationLine: {
@@ -87567,7 +87567,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -87581,7 +87581,7 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -94552,6 +94552,15 @@ export type Database = {
       resolve_shelf_life_start_for_receipt: {
         Args: { p_item_id: string; p_receipt_id: string }
         Returns: string
+      }
+      revoke_connections: {
+        Args: {
+          p_company_id: string
+          p_connection_id?: string
+          p_piece_name: string
+          p_updated_by: string
+        }
+        Returns: undefined
       }
       rotate_webhook_signing_secret: {
         Args: { p_company_id: string; p_webhook_id: string }

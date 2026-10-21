@@ -34,6 +34,7 @@ import {
   useBuilderStoreApi,
   useBuilderStoreShallow
 } from "../context";
+import { useDataOperationLabel } from "../dataOperationLabels";
 import { asWorkflowNode, canConnect } from "../graph";
 import { NodeCard } from "../NodeCard";
 import { portsFor } from "../ports";
@@ -54,6 +55,7 @@ import { NODE_KIND_META } from "./meta";
 function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const { t } = useLingui();
   const eventLabel = useWorkflowEventLabel();
+  const operationLabel = useDataOperationLabel();
   const node = asWorkflowNode(id, type as WorkflowNodeType, data);
   const meta = NODE_KIND_META[node.type];
   // Once an app is chosen, the node wears that app's own logo instead of the
@@ -127,7 +129,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   // shipped label and would otherwise render its raw id on the card.
   const label = catalogId ? eventLabel(catalogId, catalogId) : undefined;
 
-  const summary = label ?? meta.summary?.(node);
+  const summary = label ?? meta.summary?.(node, { operation: operationLabel });
 
   const ports = portsFor(node, t);
 
@@ -182,7 +184,7 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
         <TooltipContent side="top">
           {hasIssues
             ? t`Fix the problems with this workflow before testing it`
-            : t`Test run — results are not saved to the Runs page`}
+            : t`Test runs are saved to the run history, marked as tests.`}
         </TooltipContent>
       </Tooltip>
     ) : null;

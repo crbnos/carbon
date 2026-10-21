@@ -994,13 +994,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // An allowlisted workflow piece has no settings — what it has is the accounts a
   // workflow step can act as, so its card gets that list as a tab.
   const piece = allowlistEntry(integrationId);
+  const [connectionRows, requiredScopes] = piece
+    ? await Promise.all([
+        readConnections(client, companyId, integrationId),
+        requiredScopesFor(integrationId)
+      ])
+    : [[], []];
   const connections = piece
     ? {
         pieceName: integrationId,
         defaultName: piece.label,
         // Only what the tab renders. `metadata` can carry workspace facts that
         // are not for the browser; `scopes` is the one key the tab compares.
-        rows: (await readConnections(client, companyId, integrationId)).map(
+        rows: connectionRows.map(
           ({
             id,
             pieceName,
@@ -1021,7 +1027,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ),
         // What a connection must hold for this piece's steps; an account that
         // predates a scope shows "Reconnect needed".
-        requiredScopes: [...(await requiredScopesFor(integrationId))]
+        requiredScopes: [...requiredScopes]
       }
     : null;
 

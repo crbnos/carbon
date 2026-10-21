@@ -127,6 +127,29 @@ describe("data node operations", () => {
       ]);
     });
 
+    // Flattening can produce more values than a list may hold. The run history
+    // used to say "Took 120 values" over a list holding 100.
+    it("says how many flattened values the list cap dropped", async () => {
+      const many = Array.from({ length: 60 }, (_, i) =>
+        event(`E${i}`, [`a${i}@x.co`, `b${i}@x.co`], "sam@x.co")
+      );
+      const result = await run(
+        { operation: "pluck", field: "attendees", flatten: true },
+        many
+      );
+      expect(result.status).toBe("Succeeded");
+      if (result.status !== "Succeeded") return;
+      const list = result.outputs?.result;
+      expect(list?.kind === "list" && list.items).toHaveLength(100);
+      expect(result.summary).toBe("Took 120 values; kept the first 100.");
+      const detail = result.detail;
+      expect(detail?.kind === "data" && detail.cards[0]?.counts).toEqual({
+        input: 60,
+        output: 100,
+        dropped: 20
+      });
+    });
+
     it("yields null for an item missing the field, not a shorter list", async () => {
       const partial = [
         EVENTS[0] as RuntimeValue,

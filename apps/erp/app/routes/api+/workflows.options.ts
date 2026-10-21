@@ -47,7 +47,11 @@ function readStringMap(raw: string | null): Record<string, string> {
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const providerId = url.searchParams.get("provider");
-  const provider = providerId ? OPTIONS_PROVIDERS[providerId] : undefined;
+  // Own keys only: `?provider=constructor` must not reach Object.prototype.
+  const provider =
+    providerId && Object.hasOwn(OPTIONS_PROVIDERS, providerId)
+      ? OPTIONS_PROVIDERS[providerId]
+      : undefined;
 
   if (provider === undefined) {
     // Still behind auth: an unknown provider must not be a way to probe the app
@@ -57,18 +61,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return { options: [], errorCode: FAILED };
   }
 
-  const { client, companyId } = await requirePermissions(
-    request,
-    provider.permission
-  );
+  const { companyId } = await requirePermissions(request, provider.permission);
 
   try {
     return await provider.resolve({
-      client,
       companyId,
       params: readStringMap(url.searchParams.get("params")),
-      values: readStringMap(url.searchParams.get("values")),
-      search: url.searchParams.get("search") ?? undefined
+      values: readStringMap(url.searchParams.get("values"))
     });
   } catch (err) {
     // Never echo a provider's raw payload to the CUSTOMER — for an integration it

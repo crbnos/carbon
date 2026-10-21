@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Readable } from "node:stream";
 import { createGunzip } from "node:zlib";
 import { NotFoundError } from "@carbon/api/errors";
@@ -14,7 +13,6 @@ import type {
 import {
   CarbonEdition,
   CONTROLLED_ENVIRONMENT,
-  SESSION_SECRET,
   SUPABASE_INTERNAL_URL,
   SUPABASE_URL,
   VERCEL_URL
@@ -2080,6 +2078,7 @@ export async function getOeeDevicesTabData(
 }
 
 const INTEGRATION_CACHE_TTL = 3600;
+const PIECE_HEALTHY_CACHE_TTL = 300;
 
 /**
  * Drop the cached auth record for an API key so a scope change or revocation
@@ -2518,37 +2517,35 @@ export async function upsertCompanyIntegration(
 /**
  * Flip an integration to installed without touching anything else on the row. The
  * piece callback marks its card installed after a connection is saved; an upsert
- * with empty metadata would wipe whatever settings the row already holds.
+ * that UPDATES on conflict would write empty metadata over whatever settings the
+ * row already holds.
  */
 export async function markIntegrationInstalled(
   client: SupabaseClient<Database>,
   args: { id: string; companyId: string; updatedBy: string }
 ): Promise<{ error: PostgrestError | null }> {
-  // Read the row directly: `getCompanyIntegration` is Redis-cached and drops
-  // inactive rows, and both matter here.
-  const existing = await client
-    .from("companyIntegration")
-    .select("active")
-    .eq("id", args.id)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (existing.error) return { error: existing.error };
-
-  let error: PostgrestError | null = null;
-  if (existing.data === null) {
-    ({ error } = await client.from("companyIntegration").insert({
+  // Two statements that are each safe against a concurrent callback, instead of
+  // read-then-insert (two callbacks both read "absent" and the second insert
+  // failed on the primary key): insert only when absent, then activate only
+  // when inactive. Neither touches `metadata`.
+  const inserted = await client.from("companyIntegration").upsert(
+    {
       id: args.id,
       companyId: args.companyId,
       active: true,
       metadata: {},
       updatedBy: args.updatedBy
-    }));
-  } else if (existing.data.active !== true) {
+    },
+    { onConflict: "id,companyId", ignoreDuplicates: true }
+  );
+  let error: PostgrestError | null = inserted.error;
+  if (error === null) {
     ({ error } = await client
       .from("companyIntegration")
       .update({ active: true, updatedBy: args.updatedBy })
       .eq("id", args.id)
-      .eq("companyId", args.companyId));
+      .eq("companyId", args.companyId)
+      .eq("active", false));
   }
   if (error === null) await clearCompanyIntegrationCache(args.companyId);
   return { error };
@@ -2694,15 +2691,15 @@ async function getConnectionHealth(
     } catch {
       return { ...integration, health: "unhealthy", healthReason: null };
     }
-    // An unhealthy piece card stays unhealthy until someone reconnects, and every
-    // path that changes that (callback, disconnect, uninstall) invalidates this
-    // key — so a short negative cache is safe and stops the Settings grid from
-    // re-reading the rows on every load.
+    // The callback, disconnect and uninstall invalidate this key. A refresh the
+    // vendor rejects does not: ee's `markExpired` sets the connection Expired and
+    // cannot reach this key. So a healthy answer is kept for five minutes, not
+    // hours, and an unhealthy one for a minute.
     await redis.set(
       key,
       healthy ? "1" : "0",
       "EX",
-      healthy ? INTEGRATION_CACHE_TTL * 5 : 60
+      healthy ? PIECE_HEALTHY_CACHE_TTL : 60
     );
     return {
       ...integration,
@@ -5241,7 +5238,8 @@ export async function completeOnshapeAuthorization({
   }
 }
 
-function withCookie(response: Response, cookie: string) {
+/** Sets the OAuth state cookie a consume rewrote on the reply that ends the flow. */
+export function withCookie(response: Response, cookie: string) {
   response.headers.append("Set-Cookie", cookie);
   return response;
 }
@@ -8710,78 +8708,4 @@ export async function getOpenJobsMissingStorageUnit(
   } catch (error) {
     return { data: null, error: error as Error };
   }
-}
-
-/**
- * The signed `state` parameter for an integration-connection OAuth round trip.
- *
- * This is the control that stops a token being planted into another company's
- * connection: the callback trusts nothing from the query string except what this
- * signature covers, and re-checks the companyId against the session on top.
- */
-
-export interface ConnectionState {
-  companyId: string;
-  pieceName: string;
-  name: string;
-  /** Set by Reconnect, so the callback revives exactly this row. */
-  connectionId?: string;
-  userId: string;
-  nonce: string;
-  issuedAt: number;
-}
-
-const CONNECTION_STATE_MAX_AGE_MS = 10 * 60 * 1000;
-
-function signConnectionPayload(payload: string): string {
-  // SESSION_SECRET is a required env var; the guard is for the type, and a boot
-  // without it must never fall back to an unsigned state.
-  if (!SESSION_SECRET) throw new Error("SESSION_SECRET is not set");
-  return createHmac("sha256", SESSION_SECRET)
-    .update(payload)
-    .digest("base64url");
-}
-
-export function signConnectionState(
-  state: Omit<ConnectionState, "nonce" | "issuedAt">
-): string {
-  const full: ConnectionState = {
-    ...state,
-    nonce: randomBytes(16).toString("base64url"),
-    issuedAt: Date.now()
-  };
-  const payload = Buffer.from(JSON.stringify(full)).toString("base64url");
-  return `${payload}.${signConnectionPayload(payload)}`;
-}
-
-/** Returns the state only when the signature is valid and the state is fresh. */
-export function verifyConnectionState(
-  raw: string | null | undefined
-): ConnectionState | null {
-  if (!raw) return null;
-
-  const separator = raw.lastIndexOf(".");
-  if (separator <= 0) return null;
-
-  const payload = raw.slice(0, separator);
-  const signature = raw.slice(separator + 1);
-
-  const expected = Buffer.from(signConnectionPayload(payload));
-  const supplied = Buffer.from(signature);
-  if (expected.length !== supplied.length) return null;
-  if (!timingSafeEqual(expected, supplied)) return null;
-
-  let state: ConnectionState;
-  try {
-    state = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-  } catch {
-    return null;
-  }
-
-  if (typeof state.issuedAt !== "number") return null;
-  if (Date.now() - state.issuedAt > CONNECTION_STATE_MAX_AGE_MS) return null;
-  if (!state.companyId || !state.pieceName || !state.name) return null;
-  if (!state.userId) return null;
-
-  return state;
 }

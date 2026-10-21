@@ -91,7 +91,7 @@ const lookupNode = z.object({
 /** One step of the data node's chain. Identity is load-bearing: React keys,
  * issue field paths (`operations.{id}.…`) and run-detail rows all key on it. */
 const operationCardSchema = z.object({
-  id: z.string(),
+  id: z.string().min(1),
   operation: dataOperationSchema.default("filter"),
   combinator: combinatorSchema.default("and"),
   clauses: z.array(clauseSchema).default([]),
@@ -123,7 +123,16 @@ const filterNode = z.object({
     flatten: z.boolean().default(false),
     /** The chain. Absent on every pre-chain definition — `cardsOf` synthesizes
      * one card from the flat fields above, which stay for exactly that reason. */
-    operations: z.array(operationCardSchema).max(20).optional()
+    operations: z
+      .array(operationCardSchema)
+      .max(20)
+      // An item ref names its card by id, and `dataLoopList` finds it with
+      // `findIndex`: a repeated id would type every ref against the first.
+      .refine(
+        (cards) => new Set(cards.map((card) => card.id)).size === cards.length,
+        { message: "Every step in the chain needs its own id." }
+      )
+      .optional()
   })
 });
 

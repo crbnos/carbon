@@ -369,8 +369,14 @@ async function runBatchedNode(
     recordStep(args, "", async () => aggregate)
   );
 
-  // A failed item does not stop the graph, but it must not leave the run green.
-  return { ...outcome, failedItems: failed };
+  // A failed item does not stop the graph, but it must not leave the run green —
+  // and the run says why in the words the aggregate row uses ("Ran 3 of 3; 1
+  // failed."), not with an empty error.
+  return {
+    ...outcome,
+    failedItems: failed,
+    error: outcome.error ?? (failed > 0 ? summary : null)
+  };
 }
 
 export async function executeWorkflowRun(params: {
@@ -653,6 +659,7 @@ export async function walkWorkflow(params: {
     // the run reports what actually broke: `error` was hard-coded null here, so
     // every ordinary failure — the common case — reached the run page as "Failed
     // at <step>." with the reason sitting unread in the step row.
+    // `finishRun` redacts and caps it as `settleStep` does the step row's.
     const error = capped
       ? TOO_MANY_STEPS
       : (firstError ?? (interrupted > 0 ? INTERRUPTED : null));

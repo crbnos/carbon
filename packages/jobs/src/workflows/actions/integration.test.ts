@@ -219,18 +219,129 @@ describe("runIntegrationAction", () => {
     expect(ctx.propsValue.sendAsBot).toBe(true);
   });
 
-  it("maps a vendor scope error to the reconnect copy", async () => {
+  const pieceThatThrows = (error: unknown) =>
     getPieceAction.mockResolvedValue({
       name: "create_google_calendar_event",
       displayName: "Create Event",
       props: { title: { type: "SHORT_TEXT", required: true } },
       run: async () => {
-        throw new Error("An API error occurred: missing_scope");
+        throw error;
       }
     });
+
+  // The shape the Activepieces `HttpError` takes: the message embeds the REQUEST
+  // body, the vendor's verdict sits on `status` / `responseBody`.
+  const httpError = (requestBody: unknown, status: number, body: unknown) =>
+    Object.assign(
+      new Error(
+        JSON.stringify({
+          response: { status, body },
+          request: { body: requestBody }
+        })
+      ),
+      { status, responseBody: body, requestBody }
+    );
+
+  it("maps a Slack scope error to the reconnect copy", async () => {
+    pieceThatThrows(
+      Object.assign(new Error("An API error occurred: missing_scope"), {
+        code: "slack_webapi_platform_error",
+        data: { ok: false, error: "missing_scope" }
+      })
+    );
     const outcome = await run();
     expect(outcome.ok).toBe(false);
     expect(outcome.ok ? "" : outcome.error).toMatch(/needs to be reconnected/);
+  });
+
+  it("maps a Google scope refusal to the reconnect copy", async () => {
+    pieceThatThrows(
+      httpError({ summary: "Kickoff" }, 403, {
+        error: {
+          code: 403,
+          status: "PERMISSION_DENIED",
+          errors: [{ reason: "insufficientPermissions" }]
+        }
+      })
+    );
+    const outcome = await run();
+    expect(outcome.ok ? "" : outcome.error).toMatch(/needs to be reconnected/);
+  });
+
+  it("does not read an email body that mentions permissions as a scope error", async () => {
+    pieceThatThrows(
+      httpError(
+        { raw: "Hi, you have insufficient permission to approve this order." },
+        400,
+        { error: { code: 400, message: "Invalid To header" } }
+      )
+    );
+    const outcome = await run();
+    expect(outcome.ok).toBe(false);
+    expect(outcome.ok ? "" : outcome.error).toMatch(
+      /^Google Calendar rejected this:/
+    );
+  });
+
+  it("never stores the request a googleapis response carries", async () => {
+    getPieceAction.mockResolvedValue({
+      name: "send_email",
+      displayName: "Send Email",
+      props: {},
+      // A GaxiosResponse: `config.data` is the base64 email it sent.
+      run: async () => ({
+        config: {
+          url: "https://gmail.googleapis.com",
+          data: "U2VjcmV0IGJvZHk="
+        },
+        request: { responseURL: "https://gmail.googleapis.com" },
+        data: { id: "msg_1", threadId: "thr_1" },
+        status: 200
+      })
+    });
+    const outcome = await run();
+    if (!outcome.ok) throw new Error("Expected ok");
+    const stored = outcome.outputs.result;
+    expect(stored?.kind === "primitive" && stored.value).toBe(
+      JSON.stringify({ data: { id: "msg_1", threadId: "thr_1" }, status: 200 })
+    );
+  });
+
+  it("succeeds when the vendor's result cannot be serialized", async () => {
+    // The vendor call already happened; reporting it as rejected would invite a
+    // re-run that sends the same message twice.
+    const circular: Record<string, unknown> = { id: "evt_1" };
+    circular.self = circular;
+    getPieceAction.mockResolvedValue({
+      name: "create_google_calendar_event",
+      displayName: "Create Event",
+      props: {},
+      run: async () => circular
+    });
+    const outcome = await run();
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.outputs.result).toEqual({
+      kind: "primitive",
+      of: "string",
+      value: null
+    });
+  });
+
+  it("stores no result for a vendor call that returned nothing", async () => {
+    getPieceAction.mockResolvedValue({
+      name: "create_google_calendar_event",
+      displayName: "Create Event",
+      props: {},
+      run: async () => undefined
+    });
+    const outcome = await run();
+    if (!outcome.ok) throw new Error("Expected ok");
+    expect(outcome.outputs.result).toEqual({
+      kind: "primitive",
+      of: "string",
+      value: null
+    });
   });
 
   it("refuses a connection belonging to another piece", async () => {

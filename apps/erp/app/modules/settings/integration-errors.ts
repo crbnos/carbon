@@ -183,6 +183,10 @@ export const integrationErrors = {
       title: msg`That's a different account`,
       description: msg`Reconnect with the account this connection already uses, or use Add account to connect the other one.`
     },
+    "workspace-taken": {
+      title: msg`That workspace is connected to another company`,
+      description: msg`A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace.`
+    },
     "save-failed": {
       title: msg`Couldn't save the connection`,
       description: msg`The integration authorized the connection but saving it failed. Try connecting again.`
@@ -190,6 +194,15 @@ export const integrationErrors = {
     unexpected: {
       title: msg`Couldn't complete the connection`,
       description: msg`An unexpected error occurred while connecting. Try connecting again.`
+    },
+    // Answered by the connect route, before the consent screen opens.
+    unavailable: {
+      title: msg`That integration is not available`,
+      description: msg`This integration can't be connected on this Carbon instance.`
+    },
+    "account-missing": {
+      title: msg`That account no longer exists`,
+      description: msg`It was removed after this page loaded. Reload the page and try again.`
     }
   }
 } satisfies Record<string, Record<string, IntegrationErrorMessage>>;

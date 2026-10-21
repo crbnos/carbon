@@ -15,6 +15,8 @@ export type MultiChoiceFieldProps = {
   required?: boolean;
   helpTermId?: TermId;
   help?: string;
+  /** Advisory one-liner, muted, under the control. */
+  hint?: string;
   /** Titles, descriptions and per-option availability, in the order to offer them. */
   options: ChoiceSelectOption[];
   /** Always ticked and never togglable, whatever is stored — a channel the platform
@@ -37,6 +39,7 @@ export function MultiChoiceField({
   required,
   helpTermId,
   help,
+  hint,
   options,
   locked,
   value,
@@ -59,6 +62,7 @@ export function MultiChoiceField({
       helpTermId={helpTermId}
       help={help}
       issue={issue}
+      hint={hint}
     >
       <div className="min-w-0 flex-1">
         <ChoiceSelect

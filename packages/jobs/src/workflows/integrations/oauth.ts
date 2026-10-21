@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { OAuth2RefreshConfig } from "@carbon/ee/integrations/connections";
+import { getPath } from "@carbon/ee/integrations/secrets";
 import { getEnv } from "@carbon/env";
 import { type AllowlistEntry, allowlistEntry } from "./allowlist";
 import { getPieceOAuth2Auth } from "./registry";
@@ -95,15 +96,11 @@ function scalarAt(
   body: Record<string, unknown>,
   path: string
 ): string | number | boolean | undefined {
-  let cursor: unknown = body;
-  for (const key of path.split(".")) {
-    if (typeof cursor !== "object" || cursor === null) return undefined;
-    cursor = (cursor as Record<string, unknown>)[key];
-  }
-  return typeof cursor === "string" ||
-    typeof cursor === "number" ||
-    typeof cursor === "boolean"
-    ? cursor
+  const value = getPath(body, path);
+  return typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+    ? value
     : undefined;
 }
 

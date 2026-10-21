@@ -214,6 +214,7 @@ function labelDeclaration(
   labels: Record<string, string>,
   help: Record<string, string>
 ): void {
+  assertLabelIsSafe(id, declaration.label);
   labels[id] = declaration.label;
   for (const [input, spec] of Object.entries(declaration.inputs)) {
     const key = `action.${id}.input.${input}`;
@@ -271,11 +272,17 @@ function columnLabel(entry: RegistryEntry, column: string): string {
     : rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
 }
 
-/** Labels are spliced into a msg`` template literal, so these would break the emit. */
+/** Labels are spliced verbatim into a msg`` template literal, so these would
+ * break the emit or change the text: a backtick, `${`, or a backslash that is not
+ * itself escaped (`\\` reads back as one backslash, a lone one starts an escape). */
 function assertLabelIsSafe(key: string, label: string): void {
-  if (label.includes("`") || label.includes("${")) {
+  if (
+    label.includes("`") ||
+    label.includes("${") ||
+    label.replaceAll("\\\\", "").includes("\\")
+  ) {
     throw new Error(
-      `Label for ${key} contains a backtick or template literal: "${label}"`
+      `Label for ${key} contains a backtick, a template literal or a lone backslash: "${label}"`
     );
   }
 }

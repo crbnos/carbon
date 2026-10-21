@@ -14,7 +14,7 @@ import path from "node:path";
 import { assertPinnedVersions } from "../packages/jobs/src/workflows/integrations/allowlist";
 import { buildPieceActionDeclarations } from "../packages/jobs/src/workflows/integrations/catalog";
 import schema from "../packages/database/src/swagger-docs-schema";
-import { WORKFLOW_ACTIONS as HAND_WRITTEN_ACTIONS } from "../packages/ee/src/workflows/catalog/actions";
+import { WORKFLOW_ACTIONS } from "../packages/ee/src/workflows/catalog/actions";
 import {
   WORKFLOW_ACTION_CATALOG,
   WORKFLOW_INTEGRATION_CATALOG,
@@ -46,7 +46,6 @@ async function main(): Promise<void> {
   // The generator feeds buildCatalog the same two maps, so the staleness check
   // compares like with like. An UnmappablePropertyError here fails the check, which
   // is the point: the committed catalog could not have been regenerated either.
-  const WORKFLOW_ACTIONS = HAND_WRITTEN_ACTIONS;
   const INTEGRATION_STEPS = await buildPieceActionDeclarations();
 
   const failures: string[] = [];
@@ -219,19 +218,33 @@ async function main(): Promise<void> {
     const stale =
       "The committed catalog is out of date. Run `pnpm run generate:workflow-catalog` and commit the result.";
 
-    try {
-      assert.deepStrictEqual(WORKFLOW_EVENTS, rebuilt.events);
-    } catch {
-      const committed = new Set(Object.keys(WORKFLOW_EVENTS));
-      const fresh = new Set(Object.keys(rebuilt.events));
-      const missing = [...fresh].filter((id) => !committed.has(id));
-      const extra = [...committed].filter((id) => !fresh.has(id));
-      fail(
-        `${stale}${missing.length ? ` Missing: ${missing.join(", ")}.` : ""}${
-          extra.length ? ` No longer generated: ${extra.join(", ")}.` : ""
-        }${!missing.length && !extra.length ? " An event's outputs, permission or match changed." : ""}`
-      );
-    }
+    /** One generated map against a fresh build: on drift, name what is missing,
+     * what is no longer generated, or — when the keys agree — what changed. */
+    const compareMap = (
+      noun: string,
+      committed: Record<string, unknown>,
+      fresh: Record<string, unknown>,
+      changed: string
+    ) => {
+      try {
+        assert.deepStrictEqual(committed, fresh);
+      } catch {
+        const missing = Object.keys(fresh).filter((id) => !(id in committed));
+        const extra = Object.keys(committed).filter((id) => !(id in fresh));
+        fail(
+          `${stale}${missing.length ? ` Missing ${noun}: ${missing.join(", ")}.` : ""}${
+            extra.length ? ` No longer generated: ${extra.join(", ")}.` : ""
+          }${!missing.length && !extra.length ? ` ${changed}` : ""}`
+        );
+      }
+    };
+
+    compareMap(
+      "event",
+      WORKFLOW_EVENTS,
+      rebuilt.events,
+      "An event's outputs, permission or match changed."
+    );
 
     try {
       assert.deepStrictEqual(WORKFLOW_ENTITIES, rebuilt.entities);
@@ -239,33 +252,18 @@ async function main(): Promise<void> {
       fail(`${stale} An entity's generated properties changed.`);
     }
 
-    try {
-      assert.deepStrictEqual(WORKFLOW_ACTION_CATALOG, rebuilt.actions);
-    } catch {
-      const committed = new Set(Object.keys(WORKFLOW_ACTION_CATALOG));
-      const fresh = new Set(Object.keys(rebuilt.actions));
-      const missing = [...fresh].filter((id) => !committed.has(id));
-      const extra = [...committed].filter((id) => !fresh.has(id));
-      fail(
-        `${stale}${missing.length ? ` Missing action: ${missing.join(", ")}.` : ""}${
-          extra.length ? ` No longer generated: ${extra.join(", ")}.` : ""
-        }${!missing.length && !extra.length ? " An action's inputs, outputs or permission changed." : ""}`
-      );
-    }
-
-    try {
-      assert.deepStrictEqual(WORKFLOW_INTEGRATION_CATALOG, rebuilt.integrations);
-    } catch {
-      const committed = new Set(Object.keys(WORKFLOW_INTEGRATION_CATALOG));
-      const fresh = new Set(Object.keys(rebuilt.integrations));
-      const missing = [...fresh].filter((id) => !committed.has(id));
-      const extra = [...committed].filter((id) => !fresh.has(id));
-      fail(
-        `${stale}${missing.length ? ` Missing integration step: ${missing.join(", ")}.` : ""}${
-          extra.length ? ` No longer generated: ${extra.join(", ")}.` : ""
-        }${!missing.length && !extra.length ? " An integration step's inputs, outputs or permission changed." : ""}`
-      );
-    }
+    compareMap(
+      "action",
+      WORKFLOW_ACTION_CATALOG,
+      rebuilt.actions,
+      "An action's inputs, outputs or permission changed."
+    );
+    compareMap(
+      "integration step",
+      WORKFLOW_INTEGRATION_CATALOG,
+      rebuilt.integrations,
+      "An integration step's inputs, outputs or permission changed."
+    );
 
     try {
       assert.deepStrictEqual(WORKFLOW_OPERATION_CATALOG, rebuilt.operations);
@@ -281,15 +279,20 @@ async function main(): Promise<void> {
 
     // Read as text, not imported: the untransformed `msg` macro throws in plain Node.
     const labelSource = fs.readFileSync(LABELS_FILE, "utf8");
-    // Biome drops the quotes around a key that is a valid identifier.
-    const labelIds = new Set(
-      [...labelSource.matchAll(/^ {2}"?([^":\s]+)"?:\s*msg`/gm)].map((m) => m[1])
+    // Biome drops the quotes around a key that is a valid identifier. A label
+    // never holds a backtick (`assertLabelIsSafe`), so the text ends at the next.
+    const committedLabels = new Map(
+      [
+        ...labelSource.matchAll(/^ {2}"?([^":\s]+)"?:\s*msg`([^`]*)`/gm)
+      ].map((m) => [m[1] ?? "", m[2] ?? ""])
     );
-    for (const id of Object.keys(rebuilt.labels)) {
-      if (!labelIds.has(id)) fail(`${stale} "${id}" has no label.`);
+    for (const [id, text] of Object.entries(rebuilt.labels)) {
+      const committed = committedLabels.get(id);
+      if (committed === undefined) fail(`${stale} "${id}" has no label.`);
+      else if (committed !== text) fail(`${stale} The label of "${id}" changed.`);
     }
-    for (const id of labelIds) {
-      if (id !== undefined && !(id in rebuilt.labels)) {
+    for (const id of committedLabels.keys()) {
+      if (!(id in rebuilt.labels)) {
         fail(
           `${stale} Label "${id}" no longer matches an event, action or operation.`
         );

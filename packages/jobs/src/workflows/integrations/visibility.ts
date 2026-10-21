@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { type AllowlistPropOverride, allowlistEntry } from "./allowlist";
-import type { PieceProperty } from "./types";
+import type { AllowlistPropOverride } from "./allowlist";
+import type { PieceOption, PieceProperty } from "./types";
 
 /**
  * Which of a piece's props a person actually sees.
@@ -25,18 +25,25 @@ export type Visibility =
   /** Not part of the step at all — neither the form nor Advanced. */
   | { show: false; omit: true; value?: unknown };
 
-/** A dropdown with exactly one possible answer is not a choice. */
+/** A dropdown's options when the piece lists them statically; undefined for a
+ * fetched dropdown, or anything else. The one reading of `property.options`. */
+export function staticOptions(
+  property: PieceProperty
+): readonly PieceOption[] | undefined {
+  const options = property.options;
+  if (typeof options !== "object" || options === null) return undefined;
+  return Array.isArray(options.options) ? options.options : undefined;
+}
+
 /** The one value a single-option dropdown can hold, or undefined when it has more
  * (or fewer) than one. There is nothing to decide, so the field is hidden — but the
  * value still has to be SENT, exactly as a required default is. */
 function singleChoiceValue(property: PieceProperty): unknown {
-  const options = property.options;
-  if (typeof options !== "object" || options === null) return undefined;
-  const list = (options as { options?: readonly unknown[] }).options;
-  if (!Array.isArray(list) || list.length !== 1) return undefined;
-  const only = list[0];
+  const list = staticOptions(property);
+  if (list === undefined || list.length !== 1) return undefined;
+  const only: unknown = list[0];
   return typeof only === "object" && only !== null && "value" in only
-    ? (only as { value: unknown }).value
+    ? only.value
     : undefined;
 }
 
@@ -102,67 +109,4 @@ export function assertHiddenPropIsSatisfied(
   throw new Error(
     `${piece}.${action}.${name} is required but hidden or omitted with no value to send.`
   );
-}
-
-/**
- * Every value a hidden prop must carry at run time, for one action.
- *
- * Derived from `visibilityOf` rather than restating its rules, so what the form
- * hides and what the call sends can never drift: a prop hidden here with a value
- * is exactly a prop the author was not shown and the vendor still needs. Covers
- * both the allowlist's pins and a vendor `defaultValue` we hid on the author's
- * behalf — a piece applies neither for itself.
- *
- * Not stored on the node, so changing a pin fixes every saved workflow at once.
- */
-export function pinnedValues(
-  piece: string,
-  action: string,
-  props: Record<string, PieceProperty> = {}
-): Record<string, unknown> {
-  const overrides = allowlistEntry(piece)?.props?.[action] ?? {};
-  const pinned: Record<string, unknown> = {};
-
-  for (const [name, property] of Object.entries(props)) {
-    const visibility = visibilityOf(property, overrides[name]);
-    if (!visibility.show && visibility.value !== undefined) {
-      pinned[name] = visibility.value;
-    }
-  }
-
-  // The allowlist's own pins, for every prop `props` did not cover. Callers that
-  // have no piece schema to hand pass none at all, so this loop — not the one
-  // above — is what carries a reviewed pin in that case.
-  //
-  // A pin for a prop the piece no longer declares still lands here and is then
-  // dropped by `toPropsValue`, which walks the piece's props: you cannot send a
-  // field the action has no slot for.
-  for (const [name, override] of Object.entries(overrides)) {
-    if (override.value !== undefined && !(name in pinned)) {
-      pinned[name] = override.value;
-    }
-  }
-
-  return pinned;
-}
-
-/**
- * Props the step must never send from a node value — omitted by the allowlist or
- * display-only. The catalog leaves them out of both input maps, but a node saved
- * before the omit (or a definition posted by hand) can still carry a value for
- * them, and `toPropsValue` lets a node value win. Strip those first; the pin, if
- * any, is still applied.
- */
-export function omittedProps(
-  piece: string,
-  action: string,
-  props: Record<string, PieceProperty> = {}
-): Set<string> {
-  const overrides = allowlistEntry(piece)?.props?.[action] ?? {};
-  const omitted = new Set<string>();
-  for (const [name, property] of Object.entries(props)) {
-    const visibility = visibilityOf(property, overrides[name]);
-    if (!visibility.show && visibility.omit === true) omitted.add(name);
-  }
-  return omitted;
 }

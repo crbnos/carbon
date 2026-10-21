@@ -187,6 +187,80 @@ function stepLoopList(
     : { failure: "unconfigured" };
 }
 
+/**
+ * The action and the integration kinds. Both run one catalog step, so they share
+ * every check; only how the step is chosen differs, which `unchosen` reports
+ * before the catalog is asked.
+ */
+function stepNodeKind<N extends ActionNode | IntegrationNode>(
+  unchosen: (node: N) => WorkflowIssue[]
+): NodeKind<N> {
+  return {
+    handles: () => [SUCCESS_HANDLE, FAILURE_HANDLE],
+    values: (node) => inputValues(node.data.inputs),
+    outputs: (node, ctx) => stepDefinition(node, ctx)?.outputs,
+    loopList: stepLoopList,
+    configured: (node, ctx) => stepDefinition(node, ctx) !== undefined,
+    checkTypes: (node, ctx) => {
+      const step = stepDefinition(node, ctx);
+      if (step === undefined) return [];
+      // Ambiguity counts as batching here so two wired lists raise the one issue that
+      // explains them, rather than that issue plus a rejection of each list.
+      const batching = stepBatchPlan(node, ctx).kind !== "none";
+      // Advanced inputs write into the SAME `inputs` bag, so validating only the
+      // visible ones let an off-enum choice or a mistyped ref reach the vendor
+      // with no issue raised in the builder.
+      return checkInputs(
+        node,
+        node.data.inputs,
+        { ...step.inputs, ...step.advancedInputs },
+        batching,
+        ctx
+      );
+    },
+    checkConfig: (node, ctx) => {
+      const missing = unchosen(node);
+      if (missing.length > 0) return missing;
+      const step = stepDefinition(node, ctx);
+      // Same code for both kinds: to the customer an integration step that no
+      // longer exists and an action that no longer exists are the same problem.
+      if (step === undefined) {
+        return [
+          {
+            code: "UNKNOWN_ACTION",
+            nodeId: node.id,
+            field: "action",
+            message: `"${node.data.action}" is not something we can do any more.`
+          }
+        ];
+      }
+      const plan = stepBatchPlan(node, ctx);
+      if (plan.kind === "ambiguous") {
+        return [
+          incomplete(
+            node,
+            // Blamed on the second list, since the first was already working.
+            plan.second,
+            `Lists are wired into both "${plan.first}" and "${plan.second}", so this step cannot tell which one to repeat over.`
+          )
+        ];
+      }
+      for (const group of step.requireOneOf ?? []) {
+        if (group.some((name) => node.data.inputs[name] !== undefined))
+          continue;
+        return [
+          incomplete(
+            node,
+            group[0] ?? "inputs",
+            `This step needs at least one of: ${group.join(", ")}.`
+          )
+        ];
+      }
+      return [];
+    }
+  };
+}
+
 export function checkClauses(
   node: WorkflowNode,
   clauses: Clause[],
@@ -660,117 +734,20 @@ export const NODE_KINDS: {
 
   filter: dataNodeKind,
 
-  action: {
-    handles: () => [SUCCESS_HANDLE, FAILURE_HANDLE],
-    values: (node) => inputValues(node.data.inputs),
-    outputs: (node, ctx) => ctx.catalog.getAction(node.data.action)?.outputs,
-    loopList: stepLoopList,
-    configured: (node, ctx) =>
-      ctx.catalog.getAction(node.data.action) !== undefined,
-    checkTypes: (node, ctx) => {
-      const action = ctx.catalog.getAction(node.data.action);
-      if (action === undefined) return [];
-      // Ambiguity counts as batching here so two wired lists raise the one issue that
-      // explains them, rather than that issue plus a rejection of each list.
-      const batching = stepBatchPlan(node, ctx).kind !== "none";
-      return checkInputs(node, node.data.inputs, action.inputs, batching, ctx);
-    },
-    checkConfig: (node, ctx) => {
-      if (node.data.action.length === 0) {
-        return [incomplete(node, "action", "Choose what this step should do.")];
-      }
-      if (ctx.catalog.getAction(node.data.action) === undefined) {
-        return [
-          {
-            code: "UNKNOWN_ACTION",
-            nodeId: node.id,
-            field: "action",
-            message: `"${node.data.action}" is not something we can do any more.`
-          }
-        ];
-      }
-      const plan = stepBatchPlan(node, ctx);
-      if (plan.kind === "ambiguous") {
-        return [
-          incomplete(
-            node,
-            // Blamed on the second list, since the first was already working.
-            plan.second,
-            `Lists are wired into both "${plan.first}" and "${plan.second}", so this step cannot tell which one to repeat over.`
-          )
-        ];
-      }
-      const action = ctx.catalog.getAction(node.data.action);
-      for (const group of action?.requireOneOf ?? []) {
-        if (group.some((name) => node.data.inputs[name] !== undefined))
-          continue;
-        return [
-          incomplete(
-            node,
-            group[0] ?? "inputs",
-            `This step needs at least one of: ${group.join(", ")}.`
-          )
-        ];
-      }
-      return [];
+  action: stepNodeKind<ActionNode>((node) =>
+    node.data.action.length === 0
+      ? [incomplete(node, "action", "Choose what this step should do.")]
+      : []
+  ),
+  integration: stepNodeKind<IntegrationNode>((node) => {
+    if (node.data.piece.length === 0) {
+      return [incomplete(node, "piece", "Choose an integration.")];
     }
-  },
-  integration: {
-    handles: () => [SUCCESS_HANDLE, FAILURE_HANDLE],
-    values: (node) => inputValues(node.data.inputs),
-    outputs: (node, ctx) =>
-      ctx.catalog.getIntegration(
-        integrationStepId(node.data.piece, node.data.action)
-      )?.outputs,
-    loopList: stepLoopList,
-    configured: (node, ctx) => stepDefinition(node, ctx) !== undefined,
-    checkTypes: (node, ctx) => {
-      const step = stepDefinition(node, ctx);
-      if (step === undefined) return [];
-      const batching = stepBatchPlan(node, ctx).kind !== "none";
-      // Advanced inputs write into the SAME `inputs` bag, so validating only the
-      // visible ones let an off-enum choice or a mistyped ref reach the vendor
-      // with no issue raised in the builder.
-      return checkInputs(
-        node,
-        node.data.inputs,
-        { ...step.inputs, ...step.advancedInputs },
-        batching,
-        ctx
-      );
-    },
-    checkConfig: (node, ctx) => {
-      if (node.data.piece.length === 0) {
-        return [incomplete(node, "piece", "Choose an integration.")];
-      }
-      if (node.data.action.length === 0) {
-        return [incomplete(node, "action", "Choose what this step should do.")];
-      }
-      // Same code as a missing action: to the customer an integration step that no
-      // longer exists and an action that no longer exists are the same problem.
-      if (stepDefinition(node, ctx) === undefined) {
-        return [
-          {
-            code: "UNKNOWN_ACTION",
-            nodeId: node.id,
-            field: "action",
-            message: `"${node.data.action}" is not something we can do any more.`
-          }
-        ];
-      }
-      const plan = stepBatchPlan(node, ctx);
-      if (plan.kind === "ambiguous") {
-        return [
-          incomplete(
-            node,
-            plan.second,
-            `Lists are wired into both "${plan.first}" and "${plan.second}", so this step cannot tell which one to repeat over.`
-          )
-        ];
-      }
-      return [];
+    if (node.data.action.length === 0) {
+      return [incomplete(node, "action", "Choose what this step should do.")];
     }
-  }
+    return [];
+  })
 };
 
 // Cast: TypeScript cannot see that `NODE_KINDS[node.type]` and `node` narrow to

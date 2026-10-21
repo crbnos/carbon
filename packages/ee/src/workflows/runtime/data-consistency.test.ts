@@ -4,9 +4,10 @@
 
 import { describe, expect, it } from "vitest";
 import { createFixtureCatalog } from "../definition/catalog";
+import type { DataOperation } from "../definition/data-operations";
 import { getNodeOutputs } from "../definition/nodes";
-import type { FilterNode, WorkflowDefinition } from "../definition/schema";
-import { t, type ValueType } from "../definition/types";
+import type { FilterNode } from "../definition/schema";
+import { type RecordType, t, type ValueType } from "../definition/types";
 import { createContext } from "../definition/variables";
 import { filterExecutor } from "./filter";
 import { createRuntimeContext } from "./fixtures";
@@ -25,7 +26,7 @@ import { entityValue, fromColumn, listValue, primitiveValue } from "./values";
  * what the validator had said.
  */
 
-const EVENT: ValueType = { kind: "record", fields: { summary: t.string } };
+const EVENT: RecordType = { kind: "record", fields: { summary: t.string } };
 
 const SOURCES: {
   label: string;
@@ -36,23 +37,20 @@ const SOURCES: {
 }[] = [
   {
     label: "list<string>",
-    type: t.list(t.string as never),
-    value: () =>
-      listValue(t.string as never, [primitiveValue("string", "a")]).value
+    type: t.list(t.string),
+    value: () => listValue(t.string, [primitiveValue("string", "a")]).value
   },
   {
     label: "list<number>",
-    type: t.list(t.number as never),
-    value: () =>
-      listValue(t.number as never, [primitiveValue("number", 1)]).value
+    type: t.list(t.number),
+    value: () => listValue(t.number, [primitiveValue("number", 1)]).value
   },
   {
     label: "list<date>",
-    type: t.list(t.date as never),
+    type: t.list(t.date),
     value: () =>
-      listValue(t.date as never, [
-        primitiveValue("date", "2026-01-01T00:00:00.000Z")
-      ]).value
+      listValue(t.date, [primitiveValue("date", "2026-01-01T00:00:00.000Z")])
+        .value
   },
   {
     label: "list<entity>",
@@ -65,9 +63,8 @@ const SOURCES: {
   },
   {
     label: "list<record>",
-    type: t.list(EVENT as never),
-    value: () =>
-      listValue(EVENT as never, [fromColumn(EVENT, { summary: "A" })]).value,
+    type: t.list(EVENT),
+    value: () => listValue(EVENT, [fromColumn(EVENT, { summary: "A" })]).value,
     field: "summary"
   }
 ];
@@ -81,7 +78,7 @@ const OPERATIONS = [
   "pluck"
 ] as const;
 
-function node(operation: string, field?: string): FilterNode {
+function node(operation: DataOperation, field?: string): FilterNode {
   return {
     id: "d1",
     name: "d1",
@@ -91,7 +88,7 @@ function node(operation: string, field?: string): FilterNode {
       source: { kind: "ref", nodeId: "s1", output: "result", path: [] },
       combinator: "and",
       clauses: [],
-      operation: operation as never,
+      operation,
       flatten: false,
       ...(field === undefined ? {} : { field })
     }
@@ -100,7 +97,7 @@ function node(operation: string, field?: string): FilterNode {
 
 function declaredOutput(source: ValueType, target: FilterNode) {
   const { context } = createContext(
-    { formatVersion: 4, nodes: [], edges: [] } as unknown as WorkflowDefinition,
+    { formatVersion: 4, nodes: [], edges: [] },
     createFixtureCatalog()
   );
   const ctx = {
@@ -108,33 +105,39 @@ function declaredOutput(source: ValueType, target: FilterNode) {
     typeOf: () => source,
     resolveValue: () => ({ type: source })
   };
-  return getNodeOutputs(target, ctx as never)?.result;
+  return getNodeOutputs(target, ctx)?.result;
 }
 
 describe("the data node's declared type and its runtime agree", () => {
   for (const source of SOURCES) {
     for (const operation of OPERATIONS) {
-      it(`${source.label} + ${operation}`, async () => {
-        // `pluck` needs a field; where the source has none, an invented one is the
-        // honest test — it is what an author switching operations would leave behind.
-        const target = node(
-          operation,
-          operation === "pluck" ? (source.field ?? "nope") : undefined
-        );
-        const declared = declaredOutput(source.type, target);
+      // `pluck` needs a field. Every source is tried with an invented one — what an
+      // author renaming or switching operations leaves behind — and a source whose
+      // items have fields is tried with a real one too.
+      const fields =
+        operation !== "pluck"
+          ? [undefined]
+          : source.field === undefined
+            ? ["nope"]
+            : [source.field, "nope"];
+      for (const field of fields) {
+        it(`${source.label} + ${operation}${field === undefined ? "" : ` "${field}"`}`, async () => {
+          const target = node(operation, field);
+          const declared = declaredOutput(source.type, target);
 
-        const ctx = createRuntimeContext({
-          outputs: { s1: { result: source.value() } }
+          const ctx = createRuntimeContext({
+            outputs: { s1: { result: source.value() } }
+          });
+          const result = await filterExecutor.execute(target, ctx);
+
+          expect(
+            result.status === "Succeeded",
+            declared === undefined
+              ? `declares no output but ran, producing an untyped value`
+              : `declares ${JSON.stringify(declared)} but did not run`
+          ).toBe(declared !== undefined);
         });
-        const result = await filterExecutor.execute(target, ctx);
-
-        expect(
-          result.status === "Succeeded",
-          declared === undefined
-            ? `declares no output but ran, producing an untyped value`
-            : `declares ${JSON.stringify(declared)} but did not run`
-        ).toBe(declared !== undefined);
-      });
+      }
     }
   }
 
@@ -152,7 +155,7 @@ describe("the data node's declared type and its runtime agree", () => {
     );
   });
 
-  it("types a plucked list from the first real value, not a leading null", async () => {
+  it("keeps a leading null in a plucked list typed by the declared field", async () => {
     const shape = { kind: "record" as const, fields: { v: t.string } };
     const list = listValue(shape, [
       fromColumn(shape, { v: null }),
@@ -162,7 +165,7 @@ describe("the data node's declared type and its runtime agree", () => {
     const result = await filterExecutor.execute(node("pluck", "v"), ctx);
     // A null-typed list holding a string would disagree with its own contents.
     expect(result.status === "Succeeded" && result.outputs?.result).toEqual(
-      listValue(t.string as never, [
+      listValue(t.string, [
         { kind: "primitive", of: "null", value: null },
         primitiveValue("string", "a")
       ]).value
@@ -170,9 +173,7 @@ describe("the data node's declared type and its runtime agree", () => {
   });
 
   it("refuses to pluck from a list of plain values rather than returning nulls", async () => {
-    const list = listValue(t.string as never, [
-      primitiveValue("string", "a")
-    ]).value;
+    const list = listValue(t.string, [primitiveValue("string", "a")]).value;
     const ctx = createRuntimeContext({ outputs: { s1: { result: list } } });
     const result = await filterExecutor.execute(node("pluck", "x"), ctx);
     expect(result.status).toBe("Skipped");
@@ -188,7 +189,7 @@ describe("the data node's declared type and its runtime agree", () => {
     const ctx = createRuntimeContext({ outputs: { s1: { result: list } } });
     const result = await filterExecutor.execute(node("pluck", "status"), ctx);
     expect(result.status === "Succeeded" && result.outputs?.result).toEqual(
-      listValue(t.string as never, [
+      listValue(t.string, [
         primitiveValue("string", "Draft"),
         primitiveValue("string", "Sent")
       ]).value
@@ -211,7 +212,7 @@ describe("the data node's declared type and its runtime agree", () => {
   it("skips an unflattened pluck of a list-valued field rather than nesting lists", async () => {
     const shape = {
       kind: "record" as const,
-      fields: { tags: t.list(t.string as never) }
+      fields: { tags: t.list(t.string) }
     };
     const list = listValue(shape, [
       fromColumn(shape, { tags: ["a", "b"] })
@@ -299,19 +300,22 @@ describe("operation chains at run time", () => {
         id: "c1",
         operation: "filter",
         summary: "Kept 3 of 5.",
-        status: "Succeeded"
+        status: "Succeeded",
+        counts: { input: 5, output: 3, unresolved: 0 }
       },
       {
         id: "c2",
         operation: "pluck",
         summary: "Took 3 values.",
-        status: "Succeeded"
+        status: "Succeeded",
+        counts: { input: 3, output: 3 }
       },
       {
         id: "c3",
         operation: "count",
         summary: "Counted 3.",
-        status: "Succeeded"
+        status: "Succeeded",
+        counts: { input: 3 }
       }
     ]);
   });

@@ -2,23 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { IntegrationConnectError } from "@carbon/ee/integrations/connect";
 import { getLogger } from "@carbon/logger";
 import { toast } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import { useFetcher, useNavigate } from "react-router";
+import { getIntegrationError } from "~/modules/settings/integration-errors";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "settings", "integrations");
 
-/**
- * Installing an integration, from wherever it is offered — the card in the grid and the
- * Details drawer.
- *
- * Shared so the two can never disagree about what Install means: an OAuth integration opens
- * the vendor's consent screen, one with required settings opens its form, and anything else
- * installs in place. `integration` may be undefined so this can be called before the caller
- * has resolved one (rules of hooks).
- */
 /** Only what installing needs. Structural rather than `Integration`, whose generic
  * variants don't all assign back to the bare type. */
 export type InstallableIntegration = {
@@ -48,9 +42,19 @@ export function startOAuthConnect(integrationId: string, mode?: string) {
   window.location.href = url.toString();
 }
 
+/**
+ * Installing an integration, from wherever it is offered — the card in the grid and the
+ * Details drawer.
+ *
+ * Shared so the two can never disagree about what Install means: an OAuth integration opens
+ * the vendor's consent screen, one with required settings opens its form, and anything else
+ * installs in place. `integration` may be undefined so this can be called before the caller
+ * has resolved one (rules of hooks).
+ */
 export function useIntegrationInstall(
   integration: InstallableIntegration | undefined
 ) {
+  const { t, i18n } = useLingui();
   const fetcher = useFetcher<{}>();
   const navigate = useNavigate();
 
@@ -75,7 +79,19 @@ export function useIntegrationInstall(
           integration: integration.id,
           error
         });
-        toast.error(`Couldn't start the ${integration.name} connection`);
+        // A workflow piece's connect route answers with a `connection` code.
+        const failure =
+          error instanceof IntegrationConnectError
+            ? getIntegrationError("connection", error.code)
+            : undefined;
+        const name = integration.name;
+        if (failure) {
+          toast.error(i18n._(failure.title), {
+            description: i18n._(failure.description)
+          });
+        } else {
+          toast.error(t`Couldn't start the ${name} connection`);
+        }
       }
       return;
     }
@@ -84,7 +100,7 @@ export function useIntegrationInstall(
       method: "post",
       action: path.to.integration(integration.id)
     });
-  }, [integration, navigate, fetcher]);
+  }, [integration, navigate, fetcher, t, i18n]);
 
   return { install, isInstalling: fetcher.state !== "idle" };
 }

@@ -5,12 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { toPropsValue } from "./properties";
 import type { PieceProperty } from "./types";
-import {
-  assertHiddenPropIsSatisfied,
-  omittedProps,
-  pinnedValues,
-  visibilityOf
-} from "./visibility";
+import { assertHiddenPropIsSatisfied, visibilityOf } from "./visibility";
 
 const prop = (over: Partial<PieceProperty> = {}): PieceProperty => ({
   type: "SHORT_TEXT",
@@ -133,22 +128,43 @@ describe("assertHiddenPropIsSatisfied", () => {
   });
 });
 
-describe("pinnedValues", () => {
+describe("toPropsValue pins", () => {
+  const bool = (value: boolean) => ({
+    kind: "primitive" as const,
+    of: "boolean" as const,
+    value
+  });
+
   it("reads the real allowlist entry", () => {
     expect(
-      pinnedValues("google-calendar", "google_calendar_get_events")
+      toPropsValue(
+        "google-calendar",
+        "google_calendar_get_events",
+        { singleEvents: prop({ type: "CHECKBOX" }) },
+        {}
+      )
     ).toEqual({ singleEvents: true });
   });
 
   it("pins gmail's draft flag off even though the prop is omitted from the form", () => {
-    expect(pinnedValues("gmail", "gmail_send_email")).toEqual({ draft: false });
+    expect(
+      toPropsValue(
+        "gmail",
+        "gmail_send_email",
+        {
+          draft: prop({ type: "CHECKBOX", required: true, defaultValue: true })
+        },
+        {}
+      )
+    ).toEqual({ draft: false });
   });
 
   it("is empty for an action or piece with no overrides", () => {
+    const props = { search: prop() };
     expect(
-      pinnedValues("google-calendar", "create_google_calendar_event")
+      toPropsValue("google-calendar", "create_google_calendar_event", props, {})
     ).toEqual({});
-    expect(pinnedValues("nope", "nope")).toEqual({});
+    expect(toPropsValue("nope", "nope", props, {})).toEqual({});
   });
 
   /**
@@ -165,74 +181,76 @@ describe("pinnedValues", () => {
         required: true,
         defaultValue: ["default", "focusTime", "outOfOffice"]
       }),
+      singleEvents: prop({ type: "CHECKBOX" }),
       search: prop()
     };
 
-    const pinned = pinnedValues(
+    const sent = toPropsValue(
       "google-calendar",
       "google_calendar_get_events",
-      props
+      props,
+      {}
     );
 
-    expect(pinned.event_types).toEqual(["default", "focusTime", "outOfOffice"]);
+    expect(sent.event_types).toEqual(["default", "focusTime", "outOfOffice"]);
     // The allowlist's own pin still applies alongside it.
-    expect(pinned.singleEvents).toBe(true);
+    expect(sent.singleEvents).toBe(true);
     // A visible prop is the author's to fill and must never be pinned.
-    expect("search" in pinned).toBe(false);
+    expect("search" in sent).toBe(false);
   });
 
   it("never pins an optional prop's default — that is still the author's choice", () => {
     const props = { search: prop({ defaultValue: "everything" }) };
     expect(
-      pinnedValues("google-calendar", "create_google_calendar_event", props)
+      toPropsValue("google-calendar", "create_google_calendar_event", props, {})
     ).toEqual({});
-  });
-});
-
-describe("toPropsValue with pinned values", () => {
-  const props = { singleEvents: prop({ type: "CHECKBOX" }), search: prop() };
-
-  it("sends the pin when the node supplied nothing", () => {
-    expect(toPropsValue(props, {}, { singleEvents: true })).toEqual({
-      singleEvents: true
-    });
   });
 
   // The Advanced section exists so an author CAN override us; a pin that beat a
   // deliberate choice would make that section a lie.
   it("lets a node value win over the pin", () => {
-    const inputs = {
-      singleEvents: {
-        kind: "primitive" as const,
-        of: "boolean" as const,
-        value: false
-      }
-    };
-    expect(toPropsValue(props, inputs, { singleEvents: true })).toEqual({
-      singleEvents: false
-    });
+    expect(
+      toPropsValue(
+        "google-calendar",
+        "google_calendar_get_events",
+        { singleEvents: prop({ type: "CHECKBOX" }) },
+        { singleEvents: bool(false) }
+      )
+    ).toEqual({ singleEvents: false });
   });
 
   it("falls back to the pin when the node's value resolved to nothing", () => {
-    const inputs = {
-      singleEvents: {
-        kind: "primitive" as const,
-        of: "null" as const,
-        value: null
-      }
-    };
-    expect(toPropsValue(props, inputs, { singleEvents: true })).toEqual({
-      singleEvents: true
-    });
+    expect(
+      toPropsValue(
+        "google-calendar",
+        "google_calendar_get_events",
+        { singleEvents: prop({ type: "CHECKBOX" }) },
+        { singleEvents: { kind: "primitive", of: "null", value: null } }
+      )
+    ).toEqual({ singleEvents: true });
   });
 
   it("never invents a prop the action does not declare", () => {
-    expect(toPropsValue(props, {}, { ghost: "x" })).toEqual({});
+    expect(
+      toPropsValue(
+        "google-calendar",
+        "google_calendar_get_events",
+        { search: prop() },
+        {}
+      )
+    ).toEqual({});
   });
 
   it("falls back to the pin when a multi-select was emptied", () => {
     // Deselecting every option is "nothing chosen", not "send []" — a required
     // list prop read unguarded by the piece is exactly what crashed the vendor.
+    const props = {
+      eventTypes: prop({
+        type: "STATIC_MULTI_SELECT_DROPDOWN",
+        required: true,
+        defaultValue: ["default"]
+      })
+    };
     const inputs = {
       eventTypes: {
         kind: "list" as const,
@@ -240,11 +258,9 @@ describe("toPropsValue with pinned values", () => {
         items: []
       }
     };
-    expect(
-      toPropsValue({ eventTypes: props.singleEvents }, inputs, {
-        eventTypes: ["default"]
-      })
-    ).toEqual({ eventTypes: ["default"] });
+    expect(toPropsValue("nope", "nope", props, inputs)).toEqual({
+      eventTypes: ["default"]
+    });
   });
 });
 
@@ -288,17 +304,27 @@ describe("omit", () => {
   });
 
   it("pins an omitted prop's value from the real slack row", () => {
-    expect(pinnedValues("slack", "send_channel_message")).toEqual({
-      sendAsBot: true
+    const sendAsBot = prop({
+      type: "CHECKBOX",
+      required: true,
+      defaultValue: true
     });
-    expect(pinnedValues("slack", "send_direct_message")).toEqual({});
+    expect(
+      toPropsValue("slack", "send_channel_message", { sendAsBot }, {})
+    ).toEqual({ sendAsBot: true });
+    expect(
+      toPropsValue(
+        "slack",
+        "send_direct_message",
+        { sendAsBot: prop({ type: "CHECKBOX" }) },
+        {}
+      )
+    ).toEqual({});
   });
-});
 
-describe("omittedProps", () => {
   // The omit exists to make the user-token path unreachable; a stale node value
   // for `sendAsBot` must not reopen it.
-  it("names the real slack row's omitted props, including MARKDOWN", () => {
+  it("drops a stale node value for an omitted or MARKDOWN prop but still sends the pin", () => {
     const props = {
       info: prop({ type: "MARKDOWN" }),
       channel: prop({ type: "DROPDOWN", required: true }),
@@ -306,29 +332,19 @@ describe("omittedProps", () => {
       blocks: prop({ type: "JSON" }),
       text: prop({ type: "LONG_TEXT" })
     };
+    const text = (value: string) => ({
+      kind: "primitive" as const,
+      of: "string" as const,
+      value
+    });
     expect(
-      [...omittedProps("slack", "send_channel_message", props)].sort()
-    ).toEqual(["blocks", "info", "sendAsBot"]);
-  });
-
-  it("strips a stale node value but still sends the pin", () => {
-    const props = {
-      sendAsBot: prop({ type: "CHECKBOX", required: true, defaultValue: true }),
-      text: prop({ type: "LONG_TEXT" })
-    };
-    const omitted = omittedProps("slack", "send_channel_message", props);
-    const inputs = Object.fromEntries(
-      Object.entries({
+      toPropsValue("slack", "send_channel_message", props, {
+        info: text("help"),
+        channel: text("C1"),
         sendAsBot: { kind: "primitive", of: "boolean", value: false },
-        text: { kind: "primitive", of: "string", value: "hi" }
-      }).filter(([name]) => !omitted.has(name))
-    );
-    expect(
-      toPropsValue(
-        props,
-        inputs as never,
-        pinnedValues("slack", "send_channel_message", props)
-      )
-    ).toEqual({ sendAsBot: true, text: "hi" });
+        blocks: text("[]"),
+        text: text("hi")
+      })
+    ).toEqual({ channel: "C1", sendAsBot: true, text: "hi" });
   });
 });

@@ -42,15 +42,10 @@ export function compactForLog(value: unknown, depth = 0): unknown {
       record.fields !== null &&
       typeof record.fields === "object"
     ) {
-      const fields = Object.entries(record.fields as Record<string, unknown>);
-      const kept: Record<string, unknown> = {};
-      for (const [name, field] of fields.slice(0, MAX_OBJECT_KEYS)) {
-        kept[name] = compactForLog(field, depth + 1);
-      }
-      if (fields.length > MAX_OBJECT_KEYS) {
-        kept["…"] = `${fields.length - MAX_OBJECT_KEYS} more keys`;
-      }
-      return { kind: "record", fields: kept };
+      return {
+        kind: "record",
+        fields: compactKeys(record.fields as Record<string, unknown>, depth)
+      };
     }
     // Named rows shrink like a list: cap the entries, recurse into each value.
     if (record.kind === "pairs" && Array.isArray(record.entries)) {
@@ -73,16 +68,25 @@ export function compactForLog(value: unknown, depth = 0): unknown {
               ]
       };
     }
-    const entries = Object.entries(record);
-    const kept: Record<string, unknown> = {};
-    for (const [key, entry] of entries.slice(0, MAX_OBJECT_KEYS)) {
-      kept[key] = compactForLog(entry, depth + 1);
-    }
-    if (entries.length > MAX_OBJECT_KEYS) {
-      kept["…"] = `${entries.length - MAX_OBJECT_KEYS} more keys`;
-    }
-    return kept;
+    return compactKeys(record, depth);
   }
 
   return value;
+}
+
+/** An object's first MAX_OBJECT_KEYS keys, each compacted, plus a marker for the
+ * rest. Shared by a plain object and a record value's fields. */
+function compactKeys(
+  source: Record<string, unknown>,
+  depth: number
+): Record<string, unknown> {
+  const entries = Object.entries(source);
+  const kept: Record<string, unknown> = {};
+  for (const [key, entry] of entries.slice(0, MAX_OBJECT_KEYS)) {
+    kept[key] = compactForLog(entry, depth + 1);
+  }
+  if (entries.length > MAX_OBJECT_KEYS) {
+    kept["…"] = `${entries.length - MAX_OBJECT_KEYS} more keys`;
+  }
+  return kept;
 }

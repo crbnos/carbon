@@ -37,16 +37,14 @@ import {
   actionInputLabelKey,
   entityLabelKey,
   useWorkflowCatalog,
-  useWorkflowLabel,
-  workflowFieldHelp
+  useWorkflowLabel
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
-import { lockedChoices, useChoiceOptions } from "../../fields/choiceOptions";
 import { ValueField } from "../../fields/ValueField";
 import { useActionBatchPlan, useAvailableVariables } from "../../useDefinition";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
-import { renderStepInput } from "./StepInput";
+import { StepInput } from "./StepInput";
 
 /** Module-level, not an inline literal: it reaches the variable menu as `accepts`,
  * which memoises on identity. */
@@ -280,7 +278,6 @@ export function ActionForm({
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
   const catalog = useWorkflowCatalog();
-  const choiceOptions = useChoiceOptions();
 
   const { action: actionId, inputs } = node.data;
 
@@ -383,29 +380,20 @@ export function ActionForm({
     if (!inputDef) return null;
     // Also guarded in the list below; a requireOneOf member reaches here without it.
     if (!isGateOpen(inputDef.showWhen, inputs)) return null;
-    return renderStepInput({
-      name,
-      inputDef,
-      label: inputLabel(name),
-      helpTermId: workflowFieldHelp(actionInputLabelKey(actionId, name)),
-      // A hand-written action may carry a description too; translated like its label.
-      help:
-        inputDef.description === undefined
-          ? undefined
-          : label(
-              `${actionInputLabelKey(actionId, name)}.description`,
-              inputDef.description
-            ),
-      inputs,
-      issues,
-      nodeId: node.id,
-      batching: isBatch,
-      isReadOnly,
-      onChange: handleInputChange,
-      labelFor: inputLabel,
-      choiceOptions,
-      lockedChoices
-    });
+    return (
+      <StepInput
+        key={name}
+        stepId={actionId}
+        name={name}
+        inputDef={inputDef}
+        inputs={inputs}
+        issues={issues}
+        nodeId={node.id}
+        batching={isBatch}
+        isReadOnly={isReadOnly}
+        onChange={handleInputChange}
+      />
+    );
   }
 
   /** Rendered directly under the action picker rather than with the rest: a multi-select

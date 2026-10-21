@@ -6,7 +6,7 @@ import { z } from "zod";
 import type { WorkflowCatalog } from "./catalog";
 import { walkPath } from "./catalog";
 import type { FilterNode, OperationCard } from "./schema";
-import { rendersAsText, type ValueType } from "./types";
+import { rendersAsText, type ScalarType, type ValueType } from "./types";
 
 /**
  * What the data node can do to a value.
@@ -22,11 +22,10 @@ import { rendersAsText, type ValueType } from "./types";
 export interface DataOperationSpec {
   /** Shown in the builder's operation picker. */
   label: string;
-  /** Whether clause rows apply — only filtering compares each item. */
+  /** Whether clause rows apply — only filtering compares each item, and so only
+   * filtering exposes a loop item, which is what keeps `ItemRef` ("the current
+   * item") meaning exactly one thing. */
   usesClauses: boolean;
-  /** Whether the operation exposes a loop item. Only `filter` does, which is what
-   * keeps `ItemRef` ("the current item") meaning exactly one thing. */
-  loops: boolean;
   /** Whether the operation projects a named field off each item. */
   usesField: boolean;
   /** Whether the result is still a list another operation could consume. False
@@ -39,42 +38,36 @@ export const DATA_OPERATIONS = {
   filter: {
     label: "Keep matching items",
     usesClauses: true,
-    loops: true,
     usesField: false,
     keepsList: true
   },
   count: {
     label: "Count items",
     usesClauses: false,
-    loops: false,
     usesField: false,
     keepsList: false
   },
   first: {
     label: "Take the first item",
     usesClauses: false,
-    loops: false,
     usesField: false,
     keepsList: false
   },
   last: {
     label: "Take the last item",
     usesClauses: false,
-    loops: false,
     usesField: false,
     keepsList: false
   },
   pluck: {
     label: "Take one field from every item",
     usesClauses: false,
-    loops: false,
     usesField: true,
     keepsList: true
   },
   join: {
     label: "Join into text",
     usesClauses: false,
-    loops: false,
     usesField: false,
     keepsList: false
   }
@@ -89,6 +82,17 @@ export const DATA_OPERATION_NAMES = Object.keys(DATA_OPERATIONS) as [
 
 export const dataOperationSchema = z.enum(DATA_OPERATION_NAMES);
 
+/** Which operations can consume this type. Everything needs a list; what each
+ * needs of the list's items is `itemRefusal`. An undefined input (the author is
+ * still configuring) offers everything. */
+export function operationsFor(input: ValueType | undefined): DataOperation[] {
+  if (input === undefined) return [...DATA_OPERATION_NAMES];
+  if (input.kind !== "list") return [];
+  return DATA_OPERATION_NAMES.filter(
+    (name) => itemRefusal(name, input.of) === undefined
+  );
+}
+
 /**
  * The operation a node runs, defaulting the way the schema does.
  *
@@ -97,27 +101,13 @@ export const dataOperationSchema = z.enum(DATA_OPERATION_NAMES);
  * before this field existed — so the key can genuinely be absent, and reading it
  * unguarded made `DATA_OPERATIONS[undefined]` and produced no outputs at all.
  *
- * A name that is no longer an operation falls back too: a definition saved against
- * an older list must not index the table with a key it no longer holds.
+ * That is the only case the fallback serves. A PARSED definition never reaches it
+ * with an unknown name: `dataOperationSchema` is a strict enum, so a stored name
+ * that is no longer an operation fails the parse instead. An own-key check, so a
+ * raw value like `"constructor"` does not read as an operation.
  */
-/** Which operations can consume this type. Everything needs a list; `pluck`
- * needs items with fields; `join` needs items that read as text. An undefined
- * input (the author is still configuring) offers everything. */
-export function operationsFor(input: ValueType | undefined): DataOperation[] {
-  if (input === undefined) return [...DATA_OPERATION_NAMES];
-  if (input.kind !== "list") return [];
-  return DATA_OPERATION_NAMES.filter((name) => {
-    if (DATA_OPERATIONS[name].usesField) {
-      return input.of.kind === "record" || input.of.kind === "entity";
-    }
-    // The same reading rule the template renderer and the type walk use.
-    if (name === "join") return rendersAsText(input.of);
-    return true;
-  });
-}
-
 export function operationOf(stored: string | undefined): DataOperation {
-  return stored !== undefined && stored in DATA_OPERATIONS
+  return stored !== undefined && Object.hasOwn(DATA_OPERATIONS, stored)
     ? (stored as DataOperation)
     : "filter";
 }
@@ -142,48 +132,84 @@ export function cardsOf(node: FilterNode): OperationCard[] {
   ];
 }
 
-/** The type one card hands onward, or `undefined` when its input cannot
- * support it — which reads as "not configured" and suppresses downstream errors. */
-function cardResultType(
-  card: OperationCard,
-  input: ValueType | undefined,
-  catalog: WorkflowCatalog
-): ValueType | undefined {
-  if (input === undefined || input.kind !== "list") return undefined;
+/**
+ * Why a card cannot run against what reaches it. The validator words each one as
+ * an issue, the runtime as a skip reason, and the builder's dropdown hides an
+ * operation the items refuse — all off this one rule, so they cannot disagree.
+ */
+export type CardRefusal =
+  /** What reaches the card is not a list. */
+  | "not-a-list"
+  /** A pluck over single values: there are no fields to take. */
+  | "no-fields"
+  /** A pluck with no field chosen yet. */
+  | "no-field-chosen"
+  /** A pluck of a field the item type does not have. */
+  | "unknown-field"
+  /** A pluck of a field that is itself a list, without flattening:
+   * `list<list<T>>` has no representation. */
+  | "nested-list"
+  /** A join over items with no reading as text. */
+  | "not-text";
 
-  switch (operationOf(card.operation)) {
+export type CardResult = { type: ValueType } | { refusal: CardRefusal };
+
+/** What an operation needs of the items it is handed, whatever the card says. */
+function itemRefusal(
+  operation: DataOperation,
+  of: ScalarType
+): CardRefusal | undefined {
+  // Only an object or a record has fields to take. A list of plain values has
+  // nothing to project, and letting it through produced a list of nulls.
+  if (operation === "pluck" && of.kind !== "record" && of.kind !== "entity") {
+    return "no-fields";
+  }
+  // Anything with a reading in a sentence can be joined — that is exactly what
+  // `rendersAsText` decides, and it is what the template renderer already uses.
+  // Requiring a primitive refused a list of Carbon records, each of which reads
+  // perfectly well as its display name. An OBJECT still has no such reading.
+  if (operation === "join" && !rendersAsText(of)) return "not-text";
+  return undefined;
+}
+
+/**
+ * The type one card hands onward, or why it cannot run on `input`. The ONE copy
+ * of every per-operation rule: the type fold, the validator and the runtime all
+ * call it.
+ */
+export function cardResultType(
+  card: OperationCard,
+  input: ValueType,
+  catalog: WorkflowCatalog
+): CardResult {
+  if (input.kind !== "list") return { refusal: "not-a-list" };
+  const operation = operationOf(card.operation);
+  const refusal = itemRefusal(operation, input.of);
+  if (refusal !== undefined) return { refusal };
+
+  switch (operation) {
     case "filter":
-      return input;
+      return { type: input };
     case "count":
-      return { kind: "primitive", of: "number" };
+      return { type: { kind: "primitive", of: "number" } };
     case "first":
     case "last":
-      return input.of;
+      return { type: input.of };
     case "pluck": {
-      // Only an object or a record has fields to take. A list of plain values has
-      // nothing to project, and letting it through produced a list of nulls.
-      if (input.of.kind !== "record" && input.of.kind !== "entity") {
-        return undefined;
-      }
       const field = card.field;
-      if (field === undefined || field.trim() === "") return undefined;
-      const picked = walkPath(input.of, field.split("."), catalog);
-      if (picked === undefined) return undefined;
-      // A field that is itself a list can only be projected FLAT: `list<list<T>>`
-      // has no representation, so without flattening there is nothing to return.
-      if (picked.kind === "list") {
-        return card.flatten ? picked : undefined;
+      if (field === undefined || field.trim() === "") {
+        return { refusal: "no-field-chosen" };
       }
-      return { kind: "list", of: picked };
+      const picked = walkPath(input.of, field.split("."), catalog);
+      if (picked === undefined) return { refusal: "unknown-field" };
+      // A field that is itself a list can only be projected FLAT.
+      if (picked.kind === "list") {
+        return card.flatten ? { type: picked } : { refusal: "nested-list" };
+      }
+      return { type: { kind: "list", of: picked } };
     }
     case "join":
-      // Anything with a reading in a sentence can be joined — that is exactly what
-      // `rendersAsText` decides, and it is what the template renderer already uses.
-      // Requiring a primitive refused a list of Carbon records, each of which reads
-      // perfectly well as its display name. An OBJECT still has no such reading.
-      return rendersAsText(input.of)
-        ? { kind: "primitive", of: "string" }
-        : undefined;
+      return { type: { kind: "primitive", of: "string" } };
   }
 }
 
@@ -203,7 +229,10 @@ export function foldOperationTypes(
   const types: (ValueType | undefined)[] = [source];
   let current = source;
   for (const card of cards) {
-    current = cardResultType(card, current, catalog);
+    if (current !== undefined) {
+      const result = cardResultType(card, current, catalog);
+      current = "type" in result ? result.type : undefined;
+    }
     types.push(current);
   }
   return types;

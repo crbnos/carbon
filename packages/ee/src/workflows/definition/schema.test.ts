@@ -148,6 +148,20 @@ describe("node defaults", () => {
     ]);
   });
 
+  it("refuses a chain whose cards share an id, or have none", () => {
+    const filter = (operations: unknown[]) =>
+      nodeSchema.safeParse({
+        id: "n4",
+        name: "filter_0",
+        type: "filter",
+        position: { x: 0, y: 0 },
+        data: { combinator: "and", clauses: [], operations }
+      }).success;
+    expect(filter([{ id: "card-0" }, { id: "card-0" }])).toBe(false);
+    expect(filter([{ id: "" }])).toBe(false);
+    expect(filter([{ id: "card-0" }, { id: "card-1" }])).toBe(true);
+  });
+
   it("reads an item ref with and without a card scope", () => {
     expect(
       itemRefSchema.parse({ kind: "item", path: [] }).card

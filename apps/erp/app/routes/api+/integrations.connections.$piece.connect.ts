@@ -4,6 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { readConnection } from "@carbon/ee/integrations/connections";
 import {
   allowlistEntry,
@@ -12,7 +13,8 @@ import {
   resolveOAuthApp
 } from "@carbon/jobs/integrations";
 import type { LoaderFunctionArgs } from "react-router";
-import { signConnectionState } from "~/modules/settings/settings.service";
+import { data } from "react-router";
+import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
 
 export const config = {
   runtime: "nodejs"
@@ -21,10 +23,15 @@ export const config = {
 /**
  * Builds the vendor's consent URL: the piece supplies `authUrl` and `scope` (an
  * allowlist row may override either), the allowlist row supplies which env vars hold
- * our OAuth app. Returns `{ url }`, so the client opens it in a popup.
+ * our OAuth app. Returns `{ url }`, so the client opens it in a popup, or
+ * `{ error }` — a `connection` code from `integration-errors.ts`, worded in the UI.
  *
- * `?connection=<id>` is Reconnect: the id is signed into the state, and the callback
- * revives that row only if the same account authorizes. `?name=` is Add account.
+ * The `{ url }` response sets the state cookie (`issueOAuthState`): single-use,
+ * bound to this user and company, and carrying the account name and, for
+ * Reconnect, the row's id, so the callback trusts nothing from the query string.
+ *
+ * `?connection=<id>` is Reconnect: the callback revives that row only if the same
+ * account authorizes. `?name=` is Add account.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {
@@ -34,17 +41,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const pieceName = params.piece;
   const entry = pieceName ? allowlistEntry(pieceName) : undefined;
   if (!pieceName || entry === undefined) {
-    return { error: "That integration is not available." };
+    return connectError("unavailable");
   }
 
   let app: ReturnType<typeof resolveOAuthApp>;
   try {
     app = resolveOAuthApp(pieceName);
   } catch {
-    // Names the vendor rather than the missing variable: this reaches a customer.
-    return {
-      error: `This Carbon instance has no ${entry.label} OAuth app configured.`
-    };
+    return connectError("not-configured");
   }
 
   const searchParams = new URL(request.url).searchParams;
@@ -57,25 +61,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       connectionId
     );
     if (existing === null || existing.pieceName !== pieceName) {
-      return { error: "That account no longer exists." };
+      return connectError("account-missing");
     }
     name = existing.name;
   }
 
   const auth = await getPieceOAuth2Auth(pieceName);
 
-  return {
-    url: buildConsentUrl({
-      entry,
-      auth,
-      app,
-      state: signConnectionState({
-        companyId,
-        pieceName,
-        name,
-        connectionId,
-        userId
-      })
-    })
-  };
+  // Pass the request so another integration's pending state in the cookie
+  // survives this Set-Cookie.
+  const { state, cookie } = await issueOAuthState(
+    { integrationId: pieceName, userId, companyId, name, connectionId },
+    request
+  );
+
+  return data(
+    { url: buildConsentUrl({ entry, auth, app, state }) },
+    { headers: { "Set-Cookie": cookie } }
+  );
+}
+
+function connectError(error: IntegrationErrorCode<"connection">) {
+  return { error };
 }

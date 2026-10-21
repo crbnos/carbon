@@ -3,9 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { WorkflowDefinition } from "@carbon/ee/workflows";
+import { DATA_OPERATIONS } from "@carbon/ee/workflows";
 import type { WorkflowRunDetail } from "../../workflows.service";
 import type { LabelFor } from "../Builder/labelKeys";
 import { nodeTitle } from "../Builder/labelKeys";
+import type { SummaryLabels } from "../Builder/nodes/meta";
 import { metaForNodeType, NODE_KIND_META } from "../Builder/nodes/meta";
 import type { RunStepView } from "./WorkflowRunSteps";
 
@@ -16,6 +18,10 @@ export type RunOutcome = {
 
 /** This module is pure, so callers with hook access pass a translator in. */
 const UNTRANSLATED: LabelFor = (_key, fallback) => fallback;
+/** The outcome sentence is English, so a data step is named in English too. */
+const ENGLISH_SUMMARY: SummaryLabels = {
+  operation: (operation) => DATA_OPERATIONS[operation].label
+};
 
 /** The title a step should be described by in the outcome sentence. Same rule as
  * the step rows use, so the sentence and the list never name a step differently. */
@@ -33,7 +39,7 @@ function stepTitle(
   const describes =
     (catalogId === undefined ? undefined : labelFor(catalogId, catalogId)) ??
     meta.title?.(node) ??
-    meta.summary?.(node) ??
+    meta.summary?.(node, ENGLISH_SUMMARY) ??
     meta.defaultTitle;
   return nodeTitle(node.name, describes);
 }

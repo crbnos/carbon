@@ -3,13 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  type ActionInputLike,
   type IntegrationDeclarationLike,
   integrationStepId
 } from "@carbon/ee/workflows";
 import { PIECE_ALLOWLIST } from "./allowlist";
 import { CONNECTION_INPUT, CONNECTION_PROVIDER } from "./options";
-import { toOutputTypes, UnmappableOutputError } from "./outputs";
-import { toValueType } from "./properties";
+import { describeOutputs, UnmappableOutputError } from "./outputs";
+import { toValueType, vendorText } from "./properties";
 import { getPieceActions } from "./registry";
 import { assertHiddenPropIsSatisfied, visibilityOf } from "./visibility";
 
@@ -63,47 +64,12 @@ export async function buildPieceActionDeclarations(): Promise<
         // map — an unmappable type is only ever an error for a prop a person would see.
         if (!visibility.show && visibility.omit === true) continue;
 
-        const mapped = toValueType(pieceName, actionName, propName, property);
-        const declared = {
-          type: mapped.type,
-          required: mapped.required,
-          label: mapped.label,
-          ...(mapped.choices === undefined ? {} : { choices: mapped.choices }),
-          ...(mapped.options === undefined ? {} : { options: mapped.options }),
-          ...(mapped.defaultValue === undefined
-            ? {}
-            : {
-                defaultValue: mapped.defaultValue as
-                  | string
-                  | number
-                  | boolean
-                  | string[]
-              }),
-          ...(mapped.description === undefined
-            ? {}
-            : { description: mapped.description }),
-          // Prose: the vendor's LongText, or a ShortText the allowlist knows better about.
-          ...(mapped.template === true || override?.template === true
-            ? { template: true }
-            : {}),
-          ...(mapped.precision === undefined
-            ? {}
-            : { precision: mapped.precision }),
-          ...(override?.links === undefined
-            ? {}
-            : {
-                links: {
-                  format: override.links.format,
-                  ...(override.links.when === undefined
-                    ? {}
-                    : {
-                        when: {
-                          input: override.links.when.prop,
-                          equals: override.links.when.equals
-                        }
-                      })
-                }
-              })
+        const declared: ActionInputLike = {
+          ...toValueType(pieceName, actionName, propName, property),
+          // Prose: a ShortText the allowlist knows better about. A vendor's
+          // LongText is already one.
+          ...(override?.template === true ? { template: true } : {}),
+          ...(override?.links === undefined ? {} : { links: override.links })
         };
 
         if (visibility.show) inputs[propName] = declared;
@@ -118,11 +84,8 @@ export async function buildPieceActionDeclarations(): Promise<
             // so an untouched Advanced toggle displays what the run will send.
             ...(visibility.value !== undefined
               ? {
-                  defaultValue: visibility.value as
-                    | string
-                    | number
-                    | boolean
-                    | string[]
+                  defaultValue:
+                    visibility.value as ActionInputLike["defaultValue"]
                 }
               : {})
           };
@@ -138,7 +101,11 @@ export async function buildPieceActionDeclarations(): Promise<
         throw new UnmappableOutputError(pieceName, actionName);
       }
 
-      const declared = toOutputTypes(action.outputSchema);
+      const declared = Object.fromEntries(
+        Object.entries(describeOutputs(action.outputSchema)).map(
+          ([name, { type }]) => [name, type]
+        )
+      );
       for (const reserved of ["count", "result"]) {
         if (reserved in declared) {
           throw new Error(
@@ -148,7 +115,9 @@ export async function buildPieceActionDeclarations(): Promise<
       }
 
       declarations[integrationStepId(pieceName, actionName)] = {
-        label: `${entry.label}: ${action.displayName}`,
+        // The display name is vendor prose, spliced into a `msg` template like
+        // every other piece string, so it is made safe the same way.
+        label: `${entry.label}: ${vendorText(action.displayName)}`,
         permission: { module: "workflows", action: "update" },
         inputs,
         ...(Object.keys(advancedInputs).length === 0 ? {} : { advancedInputs }),

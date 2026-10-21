@@ -22,22 +22,21 @@ import {
   SelectValue
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router";
 import { path } from "~/utils/path";
 import {
   actionInputLabelKey,
   useWorkflowCatalog,
-  useWorkflowLabel,
-  workflowFieldHelp
+  useWorkflowLabel
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
-import { lockedChoices, useChoiceOptions } from "../../fields/choiceOptions";
 import { useWorkflowOptions } from "../../fields/useWorkflowOptions";
 import { useNoticeCopy } from "../../noticeCopy";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
-import { renderStepInput } from "./StepInput";
+import { StepInput } from "./StepInput";
 
 /** Piece name → its steps, in catalog order. */
 const STEPS_BY_PIECE: Map<string, { id: string; action: string }[]> = (() => {
@@ -50,6 +49,31 @@ const STEPS_BY_PIECE: Map<string, { id: string; action: string }[]> = (() => {
   return byPiece;
 })();
 
+/** A dashed notice with one link out to the app's accounts, opened in a new tab so
+ * the canvas survives. */
+function ConnectBanner({
+  message,
+  href,
+  cta,
+  isDisabled
+}: {
+  message: ReactNode;
+  href: string;
+  cta: ReactNode;
+  isDisabled?: boolean;
+}) {
+  return (
+    <div className="flex flex-col items-start gap-3 rounded-md border border-dashed p-4">
+      <p className="text-sm text-muted-foreground">{message}</p>
+      <Button asChild variant="secondary" isDisabled={isDisabled}>
+        <Link to={href} target="_blank" rel="noreferrer">
+          {cta}
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
 export function IntegrationNodeForm({
   node,
   issues,
@@ -59,7 +83,6 @@ export function IntegrationNodeForm({
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
   const catalog = useWorkflowCatalog();
-  const choiceOptions = useChoiceOptions();
 
   const { piece, action, inputs } = node.data;
 
@@ -87,13 +110,23 @@ export function IntegrationNodeForm({
     errorCode: connectionsError,
     errorHref: connectionsFixHref,
     noticeCode: connectionsNotice,
-    noticeHref: connectionsNoticeHref
+    noticeHref: connectionsNoticeHref,
+    isLoading: checkingConnections,
+    retry: retryConnections
   } = useWorkflowOptions(
     connectionSource,
     {},
     `integration-connections:${piece}`
   );
   const connected = connections.length > 0;
+  // The lookup itself failed, so whether the app is connected is unknown. Saying
+  // "isn't connected" would send the author off to add a duplicate account, and
+  // hiding the step would hide an existing node's whole configuration.
+  const lookupFailed =
+    checked &&
+    connectionsError !== undefined &&
+    connectionsError !== "reconnect";
+  const canConfigure = connected || lookupFailed;
   const storedConnection = inputs[INTEGRATION_CONNECTION_INPUT];
   const storedConnectionId =
     storedConnection?.kind === "literal" &&
@@ -265,26 +298,17 @@ export function IntegrationNodeForm({
           fix is a re-consent, and "Connect" would send the author to add a
           duplicate account instead. */}
       {piece && checked && !connected && connectionsError === "reconnect" && (
-        <div className="flex flex-col items-start gap-3 rounded-md border border-dashed p-4">
-          <p className="text-sm text-muted-foreground">
+        <ConnectBanner
+          message={
             <Trans>
               {appName} is connected, but needs to be reconnected before
               workflow steps can use it.
             </Trans>
-          </p>
-          <Button asChild variant="secondary" isDisabled={isReadOnly}>
-            <Link
-              to={
-                connectionsFixHref ??
-                `${path.to.integration(piece)}?tab=connections`
-              }
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Trans>Reconnect {appName}</Trans>
-            </Link>
-          </Button>
-        </div>
+          }
+          href={connectionsFixHref ?? path.to.integrationAccounts(piece)}
+          cta={<Trans>Reconnect {appName}</Trans>}
+          isDisabled={isReadOnly}
+        />
       )}
 
       {/* Some accounts are ready, one is not — or this node's stored account is the
@@ -293,9 +317,9 @@ export function IntegrationNodeForm({
         checked &&
         connected &&
         (connectionsNotice === "reconnect" || storedNotOffered) && (
-          <div className="flex flex-col items-start gap-3 rounded-md border border-dashed p-4">
-            <p className="text-sm text-muted-foreground">
-              {storedNotOffered ? (
+          <ConnectBanner
+            message={
+              storedNotOffered ? (
                 <Trans>
                   The {appName} account this step uses is not available — it was
                   disconnected or needs to be reconnected.
@@ -305,45 +329,53 @@ export function IntegrationNodeForm({
                   One of your {appName} accounts needs to be reconnected before
                   workflow steps can use it.
                 </Trans>
-              )}
-            </p>
-            <Button asChild variant="secondary" isDisabled={isReadOnly}>
-              <Link
-                to={
-                  connectionsNoticeHref ??
-                  `${path.to.integration(piece)}?tab=connections`
-                }
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Trans>Open {appName} accounts</Trans>
-              </Link>
-            </Button>
-          </div>
+              )
+            }
+            href={connectionsNoticeHref ?? path.to.integrationAccounts(piece)}
+            cta={<Trans>Open {appName} accounts</Trans>}
+            isDisabled={isReadOnly}
+          />
         )}
 
-      {piece && checked && !connected && connectionsError !== "reconnect" && (
-        <div className="flex flex-col items-start gap-3 rounded-md border border-dashed p-4">
+      {piece && lookupFailed && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed p-4">
           <p className="text-sm text-muted-foreground">
-            <Trans>
-              {appName} isn't connected yet. Connect an account before this step
-              can do anything.
-            </Trans>
+            {connectionsError === "refreshing" ? (
+              <Trans>
+                That account is still being reconnected. Try again in a moment.
+              </Trans>
+            ) : (
+              <Trans>Couldn't check whether {appName} is connected.</Trans>
+            )}
           </p>
-          <Button asChild variant="secondary" isDisabled={isReadOnly}>
-            {/* Land on the Accounts tab — where an account is added or reconnected. */}
-            <Link
-              to={`${path.to.integration(piece)}?tab=connections`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Trans>Connect {appName}</Trans>
-            </Link>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={retryConnections}
+            isDisabled={isReadOnly}
+            isLoading={checkingConnections}
+          >
+            <Trans>Try again</Trans>
           </Button>
         </div>
       )}
 
-      {piece && connected && (
+      {/* Land on the Accounts tab — where an account is added or reconnected. */}
+      {piece && checked && !connected && connectionsError === undefined && (
+        <ConnectBanner
+          message={
+            <Trans>
+              {appName} isn't connected yet. Connect an account before this step
+              can do anything.
+            </Trans>
+          }
+          href={path.to.integrationAccounts(piece)}
+          cta={<Trans>Connect {appName}</Trans>}
+          isDisabled={isReadOnly}
+        />
+      )}
+
+      {piece && canConfigure && (
         <div className="space-y-1">
           <Section>
             <Trans>Step</Trans>
@@ -367,7 +399,7 @@ export function IntegrationNodeForm({
         </div>
       )}
 
-      {connected && step && inputNames.length > 0 && (
+      {canConfigure && step && inputNames.length > 0 && (
         <div className="space-y-3">
           <Section>
             <Trans>Inputs</Trans>
@@ -375,39 +407,28 @@ export function IntegrationNodeForm({
           {inputNames.map((name) => {
             const inputDef = step.inputs[name];
             if (!inputDef) return null;
-            return renderStepInput({
-              name,
-              inputDef,
-              label: inputLabel(name),
-              hint: hintFor(name),
-              helpTermId: workflowFieldHelp(
-                actionInputLabelKey(stepId ?? "", name)
-              ),
-              // The vendor's own field description, translated like its label.
-              help:
-                inputDef.description === undefined
-                  ? undefined
-                  : label(
-                      `${actionInputLabelKey(stepId ?? "", name)}.description`,
-                      inputDef.description
-                    ),
-              inputs,
-              issues,
-              nodeId: node.id,
-              // A piece step is never batchable, so an input never stands for a
-              // loop item here.
-              batching: false,
-              isReadOnly,
-              onChange: handleInputChange,
-              labelFor: inputLabel,
-              choiceOptions,
-              lockedChoices
-            });
+            return (
+              <StepInput
+                key={name}
+                stepId={stepId ?? ""}
+                name={name}
+                inputDef={inputDef}
+                hint={hintFor(name)}
+                inputs={inputs}
+                issues={issues}
+                nodeId={node.id}
+                // A piece step is never batchable, so an input never stands for a
+                // loop item here.
+                batching={false}
+                isReadOnly={isReadOnly}
+                onChange={handleInputChange}
+              />
+            );
           })}
         </div>
       )}
 
-      {connected && step && advancedNames.length > 0 && (
+      {canConfigure && step && advancedNames.length > 0 && (
         <Accordion type="single" collapsible>
           <AccordionItem value="advanced" className="border-none">
             <AccordionTrigger className="py-2 text-sm text-muted-foreground hover:no-underline">
@@ -417,31 +438,21 @@ export function IntegrationNodeForm({
               {advancedNames.map((name) => {
                 const inputDef = step.advancedInputs?.[name];
                 if (!inputDef) return null;
-                return renderStepInput({
-                  name,
-                  inputDef,
-                  label: inputLabel(name),
-                  hint: hintFor(name),
-                  help:
-                    inputDef.description === undefined
-                      ? undefined
-                      : label(
-                          `${actionInputLabelKey(stepId ?? "", name)}.description`,
-                          inputDef.description
-                        ),
-                  helpTermId: workflowFieldHelp(
-                    actionInputLabelKey(stepId ?? "", name)
-                  ),
-                  inputs,
-                  issues,
-                  nodeId: node.id,
-                  batching: false,
-                  isReadOnly,
-                  onChange: handleInputChange,
-                  labelFor: inputLabel,
-                  choiceOptions,
-                  lockedChoices
-                });
+                return (
+                  <StepInput
+                    key={name}
+                    stepId={stepId ?? ""}
+                    name={name}
+                    inputDef={inputDef}
+                    hint={hintFor(name)}
+                    inputs={inputs}
+                    issues={issues}
+                    nodeId={node.id}
+                    batching={false}
+                    isReadOnly={isReadOnly}
+                    onChange={handleInputChange}
+                  />
+                );
               })}
             </AccordionContent>
           </AccordionItem>

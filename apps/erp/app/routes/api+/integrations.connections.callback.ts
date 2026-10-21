@@ -4,11 +4,14 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { consumeOAuthStateByValue } from "@carbon/auth/oauth-state.server";
 import {
   ConnectionAccountMismatchError,
   ConnectionNameTakenError,
+  ConnectionWorkspaceTakenError,
   createConnection,
-  exchangeAuthorizationCode
+  exchangeAuthorizationCode,
+  TOKEN_REQUEST_TIMEOUT_MS
 } from "@carbon/ee/integrations/connections";
 import type { AllowlistEntry } from "@carbon/jobs/integrations";
 import {
@@ -26,7 +29,7 @@ import {
   invalidateIntegrationHealthCache,
   markIntegrationInstalled,
   oauthPopupResponse,
-  verifyConnectionState
+  withCookie
 } from "~/modules/settings/settings.service";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
@@ -41,19 +44,24 @@ const logger = getLogger("erp", "integrations", "connections");
  * The consent screen runs in a popup the integrations page opened, so the answer
  * is posted back to that page (which refreshes, or shows the error) and the popup
  * closes. With no opener it lands on the integrations page like a redirect. Only a
- * code crosses; `integrationErrors` owns the copy.
+ * code crosses; `integrationErrors` owns the copy. Every reply carries the state
+ * cookie, which consuming the state rewrote.
  */
 function connectionReply(
   integration: string,
+  cookie: string,
   reason?: IntegrationErrorCode<"connection">
 ) {
-  return oauthPopupResponse(
-    reason === undefined
-      ? { integration, ok: true }
-      : { integration, ok: false, error: reason },
-    reason === undefined
-      ? path.to.integrations
-      : `${path.to.integrations}${integrationErrorSearch("connection", reason)}`
+  return withCookie(
+    oauthPopupResponse(
+      reason === undefined
+        ? { integration, ok: true }
+        : { integration, ok: false, error: reason },
+      reason === undefined
+        ? path.to.integrations
+        : `${path.to.integrations}${integrationErrorSearch("connection", reason)}`
+    ),
+    cookie
   );
 }
 
@@ -64,12 +72,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());
-  // Which card the reply is for. Read from the signed state even on a refusal,
-  // so the right card shows it; the checks below still gate the save.
-  const replyTo =
-    verifyConnectionState(searchParams.state)?.pieceName ?? "connection";
+
+  // One redirect URI serves every piece, so the stored state is found by its
+  // value, then checked against this session's user and company: that binding is
+  // what stops a token being planted into another company's connection, or one
+  // user's authorization code being completed in another user's session (CSRF).
+  // Consumed first, so a refused consent spends it too.
+  const consumed = await consumeOAuthStateByValue(
+    request,
+    searchParams.state ?? "",
+    { userId, companyId }
+  );
+  const state = consumed.payload;
+  // Which card the reply is for, so the right card shows a refusal.
+  const replyTo = state?.integrationId ?? "connection";
   const connectionFailed = (reason: IntegrationErrorCode<"connection">) =>
-    connectionReply(replyTo, reason);
+    connectionReply(replyTo, consumed.cookie, reason);
 
   if (searchParams.error) {
     logger.error("Integration authorization refused", {
@@ -87,24 +105,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return connectionFailed("invalid-response");
   }
 
-  // The signature is what stops a token being planted into another company's
-  // connection; the session checks on top stop a replay into a company the
-  // signer no longer sits in, and stop one user's authorization code being
-  // completed inside another user's session (CSRF).
-  const state = verifyConnectionState(parsed.data.state);
-  if (
-    state === null ||
-    state.companyId !== companyId ||
-    state.userId !== userId
-  ) {
-    logger.error("Integration callback state rejected", {
-      companyMatched: state?.companyId === companyId,
-      userMatched: state?.userId === userId
-    });
+  // A piece's state always names the account; one without it was issued for
+  // another integration's flow.
+  if (state === undefined || state.name === undefined) {
+    logger.error("Integration callback state rejected", { companyId });
     return connectionFailed("invalid-state");
   }
+  const pieceName = state.integrationId;
+  const name = state.name;
 
-  const entry = allowlistEntry(state.pieceName);
+  const entry = allowlistEntry(pieceName);
   if (entry === undefined) {
     return connectionFailed("invalid-state");
   }
@@ -112,8 +122,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let app: ReturnType<typeof resolveOAuthApp>;
   let auth: Awaited<ReturnType<typeof getPieceOAuth2Auth>>;
   try {
-    app = resolveOAuthApp(state.pieceName);
-    auth = await getPieceOAuth2Auth(state.pieceName);
+    app = resolveOAuthApp(pieceName);
+    auth = await getPieceOAuth2Auth(pieceName);
   } catch {
     return connectionFailed("not-configured");
   }
@@ -141,8 +151,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     await createConnection(getCarbonServiceRole(), {
       companyId,
-      pieceName: state.pieceName,
-      name: state.name,
+      pieceName,
+      name,
       connectionId: state.connectionId,
       authType: "OAUTH2",
       accountLabel:
@@ -155,7 +165,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         refreshToken: tokens.refreshToken
       },
       expiresAt: tokens.expiresAt,
-      createdBy: state.userId
+      createdBy: userId
     });
   } catch (err) {
     if (err instanceof ConnectionAccountMismatchError) {
@@ -163,6 +173,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     if (err instanceof ConnectionNameTakenError) {
       return connectionFailed("duplicate-name");
+    }
+    if (err instanceof ConnectionWorkspaceTakenError) {
+      logger.error("Integration workspace already connected elsewhere", {
+        companyId,
+        pieceName
+      });
+      return connectionFailed("workspace-taken");
     }
     logger.error("Integration connection save failed: {detail}", {
       detail: describeError(err)
@@ -175,7 +192,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Install for an account that is already connected. Never overwrite an
   // existing row — it may hold settings that are not this callback's to touch.
   const installed = await markIntegrationInstalled(client, {
-    id: state.pieceName,
+    id: pieceName,
     companyId,
     updatedBy: userId
   });
@@ -185,9 +202,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
     return connectionFailed("save-failed");
   }
-  await invalidateIntegrationHealthCache(state.pieceName, companyId);
+  await invalidateIntegrationHealthCache(pieceName, companyId);
 
-  return connectionReply(state.pieceName);
+  return connectionReply(pieceName, consumed.cookie);
 }
 
 /** A PostgREST failure is a plain object, not an Error: its `message`, `code` and
@@ -217,7 +234,10 @@ async function accountLabelFor(
   if (label === undefined || !("url" in label)) return null;
   try {
     const response = await fetch(label.url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { Authorization: `Bearer ${accessToken}` },
+      // A stalled identity endpoint must not hang the callback; the abort lands
+      // in the catch below and the connection is saved without a label.
+      signal: AbortSignal.timeout(TOKEN_REQUEST_TIMEOUT_MS)
     });
     if (!response.ok) return null;
     const body = (await response.json()) as Record<string, unknown>;

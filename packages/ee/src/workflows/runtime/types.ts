@@ -131,8 +131,19 @@ export type NodeDetail =
       cards: Array<{
         id: string;
         operation: DataOperation;
+        /** English, for logs and for rows written before `counts` existed. */
         summary: string;
         status: "Succeeded" | "Skipped";
+        /** What a Succeeded card's summary says, as numbers, so the run history
+         * can word it in the reader's language: items in, items out (filter,
+         * pluck), items a filter could not check, and values a flattened pluck
+         * produced past the list cap and dropped. */
+        counts?: {
+          input: number;
+          output?: number;
+          unresolved?: number;
+          dropped?: number;
+        };
       }>;
     };
 

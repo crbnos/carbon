@@ -33,6 +33,17 @@ describe("toValueType", () => {
     expect(mapped.description).toBe("use 'ts' or $ {x}");
   });
 
+  // A lone backslash would start an escape inside the msg`` literal; doubled, the
+  // template reads back exactly the one the vendor wrote.
+  it("doubles a backslash in vendor prose", () => {
+    const mapped = toValueType("p", "a", "path", {
+      type: "SHORT_TEXT",
+      required: false,
+      displayName: "C:\\new"
+    });
+    expect(mapped.label).toBe("C:\\\\new");
+  });
+
   it("maps the text, number, boolean, date and list kinds", () => {
     expect(map({ type: "SHORT_TEXT", required: true }).type).toEqual({
       kind: "primitive",
@@ -135,7 +146,7 @@ describe("toPropsValue", () => {
       info: { type: "MARKDOWN", required: false },
       text: { type: "LONG_TEXT", required: false }
     } as const;
-    const value = toPropsValue(props as never, {
+    const value = toPropsValue("p", "a", props as never, {
       info: { kind: "primitive", of: "string", value: "x" } as never,
       text: { kind: "primitive", of: "string", value: "hi" } as never
     });
@@ -167,12 +178,22 @@ describe("toPropsValue", () => {
       location: { kind: "primitive", of: "string", value: null }
     };
 
-    expect(toPropsValue(action.props, inputs)).toEqual({
+    expect(
+      toPropsValue(
+        "google-calendar",
+        "create_google_calendar_event",
+        action.props,
+        inputs
+      )
+    ).toEqual({
       calendar_id: "primary",
       title: "Kickoff",
       start_date_time: "2026-09-01T10:00:00Z",
       attendees: ["ops@acme.com"],
-      create_meet_link: true
+      create_meet_link: true,
+      // Required with a vendor default, so hidden — and sent, since the piece
+      // never applies its own default.
+      send_notifications: "all"
     });
   });
 });

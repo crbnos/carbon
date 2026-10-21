@@ -2,15 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { TermId } from "@carbon/content/glossary";
 import type {
   CatalogInput,
   ValueOrRef,
   WorkflowIssue
 } from "@carbon/ee/workflows";
 import { isMultiSelect } from "@carbon/ee/workflows";
-import type { ChoiceSelectOption } from "@carbon/react";
-import type { ReactNode } from "react";
+import {
+  actionInputLabelKey,
+  useWorkflowCatalog,
+  useWorkflowLabel,
+  workflowFieldHelp
+} from "../../catalog";
+import { lockedChoices, useChoiceOptions } from "../../fields/choiceOptions";
 import { MultiChoiceField } from "../../fields/MultiChoiceField";
 import { OptionsField } from "../../fields/OptionsField";
 import { PairsField } from "../../fields/PairsField";
@@ -29,13 +33,11 @@ import {
  * identically — sharing this is what stops the two drifting apart as new input
  * kinds are added.
  */
-export type StepInputArgs = {
+export type StepInputProps = {
+  /** The catalog id of the action or integration step that declares the input. */
+  stepId: string;
   name: string;
   inputDef: CatalogInput;
-  label: string;
-  helpTermId?: TermId;
-  /** The vendor's own field description, already label-resolved. */
-  help?: string;
   /** Advisory one-liner under the control (a record that will not link, and why). */
   hint?: string;
   /** Every input on the node, for gates and for fetched-choice dependencies. */
@@ -45,29 +47,42 @@ export type StepInputArgs = {
   batching: boolean;
   isReadOnly?: boolean;
   onChange: (name: string, value: ValueOrRef | undefined) => void;
-  /** Human label for another input on the same node. */
-  labelFor: (name: string) => string;
-  choiceOptions: (choices: readonly string[]) => ChoiceSelectOption[];
-  lockedChoices: (choices: readonly string[]) => readonly string[];
 };
 
-export function renderStepInput({
+export function StepInput({
+  stepId,
   name,
   inputDef,
-  label,
-  helpTermId,
-  help,
   hint,
   inputs,
   issues,
   nodeId,
   batching,
   isReadOnly,
-  onChange,
-  labelFor,
-  choiceOptions,
-  lockedChoices
-}: StepInputArgs): ReactNode {
+  onChange
+}: StepInputProps) {
+  const label = useWorkflowLabel();
+  const catalog = useWorkflowCatalog();
+  const choiceOptions = useChoiceOptions();
+
+  // A custom-field input has no translated key — fall back to the customer's own name.
+  const labelFor = (input: string) =>
+    label(
+      actionInputLabelKey(stepId, input),
+      catalog.getInputLabel(stepId, input) ?? input
+    );
+  const fieldLabel = labelFor(name);
+  const helpTermId = workflowFieldHelp(actionInputLabelKey(stepId, name));
+  // The vendor's (or a hand-written action's) own field description, translated
+  // like its label.
+  const help =
+    inputDef.description === undefined
+      ? undefined
+      : label(
+          `${actionInputLabelKey(stepId, name)}.description`,
+          inputDef.description
+        );
+
   const fieldContext = { nodeId, inLoop: batching, batching };
   const fieldIssue = issueForField(issues, name, `inputs.${name}`);
   const fieldParts = partIssuesForField(issues, name, `inputs.${name}`);
@@ -89,8 +104,9 @@ export function renderStepInput({
     return (
       <OptionsField
         key={`${name}:${dependsOn.map((d) => values[d]).join(":")}`}
-        label={label}
+        label={fieldLabel}
         help={help}
+        hint={hint}
         source={inputDef.options}
         type={inputDef.type}
         values={values}
@@ -107,10 +123,10 @@ export function renderStepInput({
   if (inputDef.pairs) {
     return (
       <PairsField
-        key={name}
-        label={label}
+        label={fieldLabel}
         helpTermId={helpTermId}
         help={help}
+        hint={hint}
         type={inputDef.type}
         required={inputDef.required}
         value={inputs[name]}
@@ -126,10 +142,10 @@ export function renderStepInput({
   if (isMultiSelect(inputDef)) {
     return (
       <MultiChoiceField
-        key={name}
-        label={label}
+        label={fieldLabel}
         helpTermId={helpTermId}
         help={help}
+        hint={hint}
         type={inputDef.type}
         required={inputDef.required}
         options={choiceOptions(inputDef.choices)}
@@ -145,8 +161,7 @@ export function renderStepInput({
   if (inputDef.template) {
     return (
       <TemplateField
-        key={name}
-        label={label}
+        label={fieldLabel}
         helpTermId={helpTermId}
         help={help}
         hint={hint}
@@ -164,8 +179,7 @@ export function renderStepInput({
 
   return (
     <ValueField
-      key={name}
-      label={label}
+      label={fieldLabel}
       helpTermId={helpTermId}
       help={help}
       hint={hint}

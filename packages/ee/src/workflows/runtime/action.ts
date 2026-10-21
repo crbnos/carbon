@@ -7,8 +7,8 @@ import {
   FAILURE_HANDLE,
   SUCCESS_HANDLE
 } from "../definition/schema";
-import { renderTemplate, resolveValue } from "./resolve";
-import type { NodeExecutor, RuntimeValue } from "./types";
+import { resolveStepInputs } from "./resolve";
+import type { NodeExecutor } from "./types";
 
 const GONE = "This step is no longer available.";
 
@@ -22,34 +22,17 @@ export const actionExecutor: NodeExecutor<ActionNode> = {
     const action = ctx.catalog.getAction(node.data.action);
     if (action === undefined) return { status: "Skipped", reason: GONE };
 
-    const inputs: Record<string, RuntimeValue> = {};
-    for (const [name, value] of Object.entries(node.data.inputs)) {
-      // Only a catalog-declared `links` input renders records as links, and only
-      // when the engine supplied a resolver — a webhook body must stay plain text.
-      // A Carbon action's declaration carries no `when`; the integration executor
-      // owns that gate, against the vendor sibling that decides the dialect.
-      const links = action.inputs[name]?.links;
-      const resolved =
-        links !== undefined && value.kind === "template"
-          ? await renderTemplate(value, ctx, {
-              linkFor: ctx.linkFor,
-              format: links.format
-            })
-          : await resolveValue(value, ctx);
-      if (!resolved.ok) return { status: "Skipped", reason: resolved.reason };
-      // In a batch the one list input stands for the item this turn is on. Only a
-      // slot declared single-valued can be that input (`batchCandidates`); a slot
-      // declared as a list keeps its list.
-      inputs[name] =
-        ctx.item !== undefined &&
-        resolved.value.kind === "list" &&
-        action.inputs[name]?.type.kind !== "list"
-          ? ctx.item
-          : resolved.value;
-      ctx.record?.(name, inputs[name]);
-    }
+    const resolved = await resolveStepInputs(
+      node.data.inputs,
+      action.inputs,
+      ctx
+    );
+    if (!resolved.ok) return { status: "Skipped", reason: resolved.reason };
 
-    const outcome = await ctx.services.runAction(node.data.action, inputs);
+    const outcome = await ctx.services.runAction(
+      node.data.action,
+      resolved.inputs
+    );
     if (!outcome.ok) {
       return { status: "Failed", error: outcome.error, handle: FAILURE_HANDLE };
     }

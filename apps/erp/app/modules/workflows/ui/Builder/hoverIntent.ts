@@ -10,18 +10,21 @@
  * handle, so the pointer crosses a gap belonging to neither. Closing on the
  * handle's mouse-leave dismissed the panel before it could be reached.
  */
-export type HoverIntentOptions = {
+/** Whatever handle the clock hands back — `setTimeout`'s in the app, a counter in tests. */
+export type HoverIntentOptions<TimerId = ReturnType<typeof setTimeout>> = {
   openDelayMs: number;
   closeDelayMs: number;
   onOpen: () => void;
   onClose: () => void;
-  setTimer: (fn: () => void, ms: number) => number;
-  clearTimer: (id: number) => void;
+  setTimer: (fn: () => void, ms: number) => TimerId;
+  clearTimer: (id: TimerId) => void;
 };
 
-export function createHoverIntent(options: HoverIntentOptions) {
-  let openId: number | null = null;
-  let closeId: number | null = null;
+export function createHoverIntent<TimerId = ReturnType<typeof setTimeout>>(
+  options: HoverIntentOptions<TimerId>
+) {
+  let openId: TimerId | null = null;
+  let closeId: TimerId | null = null;
   let isOpen = false;
 
   const clearAll = () => {

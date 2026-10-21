@@ -269,7 +269,13 @@ export function createBuilderStore(initial: {
       if (current.length === 0 && liveIssues.length === 0) return;
       set({ liveIssues });
     },
-    setNotices: (notices) => set({ notices }),
+    setNotices: (notices) => {
+      // Same identity rule as `liveIssues`: most graphs have no notice, and a fresh
+      // empty array on every debounce would re-render every subscriber for nothing.
+      const current = get().notices;
+      if (current.length === 0 && notices.length === 0) return;
+      set({ notices });
+    },
     setBatchPlans: (plans) => {
       // Same identity rule as `liveIssues`: most graphs have no repeating step, and a
       // fresh empty object every 250 ms would re-render every card that reads one.

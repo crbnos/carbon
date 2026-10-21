@@ -2,13 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  fromColumn,
-  MAX_LIST_ITEMS,
-  type RuntimeValue
-} from "@carbon/ee/workflows";
+import { fromJson, type RuntimeValue } from "@carbon/ee/workflows";
 import { getLogger } from "@carbon/logger";
-import { readPath, toOutputPaths, toOutputTypes } from "./outputs";
+import { describeOutputs, readField } from "./outputs";
 import type { PieceOutputSchema } from "./types";
 
 const logger = getLogger("jobs", "workflows", "integrations");
@@ -33,41 +29,29 @@ export function projectOutputs(
   if (schema === undefined) return { count: countOf(undefined) };
 
   try {
-    const types = toOutputTypes(schema);
-    const paths = toOutputPaths(schema);
     const outputs: Record<string, RuntimeValue> = {};
     let listed: unknown[] | undefined;
 
-    for (const [name, type] of Object.entries(types)) {
-      const where = paths[name];
-      if (where === undefined) continue;
-      const raw = readPath(response, where.path);
+    for (const [name, { type, field }] of Object.entries(
+      describeOutputs(schema)
+    )) {
+      // Every level is read from its own declared path, so a remapped
+      // `start.dateTime` lands on the element rather than the response root.
+      const value = readField(field, response);
 
-      if (where.items !== undefined) {
-        // A list field: read each element's own declared paths, so a remapped
-        // `start.dateTime` lands on the element rather than the response root.
-        const items = Array.isArray(raw) ? raw : [];
+      if (type.kind === "list") {
+        const items = Array.isArray(value) ? value : [];
         // The BIGGEST declared list, not whichever the schema happened to name
         // first: a response with an empty `warnings` beside ten real `items`
         // reported zero purely because of key order.
         if (listed === undefined || items.length > listed.length)
           listed = items;
-        const rows = sortRows(
-          items.map((item) =>
-            Object.fromEntries(
-              Object.entries(where.items ?? {}).map(([field, path]) => [
-                field,
-                readPath(item, path)
-              ])
-            )
-          ),
-          options.sortItemsBy
-        ).slice(0, MAX_LIST_ITEMS);
-        outputs[name] = fromColumn(type, rows);
+        // `fromJson` caps the list, after the sort.
+        outputs[name] = fromJson(type, sortRows(items, options.sortItemsBy));
         continue;
       }
 
-      outputs[name] = fromColumn(type, raw);
+      outputs[name] = fromJson(type, value);
     }
 
     outputs.count = countOf(listed);
@@ -87,14 +71,15 @@ export function projectOutputs(
  * datetimes compare correctly as strings, which is what the field holds for
  * every sort the allowlist declares. Copied then sorted, so equal keys keep
  * vendor order only as far as the engine's sort is stable (V8's is). */
-function sortRows(
-  rows: Record<string, unknown>[],
-  by: string | undefined
-): Record<string, unknown>[] {
+function sortRows(rows: unknown[], by: string | undefined): unknown[] {
   if (by === undefined) return rows;
+  const keyOf = (row: unknown) =>
+    row !== null && typeof row === "object"
+      ? (row as Record<string, unknown>)[by]
+      : undefined;
   return [...rows].sort((a, b) => {
-    const left = a[by];
-    const right = b[by];
+    const left = keyOf(a);
+    const right = keyOf(b);
     if (left === right) return 0;
     if (left === undefined || left === null) return 1;
     if (right === undefined || right === null) return -1;

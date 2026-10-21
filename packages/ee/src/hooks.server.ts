@@ -5,6 +5,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { emailHealthcheck } from "./email/hooks.server";
 import { revokeConnectionsForPiece } from "./integrations/connections";
+import { ACTIVEPIECES_PIECES } from "./integrations/pieces";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
 import { mountHealthcheck } from "./mount/hooks.server";
@@ -52,16 +53,23 @@ import {
 } from "./xero/hooks.server";
 
 /**
- * A workflow integration is healthy when it has at least one usable account.
- *
- * Its credentials live per CONNECTION rather than on the integration row, so the
- * secret-based check the other integrations use cannot see them — and without a
- * check of its own the card reports "Healthy" unconditionally (`resolveHealth`
- * defaults to healthy when none is declared), so a revoked account read as fine
- * while every workflow step using it failed.
- *
- * Shared rather than written per vendor: nothing here is Google-specific.
+ * A workflow-integration card's whole uninstall behaviour is "revoke the accounts
+ * it connected", and its `id` IS the piece name — so a new piece needs no entry
+ * here. Health for a piece card is decided in erp's `getIntegrationHealth` (it
+ * needs the allowlist's required scopes, which ee cannot see); only uninstall
+ * lives here. Slack's card serves the Carbon Assistant and workflow steps alike,
+ * so uninstalling it revokes every connected workspace.
  */
+const pieceHooks: Record<string, IntegrationServerHooks> = Object.fromEntries(
+  ACTIVEPIECES_PIECES.map((piece) => [
+    piece,
+    {
+      onUninstall: (companyId: string) =>
+        revokeConnectionsForPiece(getCarbonServiceRole(), piece, companyId)
+    }
+  ])
+);
+
 /**
  * Server-side hooks registry for integrations.
  *
@@ -71,6 +79,7 @@ import {
  * their server-only lifecycle hooks.
  */
 const serverHooks: Record<string, IntegrationServerHooks> = {
+  ...pieceHooks,
   email: {
     onHealthcheck: emailHealthcheck
   },
@@ -80,35 +89,12 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   linear: {
     onHealthcheck: linearHealthcheck
   },
-  // A workflow-integration card's whole uninstall behaviour is "revoke the accounts
-  // it connected", and its `id` IS the piece name — so a new piece is this one line,
-  // not a hooks file of its own.
-  // Health for a piece card is decided in erp's `getIntegrationHealth` (it needs
-  // the allowlist's required scopes, which ee cannot see); only uninstall lives here.
-  "google-calendar": {
-    onUninstall: (companyId) =>
-      revokeConnectionsForPiece(
-        getCarbonServiceRole(),
-        "google-calendar",
-        companyId
-      )
-  },
-  gmail: {
-    onUninstall: (companyId) =>
-      revokeConnectionsForPiece(getCarbonServiceRole(), "gmail", companyId)
-  },
   mount: {
     onHealthcheck: mountHealthcheck
   },
   onshape: {
     onUninstall: onshapeOnUninstall,
     onHealthcheck: onshapeHealthcheck(ONSHAPE_INTEGRATION_ID)
-  },
-  // One Slack card serves the Carbon Assistant and workflow steps; uninstalling it
-  // revokes every connected workspace.
-  slack: {
-    onUninstall: (companyId) =>
-      revokeConnectionsForPiece(getCarbonServiceRole(), "slack", companyId)
   },
   "onshape-government": {
     onUninstall: onshapeOnUninstall,

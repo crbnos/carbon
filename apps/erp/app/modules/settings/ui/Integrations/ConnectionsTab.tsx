@@ -2,12 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { startIntegrationConnect } from "@carbon/ee/integrations/connect";
+import {
+  IntegrationConnectError,
+  startIntegrationConnect
+} from "@carbon/ee/integrations/connect";
 import {
   connectionUsable,
   type IntegrationConnection,
   needsReconnect
 } from "@carbon/ee/integrations/connections";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -17,11 +21,12 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { LuPlug, LuUnplug } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { getIntegrationError } from "~/modules/settings/integration-errors";
 import { path } from "~/utils/path";
 import { suggestConnectionName } from "./connectionName";
 
@@ -46,6 +51,12 @@ const STATUS_VARIANT = {
   Revoked: "red"
 } as const;
 
+const STATUS_LABEL = {
+  Active: msg`Active`,
+  Expired: msg`Expired`,
+  Revoked: msg`Revoked`
+} satisfies Record<keyof typeof STATUS_VARIANT, unknown>;
+
 /**
  * The accounts this integration can act as, inside its own card's Details drawer.
  *
@@ -68,7 +79,7 @@ export function ConnectionsTab({
   /** What a connection must hold for this piece's steps (`requiredScopesFor`). */
   requiredScopes: readonly string[];
 }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const [name, setName] = useState("");
   const [connecting, setConnecting] = useState(false);
 
@@ -88,8 +99,8 @@ export function ConnectionsTab({
   // Only what the user actually TYPED can collide — the suggestion never does.
   const duplicate = name.trim() !== "" && taken.has(proposed);
 
-  // The consent screen opens from the URL the connect loader builds, so the signed
-  // `state` never has to round-trip through the browser's own code.
+  // The consent screen opens from the URL the connect loader builds; the same
+  // response sets the state cookie the callback checks.
   // One entry point for Add account (`?name=`) and Reconnect (`?connection=`).
   const startConnect = async (
     query: { name: string } | { connection: string }
@@ -102,11 +113,17 @@ export function ConnectionsTab({
         )}`
       );
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : t`Couldn't start the authorization.`
-      );
+      const failure =
+        error instanceof IntegrationConnectError
+          ? getIntegrationError("connection", error.code)
+          : undefined;
+      if (failure) {
+        toast.error(i18n._(failure.title), {
+          description: i18n._(failure.description)
+        });
+      } else {
+        toast.error(t`Couldn't start the authorization.`);
+      }
     } finally {
       setConnecting(false);
     }
@@ -183,8 +200,12 @@ function ConnectionItem({
   reconnecting: boolean;
   onReconnect: () => void;
 }) {
-  const { t } = useLingui();
-  const fetcher = useFetcher<{ success?: boolean }>();
+  const { t, i18n } = useLingui();
+  const renamer = useAction({ onSuccess: () => toast.success(t`Renamed`) });
+  const disconnecter = useAction({
+    onSuccess: () => toast.success(t`Disconnected`)
+  });
+  const pending = renamer.isPending || disconnecter.isPending;
   const [name, setName] = useState(connection.name);
   const usable = connectionUsable(connection);
   // Connected before this piece needed a scope (a Slack workspace installed for the
@@ -206,7 +227,7 @@ function ConnectionItem({
                 setName(connection.name);
                 return;
               }
-              fetcher.submit(
+              renamer.submit(
                 { intent: "rename", id: connection.id, name: name.trim() },
                 { method: "post", action: path.to.integrationConnections }
               );
@@ -216,7 +237,7 @@ function ConnectionItem({
             variant={STATUS_VARIANT[connection.status]}
             className="shrink-0"
           >
-            {connection.status}
+            {i18n._(STATUS_LABEL[connection.status])}
           </Badge>
           {needsScopes && (
             <Badge variant="yellow" className="shrink-0">
@@ -261,30 +282,24 @@ function ConnectionItem({
             <Trans>Reconnect</Trans>
           </Button>
         )}
-        <fetcher.Form
+        <disconnecter.Form
           method="post"
           action={path.to.integrationConnections}
           className="shrink-0"
         >
           <input type="hidden" name="intent" value="disconnect" />
           <input type="hidden" name="id" value={connection.id} />
-          {/* The card's health badge is cached per piece; disconnecting has to drop
-            that entry or Settings keeps reporting "Healthy" for an app the builder
-            already treats as disconnected. */}
-          <input type="hidden" name="pieceName" value={connection.pieceName} />
           <Button
             type="submit"
             size="sm"
             variant="secondary"
             leftIcon={<LuUnplug />}
-            isDisabled={
-              connection.status === "Revoked" || fetcher.state !== "idle"
-            }
-            isLoading={fetcher.state !== "idle"}
+            isDisabled={connection.status === "Revoked" || pending}
+            isLoading={disconnecter.isPending}
           >
             <Trans>Disconnect</Trans>
           </Button>
-        </fetcher.Form>
+        </disconnecter.Form>
       </VStack>
     </HStack>
   );
