@@ -1490,6 +1490,9 @@ msgstr "Müşterinin birimi satın alabileceği bir kiralama sözleşmesi üzeri
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Fiyatlandırılmış satış teklifi; Taslak → Gönderilen → Sipariş edildi, ya da Kaybedildi, Süresi doldu veya İptal edildi ile sonlanır."
 
+msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
+msgstr ""
+
 msgid "A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock."
 msgstr "Proje Taslak iken seçilen, projeyi aldığı stok sahibi yapan bir proje ayarı. İş emirleri ve sorunlar önce o stoğu çeker, ardından atanmamış stoğu."
 
@@ -6719,9 +6722,6 @@ msgstr "Sözleşme finansmanı, şirketin temel para biriminde bir sözleşme ge
 
 msgid "Contract Line"
 msgstr "Sözleşme Satırı"
-
-msgid "Contract lines"
-msgstr "Sözleşme Satırları"
 
 msgid "Contract Loss Provision"
 msgstr "Sözleşme Kaybı Karşılığı"
@@ -16665,6 +16665,9 @@ msgstr "Henüz faturalandırılabilir öğe yok"
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "Henüz faturalandırılabilir öğe yok. Faturalandırma öğesine ve altındaki öğelere tahakkuk ettirilecek iş burada gösterilir."
 
+msgid "No billing lines yet"
+msgstr ""
+
 msgid "No billing periods."
 msgstr "Fatura dönemi yok."
 
@@ -16751,9 +16754,6 @@ msgstr "Henüz bileşen yok"
 
 msgid "No condition may match"
 msgstr "Hiçbir koşul eşleşemez"
-
-msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
-msgstr "Bu proje için sözleşme faturası yok. Bir Zaman & Malzeme veya Maliyet Artı sözleşme satırı, bunun bir faturalandırma öğesini adlandırır."
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr "Sözleşme oranı yok. Saatler varsayılan oranlarla faturalan."
@@ -17262,6 +17262,9 @@ msgstr "Henüz kayıtlı üretim yok."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Henüz proje faturası yok. Gecelik faturalama çalışması, her faturalama dönemi için bir taslak oluşturur."
+
+msgid "No project contract bills this project"
+msgstr ""
 
 msgid "No project found"
 msgstr "Proje bulunamadı"
@@ -27391,6 +27394,9 @@ msgid "Time & Materials"
 msgstr "Zaman & Malzeme"
 
 msgid "Time & Materials and Cost Plus lines bill from project cost every billing period."
+msgstr ""
+
+msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

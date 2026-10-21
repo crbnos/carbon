@@ -1490,6 +1490,9 @@ msgstr "Un prix dans un accord de location auquel le client peut acheter l'unit�
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Un devis de vente tarifé ; Brouillon → Envoyé → Commandé, ou se termine Perdu, Expiré ou Annulé."
 
+msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
+msgstr ""
+
 msgid "A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock."
 msgstr "Un paramètre de projet, choisi lorsque le projet est en brouillon, qui fait que le projet possède le stock reçu pour lui. Ses ordres de fabrication et problèmes puisent d'abord dans ce stock, puis dans le stock non attribué."
 
@@ -6719,9 +6722,6 @@ msgstr "Le financement de contrat nécessite un contrat dans la devise de base d
 
 msgid "Contract Line"
 msgstr "Ligne de contrat"
-
-msgid "Contract lines"
-msgstr "Lignes de contrat"
 
 msgid "Contract Loss Provision"
 msgstr "Provision pour perte de contrat"
@@ -16665,6 +16665,9 @@ msgstr "Aucun Article facturable pour l'instant"
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "Aucun article facturable pour le moment. Les travaux facturés à l'élément de facturation et les éléments ci-dessous apparaissent ici."
 
+msgid "No billing lines yet"
+msgstr ""
+
 msgid "No billing periods."
 msgstr "Aucune période de facturation."
 
@@ -16751,9 +16754,6 @@ msgstr "Aucun composant pour le moment"
 
 msgid "No condition may match"
 msgstr "Aucune condition ne doit correspondre"
-
-msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
-msgstr "Aucun contrat ne facture ce projet. Une ligne de contrat Temps et matériaux ou Coût plus désigne un élément de facturation."
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr "Aucun tarif contractuel. Les heures facturent aux tarifs par défaut."
@@ -17262,6 +17262,9 @@ msgstr "Aucune production enregistrée pour le moment."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Aucune facture de facturation de projet encore. L'exécution de facturation nocturne en brouille une par période de facturation."
+
+msgid "No project contract bills this project"
+msgstr ""
 
 msgid "No project found"
 msgstr "Aucun projet trouvé"
@@ -27391,6 +27394,9 @@ msgid "Time & Materials"
 msgstr "Temps et Matières"
 
 msgid "Time & Materials and Cost Plus lines bill from project cost every billing period."
+msgstr ""
+
+msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

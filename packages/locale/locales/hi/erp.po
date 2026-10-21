@@ -1490,6 +1490,9 @@ msgstr "एक किराये के समझौते पर एक मू
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "एक मूल्यवान बिक्री कोटेशन; ड्राफ्ट → भेजा गया → ऑर्डर किया गया, या खोया, समाप्त, या रद्द में समाप्त होता है।"
 
+msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
+msgstr ""
+
 msgid "A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock."
 msgstr "एक परियोजना सेटिंग, जॉब और समस्याएँ पहले उस स्टॉक को खींचती हैं, फिर असाइन किए गए स्टॉक को खींचती हैं।"
 
@@ -6719,9 +6722,6 @@ msgstr "अनुबंध वित्तपोषण को कंपनी �
 
 msgid "Contract Line"
 msgstr "अनुबंध पंक्ति"
-
-msgid "Contract lines"
-msgstr "अनुबंध पंक्तियाँ"
 
 msgid "Contract Loss Provision"
 msgstr "अनुबंध हानि प्रावधान"
@@ -16665,6 +16665,9 @@ msgstr "अभी तक कोई बिलेबल आइटम नहीं"
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "अभी कोई बिल योग्य आइटम नहीं। बिलिंग तत्व और इसके नीचे के तत्वों को चार्ज किया गया कार्य यहाँ दिखाई देता है।"
 
+msgid "No billing lines yet"
+msgstr ""
+
 msgid "No billing periods."
 msgstr "कोई बिलिंग अवधि नहीं।"
 
@@ -16751,9 +16754,6 @@ msgstr "अभी कोई घटक नहीं"
 
 msgid "No condition may match"
 msgstr "कोई भी शर्त मेल नहीं खा सकती"
-
-msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
-msgstr "इस परियोजना के लिए कोई अनुबंध बिल नहीं। एक Time & Materials या Cost Plus अनुबंध पंक्ति इसका एक बिलिंग तत्व नाम देता है।"
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr "कोई अनुबंध दर नहीं। घंटों का बिल डिफ़ॉल्ट दरों पर दिया जाता है।"
@@ -17262,6 +17262,9 @@ msgstr "अभी तक कोई उत्पादन दर्ज नही�
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "अभी तक कोई परियोजना चालान नहीं। रात्रिकालीन चालान रन प्रति चालान अवधि एक ड्राफ्ट करता है।"
+
+msgid "No project contract bills this project"
+msgstr ""
 
 msgid "No project found"
 msgstr "कोई प्रोजेक्ट नहीं मिला"
@@ -27391,6 +27394,9 @@ msgid "Time & Materials"
 msgstr "समय और सामग्री"
 
 msgid "Time & Materials and Cost Plus lines bill from project cost every billing period."
+msgstr ""
+
+msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

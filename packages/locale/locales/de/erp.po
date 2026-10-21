@@ -1490,6 +1490,9 @@ msgstr "Ein Preis auf einer Mietvereinbarung, zu dem der Kunde die Einheit kaufe
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Ein Angebot; Entwurf → Versendet → Bestellt, oder endet mit Verloren, Abgelaufen oder Storniert."
 
+msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
+msgstr ""
+
 msgid "A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock."
 msgstr "Eine Projekteinstellung, die gewählt wird, während das Projekt noch ein Entwurf ist, und die das Projekt dazu bringt, den erhaltenen Bestand zu besitzen. Seine Fertigungsaufträge und Materialentnahmen entnehmen zuerst diesen Bestand, dann nicht zugeordneten Bestand."
 
@@ -6719,9 +6722,6 @@ msgstr "Vertragsfinanzierung benötigt einen Vertrag in der Basiswährung des Un
 
 msgid "Contract Line"
 msgstr "Vertragsposition"
-
-msgid "Contract lines"
-msgstr "Vertragspositionen"
 
 msgid "Contract Loss Provision"
 msgstr "Verlustausgleich für Vertrag"
@@ -16665,6 +16665,9 @@ msgstr "Noch keine abrechenbaren Artikel"
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "Noch keine abrechnungsfähigen Artikel. Die Arbeit, die dem Abrechnungselement und den darunter liegenden Elementen zugerechnet wird, wird hier angezeigt."
 
+msgid "No billing lines yet"
+msgstr ""
+
 msgid "No billing periods."
 msgstr "Keine Abrechnungsperioden."
 
@@ -16751,9 +16754,6 @@ msgstr "Noch keine Komponenten"
 
 msgid "No condition may match"
 msgstr "Keine Bedingung darf zutreffen"
-
-msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
-msgstr "Dieses Projekt wird nicht vertraglich in Rechnung gestellt. Eine Zeit & Material oder Cost Plus Vertragslinie benennt ein Abrechnungselement von ihm."
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr "Keine Vertragssätze. Stunden werden zu den Standardsätzen abgerechnet."
@@ -17262,6 +17262,9 @@ msgstr "Noch keine Produktion aufgezeichnet."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Noch keine Projektabrechnungsrechnungen. Der nächtliche Abrechnungslauf erstellt eine pro Abrechnungsperiode."
+
+msgid "No project contract bills this project"
+msgstr ""
 
 msgid "No project found"
 msgstr "Kein Projekt gefunden"
@@ -27391,6 +27394,9 @@ msgid "Time & Materials"
 msgstr "Zeit & Materialien"
 
 msgid "Time & Materials and Cost Plus lines bill from project cost every billing period."
+msgstr ""
+
+msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

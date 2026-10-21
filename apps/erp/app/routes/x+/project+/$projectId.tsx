@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
+import { error, hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getUserClaims } from "@carbon/auth/users.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
@@ -63,7 +64,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "projects",
     bypassRls: true
   });
@@ -87,6 +88,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     changeRequests,
     planningGroups,
     billingLines,
+    projectContracts,
+    claims,
     stockRows,
     pegRows
   ] = await Promise.all([
@@ -111,8 +114,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .from("planningGroup")
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId),
-    // Billing shows under Costs only while a contract line bills the project.
     getContractBillingLines(client, { companyId, projectId }),
+    // The project contracts that bill the project: the Billing page names
+    // them, and offers a new one when there is none.
+    client
+      .from("customerContract")
+      .select("id, customerContractId, name, status")
+      .eq("companyId", companyId)
+      .eq("projectId", projectId)
+      .eq("billingBasis", "Project")
+      .order("customerContractId"),
+    // The client bypasses RLS: contracts reach only a user who can view
+    // sales.
+    getUserClaims(userId, companyId),
     // Stock and Pegging show under Costs only once the project has project
     // stock (an item ledger row of its own) or a current peg (Layer 5).
     client
@@ -158,6 +172,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ["change requests", changeRequests],
     ["planning groups", planningGroups],
     ["contract billing lines", billingLines],
+    ["project contracts", projectContracts],
     ["stock", stockRows],
     ["pegs", pegRows]
   ] as const) {
@@ -236,6 +251,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     hasBillingLines:
       project.data.costTreatment === "Contract" &&
       (billingLines.data ?? []).length > 0,
+    // Billing shows under Costs for every Contract project, with or without
+    // a project contract.
+    showBilling: project.data.costTreatment === "Contract",
+    projectContracts: hasPermission(
+      claims?.permissions,
+      "sales",
+      "view",
+      companyId
+    )
+      ? (projectContracts.data ?? [])
+      : [],
     hasProjectStock: (stockRows.count ?? 0) > 0,
     hasPegs: (pegRows.count ?? 0) > 0
   };

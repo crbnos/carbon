@@ -1490,6 +1490,9 @@ msgstr "Цена в договоре аренды, по которой Поку�
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Котировка продажи с ценой; Черновик → Отправлено → Заказано, либо завершается как Проиграно, Истек срок или Отменено."
 
+msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
+msgstr ""
+
 msgid "A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock."
 msgstr "Параметр проекта, выбранный, пока проект в черновике, который делает запас проекта полученным для него. Его производственные заказы и проблемы сначала берут этот запас, затем невыделенный запас."
 
@@ -6719,9 +6722,6 @@ msgstr "Финансирование контракта требует конт�
 
 msgid "Contract Line"
 msgstr "Строка контракта"
-
-msgid "Contract lines"
-msgstr "Строки контракта"
 
 msgid "Contract Loss Provision"
 msgstr "Резерв на убыток по контракту"
@@ -16665,6 +16665,9 @@ msgstr "Платежных позиций еще нет"
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "Нет подлежащей выставлению счетов номенклатуры. Работа, отнесенная на элемент выставления счетов и элементы ниже него, отображается здесь."
 
+msgid "No billing lines yet"
+msgstr ""
+
 msgid "No billing periods."
 msgstr "Нет периодов выставления счетов."
 
@@ -16751,9 +16754,6 @@ msgstr "Компонентов еще нет"
 
 msgid "No condition may match"
 msgstr "Ни одно условие не должно совпадать"
-
-msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
-msgstr "Нет счетов по контракту по этому проекту. Строка контракта «Время и материалы» или «Затраты плюс» указывает элемент выставления счетов."
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr "Нет контрактных ставок. Часы выставляются по умолчанию ставкам."
@@ -17262,6 +17262,9 @@ msgstr "Производство еще не записано."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Счетов-фактур проекта еще нет. Ночной запуск биллинга создает один на каждый период биллинга."
+
+msgid "No project contract bills this project"
+msgstr ""
 
 msgid "No project found"
 msgstr "Проект не найден"
@@ -27391,6 +27394,9 @@ msgid "Time & Materials"
 msgstr "Время и материалы"
 
 msgid "Time & Materials and Cost Plus lines bill from project cost every billing period."
+msgstr ""
+
+msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

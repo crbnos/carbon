@@ -1490,6 +1490,9 @@ msgstr "租赁协议上的价格，客户可以按此购买该件设备。该价
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "一份标价的销售报价单；草稿 → 已发送 → 已订购，或结束为丢单、已过期或已取消。"
 
+msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
+msgstr ""
+
 msgid "A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock."
 msgstr "项目设置，在项目为草稿时选择，使项目拥有为其接收的库存。其工单和领料首先从该库存中提取，然后是未分配的库存。"
 
@@ -6718,9 +6721,6 @@ msgid "Contract financing needs a contract in the company's base currency."
 msgstr "合同融资需要公司基础货币中的合同。"
 
 msgid "Contract Line"
-msgstr "合同行"
-
-msgid "Contract lines"
 msgstr "合同行"
 
 msgid "Contract Loss Provision"
@@ -16665,6 +16665,9 @@ msgstr "还没有可计费物料"
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "还没有可计费物料。计费元素及其下面元素的工作显示在这里。"
 
+msgid "No billing lines yet"
+msgstr ""
+
 msgid "No billing periods."
 msgstr "无计费期间。"
 
@@ -16751,9 +16754,6 @@ msgstr "还没有组件"
 
 msgid "No condition may match"
 msgstr "没有条件可以匹配"
-
-msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
-msgstr "此项目没有合同账单。时间和材料或成本加价合同行命名其计费元素。"
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr "没有合同费率。小时按默认费率计费。"
@@ -17262,6 +17262,9 @@ msgstr "还没有生产记录。"
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "还没有项目计费发票。夜间计费运行会为每个计费期间起草一张。"
+
+msgid "No project contract bills this project"
+msgstr ""
 
 msgid "No project found"
 msgstr "未找到项目"
@@ -27391,6 +27394,9 @@ msgid "Time & Materials"
 msgstr "时间与材料"
 
 msgid "Time & Materials and Cost Plus lines bill from project cost every billing period."
+msgstr ""
+
+msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

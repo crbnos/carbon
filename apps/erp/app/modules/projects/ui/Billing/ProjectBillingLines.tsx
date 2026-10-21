@@ -14,8 +14,9 @@ import {
   TooltipTrigger,
   Tr
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "react-router";
+import Empty from "~/components/Empty";
 import { useCurrencyFormatter, useUser } from "~/hooks";
 import { usePercentFormatter } from "~/hooks/usePercentFormatter";
 import { FundingBar } from "~/modules/sales/ui/Contracts";
@@ -42,6 +43,7 @@ export default function ProjectBillingLines({
   /** Progress and revenue to date per line (`getProjectContractRevenue`). */
   revenue?: Record<string, ProjectContractRevenue>;
 }) {
+  const { t } = useLingui();
   const { company } = useUser();
   // Billing lines need the contract currency to be the base currency (P5).
   const currencyCode = company.baseCurrencyCode ?? "USD";
@@ -57,12 +59,11 @@ export default function ProjectBillingLines({
 
   if (lines.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        <Trans>
-          No contract bills this project. A Time & Materials or Cost Plus
-          contract line names a billing element of it.
-        </Trans>
-      </p>
+      <Empty
+        className="py-4"
+        title={t`No billing lines yet`}
+        description={t`Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events.`}
+      />
     );
   }
 

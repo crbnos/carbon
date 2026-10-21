@@ -4,12 +4,14 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { LabelWithHelp } from "@carbon/react";
+import { Button, LabelWithHelp } from "@carbon/react";
 import { datetime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { LuCirclePlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { Link, useLoaderData, useParams } from "react-router";
 import Empty from "~/components/Empty";
+import { usePermissions, useRouteData } from "~/hooks";
 import {
   getContractBillableItems,
   getContractBillingLines,
@@ -18,7 +20,10 @@ import {
 import ProjectBillableItemsTable from "~/modules/projects/ui/Billing/ProjectBillableItemsTable";
 import ProjectBillingLines from "~/modules/projects/ui/Billing/ProjectBillingLines";
 import { getContractLineFunding } from "~/modules/sales";
+import type { ContractStatusType } from "~/modules/sales/ui/Contracts";
+import { ContractStatus } from "~/modules/sales/ui/Contracts";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 const logger = getLogger("erp", "project-billing");
@@ -85,17 +90,68 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
+/** What `$projectId.tsx` loads about the project contracts that bill it. */
+type ProjectContractRef = {
+  id: string;
+  customerContractId: string;
+  name: string;
+  status: ContractStatusType;
+};
+
 export default function ProjectBillingRoute() {
   const { t } = useLingui();
+  const { projectId } = useParams();
+  if (!projectId) throw new Error("projectId not found");
   const { lines, items, count, funding, revenue } =
     useLoaderData<typeof loader>();
+  const permissions = usePermissions();
+  const routeData = useRouteData<{ projectContracts: ProjectContractRef[] }>(
+    path.to.project(projectId)
+  );
+  const projectContracts = routeData?.projectContracts ?? [];
+
+  // No project contract: nothing bills the project yet.
+  if (projectContracts.length === 0) {
+    return (
+      <Empty
+        title={t`No project contract bills this project`}
+        description={t`A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price.`}
+      >
+        {permissions.can("create", "sales") && (
+          <Button asChild leftIcon={<LuCirclePlus />} className="mt-4">
+            <Link to={path.to.newProjectContractForProject(projectId)}>
+              <Trans>New Project Contract</Trans>
+            </Link>
+          </Button>
+        )}
+      </Empty>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <section className="flex max-h-80 shrink-0 flex-col gap-1 border-b border-border p-4">
-        <h3 className="text-sm font-medium">
-          <Trans>Contract lines</Trans>
-        </h3>
+      <section className="flex max-h-80 shrink-0 flex-col gap-2 border-b border-border p-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-1">
+          {projectContracts.map((contract) => (
+            <span
+              key={contract.id}
+              className="flex min-w-0 items-center gap-2 text-sm"
+            >
+              <Link
+                to={path.to.contract(contract.id)}
+                className="flex min-w-0 items-center gap-2 hover:underline"
+              >
+                <span className="shrink-0 whitespace-nowrap font-medium">
+                  {contract.customerContractId}
+                </span>
+                <span className="min-w-0 truncate">{contract.name}</span>
+              </Link>
+              <span className="shrink-0">
+                <ContractStatus status={contract.status} />
+              </span>
+            </span>
+          ))}
+        </div>
         <ProjectBillingLines
           lines={lines}
           funding={funding}

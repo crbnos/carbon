@@ -1490,6 +1490,9 @@ msgstr "고객이 장비를 구매할 수 있는 임차료 계약상의 가격�
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "가격이 책정된 판매 견적으로 초안 → 전송됨 → 발주됨 또는 실주, 만료됨, 취소됨으로 끝납니다."
 
+msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
+msgstr ""
+
 msgid "A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock."
 msgstr "프로젝트가 초안 상태일 때 선택하는 프로젝트 설정으로, 프로젝트가 수신한 재고를 소유하게 합니다. 해당 프로젝트의 작업 지시와 문제는 먼저 해당 재고를 사용한 후 미할당 재고를 사용합니다."
 
@@ -6718,9 +6721,6 @@ msgid "Contract financing needs a contract in the company's base currency."
 msgstr "계약 금융은 회사의 기본 통화로 된 계약이 필요합니다."
 
 msgid "Contract Line"
-msgstr "계약 라인"
-
-msgid "Contract lines"
 msgstr "계약 라인"
 
 msgid "Contract Loss Provision"
@@ -16665,6 +16665,9 @@ msgstr "아직 청구 가능한 항목이 없습니다"
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "청구 가능한 품목이 아직 없습니다. 청구 요소와 그 아래 요소에 청구된 작업이 여기에 표시됩니다."
 
+msgid "No billing lines yet"
+msgstr ""
+
 msgid "No billing periods."
 msgstr "청구 기간이 없습니다."
 
@@ -16751,9 +16754,6 @@ msgstr "아직 구성 요소 없음"
 
 msgid "No condition may match"
 msgstr "조건이 하나도 일치하지 않을 수 있습니다"
-
-msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
-msgstr "이 프로젝트에는 계약 청구가 없습니다. Time & Materials 또는 Cost Plus 계약 라인이 이를 위한 청구 요소를 지정합니다."
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr "계약 요율이 없습니다. 시간은 기본 요율로 청구됩니다."
@@ -17262,6 +17262,9 @@ msgstr "아직 기록된 생산이 없습니다."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "아직 프로젝트 청구 송장이 없습니다. 야간 청구 실행이 청구 기간당 하나를 초안으로 작성합니다."
+
+msgid "No project contract bills this project"
+msgstr ""
 
 msgid "No project found"
 msgstr "프로젝트를 찾을 수 없습니다"
@@ -27391,6 +27394,9 @@ msgid "Time & Materials"
 msgstr "시간 및 자재"
 
 msgid "Time & Materials and Cost Plus lines bill from project cost every billing period."
+msgstr ""
+
+msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

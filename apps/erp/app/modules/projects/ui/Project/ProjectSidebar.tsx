@@ -25,6 +25,7 @@ export type ProjectSidebarData = {
   openChangeRequests: ActiveChangeRequest[];
   activeChangeRequest: ActiveChangeRequest | null;
   hasBillingLines: boolean;
+  showBilling: boolean;
   hasProjectStock: boolean;
   hasPegs: boolean;
 };
@@ -43,7 +44,7 @@ export function ProjectSidebar() {
   const permissions = usePermissions();
   const data = useRouteData<ProjectSidebarData>(path.to.project(projectId));
   const links = useProjectSidebarLinks({
-    hasBillingLines: data?.hasBillingLines ?? false,
+    showBilling: data?.showBilling ?? false,
     hasProjectStock: data?.hasProjectStock ?? false,
     hasPegs: data?.hasPegs ?? false
   });

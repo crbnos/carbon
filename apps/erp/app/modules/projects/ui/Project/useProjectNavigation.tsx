@@ -32,15 +32,17 @@ export type ProjectSidebarLink = {
 /**
  * The project sidebar's page links (Layer 2): Overview, Plan, Schedule,
  * Costs with Stock, Pegging and Billing under it when they apply, and Time.
- * Billing also needs the sales permission (contract billing). The project's
- * settings are the properties column of its Overview.
+ * Billing shows for every Contract project and needs the sales permission
+ * (contract billing). The project's settings are the properties column of
+ * its Overview.
  */
 export function useProjectSidebarLinks({
-  hasBillingLines,
+  showBilling,
   hasProjectStock,
   hasPegs
 }: {
-  hasBillingLines: boolean;
+  /** A Contract project: its Billing page shows its project contract. */
+  showBilling: boolean;
   /** The project holds or has held stock of its own (an item ledger row). */
   hasProjectStock: boolean;
   /** The project has a current peg. */
@@ -103,7 +105,7 @@ export function useProjectSidebarLinks({
           }
         ]
       : []),
-    ...(hasBillingLines && permissions.can("view", "sales")
+    ...(showBilling && permissions.can("view", "sales")
       ? [
           {
             name: t`Billing`,

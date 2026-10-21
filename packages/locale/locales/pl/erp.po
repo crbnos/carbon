@@ -1490,6 +1490,9 @@ msgstr "Cena w umowie wynajmu, po której klient może kupić jednostkę, liczon
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Wyceniona oferta sprzedaży; Wersja robocza → Wysłano → Zamówiono, lub kończy się Przegrana, Wygasła lub Anulowano."
 
+msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
+msgstr ""
+
 msgid "A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock."
 msgstr "Ustawienie projektu, wybrane gdy projekt jest w wersji roboczej, które sprawia, że projekt posiada otrzymany dla niego zapas. Jego zlecenia produkcyjne i wydania czerpią ten zapas w pierwszej kolejności, następnie nieprzypisany zapas."
 
@@ -6719,9 +6722,6 @@ msgstr "Finansowanie umowy wymaga umowy w walucie bazowej firmy."
 
 msgid "Contract Line"
 msgstr "Pozycja kontraktu"
-
-msgid "Contract lines"
-msgstr "Pozycje kontraktu"
 
 msgid "Contract Loss Provision"
 msgstr "Rezerwa na stratę z kontraktu"
@@ -16665,6 +16665,9 @@ msgstr "Brak pozycji rozliczalnych"
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "Brak elementów do rozliczenia. Praca obciążona elementem rozliczeniowym i elementami poniżej niego pojawia się tutaj."
 
+msgid "No billing lines yet"
+msgstr ""
+
 msgid "No billing periods."
 msgstr "Brak okresów rozliczeniowych."
 
@@ -16751,9 +16754,6 @@ msgstr "Brak komponentów"
 
 msgid "No condition may match"
 msgstr "Żaden warunek nie może się zgadzać"
-
-msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
-msgstr "Ten projekt nie jest rozliczany. Linia umowy Time & Materials lub Cost Plus podaje element rozliczeniowy."
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr "Brak stawek umowy. Godziny są rozliczane po stawkach domyślnych."
@@ -17262,6 +17262,9 @@ msgstr "Brak zarejestrowanej produkcji."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Brak faktur rozliczeniowych projektu jeszcze. Nocne uruchomienie rozliczeń tworzy jedną na okres rozliczeniowy."
+
+msgid "No project contract bills this project"
+msgstr ""
 
 msgid "No project found"
 msgstr "Nie znaleziono projektu"
@@ -27391,6 +27394,9 @@ msgid "Time & Materials"
 msgstr "Czas i materiały"
 
 msgid "Time & Materials and Cost Plus lines bill from project cost every billing period."
+msgstr ""
+
+msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

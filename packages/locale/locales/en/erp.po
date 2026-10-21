@@ -1490,6 +1490,9 @@ msgstr "A price on a rental agreement at which the customer can buy the unit, co
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 
+msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
+msgstr "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
+
 msgid "A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock."
 msgstr "A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock."
 
@@ -6719,9 +6722,6 @@ msgstr "Contract financing needs a contract in the company's base currency."
 
 msgid "Contract Line"
 msgstr "Contract Line"
-
-msgid "Contract lines"
-msgstr "Contract lines"
 
 msgid "Contract Loss Provision"
 msgstr "Contract Loss Provision"
@@ -16665,6 +16665,9 @@ msgstr "No billable items yet"
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "No billable items yet. Work charged to the billing element and the elements below it shows here."
 
+msgid "No billing lines yet"
+msgstr "No billing lines yet"
+
 msgid "No billing periods."
 msgstr "No billing periods."
 
@@ -16751,9 +16754,6 @@ msgstr "No components yet"
 
 msgid "No condition may match"
 msgstr "No condition may match"
-
-msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
-msgstr "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr "No contract rates. Hours bill at the default rates."
@@ -17262,6 +17262,9 @@ msgstr "No production recorded yet."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "No project billing invoices yet. The nightly billing run drafts one per billing period."
+
+msgid "No project contract bills this project"
+msgstr "No project contract bills this project"
 
 msgid "No project found"
 msgstr "No project found"
@@ -27392,6 +27395,9 @@ msgstr "Time & Materials"
 
 msgid "Time & Materials and Cost Plus lines bill from project cost every billing period."
 msgstr "Time & Materials and Cost Plus lines bill from project cost every billing period."
+
+msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
+msgstr "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Time and dollar utilization of the rental fleet by asset and class"
