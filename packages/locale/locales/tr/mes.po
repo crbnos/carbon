@@ -36,7 +36,7 @@ msgstr "{0} müşteri"
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
 msgid "{0} h"
-msgstr ""
+msgstr "{0} s"
 
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
@@ -100,7 +100,7 @@ msgid "{fails} sampled failure(s) are recorded and will NOT be completed — res
 msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları işlemler menüsünden çözün."
 
 msgid "{hour} h"
-msgstr ""
+msgstr "{hour} s"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
@@ -111,7 +111,7 @@ msgstr "{recorded}/{0} iş emirleri"
 
 #. placeholder {0}: formatHours(preview - selectedHours)
 msgid "+{0} h"
-msgstr ""
+msgstr "+{0} s"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} daha fazla"
@@ -157,7 +157,7 @@ msgid "Add"
 msgstr "Ekle"
 
 msgid "Add {phrase}"
-msgstr ""
+msgstr "Ekle {phrase}"
 
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
@@ -175,7 +175,7 @@ msgid "Add Passkey"
 msgstr "Geçiş Anahtarı Ekle"
 
 msgid "Add PTO"
-msgstr ""
+msgstr "İzin Ekle"
 
 msgid "Add Sample"
 msgstr "Örnek Ekle"
@@ -184,10 +184,10 @@ msgid "Add Spare Part"
 msgstr "Yedek Parça Ekle"
 
 msgid "Add what you worked on this week, then tap a day to log time."
-msgstr ""
+msgstr "Bu hafta üzerinde çalıştığınız işleri ekleyin, ardından saat kaydı yapmak için bir gün seçin."
 
 msgid "Add what you worked on to start logging time."
-msgstr ""
+msgstr "Saat kaydı başlatmak için üzerinde çalıştığınız işi ekleyin."
 
 msgid "Added"
 msgstr "Eklendi"
@@ -380,7 +380,7 @@ msgid "Characteristics"
 msgstr "Özellikler"
 
 msgid "Charge numbers"
-msgstr ""
+msgstr "Masraf numaraları"
 
 msgid "Chat"
 msgstr "Sohbet"
@@ -431,7 +431,7 @@ msgid "Clocked in since <0/>"
 msgstr "<0/>'den beri kaydedilmiş"
 
 msgid "Clocked on your timecard"
-msgstr ""
+msgstr "Zaman kartınızda kaydedildi"
 
 msgid "Close"
 msgstr "Kapat"
@@ -1236,7 +1236,7 @@ msgid "No issue types configured"
 msgstr "Sorun türü yapılandırılmadı"
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
-msgstr ""
+msgstr "Henüz izin ayarlanmadı. Yöneticinizden ERP'de bir tane ayarlamasını isteyin."
 
 msgid "No maintenance scheduled for today"
 msgstr "Bugün planlanmış bakım yok"
@@ -1492,7 +1492,7 @@ msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "Bir stil ve avatar seçin, veya yenileri için karıştırın."
 
 msgid "Pick the leave for your time off."
-msgstr ""
+msgstr "Zaman aşınız için izni seçin."
 
 msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
@@ -1597,7 +1597,7 @@ msgid "Project"
 msgstr "Proje"
 
 msgid "PTO"
-msgstr ""
+msgstr "İzin"
 
 msgid "Purchasing"
 msgstr "Satın alma"
@@ -2067,7 +2067,7 @@ msgstr "Etiket"
 
 #. placeholder {0}: selected.readableId
 msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr ""
+msgstr "{0}'ye zaman eklemek için bir gün seçin. Saatleri değiştirmek için çubuğun alt kenarını sürükleyin."
 
 msgid "The accent color used across Carbon."
 msgstr "Carbon'da kullanılan vurgu rengi."
@@ -2189,7 +2189,7 @@ msgid "Total"
 msgstr "Toplam"
 
 msgid "Total hours"
-msgstr ""
+msgstr "Toplam saat"
 
 msgid "Total Quantity"
 msgstr "Toplam Miktar"

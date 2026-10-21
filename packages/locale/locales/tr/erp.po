@@ -87,7 +87,7 @@ msgstr "{0, plural, one {# gün gecikme} other {# gün gecikme}}"
 
 #. placeholder {0}: -daysLeft
 msgid "{0, plural, one {# day} other {# days}} past {due}"
-msgstr ""
+msgstr "{0, plural, one {# gün} other {# gün}} {due}'nın geçmişi"
 
 #. placeholder {0}: groups.length
 msgid "{0, plural, one {# element changed} other {# elements changed}}"
@@ -112,7 +112,7 @@ msgstr "{0, plural, one {# etiket} other {# etiketler}}"
 
 #. placeholder {0}: gap.count
 msgid "{0, plural, one {# labor category has no bill rate and no contract rate.} other {# labor categories have no bill rate and no contract rate.}}"
-msgstr ""
+msgstr "{0, plural, one {# işçilik kategorisinin fatura ve sözleşme oranı yok.} other {# işçilik kategorisinin fatura ve sözleşme oranı yok.}}"
 
 #. placeholder {0}: baseline.linkCount
 msgid "{0, plural, one {# link} other {# links}}"
@@ -124,7 +124,7 @@ msgstr "{0, plural, one {# operasyon için zaman standardı yok} other {# operas
 
 #. placeholder {0}: progress.overdue
 msgid "{0, plural, one {# overdue} other {# overdue}}"
-msgstr ""
+msgstr "{0, plural, one {# gecikmiş} other {# gecikmiş}}"
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
@@ -160,7 +160,7 @@ msgstr "{0, plural, one {Carbon maliyetleri kaydetmeden önce maliyet oluşan # 
 
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {Creates # element} other {Creates # elements}}"
-msgstr ""
+msgstr "{0, plural, one {# öğe oluştur} other {# öğe oluştur}}"
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -286,16 +286,16 @@ msgstr "{0} s"
 
 #. placeholder {0}: formatQuantity(card.openQuantity)
 msgid "{0} h not posted yet"
-msgstr ""
+msgstr "{0} h henüz muhasebeleştirilmedi"
 
 #. placeholder {0}: formatQuantity(weekTotal)
 #. placeholder {1}: formatQuantity(timecardTotal)
 msgid "{0} h of {1} h on your timecards"
-msgstr ""
+msgstr "{0} h / puantajda {1} h"
 
 #. placeholder {0}: formatQuantity(draftHours)
 msgid "{0} h of draft time to submit"
-msgstr ""
+msgstr "{0} h gönderilecek taslak zaman"
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -307,7 +307,7 @@ msgstr "{0}'ın muhasebeleştirilecek <0/> kalması var."
 
 #. placeholder {0}: nameOf(gap.lineId)
 msgid "{0} has no billing element."
-msgstr ""
+msgstr "{0} faturalama öğesi yok."
 
 #. placeholder {0}: rentalUnitLabel(line)
 msgid "{0} has no rate."
@@ -368,12 +368,12 @@ msgstr "{0} / {1}"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 #. placeholder {2}: card.unitOfMeasureCode ?? ""
 msgid "{0} of {1} {2} issued"
-msgstr ""
+msgstr "{0} / {1} {2} verildi"
 
 #. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
-msgstr ""
+msgstr "{0} / {1} h"
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -390,11 +390,11 @@ msgstr "{0} / {memberCount} üye iş emirlerinin henüz tamamlanmadığı — bu
 
 #. placeholder {0}: progress.done
 msgid "{0} of {whole} done"
-msgstr ""
+msgstr "{0} / {whole} bitti"
 
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
-msgstr ""
+msgstr "{0} puantajda"
 
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
@@ -503,7 +503,7 @@ msgstr "{0} değeri eksik"
 
 #. placeholder {0}: itemOf(entry.itemId)
 msgid "{0} was issued to {element}"
-msgstr ""
+msgstr "{0} {element}'e verildi"
 
 #. placeholder {0}: warning.readableId
 #. placeholder {1}: warning.message
@@ -575,7 +575,7 @@ msgstr "{alreadyPlannedItemCount} parça atlandı — bunların zaten açık iş
 
 #. placeholder {0}: entry.costType
 msgid "{amount} of {0} posted to {element}"
-msgstr ""
+msgstr "{amount} / {0} {element}'e muhasebeleştirildi"
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% borçlar"
@@ -590,7 +590,7 @@ msgid "{assetCount} Assets"
 msgstr "{assetCount} Sabit Kıymet"
 
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
-msgstr ""
+msgstr "{billingReviewCount, plural, one {# faturalama öğesi inceleme için bekliyor} other {# faturalama öğeleri inceleme için bekliyor}}"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Bu parçayı doğrudan nihai ardıla yönlendirmeyi düşünün."
@@ -651,7 +651,7 @@ msgid "{days}d"
 msgstr "{days}g"
 
 msgid "{daysLeft, plural, one {# day} other {# days}} until {due}"
-msgstr ""
+msgstr "{daysLeft, plural, one {# gün} other {# gün}} {due}'a kadar"
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} bunu muhasebe defterinize gönderir, bu nedenle Carbon onu göndermez. Kaydedilen seçiminiz değişmesi durumunda korunur."
@@ -690,7 +690,7 @@ msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} daha: {hiddenNames}"
 
 msgid "{hour} h"
-msgstr ""
+msgstr "{hour} h"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -832,7 +832,7 @@ msgid "{selectedCount} selected"
 msgstr "{selectedCount} seçildi"
 
 msgid "{serialLabel} has no components recorded in Carbon. Build from the item's bill of materials instead."
-msgstr ""
+msgstr "{serialLabel} Carbon'da kaydedilmiş bileşen yok. Stok kartının ürün ağacından inşa edin."
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ay} other {# ay}}"
@@ -886,13 +886,13 @@ msgid "{variances, plural, one {# line differs from the expected quantity} other
 msgstr "{variances, plural, one {# satır beklenen miktardan farklıdır} other {# satır beklenen miktardan farklıdır}}"
 
 msgid "{who} commented on {element}"
-msgstr ""
+msgstr "{who} {element} üzerinde yorum yaptı"
 
 msgid "{who} logged {quantity} on {element}"
-msgstr ""
+msgstr "{who} {element}'e {quantity} kaydetti"
 
 msgid "{who} reversed {amount} on {element}"
-msgstr ""
+msgstr "{who} {element} üzerinde {amount} ters kayıt yaptı"
 
 msgid "{years}yr"
 msgstr "{years}yr"
@@ -916,7 +916,7 @@ msgstr "↩ {0} eski hale getirilen {1} kaynağından yönlendirildi"
 
 #. placeholder {0}: formatHours(preview - selectedHours)
 msgid "+{0} h"
-msgstr ""
+msgstr "+{0} h"
 
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
@@ -1149,10 +1149,10 @@ msgid "A batch needs at least one operation. To break up the whole batch, use Di
 msgstr "Bir parti en az bir operasyon gerektirir. Bütün partiyi ayırmak için bunun yerine Çöz'ü kullanın."
 
 msgid "A billing method that bills every cost charged under the line's billing element, times (1 + fee %)."
-msgstr ""
+msgstr "Satırın faturalama öğesi altında alınan her maliyeti (1 + ücret %) ile faturalayan bir faturalama yöntemi."
 
 msgid "A billing method that bills the hours charged under the line's billing element at a bill rate, plus material and other direct cost marked up by the handling %."
-msgstr ""
+msgstr "Satırın faturalama öğesi altında alınan saatleri fatura oranında, artı malzeme ve işleme yüzdesiyle işaretlenmiş diğer doğrudan maliyetleri faturalayan bir faturalama yöntemi."
 
 msgid "A Borrow moves one project's stock to another until a payback due date, at the lender's cost; a Payback returns it, and the lender gets back the cost it lent."
 msgstr "Bir ödünç bir projenin stokunu geri ödeme son tarihine kadar başka bir projeye aktarır, borç verenin maliyetine; bir Geri Ödeme bunu geri döndürür ve borç veren ödünç verdiği maliyeti geri alır."
@@ -1209,10 +1209,10 @@ msgid "A contract setting for the R&D tax reports. Cost of a Direct project unde
 msgstr "R&D vergi raporları için bir sözleşme ayarı. Finanse edilen bir sözleşme kapsamında bir Doğrudan projenin maliyeti, nitelikli bir araştırma gideri değildir; Varsayılan olarak, bir Cost Plus veya Zaman ve Malzeme satırı olan bir sözleşme finanse edilmiş olarak sayılır."
 
 msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
-msgstr ""
+msgstr "Yenilenebilecek bir dönem boyunca yinelenen ve tek seferlik satırları içeren, planlanmış bir fatura çizelgesinde hizmet öğelerini faturalayan bir sözleşme. Yalnızca bir hizmet sözleşmesi hizmet siparişlerini kapsar."
 
 msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
-msgstr ""
+msgstr "Bir projenin çalışmasını bir performans döneminde faturalayan bir sözleşme. Satırları Zaman ve Malzeme, Maliyet Artı veya Sabit Fiyattır ve bir çizelge yerine faturalama öğeleri ve faturalama olaylarından faturalanır."
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "Taşeron, belirli yetkinliklere ve kullanılabilir saatlere sahip bir tedarikçi ilgili kişisidir."
@@ -1464,7 +1464,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Sorununun başka yerlerde tekrarlanmasını durduran uygunsuzluk görevi — düzeltici onarım ve çevrelemeden farklı."
 
 msgid "A part"
-msgstr ""
+msgstr "Bir parça"
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "Bir parça, satın alınabilir veya üretilebilir belirli bir öğe hakkındaki bilgileri içerir."
@@ -1506,10 +1506,10 @@ msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expir
 msgstr "Fiyatlandırılmış satış teklifi; Taslak → Gönderilen → Sipariş edildi, ya da Kaybedildi, Süresi doldu veya İptal edildi ile sonlanır."
 
 msgid "A project contract line with a set price, billed on the billing events planned on the contract's Invoicing step."
-msgstr ""
+msgstr "Belirlenmiş fiyatlı bir proje sözleşmesi satırı, sözleşmenin Faturalama adımında planlanmış faturalama olaylarında faturalanır."
 
 msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
-msgstr ""
+msgstr "Bir proje sözleşmesi bu projenin nasıl faturalanacağını belirler: Zaman ve Malzeme, Maliyet Artı veya Sabit Fiyat."
 
 msgid "A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock."
 msgstr "Proje Taslak iken seçilen, projeyi aldığı stok sahibi yapan bir proje ayarı. İş emirleri ve sorunlar önce o stoğu çeker, ardından atanmamış stoğu."
@@ -1746,7 +1746,7 @@ msgid "A separate schedule for tax reporting when tax rules require a method dif
 msgstr "Vergi kuralları defter amortismanından farklı bir yöntem gerektirdiğinde vergi raporlaması için ayrı bir zaman çizelgesi."
 
 msgid "A serial's build history"
-msgstr ""
+msgstr "Bir serininin yapım geçmişi"
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Bir hizmet, satın alınan veya gerçekleştirilen faturalaştırılabilir bir etkinliktir — hiçbir zaman gönderilmez, alınmaz veya depolanmaz"
@@ -1860,7 +1860,7 @@ msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into
 msgstr "Vergilendirilecek bir ek ücret (işçilik, kurulum, yakıt) satıra eklenir ve vergi matrahına dahil edilir."
 
 msgid "A template"
-msgstr ""
+msgstr "Bir şablon"
 
 msgid "A template holds the elements and planned work a service order starts from."
 msgstr "Bir şablon, bir hizmet siparişinin başladığı öğeleri ve planlanan işi içerir."
@@ -2270,13 +2270,13 @@ msgid "Add {0} selected"
 msgstr "Ekle {0} seçili"
 
 msgid "Add {phrase}"
-msgstr ""
+msgstr "{phrase} ekle"
 
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
 
 msgid "Add a charge number to start logging time."
-msgstr ""
+msgstr "Zaman kaydetmeye başlamak için bir gider numarası ekleyin."
 
 msgid "Add a column below to sort the view"
 msgstr "Görünümü sıralamak için aşağı bir sütun ekleyin"
@@ -2297,7 +2297,7 @@ msgid "Add a domain"
 msgstr "Alan adı ekle"
 
 msgid "Add a line for each CLIN: Time & Materials, Cost Plus or Fixed Price."
-msgstr ""
+msgstr "Her CLIN için bir satır ekleyin: Zaman ve Malzeme, Maliyet Artı veya Sabit Fiyat."
 
 msgid "Add a line to the document"
 msgstr "Belgeye bir satır ekle"
@@ -2360,7 +2360,7 @@ msgid "Add Asset Class"
 msgstr "Varlık Sınıfı Ekle"
 
 msgid "Add assignee"
-msgstr ""
+msgstr "Atanan ekle"
 
 msgid "Add at least one asset before activating."
 msgstr "Etkinleştirmeden önce en az bir varlık ekleyin."
@@ -2369,7 +2369,7 @@ msgid "Add at least one asset."
 msgstr "En az bir varlık ekleyin."
 
 msgid "Add at least one line."
-msgstr ""
+msgstr "En az bir satır ekleyin."
 
 msgid "Add at least one service."
 msgstr "En az bir hizmet ekleyin."
@@ -2396,7 +2396,7 @@ msgid "Add Charge"
 msgstr "Ücret Ekle"
 
 msgid "Add Charge Number"
-msgstr ""
+msgstr "Gider Numarası Ekle"
 
 msgid "Add child"
 msgstr "Alt öğe Ekle"
@@ -2423,7 +2423,7 @@ msgid "Add Contractor"
 msgstr "Taşeron Ekle"
 
 msgid "Add cost"
-msgstr ""
+msgstr "Maliyet ekle"
 
 msgid "Add cost center"
 msgstr "Maliyet Merkezi Ekle"
@@ -2438,7 +2438,7 @@ msgid "Add Event"
 msgstr "Olay Ekle"
 
 msgid "Add expense"
-msgstr ""
+msgstr "Gider ekle"
 
 msgid "Add Expense"
 msgstr "Gider Ekle"
@@ -2474,7 +2474,7 @@ msgid "Add Journal Entry"
 msgstr "Yevmiye Kaydı Ekle"
 
 msgid "Add labor"
-msgstr ""
+msgstr "İşçilik ekle"
 
 msgid "Add line"
 msgstr "Satır ekle"
@@ -2504,7 +2504,7 @@ msgid "Add match"
 msgstr "Eşleştirme ekle"
 
 msgid "Add material"
-msgstr ""
+msgstr "Malzeme ekle"
 
 msgid "Add Member"
 msgstr "Üye Ekle"
@@ -2574,7 +2574,7 @@ msgid "Add Property"
 msgstr "Özellik Ekle"
 
 msgid "Add PTO"
-msgstr ""
+msgstr "İzin ekle"
 
 msgid "Add Question"
 msgstr "Soru Ekle"
@@ -2646,10 +2646,10 @@ msgid "Add Supplier"
 msgstr "Tedarikçi Ekle"
 
 msgid "Add the charge numbers you worked on this week, then click a day to log time."
-msgstr ""
+msgstr "Bu hafta çalıştığınız masraf numaralarını ekleyin, sonra zaman kaydetmek için bir güne tıklayın."
 
 msgid "Add the components of a serial, an item or a template as elements."
-msgstr ""
+msgstr "Bir seri, bir stok kartı veya bir şablonun bileşenlerini öğeler olarak ekleyin."
 
 msgid "Add the items to move."
 msgstr "Taşınacak stok kartlarını Ekleyiniz."
@@ -2694,7 +2694,7 @@ msgid "Add tools"
 msgstr "Araç ekle"
 
 msgid "Add under"
-msgstr ""
+msgstr "Altına ekle"
 
 msgid "Add Unit"
 msgstr "Birim Ekle"
@@ -2941,7 +2941,7 @@ msgid "All transfers"
 msgstr "Tüm transferler"
 
 msgid "All types"
-msgstr ""
+msgstr "Tüm türler"
 
 msgid "All Types"
 msgstr "Tüm Türler"
@@ -3105,7 +3105,7 @@ msgid "An entry older than this needs a late reason."
 msgstr "Bundan daha eski bir giriş geç bir neden gerekir."
 
 msgid "An exempt employee's hours over the standard week dilute the cost of each hour"
-msgstr ""
+msgstr "Muaf bir çalışanın standart hafta üzerindeki saatleri, her saatin maliyetini azaltır."
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "Bir iş akışı bu adıma ulaştığında Carbon'un sisteminize gönderdiği bir https isteği, yapılandırdığınız başlıkları ve gövdeyi taşır."
@@ -3174,7 +3174,7 @@ msgid "An item's assignee changes"
 msgstr "Bir öğenin atanmış kişisi değişir"
 
 msgid "An item's bill of materials"
-msgstr ""
+msgstr "Bir stok kartının ürün ağacı"
 
 msgid "An item's default method type changes"
 msgstr "Bir stok kartının varsayılan tedarik şekli değişir"
@@ -4185,7 +4185,7 @@ msgid "Asset Cost on Disposal (default)"
 msgstr "Elden Çıkarma Sırasında Varlık Maliyeti (varsayılan)"
 
 msgid "Asset GL account for revenue earned before it is invoiced, for rentals and contracts; cleared when the invoice posts."
-msgstr ""
+msgstr "Kiralama ve sözleşmeler için faturalanmadan önce kazanılan hasılat için varlık muhasebe hesabı; fatura muhasebeleştirildiğinde temizlenir."
 
 msgid "Asset GL account recognized when a sales-type lease starts, holding the present value of the payments and residual; each rental payment reduces it."
 msgstr "Satış türü bir kiralama başladığında muhasebeleştirilen muhasebe hesabı, ödemelerin ve artık değerin bugünkü değerini tutarak; her kira ödemesi onu azaltır."
@@ -4686,7 +4686,7 @@ msgid "Before You Confirm"
 msgstr "Onaylamadan Önce"
 
 msgid "Before you submit"
-msgstr ""
+msgstr "Göndermeden önce"
 
 msgid "Beginning"
 msgstr "Başlangıç"
@@ -4771,7 +4771,7 @@ msgid "Billed On"
 msgstr "Faturalandığı Tarih"
 
 msgid "Billed on the line's billing events"
-msgstr ""
+msgstr "Satırın faturalama etkinliklerine göre faturalandı"
 
 msgid "Billed through"
 msgstr "Faturalandığı tarih"
@@ -4807,7 +4807,7 @@ msgid "Billing Element"
 msgstr "Fatura Öğesi"
 
 msgid "Billing Events"
-msgstr ""
+msgstr "Faturalama Etkinlikleri"
 
 msgid "Billing Frequency"
 msgstr "Faturalama Sıklığı"
@@ -4819,7 +4819,7 @@ msgid "Billing Method"
 msgstr "Fatura Yöntemi"
 
 msgid "Billing Period"
-msgstr ""
+msgstr "Faturalama Dönemi"
 
 msgid "Billing Periods"
 msgstr "Faturalandırma Dönemleri"
@@ -5034,13 +5034,13 @@ msgid "Build for Fleet"
 msgstr "Filo İçin Üret"
 
 msgid "Build from"
-msgstr ""
+msgstr "Şuradan oluştur"
 
 msgid "Build from part"
 msgstr "Parçadan oluştur"
 
 msgid "Build from Part"
-msgstr ""
+msgstr "Parçadan oluştur"
 
 msgid "Build integrations and customizations"
 msgstr "Entegrasyonlar ve özelleştirmeler oluşturun"
@@ -5705,10 +5705,10 @@ msgid "Charge at receipt"
 msgstr "Makbuzda yükle"
 
 msgid "Charge cost"
-msgstr ""
+msgstr "Masraf maliyeti"
 
 msgid "Charge Cost"
-msgstr ""
+msgstr "Masraf Maliyeti"
 
 msgid "Charge Date"
 msgstr "Ücret Tarihi"
@@ -5723,7 +5723,7 @@ msgid "Charge number (optional)"
 msgstr "Harcama numarası (isteğe bağlı)"
 
 msgid "Charge numbers"
-msgstr ""
+msgstr "Masraf numaraları"
 
 msgid "Charge Numbers"
 msgstr "Harcama Numaraları"
@@ -5876,7 +5876,7 @@ msgid "Choose the fleet units this agreement rents. Each starts at its rate on f
 msgstr "Bu anlaşmanın kiraladığı filo adetlerini seçin. Her biri dosyadaki oranında başlar; ızgarada değiştirin."
 
 msgid "Choose the item first"
-msgstr ""
+msgstr "Önce stok kartını seçin"
 
 msgid "Choose the new parent"
 msgstr "Yeni üst öğeyi seç"
@@ -5888,7 +5888,7 @@ msgid "Choose what appears on the printed job traveler."
 msgstr "Yazdırılan İş takip kartında neyin görüneceğini seçin."
 
 msgid "Choose what to build from to see a preview."
-msgstr ""
+msgstr "Önizlemeyi görmek için neyi yapacağını seçin."
 
 msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
 msgstr "MRP'nin otomatik olarak ne zaman yeniden hesaplandığını seçin. Planlama sayfalarındaki Yeniden Hesapla seçeneğiyle istediğiniz zaman elle çalıştırabilirsiniz."
@@ -5909,7 +5909,7 @@ msgid "Chosen while the project is Draft"
 msgstr "Proje Taslak iken seçildi"
 
 msgid "CIP class"
-msgstr ""
+msgstr "CIP sınıfı"
 
 msgid "CIP Class"
 msgstr "CIP Sınıfı"
@@ -5976,7 +5976,7 @@ msgstr "Demo verisi temizleniyor"
 
 #. placeholder {0}: selected.readableId
 msgid "Click a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr ""
+msgstr "Saati {0} 'a eklemek için bir güne tıklayın. Saatlerini değiştirmek için çubuğun alt kenarını sürükleyin."
 
 msgid "Click again to disconnect"
 msgstr "Bağlantıyı kesmek için yeniden tıklayın"
@@ -6015,7 +6015,7 @@ msgid "Clocked in since <0/>"
 msgstr "<0/> tarihinden beri saatlenmiş"
 
 msgid "Clocked on your timecard"
-msgstr ""
+msgstr "Zaman kartında kaydedildi"
 
 msgid "Close"
 msgstr "Kapat"
@@ -6174,7 +6174,7 @@ msgid "Coming soon"
 msgstr "Yakında"
 
 msgid "Coming up"
-msgstr ""
+msgstr "Yaklaşan"
 
 msgid "comma-separated values"
 msgstr "virgülle ayrılmış değerler"
@@ -6556,7 +6556,7 @@ msgid "Confirming fixes the invoice schedule and starts invoicing. The terms and
 msgstr "Onaylamak fatura çizelgesini sabitler ve faturalamaya başlar. Koşullar ve satırlar daha sonra Değişiklikleri Yap ile değiştirilir."
 
 msgid "Confirming starts billing: project cost each billing period, and each billing event on its date. After that the lines change with Amend."
-msgstr ""
+msgstr "Onayla faturalama başlar: her faturalama döneminde proje maliyeti ve her faturalama etkinliği tarihinde. Bundan sonra satırlar Değiştir ile değişir."
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "Dönem içinde muhasebeleştirilmiş her yevmiye kaydının eşit borç ve alacak tutarına sahip olduğunu doğrular. Herhangi bir giriş dengesiz kalırsa deneme bilançosu tutarlarıyla uyuşmayacak, bu nedenle dönem kapatılmadan önce düzeltilmesi gerekir."
@@ -6745,7 +6745,7 @@ msgid "Contract Loss Provision"
 msgstr "Sözleşme Kaybı Karşılığı"
 
 msgid "Contract Number"
-msgstr ""
+msgstr "Sözleşme Numarası"
 
 msgid "Contract price"
 msgstr "Sözleşme fiyatı"
@@ -7164,7 +7164,7 @@ msgid "Cost"
 msgstr "Maliyet"
 
 msgid "Cost account"
-msgstr ""
+msgstr "Maliyet hesabı"
 
 msgid "Cost Account"
 msgstr "Maliyet Hesabı"
@@ -7191,7 +7191,7 @@ msgid "Cost Centers"
 msgstr "Maliyet Merkezleri"
 
 msgid "Cost charged to Contract projects. The revenue run moves it to cost of goods sold as revenue is earned"
-msgstr ""
+msgstr "Sözleşme projelerine yüklenen maliyet. Hasılat çalıştırması, hasılat kazanıldıkça bunu satılan malın maliyetine taşır."
 
 msgid "Cost charged to Expense projects"
 msgstr "Gider projelerine yüklenen maliyet"
@@ -7476,7 +7476,7 @@ msgid "Create Contract"
 msgstr "Sözleşme Oluştur"
 
 msgid "Create Elements"
-msgstr ""
+msgstr "Öğeler Oluştur"
 
 msgid "Create Forecast"
 msgstr "Tahmin Oluştur"
@@ -9745,7 +9745,7 @@ msgid "Each rental agreement's or contract's salesperson (or its creator) gets a
 msgstr "Her kiralama anlaşmasının veya sözleşmenin satış temsilcisi (veya yaratıcısı) faturalarının günlük bir özetini alır."
 
 msgid "Each row is an invoice for a Fixed Price line. Add, split or move rows until each line's rows add up to its price."
-msgstr ""
+msgstr "Her satır, Sabit Fiyat satırı için bir faturadır. Her satırın satırları fiyatına eşit olana kadar satırları ekleyin, bölün veya taşıyın."
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Her tedarikçinin her iş emrinden dış operasyonları yeni bir satın alma siparişine veya seçtiğiniz mevcut bir taslağa yazılır."
@@ -11609,7 +11609,7 @@ msgid "Fee (%)"
 msgstr "Ücret (%)"
 
 msgid "Fee / Handling"
-msgstr ""
+msgstr "Ücret / İşleme"
 
 msgid "Fee on allowable cost"
 msgstr "İzin verilen maliyet üzerinde ücret"
@@ -11875,10 +11875,10 @@ msgid "Fixed price"
 msgstr "Sabit fiyat"
 
 msgid "Fixed Price"
-msgstr ""
+msgstr "Sabit Fiyat"
 
 msgid "Fixed Price Total"
-msgstr ""
+msgstr "Sabit Fiyat Toplamı"
 
 msgid "Fixed Reorder"
 msgstr "Sabit Yeniden Sipariş"
@@ -11923,7 +11923,7 @@ msgid "FLSA status"
 msgstr "FLSA durumu"
 
 msgid "FLSA Status"
-msgstr ""
+msgstr "FLSA Durumu"
 
 msgid "Focus on {label}"
 msgstr "Şuna odaklan: {label}"
@@ -11938,7 +11938,7 @@ msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
 
 msgid "For Form 6765 Section E"
-msgstr ""
+msgstr "Form 6765 Bölüm E için"
 
 msgid "Forecast"
 msgstr "Tahmin"
@@ -12076,7 +12076,7 @@ msgid "Functional"
 msgstr "İşlevsel"
 
 msgid "funded"
-msgstr ""
+msgstr "finanse edildi"
 
 msgid "Funded"
 msgstr "Finansmanlı"
@@ -12731,7 +12731,7 @@ msgid "How a contract line bills: Fixed (its schedule), Time & Materials (hours 
 msgstr "Bir kontrat satırının nasıl faturalandırılacağı: Sabit (çizelgesi), Zaman ve Malzeme (saatler × bir fatura oranı, artı marjlı maliyet) veya Maliyet Artı (maliyet × (1 + ücret %))."
 
 msgid "How a contract line earns its revenue: Daily or Even Period spread it over the line's revenue dates, Right to Invoice follows the billable items, and Percent Complete follows cost to date over the estimate at completion."
-msgstr ""
+msgstr "Bir sözleşme satırı hasılatını nasıl kazanır: Günlük veya Dönem boyunca satırın hasılat tarihleri üzerine yayıl, Faturalandığı Tarih faturalanabilir öğeleri izler ve Yüzde Tamamlı tamamlanma tahminine göre bugüne kadar maliyeti izler."
 
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "Bir sözleşme veya değişikliğin yinelenen gelir raporlaması için nasıl sınıflandırıldığı: Yeni Satış, Mevcut, Genişleme, Reaktivasyon veya Daralma. Carbon bunu önerir ve siz bunu değiştirebilirsiniz."
@@ -12806,7 +12806,7 @@ msgid "How many fractional digits to keep when rounding amounts in this currency
 msgstr "Bu para biriminde tutarlar yuvarlanırken kaç kesirli rakam tutulur."
 
 msgid "How many levels of components below the part"
-msgstr ""
+msgstr "Parçanın altında kaç seviye bileşen"
 
 msgid "How many of the successor replace one old part"
 msgstr "Bir eski parçanın yerini kaç ardıl alır"
@@ -12827,7 +12827,7 @@ msgid "How often the customer is invoiced, and from when. The invoices below fol
 msgstr "Müşteriye ne sıklıkla fatura gönderilir ve ne zaman başlayıp gönderilir. Aşağıdaki faturalar bunu takip eder."
 
 msgid "How often the project is billed. Each billing period is invoiced after it ends."
-msgstr ""
+msgstr "Projenin ne sıklıkla faturalandığı. Her faturalama dönemi sona erdikten sonra faturalandırılır."
 
 msgid "How often this gauge must be recalibrated; combined with Last Calibration Date to recompute Next Calibration Date automatically."
 msgstr "Bu ölçüm aletinin ne sıklıkla kalibre edilmesi gerektiği; Son Kalibrasyon Tarihi ile birleştirilerek Sonraki Kalibrasyon Tarihini otomatik olarak yeniden hesaplamak için."
@@ -13485,7 +13485,7 @@ msgstr "İçine"
 
 #. placeholder {0}: newParent.name
 msgid "Into {0}"
-msgstr ""
+msgstr "{0} içine"
 
 msgid "inv"
 msgstr "stok"
@@ -13801,7 +13801,7 @@ msgid "Issue not found"
 msgstr "Sorun bulunamadı"
 
 msgid "Issue part"
-msgstr ""
+msgstr "Parça Çıkışı"
 
 msgid "Issue Part"
 msgstr "Parça Çıkışı"
@@ -13861,7 +13861,7 @@ msgid "It is approved but cannot apply. Reopen it, check these rows, then submit
 msgstr "Onaylandı ama uygulanamıyor. Yeniden açın, bu satırları kontrol edin, ardından yeniden gönderin."
 
 msgid "It shows with no hours until you add some."
-msgstr ""
+msgstr "Saat ekleyene kadar hiçbir saat göstermez."
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durdurur. Hiçbir şey silinmez."
@@ -13974,7 +13974,7 @@ msgstr "Stok kartları: stok kartı veritabanı, BOM'lar, operasyon listesi, mü
 
 #. placeholder {0}: formatQuantity(rowTotal(removing))
 msgid "Its {0} h of draft time this week are deleted."
-msgstr ""
+msgstr "Bu haftanın {0} saat taslak zaman silindi."
 
 msgid "Its amounts go back to what each line has left to invoice."
 msgstr "Tutarları, her satırın faturalandırılacak kalanına geri döner."
@@ -14305,7 +14305,7 @@ msgid "Last scheduled push {when}:"
 msgstr "Son planlanan gönderim {when}:"
 
 msgid "Last service"
-msgstr ""
+msgstr "Son Hizmet"
 
 msgid "Last Service"
 msgstr "Son Hizmet"
@@ -14447,10 +14447,10 @@ msgid "Leave"
 msgstr "İzin"
 
 msgid "Leave a comment"
-msgstr ""
+msgstr "Yorum Bırak"
 
 msgid "Leave a comment..."
-msgstr ""
+msgstr "Yorum Bırak..."
 
 msgid "Leave any related receipts untouched"
 msgstr "İlgili tüm makbuzları dokunulmamış bırakır"
@@ -14546,7 +14546,7 @@ msgid "Level of Effort"
 msgstr "Çaba Düzeyi"
 
 msgid "Levels"
-msgstr ""
+msgstr "Seviyeler"
 
 msgid "Liability"
 msgstr "Yükümlülük"
@@ -14869,7 +14869,7 @@ msgid "Lock Period"
 msgstr "Dönemi Kilitle"
 
 msgid "Lock plan after milestone"
-msgstr ""
+msgstr "Kilometre taşından sonra planı kilitle"
 
 msgid "Lock Plan After Milestone"
 msgstr "Kilometre Taşından Sonra Planı Kilitle"
@@ -15376,7 +15376,7 @@ msgid "Material item"
 msgstr "Malzeme Stok Kartı"
 
 msgid "Material measurement point"
-msgstr ""
+msgstr "Malzeme Ölçüm Noktası"
 
 msgid "Material Planning"
 msgstr "Malzeme Planlama"
@@ -15965,7 +15965,7 @@ msgstr "Gerek duyulan hedef"
 
 #. placeholder {0}: formatDate(card.date)
 msgid "Needed {0}"
-msgstr ""
+msgstr "Gerekli {0}"
 
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "Gerekli olan, o gün vadesi gelen iş saatleri {personDayHours}s'ye bölünmüş, yuvarlanmıştır — filtrelediğiniz vardiya veya bu konumdaki en yaygın vardiya uzunluğu."
@@ -16305,7 +16305,7 @@ msgid "New Project"
 msgstr "Yeni Proje"
 
 msgid "New Project Contract"
-msgstr ""
+msgstr "Yeni Proje Sözleşmesi"
 
 msgid "New Project Stock Transfer"
 msgstr "Yeni Proje Stok Transferi"
@@ -16467,7 +16467,7 @@ msgid "New Workflow"
 msgstr "Yeni İş Akışı"
 
 msgid "Newest"
-msgstr ""
+msgstr "En Yeni"
 
 msgid "Newest first"
 msgstr "En yeniden önce"
@@ -16485,7 +16485,7 @@ msgid "Next 7 days"
 msgstr "Sonraki 7 gün"
 
 msgid "Next billing event"
-msgstr ""
+msgstr "Sonraki Faturalandırma Olayı"
 
 msgid "Next Calibration"
 msgstr "Son Kalibrasyon"
@@ -16617,7 +16617,7 @@ msgid "No Active Quotes"
 msgstr "Aktif Teklif Yok"
 
 msgid "No activity yet."
-msgstr ""
+msgstr "Henüz aktivite yok."
 
 msgid "No addresses found"
 msgstr "Adres bulunamadı"
@@ -16681,7 +16681,7 @@ msgid "No billable items yet. Work charged to the billing element and the elemen
 msgstr "Henüz faturalandırılabilir öğe yok. Faturalandırma öğesine ve altındaki öğelere tahakkuk ettirilecek iş burada gösterilir."
 
 msgid "No billing lines yet"
-msgstr ""
+msgstr "Henüz faturalandırma satırları yok"
 
 msgid "No billing periods."
 msgstr "Fatura dönemi yok."
@@ -16690,7 +16690,7 @@ msgid "No BOM input has a shelf-life policy"
 msgstr "Hiçbir BOM girdisi raf ömrü politikasına sahip değil"
 
 msgid "No budget set on the plan. Actual {actualText} · Committed {committedText}"
-msgstr ""
+msgstr "Planda bütçe belirlenmedi. Gerçek {actualText} · Yükümlü {committedText}"
 
 msgid "No CAD model to preview."
 msgstr "Önizlemek için CAD modeli yok."
@@ -16726,7 +16726,7 @@ msgid "No changes yet. Once the lease is active, Modify is in the header and Ter
 msgstr "Henüz değişiklik yok. Kiralama aktif olduktan sonra, Değiştir başlık kısmında ve Sonlandır ile Satın Al her varlığın sayfasında yer alır."
 
 msgid "No charges match the filters."
-msgstr ""
+msgstr "Filtrelerle eşleşen ücretler yok."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Herhangi bir ücret yok. Kilometre, hasar, teslimat veya temizlik ücretleri sonraki faturaya dahil edilir."
@@ -16789,7 +16789,7 @@ msgid "No cost history found"
 msgstr "Hiç maliyet geçmişi bulunamadı"
 
 msgid "No costs have been posted to this element yet."
-msgstr ""
+msgstr "Bu öğeye henüz hiç maliyet muhasebeleştirilmedi."
 
 msgid "No costs posted yet"
 msgstr "Henüz maliyet muhasebeleştirilmedi"
@@ -16840,7 +16840,7 @@ msgid "No draft make method for this item yet."
 msgstr "Bu stok kartı için henüz taslak üretim yöntemi yok."
 
 msgid "No draft time this week"
-msgstr ""
+msgstr "Bu hafta taslak zaman yok"
 
 msgid "No draft versions available"
 msgstr "Kullanılabilir taslak sürüm yok"
@@ -16900,7 +16900,7 @@ msgid "No end"
 msgstr "Bitiş tarihi yok"
 
 msgid "No estimated costs."
-msgstr ""
+msgstr "Tahmini maliyet yok."
 
 msgid "No events found."
 msgstr "Olay bulunamadı."
@@ -17023,13 +17023,13 @@ msgid "No lease run is posted yet"
 msgstr "Henüz kiralama çalıştırması muhasebeleştirilmedi"
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
-msgstr ""
+msgstr "Hiçbir izin öğesi ayarlanmadı. Dolaylı bir projede, zaman kaydı öğesini açın ve İzni etkinleştirin."
 
 msgid "No lines"
 msgstr "Satır yok"
 
 msgid "No lines match the filters."
-msgstr ""
+msgstr "Filtrelerle eşleşen satırlar yok."
 
 msgid "No lines to map"
 msgstr "Eşlenecek satır yok"
@@ -17038,7 +17038,7 @@ msgid "No lines yet"
 msgstr "Henüz satır yok"
 
 msgid "No lines yet. Add a line before confirming the contract."
-msgstr ""
+msgstr "Henüz satır yok. Sözleşmeyi onaylamadan önce bir satır ekleyin."
 
 msgid "No list variables available upstream."
 msgstr "Yukarı akışta kullanılabilir liste değişkeni yok."
@@ -17086,7 +17086,7 @@ msgid "No milestones yet"
 msgstr "Henüz kilometre taşı yok"
 
 msgid "No milestones yet."
-msgstr ""
+msgstr "Henüz kilometre taşı yok."
 
 msgid "No modules found"
 msgstr "Modül bulunamadı"
@@ -17140,7 +17140,7 @@ msgid "No open sales order lines"
 msgstr "Açık satış sipariş satırı yok"
 
 msgid "No open work has a target date."
-msgstr ""
+msgstr "Hiçbir açık işin hedef tarihi yoktur."
 
 msgid "No operations found."
 msgstr "Operasyon bulunamadı."
@@ -17279,7 +17279,7 @@ msgid "No project billing invoices yet. The nightly billing run drafts one per b
 msgstr "Henüz proje faturası yok. Gecelik faturalama çalışması, her faturalama dönemi için bir taslak oluşturur."
 
 msgid "No project contract bills this project"
-msgstr ""
+msgstr "Hiçbir proje sözleşmesi bu projeyi faturalandırmaz"
 
 msgid "No project found"
 msgstr "Proje bulunamadı"
@@ -17543,7 +17543,7 @@ msgid "No work packages yet. Give a chargeable element below a control account a
 msgstr "Henüz çalışma paketi yok. Kontrol hesabının altındaki ücretlendirilebilir bir öğeye kazanılmış değer tekniği verin."
 
 msgid "No work yet. <0>Plan the project</0>"
-msgstr ""
+msgstr "Henüz iş yok. <0>Projeyi planlayın</0>"
 
 msgid "No, More Work"
 msgstr "Hayır, Daha Çok İş"
@@ -17719,10 +17719,10 @@ msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."
 
 msgid "Nothing has been charged yet."
-msgstr ""
+msgstr "Henüz hiçbir şey ücretlendirilmedi."
 
 msgid "Nothing has been charged yet. Log time, issue material, or charge a job or purchase order to this element."
-msgstr ""
+msgstr "Henüz hiçbir şey ücretlendirilmedi. Bu öğeye zaman kaydedin, malzeme çıkışı yapın veya bir İş emri ya da Satın alma siparişi ücretlendir."
 
 msgid "Nothing here matches your search and filters."
 msgstr "Burada arama ve filtrelerinizle eşleşen hiçbir şey yok."
@@ -17761,7 +17761,7 @@ msgid "Nothing to bill yet. Time, parts and expenses charged to the work show he
 msgstr "Henüz faturalanacak hiçbir şey yok. İşe ücretlendirilen zaman, parçalar ve giderler burada görünür."
 
 msgid "Nothing to build"
-msgstr ""
+msgstr "İnşa edilecek bir şey yok"
 
 msgid "Nothing to post for this period."
 msgstr "Bu dönem için muhasebeleştirecek bir şey yok."
@@ -17880,7 +17880,7 @@ msgid "Old Value"
 msgstr "Eski Değer"
 
 msgid "Oldest"
-msgstr ""
+msgstr "En Eski"
 
 msgid "Oldest first"
 msgstr "En eski önce"
@@ -17955,7 +17955,7 @@ msgid "On Storage Unit"
 msgstr "Depolama biriminde"
 
 msgid "On the Missing Time report"
-msgstr ""
+msgstr "Eksik Zaman raporunda"
 
 msgid "On this operation"
 msgstr "Bu operasyonda"
@@ -18014,10 +18014,10 @@ msgid "One firing of a workflow, recorded step by step with the values each step
 msgstr "Bir iş akışının bir kez çalıştırılması, her adımın kullandığı ve ürettiği değerlerle adım adım kaydedilmiş, iş akışının sahibinin izinleriyle hareket eder."
 
 msgid "One item of a project's tree, typed System, Requirement, Function, Task, Test Case or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
-msgstr ""
+msgstr "Bir projenin ağacının öğesi, Sistem, Gereklilik, İşlev, Görev, Test Durumu veya Parametre olarak yazılan, ST-12 gibi okunabilir kimlikle: proje tanımlayıcısı ve bir numaralandırma numarası."
 
 msgid "One line per CLIN. Time & Materials and Cost Plus lines bill from project cost; a Fixed Price line bills its price. Click a cell to change it."
-msgstr ""
+msgstr "CLIN başına bir satır. Zaman & Malzeme ve Maliyet Artı satırları proje maliyetinden faturalanır; Sabit Fiyat satırı kendi fiyatından faturalanır. Değiştirmek için bir hücreyi tıklayın."
 
 msgid "One or more quantities cannot meet this date"
 msgstr "Bir veya daha fazla miktar bu tarihi karşılayamıyor"
@@ -18215,7 +18215,7 @@ msgid "Open menu"
 msgstr "Menüyü aç"
 
 msgid "Open My Time"
-msgstr ""
+msgstr "Zamanımı Göster"
 
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "Tasarıdaki planı değiştirmek için birini açın; inceleyenler onaylamadan önce uygulanır."
@@ -18616,7 +18616,7 @@ msgid "Outstanding"
 msgstr "Ödenmemiş"
 
 msgid "Over estimate first"
-msgstr ""
+msgstr "Önce Tahminini Aşma"
 
 msgid "Over-applied by"
 msgstr "Fazla uygulandı"
@@ -18674,7 +18674,7 @@ msgid "Override Classification of {0}"
 msgstr "{0} Sınıflandırmasını Geçersiz Kıl"
 
 msgid "Override coverage"
-msgstr ""
+msgstr "Kapsamı Geçersiz Kıl"
 
 msgid "Override Coverage"
 msgstr "Geçersiz Kılma Kapsamı"
@@ -19186,7 +19186,7 @@ msgid "Period lock policy"
 msgstr "Dönem kilit politikası"
 
 msgid "Period of Performance"
-msgstr ""
+msgstr "Performans Dönemi"
 
 msgid "Period Start"
 msgstr "Dönem Başlangıcı"
@@ -19387,7 +19387,7 @@ msgid "Plan lock"
 msgstr "Plan Kilidi"
 
 msgid "Plan order"
-msgstr ""
+msgstr "Siparişi Planlayın"
 
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "Birkaç projeyi bir olarak planlayın, hepsi için bir kez satın alın ve her siparişin hangi proje için olduğunu görün."
@@ -19484,7 +19484,7 @@ msgid "Planning Ownership"
 msgstr "Planlama Sahipliği"
 
 msgid "Planning priority"
-msgstr ""
+msgstr "Planlama Önceliği"
 
 msgid "Planning Priority"
 msgstr "Planlama Önceliği"
@@ -19635,7 +19635,7 @@ msgid "Posted By"
 msgstr "Gönderen"
 
 msgid "Posted from the service order"
-msgstr ""
+msgstr "Hizmet emrinden muhasebeleştirildi"
 
 msgid "Posted hours"
 msgstr "Muhasebeleştirilmiş saatler"
@@ -19850,7 +19850,7 @@ msgid "Print batch list"
 msgstr "Parti Listesini Yazdır"
 
 msgid "Print estimate"
-msgstr ""
+msgstr "Tahmini yazdır"
 
 msgid "Print Estimate"
 msgstr "Tahmini Yazdır"
@@ -20023,7 +20023,7 @@ msgstr "Proje Faturalaması"
 
 #. placeholder {0}: gap.baseCurrencyCode
 msgid "Project billing needs the contract in the base currency, {0}."
-msgstr ""
+msgstr "Proje faturalandırması, temel para biriminde sözleşme gerektirir, {0}."
 
 msgid "Project Change Request"
 msgstr "Proje Değişiklik İsteği"
@@ -20032,19 +20032,19 @@ msgid "Project Change Requests"
 msgstr "Proje Değişiklik İstekleri"
 
 msgid "Project contract"
-msgstr ""
+msgstr "Proje sözleşmesi"
 
 msgid "Project Contract"
-msgstr ""
+msgstr "Proje Sözleşmesi"
 
 msgid "Project contract {contractId} is not confirmed"
-msgstr ""
+msgstr "Proje sözleşmesi {contractId} teyit edilmedi"
 
 msgid "Project Contracts"
-msgstr ""
+msgstr "Proje Sözleşmeleri"
 
 msgid "Project control"
-msgstr ""
+msgstr "Proje kontrolü"
 
 msgid "Project Control"
 msgstr "Proje Kontrolü"
@@ -20211,7 +20211,7 @@ msgid "Provisional rate"
 msgstr "Geçici Oran"
 
 msgid "PTO"
-msgstr ""
+msgstr "PTO"
 
 msgid "Public"
 msgstr "Herkese açık"
@@ -20999,7 +20999,7 @@ msgid "Recent"
 msgstr "Son Aramalar"
 
 msgid "Recent activity"
-msgstr ""
+msgstr "Son aktiviteler"
 
 msgid "Recent payments"
 msgstr "Son ödemeler"
@@ -21371,7 +21371,7 @@ msgstr "{1}'den {memberCount} operasyondan {0}'ını kaldırılsın mı?"
 
 #. placeholder {0}: removing.readableId
 msgid "Remove {0}?"
-msgstr ""
+msgstr "{0} kaldırılsın mı?"
 
 msgid "Remove {deletingName} from the plan?"
 msgstr "{deletingName} planından kaldırılsın mı?"
@@ -22082,7 +22082,7 @@ msgid "Revenue Dates"
 msgstr "Hasılat Tarihleri"
 
 msgid "Revenue earned before it is invoiced, for rentals and contracts"
-msgstr ""
+msgstr "Kiralamalar ve sözleşmeler için faturalanmadan önce kazanılan hasılat"
 
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "Kazanılmış ancak henüz faturalandırılmamış hasılat, örneğin bir birimin zaten kirada olduğu günler için kiralama; muhasebeleştirme çalıştırması bunu tahakkuk ettirir ve o dönemin faturası bunu kapatır."
@@ -22217,7 +22217,7 @@ msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Her stok kartın değişikliklerini incele, sonra onayla — serbest bırakma geri alınamaz."
 
 msgid "Review the changes to your timesheet first"
-msgstr ""
+msgstr "Önce zaman çizelgenizin değişikliklerini inceleyin"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Dönemin bilançosunu ve gelir tablosunu incele ve rakamların doğru göründüğünü onayla. Bu manuel bir onay işlemi — bunları inceledikten sonra bitti olarak işaretle."
@@ -22961,7 +22961,7 @@ msgid "Search by shipment, sales order, or item"
 msgstr "Sevkiyat, satış siparişi veya stok kartı ile ara"
 
 msgid "Search costs"
-msgstr ""
+msgstr "Maliyetleri ara"
 
 msgid "Search customers and types..."
 msgstr "Müşterileri ve türleri ara..."
@@ -23469,10 +23469,10 @@ msgid "Service Charges (default)"
 msgstr "Hizmet bedelleri (varsayılan)"
 
 msgid "Service contract"
-msgstr ""
+msgstr "Hizmet sözleşmesi"
 
 msgid "Service Contract"
-msgstr ""
+msgstr "Hizmet Sözleşmesi"
 
 msgid "Service Contracts"
 msgstr "Hizmet Sözleşmeleri"
@@ -23505,7 +23505,7 @@ msgid "Service Order"
 msgstr "Hizmet Siparişi"
 
 msgid "Service order pages"
-msgstr ""
+msgstr "Hizmet emri sayfaları"
 
 msgid "Service orders"
 msgstr "Hizmet Siparişleri"
@@ -24227,7 +24227,7 @@ msgid "Some Shifts"
 msgstr "Bazı Vardiyalar"
 
 msgid "Someone"
-msgstr ""
+msgstr "Birisi"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Muhasebeyi güncelleyebilen birinin, varlıklaştırılabilmesi için üretim maliyetini girmesi gerekir."
@@ -24673,7 +24673,7 @@ msgid "Stop-work order"
 msgstr "Durma Emri"
 
 msgid "Stop-work order since {start}, ends {end}"
-msgstr ""
+msgstr "İş durdurma emri {start} tarihinden itibaren, {end} tarihinde sona erer"
 
 msgid "Stop-Work Orders"
 msgstr "İş Durdurma Emirleri"
@@ -24849,10 +24849,10 @@ msgid "Submit week"
 msgstr "Haftayı Gönder"
 
 msgid "Submits all your draft time of this week for approval."
-msgstr ""
+msgstr "Bu haftanın taslak saatlerinin tümünü onay için gönderir."
 
 msgid "Submits and posts all your draft time of this week."
-msgstr ""
+msgstr "Bu haftanın taslak saatlerinin tümünü gönderir ve muhasebeleştirir."
 
 msgid "Submitted"
 msgstr "Gönderildi"
@@ -25636,11 +25636,11 @@ msgstr "Parti en acil üyesinin zamanında çalışır — diğerleri öne çeki
 
 #. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing element of {0} is not marked as a billing element."
-msgstr ""
+msgstr "{0} öğesinin faturalandırma öğesi olarak işaretlenmemiştir."
 
 #. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing events of {0} have <0/> left to invoice."
-msgstr ""
+msgstr "{0} öğesinin faturalandırma olaylarında <0/> faturalanmaya kaldı."
 
 msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
 msgstr "Tüm muhasebeleştirilmiş muhasebe fiş satırlarının, hesap tarafından toplandığı defteri. Şirketin muhasebeyi kurmadan ön geçici muhasebe fişleri içinde değildir."
@@ -25748,7 +25748,7 @@ msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time.
 msgstr "Şirketin zaman çizelgesi modu Standard veya DCAA olarak ayarlanmıştır ve Ayarlar → Zaman içinde ayarlanmıştır. DCAA giriş penceresini, gecikmeler ve değişen saatlerin nedenlerini, haftalık sertifikasyonu ve timecard kontrolünü ekler."
 
 msgid "The Contract Assets default account is empty."
-msgstr ""
+msgstr "Sözleşme Varlıkları varsayılan hesabı boş."
 
 msgid "The contract cannot be cancelled then"
 msgstr "Sözleşme o zaman iptal edilemez"
@@ -25760,10 +25760,10 @@ msgid "The contract ends on the end date and does not renew. Planned invoices af
 msgstr "Sözleşme bitiş tarihinde sona erer ve yenilenmez. Bundan sonraki planlanan faturalar kaldırılır."
 
 msgid "The contract is ready to bill."
-msgstr ""
+msgstr "Sözleşme faturalandırmaya hazırdır."
 
 msgid "The Contract Loss Provision default account is empty."
-msgstr ""
+msgstr "Sözleşme Zarar Karşılığı varsayılan hesabı boş."
 
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Sözleşmenin faturaları, bu Carbon müşterisine zaten bağlı olan Stripe müşterisine faturalanacaktır. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
@@ -25908,7 +25908,7 @@ msgid "The default tax rate applied to this customer's quote and sales-order lin
 msgstr "Bu müşterinin alıntı ve satış siparişi satırlarına uygulanan varsayılan vergi oranı, satır başına geçersiz kılmadan önce; yetki alanına özgü vergi matematik üstünde çalışır."
 
 msgid "The Deferred Revenue default account is empty."
-msgstr ""
+msgstr "Ertelenmiş Hasılat varsayılan hesabı boş."
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Bu departmanın raporlama ve personel sayısı hiyerarşisinde bağlı olduğu departman; üst seviye bir departman için boş bırakın."
@@ -26100,7 +26100,7 @@ msgid "The item each job produces — require it to match to merge output lots"
 msgstr "Her iş emrinin ürettiği stok kartı — çıkış lotlarını birleştirmek için eşleşmesi gerekir"
 
 msgid "The item has no made components at this depth. Include bought components to add its purchased parts."
-msgstr ""
+msgstr "Stok kartının bu derinlikte üretilmiş bileşeni yoktur. Satın alınan parçaları eklemek için satın alınan bileşenleri dahil edin."
 
 msgid "The item's bill of materials"
 msgstr "Stok kartının ürün ağacı"
@@ -26264,7 +26264,7 @@ msgid "The monthly periods you post into and close"
 msgstr "Nakliye yaptığınız ve kapattığınız aylık dönemler"
 
 msgid "The most a Cost Plus line can be worth, fee included. Percent Complete never prices the line above it."
-msgstr ""
+msgstr "Bir Maliyet Artı satırının değerinin üst sınırı, ücret dahil. Yüzde Tamamlama satırı asla bu değerin üzerine fiyatlandırmaz."
 
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "İstekçinin şüphelendiği en olası hata modu; teknisyen bunu kapatırken doğrular veya değiştirir ve şüphelenilen ile gerçek arasındaki fark güvenilirlik raporlarını besler."
@@ -26432,7 +26432,7 @@ msgid "The progress behind each project contract line in this run."
 msgstr "Bu çalıştırmada her proje sözleşmesi satırının arkasındaki ilerleme."
 
 msgid "the project"
-msgstr ""
+msgstr "proje"
 
 msgid "The project element a Time & Materials or Cost Plus contract line bills. The line bills the work charged to it and to every element below it."
 msgstr "Bir Zaman ve Malzeme veya Maliyet Artı sözleşme satırının faturalayan proje öğesi. Satır, kendisine ve aşağındaki her öğeye yüklenen işi faturalar."
@@ -26441,10 +26441,10 @@ msgid "The project goes On Hold and takes no new charges. Open commitments still
 msgstr "Proje Askıda hale gider ve yeni ücretler almaz. Açık taahhütler yine de muhasebeleştirilir. Siparişi ilk olarak işi sürdürmedikçe {STOP_WORK_DAYS} gün sonra sona erer."
 
 msgid "The Project WIP default account is empty."
-msgstr ""
+msgstr "Proje Yarı Mamul varsayılan hesabı boş."
 
 msgid "The project's cost treatment is not Contract."
-msgstr ""
+msgstr "Projenin maliyet işlemi Sözleşme değildir."
 
 msgid "The project's stock moves only to projects of the same customer"
 msgstr "Projenin stoku sadece aynı müşterinin projelerine hareket eder"
@@ -26635,7 +26635,7 @@ msgid "The smallest quantity this supplier will accept on a PO line for this par
 msgstr "Bu tedarikçinin bu parça için bir PO satırında kabul edeceği en küçük miktar; planlama ona yuvarlanır."
 
 msgid "The source has nothing to build at this depth."
-msgstr ""
+msgstr "Kaynağın bu derinlikte inşa edecek bir şeyi yoktur."
 
 msgid "The specific contact on the selected customer who will own this portal account; their email becomes the sign-in identifier."
 msgstr "Seçilen müşteri üzerindeki bu portal hesabına sahip olacak belirli ilgili kişi; e-postaları giriş tanımlayıcısı olur."
@@ -27210,7 +27210,7 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "Bu satış siparişi, oluşturulması gereken iş emirlerini gerektiren satırlar içerir"
 
 msgid "This serial"
-msgstr ""
+msgstr "Bu seri numarası"
 
 msgid "This service order has no work yet."
 msgstr "Bu hizmet emrinin henüz işi yok."
@@ -27421,10 +27421,10 @@ msgid "Time & Materials"
 msgstr "Zaman & Malzeme"
 
 msgid "Time & Materials and Cost Plus lines bill from project cost every billing period."
-msgstr ""
+msgstr "Zaman & Malzemeleri ve Maliyet Artı satırları her faturalandırma döneminde proje maliyetinden faturalanır."
 
 msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
-msgstr ""
+msgstr "Zaman & Malzemeleri ve Maliyet Artı satırları burada gösterilir. Sabit Fiyat satırları faturalandırma olaylarında faturalanır."
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Kiralama filosunun varlık ve sınıf bazında zaman ve dolar kullanım oranı"
@@ -27445,7 +27445,7 @@ msgid "Time off"
 msgstr "Ara"
 
 msgid "Time off is charged to a leave element."
-msgstr ""
+msgstr "İzin saati bir izin öğesine yüklenir."
 
 msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
 msgstr "Bu kategorideki zaman, bir orana sahip olana kadar Gider veya Sözleşme projesine muhasebeleştirilemez."
@@ -27484,7 +27484,7 @@ msgid "Timesheet Audit"
 msgstr "Zaman Çizelgesi Denetimi"
 
 msgid "Timesheet Required"
-msgstr ""
+msgstr "Zaman Çizelgesi Gerekli"
 
 msgid "Timezone"
 msgstr "Saat Dilim"
@@ -27550,7 +27550,7 @@ msgid "To test whether it is a sale, <0>give the agreement a fixed term</0>."
 msgstr "Satış olup olmadığını test etmek için, <0>anlaşmaya sabit bir dönem verin</0>."
 
 msgid "To the top level"
-msgstr ""
+msgstr "En üst seviyeye"
 
 msgid "To:"
 msgstr "Kime:"
@@ -27687,7 +27687,7 @@ msgid "Total expected production units for units-of-production depreciation; cos
 msgstr "Üretim birimleri amortismanı için toplam beklenen üretim birimleri; maliyet üretilen birim başına dağıtılır."
 
 msgid "Total hours"
-msgstr ""
+msgstr "Toplam saatler"
 
 msgid "Total Hours"
 msgstr "Toplam Saat"
@@ -28574,7 +28574,7 @@ msgid "Use Sub-Assembly"
 msgstr "Alt Montajı Kullan"
 
 msgid "Use the Bill of Materials"
-msgstr ""
+msgstr "Ürün Ağacını Kullan"
 
 msgid "Used by"
 msgstr "Tarafından kullanılan"
@@ -28872,7 +28872,7 @@ msgid "View Contained Issues"
 msgstr "Kontrol Altına Alınan Sorunları Görüntüle"
 
 msgid "View contract"
-msgstr ""
+msgstr "Sözleşmeyi Görüntüle"
 
 msgid "View costs"
 msgstr "Maliyetleri Görüntüle"
@@ -28914,7 +28914,7 @@ msgid "View Journal Entry"
 msgstr "Yevmiye kaydını görüntüle"
 
 msgid "View list"
-msgstr ""
+msgstr "Listeyi Görüntüle"
 
 msgid "View Lists"
 msgstr "Listeleri Görüntüle"
@@ -29013,7 +29013,7 @@ msgid "View Run"
 msgstr "Çalıştırmayı Görüntüle"
 
 msgid "View schedule"
-msgstr ""
+msgstr "Çizelgeyi Görüntüle"
 
 msgid "View Scheduled"
 msgstr "Planlanmışları Gör"
@@ -29374,7 +29374,7 @@ msgid "What kind of quote this is — standard supplier quote, blanket-agreement
 msgstr "Bu teklif türü nedir — standart tedarikçi teklifi, genel uyum fiyatlı teklif veya sözleşmeli üretim teklifi; dönüştürülürken PO satır düzenini belirler."
 
 msgid "What posting this run will write, by account."
-msgstr ""
+msgstr "Bu çalıştırmanın muhasebeleştirme işleminde hangi hesaplara yazacağı."
 
 msgid "What should the author change?"
 msgstr "Yazar ne değiştirmeli?"
@@ -29386,7 +29386,7 @@ msgid "What the customer can buy each unit for at the end"
 msgstr "Müşterinin sonunda her adeti ne kadara satın alabileceği"
 
 msgid "What the customer has authorized on a Time & Materials or Cost Plus line. Billing stops at it, and items past it stay Unbilled with the reason Funding limit."
-msgstr ""
+msgstr "Müşterinin Zaman & Malzeme veya Maliyet Artısı satırında yetkilendirdiği. Faturalandırma burada durur ve bunun ötesindeki stok kartları Faturasız kalır, nedeni Finansman Limiti olur."
 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "Müşterinin peşin ödediği, kiranın vergisi ve faturaların vadesi."
@@ -29545,7 +29545,7 @@ msgid "When the supplier's pricing stops being honored; converting this quote to
 msgstr "Tedarikçi fiyatlandırması artık kabul edilmediğinde; bu fiyatlandırmayı bu tarihten sonra bir PO'ya dönüştürmek yeniden fiyatlandırma gerektirebilir."
 
 msgid "When the work under the contract starts and ends."
-msgstr ""
+msgstr "Sözleşme kapsamındaki işin başlama ve bitiş tarihleri."
 
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "Bu ölçü aleti kalibrasyonun yapılması gerektiğinde; vadesi geçtikten sonra Kalibrasyondan Çıktı olarak okunur."
@@ -29749,7 +29749,7 @@ msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Envanter işi tamamlandığında kimler bildirim almalı?"
 
 msgid "Who sold it, and when it closed."
-msgstr ""
+msgstr "Bunu kim sattı ve ne zaman kapatıldı."
 
 msgid "Who sold it, the currency it bills in, and any notes."
 msgstr "Satıcı, faturalandırılan para birimi ve notlar."
@@ -29764,7 +29764,7 @@ msgid "Who the contract is with and what it is called."
 msgstr "Sözleşmenin karşı tarafı ve adı."
 
 msgid "Who the contract is with, what it is called, and the project it bills."
-msgstr ""
+msgstr "Sözleşmenin imzalandığı taraf, adı ve faturalandırıldığı proje."
 
 msgid "Who you buy from."
 msgstr "Kimden satın aldığınız."
@@ -29998,7 +29998,7 @@ msgid "Yes, Work Complete"
 msgstr "Evet, Çalışma Tamamlandı"
 
 msgid "Yesterday"
-msgstr ""
+msgstr "Dün"
 
 msgid "You"
 msgstr "Sen"

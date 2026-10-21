@@ -36,7 +36,7 @@ msgstr "{0}件の得意先"
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
 msgid "{0} h"
-msgstr ""
+msgstr "{0} h"
 
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
@@ -100,7 +100,7 @@ msgid "{fails} sampled failure(s) are recorded and will NOT be completed — res
 msgstr "{fails}件のサンプル不良が記録されており、完了されません — アクションメニューから対応してください。"
 
 msgid "{hour} h"
-msgstr ""
+msgstr "{hour} h"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB の制限"
@@ -111,7 +111,7 @@ msgstr "{recorded}/{0}件の製造指図"
 
 #. placeholder {0}: formatHours(preview - selectedHours)
 msgid "+{0} h"
-msgstr ""
+msgstr "+{0} h"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} その他"
@@ -157,7 +157,7 @@ msgid "Add"
 msgstr "追加"
 
 msgid "Add {phrase}"
-msgstr ""
+msgstr "{phrase}を追加"
 
 msgid "Add & Issue"
 msgstr "追加して払出"
@@ -175,7 +175,7 @@ msgid "Add Passkey"
 msgstr "パスキーを追加"
 
 msgid "Add PTO"
-msgstr ""
+msgstr "有給を追加"
 
 msgid "Add Sample"
 msgstr "サンプルを追加"
@@ -184,10 +184,10 @@ msgid "Add Spare Part"
 msgstr "予備品を追加"
 
 msgid "Add what you worked on this week, then tap a day to log time."
-msgstr ""
+msgstr "今週の作業を追加し、日付をタップして時間を記録してください。"
 
 msgid "Add what you worked on to start logging time."
-msgstr ""
+msgstr "作業を追加して時間記録を開始してください。"
 
 msgid "Added"
 msgstr "追加完了"
@@ -380,7 +380,7 @@ msgid "Characteristics"
 msgstr "特性"
 
 msgid "Charge numbers"
-msgstr ""
+msgstr "チャージ番号"
 
 msgid "Chat"
 msgstr "チャット"
@@ -431,7 +431,7 @@ msgid "Clocked in since <0/>"
 msgstr "<0/>からクロックイン中"
 
 msgid "Clocked on your timecard"
-msgstr ""
+msgstr "タイムカードに記録済み"
 
 msgid "Close"
 msgstr "閉じる"
@@ -1236,7 +1236,7 @@ msgid "No issue types configured"
 msgstr "構成されたイシュータイプがありません"
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
-msgstr ""
+msgstr "休暇がまだ設定されていません。マネージャーにERPで設定するよう依頼してください。"
 
 msgid "No maintenance scheduled for today"
 msgstr "本日の保全予定はありません。"
@@ -1492,7 +1492,7 @@ msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "スタイルとアバターを選択するか、新しいものにシャッフルしてください。"
 
 msgid "Pick the leave for your time off."
-msgstr ""
+msgstr "休暇を選択してください。"
 
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
@@ -1597,7 +1597,7 @@ msgid "Project"
 msgstr "プロジェクト"
 
 msgid "PTO"
-msgstr ""
+msgstr "有給"
 
 msgid "Purchasing"
 msgstr "購買"
@@ -2067,7 +2067,7 @@ msgstr "タグ"
 
 #. placeholder {0}: selected.readableId
 msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr ""
+msgstr "日付をタップして {0} に時間を追加してください。バーの下端をドラッグして時間を変更できます。"
 
 msgid "The accent color used across Carbon."
 msgstr "Carbon全体で使用されるアクセントカラー。"
@@ -2189,7 +2189,7 @@ msgid "Total"
 msgstr "合計"
 
 msgid "Total hours"
-msgstr ""
+msgstr "合計時間"
 
 msgid "Total Quantity"
 msgstr "合計数量"

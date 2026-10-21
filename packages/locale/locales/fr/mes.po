@@ -36,7 +36,7 @@ msgstr "{0} clients"
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
 msgid "{0} h"
-msgstr ""
+msgstr "{0} h"
 
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
@@ -100,7 +100,7 @@ msgid "{fails} sampled failure(s) are recorded and will NOT be completed — res
 msgstr "{fails} défaut(s) échantillonné(s) enregistré(s) et ne seront PAS complété(s) — résolvez-les à partir du menu des actions."
 
 msgid "{hour} h"
-msgstr ""
+msgstr "{hour} h"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "Limite de {maxSizeMB}MB"
@@ -111,7 +111,7 @@ msgstr "{recorded}/{0} ordres de fabrication"
 
 #. placeholder {0}: formatHours(preview - selectedHours)
 msgid "+{0} h"
-msgstr ""
+msgstr "+{0} h"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} autres"
@@ -157,7 +157,7 @@ msgid "Add"
 msgstr "Ajouter"
 
 msgid "Add {phrase}"
-msgstr ""
+msgstr "Ajouter {phrase}"
 
 msgid "Add & Issue"
 msgstr "Ajouter et distribuer"
@@ -175,7 +175,7 @@ msgid "Add Passkey"
 msgstr "Ajouter une clé d'accès"
 
 msgid "Add PTO"
-msgstr ""
+msgstr "Ajouter un congé"
 
 msgid "Add Sample"
 msgstr "Ajouter échantillon"
@@ -184,10 +184,10 @@ msgid "Add Spare Part"
 msgstr "Ajouter une pièce de rechange"
 
 msgid "Add what you worked on this week, then tap a day to log time."
-msgstr ""
+msgstr "Ajoutez ce sur quoi vous avez travaillé cette semaine, puis appuyez sur un jour pour enregistrer vos heures."
 
 msgid "Add what you worked on to start logging time."
-msgstr ""
+msgstr "Ajoutez ce sur quoi vous avez travaillé pour commencer à enregistrer vos heures."
 
 msgid "Added"
 msgstr "Ajoutée"
@@ -380,7 +380,7 @@ msgid "Characteristics"
 msgstr "Caractéristiques"
 
 msgid "Charge numbers"
-msgstr ""
+msgstr "Numéros de charge"
 
 msgid "Chat"
 msgstr "Discussion"
@@ -431,7 +431,7 @@ msgid "Clocked in since <0/>"
 msgstr "Connecté depuis <0/>"
 
 msgid "Clocked on your timecard"
-msgstr ""
+msgstr "Enregistré sur votre feuille de temps"
 
 msgid "Close"
 msgstr "Fermer"
@@ -1236,7 +1236,7 @@ msgid "No issue types configured"
 msgstr "Aucun type de problème configuré"
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
-msgstr ""
+msgstr "Aucun congé n'est configuré. Demandez à votre responsable de le configurer dans l'ERP."
 
 msgid "No maintenance scheduled for today"
 msgstr "Aucune maintenance planifiée pour aujourd'hui"
@@ -1492,7 +1492,7 @@ msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "Choisissez un style et un avatar, ou mélangez pour en obtenir de nouveaux."
 
 msgid "Pick the leave for your time off."
-msgstr ""
+msgstr "Choisissez le congé pour votre absence."
 
 msgid "Pick tracked item"
 msgstr "Sélectionner un article suivi"
@@ -1597,7 +1597,7 @@ msgid "Project"
 msgstr "Projet"
 
 msgid "PTO"
-msgstr ""
+msgstr "Congé"
 
 msgid "Purchasing"
 msgstr "Achats"
@@ -2067,7 +2067,7 @@ msgstr "Étiquette"
 
 #. placeholder {0}: selected.readableId
 msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr ""
+msgstr "Appuyez sur un jour pour ajouter du temps à {0}. Faites glisser le bord inférieur d'une barre pour modifier ses heures."
 
 msgid "The accent color used across Carbon."
 msgstr "Couleur d'accent utilisée dans Carbon."
@@ -2189,7 +2189,7 @@ msgid "Total"
 msgstr "Total"
 
 msgid "Total hours"
-msgstr ""
+msgstr "Heures totales"
 
 msgid "Total Quantity"
 msgstr "Quantité totale"

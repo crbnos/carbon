@@ -36,7 +36,7 @@ msgstr "{0} 个客户"
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
 msgid "{0} h"
-msgstr ""
+msgstr "{0} 小时"
 
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
@@ -100,7 +100,7 @@ msgid "{fails} sampled failure(s) are recorded and will NOT be completed — res
 msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操作菜单解决它们。"
 
 msgid "{hour} h"
-msgstr ""
+msgstr "{hour} 小时"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
@@ -111,7 +111,7 @@ msgstr "{recorded}/{0} 个工单"
 
 #. placeholder {0}: formatHours(preview - selectedHours)
 msgid "+{0} h"
-msgstr ""
+msgstr "+{0} 小时"
 
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
@@ -157,7 +157,7 @@ msgid "Add"
 msgstr "添加"
 
 msgid "Add {phrase}"
-msgstr ""
+msgstr "添加 {phrase}"
 
 msgid "Add & Issue"
 msgstr "添加并发放"
@@ -175,7 +175,7 @@ msgid "Add Passkey"
 msgstr "添加通行密钥"
 
 msgid "Add PTO"
-msgstr ""
+msgstr "添加 PTO"
 
 msgid "Add Sample"
 msgstr "添加样本"
@@ -184,10 +184,10 @@ msgid "Add Spare Part"
 msgstr "添加备件"
 
 msgid "Add what you worked on this week, then tap a day to log time."
-msgstr ""
+msgstr "添加本周完成的工作，然后点击某一天记录时间。"
 
 msgid "Add what you worked on to start logging time."
-msgstr ""
+msgstr "添加工作内容以开始记录时间。"
 
 msgid "Added"
 msgstr "已添加"
@@ -380,7 +380,7 @@ msgid "Characteristics"
 msgstr "特性"
 
 msgid "Charge numbers"
-msgstr ""
+msgstr "费用编号"
 
 msgid "Chat"
 msgstr "聊天"
@@ -431,7 +431,7 @@ msgid "Clocked in since <0/>"
 msgstr "自 <0/> 起打卡"
 
 msgid "Clocked on your timecard"
-msgstr ""
+msgstr "在您的时间卡上打卡"
 
 msgid "Close"
 msgstr "关闭"
@@ -1236,7 +1236,7 @@ msgid "No issue types configured"
 msgstr "未配置问题类型"
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
-msgstr ""
+msgstr "尚未设置假期。请您的经理在 ERP 中设置。"
 
 msgid "No maintenance scheduled for today"
 msgstr "今天没有计划的维护"
@@ -1492,7 +1492,7 @@ msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "选择一个风格和头像，或者随机生成新的。"
 
 msgid "Pick the leave for your time off."
-msgstr ""
+msgstr "选择您休假的假期类型。"
 
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
@@ -1597,7 +1597,7 @@ msgid "Project"
 msgstr "项目"
 
 msgid "PTO"
-msgstr ""
+msgstr "PTO"
 
 msgid "Purchasing"
 msgstr "采购"
@@ -2067,7 +2067,7 @@ msgstr "标签"
 
 #. placeholder {0}: selected.readableId
 msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr ""
+msgstr "点击某一天以添加时间到 {0}。拖动条形下边缘以更改其小时数。"
 
 msgid "The accent color used across Carbon."
 msgstr "整个 Carbon 中使用的强调色。"
@@ -2189,7 +2189,7 @@ msgid "Total"
 msgstr "总计"
 
 msgid "Total hours"
-msgstr ""
+msgstr "总小时数"
 
 msgid "Total Quantity"
 msgstr "总数量"
