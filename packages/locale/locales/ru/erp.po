@@ -110,6 +110,10 @@ msgstr "{0, plural, one {# номенклатура} few {# номенклату
 msgid "{0, plural, one {# label} other {# labels}}"
 msgstr "{0, plural, one {# метка} few {# метки} other {# меток}}"
 
+#. placeholder {0}: gap.count
+msgid "{0, plural, one {# labor category has no bill rate and no contract rate.} other {# labor categories have no bill rate and no contract rate.}}"
+msgstr ""
+
 #. placeholder {0}: baseline.linkCount
 msgid "{0, plural, one {# link} other {# links}}"
 msgstr "{0, plural, one {# связь} few {# связи} other {# связей}}"
@@ -300,6 +304,10 @@ msgstr "{0} остаток счета-фактуры: <0/>."
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to recognize."
 msgstr "{0} остаток для признания выручки: <0/>."
+
+#. placeholder {0}: nameOf(gap.lineId)
+msgid "{0} has no billing element."
+msgstr ""
 
 #. placeholder {0}: rentalUnitLabel(line)
 msgid "{0} has no rate."
@@ -2338,6 +2346,9 @@ msgstr "Добавьте по крайней мере один актив пер
 
 msgid "Add at least one asset."
 msgstr "Добавьте по крайней мере один актив."
+
+msgid "Add at least one line."
+msgstr ""
 
 msgid "Add at least one service."
 msgstr "Добавьте хотя бы одну услугу."
@@ -6522,6 +6533,9 @@ msgstr "Подтверждение фиксирует график счета-ф
 
 msgid "Confirming fixes the invoice schedule and starts invoicing. The terms and lines are then changed with Amend."
 msgstr "Подтверждение фиксирует график счетов-фактур и начинает выставление счетов. Условия и строки затем изменяются с помощью поправки."
+
+msgid "Confirming starts billing: project cost each billing period, and each billing event on its date. After that the lines change with Amend."
+msgstr ""
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "Подтверждает, что каждая проводка, проведенная в периоде, имеет равные дебет и кредит. Если какая-либо запись неуравновешена, сверка дебета и кредита не совпадет, поэтому она должна быть исправлена до закрытия периода."
@@ -19983,6 +19997,10 @@ msgstr "Проект"
 msgid "Project Billing"
 msgstr "Выставление счетов проекта"
 
+#. placeholder {0}: gap.baseCurrencyCode
+msgid "Project billing needs the contract in the base currency, {0}."
+msgstr ""
+
 msgid "Project Change Request"
 msgstr "Запрос на изменение проекта"
 
@@ -25583,6 +25601,14 @@ msgstr "Серия поступает на цех. Её производстве
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Партия выполняется по самому срочному элементу — остальные сдвигаются раньше"
 
+#. placeholder {0}: nameOf(gap.lineId)
+msgid "The billing element of {0} is not marked as a billing element."
+msgstr ""
+
+#. placeholder {0}: nameOf(gap.lineId)
+msgid "The billing events of {0} have <0/> left to invoice."
+msgstr ""
+
 msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
 msgstr "Книга всех проведенных строк операций, просуммированных по счетам. Предварительные операции до включения бухгалтерии компании в ней не содержатся."
 
@@ -25688,6 +25714,9 @@ msgstr "У организации нет значений по умолчани�
 msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
 msgstr "Режим табеля учета рабочего времени Организации — Стандартный или DCAA, установленный в Настройки → Время. DCAA добавляет окно ввода, причины опозданий и изменений времени, еженедельную сертификацию и проверку табелей."
 
+msgid "The Contract Assets default account is empty."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "Контракт не может быть отменен тогда"
 
@@ -25696,6 +25725,12 @@ msgstr "Контракт заканчивается в дату окончани
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "Контракт завершается в дату окончания и не продлевается. Запланированные счета-фактуры после него удаляются."
+
+msgid "The contract is ready to bill."
+msgstr ""
+
+msgid "The Contract Loss Provision default account is empty."
+msgstr ""
 
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Счета-фактуры договора будут выставляться покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, измените их в панели управления Stripe."
@@ -25838,6 +25873,9 @@ msgstr "Количество прогона по умолчанию при из�
 
 msgid "The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top."
 msgstr "Налоговая ставка по умолчанию, применяемая к строкам коммерческого предложения и заказа покупателя, до переопределений по строкам; поверх этого применяется математика налогообложения, специфичная для юрисдикции."
+
+msgid "The Deferred Revenue default account is empty."
+msgstr ""
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Отдел, под который это накапливается для отчетности и иерархий подсчета; оставить пусто для отдела верхнего уровня."
@@ -26365,6 +26403,12 @@ msgstr "Элемент проекта, который счет Time & Materials 
 
 msgid "The project goes On Hold and takes no new charges. Open commitments still post. The order ends after {STOP_WORK_DAYS} days unless you resume work first."
 msgstr "Проект переводится на Приостановлено и не принимает новые начисления. Открытые обязательства по-прежнему проводятся. Заказ завершится через {STOP_WORK_DAYS} дней, если только вы сначала не возобновите работу."
+
+msgid "The Project WIP default account is empty."
+msgstr ""
+
+msgid "The project's cost treatment is not Contract."
+msgstr ""
 
 msgid "The project's stock moves only to projects of the same customer"
 msgstr "Запас проекта перемещается только на проекты одного и того же покупателя"

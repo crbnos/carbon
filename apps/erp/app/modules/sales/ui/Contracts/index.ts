@@ -46,10 +46,15 @@ import FundingBar from "./FundingBar";
 import ProjectContractDetailsForm from "./ProjectContractDetailsForm";
 import ProjectContractLinesGrid from "./ProjectContractLinesGrid";
 import { contractDurationOf, useContractLabels } from "./useContractLabels";
+import { useProjectContractGaps } from "./useProjectContractGaps";
 
 export type { ContractSetupStep } from "./ContractSetupSteps";
 export type { ContractScheduleRow } from "./contractTerms";
 export type * from "./types";
+export type {
+  ProjectContractReviewData,
+  ProjectContractReviewFacts
+} from "./useProjectContractGaps";
 
 export {
   ContractAmendModal,
@@ -91,5 +96,6 @@ export {
   scheduleRows,
   toContractLineTerms,
   toContractTerms,
-  useContractLabels
+  useContractLabels,
+  useProjectContractGaps
 };

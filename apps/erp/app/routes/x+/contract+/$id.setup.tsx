@@ -19,7 +19,8 @@ import {
   ContractConfirmModal,
   ContractSetupSteps,
   contractSetupSteps,
-  contractSetupStepsFor
+  contractSetupStepsFor,
+  useProjectContractGaps
 } from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
 
@@ -76,6 +77,9 @@ export default function ContractSetupRoute() {
   const formatter = useCurrencyFormatter({
     currency: routeData?.contract.currencyCode
   });
+  // A project contract's Review step lists its gaps; a blocking one keeps
+  // Confirm disabled, as the server would refuse it.
+  const projectGaps = useProjectContractGaps(id);
 
   if (!routeData) return null;
   const { contract, lines, lineTotals, residuals, revenueResiduals } =
@@ -99,6 +103,7 @@ export default function ContractSetupRoute() {
   const isBalanced =
     Object.values(residuals).every((r) => equals(r, 0)) &&
     Object.values(revenueResiduals).every((r) => equals(r, 0));
+  const hasBlockingGap = (projectGaps ?? []).some((gap) => gap.blocking);
 
   return (
     <SetupFrame
@@ -168,6 +173,7 @@ export default function ContractSetupRoute() {
                     isDisabled={
                       !hasLines ||
                       !isBalanced ||
+                      hasBlockingGap ||
                       !permissions.can("update", "sales")
                     }
                     onClick={confirm.onOpen}

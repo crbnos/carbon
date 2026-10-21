@@ -110,6 +110,10 @@ msgstr "{0, plural, one {# 品目} other {# 品目}}"
 msgid "{0, plural, one {# label} other {# labels}}"
 msgstr "{0, plural, one {# ラベル} other {# ラベル}}"
 
+#. placeholder {0}: gap.count
+msgid "{0, plural, one {# labor category has no bill rate and no contract rate.} other {# labor categories have no bill rate and no contract rate.}}"
+msgstr ""
+
 #. placeholder {0}: baseline.linkCount
 msgid "{0, plural, one {# link} other {# links}}"
 msgstr "{0, plural, one {# リンク} other {# リンク}}"
@@ -300,6 +304,10 @@ msgstr "{0}には<0/>の請求残があります。"
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to recognize."
 msgstr "{0}には<0/>の計上残があります。"
+
+#. placeholder {0}: nameOf(gap.lineId)
+msgid "{0} has no billing element."
+msgstr ""
 
 #. placeholder {0}: rentalUnitLabel(line)
 msgid "{0} has no rate."
@@ -2338,6 +2346,9 @@ msgstr "有効化する前に少なくとも1つの資産を追加してくだ�
 
 msgid "Add at least one asset."
 msgstr "少なくとも1つの資産を追加してください。"
+
+msgid "Add at least one line."
+msgstr ""
 
 msgid "Add at least one service."
 msgstr "少なくとも1つの外注サービスを追加してください。"
@@ -6522,6 +6533,9 @@ msgstr "確認すると請求スケジュールが確定し、請求が開始さ
 
 msgid "Confirming fixes the invoice schedule and starts invoicing. The terms and lines are then changed with Amend."
 msgstr "確認すると請求予定が確定され、請求が開始されます。その後、明細と条件は修正で変更されます。"
+
+msgid "Confirming starts billing: project cost each billing period, and each billing event on its date. After that the lines change with Amend."
+msgstr ""
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "期間内のすべての転記済仕訳行が等しい借方と貸方を持つことを確認します。いずれかの行が不平衡な場合、試算表が一致しないため、期間をクローズするまえに修正する必要があります。"
@@ -19983,6 +19997,10 @@ msgstr "プロジェクト"
 msgid "Project Billing"
 msgstr "プロジェクト請求"
 
+#. placeholder {0}: gap.baseCurrencyCode
+msgid "Project billing needs the contract in the base currency, {0}."
+msgstr ""
+
 msgid "Project Change Request"
 msgstr "プロジェクト変更要求"
 
@@ -25583,6 +25601,14 @@ msgstr "バッチが製造現場に移動します。その製造指図は既に
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "バッチは最も急ぎのメンバーに合わせて実行され、他は前倒しになります"
 
+#. placeholder {0}: nameOf(gap.lineId)
+msgid "The billing element of {0} is not marked as a billing element."
+msgstr ""
+
+#. placeholder {0}: nameOf(gap.lineId)
+msgid "The billing events of {0} have <0/> left to invoice."
+msgstr ""
+
 msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
 msgstr "すべての転記済仕訳明細の帳簿で、勘定別に合計されています。会社が会計を設定する前の暫定仕訳はそこに含まれません。"
 
@@ -25688,6 +25714,9 @@ msgstr "会社に勘定科目のデフォルト設定がありません。"
 msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
 msgstr "会社のタイムシートモードは標準またはDCAAで、設定 → 時間で設定されます。DCAAは入力ウィンドウ、遅刻および時間変更の理由、毎週の認証、およびタイムカード確認を追加します。"
 
+msgid "The Contract Assets default account is empty."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "その場合、契約をキャンセルすることはできません。"
 
@@ -25696,6 +25725,12 @@ msgstr "契約は終了日に終了し、請求は停止します。"
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "契約は終了日に終了し、更新されません。その後の計画済請求書は削除されます。"
+
+msgid "The contract is ready to bill."
+msgstr ""
+
+msgid "The Contract Loss Provision default account is empty."
+msgstr ""
 
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "この契約の請求書は、このCarbon得意先にリンク済みのStripeカスタマーに請求されます。詳細を変更するにはStripeダッシュボードで編集してください。"
@@ -25838,6 +25873,9 @@ msgstr "このパーツが製造される場合のデフォルト実行数量。
 
 msgid "The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top."
 msgstr "得意先の見積および販売注文明細に適用される既定の税率。明細ごとの上書き前。管轄区域固有の税計算が上に実行されます。"
+
+msgid "The Deferred Revenue default account is empty."
+msgstr ""
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "レポートとヘッドカウント階層のために、このロールアップが行われるセクション。トップレベル部門の場合は空白のままにしてください。"
@@ -26365,6 +26403,12 @@ msgstr "タイム & マテリアルまたはコストプラスコントラクト
 
 msgid "The project goes On Hold and takes no new charges. Open commitments still post. The order ends after {STOP_WORK_DAYS} days unless you resume work first."
 msgstr "プロジェクトが保留中になり、新しい請求を受け付けません。オープンなコミットメントは転記済のままです。{STOP_WORK_DAYS}日以内に作業を再開しない限り、注文は終了します。"
+
+msgid "The Project WIP default account is empty."
+msgstr ""
+
+msgid "The project's cost treatment is not Contract."
+msgstr ""
 
 msgid "The project's stock moves only to projects of the same customer"
 msgstr "プロジェクトの在庫は同じ得意先のプロジェクトにのみ移動します"

@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import {
   bicMatchesCountry,
   conditionAstFormField,
+  equals,
   getBankFieldConfig,
   getFieldDef,
   isFieldAvailableOnSalesRuleSurfaces,
@@ -2112,6 +2113,183 @@ export function isProjectBillingMethod(
   billingMethod: (typeof contractBillingMethods)[number] | null | undefined
 ) {
   return billingMethod === "Time & Materials" || billingMethod === "Cost Plus";
+}
+
+/** The default accounts a project contract posts through. An empty one does
+ *  not stop Confirm, but its first posting fails. */
+export const projectContractAccountDefaults = [
+  "projectWorkInProgressAccount",
+  "deferredRevenueAccount",
+  "contractAssetAccount",
+  "contractLossProvisionAccount"
+] as const;
+
+export type ProjectContractAccountDefault =
+  (typeof projectContractAccountDefaults)[number];
+
+/** What the Review step knows about a project contract. A fact the user may
+ *  not read (RLS) is absent or null: it is unknown, and gives no gap. */
+export type ProjectContractGapInput = {
+  lines: {
+    id: string;
+    billingMethod: (typeof contractBillingMethods)[number];
+    revenueMethod: (typeof contractRevenueMethods)[number];
+    projectId: string | null;
+    projectElementId: string | null;
+  }[];
+  /** The contract's project; a line without its own project bills it. */
+  projectId: string | null;
+  currencyCode: string;
+  baseCurrencyCode: string | null;
+  costTreatmentByProject: Record<string, Enums["projectCostTreatment"]>;
+  /** Per element a line names: whether it is a billing element. */
+  billingElementById: Record<string, boolean>;
+  /** Per line: its price less the sum of its billing events. */
+  residuals: Record<string, number>;
+  /** The labor categories a Time & Materials line cannot price. */
+  laborCategoriesWithoutBillRate: string[];
+  emptyAccountDefaults: ProjectContractAccountDefault[] | null;
+};
+
+export type ProjectContractGap =
+  | { key: "noLines"; blocking: true }
+  | { key: "noBillingElement"; blocking: true; lineId: string }
+  | {
+      key: "notBillingElement";
+      blocking: true;
+      lineId: string;
+      projectId: string;
+      elementId: string;
+    }
+  | { key: "costTreatment"; blocking: true; projectId: string }
+  | { key: "currency"; blocking: true; baseCurrencyCode: string }
+  | { key: "billingEvents"; blocking: true; lineId: string; residual: number }
+  | { key: "laborBillRate"; blocking: false; count: number }
+  | {
+      key: "accountDefault";
+      blocking: false;
+      account: ProjectContractAccountDefault;
+    };
+
+/** What stops a project contract's Confirm, and what it should fix first.
+ *  The blocking gaps mirror `checkBillingLines` (post-customer-contract), so
+ *  the Review step says it before the server refuses it. */
+export function projectContractGaps(
+  input: ProjectContractGapInput
+): ProjectContractGap[] {
+  const { lines } = input;
+  if (lines.length === 0) return [{ key: "noLines", blocking: true }];
+  const gaps: ProjectContractGap[] = [];
+
+  const progress = lines.filter(
+    (line) =>
+      line.billingMethod !== "Fixed" ||
+      line.revenueMethod === "Percent Complete"
+  );
+  if (
+    progress.length > 0 &&
+    input.baseCurrencyCode &&
+    input.baseCurrencyCode !== input.currencyCode
+  ) {
+    gaps.push({
+      key: "currency",
+      blocking: true,
+      baseCurrencyCode: input.baseCurrencyCode
+    });
+  }
+
+  const flaggedProjects = new Set<string>();
+  for (const line of lines.filter((l) =>
+    isProjectBillingMethod(l.billingMethod)
+  )) {
+    const projectId = line.projectId ?? input.projectId;
+    if (!projectId || !line.projectElementId) {
+      gaps.push({ key: "noBillingElement", blocking: true, lineId: line.id });
+      continue;
+    }
+    const treatment = input.costTreatmentByProject[projectId];
+    if (treatment && treatment !== "Contract") {
+      // One row per project; its elements cannot be billing elements yet.
+      if (!flaggedProjects.has(projectId)) {
+        flaggedProjects.add(projectId);
+        gaps.push({ key: "costTreatment", blocking: true, projectId });
+      }
+      continue;
+    }
+    if (input.billingElementById[line.projectElementId] === false) {
+      gaps.push({
+        key: "notBillingElement",
+        blocking: true,
+        lineId: line.id,
+        projectId,
+        elementId: line.projectElementId
+      });
+    }
+  }
+
+  for (const line of lines.filter((l) => l.billingMethod === "Fixed")) {
+    const residual = input.residuals[line.id];
+    if (residual !== undefined && !equals(residual, 0)) {
+      gaps.push({
+        key: "billingEvents",
+        blocking: true,
+        lineId: line.id,
+        residual
+      });
+    }
+  }
+
+  if (
+    lines.some((line) => line.billingMethod === "Time & Materials") &&
+    input.laborCategoriesWithoutBillRate.length > 0
+  ) {
+    gaps.push({
+      key: "laborBillRate",
+      blocking: false,
+      count: input.laborCategoriesWithoutBillRate.length
+    });
+  }
+
+  for (const account of input.emptyAccountDefaults ?? []) {
+    gaps.push({ key: "accountDefault", blocking: false, account });
+  }
+
+  return gaps;
+}
+
+/** The active labor categories a Time & Materials line cannot price: no bill
+ *  rate of their own, and no contract labor rate on every T&M line. */
+export function laborCategoriesWithoutBillRate(args: {
+  categories: {
+    id: string;
+    name: string;
+    active: boolean;
+    rates: { billRate: number | null }[];
+  }[];
+  timeAndMaterialsLineIds: string[];
+  lineRates: {
+    customerContractLineId: string;
+    laborCategoryId: string | null;
+  }[];
+}): string[] {
+  if (args.timeAndMaterialsLineIds.length === 0) return [];
+  const covered = new Set(
+    args.lineRates.flatMap((rate) =>
+      rate.laborCategoryId
+        ? [`${rate.customerContractLineId}:${rate.laborCategoryId}`]
+        : []
+    )
+  );
+  return args.categories
+    .filter(
+      (category) =>
+        category.active &&
+        !category.rates.some((rate) => rate.billRate !== null) &&
+        args.timeAndMaterialsLineIds.some(
+          (lineId) => !covered.has(`${lineId}:${category.id}`)
+        )
+    )
+    .map((category) => category.name);
 }
 
 type BillingTerms = {

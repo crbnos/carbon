@@ -110,6 +110,10 @@ msgstr "{0, plural, one {# 품목} other {# 품목}}"
 msgid "{0, plural, one {# label} other {# labels}}"
 msgstr "{0, plural, one {# 레이블} other {# 레이블}}"
 
+#. placeholder {0}: gap.count
+msgid "{0, plural, one {# labor category has no bill rate and no contract rate.} other {# labor categories have no bill rate and no contract rate.}}"
+msgstr ""
+
 #. placeholder {0}: baseline.linkCount
 msgid "{0, plural, one {# link} other {# links}}"
 msgstr "{0, plural, one {# 링크} other {# 링크}}"
@@ -300,6 +304,10 @@ msgstr "{0}은(는) 송장 발행할 <0/>이(가) 남아 있습니다."
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to recognize."
 msgstr "{0}은(는) 인식할 <0/>이(가) 남아 있습니다."
+
+#. placeholder {0}: nameOf(gap.lineId)
+msgid "{0} has no billing element."
+msgstr ""
 
 #. placeholder {0}: rentalUnitLabel(line)
 msgid "{0} has no rate."
@@ -2338,6 +2346,9 @@ msgstr "활성화하기 전에 최소한 하나의 자산을 추가하세요."
 
 msgid "Add at least one asset."
 msgstr "최소한 하나의 자산을 추가하세요."
+
+msgid "Add at least one line."
+msgstr ""
 
 msgid "Add at least one service."
 msgstr "최소 1개의 서비스를 추가하세요."
@@ -6522,6 +6533,9 @@ msgstr "확인하면 송장 일정을 고정하고 송장 발행을 시작합니
 
 msgid "Confirming fixes the invoice schedule and starts invoicing. The terms and lines are then changed with Amend."
 msgstr "확인하면 송장 일정이 확정되고 청구가 시작됩니다. 용어 및 라인은 수정으로 변경됩니다."
+
+msgid "Confirming starts billing: project cost each billing period, and each billing event on its date. After that the lines change with Amend."
+msgstr ""
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "기간 내 전기된 모든 분개가 차변과 대변이 일치하는지 확인합니다. 불균형인 분개가 있으면 시산표가 맞지 않으므로 기간을 마감하기 전에 정정해야 합니다."
@@ -19983,6 +19997,10 @@ msgstr "프로젝트"
 msgid "Project Billing"
 msgstr "프로젝트 청구"
 
+#. placeholder {0}: gap.baseCurrencyCode
+msgid "Project billing needs the contract in the base currency, {0}."
+msgstr ""
+
 msgid "Project Change Request"
 msgstr "프로젝트 변경 요청"
 
@@ -25583,6 +25601,14 @@ msgstr "배치가 현장으로 이동합니다. 포함된 작업 지시들은 �
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "배치는 가장 급한 항목의 일정에 맞춰 실행되며 나머지는 앞당겨집니다"
 
+#. placeholder {0}: nameOf(gap.lineId)
+msgid "The billing element of {0} is not marked as a billing element."
+msgstr ""
+
+#. placeholder {0}: nameOf(gap.lineId)
+msgid "The billing events of {0} have <0/> left to invoice."
+msgstr ""
+
 msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
 msgstr "전기된 모든 전표 라인의 장부이며 계정별로 합계됩니다. 회사가 회계를 설정하기 전의 임시 전표는 포함되지 않습니다."
 
@@ -25688,6 +25714,9 @@ msgstr "회사에 계정 기본값이 없습니다."
 msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
 msgstr "회사의 타임시트 모드는 표준 또는 DCAA이며, 설정 → 시간에서 설정됩니다. DCAA는 항목 입력 창, 지연 및 변경된 시간의 이유, 매주 인증 및 타임카드 확인을 추가합니다."
 
+msgid "The Contract Assets default account is empty."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "그때는 계약을 취소할 수 없습니다."
 
@@ -25696,6 +25725,12 @@ msgstr "계약이 종료 날짜에 종료되고 송장 관리가 중지됩니다
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "계약이 종료 날짜에 끝나고 갱신되지 않습니다. 그 이후의 계획된 송장은 제거됩니다."
+
+msgid "The contract is ready to bill."
+msgstr ""
+
+msgid "The Contract Loss Provision default account is empty."
+msgstr ""
 
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "계약의 송장은 이미 이 Carbon 고객에 연결된 Stripe 고객에게 청구됩니다. 세부 정보를 변경하려면 Stripe 대시보드에서 편집하세요."
@@ -25838,6 +25873,9 @@ msgstr "이 품목을 생산할 때의 기본 생산 수량으로, 계획 시 �
 
 msgid "The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top."
 msgstr "이 고객의 견적 및 판매주문 라인에 적용되는 기본 세율로, 라인별 재정의 전에 적용됩니다. 관할구역별 세금 계산은 이 위에 추가로 적용됩니다."
+
+msgid "The Deferred Revenue default account is empty."
+msgstr ""
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "보고 및 인원 계층구조에서 이 부서가 속하는 상위 부서입니다. 최상위 부서인 경우 비워두세요."
@@ -26365,6 +26403,12 @@ msgstr "시간 및 자재 또는 Cost Plus 계약 라인이 청구하는 프로�
 
 msgid "The project goes On Hold and takes no new charges. Open commitments still post. The order ends after {STOP_WORK_DAYS} days unless you resume work first."
 msgstr "프로젝트가 보류되고 새 청구를 받지 않습니다. 미결 약정은 여전히 전기됩니다. 먼저 작업을 재개하지 않으면 {STOP_WORK_DAYS}일 후에 주문이 종료됩니다."
+
+msgid "The Project WIP default account is empty."
+msgstr ""
+
+msgid "The project's cost treatment is not Contract."
+msgstr ""
 
 msgid "The project's stock moves only to projects of the same customer"
 msgstr "프로젝트의 재고는 같은 고객의 프로젝트로만 이동합니다."

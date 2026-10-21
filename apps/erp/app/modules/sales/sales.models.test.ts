@@ -23,6 +23,8 @@ const {
   contractRevenueMethodsFor,
   contractTermFromServicePeriods,
   customerContractValidator,
+  laborCategoriesWithoutBillRate,
+  projectContractGaps,
   quoteLineValidator,
   quoteValidator,
   rentalAgreementChargeValidator,
@@ -377,5 +379,196 @@ describe("contractRevenueMethodsFor", () => {
       "Percent Complete",
       "Right to Invoice"
     ]);
+  });
+});
+
+describe("projectContractGaps", () => {
+  type Input = Parameters<typeof projectContractGaps>[0];
+  const tm = {
+    id: "line_tm",
+    billingMethod: "Time & Materials" as const,
+    revenueMethod: "Right to Invoice" as const,
+    projectId: null,
+    projectElementId: "el_1"
+  };
+  const fixed = {
+    id: "line_fixed",
+    billingMethod: "Fixed" as const,
+    revenueMethod: "Daily" as const,
+    projectId: null,
+    projectElementId: null
+  };
+  const clean: Input = {
+    lines: [tm, fixed],
+    projectId: "proj_1",
+    currencyCode: "USD",
+    baseCurrencyCode: "USD",
+    costTreatmentByProject: { proj_1: "Contract" },
+    billingElementById: { el_1: true },
+    residuals: { line_fixed: 0 },
+    laborCategoriesWithoutBillRate: [],
+    emptyAccountDefaults: []
+  };
+  const keys = (input: Input) =>
+    projectContractGaps(input).map((gap) => [gap.key, gap.blocking]);
+
+  it("finds no gap on a ready contract", () => {
+    expect(projectContractGaps(clean)).toEqual([]);
+  });
+
+  it("blocks a contract with no line", () => {
+    expect(keys({ ...clean, lines: [] })).toEqual([["noLines", true]]);
+  });
+
+  it("blocks a billing line with no billing element", () => {
+    expect(
+      projectContractGaps({
+        ...clean,
+        lines: [{ ...tm, projectElementId: null }]
+      })
+    ).toEqual([{ key: "noBillingElement", blocking: true, lineId: "line_tm" }]);
+  });
+
+  it("blocks an element that is not a billing element", () => {
+    expect(
+      projectContractGaps({ ...clean, billingElementById: { el_1: false } })
+    ).toEqual([
+      {
+        key: "notBillingElement",
+        blocking: true,
+        lineId: "line_tm",
+        projectId: "proj_1",
+        elementId: "el_1"
+      }
+    ]);
+  });
+
+  it("gives no element gap for an element it could not read", () => {
+    expect(projectContractGaps({ ...clean, billingElementById: {} })).toEqual(
+      []
+    );
+  });
+
+  it("blocks once per project whose cost treatment is not Contract", () => {
+    expect(
+      keys({
+        ...clean,
+        lines: [tm, { ...tm, id: "line_tm_2" }],
+        costTreatmentByProject: { proj_1: "Expense" },
+        billingElementById: { el_1: false }
+      })
+    ).toEqual([["costTreatment", true]]);
+  });
+
+  it("blocks a contract in a foreign currency", () => {
+    expect(projectContractGaps({ ...clean, currencyCode: "EUR" })).toEqual([
+      { key: "currency", blocking: true, baseCurrencyCode: "USD" }
+    ]);
+  });
+
+  it("ignores the currency when only Fixed Daily lines bill", () => {
+    expect(
+      projectContractGaps({ ...clean, lines: [fixed], currencyCode: "EUR" })
+    ).toEqual([]);
+  });
+
+  it("blocks a Fixed Price line whose billing events miss its price", () => {
+    expect(
+      projectContractGaps({ ...clean, residuals: { line_fixed: 250 } })
+    ).toEqual([
+      {
+        key: "billingEvents",
+        blocking: true,
+        lineId: "line_fixed",
+        residual: 250
+      }
+    ]);
+  });
+
+  it("warns about labor categories with no bill rate on a T&M contract", () => {
+    expect(
+      projectContractGaps({
+        ...clean,
+        laborCategoriesWithoutBillRate: ["Engineer", "Technician"]
+      })
+    ).toEqual([{ key: "laborBillRate", blocking: false, count: 2 }]);
+    expect(
+      projectContractGaps({
+        ...clean,
+        lines: [fixed],
+        laborCategoriesWithoutBillRate: ["Engineer"]
+      })
+    ).toEqual([]);
+  });
+
+  it("warns about each empty default account, and not when unknown", () => {
+    expect(
+      keys({
+        ...clean,
+        emptyAccountDefaults: ["projectWorkInProgressAccount"]
+      })
+    ).toEqual([["accountDefault", false]]);
+    expect(
+      projectContractGaps({ ...clean, emptyAccountDefaults: null })
+    ).toEqual([]);
+  });
+});
+
+describe("laborCategoriesWithoutBillRate", () => {
+  const categories = [
+    {
+      id: "lc_eng",
+      name: "Engineer",
+      active: true,
+      rates: [{ billRate: 150 }]
+    },
+    {
+      id: "lc_tech",
+      name: "Technician",
+      active: true,
+      rates: [{ billRate: null }]
+    },
+    { id: "lc_old", name: "Retired", active: false, rates: [] }
+  ];
+
+  it("lists active categories with no bill rate", () => {
+    expect(
+      laborCategoriesWithoutBillRate({
+        categories,
+        timeAndMaterialsLineIds: ["line_1"],
+        lineRates: []
+      })
+    ).toEqual(["Technician"]);
+  });
+
+  it("counts a contract labor rate on every T&M line as covered", () => {
+    expect(
+      laborCategoriesWithoutBillRate({
+        categories,
+        timeAndMaterialsLineIds: ["line_1", "line_2"],
+        lineRates: [
+          { customerContractLineId: "line_1", laborCategoryId: "lc_tech" }
+        ]
+      })
+    ).toEqual(["Technician"]);
+    expect(
+      laborCategoriesWithoutBillRate({
+        categories,
+        timeAndMaterialsLineIds: ["line_1"],
+        lineRates: [
+          { customerContractLineId: "line_1", laborCategoryId: "lc_tech" }
+        ]
+      })
+    ).toEqual([]);
+  });
+
+  it("lists nothing without a T&M line", () => {
+    expect(
+      laborCategoriesWithoutBillRate({
+        categories,
+        timeAndMaterialsLineIds: [],
+        lineRates: []
+      })
+    ).toEqual([]);
   });
 });
