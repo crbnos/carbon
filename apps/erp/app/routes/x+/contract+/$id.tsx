@@ -334,12 +334,20 @@ export async function loader({
         fallbackEnds: lastPeriodEndByLine,
         recognizeRevenueFrom: current.recognizeRevenueFrom
       });
-  // Per line: billed − Σ revenue. Non-zero blocks Confirm.
+  // Per line: billed − Σ revenue. Non-zero blocks Confirm. A progress line
+  // has no planned revenue (above), so a Fixed Percent Complete line's
+  // billed total has nothing to match.
+  const progressLineIds = new Set(
+    contractLines
+      .filter((line) => isProgressRevenueMethod(line.revenueMethod))
+      .map((line) => line.id)
+  );
   const revenueResiduals: Record<string, number> = {};
   for (const [lineId, residual] of validateRevenueEdit(
     billedTotals,
     revenueRows
   ).residuals) {
+    if (progressLineIds.has(lineId)) continue;
     revenueResiduals[lineId] = residual;
   }
 

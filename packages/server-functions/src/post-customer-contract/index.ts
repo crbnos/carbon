@@ -30,6 +30,7 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
+  isProgressRevenueMethod,
   monthStart,
   validateRevenueEdit
 } from "@carbon/database/contract-revenue-schedule";
@@ -790,9 +791,28 @@ async function refuseRevenueResiduals(
   contractId: string,
   lineLabel: (lineId: string) => string
 ): Promise<void> {
+  // A progress line (Right to Invoice, Percent Complete) has no planned
+  // revenue: the monthly run recognizes it. A Fixed Percent Complete line
+  // still bills on its schedule, so its billed total has nothing to match.
+  const lines = await trx
+    .selectFrom("customerContractLine")
+    .select(["id", "revenueMethod"])
+    .where("customerContractId", "=", contractId)
+    .where("companyId", "=", scope.companyId)
+    .execute();
+  const progressLineIds = new Set(
+    lines
+      .filter((line) => isProgressRevenueMethod(line.revenueMethod))
+      .map((line) => line.id)
+  );
   const billed = await billedTotals(trx, scope, contractId);
-  const rows = await loadRevenue(trx, scope, contractId);
-  const { ok, residuals } = validateRevenueEdit(billed.totals, rows);
+  const totals = new Map(
+    [...billed.totals].filter(([lineId]) => !progressLineIds.has(lineId))
+  );
+  const rows = (await loadRevenue(trx, scope, contractId)).filter(
+    (row) => !progressLineIds.has(row.lineId)
+  );
+  const { ok, residuals } = validateRevenueEdit(totals, rows);
   if (ok) return;
   const detail = [...residuals].map(
     ([lineId, residual]) => `${lineLabel(lineId)}: ${residual}`

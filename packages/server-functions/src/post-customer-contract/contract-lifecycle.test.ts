@@ -2206,3 +2206,86 @@ databaseTest(
     }
   }
 );
+
+// A Fixed Price line of a project contract bills on its billing events and
+// earns revenue by Percent Complete, so it has billed rows and no planned
+// revenue rows. Confirm must not read that as a revenue residual.
+databaseTest(
+  "confirm activates a project contract with a Fixed Percent Complete line",
+  async () => {
+    const f = await contractFixture();
+    const { ctx, db, companyId } = f;
+    try {
+      const billing = await projectBillingFixture(f);
+      const project = await billing.addProject("fixed", "PX", "Contract");
+      const itemId = await contractItemId(db, companyId, f.oneTimeLineId);
+      const { customerId } = await db
+        .selectFrom("customerContract")
+        .select("customerId")
+        .where("id", "=", f.contractId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirstOrThrow();
+
+      const contractId = `${companyId}-fixed-pc`;
+      await db.transaction().execute(async (trx) => {
+        await trx
+          .insertInto("customerContract")
+          .values({
+            id: contractId,
+            customerContractId: "CON-fixed-pc",
+            name: "fixed-pc",
+            customerId,
+            billingBasis: "Project",
+            projectId: project.projectId,
+            closeDate: "2026-01-01",
+            startDate: "2026-01-01",
+            endDate: "2026-12-31",
+            billingFrequency: "Month",
+            billingAlignment: "Calendar",
+            billingTiming: "Arrears",
+            renewal: "End",
+            currencyCode: "USD",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("customerContractLine")
+          .values({
+            id: `${contractId}-line`,
+            customerContractId: contractId,
+            revenueType: "One-time",
+            itemId,
+            description: "Fixed Price build",
+            quantity: 1,
+            rate: 90000,
+            startDate: "2026-01-01",
+            billingMethod: "Fixed",
+            revenueMethod: "Percent Complete",
+            projectId: project.projectId,
+            projectElementId: project.rootId,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+
+      const confirmed = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(confirmed.error).toBeNull();
+
+      const { status } = await db
+        .selectFrom("customerContract")
+        .select("status")
+        .where("id", "=", contractId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirstOrThrow();
+      expect(status).toBe("Active");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
