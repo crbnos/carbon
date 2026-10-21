@@ -54,7 +54,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   // The coverage contracts the order may still name: its customer's Active
-  // contracts. The unbilled count decides between Create Invoice and Close.
+  // service contracts. The unbilled count decides between Create Invoice and
+  // Close.
   const [contracts, unbilled, elements] = await Promise.all([
     serviceOrder.data.customerId
       ? client
@@ -63,6 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .eq("companyId", companyId)
           .eq("customerId", serviceOrder.data.customerId)
           .eq("status", "Active")
+          .eq("billingBasis", "Schedule")
           .order("customerContractId")
       : null,
     client

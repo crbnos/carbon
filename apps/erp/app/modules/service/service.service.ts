@@ -368,8 +368,9 @@ export async function getDepotRepairOrdersByReturnOrder(
 
 /**
  * What the new order form offers: the In Service customer assets (the only
- * subjects a field visit takes), the Active coverage contracts of their
- * customers, and the service templates. The asset list stops at the
+ * subjects a field visit takes), the Active service contracts of their
+ * customers (a project contract never covers an order), and the service
+ * templates. The asset list stops at the
  * PostgREST page (1000 rows).
  */
 export async function getServiceOrderFormOptions(
@@ -390,6 +391,7 @@ export async function getServiceOrderFormOptions(
       .select("id, customerContractId, name, customerId")
       .eq("companyId", companyId)
       .eq("status", "Active")
+      .eq("billingBasis", "Schedule")
       .order("customerContractId"),
     client
       .from("project")

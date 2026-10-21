@@ -194,13 +194,17 @@ export async function createServiceOrder(
 
     const contracts = await trx
       .selectFrom("customerContract")
-      .select(["id", "projectId", "status"])
+      .select(["id", "projectId", "status", "billingBasis"])
       .where("companyId", "=", companyId)
       .where("customerId", "=", asset.customerId)
       .where((eb) =>
         args.customerContractId
           ? eb("id", "=", args.customerContractId)
-          : eb("status", "=", "Active")
+          : eb.and([
+              eb("status", "=", "Active"),
+              // A project contract never covers a service order.
+              eb("billingBasis", "=", "Schedule")
+            ])
       )
       .execute();
     let contract: { id: string; projectId: string | null } | null = null;
@@ -209,6 +213,11 @@ export async function createServiceOrder(
       if (!contract) {
         throw new ServiceOrderError(
           "The coverage contract is not one of this customer's contracts"
+        );
+      }
+      if (contracts[0]?.billingBasis === "Project") {
+        throw new ServiceOrderError(
+          "A project contract cannot cover a service order."
         );
       }
     } else if (contracts.length === 1) {
@@ -809,7 +818,7 @@ export async function updateServiceOrderCoverageContract(
     if (args.customerContractId) {
       const contract = await trx
         .selectFrom("customerContract")
-        .select(["id", "projectId"])
+        .select(["id", "projectId", "billingBasis"])
         .where("id", "=", args.customerContractId)
         .where("companyId", "=", args.companyId)
         .where("customerId", "=", order.customerId ?? "")
@@ -817,6 +826,11 @@ export async function updateServiceOrderCoverageContract(
       if (!contract) {
         throw new ServiceOrderError(
           "The coverage contract is not one of this customer's contracts"
+        );
+      }
+      if (contract.billingBasis === "Project") {
+        throw new ServiceOrderError(
+          "A project contract cannot cover a service order."
         );
       }
       contractProjectId = contract.projectId;
