@@ -6730,9 +6730,6 @@ msgstr "Pracownik zewnętrzny"
 msgid "Contractors"
 msgstr "Pracownicy zewnętrzni"
 
-msgid "Contracts"
-msgstr ""
-
 msgid "Control"
 msgstr "Kontrola"
 
@@ -19953,6 +19950,12 @@ msgstr "Wniosek o zmianę projektu"
 msgid "Project Change Requests"
 msgstr "Wnioski o zmianę projektu"
 
+msgid "Project Contract"
+msgstr ""
+
+msgid "Project Contracts"
+msgstr ""
+
 msgid "Project control"
 msgstr ""
 
@@ -23377,6 +23380,9 @@ msgstr "Opłaty za usługi"
 
 msgid "Service Charges (default)"
 msgstr "Opłaty za usługi (domyślnie)"
+
+msgid "Service Contract"
+msgstr ""
 
 msgid "Service Contracts"
 msgstr "Umowy serwisowe"

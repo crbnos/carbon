@@ -6730,9 +6730,6 @@ msgstr "외주 인력"
 msgid "Contractors"
 msgstr "외주 인력"
 
-msgid "Contracts"
-msgstr ""
-
 msgid "Control"
 msgstr "제어"
 
@@ -19953,6 +19950,12 @@ msgstr "프로젝트 변경 요청"
 msgid "Project Change Requests"
 msgstr "프로젝트 변경 요청"
 
+msgid "Project Contract"
+msgstr ""
+
+msgid "Project Contracts"
+msgstr ""
+
 msgid "Project control"
 msgstr ""
 
@@ -23377,6 +23380,9 @@ msgstr "서비스 요금"
 
 msgid "Service Charges (default)"
 msgstr "서비스 요금(기본값)"
+
+msgid "Service Contract"
+msgstr ""
 
 msgid "Service Contracts"
 msgstr "서비스 계약"

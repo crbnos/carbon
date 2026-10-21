@@ -6730,9 +6730,6 @@ msgstr "Terceirizado"
 msgid "Contractors"
 msgstr "Terceirizados"
 
-msgid "Contracts"
-msgstr ""
-
 msgid "Control"
 msgstr "Controle"
 
@@ -19953,6 +19950,12 @@ msgstr "Solicitação de alteração do projeto"
 msgid "Project Change Requests"
 msgstr "Solicitações de Mudança do Projeto"
 
+msgid "Project Contract"
+msgstr ""
+
+msgid "Project Contracts"
+msgstr ""
+
 msgid "Project control"
 msgstr ""
 
@@ -23377,6 +23380,9 @@ msgstr "Taxas de serviço"
 
 msgid "Service Charges (default)"
 msgstr "Taxas de serviço (padrão)"
+
+msgid "Service Contract"
+msgstr ""
 
 msgid "Service Contracts"
 msgstr "Contratos de serviço"

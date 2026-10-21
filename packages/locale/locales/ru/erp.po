@@ -6730,9 +6730,6 @@ msgstr "Подрядчик"
 msgid "Contractors"
 msgstr "Подрядчики"
 
-msgid "Contracts"
-msgstr ""
-
 msgid "Control"
 msgstr "Управление"
 
@@ -19953,6 +19950,12 @@ msgstr "Запрос на изменение проекта"
 msgid "Project Change Requests"
 msgstr "Запросы изменений проекта"
 
+msgid "Project Contract"
+msgstr ""
+
+msgid "Project Contracts"
+msgstr ""
+
 msgid "Project control"
 msgstr ""
 
@@ -23377,6 +23380,9 @@ msgstr "Сервисные сборы"
 
 msgid "Service Charges (default)"
 msgstr "Сервисные сборы (по умолчанию)"
+
+msgid "Service Contract"
+msgstr ""
 
 msgid "Service Contracts"
 msgstr "Сервисные контракты"

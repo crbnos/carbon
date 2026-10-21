@@ -6730,9 +6730,6 @@ msgstr "外协人员"
 msgid "Contractors"
 msgstr "外协人员"
 
-msgid "Contracts"
-msgstr ""
-
 msgid "Control"
 msgstr "控制"
 
@@ -19953,6 +19950,12 @@ msgstr "项目变更请求"
 msgid "Project Change Requests"
 msgstr "项目变更请求"
 
+msgid "Project Contract"
+msgstr ""
+
+msgid "Project Contracts"
+msgstr ""
+
 msgid "Project control"
 msgstr ""
 
@@ -23377,6 +23380,9 @@ msgstr "服务费"
 
 msgid "Service Charges (default)"
 msgstr "服务费 (默认)"
+
+msgid "Service Contract"
+msgstr ""
 
 msgid "Service Contracts"
 msgstr "服务合约"

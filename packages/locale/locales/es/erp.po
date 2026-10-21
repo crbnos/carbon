@@ -6730,9 +6730,6 @@ msgstr "Contratista"
 msgid "Contractors"
 msgstr "Contratistas"
 
-msgid "Contracts"
-msgstr ""
-
 msgid "Control"
 msgstr "Control"
 
@@ -19953,6 +19950,12 @@ msgstr "Solicitud de cambio de proyecto"
 msgid "Project Change Requests"
 msgstr "Solicitudes de cambio de proyectos"
 
+msgid "Project Contract"
+msgstr ""
+
+msgid "Project Contracts"
+msgstr ""
+
 msgid "Project control"
 msgstr ""
 
@@ -23377,6 +23380,9 @@ msgstr "Cargos por servicio"
 
 msgid "Service Charges (default)"
 msgstr "Cargos por servicio (predeterminado)"
+
+msgid "Service Contract"
+msgstr ""
 
 msgid "Service Contracts"
 msgstr "Contratos de servicio"

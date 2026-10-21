@@ -1890,6 +1890,9 @@ export const path = {
     newProject: `${x}/projects/new`,
     newProjectChangeRequest: (id: string) =>
       generatePath(`${x}/project/${id}/change-requests/new`),
+    newProjectContract: `${x}/contract/new?basis=Project`,
+    newProjectContractForProject: (projectId: string) =>
+      `${x}/contract/new?${new URLSearchParams({ basis: "Project", projectId })}`,
     newProjectElement: (id: string) =>
       generatePath(`${x}/project/${id}/elements/new`),
     newProjectStockTransfer: `${x}/projects/transfers/new`,
@@ -2135,6 +2138,7 @@ export const path = {
       generatePath(`${x}/project/${id}/change-requests`),
     projectChangeRequestViewed: (id: string, crId: string) =>
       generatePath(`${x}/project/${id}/change-requests/${crId}/viewed`),
+    projectContracts: `${x}/sales/project-contracts`,
     projectCosts: (id: string) => generatePath(`${x}/project/${id}/costs`),
     projectCostsElement: (id: string, elementId: string) =>
       generatePath(`${x}/project/${id}/costs/${elementId}`),

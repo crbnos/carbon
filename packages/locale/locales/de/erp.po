@@ -6730,9 +6730,6 @@ msgstr "Externer Mitarbeiter"
 msgid "Contractors"
 msgstr "Externe Mitarbeiter"
 
-msgid "Contracts"
-msgstr ""
-
 msgid "Control"
 msgstr "Steuerung"
 
@@ -19953,6 +19950,12 @@ msgstr "Projektänderungsanfrage"
 msgid "Project Change Requests"
 msgstr "Projektänderungsanfragen"
 
+msgid "Project Contract"
+msgstr ""
+
+msgid "Project Contracts"
+msgstr ""
+
 msgid "Project control"
 msgstr ""
 
@@ -23377,6 +23380,9 @@ msgstr "Servicegebühren"
 
 msgid "Service Charges (default)"
 msgstr "Servicegebühren (Standard)"
+
+msgid "Service Contract"
+msgstr ""
 
 msgid "Service Contracts"
 msgstr "Serviceverträge"

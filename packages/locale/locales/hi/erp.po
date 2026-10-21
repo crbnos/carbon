@@ -6730,9 +6730,6 @@ msgstr "ठेकेदार"
 msgid "Contractors"
 msgstr "ठेकेदार"
 
-msgid "Contracts"
-msgstr ""
-
 msgid "Control"
 msgstr "नियंत्रण"
 
@@ -19953,6 +19950,12 @@ msgstr "प्रोजेक्ट परिवर्तन अनुरोध"
 msgid "Project Change Requests"
 msgstr "प्रोजेक्ट परिवर्तन अनुरोध"
 
+msgid "Project Contract"
+msgstr ""
+
+msgid "Project Contracts"
+msgstr ""
+
 msgid "Project control"
 msgstr ""
 
@@ -23377,6 +23380,9 @@ msgstr "सेवा शुल्क"
 
 msgid "Service Charges (default)"
 msgstr "सेवा शुल्क (डिफ़ॉल्ट)"
+
+msgid "Service Contract"
+msgstr ""
 
 msgid "Service Contracts"
 msgstr "सेवा अनुबंध"

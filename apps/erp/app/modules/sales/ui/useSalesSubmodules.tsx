@@ -5,6 +5,7 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBan,
+  LuFolderKanban,
   LuGlobe,
   LuKeyRound,
   LuList,
@@ -86,9 +87,15 @@ export default function useSalesSubmodules() {
       name: t`Agreements`,
       routes: [
         {
-          name: t`Contracts`,
+          name: t`Service Contracts`,
           to: path.to.contracts,
           icon: <LuSection />,
+          table: "customerContract"
+        },
+        {
+          name: t`Project Contracts`,
+          to: path.to.projectContracts,
+          icon: <LuFolderKanban />,
           table: "customerContract"
         },
         {

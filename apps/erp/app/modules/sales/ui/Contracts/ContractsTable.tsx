@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { BarProgress, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import type { ContractBillingBasis } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -40,9 +41,21 @@ import type { ContractListItem } from "./types";
 type ContractsTableProps = {
   data: ContractListItem[];
   count: number;
+  /** Which list this is: service contracts or project contracts. */
+  billingBasis: ContractBillingBasis;
 };
 
-const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
+/** The columns only a service contract fills: its value, what is invoiced of
+ *  it and its next invoice all come from the invoice schedule. A project
+ *  contract bills project cost, which the view does not sum. */
+const scheduleOnlyColumns = new Set([
+  "contractValue",
+  "invoicedToDate",
+  "nextInvoiceDate"
+]);
+
+const ContractsTable = memo((props: ContractsTableProps) => {
+  const { data, count, billingBasis } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -206,8 +219,21 @@ const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
       }
     ];
 
-    return [...defaultColumns, ...customColumns];
-  }, [customers, customColumns, formatDate, t]);
+    const basisColumns =
+      billingBasis === "Project"
+        ? defaultColumns.filter(
+            (column) =>
+              !(
+                "accessorKey" in column &&
+                scheduleOnlyColumns.has(String(column.accessorKey))
+              )
+          )
+        : defaultColumns;
+
+    return [...basisColumns, ...customColumns];
+  }, [billingBasis, customers, customColumns, formatDate, t]);
+
+  const isProject = billingBasis === "Project";
 
   const renderContextMenu = useMemo(() => {
     return (row: ContractListItem) => (
@@ -249,11 +275,14 @@ const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
         }}
         primaryAction={
           permissions.can("create", "sales") && (
-            <New label={t`Contract`} to={path.to.newContract} />
+            <New
+              label={isProject ? t`Project Contract` : t`Service Contract`}
+              to={isProject ? path.to.newProjectContract : path.to.newContract}
+            />
           )
         }
         renderContextMenu={renderContextMenu}
-        title={t`Contracts`}
+        title={isProject ? t`Project Contracts` : t`Service Contracts`}
         table="customerContract"
         withSavedView
       />

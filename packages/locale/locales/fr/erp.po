@@ -6730,9 +6730,6 @@ msgstr "Prestataire"
 msgid "Contractors"
 msgstr "Prestataires"
 
-msgid "Contracts"
-msgstr ""
-
 msgid "Control"
 msgstr "Contrôle"
 
@@ -19953,6 +19950,12 @@ msgstr "Demande de modification de projet"
 msgid "Project Change Requests"
 msgstr "Demandes de changement de projet"
 
+msgid "Project Contract"
+msgstr ""
+
+msgid "Project Contracts"
+msgstr ""
+
 msgid "Project control"
 msgstr ""
 
@@ -23377,6 +23380,9 @@ msgstr "Frais de service"
 
 msgid "Service Charges (default)"
 msgstr "Frais de service (défaut)"
+
+msgid "Service Contract"
+msgstr ""
 
 msgid "Service Contracts"
 msgstr "Contrats de service"

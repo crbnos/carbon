@@ -6730,9 +6730,6 @@ msgstr "Taşeron"
 msgid "Contractors"
 msgstr "Taşeronlar"
 
-msgid "Contracts"
-msgstr ""
-
 msgid "Control"
 msgstr "Kontrol"
 
@@ -19953,6 +19950,12 @@ msgstr "Proje Değişiklik İsteği"
 msgid "Project Change Requests"
 msgstr "Proje Değişiklik İstekleri"
 
+msgid "Project Contract"
+msgstr ""
+
+msgid "Project Contracts"
+msgstr ""
+
 msgid "Project control"
 msgstr ""
 
@@ -23377,6 +23380,9 @@ msgstr "Hizmet bedelleri"
 
 msgid "Service Charges (default)"
 msgstr "Hizmet bedelleri (varsayılan)"
+
+msgid "Service Contract"
+msgstr ""
 
 msgid "Service Contracts"
 msgstr "Hizmet Sözleşmeleri"

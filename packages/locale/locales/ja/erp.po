@@ -6730,9 +6730,6 @@ msgstr "外部作業者"
 msgid "Contractors"
 msgstr "外部作業者"
 
-msgid "Contracts"
-msgstr ""
-
 msgid "Control"
 msgstr "管理"
 
@@ -19953,6 +19950,12 @@ msgstr "プロジェクト変更要求"
 msgid "Project Change Requests"
 msgstr "プロジェクト変更要求"
 
+msgid "Project Contract"
+msgstr ""
+
+msgid "Project Contracts"
+msgstr ""
+
 msgid "Project control"
 msgstr ""
 
@@ -23377,6 +23380,9 @@ msgstr "サービス料金"
 
 msgid "Service Charges (default)"
 msgstr "サービス料金 (既定)"
+
+msgid "Service Contract"
+msgstr ""
 
 msgid "Service Contracts"
 msgstr "サービス契約"
