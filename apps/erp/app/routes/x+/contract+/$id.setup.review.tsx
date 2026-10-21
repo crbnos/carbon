@@ -136,9 +136,10 @@ export async function loader({
     ["contract labor rates", lineRates]
   ] as const) {
     if (result.error) {
-      logger.error(`Failed to load the ${what} for the contract review`, {
+      logger.error("Failed to load a read for the contract review", {
         companyId,
         id,
+        read: what,
         error: result.error
       });
     }
