@@ -589,6 +589,9 @@ msgstr "{asset}: платеж, подлежащий оплате {dueDate}, пр
 msgid "{assetCount} Assets"
 msgstr "{assetCount} Активы"
 
+msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
 
@@ -20019,6 +20022,9 @@ msgstr "Запросы изменений проекта"
 msgid "Project Contract"
 msgstr ""
 
+msgid "Project contract {contractId} is not confirmed"
+msgstr ""
+
 msgid "Project Contracts"
 msgstr ""
 
@@ -28846,6 +28852,9 @@ msgstr "Просмотр контактного лица"
 
 msgid "View Contained Issues"
 msgstr "Просмотреть содержащиеся проблемы"
+
+msgid "View contract"
+msgstr ""
 
 msgid "View costs"
 msgstr "Просмотр стоимостей"

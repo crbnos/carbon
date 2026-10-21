@@ -589,6 +589,9 @@ msgstr "{asset}: o pagamento vencido em {dueDate} é ignorado (pago fora do Carb
 msgid "{assetCount} Assets"
 msgstr "{assetCount} Ativos"
 
+msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Considere apontar esta peça diretamente para o sucessor final."
 
@@ -20019,6 +20022,9 @@ msgstr "Solicitações de Mudança do Projeto"
 msgid "Project Contract"
 msgstr ""
 
+msgid "Project contract {contractId} is not confirmed"
+msgstr ""
+
 msgid "Project Contracts"
 msgstr ""
 
@@ -28846,6 +28852,9 @@ msgstr "Ver Contacto"
 
 msgid "View Contained Issues"
 msgstr "Ver Problemas Contidos"
+
+msgid "View contract"
+msgstr ""
 
 msgid "View costs"
 msgstr "Visualizar custos"

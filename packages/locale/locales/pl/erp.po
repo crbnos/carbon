@@ -589,6 +589,9 @@ msgstr "{asset}: płatność wymagalna w dniu {dueDate} jest pominięta (zapłac
 msgid "{assetCount} Assets"
 msgstr "{assetCount} Aktywów"
 
+msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Rozważ wskazanie tej części bezpośrednio na ostatecznego następcę."
 
@@ -20019,6 +20022,9 @@ msgstr "Wnioski o zmianę projektu"
 msgid "Project Contract"
 msgstr ""
 
+msgid "Project contract {contractId} is not confirmed"
+msgstr ""
+
 msgid "Project Contracts"
 msgstr ""
 
@@ -28846,6 +28852,9 @@ msgstr "Wyświetl Kontakt"
 
 msgid "View Contained Issues"
 msgstr "Wyświetl zawarte problemy"
+
+msgid "View contract"
+msgstr ""
 
 msgid "View costs"
 msgstr "Wyświetl koszty"

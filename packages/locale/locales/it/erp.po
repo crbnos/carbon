@@ -589,6 +589,9 @@ msgstr "{asset}: il pagamento scaduto {dueDate} è Saltato (pagato al di fuori d
 msgid "{assetCount} Assets"
 msgstr "{assetCount} Cespiti"
 
+msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Considera di indirizzare direttamente questa parte al successore finale."
 
@@ -20019,6 +20022,9 @@ msgstr "Richieste di modifica del progetto"
 msgid "Project Contract"
 msgstr ""
 
+msgid "Project contract {contractId} is not confirmed"
+msgstr ""
+
 msgid "Project Contracts"
 msgstr ""
 
@@ -28846,6 +28852,9 @@ msgstr "Visualizza Contatto"
 
 msgid "View Contained Issues"
 msgstr "Visualizza problemi contenuti"
+
+msgid "View contract"
+msgstr ""
 
 msgid "View costs"
 msgstr "Visualizza costi"

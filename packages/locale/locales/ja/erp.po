@@ -589,6 +589,9 @@ msgstr "{asset}: {dueDate}に支払期限のある支払はスキップ済（Car
 msgid "{assetCount} Assets"
 msgstr "{assetCount} 固定資産"
 
+msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
 
@@ -20019,6 +20022,9 @@ msgstr "プロジェクト変更要求"
 msgid "Project Contract"
 msgstr ""
 
+msgid "Project contract {contractId} is not confirmed"
+msgstr ""
+
 msgid "Project Contracts"
 msgstr ""
 
@@ -28846,6 +28852,9 @@ msgstr "担当者を表示"
 
 msgid "View Contained Issues"
 msgstr "含まれた問題を表示"
+
+msgid "View contract"
+msgstr ""
 
 msgid "View costs"
 msgstr "原価を表示"

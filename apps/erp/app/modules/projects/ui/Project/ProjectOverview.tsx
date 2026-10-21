@@ -11,9 +11,12 @@ import type { ReactNode } from "react";
 import {
   LuChevronRight,
   LuClock,
+  LuFilePen,
+  LuFilePlus,
   LuGitPullRequestArrow,
   LuHandCoins,
-  LuOctagonX
+  LuOctagonX,
+  LuReceipt
 } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
@@ -22,8 +25,10 @@ import {
   useDateFormatter,
   usePercentFormatter,
   usePermissions,
-  useRouteData
+  useRouteData,
+  useUser
 } from "~/hooks";
+import { FundingBar } from "~/modules/sales/ui/Contracts";
 import { useItems, usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import type {
@@ -76,6 +81,23 @@ type ProjectOverviewProps = {
     isReversal: boolean;
   }[];
   openTimeCount: number;
+  /** The confirmed project contracts that bill the project, together. */
+  contract: {
+    /** The contract the card links. */
+    id: string;
+    funded: number;
+    incurred: number;
+    billed: number;
+    unbilled: number;
+    revenue: number;
+  } | null;
+  /** The project contract rows of Needs attention; null without
+   *  `view: sales`. */
+  contractAttention: {
+    hasProjectContract: boolean;
+    draftContract: { id: string; customerContractId: string } | null;
+    billingReviewCount: number;
+  } | null;
   /** The members section, in DCAA timekeeping. */
   members?: ReactNode;
 };
@@ -94,6 +116,8 @@ export default function ProjectOverview({
   milestones,
   activity,
   openTimeCount,
+  contract,
+  contractAttention,
   members
 }: ProjectOverviewProps) {
   const { t } = useLingui();
@@ -111,6 +135,7 @@ export default function ProjectOverview({
 
   const isDisabled =
     !permissions.can("update", "projects") || project.status === "Closed";
+  const isContract = project.costTreatment === "Contract";
 
   return (
     <div className="@container mx-auto w-full max-w-[90rem] px-6 py-6">
@@ -137,12 +162,14 @@ export default function ProjectOverview({
             today={today}
           />
           <BudgetCard figures={figures} />
+          {isContract && contract && <ContractCard contract={contract} />}
           <NeedsAttentionCard
             projectId={projectId}
             project={project}
             overdueBorrowCount={routeData?.overdueBorrowCount ?? 0}
             openChangeRequestCount={routeData?.openChangeRequests.length ?? 0}
             openTimeCount={openTimeCount}
+            contractAttention={isContract ? contractAttention : null}
           />
         </div>
         <div className="flex min-w-0 flex-col gap-6">
@@ -486,19 +513,109 @@ function BudgetCard({ figures }: { figures: ProjectOverviewProps["figures"] }) {
   );
 }
 
+/** Where the project contract stands: billing against what is funded, then
+ *  the cost, billed, unbilled and revenue figures. */
+function ContractCard({
+  contract
+}: {
+  contract: NonNullable<ProjectOverviewProps["contract"]>;
+}) {
+  const { t } = useLingui();
+  const { company } = useUser();
+  const money = useCurrencyFormatter();
+
+  return (
+    <OverviewCard
+      title={t`Contract`}
+      action={
+        <CardLink to={path.to.contract(contract.id)}>
+          <Trans>View contract</Trans>
+        </CardLink>
+      }
+    >
+      <div className="@container flex flex-col gap-3">
+        {/* Billing lines need the contract currency to be the base
+            currency (P5). */}
+        <FundingBar
+          position={{
+            billed: contract.billed,
+            unbilled: contract.unbilled,
+            incurred: contract.incurred
+          }}
+          terms={{
+            fundedAmount: contract.funded,
+            fundedCost: null,
+            ceilingAmount: null,
+            noticePercent: 0
+          }}
+          currencyCode={company.baseCurrencyCode ?? "USD"}
+          compact
+        />
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 @sm:grid-cols-3 @xl:grid-cols-5">
+          <ContractFigure label={t`Funded`}>
+            {money.format(contract.funded)}
+          </ContractFigure>
+          <ContractFigure label={t`Cost`}>
+            {money.format(contract.incurred)}
+          </ContractFigure>
+          <ContractFigure label={t`Billed`} swatch="bg-emerald-500">
+            {money.format(contract.billed)}
+          </ContractFigure>
+          <ContractFigure label={t`Unbilled`} swatch="bg-blue-500">
+            {money.format(contract.unbilled)}
+          </ContractFigure>
+          <ContractFigure label={t`Revenue`}>
+            {money.format(contract.revenue)}
+          </ContractFigure>
+        </div>
+      </div>
+    </OverviewCard>
+  );
+}
+
+/** One figure of the Contract card: a muted label over the amount. The
+ *  swatch matches its segment of the funding bar. */
+function ContractFigure({
+  label,
+  swatch,
+  children
+}: {
+  label: string;
+  swatch?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        {swatch && (
+          <span
+            aria-hidden="true"
+            className={cn("size-2 shrink-0 rounded-[2px]", swatch)}
+          />
+        )}
+        {label}
+      </span>
+      <span className="truncate text-sm tabular-nums">{children}</span>
+    </div>
+  );
+}
+
 /** What needs a decision; the card shows only when something does. */
 function NeedsAttentionCard({
   projectId,
   project,
   overdueBorrowCount,
   openChangeRequestCount,
-  openTimeCount
+  openTimeCount,
+  contractAttention
 }: {
   projectId: string;
   project: Project;
   overdueBorrowCount: number;
   openChangeRequestCount: number;
   openTimeCount: number;
+  /** A Contract project's contract rows; null otherwise. */
+  contractAttention: ProjectOverviewProps["contractAttention"];
 }) {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
@@ -560,6 +677,46 @@ function NeedsAttentionCard({
           value={openTimeCount}
           one="# time entry is not posted yet"
           other="# time entries are not posted yet"
+        />
+      </AttentionRow>
+    );
+  }
+  if (contractAttention && !contractAttention.hasProjectContract) {
+    rows.push(
+      <AttentionRow
+        key="no-contract"
+        to={path.to.projectBilling(projectId)}
+        icon={<LuFilePlus />}
+      >
+        <Trans>No project contract bills this project</Trans>
+      </AttentionRow>
+    );
+  }
+  const draftContract = contractAttention?.draftContract;
+  if (draftContract) {
+    const contractId = draftContract.customerContractId;
+    rows.push(
+      <AttentionRow
+        key="draft-contract"
+        to={path.to.contractSetup(draftContract.id, "review")}
+        icon={<LuFilePen />}
+      >
+        <Trans>Project contract {contractId} is not confirmed</Trans>
+      </AttentionRow>
+    );
+  }
+  const billingReviewCount = contractAttention?.billingReviewCount ?? 0;
+  if (billingReviewCount > 0) {
+    rows.push(
+      <AttentionRow
+        key="billing-review"
+        to={`${path.to.projectTimesheetApprovals}?tab=billing`}
+        icon={<LuReceipt />}
+      >
+        <Plural
+          value={billingReviewCount}
+          one="# billable item waits for review"
+          other="# billable items wait for review"
         />
       </AttentionRow>
     );

@@ -589,6 +589,9 @@ msgstr "{asset}: {dueDate}에 납부 기한이 있는 지불이 건너뜀 상태
 msgid "{assetCount} Assets"
 msgstr "{assetCount} 자산"
 
+msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
 
@@ -20019,6 +20022,9 @@ msgstr "프로젝트 변경 요청"
 msgid "Project Contract"
 msgstr ""
 
+msgid "Project contract {contractId} is not confirmed"
+msgstr ""
+
 msgid "Project Contracts"
 msgstr ""
 
@@ -28846,6 +28852,9 @@ msgstr "담당자 보기"
 
 msgid "View Contained Issues"
 msgstr "포함된 이슈 보기"
+
+msgid "View contract"
+msgstr ""
 
 msgid "View costs"
 msgstr "원가 보기"

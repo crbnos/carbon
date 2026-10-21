@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getUserClaims } from "@carbon/auth/users.server";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -11,6 +13,7 @@ import { usePermissions, useRouteData } from "~/hooks";
 import {
   buildProjectCostFigures,
   getChildServiceProjectCosts,
+  getProjectContractRevenue,
   getProjectCostSummary,
   getProjectElements,
   getProjectMembers,
@@ -21,6 +24,7 @@ import {
 } from "~/modules/projects";
 import ProjectMembers from "~/modules/projects/ui/Project/ProjectMembers";
 import ProjectOverview from "~/modules/projects/ui/Project/ProjectOverview";
+import { getContractLineFunding, projectContractFunded } from "~/modules/sales";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
 
@@ -31,12 +35,19 @@ const COMING_UP_LIMIT = 6;
 const ACTIVITY_LIMIT = 6;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "projects"
   });
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
+
+  // The project contract (the Contract card and its Needs attention rows) is
+  // sales data; billing review also needs `update: projects`.
+  const permissions = (await getUserClaims(userId, companyId))?.permissions;
+  const canViewSales = hasPermission(permissions, "sales", "view", companyId);
+  const canReviewBilling =
+    canViewSales && hasPermission(permissions, "projects", "update", companyId);
 
   const [
     elements,
@@ -47,7 +58,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     timeZone,
     members,
     comments,
-    costs
+    costs,
+    projectContracts,
+    billingReview
   ] = await Promise.all([
     getProjectElements(client, projectId, companyId),
     getProjectCostSummary(client, projectId, companyId),
@@ -74,7 +87,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .eq("projectId", projectId)
       .eq("companyId", companyId)
       .order("createdAt", { ascending: false })
-      .limit(ACTIVITY_LIMIT)
+      .limit(ACTIVITY_LIMIT),
+    // The project contracts that bill the project, with their lines.
+    canViewSales
+      ? client
+          .from("customerContract")
+          .select(
+            "id, customerContractId, name, status, lines:customerContractLine!customerContractLine_contract_fkey(id, billingMethod, fundedAmount, quantity, rate)"
+          )
+          .eq("companyId", companyId)
+          .eq("projectId", projectId)
+          .eq("billingBasis", "Project")
+          .order("customerContractId")
+      : null,
+    // The project's contract billable items that wait for review.
+    canReviewBilling
+      ? client
+          .from("projectBillableItem")
+          .select("id", { count: "exact", head: true })
+          .eq("companyId", companyId)
+          .eq("projectId", projectId)
+          .not("customerContractLineId", "is", null)
+          .in("status", ["Unbilled", "On Hold"])
+      : null
   ]);
 
   for (const [what, result] of [
@@ -85,9 +120,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ["open time", openEntries],
     ["members", members],
     ["comments", comments],
-    ["costs", costs]
+    ["costs", costs],
+    ["project contracts", projectContracts],
+    ["billable items to review", billingReview]
   ] as const) {
-    if (result.error) {
+    if (result?.error) {
       logger.error("Failed to load a part of the project overview", {
         what,
         companyId,
@@ -99,6 +136,83 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const today = datetime.today(timeZone).toString();
   const elementRows = elements.data ?? [];
+
+  // The Contract card: every confirmed project contract (Active or Ended)
+  // together. Billing lines (T&M, Cost Plus) give the cost, billed and
+  // unbilled amounts; a Fixed Price line is billed by its invoiced billing
+  // events. Three reads, whatever the number of lines.
+  const contracts = projectContracts?.data ?? [];
+  const confirmed = contracts.filter((contract) => contract.status !== "Draft");
+  const confirmedLines = confirmed.flatMap((contract) => contract.lines);
+  const billingLineIds = confirmedLines
+    .filter((line) => line.billingMethod !== "Fixed")
+    .map((line) => line.id);
+  const fixedLineIds = confirmedLines
+    .filter((line) => line.billingMethod === "Fixed")
+    .map((line) => line.id);
+  const [funding, revenue, fixedBilled] =
+    confirmed.length > 0
+      ? await Promise.all([
+          getContractLineFunding(client, {
+            companyId,
+            lineIds: billingLineIds,
+            asOf: today
+          }),
+          getProjectContractRevenue(client, {
+            companyId,
+            lineIds: confirmedLines.map((line) => line.id)
+          }),
+          fixedLineIds.length > 0
+            ? client
+                .from("customerContractInvoiceLine")
+                .select(
+                  "amount, invoice:customerContractInvoice!customerContractInvoiceLine_invoice_fkey!inner(status)"
+                )
+                .eq("companyId", companyId)
+                .in("customerContractLineId", fixedLineIds)
+                .in("invoice.status", ["Invoiced", "Billed Externally"])
+            : null
+        ])
+      : [null, null, null];
+  for (const [what, result] of [
+    ["contract funding", funding],
+    ["contract revenue", revenue],
+    ["fixed price billing", fixedBilled]
+  ] as const) {
+    if (result?.error) {
+      logger.error("Failed to load a part of the project overview", {
+        what,
+        companyId,
+        projectId,
+        error: result.error
+      });
+    }
+  }
+  const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
+  const fundingRows = funding?.data ?? [];
+  const contract =
+    confirmed.length > 0
+      ? {
+          // The card links the first Active contract, else the first one.
+          id: (
+            confirmed.find((row) => row.status === "Active") ?? confirmed[0]!
+          ).id,
+          funded: projectContractFunded(confirmedLines),
+          incurred: sum(fundingRows.map((row) => Number(row.incurred))),
+          billed:
+            sum(fundingRows.map((row) => Number(row.billed))) +
+            sum((fixedBilled?.data ?? []).map((row) => Number(row.amount))),
+          unbilled: sum(fundingRows.map((row) => Number(row.unbilled))),
+          revenue: sum(
+            Object.values(revenue?.data ?? {}).map(
+              (line) => line.recognizedToDate
+            )
+          )
+        }
+      : null;
+  const draftContract = contracts.find(
+    (contract) => contract.status === "Draft"
+  );
 
   // The project total, as the Costs page's "Project total" row shows it.
   const serviceActual = (serviceCosts.data ?? []).reduce(
@@ -210,7 +324,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })),
     activity,
     openTimeCount: openEntries.data?.length ?? 0,
-    members: members.data ?? []
+    members: members.data ?? [],
+    contract,
+    // Null when the user cannot view sales: no contract row shows then.
+    contractAttention: canViewSales
+      ? {
+          hasProjectContract: contracts.length > 0,
+          draftContract: draftContract
+            ? {
+                id: draftContract.id,
+                customerContractId: draftContract.customerContractId
+              }
+            : null,
+          billingReviewCount: billingReview?.count ?? 0
+        }
+      : null
   };
 }
 

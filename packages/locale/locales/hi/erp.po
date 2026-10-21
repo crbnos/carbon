@@ -589,6 +589,9 @@ msgstr "{asset}: {dueDate} को देय भुगतान छोड़ा �
 msgid "{assetCount} Assets"
 msgstr "{assetCount} अचल संपत्तियाँ"
 
+msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
 
@@ -20019,6 +20022,9 @@ msgstr "प्रोजेक्ट परिवर्तन अनुरोध"
 msgid "Project Contract"
 msgstr ""
 
+msgid "Project contract {contractId} is not confirmed"
+msgstr ""
+
 msgid "Project Contracts"
 msgstr ""
 
@@ -28846,6 +28852,9 @@ msgstr "संपर्क देखें"
 
 msgid "View Contained Issues"
 msgstr "नियंत्रित समस्याओं को देखें"
+
+msgid "View contract"
+msgstr ""
 
 msgid "View costs"
 msgstr "लागत देखें"

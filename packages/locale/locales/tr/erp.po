@@ -589,6 +589,9 @@ msgstr "{asset}: {dueDate}'de vadesi gelen ödeme Atlandı (Carbon dışında ö
 msgid "{assetCount} Assets"
 msgstr "{assetCount} Sabit Kıymet"
 
+msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Bu parçayı doğrudan nihai ardıla yönlendirmeyi düşünün."
 
@@ -20019,6 +20022,9 @@ msgstr "Proje Değişiklik İstekleri"
 msgid "Project Contract"
 msgstr ""
 
+msgid "Project contract {contractId} is not confirmed"
+msgstr ""
+
 msgid "Project Contracts"
 msgstr ""
 
@@ -28846,6 +28852,9 @@ msgstr "İlgili kişiyi görüntüle"
 
 msgid "View Contained Issues"
 msgstr "Kontrol Altına Alınan Sorunları Görüntüle"
+
+msgid "View contract"
+msgstr ""
 
 msgid "View costs"
 msgstr "Maliyetleri Görüntüle"

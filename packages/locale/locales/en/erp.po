@@ -589,6 +589,9 @@ msgstr "{asset}: the payment due {dueDate} is Skipped (paid outside Carbon), so 
 msgid "{assetCount} Assets"
 msgstr "{assetCount} Assets"
 
+msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
+msgstr "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Consider pointing this part directly at the final successor."
 
@@ -20019,6 +20022,9 @@ msgstr "Project Change Requests"
 msgid "Project Contract"
 msgstr "Project Contract"
 
+msgid "Project contract {contractId} is not confirmed"
+msgstr "Project contract {contractId} is not confirmed"
+
 msgid "Project Contracts"
 msgstr "Project Contracts"
 
@@ -28846,6 +28852,9 @@ msgstr "View Contact"
 
 msgid "View Contained Issues"
 msgstr "View Contained Issues"
+
+msgid "View contract"
+msgstr "View contract"
 
 msgid "View costs"
 msgstr "View costs"

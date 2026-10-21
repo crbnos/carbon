@@ -589,6 +589,9 @@ msgstr "{asset}: 应付日期为 {dueDate} 的付款已跳过（在 Carbon 外�
 msgid "{assetCount} Assets"
 msgstr "{assetCount} 个资产"
 
+msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
 
@@ -20019,6 +20022,9 @@ msgstr "项目变更请求"
 msgid "Project Contract"
 msgstr ""
 
+msgid "Project contract {contractId} is not confirmed"
+msgstr ""
+
 msgid "Project Contracts"
 msgstr ""
 
@@ -28846,6 +28852,9 @@ msgstr "查看联系人"
 
 msgid "View Contained Issues"
 msgstr "查看已遏制的问题"
+
+msgid "View contract"
+msgstr ""
 
 msgid "View costs"
 msgstr "查看成本"
