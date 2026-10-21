@@ -3,18 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import type { KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
-import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Kysely } from "kysely";
 import type { z } from "zod";
+import { erpPosting } from "./erp";
 import type { timesheetCellValidator } from "./models";
 
 // The MES copy of the ERP's timesheet reads (`apps/erp/app/modules/
 // projects`). The two apps share no module, so a change to the rules there
-// must be made here too. Saving and submitting go through the shared server
-// functions (`save-timesheet-entry`, `submit-timesheet-week`).
+// must be made here too. Saving, submitting and posting are the ERP's
+// postings (`save-timesheet-entry`, `submit-timesheet-week`, `post-timesheet`),
+// reached through `erpPosting`.
 
 type Client = SupabaseClient<Database>;
 
@@ -266,13 +265,12 @@ export function groupTimesheetRows(
 }
 
 /**
- * Saves one cell of the user's own timesheet through the
- * `save-timesheet-entry` server function, the one place the DCAA rules
- * live. System scope, as `postTimesheetEntries`: the route saves only the
- * user's own time, and an operator does not hold `projects_update`.
+ * Saves one cell of the user's own timesheet through the ERP's
+ * `save-timesheet-entry` posting, the one place the DCAA rules live. System
+ * scope, as `postTimesheetEntries`: the route saves only the user's own
+ * time, and an operator does not hold `projects_update`.
  */
 export async function saveTimesheetEntry(
-  db: Kysely<KyselyDatabase>,
   args: Omit<z.infer<typeof timesheetCellValidator>, "projectElementId"> & {
     projectElementId?: string | null;
     companyId: string;
@@ -281,9 +279,10 @@ export async function saveTimesheetEntry(
   }
 ) {
   const { companyId, userId, ...input } = args;
-  return serverFns
-    .system({ db, companyId, userId })
-    .invoke("save-timesheet-entry", {
+  return erpPosting(
+    "save-timesheet-entry",
+    { companyId, userId },
+    {
       employeeId: input.employeeId,
       entryDate: input.entryDate,
       projectId: input.projectId,
@@ -302,45 +301,47 @@ export async function saveTimesheetEntry(
         input.rdActivityRole === undefined
           ? undefined
           : input.rdActivityRole || null
-    });
+    }
+  );
 }
 
 /**
- * Submits a week of the user's own timesheet through the
- * `submit-timesheet-week` server function. System scope, as
- * `saveTimesheetEntry`.
+ * Submits a week of the user's own timesheet through the ERP's
+ * `submit-timesheet-week` posting. System scope, as `saveTimesheetEntry`.
  */
-export async function submitTimesheetWeek(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    employeeId: string;
-    weekStart: string;
-    /** DCAA mode: the certification text the employee confirmed. */
-    certificationText?: string;
-    userId: string;
-  }
-) {
-  return serverFns
-    .system({ db, companyId: args.companyId, userId: args.userId })
-    .invoke("submit-timesheet-week", {
+export async function submitTimesheetWeek(args: {
+  companyId: string;
+  employeeId: string;
+  weekStart: string;
+  /** DCAA mode: the certification text the employee confirmed. */
+  certificationText?: string;
+  userId: string;
+}) {
+  return erpPosting(
+    "submit-timesheet-week",
+    { companyId: args.companyId, userId: args.userId },
+    {
       employeeId: args.employeeId,
       weekStart: args.weekStart,
       certificationText: args.certificationText
-    });
+    }
+  );
 }
 
 /**
- * Posts the user's own just-submitted entries through `post-timesheet`, for
- * a company that does not require approval. System scope: the route has
- * already checked that the entries are the user's own Submitted time, and an
- * operator does not hold `projects_update`.
+ * Posts the user's own just-submitted entries through the ERP's
+ * `post-timesheet` posting, for a company that does not require approval.
+ * System scope: the route has already checked that the entries are the
+ * user's own Submitted time, and an operator does not hold `projects_update`.
  */
-export async function postTimesheetEntries(
-  db: Kysely<KyselyDatabase>,
-  args: { timesheetEntryIds: string[]; companyId: string; userId: string }
-) {
-  return serverFns
-    .system({ db, companyId: args.companyId, userId: args.userId })
-    .invoke("post-timesheet", { timesheetEntryIds: args.timesheetEntryIds });
+export async function postTimesheetEntries(args: {
+  timesheetEntryIds: string[];
+  companyId: string;
+  userId: string;
+}) {
+  return erpPosting(
+    "post-timesheet",
+    { companyId: args.companyId, userId: args.userId },
+    { timesheetEntryIds: args.timesheetEntryIds }
+  );
 }

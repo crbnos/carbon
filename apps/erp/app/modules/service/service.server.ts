@@ -10,14 +10,6 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
-import {
-  loadRefurbishmentCompletion,
-  planRefurbishmentCompletion,
-  RefurbishmentCompletionError,
-  type RefurbishmentCompletionPlan
-} from "@carbon/server-functions/complete-service-order";
-import { insertServiceOrder } from "@carbon/server-functions/lib/service-orders";
 import { datetime, openChargeIds, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -27,7 +19,18 @@ import {
   insertElementsFromPart,
   postTimesheetEntries
 } from "../projects/projects.server";
-import { createTimesheetCorrection } from "../projects/projects.service";
+import {
+  createTimesheetCorrection,
+  postProjectExpense,
+  reclassProjectCoverage
+} from "../projects/projects.service";
+import { invokePosting } from "../shared/shared.service";
+import { loadRefurbishmentCompletion } from "./refurbishment-completion-load";
+import {
+  planRefurbishmentCompletion,
+  RefurbishmentCompletionError,
+  type RefurbishmentCompletionPlan
+} from "./refurbishment-completion-plan";
 import type {
   coverageOverrideValidator,
   customerAssetValidator,
@@ -46,6 +49,8 @@ import {
   rollUpOrderStatus,
   serviceTemplateIdentifier
 } from "./service.models";
+import * as service from "./service.service";
+import { insertServiceOrder } from "./service-orders";
 
 type ProjectStatus = Database["public"]["Enums"]["projectStatus"];
 
@@ -583,11 +588,12 @@ export async function completeServiceOrder(
   db: Kysely<KyselyDatabase>,
   args: { companyId: string; serviceOrderId: string; userId: string }
 ): Promise<{ error: string | null; warnings: string[] }> {
-  const result = await serverFns
-    .system({ db, companyId: args.companyId, userId: args.userId })
-    .invoke("complete-service-order", {
-      serviceOrderId: args.serviceOrderId
-    });
+  const result = await invokePosting(
+    { db, companyId: args.companyId, userId: args.userId },
+    "complete-service-order",
+    { serviceOrderId: args.serviceOrderId },
+    service.completeServiceOrder
+  );
   if (result.error) {
     logger.error("Failed to complete a service order", {
       companyId: args.companyId,
@@ -1054,9 +1060,12 @@ export async function addServiceExpense(
     .returning("id")
     .executeTakeFirstOrThrow();
 
-  const posting = await serverFns
-    .system({ db, companyId: args.companyId, userId: args.userId })
-    .invoke("post-project-expense", { projectExpenseEntryId: entry.id });
+  const posting = await invokePosting(
+    { db, companyId: args.companyId, userId: args.userId },
+    "post-project-expense",
+    { projectExpenseEntryId: entry.id },
+    postProjectExpense
+  );
   if (posting.error) {
     logger.error("Failed to post a service expense", {
       companyId: args.companyId,
@@ -1082,13 +1091,16 @@ export async function reclassServiceCharge(
     projectLedgerId: string;
   }
 ): Promise<string | null> {
-  const posting = await serverFns
-    .system({ db, companyId: args.companyId, userId: args.userId })
-    .invoke("reclass-project-coverage", {
+  const posting = await invokePosting(
+    { db, companyId: args.companyId, userId: args.userId },
+    "reclass-project-coverage",
+    {
       projectLedgerId: args.projectLedgerId,
       coverage: args.coverage,
       reason: args.reason
-    });
+    },
+    reclassProjectCoverage
+  );
   if (posting.error) {
     logger.error("Failed to reclass a service charge", {
       companyId: args.companyId,
@@ -1251,9 +1263,12 @@ export async function reverseServiceCharge(
     return row.id;
   });
 
-  const posting = await serverFns
-    .system({ db, companyId: args.companyId, userId: args.userId })
-    .invoke("post-project-expense", { projectExpenseEntryId: reversalId });
+  const posting = await invokePosting(
+    { db, companyId: args.companyId, userId: args.userId },
+    "post-project-expense",
+    { projectExpenseEntryId: reversalId },
+    postProjectExpense
+  );
   if (posting.error) {
     logger.error("Failed to post a service expense reversal", {
       companyId: args.companyId,

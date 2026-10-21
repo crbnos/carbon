@@ -2,26 +2,111 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { createHash } from "node:crypto";
+import {
+  InvalidInputError,
+  NotFoundError,
+  ServerFnError
+} from "@carbon/api/errors";
+import type { PermissionRule } from "@carbon/api/permissions";
+import {
+  type PostTimesheetResult,
+  postTimesheetInput,
+  type SaveTimesheetEntryResult,
+  type SubmitTimesheetWeekResult,
+  saveTimesheetEntryInput,
+  submitTimesheetWeekInput
+} from "@carbon/api/postings";
+import type { PostProjectBurdenResult } from "@carbon/api/postings.server";
+import type { ServiceContext } from "@carbon/api/service-fn.server";
+import {
+  assertEntitiesInStripes,
+  loadDemandStripes,
+  type StripeQuantity,
+  splitAcrossStripes,
+  trackedEntityStripe
+} from "@carbon/api/stock-stripes";
 import type { Database, Json } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  Constants,
+  getCompanyTimeZone,
+  journalReference
+} from "@carbon/database";
+import type {
+  KyselyDatabase as DB,
+  Kysely,
+  KyselyDatabase
+} from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import { toJson } from "@carbon/database/json";
 import { completedAtForGroup } from "@carbon/database/project-plan";
+import { inOrder, rpcRows, single } from "@carbon/database/rows";
 import {
+  accountTypeFromClass,
   BILLABLE_REASON_NO_BILL_RATE,
+  buildJournalLineDimensionInserts,
+  certificationTextFor,
+  credit,
   datetime,
+  debit,
+  dilutionFactor,
+  equals,
   heldProjectRefusal,
+  isEntryDateAllowed,
   isUniqueViolation,
   isValidWbsCode,
-  round
+  nextEntryStatus,
+  type RdActivityRole,
+  round,
+  type ServiceCoverage,
+  settleQuantity,
+  TIMESHEET_REFUSAL_NOT_DRAFT,
+  type TimesheetEntryStatus,
+  timecardShortfall
 } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import type { Insertable, Selectable, Transaction } from "kysely";
 import { sql } from "kysely";
-import type { z } from "zod";
+import { nanoid } from "nanoid";
+import { z } from "zod";
+import {
+  allocateJournalLineIds,
+  assertCompanyRecords,
+  bookAdjustment,
+  buildAdjustmentJournalLines,
+  buildCostLedgerRow,
+  buildItemLedgerRow,
+  buildJournalLineDimensions,
+  calculateCOGS,
+  createAdjustmentJournal,
+  resolveAccountingPeriod
+} from "~/modules/shared/shared.service";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { updateSortOrder } from "../shared/sort-order";
+import { buildProjectCipRow, writeProjectCipRows } from "./project-cip";
+import { postProjectJournal } from "./project-journal";
+import {
+  assertChargeable,
+  buildBillableItem,
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  isUnallowableCharge,
+  loadProjectPostingContexts,
+  loadServicePostingContext,
+  loadServicePostingContexts,
+  ProjectChargeError,
+  projectPostingKey,
+  resolveProjectPostingAccount,
+  resolveProjectTreatment,
+  reverseBillableItem,
+  type ServicePostingContext,
+  serviceChargeCoverage,
+  startElementsOnFirstCharge
+} from "./project-posting";
 import type {
   BillableItemAction,
   ItemValues,
@@ -68,6 +153,23 @@ import {
   typeSpecificElementFields,
   weekStartOf
 } from "./projects.models";
+import {
+  findServiceIssueToReturn,
+  installServicePart,
+  type ServiceIssue,
+  uninstallServicePart
+} from "./service-part-issue";
+import { paybackVariance, planBorrowMatching } from "./stock-transfer-plan";
+import {
+  type DilutionPostedEntry,
+  planDilution,
+  planRedilutionPostings,
+  planTimesheetPosting,
+  type TimesheetJournalLine,
+  type TimesheetLedgerRow,
+  type TimesheetOriginal,
+  type TimesheetPostingEntry
+} from "./timesheet-posting-plan";
 import type { ProjectElementLink } from "./types";
 
 type Client = SupabaseClient<Database>;
@@ -5250,4 +5352,3851 @@ export async function getCostByClin(
     ORDER BY cc."customerContractId", l."lineItemNumber"
   `.execute(db);
   return result.rows;
+}
+
+// ---------------------------------------------------------------------------
+// submit-timesheet-week
+//
+// Submits one week of an employee's timesheet. Standard mode keeps Phase 1a
+// `submitTimesheetEntries`. DCAA mode adds the review check, the total-time
+// check against the timecards and the certification row.
+// Spec: .ai/specs/implemented/2026-10-09-government-contracting.md (Timekeeping).
+
+export const TIMESHEET_REVIEW_PENDING =
+  "Review the changes to your timesheet first";
+export const TIMESHEET_CERTIFICATION_CHANGED =
+  "The certification text changed. Reload the page";
+export const TIMESHEET_CERTIFICATION_MISSING =
+  "Set the certification text in Settings → Time before you submit";
+
+/** A refusal the caller can fix: returned as a 422 with its message. */
+class TimesheetRefusal extends ServerFnError {
+  constructor(message: string) {
+    super(message, 422);
+  }
+}
+
+/** "Your entries account for X h of Y h on your timecards". */
+export function timecardShortfallMessage(
+  entryHours: number,
+  timecardHours: number
+): string {
+  return `Your entries account for ${round(entryHours)} h of ${round(timecardHours)} h on your timecards`;
+}
+
+/** The SHA-256 hex of a certification text, as `timesheetCertification.textHash`. */
+export function certificationTextHash(text: string): string {
+  return createHash("sha256").update(text, "utf8").digest("hex");
+}
+
+export const submitTimesheetWeekPermission = {
+  update: "projects"
+} satisfies PermissionRule<z.output<typeof submitTimesheetWeekInput>>;
+
+/**
+ * Submits an employee's Draft entries of Standard projects in the ISO week
+ * that starts on `weekStart`. Service time posts from Draft and is never
+ * submitted here.
+ *
+ * In DCAA mode it first refuses a week with a Pending Employee Review entry,
+ * checks the week's entries against the timecard hours (Warn adds a warning,
+ * Block refuses), refuses a certification text that is not the current one,
+ * and writes a `timesheetCertification` row with the text's hash and the
+ * employee's FLSA status.
+ */
+export async function submitTimesheetWeek(
+  ctx: ServiceContext,
+  raw: z.input<typeof submitTimesheetWeekInput>
+): Promise<SubmitTimesheetWeekResult> {
+  const input = submitTimesheetWeekInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const { employeeId, weekStart } = input;
+  const weekEnd = parseDate(weekStart).add({ days: 6 }).toString();
+
+  return db.transaction().execute(async (trx) => {
+    const [settings, job] = await inOrder([
+      () =>
+        trx
+          .selectFrom("companySettings")
+          .select([
+            "timekeepingControls",
+            "timeCardEnabled",
+            "timesheetTimecardCheck",
+            "certificationTextExempt",
+            "certificationTextNonExempt"
+          ])
+          .where("id", "=", companyId)
+          .executeTakeFirst(),
+      () =>
+        trx
+          .selectFrom("employeeJob")
+          .select("flsaStatus")
+          .where("id", "=", employeeId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+    ]);
+    const mode = settings?.timekeepingControls ?? "Standard";
+
+    // Row locks: a save during the submit waits for it.
+    const entries = await trx
+      .selectFrom("timesheetEntry")
+      .innerJoin("project", (join) =>
+        join
+          .onRef("project.id", "=", "timesheetEntry.projectId")
+          .onRef("project.companyId", "=", "timesheetEntry.companyId")
+      )
+      .select([
+        "timesheetEntry.id",
+        "timesheetEntry.status",
+        "timesheetEntry.hours",
+        "project.projectType"
+      ])
+      .where("timesheetEntry.companyId", "=", companyId)
+      .where("timesheetEntry.employeeId", "=", employeeId)
+      .where("timesheetEntry.entryDate", ">=", weekStart)
+      .where("timesheetEntry.entryDate", "<=", weekEnd)
+      .orderBy("timesheetEntry.id")
+      .forUpdate("timesheetEntry")
+      .execute();
+
+    // A service order's time is posted from its visit page, never here.
+    const drafts = entries.filter(
+      (entry) => entry.status === "Draft" && entry.projectType === "Standard"
+    );
+    const warnings: string[] = [];
+
+    if (mode === "DCAA") {
+      if (entries.some((entry) => entry.status === "Pending Employee Review")) {
+        throw new TimesheetRefusal(TIMESHEET_REVIEW_PENDING);
+      }
+
+      const check = settings?.timesheetTimecardCheck ?? "Warn";
+      if (settings?.timeCardEnabled && check !== "Off") {
+        const timezone = await getCompanyTimeZone(trx, companyId);
+        const { rows } = await sql<{ hours: number | string | null }>`
+            SELECT SUM(EXTRACT(EPOCH FROM ("clockOut" - "clockIn"))) / 3600 AS "hours"
+            FROM "timeCardEntry"
+            WHERE "companyId" = ${companyId}
+              AND "employeeId" = ${employeeId}
+              AND "clockOut" IS NOT NULL
+              AND ("clockIn" AT TIME ZONE ${timezone})::date
+                BETWEEN ${weekStart}::date AND ${weekEnd}::date
+          `.execute(trx);
+        const timecardHours = Number(rows[0]?.hours ?? 0);
+        const entryHours = entries.reduce(
+          (sum, entry) => sum + Number(entry.hours),
+          0
+        );
+        if (timecardShortfall(entryHours, timecardHours) > 0) {
+          const message = timecardShortfallMessage(entryHours, timecardHours);
+          if (check === "Block") throw new TimesheetRefusal(message);
+          warnings.push(message);
+        }
+      }
+
+      if (drafts.length > 0) {
+        const flsaStatus = job?.flsaStatus ?? null;
+        const text = certificationTextFor(flsaStatus, settings);
+        if (!text) throw new TimesheetRefusal(TIMESHEET_CERTIFICATION_MISSING);
+        if (input.certificationText !== text) {
+          throw new TimesheetRefusal(TIMESHEET_CERTIFICATION_CHANGED);
+        }
+        await trx
+          .insertInto("timesheetCertification")
+          .values({
+            companyId,
+            employeeId,
+            weekStart,
+            textHash: certificationTextHash(text),
+            flsaStatus
+          })
+          .execute();
+      }
+    }
+
+    if (drafts.length === 0) return { entryIds: [], warnings };
+
+    const now = datetime.timestamp();
+    const submitted = await trx
+      .updateTable("timesheetEntry")
+      .set({
+        status: "Submitted",
+        submittedAt: now,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("companyId", "=", companyId)
+      .where(
+        "id",
+        "in",
+        drafts.map((entry) => entry.id)
+      )
+      .where("status", "=", "Draft")
+      .returning("id")
+      .execute();
+    return { entryIds: submitted.map((row) => row.id), warnings };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// save-timesheet-entry
+//
+// Saves one timesheet cell, or adds one entry (Log time, service time): the
+// one write path of a timesheet entry for the ERP and the MES, so the DCAA
+// timekeeping controls live in one place. Standard mode keeps the Phase 1a
+// behavior exactly. DCAA mode adds the entry window, the late reason, charge
+// restrictions, supervisor entry on a recorded absence, Pending Employee
+// Review and the correction trail.
+// Spec: .ai/specs/implemented/2026-10-09-government-contracting.md (Timekeeping).
+
+export const TIMESHEET_FUTURE_DATE = "Time cannot be entered for a future date";
+export const TIMESHEET_LATE_REASON_REQUIRED =
+  "Give a reason for the late entry";
+export const TIMESHEET_CHANGE_REASON_REQUIRED = "Give a reason for the change";
+export const TIMESHEET_SUPERVISOR_ENTRY_REFUSED =
+  "You can enter time for another employee only on a day of recorded absence";
+export const TIMESHEET_HOURS_REQUIRED = "Hours must be greater than 0";
+
+type EntryRow = Pick<
+  Selectable<DB["timesheetEntry"]>,
+  | "id"
+  | "status"
+  | "hours"
+  | "projectElementId"
+  | "laborCategoryId"
+  | "entryDate"
+  | "workLocationId"
+  | "rdActivityRole"
+>;
+
+/**
+ * The note of an updated entry. A save without a note keeps the stored note
+ * (the grid sends hours only, and Log time may have written one), as Phase 1a
+ * did. A note that is sent replaces it.
+ */
+function keptNote(note: string | undefined): { note?: string | null } {
+  return note === undefined ? {} : { note: note || null };
+}
+
+/** The fields a revision records, before and after a change. */
+function revisionFields(entry: {
+  hours: number | string;
+  projectElementId: string | null;
+  laborCategoryId: string;
+  entryDate: string;
+  workLocationId: string | null;
+  rdActivityRole: RdActivityRole | null;
+}) {
+  return {
+    hours: Number(entry.hours),
+    projectElementId: entry.projectElementId,
+    laborCategoryId: entry.laborCategoryId,
+    entryDate: entry.entryDate,
+    workLocationId: entry.workLocationId,
+    rdActivityRole: entry.rdActivityRole
+  };
+}
+
+/**
+ * The entry a cell edits: a Draft first, then Rejected, Pending Employee
+ * Review, Submitted and Approved. A Posted entry only when no other exists,
+ * so the refusal can name it (a posted entry changes only by correction).
+ */
+function currentEntry(rows: EntryRow[]): EntryRow | null {
+  const order: TimesheetEntryStatus[] = [
+    "Draft",
+    "Rejected",
+    "Pending Employee Review",
+    "Submitted",
+    "Approved",
+    "Posted"
+  ];
+  for (const status of order) {
+    const row = rows.find((candidate) => candidate.status === status);
+    if (row) return row;
+  }
+  return null;
+}
+
+export const saveTimesheetEntryPermission = {
+  update: "projects"
+} satisfies PermissionRule<z.output<typeof saveTimesheetEntryInput>>;
+
+/**
+ * Saves one cell of an employee's timesheet (employee, date, charge number,
+ * labor category), or adds one entry in `add` mode. Saving never posts.
+ *
+ * - **`add` mode** (Log time, service time): always inserts a new entry with
+ *   the requested status and visit, beside any entry of the same cell. DCAA
+ *   mode applies the same controls as a cell save to it.
+ * - **Standard mode** (Phase 1a): a new cell inserts a Draft; a Draft or
+ *   Rejected entry is updated to Draft, or deleted at 0 hours; a Submitted,
+ *   Approved or Posted entry is refused. No revision.
+ * - **DCAA mode**: no future dates (except on a leave element); a date
+ *   outside the entry window needs a late reason; a project that restricts
+ *   charging takes time only from its members; another user may create an
+ *   entry only on the employee's recorded absence; every change to a saved
+ *   entry needs a reason and writes one `timesheetEntryRevision` row in the
+ *   same transaction. A change by anyone but the owner gives Pending Employee
+ *   Review; the owner's change returns the entry to Draft.
+ */
+export async function saveTimesheetEntry(
+  ctx: ServiceContext,
+  raw: z.input<typeof saveTimesheetEntryInput>
+): Promise<SaveTimesheetEntryResult> {
+  const input = saveTimesheetEntryInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  return db.transaction().execute(async (trx) =>
+    save(trx, {
+      ...input,
+      companyId,
+      userId,
+      ...(await resolveRdDefaults(trx, { ...input, companyId }))
+    })
+  );
+}
+
+type SaveInput = Omit<
+  z.output<typeof saveTimesheetEntryInput>,
+  "workLocationId" | "rdActivityRole"
+> & {
+  companyId: string;
+  userId: string;
+  /** Resolved: the input's value, else the default (`resolveRdDefaults`). */
+  workLocationId: string | null;
+  rdActivityRole: RdActivityRole | null;
+};
+
+type Settings =
+  | Pick<
+      Selectable<DB["companySettings"]>,
+      "timekeepingControls" | "timesheetEntryWindowDays"
+    >
+  | undefined;
+
+/**
+ * The work location and research role of the entry (R&D tax). A value the
+ * input leaves out takes its default: the employee's job location, and the
+ * labor category's role. Both are part of the cell's key, so two entries on
+ * one day may differ only by location or role.
+ */
+async function resolveRdDefaults(
+  trx: Transaction<DB>,
+  input: z.output<typeof saveTimesheetEntryInput> & { companyId: string }
+): Promise<{
+  workLocationId: string | null;
+  rdActivityRole: RdActivityRole | null;
+}> {
+  const [job, category] = await inOrder([
+    () =>
+      input.workLocationId === undefined
+        ? trx
+            .selectFrom("employeeJob")
+            .select("locationId")
+            .where("id", "=", input.employeeId)
+            .where("companyId", "=", input.companyId)
+            .executeTakeFirst()
+        : Promise.resolve(null),
+    () =>
+      input.rdActivityRole === undefined
+        ? trx
+            .selectFrom("laborCategory")
+            .select("rdActivityRole")
+            .where("id", "=", input.laborCategoryId)
+            .where("companyId", "=", input.companyId)
+            .executeTakeFirst()
+        : Promise.resolve(null)
+  ]);
+  return {
+    workLocationId:
+      input.workLocationId === undefined
+        ? (job?.locationId ?? null)
+        : input.workLocationId,
+    rdActivityRole:
+      input.rdActivityRole === undefined
+        ? (category?.rdActivityRole ?? null)
+        : input.rdActivityRole
+  };
+}
+
+async function save(
+  trx: Transaction<DB>,
+  input: SaveInput
+): Promise<SaveTimesheetEntryResult> {
+  const { companyId, userId, employeeId } = input;
+  const actorIsOwner = userId === employeeId;
+
+  const settings = await trx
+    .selectFrom("companySettings")
+    .select(["timekeepingControls", "timesheetEntryWindowDays"])
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  const mode = settings?.timekeepingControls ?? "Standard";
+
+  if (input.mode === "add") {
+    await assertProjectTakesTime(trx, input);
+    return addEntry(trx, input, settings, actorIsOwner);
+  }
+
+  let existingQuery = trx
+    .selectFrom("timesheetEntry")
+    .select([
+      "id",
+      "status",
+      "hours",
+      "projectElementId",
+      "laborCategoryId",
+      "entryDate",
+      "workLocationId",
+      "rdActivityRole"
+    ])
+    .where("companyId", "=", companyId)
+    .where("employeeId", "=", employeeId)
+    .where("entryDate", "=", input.entryDate)
+    .where("projectId", "=", input.projectId)
+    .where("laborCategoryId", "=", input.laborCategoryId)
+    .where("reversalOfId", "is", null);
+  existingQuery = input.projectElementId
+    ? existingQuery.where("projectElementId", "=", input.projectElementId)
+    : existingQuery.where("projectElementId", "is", null);
+  existingQuery = input.workLocationId
+    ? existingQuery.where("workLocationId", "=", input.workLocationId)
+    : existingQuery.where("workLocationId", "is", null);
+  existingQuery = input.rdActivityRole
+    ? existingQuery.where("rdActivityRole", "=", input.rdActivityRole)
+    : existingQuery.where("rdActivityRole", "is", null);
+  const rows = await existingQuery.orderBy("id").forUpdate().execute();
+  const current = currentEntry(rows);
+  // Fewer hours on a held project is a correction; more is a new charge.
+  if (input.hours > Number(current?.hours ?? 0)) {
+    await assertProjectTakesTime(trx, input);
+  }
+
+  if (mode === "Standard") {
+    return saveStandard(trx, input, rows, actorIsOwner);
+  }
+
+  const next = nextEntryStatus({
+    mode,
+    current: current?.status ?? null,
+    actorIsOwner
+  });
+  if (typeof next !== "string") throw new TimesheetRefusal(next.refuse);
+
+  // Nothing to save, nothing to change.
+  if (!current && input.hours === 0) return { entryId: null, status: null };
+
+  const { late, lateReason } = await checkDcaaEntry(trx, input, settings);
+
+  const reason = input.reason?.trim() || null;
+  const now = datetime.timestamp();
+
+  // 4. A new entry.
+  if (!current) {
+    if (!actorIsOwner) await assertSupervisorEntry(trx, input, reason);
+    const created = await trx
+      .insertInto("timesheetEntry")
+      .values({
+        companyId,
+        employeeId,
+        entryDate: input.entryDate,
+        projectId: input.projectId,
+        projectElementId: input.projectElementId,
+        laborCategoryId: input.laborCategoryId,
+        workLocationId: input.workLocationId,
+        rdActivityRole: input.rdActivityRole,
+        hours: input.hours,
+        note: input.note ?? null,
+        lateReason: late ? lateReason : null,
+        status: next,
+        createdBy: userId,
+        createdAt: now
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    // 5. The owner's first save is not a change: no revision.
+    if (!actorIsOwner) {
+      await writeRevision(trx, {
+        companyId,
+        employeeId,
+        timesheetEntryId: created.id,
+        revisedBy: userId,
+        reason: reason!,
+        before: null,
+        after: revisionFields(input)
+      });
+    }
+    return { entryId: created.id, status: next };
+  }
+
+  // 5. A change to a saved entry.
+  if (!reason) throw new TimesheetRefusal(TIMESHEET_CHANGE_REASON_REQUIRED);
+  const before = revisionFields(current);
+
+  // 7. Zero hours deletes the entry; the revision is written first.
+  if (input.hours === 0) {
+    await writeRevision(trx, {
+      companyId,
+      employeeId,
+      timesheetEntryId: current.id,
+      revisedBy: userId,
+      reason,
+      before,
+      after: null
+    });
+    await trx
+      .deleteFrom("timesheetEntry")
+      .where("id", "=", current.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    return { entryId: null, status: null };
+  }
+
+  await trx
+    .updateTable("timesheetEntry")
+    .set({
+      hours: input.hours,
+      ...keptNote(input.note),
+      ...(late ? { lateReason } : {}),
+      status: next,
+      // A changed entry needs approval again.
+      submittedAt: null,
+      approvedBy: null,
+      approvedAt: null,
+      rejectionNote: null,
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .where("id", "=", current.id)
+    .where("companyId", "=", companyId)
+    .execute();
+  // 6. The correction trail, in the same transaction.
+  await writeRevision(trx, {
+    companyId,
+    employeeId,
+    timesheetEntryId: current.id,
+    revisedBy: userId,
+    reason,
+    before,
+    after: revisionFields({ ...current, hours: input.hours })
+  });
+  return { entryId: current.id, status: next };
+}
+
+/**
+ * A project On Hold takes no new hours (`heldProjectRefusal`): the
+ * charge-number picker hides it, and this stops the rows already on a
+ * timesheet. A stop-work order sets the project On Hold (FAR 52.242-15).
+ */
+async function assertProjectTakesTime(trx: Transaction<DB>, input: SaveInput) {
+  const project = await trx
+    .selectFrom("project")
+    .select(["identifier", "name", "status", "stopWorkDate"])
+    .where("id", "=", input.projectId)
+    .where("companyId", "=", input.companyId)
+    .executeTakeFirst();
+  if (!project) throw new NotFoundError("The project does not exist");
+  const refusal = heldProjectRefusal(project, input.entryDate);
+  if (refusal) throw new TimesheetRefusal(refusal);
+}
+
+/**
+ * DCAA steps 1–3, the controls a new entry and a change share: the entry
+ * window (no future dates except on a leave element), the late reason, and
+ * charge restrictions. Returns whether the date is late, with the reason.
+ */
+async function checkDcaaEntry(
+  trx: Transaction<DB>,
+  input: SaveInput,
+  settings: Settings
+): Promise<{ late: boolean; lateReason: string | null }> {
+  const { companyId, employeeId } = input;
+  const [project, element, timezone] = await inOrder([
+    () =>
+      trx
+        .selectFrom("project")
+        .select(["identifier", "name", "restrictCharging"])
+        .where("id", "=", input.projectId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst(),
+    () =>
+      input.projectElementId
+        ? trx
+            .selectFrom("projectElement")
+            .select(["isLeave"])
+            .where("id", "=", input.projectElementId)
+            .where("projectId", "=", input.projectId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : Promise.resolve(null),
+    () => getCompanyTimeZone(trx, companyId)
+  ]);
+  if (!project) throw new NotFoundError("The project does not exist");
+  if (input.projectElementId && !element) {
+    throw new NotFoundError("The element does not exist");
+  }
+
+  // 1–2. The entry window.
+  const entryWindow = isEntryDateAllowed({
+    entryDate: input.entryDate,
+    today: datetime.today(timezone).toString(),
+    windowDays: settings?.timesheetEntryWindowDays ?? 1,
+    isLeave: element?.isLeave ?? false
+  });
+  if (!entryWindow.allowed) throw new TimesheetRefusal(TIMESHEET_FUTURE_DATE);
+  const lateReason = input.lateReason?.trim() || null;
+  if (entryWindow.late && !lateReason) {
+    throw new TimesheetRefusal(TIMESHEET_LATE_REASON_REQUIRED);
+  }
+
+  // 3. Charge restrictions.
+  if (project.restrictCharging) {
+    const member = await trx
+      .selectFrom("projectMember")
+      .select("userId")
+      .where("projectId", "=", input.projectId)
+      .where("userId", "=", employeeId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!member) {
+      throw new TimesheetRefusal(
+        `${project.identifier || project.name} accepts time only from its members`
+      );
+    }
+  }
+
+  return { late: entryWindow.late, lateReason };
+}
+
+/**
+ * `add` mode: one new entry each call, as Phase 1a Log time and service time
+ * did. It never replaces the hours of an entry already in the cell.
+ * - Standard mode: the owner adds the entry with the requested status.
+ * - DCAA mode: the cell's controls apply (entry window, late reason, charge
+ *   restrictions). The owner's entry is Draft whatever status was asked for,
+ *   so it goes through the weekly certification and approval; it is not a
+ *   change, so it writes no revision. Another user adds an entry only on the
+ *   employee's recorded absence, with a reason; it is Pending Employee
+ *   Review and writes a revision.
+ */
+async function addEntry(
+  trx: Transaction<DB>,
+  input: SaveInput,
+  settings: Settings,
+  actorIsOwner: boolean
+): Promise<SaveTimesheetEntryResult> {
+  const { companyId, userId, employeeId } = input;
+  const mode = settings?.timekeepingControls ?? "Standard";
+  if (input.hours <= 0) throw new TimesheetRefusal(TIMESHEET_HOURS_REQUIRED);
+
+  let status: TimesheetEntryStatus = input.status ?? "Draft";
+  let late = false;
+  let lateReason: string | null = null;
+  const reason = input.reason?.trim() || null;
+
+  if (mode === "Standard") {
+    // Standard mode has no supervisor entry: the owner logs their own time.
+    if (!actorIsOwner) throw new TimesheetRefusal(TIMESHEET_REFUSAL_NOT_DRAFT);
+  } else {
+    ({ late, lateReason } = await checkDcaaEntry(trx, input, settings));
+    if (!actorIsOwner) {
+      await assertSupervisorEntry(trx, input, reason);
+      status = "Pending Employee Review";
+    } else {
+      // An added entry waits for the weekly certification and approval
+      // (`submit-timesheet-week`), as a cell save does. Log time asks for
+      // Submitted; DCAA mode never submits one entry on its own.
+      status = "Draft";
+    }
+  }
+
+  const now = datetime.timestamp();
+  const created = await trx
+    .insertInto("timesheetEntry")
+    .values({
+      companyId,
+      employeeId,
+      entryDate: input.entryDate,
+      projectId: input.projectId,
+      projectElementId: input.projectElementId,
+      serviceVisitId: input.serviceVisitId ?? null,
+      laborCategoryId: input.laborCategoryId,
+      workLocationId: input.workLocationId,
+      rdActivityRole: input.rdActivityRole,
+      hours: input.hours,
+      note: input.note ?? null,
+      lateReason: late ? lateReason : null,
+      status,
+      submittedAt: status === "Submitted" ? now : null,
+      createdBy: userId,
+      createdAt: now
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+
+  if (mode === "DCAA" && !actorIsOwner) {
+    await writeRevision(trx, {
+      companyId,
+      employeeId,
+      timesheetEntryId: created.id,
+      revisedBy: userId,
+      reason: reason!,
+      before: null,
+      after: revisionFields(input)
+    });
+  }
+  return { entryId: created.id, status };
+}
+
+/**
+ * DCAA supervisor entry: another user creates an entry for the employee only
+ * on a day of recorded absence, and only with a reason.
+ */
+async function assertSupervisorEntry(
+  trx: Transaction<DB>,
+  input: SaveInput,
+  reason: string | null
+): Promise<void> {
+  const absence = await trx
+    .selectFrom("peopleAbsence")
+    .select("id")
+    .where("companyId", "=", input.companyId)
+    .where("employeeId", "=", input.employeeId)
+    .where("date", "=", input.entryDate)
+    .executeTakeFirst();
+  if (!absence) throw new TimesheetRefusal(TIMESHEET_SUPERVISOR_ENTRY_REFUSED);
+  if (!reason) throw new TimesheetRefusal(TIMESHEET_CHANGE_REASON_REQUIRED);
+}
+
+/** Phase 1a `upsertTimesheetCell`, unchanged. */
+async function saveStandard(
+  trx: Transaction<DB>,
+  input: SaveInput,
+  rows: EntryRow[],
+  actorIsOwner: boolean
+): Promise<SaveTimesheetEntryResult> {
+  const { companyId, userId } = input;
+  const editable =
+    rows.find((row) => row.status === "Draft") ??
+    rows.find((row) => row.status === "Rejected");
+
+  // Standard mode has no supervisor entry: the owner edits their own time.
+  if (!actorIsOwner) throw new TimesheetRefusal(TIMESHEET_REFUSAL_NOT_DRAFT);
+
+  if (!editable) {
+    if (rows.some((row) => row.status === "Posted")) {
+      throw new TimesheetRefusal(
+        "This time is posted. Use a correction to change posted hours."
+      );
+    }
+    if (rows.length > 0) {
+      throw new TimesheetRefusal(
+        "This time is submitted. It can change only after it is rejected."
+      );
+    }
+    if (input.hours === 0) return { entryId: null, status: null };
+    const created = await trx
+      .insertInto("timesheetEntry")
+      .values({
+        companyId,
+        employeeId: input.employeeId,
+        entryDate: input.entryDate,
+        projectId: input.projectId,
+        projectElementId: input.projectElementId,
+        laborCategoryId: input.laborCategoryId,
+        workLocationId: input.workLocationId,
+        rdActivityRole: input.rdActivityRole,
+        hours: input.hours,
+        note: input.note ?? null,
+        status: "Draft",
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    return { entryId: created.id, status: "Draft" };
+  }
+
+  if (input.hours === 0) {
+    await trx
+      .deleteFrom("timesheetEntry")
+      .where("id", "=", editable.id)
+      .where("companyId", "=", companyId)
+      .where("status", "in", ["Draft", "Rejected"])
+      .execute();
+    return { entryId: null, status: null };
+  }
+
+  await trx
+    .updateTable("timesheetEntry")
+    .set({
+      hours: input.hours,
+      ...keptNote(input.note),
+      status: "Draft",
+      rejectionNote: null,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("id", "=", editable.id)
+    .where("companyId", "=", companyId)
+    .where("status", "in", ["Draft", "Rejected"])
+    .execute();
+  return { entryId: editable.id, status: "Draft" };
+}
+
+async function writeRevision(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    employeeId: string;
+    timesheetEntryId: string;
+    revisedBy: string;
+    reason: string;
+    before: ReturnType<typeof revisionFields> | null;
+    after: ReturnType<typeof revisionFields> | null;
+  }
+): Promise<void> {
+  await trx
+    .insertInto("timesheetEntryRevision")
+    .values({
+      companyId: args.companyId,
+      timesheetEntryId: args.timesheetEntryId,
+      employeeId: args.employeeId,
+      revisedBy: args.revisedBy,
+      reason: args.reason,
+      before: toJson(args.before) ?? null,
+      after: toJson(args.after) ?? null
+    })
+    .execute();
+}
+
+// ---------------------------------------------------------------------------
+// post-timesheet
+
+export const postTimesheetPermission = {
+  update: "projects"
+} satisfies PermissionRule<z.output<typeof postTimesheetInput>>;
+
+/**
+ * Posts Submitted or Approved timesheet entries: the cost (hours × the labor
+ * category's rate, or the original's rate for a reversal) goes Dr the project
+ * account / Cr laborAbsorptionAccount, one projectLedger row per entry, and
+ * each entry is stamped Posted. The journal is Provisional before the
+ * company's accounting cutover and Posted after it. A Statistical project
+ * writes no journal and no ledger row. Entries that are not postable (Draft, Rejected, already posted)
+ * are skipped. The ERP checks who may post (approval routing) before it calls.
+ *
+ * A Service project's entry also posts from Draft (service time posts at Stop
+ * work, with no submit or approval). Its coverage decides the account: a
+ * stored coverage with a reason is the user's override, a reversal takes its
+ * original's, and any other entry gets `resolveCoverage`, stored on the entry.
+ * It writes a billable item; a reversal reverses its original's.
+ */
+export async function postTimesheet(
+  ctx: ServiceContext,
+  raw: z.input<typeof postTimesheetInput>
+): Promise<PostTimesheetResult> {
+  const { timesheetEntryIds } = postTimesheetInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const entryIds = [...new Set(timesheetEntryIds)];
+
+  const settings = await single(
+    db,
+    "companySettings",
+    { id: companyId },
+    {
+      columns: ["timekeepingControls", "standardWeeklyHours"]
+    }
+  );
+  const isDcaa = settings.data?.timekeepingControls === "DCAA";
+  const standardWeeklyHours = Number(settings.data?.standardWeeklyHours ?? 40);
+
+  return db.transaction().execute(async (trx) => {
+    // Row locks: two posts of one entry must not both post it.
+    const locked = await trx
+      .selectFrom("timesheetEntry")
+      .select([
+        "id",
+        "employeeId",
+        "entryDate",
+        "projectId",
+        "projectElementId",
+        "laborCategoryId",
+        "hours",
+        "status",
+        "postedAt",
+        "reversalOfId",
+        "note",
+        "coverage",
+        "coverageReason",
+        (eb) =>
+          eb
+            .selectFrom("project")
+            .select("project.projectType")
+            .whereRef("project.id", "=", "timesheetEntry.projectId")
+            .whereRef("project.companyId", "=", "timesheetEntry.companyId")
+            .as("projectType")
+      ])
+      .where("id", "in", entryIds)
+      .where("companyId", "=", companyId)
+      .orderBy("id")
+      .forUpdate()
+      .execute();
+
+    const entries = locked
+      .filter(
+        (entry) =>
+          (entry.status === "Submitted" ||
+            entry.status === "Approved" ||
+            (entry.status === "Draft" && entry.projectType === "Service")) &&
+          entry.postedAt === null
+      )
+      .map((entry) => ({
+        id: entry.id,
+        employeeId: entry.employeeId,
+        entryDate: entry.entryDate,
+        projectId: entry.projectId,
+        projectElementId: entry.projectElementId,
+        laborCategoryId: entry.laborCategoryId,
+        hours: Number(entry.hours),
+        reversalOfId: entry.reversalOfId,
+        isService: entry.projectType === "Service",
+        note: entry.note,
+        coverage: entry.coverage as ServiceCoverage | null,
+        coverageReason: entry.coverageReason,
+        customerId: null as string | null
+      }));
+    if (entries.length === 0) {
+      return { success: true, postedEntryIds: [], journalIds: [] };
+    }
+
+    const categoryIds = [...new Set(entries.map((e) => e.laborCategoryId))];
+    const originalIds = [
+      ...new Set(
+        entries
+          .map((e) => e.reversalOfId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+
+    // DCAA mode: dilute each exempt employee's week (CAM 6-410.4a).
+    const dilution = isDcaa
+      ? await loadWeekDilution(trx, {
+          companyId,
+          standardWeeklyHours,
+          entries
+        })
+      : null;
+    const redilutedEntries = dilution?.posted ?? [];
+
+    const serviceEntries = entries.filter((e) => e.isService);
+    const serviceRefs = [
+      ...serviceEntries,
+      ...redilutedEntries.filter((e) => e.isService)
+    ].map((e) => ({
+      projectId: e.projectId,
+      projectElementId: e.projectElementId
+    }));
+    const [
+      contexts,
+      rates,
+      originals,
+      originalLedger,
+      accountDefaults,
+      services
+    ] = await inOrder([
+      () =>
+        loadProjectPostingContexts(
+          trx,
+          companyId,
+          [...entries, ...redilutedEntries].map((e) => ({
+            projectId: e.projectId,
+            projectElementId: e.projectElementId
+          }))
+        ),
+      () =>
+        trx
+          .selectFrom("laborCategoryRate")
+          .select(["laborCategoryId", "effectiveFrom", "costRate"])
+          .where("laborCategoryId", "in", categoryIds)
+          .where("companyId", "=", companyId)
+          .execute(),
+      async () =>
+        originalIds.length === 0
+          ? ([] as Pick<
+              Selectable<DB["timesheetEntry"]>,
+              "id" | "costRate" | "coverage" | "coverageReason"
+            >[])
+          : trx
+              .selectFrom("timesheetEntry")
+              .select(["id", "costRate", "coverage", "coverageReason"])
+              .where("id", "in", originalIds)
+              .where("companyId", "=", companyId)
+              .execute(),
+      async () =>
+        originalIds.length === 0
+          ? ([] as Pick<Selectable<DB["projectLedger"]>, "id" | "documentId">[])
+          : trx
+              .selectFrom("projectLedger")
+              .select(["id", "documentId"])
+              .where("documentType", "=", "Timesheet")
+              .where("documentId", "in", originalIds)
+              .where("reversalOfId", "is", null)
+              // Not reversed by a later row: a coverage reclass reverses
+              // a service row and writes its replacement.
+              .where(({ not, exists, selectFrom }) =>
+                not(
+                  exists(
+                    selectFrom("projectLedger as reversal")
+                      .select("reversal.id")
+                      .whereRef(
+                        "reversal.reversalOfId",
+                        "=",
+                        "projectLedger.id"
+                      )
+                      .whereRef(
+                        "reversal.companyId",
+                        "=",
+                        "projectLedger.companyId"
+                      )
+                  )
+                )
+              )
+              .where("companyId", "=", companyId)
+              .execute(),
+      () =>
+        trx
+          .selectFrom("accountDefault")
+          .select(["laborAbsorptionAccount", "retainedEarningsAccount"])
+          .where("companyId", "=", companyId)
+          .executeTakeFirst(),
+      () => loadServicePostingContexts(trx, companyId, serviceRefs)
+    ]);
+    if (!accountDefaults) throw new Error("Error getting account defaults");
+    // Every posting writes its journal: Provisional before the company's
+    // accounting cutover, Posted after it. FOR SHARE holds the status until
+    // commit. A Provisional journal has no accounting period.
+    const postingStatus = await journalPostingStatus(trx, companyId);
+    const journalOptions = { postingStatus, accountDefaults };
+
+    // A re-diluted Service entry keeps its order's Customer dimension.
+    for (const entry of redilutedEntries) {
+      if (!entry.isService) continue;
+      entry.customerId =
+        services.get(projectPostingKey(entry.projectId, entry.projectElementId))
+          ?.customerId ?? null;
+    }
+
+    // A Service entry's coverage: a reversal posts to its original's
+    // account, a stored coverage with a reason is the user's override, and
+    // any other entry gets the coverage its date and the asset decide.
+    const originalCoverage = new Map(
+      originals.map((original) => [original.id, original])
+    );
+    for (const entry of serviceEntries) {
+      const service = services.get(
+        projectPostingKey(entry.projectId, entry.projectElementId)
+      );
+      if (!service) {
+        throw new ProjectChargeError(
+          "No service order owns the project of this timesheet entry"
+        );
+      }
+      entry.customerId = service.customerId;
+      const original = entry.reversalOfId
+        ? originalCoverage.get(entry.reversalOfId)
+        : undefined;
+      if (original) {
+        entry.coverage = original.coverage as ServiceCoverage | null;
+        entry.coverageReason = original.coverageReason;
+      } else if (!(entry.coverage && entry.coverageReason)) {
+        entry.coverage = serviceChargeCoverage(
+          service,
+          "Time",
+          entry.entryDate
+        );
+        entry.coverageReason = null;
+      }
+    }
+
+    const ledgerRowByEntry = new Map(
+      originalLedger.map((row) => [row.documentId, row.id])
+    );
+    const originalById = new Map<string, TimesheetOriginal>(
+      originals.map((original) => [
+        original.id,
+        {
+          id: original.id,
+          costRate:
+            original.costRate === null ? null : Number(original.costRate),
+          ledgerRowId: ledgerRowByEntry.get(original.id) ?? null
+        }
+      ])
+    );
+
+    const plan = planTimesheetPosting(
+      entries,
+      contexts,
+      rates.map((rate) => ({
+        laborCategoryId: rate.laborCategoryId,
+        effectiveFrom: rate.effectiveFrom,
+        costRate: Number(rate.costRate)
+      })),
+      originalById,
+      {
+        ...journalOptions,
+        dilutionFactors: dilution?.factorByEntry,
+        restrictCharging: isDcaa
+      }
+    );
+
+    // Re-dilution: the week's posted entries post the difference to their
+    // new diluted cost, as ledger rows with quantity 0 and journal lines of
+    // their own account.
+    if (dilution && dilution.adjustments.length > 0) {
+      const redilutedById = new Map(
+        redilutedEntries.map((entry) => [entry.id, entry])
+      );
+      const redilution = planRedilutionPostings(
+        dilution.adjustments.map((adjustment) => ({
+          entry: redilutedById.get(adjustment.entryId)!,
+          amount: adjustment.amount
+        })),
+        contexts,
+        journalOptions
+      );
+      plan.lines.push(...redilution.lines);
+      plan.ledgerRows.push(...redilution.ledgerRows);
+    }
+
+    // Journals: one per accounting period the entries fall in, dated the
+    // period's latest entry date. Before the cutover there is no period,
+    // so one Provisional journal holds every line.
+    const journalIdByEntry = new Map<string, string>();
+    const debitLineIdByEntry = new Map<string, string>();
+    const journalIds: string[] = [];
+
+    if (plan.lines.length > 0) {
+      const periodByDate = new Map<string, string | null>();
+      for (const date of [
+        ...new Set(plan.lines.map((l) => l.postingDate))
+      ].sort()) {
+        const period =
+          postingStatus === "Posted"
+            ? await resolveAccountingPeriod(trx, companyId, date, "current")
+            : null;
+        periodByDate.set(date, period?.id ?? null);
+      }
+
+      const linesByPeriod = new Map<string | null, TimesheetJournalLine[]>();
+      for (const line of plan.lines) {
+        const periodId = periodByDate.get(line.postingDate) ?? null;
+        const group = linesByPeriod.get(periodId) ?? [];
+        group.push(line);
+        linesByPeriod.set(periodId, group);
+      }
+
+      const dimensions = await trx
+        .selectFrom("dimension")
+        .innerJoin(
+          "company",
+          "company.companyGroupId",
+          "dimension.companyGroupId"
+        )
+        .select(["dimension.id", "dimension.entityType"])
+        .where("company.id", "=", companyId)
+        .where("dimension.active", "=", true)
+        .where("dimension.entityType", "in", [
+          "Project",
+          "ProjectElement",
+          "Employee",
+          "Customer"
+        ])
+        .execute();
+      const dimensionIdByType = new Map(
+        dimensions
+          .filter((d) => d.entityType)
+          .map((d) => [d.entityType as string, d.id])
+      );
+
+      for (const [accountingPeriodId, lines] of linesByPeriod) {
+        const postingDate = lines.reduce(
+          (latest, line) =>
+            line.postingDate > latest ? line.postingDate : latest,
+          lines[0]!.postingDate
+        );
+        const journalId = await createAdjustmentJournal(trx, {
+          companyId,
+          accountingPeriodId,
+          status: postingStatus,
+          description: "Project Timesheet",
+          postingDate,
+          userId,
+          sourceType: "Timesheet"
+        });
+        journalIds.push(journalId);
+
+        const lineIds = await allocateJournalLineIds(trx, lines.length);
+        const journalLineReference = nanoid();
+        await trx
+          .insertInto("journalLine")
+          .values(
+            lines.map((line, index) => ({
+              id: lineIds[index]!,
+              journalId,
+              accountId: line.accountId,
+              accountDefaultRole: line.accountDefaultRole,
+              description: line.description,
+              amount: line.amount,
+              quantity: 1,
+              documentType: "Timesheet" as const,
+              documentId: line.entryId,
+              documentLineReference: journalReference.to.timesheet(
+                line.entryId
+              ),
+              journalLineReference,
+              companyId
+            }))
+          )
+          .execute();
+
+        const dimensionRows = lines.flatMap((line, index) =>
+          (
+            [
+              ["Project", line.projectId],
+              ["ProjectElement", line.projectElementId],
+              ["Employee", line.employeeId],
+              ["Customer", line.customerId]
+            ] as const
+          ).flatMap(([entityType, valueId]) => {
+            const dimensionId = dimensionIdByType.get(entityType);
+            return dimensionId && valueId
+              ? [
+                  {
+                    journalLineId: lineIds[index]!,
+                    dimensionId,
+                    valueId,
+                    companyId
+                  }
+                ]
+              : [];
+          })
+        );
+        if (dimensionRows.length > 0) {
+          await trx
+            .insertInto("journalLineDimension")
+            .values(dimensionRows)
+            .execute();
+        }
+
+        lines.forEach((line, index) => {
+          journalIdByEntry.set(line.entryId, journalId);
+          if (line.isProjectDebit) {
+            debitLineIdByEntry.set(line.entryId, lineIds[index]!);
+          }
+        });
+      }
+    }
+
+    if (plan.ledgerRows.length > 0) {
+      const insertedLedger = await insertProjectLedgerRows(trx, {
+        companyId,
+        userId,
+        rows: plan.ledgerRows.map((row) =>
+          buildProjectLedgerRow({
+            companyId,
+            projectId: row.projectId,
+            projectElementId: row.projectElementId,
+            postingDate: row.postingDate,
+            costType: "Labor",
+            documentType: "Timesheet",
+            documentId: row.entryId,
+            employeeId: row.employeeId,
+            laborCategoryId: row.laborCategoryId,
+            quantity: row.quantity,
+            unitOfMeasureCode: "HR",
+            amount: row.amount,
+            journalLineId: debitLineIdByEntry.get(row.entryId) ?? null,
+            reversalOfId: row.reversalOfId,
+            coverage: row.coverage,
+            coverageReason: row.coverageReason,
+            unallowable: row.unallowable,
+            createdBy: userId
+          })
+        )
+      });
+
+      await writeServiceBillableItems(trx, {
+        companyId,
+        userId,
+        entries: serviceEntries,
+        ledgerRows: plan.ledgerRows,
+        ledgerIdByEntry: new Map(
+          insertedLedger.map((row) => [row.documentId, row.id])
+        ),
+        services
+      });
+
+      // A Capitalize entry also builds its asset.
+      await writeProjectCipRows(trx, {
+        companyId,
+        userId,
+        rows: plan.ledgerRows.map((row) =>
+          buildProjectCipRow({
+            resolved: row,
+            companyId,
+            userId,
+            projectId: row.projectId,
+            projectElementId: row.projectElementId,
+            sourceType: "Timesheet",
+            sourceDocumentId: row.entryId,
+            amount: row.amount,
+            costDate: row.postingDate,
+            journalId: journalIdByEntry.get(row.entryId) ?? null
+          })
+        )
+      });
+    }
+
+    // One statement for every entry: each carries its own rate and journal,
+    // and a Service entry its coverage.
+    const entryById = new Map(entries.map((entry) => [entry.id, entry]));
+    const postedAt = datetime.timestamp();
+    await sql`
+        UPDATE "timesheetEntry" t
+        SET "status" = 'Posted',
+            "costRate" = v."costRate",
+            "journalId" = v."journalId",
+            "dilutionFactor" = COALESCE(v."dilutionFactor", t."dilutionFactor"),
+            "coverage" = COALESCE(v."coverage"::"serviceCoverage", t."coverage"),
+            "coverageReason" = CASE WHEN v."coverage" IS NULL
+              THEN t."coverageReason" ELSE v."coverageReason" END,
+            "postedAt" = ${postedAt}::timestamptz,
+            "updatedBy" = ${userId},
+            "updatedAt" = ${postedAt}::timestamptz
+        FROM (VALUES ${sql.join(
+          plan.stamps.map((stamp) => {
+            const entry = entryById.get(stamp.entryId);
+            const coverage = entry?.isService ? entry.coverage : null;
+            return sql`(${stamp.entryId}, ${stamp.costRate}::numeric, ${
+              journalIdByEntry.get(stamp.entryId) ?? null
+            }::text, ${stamp.dilutionFactor ?? null}::numeric, ${coverage}::text, ${
+              coverage ? (entry?.coverageReason ?? null) : null
+            }::text)`;
+          })
+        )}) AS v("id", "costRate", "journalId", "dilutionFactor", "coverage", "coverageReason")
+        WHERE t."id" = v."id" AND t."companyId" = ${companyId}
+      `.execute(trx);
+
+    // A re-diluted entry carries its new rate and factor, so a later
+    // reversal nets exactly what it posted.
+    if (dilution && dilution.stamps.length > 0) {
+      await sql`
+          UPDATE "timesheetEntry" t
+          SET "costRate" = v."costRate",
+              "dilutionFactor" = v."dilutionFactor",
+              "updatedBy" = ${userId},
+              "updatedAt" = ${postedAt}::timestamptz
+          FROM (VALUES ${sql.join(
+            dilution.stamps.map(
+              (stamp) =>
+                sql`(${stamp.entryId}, ${stamp.costRate}::numeric, ${stamp.dilutionFactor}::numeric)`
+            )
+          )}) AS v("id", "costRate", "dilutionFactor")
+          WHERE t."id" = v."id" AND t."companyId" = ${companyId}
+        `.execute(trx);
+    }
+
+    await startElementsOnFirstCharge(
+      trx,
+      companyId,
+      entries.filter((e) => !e.reversalOfId).map((e) => e.projectElementId)
+    );
+
+    return {
+      success: true,
+      postedEntryIds: plan.stamps.map((stamp) => stamp.entryId),
+      journalIds
+    };
+  });
+}
+
+type PostingEntry = TimesheetPostingEntry & {
+  isService: boolean;
+  note: string | null;
+};
+
+/**
+ * The dilution of every (exempt employee, ISO week) the call touches, in DCAA
+ * mode, in at most 3 queries: the employees' FLSA status, the weeks'
+ * entries, and what each posted entry's ledger rows hold.
+ * - The week's hours are its Submitted, Approved and Posted entries plus the
+ *   entries of this call (a Service entry posts from Draft).
+ * - `factorByEntry`: the factor of each new entry of the call.
+ * - `posted`, `adjustments`, `stamps`: the week's other posted entries (not a
+ *   reversal, not reversed) and their re-dilution (`planDilution`).
+ */
+async function loadWeekDilution(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    standardWeeklyHours: number;
+    entries: PostingEntry[];
+  }
+): Promise<{
+  factorByEntry: Map<string, number>;
+  posted: PostingEntry[];
+  adjustments: { entryId: string; amount: number }[];
+  stamps: { entryId: string; costRate: number; dilutionFactor: number }[];
+} | null> {
+  const { companyId, entries } = args;
+  const employeeIds = [...new Set(entries.map((entry) => entry.employeeId))];
+  const jobs = await trx
+    .selectFrom("employeeJob")
+    .select(["id", "flsaStatus"])
+    .where("id", "in", employeeIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const exempt = new Set(
+    jobs.filter((job) => job.flsaStatus === "Exempt").map((job) => job.id)
+  );
+  const diluted = entries.filter((entry) => exempt.has(entry.employeeId));
+  if (diluted.length === 0) return null;
+
+  const pairOf = (employeeId: string, entryDate: string) =>
+    `${employeeId}\x1f${weekStartOf(entryDate)}`;
+  const pairs = new Set(
+    diluted.map((entry) => pairOf(entry.employeeId, entry.entryDate))
+  );
+  const weekStarts = diluted
+    .map((entry) => weekStartOf(entry.entryDate))
+    .sort();
+  const from = weekStarts[0]!;
+  const to = parseDate(weekStarts[weekStarts.length - 1]!)
+    .add({ days: 6 })
+    .toString();
+
+  const rows = await trx
+    .selectFrom("timesheetEntry")
+    .innerJoin("project", (join) =>
+      join
+        .onRef("project.id", "=", "timesheetEntry.projectId")
+        .onRef("project.companyId", "=", "timesheetEntry.companyId")
+    )
+    .select([
+      "timesheetEntry.id",
+      "timesheetEntry.employeeId",
+      "timesheetEntry.entryDate",
+      "timesheetEntry.projectId",
+      "timesheetEntry.projectElementId",
+      "timesheetEntry.laborCategoryId",
+      "timesheetEntry.hours",
+      "timesheetEntry.status",
+      "timesheetEntry.costRate",
+      "timesheetEntry.dilutionFactor",
+      "timesheetEntry.reversalOfId",
+      "timesheetEntry.note",
+      "timesheetEntry.coverage",
+      "timesheetEntry.coverageReason",
+      "project.projectType"
+    ])
+    .where("timesheetEntry.companyId", "=", companyId)
+    .where("timesheetEntry.employeeId", "in", [...exempt])
+    .where("timesheetEntry.entryDate", ">=", from)
+    .where("timesheetEntry.entryDate", "<=", to)
+    .execute();
+
+  const callIds = new Set(entries.map((entry) => entry.id));
+  const reversedIds = new Set(
+    [...rows, ...entries]
+      .map((row) => row.reversalOfId)
+      .filter((id): id is string => Boolean(id))
+  );
+  const hoursByPair = new Map<string, number>();
+  for (const row of rows) {
+    const pair = pairOf(row.employeeId, row.entryDate);
+    if (!pairs.has(pair)) continue;
+    const counts =
+      callIds.has(row.id) ||
+      row.status === "Submitted" ||
+      row.status === "Approved" ||
+      row.status === "Posted";
+    if (!counts) continue;
+    hoursByPair.set(pair, (hoursByPair.get(pair) ?? 0) + Number(row.hours));
+  }
+  const factorByPair = new Map(
+    [...pairs].map((pair) => [
+      pair,
+      dilutionFactor(args.standardWeeklyHours, hoursByPair.get(pair) ?? 0)
+    ])
+  );
+  const factorByEntry = new Map(
+    diluted
+      .filter((entry) => !entry.reversalOfId)
+      .map((entry) => [
+        entry.id,
+        factorByPair.get(pairOf(entry.employeeId, entry.entryDate))!
+      ])
+  );
+
+  const postedRows = rows.filter(
+    (row) =>
+      row.status === "Posted" &&
+      !callIds.has(row.id) &&
+      !row.reversalOfId &&
+      !reversedIds.has(row.id) &&
+      row.costRate !== null &&
+      pairs.has(pairOf(row.employeeId, row.entryDate))
+  );
+  if (postedRows.length === 0) {
+    return { factorByEntry, posted: [], adjustments: [], stamps: [] };
+  }
+
+  const amounts = await trx
+    .selectFrom("projectLedger")
+    .select(["documentId", (eb) => eb.fn.sum<string>("amount").as("amount")])
+    .where("companyId", "=", companyId)
+    .where("documentType", "=", "Timesheet")
+    .where(
+      "documentId",
+      "in",
+      postedRows.map((row) => row.id)
+    )
+    .groupBy("documentId")
+    .execute();
+  const amountByEntry = new Map(
+    amounts.map((row) => [row.documentId, Number(row.amount)])
+  );
+
+  const adjustments: { entryId: string; amount: number }[] = [];
+  const stamps: {
+    entryId: string;
+    costRate: number;
+    dilutionFactor: number;
+  }[] = [];
+  for (const pair of pairs) {
+    const inWeek: DilutionPostedEntry[] = postedRows
+      .filter((row) => pairOf(row.employeeId, row.entryDate) === pair)
+      .map((row) => ({
+        id: row.id,
+        hours: Number(row.hours),
+        costRate: Number(row.costRate),
+        dilutionFactor:
+          row.dilutionFactor === null ? null : Number(row.dilutionFactor),
+        postedAmount: amountByEntry.get(row.id) ?? 0
+      }));
+    if (inWeek.length === 0) continue;
+    const planned = planDilution([], inWeek, factorByPair.get(pair)!);
+    adjustments.push(...planned.adjustments);
+    stamps.push(...planned.stamps);
+  }
+
+  return {
+    factorByEntry,
+    posted: postedRows.map((row) => ({
+      id: row.id,
+      employeeId: row.employeeId,
+      entryDate: row.entryDate,
+      projectId: row.projectId,
+      projectElementId: row.projectElementId,
+      laborCategoryId: row.laborCategoryId,
+      hours: Number(row.hours),
+      reversalOfId: null,
+      isService: row.projectType === "Service",
+      note: row.note,
+      coverage: row.coverage as ServiceCoverage | null,
+      coverageReason: row.coverageReason,
+      customerId: null
+    })),
+    adjustments,
+    stamps
+  };
+}
+
+/**
+ * The billable items of the Service entries just posted: a new item per
+ * entry, priced by the service labor item, and for a reversal the reversal of
+ * its original's item (written off while unbilled, else a negative copy).
+ */
+async function writeServiceBillableItems(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    entries: {
+      id: string;
+      note: string | null;
+      coverage: ServiceCoverage | null;
+      reversalOfId: string | null;
+      projectId: string;
+      projectElementId: string | null;
+    }[];
+    ledgerRows: TimesheetLedgerRow[];
+    ledgerIdByEntry: Map<string, string>;
+    services: Map<string, ServicePostingContext>;
+  }
+): Promise<void> {
+  const { companyId, userId } = args;
+  const entryById = new Map(args.entries.map((entry) => [entry.id, entry]));
+  const rows = args.ledgerRows.filter((row) => entryById.has(row.entryId));
+  if (rows.length === 0) return;
+
+  // The originals' items, for the reversals: one query.
+  const originalLedgerIds = rows
+    .map((row) => row.reversalOfId)
+    .filter((id): id is string => Boolean(id));
+  const originalItems =
+    originalLedgerIds.length === 0
+      ? []
+      : await trx
+          .selectFrom("projectBillableItem")
+          .selectAll()
+          .where("projectLedgerId", "in", originalLedgerIds)
+          .where("reversalOfId", "is", null)
+          .where("companyId", "=", companyId)
+          .execute();
+  const itemByLedger = new Map(
+    originalItems.map((item) => [item.projectLedgerId, item])
+  );
+
+  const inserts: Insertable<DB["projectBillableItem"]>[] = [];
+  const writeOffIds: string[] = [];
+  for (const row of rows) {
+    const entry = entryById.get(row.entryId)!;
+    const ledgerId = args.ledgerIdByEntry.get(row.entryId);
+    if (!ledgerId) continue;
+
+    if (row.reversalOfId) {
+      const original = itemByLedger.get(row.reversalOfId);
+      if (!original) continue;
+      const reversal = reverseBillableItem(
+        {
+          ...original,
+          quantity: Number(original.quantity),
+          unitPrice: Number(original.unitPrice),
+          amount: Number(original.amount)
+        },
+        { projectLedgerId: ledgerId, createdBy: userId }
+      );
+      if (reversal.update) writeOffIds.push(original.id);
+      if (reversal.insert) inserts.push(reversal.insert);
+      continue;
+    }
+
+    if (!entry.coverage) continue;
+    const service = args.services.get(
+      projectPostingKey(entry.projectId, entry.projectElementId)
+    );
+    const item = buildBillableItem({
+      ledgerRow: {
+        id: ledgerId,
+        companyId,
+        projectId: row.projectId,
+        projectElementId: row.projectElementId,
+        costType: "Labor",
+        quantity: row.quantity,
+        amount: row.amount,
+        itemId: service?.laborItemId ?? null,
+        createdBy: userId
+      },
+      coverage: entry.coverage,
+      laborPrice: service?.laborPrice ?? null,
+      partPrice: null,
+      description: entry.note?.trim() || "Labor"
+    });
+    if (item) inserts.push(item);
+  }
+
+  if (writeOffIds.length > 0) {
+    await trx
+      .updateTable("projectBillableItem")
+      .set({
+        status: "Written Off",
+        statusReason: "Reversed",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "in", writeOffIds)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+  if (inserts.length > 0) {
+    await trx.insertInto("projectBillableItem").values(inserts).execute();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// post-project-expense
+
+export const postProjectExpenseInput = z.object({
+  projectExpenseEntryId: z.string()
+});
+
+export type PostProjectExpenseResult = {
+  success: true;
+  /** False when the entry was already posted. */
+  posted: boolean;
+  journalId: string | null;
+  projectLedgerId: string | null;
+};
+
+export const postProjectExpensePermission = {
+  update: "projects"
+} satisfies PermissionRule<z.output<typeof postProjectExpenseInput>>;
+
+/**
+ * Posts a project expense entry (a cost with no invoice: mileage, a meal, a
+ * part bought on a card): Dr the project account / Cr
+ * goodsReceivedNotInvoicedAccount, with `sourceType 'Project Expense'` and the
+ * Project, Project Element and Employee dimensions, plus one projectLedger row
+ * of type Other Direct. The journal is Provisional before the company's
+ * accounting cutover and Posted after it. A Statistical project charges
+ * indirectCostAccount and writes no ledger row.
+ *
+ * On a Service project the coverage decides the account (the user's override
+ * with a reason, else `resolveCoverage` for an expense), the journal carries
+ * the Customer dimension, and the charge writes a billable item at its
+ * amount. A reversal entry (`reversalOfId`) posts its own (negative) amount at
+ * its original's coverage and reverses the original's billable item.
+ * Posting twice is a no-op.
+ */
+export async function postProjectExpense(
+  ctx: ServiceContext,
+  raw: z.input<typeof postProjectExpenseInput>
+): Promise<PostProjectExpenseResult> {
+  const { projectExpenseEntryId } = postProjectExpenseInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  return db.transaction().execute(async (trx) => {
+    // Row lock: two posts of one entry must not both post it.
+    const entry = await trx
+      .selectFrom("projectExpenseEntry")
+      .selectAll()
+      .where("id", "=", projectExpenseEntryId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!entry) throw new NotFoundError("Expense entry not found");
+
+    const alreadyPosted = await trx
+      .selectFrom("projectLedger")
+      .select("id")
+      .where("documentType", "=", "Project Expense")
+      .where("documentId", "=", entry.id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (entry.journalId || alreadyPosted) {
+      return {
+        success: true,
+        posted: false,
+        journalId: entry.journalId,
+        projectLedgerId: alreadyPosted?.id ?? null
+      };
+    }
+
+    const isReversal = Boolean(entry.reversalOfId);
+    const contexts = await loadProjectPostingContexts(trx, companyId, [
+      {
+        projectId: entry.projectId,
+        projectElementId: entry.projectElementId
+      }
+    ]);
+    const context = contexts.get(
+      projectPostingKey(entry.projectId, entry.projectElementId)
+    );
+    if (!context) throw new NotFoundError("Project element not found");
+    assertChargeable(context, isReversal ? "commitment" : "new");
+
+    // The original's open ledger row: not reversed by a later row (a
+    // coverage reclass reverses and replaces it).
+    const original = entry.reversalOfId
+      ? await sql<{
+          id: string;
+          coverage: ServiceCoverage | null;
+          coverageReason: string | null;
+        }>`
+            SELECT pl."id", pl."coverage", pl."coverageReason"
+            FROM "projectLedger" pl
+            WHERE pl."documentType" = 'Project Expense'
+              AND pl."documentId" = ${entry.reversalOfId}
+              AND pl."companyId" = ${companyId}
+              AND pl."reversalOfId" IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM "projectLedger" r
+                WHERE r."reversalOfId" = pl."id" AND r."companyId" = pl."companyId"
+              )
+            ORDER BY pl."createdAt" DESC, pl."id" DESC
+            LIMIT 1
+          `
+          .execute(trx)
+          .then((result) => result.rows[0] ?? null)
+      : null;
+
+    const isService = context.project.costTreatment === "By Coverage";
+    const service = isService
+      ? await loadServicePostingContext(trx, {
+          companyId,
+          projectId: entry.projectId,
+          elementId: entry.projectElementId
+        })
+      : null;
+    if (isService && !service) {
+      throw new ProjectChargeError(
+        "No service order owns the project of this expense"
+      );
+    }
+
+    let coverage: ServiceCoverage | null = null;
+    let coverageReason: string | null = null;
+    if (service) {
+      if (original) {
+        coverage = original.coverage;
+        coverageReason = original.coverageReason;
+      } else if (entry.coverage && entry.coverageReason) {
+        coverage = entry.coverage;
+        coverageReason = entry.coverageReason;
+      } else {
+        coverage = serviceChargeCoverage(service, "Expense", entry.entryDate);
+      }
+    }
+
+    const resolved = resolveProjectPostingAccount(
+      context,
+      entry.entryDate,
+      coverage
+    );
+    if (resolved.treatment === "Capitalize") {
+      throw new ProjectChargeError(
+        "An expense entry cannot charge a capital project. Use a charge or a purchase invoice."
+      );
+    }
+    const isStatistical = resolved.treatment === "Statistical";
+    const amount = round(Number(entry.amount));
+
+    let journalId: string | null = null;
+    let debitLineId: string | null = null;
+    // The journal is written for every company: Provisional before the
+    // accounting cutover, Posted after it (postProjectJournal).
+    if (amount !== 0) {
+      const defaults = await trx
+        .selectFrom("accountDefault")
+        .select(["goodsReceivedNotInvoicedAccount", "indirectCostAccount"])
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      const debitAccount = isStatistical
+        ? defaults?.indirectCostAccount
+        : resolved.accountId;
+      if (!debitAccount) {
+        throw new ProjectChargeError(
+          "Set Indirect Cost in Account Defaults before you charge an expense to a Statistical project"
+        );
+      }
+      if (!defaults?.goodsReceivedNotInvoicedAccount) {
+        throw new Error(
+          "goodsReceivedNotInvoicedAccount not configured in account defaults"
+        );
+      }
+
+      const posted = await postProjectJournal(trx, {
+        companyId,
+        userId,
+        postingDate: entry.entryDate,
+        description: `${isReversal ? "Reverse expense" : "Expense"}: ${entry.description}`,
+        sourceType: "Project Expense",
+        documentType: "Project Expense",
+        documentId: entry.id,
+        documentLineReference: journalReference.to.projectExpense(entry.id),
+        lines: [
+          {
+            accountId: debitAccount,
+            description: isStatistical
+              ? "Indirect Cost"
+              : service
+                ? "Service Expense"
+                : "Project Expense",
+            amount: debit("expense", amount)
+          },
+          {
+            accountId: defaults.goodsReceivedNotInvoicedAccount,
+            description: "Accrued Expense",
+            amount: credit("liability", amount)
+          }
+        ],
+        dimensions: [
+          ["Project", entry.projectId],
+          ["ProjectElement", entry.projectElementId],
+          ["Employee", entry.employeeId],
+          ["Customer", service?.customerId]
+        ]
+      });
+      journalId = posted.journalId;
+      debitLineId = posted.lineIds[0] ?? null;
+    }
+
+    let projectLedgerId: string | null = null;
+    if (!isStatistical) {
+      const row = (
+        await insertProjectLedgerRows(trx, {
+          companyId,
+          userId,
+          rows: [
+            buildProjectLedgerRow({
+              companyId,
+              projectId: entry.projectId,
+              projectElementId: entry.projectElementId,
+              postingDate: entry.entryDate,
+              costType: "Other Direct",
+              documentType: "Project Expense",
+              documentId: entry.id,
+              employeeId: entry.employeeId,
+              quantity: isReversal ? -1 : 1,
+              amount,
+              journalLineId: debitLineId,
+              reversalOfId: original?.id ?? null,
+              coverage,
+              coverageReason,
+              unallowable: isUnallowableCharge(context, resolved.accountId),
+              createdBy: userId
+            })
+          ]
+        })
+      )[0]!;
+      projectLedgerId = row.id;
+
+      if (service && original) {
+        const item = await trx
+          .selectFrom("projectBillableItem")
+          .selectAll()
+          .where("projectLedgerId", "=", original.id)
+          .where("reversalOfId", "is", null)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (item) {
+          const reversal = reverseBillableItem(item, {
+            projectLedgerId: row.id,
+            createdBy: userId
+          });
+          if (reversal.update) {
+            await trx
+              .updateTable("projectBillableItem")
+              .set({
+                ...reversal.update,
+                updatedBy: userId,
+                updatedAt: datetime.timestamp()
+              })
+              .where("id", "=", item.id)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+          if (reversal.insert) {
+            await trx
+              .insertInto("projectBillableItem")
+              .values(reversal.insert)
+              .execute();
+          }
+        }
+      } else if (service && coverage) {
+        const item = buildBillableItem({
+          ledgerRow: {
+            id: row.id,
+            companyId,
+            projectId: entry.projectId,
+            projectElementId: entry.projectElementId,
+            costType: "Other Direct",
+            quantity: 1,
+            amount,
+            itemId: null,
+            createdBy: userId
+          },
+          coverage,
+          laborPrice: null,
+          partPrice: null,
+          description: entry.description
+        });
+        if (item) {
+          await trx.insertInto("projectBillableItem").values(item).execute();
+        }
+      }
+    }
+
+    await trx
+      .updateTable("projectExpenseEntry")
+      .set({
+        journalId,
+        coverage: service ? coverage : entry.coverage,
+        coverageReason: service ? coverageReason : entry.coverageReason,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", entry.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    if (!isReversal) {
+      await startElementsOnFirstCharge(trx, companyId, [
+        entry.projectElementId
+      ]);
+    }
+
+    return { success: true, posted: true, journalId, projectLedgerId };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// post-project-issue
+
+export const postProjectIssueInput = z.object({
+  projectId: z.string(),
+  projectElementId: z.string().optional().nullable(),
+  itemId: z.string(),
+  locationId: z.string(),
+  storageUnitId: z.string().optional().nullable(),
+  trackedEntityId: z.string().optional().nullable(),
+  quantity: z.number().gt(0),
+  direction: z.enum(["Issue", "Return"]),
+  /** A Service project's issue: the user's coverage, with its reason. */
+  coverage: z
+    .enum(Constants.public.Enums.serviceCoverage)
+    .optional()
+    .nullable(),
+  coverageReason: z.string().optional().nullable(),
+  /** A Service project's return: the issue it reverses (else the latest
+   *  open issue of the same part to the node). */
+  returnOfProjectLedgerId: z.string().optional().nullable()
+});
+
+export type PostProjectIssueResult = {
+  success: true;
+  itemLedgerId: string;
+  journalId: string | null;
+  cost: number;
+  projectLedgerId: string | null;
+};
+
+export const postProjectIssuePermission = {
+  update: "inventory"
+} satisfies PermissionRule<z.output<typeof postProjectIssueInput>>;
+
+/**
+ * Issues stock to a project (or returns it). The stock leaves (or re-enters)
+ * inventory at its carrying cost through the inventory-adjustment core, and
+ * the offset posts to the project account the cost treatment resolves:
+ * Dr project / Cr inventory for an Issue, the mirror for a Return. One
+ * projectLedger Material row records the same cost. A Statistical project
+ * charges indirectCostAccount and writes no ledger row.
+ *
+ * A Return values the stock at the item's current cost (the increase rule of
+ * `bookAdjustment`), and the ledger row uses that same cost, so the project
+ * total equals the GL.
+ *
+ * On a Service project (By Coverage) the charge's coverage decides the
+ * account: the user's override with a reason, else `resolveCoverage` for a
+ * part. The issue writes a billable item and installs the part in the
+ * customer asset (`installServicePart`). A return reverses one whole issue at
+ * its coverage (`reversalOfId` on the ledger row) and undoes the install.
+ */
+export async function postProjectIssue(
+  ctx: ServiceContext,
+  raw: z.input<typeof postProjectIssueInput>
+): Promise<PostProjectIssueResult> {
+  const input = postProjectIssueInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const {
+    projectId,
+    itemId,
+    locationId,
+    quantity,
+    direction,
+    storageUnitId = null,
+    trackedEntityId = null
+  } = input;
+  const projectElementId = input.projectElementId ?? null;
+  const isIssue = direction === "Issue";
+
+  // The ids come from the caller: re-read them under companyId.
+  await inOrder([
+    () =>
+      assertCompanyRecords(db, "project", [projectId], companyId, "Project"),
+    () => assertCompanyRecords(db, "item", [itemId], companyId, "Item"),
+    () =>
+      assertCompanyRecords(db, "location", [locationId], companyId, "Location"),
+    () =>
+      assertCompanyRecords(
+        db,
+        "storageUnit",
+        [storageUnitId],
+        companyId,
+        "Storage unit"
+      ),
+    () =>
+      assertCompanyRecords(
+        db,
+        "trackedEntity",
+        [trackedEntityId],
+        companyId,
+        "Tracked entity"
+      )
+  ]);
+
+  const postingDate = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+
+  const [itemResult, itemCostResult, accountDefaults, dimensions, quantities] =
+    await inOrder([
+      () =>
+        single(
+          db,
+          "item",
+          { id: itemId, companyId },
+          { columns: ["name", "itemTrackingType", "replenishmentSystem"] }
+        ),
+      () =>
+        single(
+          db,
+          "itemCost",
+          { itemId, companyId },
+          {
+            columns: [
+              "costingMethod",
+              "unitCost",
+              "standardCost",
+              "itemPostingGroupId"
+            ]
+          }
+        ),
+      () =>
+        db
+          .selectFrom("accountDefault")
+          .select([
+            "rawMaterialsAccount",
+            "finishedGoodsAccount",
+            "inventoryAdjustmentVarianceAccount",
+            "indirectCostAccount"
+          ])
+          .where("companyId", "=", companyId)
+          .executeTakeFirst(),
+      () =>
+        db
+          .selectFrom("dimension")
+          .innerJoin(
+            "company",
+            "company.companyGroupId",
+            "dimension.companyGroupId"
+          )
+          .select(["dimension.id", "dimension.entityType"])
+          .where("company.id", "=", companyId)
+          .where("dimension.active", "=", true)
+          .where("dimension.entityType", "in", [
+            "Item",
+            "ItemPostingGroup",
+            "Location",
+            "Project",
+            "ProjectElement",
+            "Customer"
+          ])
+          .execute(),
+      () =>
+        rpcRows(db, "get_item_quantities_by_tracking_id", {
+          item_id: itemId,
+          company_id: companyId,
+          location_id: locationId
+        })
+    ]);
+
+  if (itemResult.error) throw new Error("Failed to fetch item");
+  if (itemCostResult.error) throw new Error("Failed to fetch item cost");
+  if (quantities.error) throw new Error("Failed to fetch current quantities");
+  if (!accountDefaults) throw new Error("Error getting account defaults");
+
+  const isTracked =
+    itemResult.data.itemTrackingType === "Serial" ||
+    itemResult.data.itemTrackingType === "Batch";
+  if (isTracked && !trackedEntityId) {
+    throw new InvalidInputError(
+      `Select the ${itemResult.data.itemTrackingType === "Serial" ? "serial number" : "batch"} to ${isIssue ? "issue" : "return"}`
+    );
+  }
+
+  // Only the fields this function reads.
+  type TrackingQuantityRow = {
+    trackedEntityId: string | null;
+    storageUnitId: string | null;
+    quantity: number | null;
+    projectId: string | null;
+  };
+  const trackingRows = (quantities.data ?? []) as TrackingQuantityRow[];
+
+  // The stripes the project's demand may draw (Projects Phase 2a): its own
+  // stock first when it has project stock, then common stock. A Return goes
+  // back to the first: the project's stock, else common stock.
+  const stripes = await loadDemandStripes(db, companyId, projectId);
+  let draws: StripeQuantity[];
+  if (!isIssue) {
+    draws = [{ stripe: stripes[0] ?? null, quantity }];
+  } else if (trackedEntityId) {
+    // A tracked entity is drawn from its own stripe, which the project's
+    // demand must be allowed to draw.
+    const stripe = trackedEntityStripe(
+      trackingRows.map((row) => ({
+        trackedEntityId: row.trackedEntityId,
+        projectId: row.projectId,
+        quantity: row.quantity
+      })),
+      trackedEntityId
+    );
+    const source = trackingRows.find(
+      (row) =>
+        row.trackedEntityId === trackedEntityId &&
+        (row.projectId ?? null) === stripe
+    );
+    if (round(quantity) > round(source?.quantity ?? 0)) {
+      throw new InvalidInputError("Insufficient quantity to issue");
+    }
+    if (!stripes.includes(stripe)) {
+      const entity = await single(
+        db,
+        "trackedEntity",
+        { id: trackedEntityId, companyId },
+        { columns: ["readableId"] }
+      );
+      await assertEntitiesInStripes(
+        db,
+        companyId,
+        [{ readableId: entity.data?.readableId ?? null, stripe }],
+        stripes
+      );
+    }
+    draws = [{ stripe, quantity }];
+  } else {
+    // Untracked stock at the bin, stripe by stripe in draw order.
+    // null == undefined — loose equality, as the adjustment path matches.
+    const available = stripes.map((stripe) => ({
+      stripe,
+      quantity: trackingRows
+        .filter(
+          (row) =>
+            row.trackedEntityId == null &&
+            row.storageUnitId == storageUnitId &&
+            (row.projectId ?? null) === stripe
+        )
+        .reduce((sum, row) => sum + Number(row.quantity ?? 0), 0)
+    }));
+    const split = splitAcrossStripes(quantity, available);
+    if (round(split.remaining) > 0) {
+      throw new InvalidInputError("Insufficient quantity to issue");
+    }
+    // One stripe (no project stock) books the quantity as given.
+    draws =
+      stripes.length === 1
+        ? [{ stripe: stripes[0] ?? null, quantity }]
+        : split.draws;
+  }
+
+  const dimensionMap: Record<string, string> = {};
+  for (const dimension of dimensions) {
+    if (dimension.entityType) {
+      dimensionMap[dimension.entityType] = dimension.id;
+    }
+  }
+
+  return db.transaction().execute(async (trx) => {
+    const contexts = await loadProjectPostingContexts(trx, companyId, [
+      { projectId, projectElementId }
+    ]);
+    const context = contexts.get(
+      projectPostingKey(projectId, projectElementId)
+    );
+    if (!context) throw new NotFoundError("Project element not found");
+    assertChargeable(context, isIssue ? "new" : "commitment");
+
+    // A Service project: the coverage decides the account.
+    const service =
+      context.project.costTreatment === "By Coverage"
+        ? await loadServicePostingContext(trx, {
+            companyId,
+            projectId,
+            elementId: projectElementId
+          })
+        : null;
+    if (context.project.costTreatment === "By Coverage" && !service) {
+      throw new ProjectChargeError(
+        "No service order owns the project of this issue"
+      );
+    }
+    let coverage: ServiceCoverage | null = null;
+    let coverageReason: string | null = null;
+    let returnedIssue: ServiceIssue | null = null;
+    if (service && isIssue) {
+      const override = input.coverage && input.coverageReason?.trim();
+      coverage = override
+        ? input.coverage!
+        : serviceChargeCoverage(service, "Part", postingDate);
+      coverageReason = override ? input.coverageReason!.trim() : null;
+    } else if (service) {
+      returnedIssue = await findServiceIssueToReturn(trx, {
+        companyId,
+        projectId,
+        projectElementId,
+        itemId,
+        trackedEntityId,
+        quantity,
+        returnOfProjectLedgerId: input.returnOfProjectLedgerId ?? null
+      });
+      coverage = returnedIssue.coverage;
+      coverageReason = returnedIssue.coverageReason;
+    }
+
+    const resolved = resolveProjectPostingAccount(
+      context,
+      postingDate,
+      coverage
+    );
+    const { treatment, accountId } = resolved;
+    const isStatistical = treatment === "Statistical";
+    const offsetAccount = isStatistical
+      ? accountDefaults.indirectCostAccount
+      : accountId;
+    if (!offsetAccount) {
+      throw new ProjectChargeError(
+        "Set Indirect Cost in Account Defaults before you issue to a Statistical project"
+      );
+    }
+
+    if (trackedEntityId) {
+      const entity = await trx
+        .selectFrom("trackedEntity")
+        .select(["quantity", "status"])
+        .where("id", "=", trackedEntityId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirstOrThrow();
+      await trx
+        .updateTable("trackedEntity")
+        .set(
+          settleQuantity({
+            quantity:
+              Number(entity.quantity) + (isIssue ? -quantity : quantity),
+            // A returned unit is back in stock.
+            status:
+              !isIssue && entity.status === "Consumed"
+                ? "Available"
+                : entity.status,
+            refusal: "Insufficient quantity to issue"
+          })
+        )
+        .where("id", "=", trackedEntityId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    // Every issue writes its journal: Provisional before the company's
+    // accounting cutover, Posted after it. FOR SHARE holds the status until
+    // commit. A Provisional journal has no accounting period.
+    const postingStatus = await journalPostingStatus(trx, companyId);
+    const accountingPeriodId =
+      postingStatus === "Posted"
+        ? (
+            await resolveAccountingPeriod(
+              trx,
+              companyId,
+              postingDate,
+              "current"
+            )
+          ).id
+        : null;
+
+    // One journal for every stripe drawn, created on the first movement
+    // that carries value.
+    let sharedJournalId: string | null = null;
+    const getJournalId = async () => {
+      if (!sharedJournalId) {
+        sharedJournalId = await createAdjustmentJournal(trx, {
+          companyId,
+          accountingPeriodId,
+          status: postingStatus,
+          description: journalDescription,
+          postingDate,
+          userId,
+          sourceType: "Project Issue"
+        });
+      }
+      return sharedJournalId;
+    };
+    const journalDescription = `${isIssue ? "Issue to" : "Return from"} Project ${
+      context.project.identifier || context.project.name || projectId
+    }`;
+
+    // One adjustment per stripe drawn; the project is charged their sum.
+    const bookedRows: {
+      itemLedgerId: string;
+      offsetJournalLineId: string | null;
+      cost: number;
+    }[] = [];
+    for (const draw of draws) {
+      const bookedRow = await bookAdjustment(trx, {
+        ledger: {
+          postingDate,
+          itemId,
+          quantity: isIssue ? -draw.quantity : draw.quantity,
+          locationId,
+          storageUnitId,
+          trackedEntityId,
+          projectId: draw.stripe,
+          entryType: isIssue ? "Negative Adjmt." : "Positive Adjmt.",
+          documentType: "Project Issue",
+          documentId: projectId,
+          companyId,
+          createdBy: userId
+        },
+        item: {
+          itemTrackingType: itemResult.data.itemTrackingType,
+          replenishmentSystem: itemResult.data.replenishmentSystem,
+          itemPostingGroupId: itemCostResult.data.itemPostingGroupId
+        },
+        itemCost: itemCostResult.data,
+        accounting: {
+          postingStatus,
+          accountingPeriodId,
+          accountDefaults: {
+            rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
+            finishedGoodsAccount: accountDefaults.finishedGoodsAccount,
+            inventoryAdjustmentVarianceAccount:
+              accountDefaults.inventoryAdjustmentVarianceAccount
+          },
+          offsetAccount,
+          offsetDescription: isStatistical
+            ? "Indirect Cost"
+            : service
+              ? "Service Material"
+              : "Project Material",
+          sourceType: "Project Issue",
+          description: journalDescription,
+          getJournalId,
+          userId,
+          dimensions: dimensionMap,
+          extraDimensions: [
+            { entityType: "Project", valueId: projectId },
+            ...(projectElementId
+              ? [
+                  {
+                    entityType: "ProjectElement",
+                    valueId: projectElementId
+                  }
+                ]
+              : []),
+            ...(service?.customerId
+              ? [{ entityType: "Customer", valueId: service.customerId }]
+              : [])
+          ]
+        }
+      });
+      bookedRows.push(bookedRow);
+    }
+    const booked = {
+      itemLedgerId: bookedRows[0]!.itemLedgerId,
+      journalId: sharedJournalId as string | null,
+      // Every stripe's offset line is on the one project account, so the
+      // first one tells the revenue run which account the row charged.
+      offsetJournalLineId:
+        bookedRows.find((row) => row.offsetJournalLineId)
+          ?.offsetJournalLineId ?? null,
+      cost: round(bookedRows.reduce((sum, row) => sum + row.cost, 0))
+    };
+
+    let projectLedgerId: string | null = null;
+    if (!isStatistical) {
+      const row = (
+        await insertProjectLedgerRows(trx, {
+          companyId,
+          userId,
+          rows: [
+            buildProjectLedgerRow({
+              companyId,
+              projectId,
+              projectElementId,
+              postingDate,
+              costType: "Material",
+              documentType: "Project Issue",
+              documentId: booked.itemLedgerId,
+              itemId,
+              quantity: isIssue ? quantity : -quantity,
+              amount: isIssue ? booked.cost : -booked.cost,
+              journalLineId: booked.offsetJournalLineId,
+              reversalOfId: returnedIssue?.id ?? null,
+              coverage,
+              coverageReason,
+              unallowable: isUnallowableCharge(context, accountId),
+              createdBy: userId
+            })
+          ]
+        })
+      )[0]!;
+      projectLedgerId = row.id;
+
+      if (service && isIssue && coverage) {
+        await installServicePart(trx, {
+          companyId,
+          userId,
+          service,
+          projectId,
+          projectElementId,
+          projectLedgerId: row.id,
+          itemLedgerId: booked.itemLedgerId,
+          itemId,
+          itemName: itemResult.data.name,
+          trackedEntityId,
+          quantity,
+          postingDate,
+          coverage
+        });
+      } else if (service && returnedIssue) {
+        await uninstallServicePart(trx, {
+          companyId,
+          userId,
+          service,
+          projectElementId,
+          issueLedgerId: returnedIssue.id,
+          issueItemLedgerId: returnedIssue.documentId,
+          returnLedgerId: row.id
+        });
+      }
+
+      // An issue to a Capitalize project builds its asset.
+      await writeProjectCipRows(trx, {
+        companyId,
+        userId,
+        rows: [
+          buildProjectCipRow({
+            resolved,
+            companyId,
+            userId,
+            projectId,
+            projectElementId,
+            sourceType: "Project Issue",
+            sourceDocumentId: booked.itemLedgerId,
+            amount: isIssue ? booked.cost : -booked.cost,
+            costDate: postingDate,
+            journalId: booked.journalId
+          })
+        ]
+      });
+    }
+
+    if (projectElementId) {
+      // The element's plan line for the item, if it has one (the oldest
+      // when it has several).
+      await sql`
+          UPDATE "projectElementMaterial"
+          SET "quantityIssued" = "quantityIssued" + ${
+            isIssue ? quantity : -quantity
+          }::numeric,
+              "updatedBy" = ${userId},
+              "updatedAt" = NOW()
+          WHERE "id" = (
+            SELECT "id" FROM "projectElementMaterial"
+            WHERE "projectElementId" = ${projectElementId}
+              AND "projectId" = ${projectId}
+              AND "itemId" = ${itemId}
+              AND "companyId" = ${companyId}
+            ORDER BY "createdAt", "id"
+            LIMIT 1
+          )
+          AND "companyId" = ${companyId}
+        `.execute(trx);
+
+      if (isIssue) {
+        await startElementsOnFirstCharge(trx, companyId, [projectElementId]);
+      }
+    }
+
+    return {
+      success: true,
+      itemLedgerId: booked.itemLedgerId,
+      journalId: booked.journalId,
+      cost: booked.cost,
+      projectLedgerId
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// post-project-stock-transfer
+
+export const postProjectStockTransferInput = z.object({
+  projectStockTransferId: z.string()
+});
+
+export type PostProjectStockTransferResult = {
+  success: true;
+  journalId: string | null;
+};
+
+export const postProjectStockTransferPermission = {
+  update: "projects"
+} satisfies PermissionRule<z.output<typeof postProjectStockTransferInput>>;
+
+/**
+ * Posts an Approved project stock transfer (Projects Phase 2a): stock moves
+ * between stock stripes at the same bin, at cost.
+ *
+ * - **Transfer**: the from-stripe's layers are relieved (calculateCOGS) and a
+ *   layer at the drawn cost opens in the to-stripe. The drawn cost includes the
+ *   relieved layers' adjustment children, so their value moves with them. No
+ *   journal: both owners are inventory.
+ * - **Borrow**: the same move from the lender to the borrower, whose layer
+ *   points at a new open `projectBorrow` (quantity, borrowed unit cost, due
+ *   date). No journal.
+ * - **Payback**: the borrower's stock is relieved at its current cost and the
+ *   lender gets back the borrowed cost, one layer per borrow settled (oldest
+ *   open borrow of the item first, starting from the one the payback names).
+ *   The difference is the borrower's Payback Variance: a projectLedger row and
+ *   a journal of the variance against inventory, tagged with the borrower's
+ *   project.
+ *
+ * Government-furnished stock never leaves for common stock or for a project
+ * of another customer.
+ */
+export async function postProjectStockTransfer(
+  ctx: ServiceContext,
+  raw: z.input<typeof postProjectStockTransferInput>
+): Promise<PostProjectStockTransferResult> {
+  const { projectStockTransferId } = postProjectStockTransferInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const postingDate = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+
+  const [accountDefaults, dimensions] = await inOrder([
+    () =>
+      db
+        .selectFrom("accountDefault")
+        .select([
+          "rawMaterialsAccount",
+          "finishedGoodsAccount",
+          "inventoryAdjustmentVarianceAccount"
+        ])
+        .where("companyId", "=", companyId)
+        .executeTakeFirst(),
+    () =>
+      db
+        .selectFrom("dimension")
+        .innerJoin(
+          "company",
+          "company.companyGroupId",
+          "dimension.companyGroupId"
+        )
+        .select(["dimension.id", "dimension.entityType"])
+        .where("company.id", "=", companyId)
+        .where("dimension.active", "=", true)
+        .where("dimension.entityType", "in", [
+          "Item",
+          "ItemPostingGroup",
+          "Location",
+          "Project"
+        ])
+        .execute()
+  ]);
+  if (!accountDefaults) throw new Error("Error getting account defaults");
+  const dimensionMap: Record<string, string> = {};
+  for (const dimension of dimensions) {
+    if (dimension.entityType) {
+      dimensionMap[dimension.entityType] = dimension.id;
+    }
+  }
+
+  return db.transaction().execute(async (trx) => {
+    const header = await trx
+      .selectFrom("projectStockTransfer")
+      .selectAll()
+      .where("id", "=", projectStockTransferId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!header) throw new NotFoundError("Project stock transfer not found");
+    if (header.status !== "Approved") {
+      throw new InvalidInputError(
+        `Only an approved transfer can be posted; this one is ${header.status}`
+      );
+    }
+
+    const lines = await trx
+      .selectFrom("projectStockTransferLine")
+      .selectAll()
+      .where("projectStockTransferId", "=", header.id)
+      .where("companyId", "=", companyId)
+      .orderBy("createdAt")
+      .orderBy("id")
+      .execute();
+    if (lines.length === 0) {
+      throw new InvalidInputError("Add a line before you post the transfer");
+    }
+
+    // The owners. A Payback runs from the borrower back to the lender of
+    // the borrow it settles.
+    let fromProjectId = header.fromProjectId;
+    let toProjectId = header.toProjectId;
+    if (header.type === "Payback") {
+      const borrow = await trx
+        .selectFrom("projectBorrow")
+        .select(["borrowerProjectId", "lenderProjectId", "status"])
+        .where("id", "=", header.settlesBorrowId!)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!borrow) throw new NotFoundError("Borrow not found");
+      if (borrow.status !== "Open") {
+        throw new InvalidInputError("The borrow is already paid back");
+      }
+      if (
+        (header.fromProjectId &&
+          header.fromProjectId !== borrow.borrowerProjectId) ||
+        (header.toProjectId && header.toProjectId !== borrow.lenderProjectId)
+      ) {
+        throw new InvalidInputError(
+          "A payback runs from the borrower back to the lender"
+        );
+      }
+      fromProjectId = borrow.borrowerProjectId;
+      toProjectId = borrow.lenderProjectId;
+    }
+    if (fromProjectId === toProjectId) {
+      throw new InvalidInputError("The transfer needs two different owners");
+    }
+
+    // Government-furnished stock stays with its customer.
+    const ownerIds = [fromProjectId, toProjectId].filter((id): id is string =>
+      Boolean(id)
+    );
+    const owners =
+      ownerIds.length > 0
+        ? await trx
+            .selectFrom("project")
+            .select([
+              "id",
+              "identifier",
+              "name",
+              "customerId",
+              "governmentFurnished"
+            ])
+            .where("id", "in", ownerIds)
+            .where("companyId", "=", companyId)
+            .execute()
+        : [];
+    const fromProject = owners.find((p) => p.id === fromProjectId);
+    const toProject = owners.find((p) => p.id === toProjectId);
+    if (fromProject?.governmentFurnished) {
+      if (
+        !toProject ||
+        !fromProject.customerId ||
+        toProject.customerId !== fromProject.customerId
+      ) {
+        throw new InvalidInputError(
+          `Government-furnished stock of project ${
+            fromProject.identifier || fromProject.name
+          } can only move to a project of the same customer`
+        );
+      }
+    }
+
+    const itemIds = [...new Set(lines.map((line) => line.itemId))];
+    const [items, itemCosts, onHand] = await Promise.all([
+      trx
+        .selectFrom("item")
+        .select(["id", "itemTrackingType", "replenishmentSystem"])
+        .where("id", "in", itemIds)
+        .where("companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("itemCost")
+        .select(["itemId", "itemPostingGroupId"])
+        .where("itemId", "in", itemIds)
+        .where("companyId", "=", companyId)
+        .execute(),
+      // The from-stripe's on-hand at the transfer's location, per bin and
+      // lot: what the lines may move.
+      trx
+        .selectFrom("itemLedger")
+        .select([
+          "itemId",
+          "storageUnitId",
+          "trackedEntityId",
+          (eb) => eb.fn.sum<number>("quantity").as("quantity")
+        ])
+        .where("companyId", "=", companyId)
+        .where("locationId", "=", header.locationId)
+        .where("itemId", "in", itemIds)
+        .where((eb) =>
+          fromProjectId
+            ? eb("projectId", "=", fromProjectId)
+            : eb("projectId", "is", null)
+        )
+        .groupBy(["itemId", "storageUnitId", "trackedEntityId"])
+        .execute()
+    ]);
+    const itemById = new Map(items.map((item) => [item.id, item]));
+    const postingGroupByItem = new Map(
+      itemCosts.map((cost) => [cost.itemId, cost.itemPostingGroupId])
+    );
+    const slotKey = (
+      itemId: string,
+      storageUnitId: string | null,
+      trackedEntityId: string | null
+    ) => `${itemId}\u0000${storageUnitId ?? ""}\u0000${trackedEntityId ?? ""}`;
+    const available = new Map<string, number>();
+    for (const row of onHand) {
+      available.set(
+        slotKey(row.itemId, row.storageUnitId, row.trackedEntityId),
+        Number(row.quantity ?? 0)
+      );
+    }
+    const requested = new Map<string, number>();
+    for (const line of lines) {
+      const item = itemById.get(line.itemId);
+      if (!item || item.itemTrackingType === "Non-Inventory") {
+        throw new InvalidInputError("Only stocked items can be transferred");
+      }
+      const tracked =
+        item.itemTrackingType === "Serial" || item.itemTrackingType === "Batch";
+      if (tracked && !line.trackedEntityId) {
+        throw new InvalidInputError(
+          "Select the lot or serial number of every tracked line"
+        );
+      }
+      const key = slotKey(
+        line.itemId,
+        line.storageUnitId,
+        line.trackedEntityId
+      );
+      requested.set(key, (requested.get(key) ?? 0) + Number(line.quantity));
+    }
+    for (const [key, quantity] of requested) {
+      if (round(quantity) > round(available.get(key) ?? 0)) {
+        throw new InvalidInputError(
+          `Insufficient quantity in the ${
+            fromProject
+              ? `stock of project ${fromProject.identifier || fromProject.name}`
+              : "unassigned stock"
+          } to transfer`
+        );
+      }
+    }
+
+    // A payback variance writes a journal: Provisional before the
+    // company's accounting cutover, Posted after it. FOR SHARE holds the
+    // status until commit. A Provisional journal has no accounting period.
+    const postingStatus = await journalPostingStatus(trx, companyId);
+    const accountingPeriodId =
+      postingStatus === "Posted" && header.type === "Payback"
+        ? (
+            await resolveAccountingPeriod(
+              trx,
+              companyId,
+              postingDate,
+              "current"
+            )
+          ).id
+        : null;
+    // One journal for the paybacks of every line, created on the first
+    // variance.
+    let journalId: string | null = null;
+    const getJournalId = async () => {
+      if (!journalId) {
+        journalId = await createAdjustmentJournal(trx, {
+          companyId,
+          accountingPeriodId,
+          status: postingStatus,
+          description: `Payback ${header.projectStockTransferId}`,
+          postingDate,
+          userId,
+          sourceType: "Project Transfer"
+        });
+      }
+      return journalId;
+    };
+
+    for (const line of lines) {
+      const item = itemById.get(line.itemId)!;
+      const quantity = Number(line.quantity);
+      // A serial unit is costed by specific identification, as every
+      // adjustment is (valueMovement).
+      const serialId =
+        item.itemTrackingType === "Serial" ? line.trackedEntityId : null;
+
+      // 1. Draw from the from-stripe: its layers are relieved.
+      const cogs = await calculateCOGS(trx, {
+        itemId: line.itemId,
+        quantity,
+        companyId,
+        projectId: fromProjectId,
+        trackedEntityIds: serialId ? [serialId] : []
+      });
+      const unitCost = quantity > 0 ? cogs.totalCost / quantity : 0;
+
+      // 2. The Transfer pair at the same bin, one leg per stripe.
+      const ledgerBase = {
+        postingDate,
+        entryType: "Transfer" as const,
+        documentType: "Project Transfer" as const,
+        documentId: header.id,
+        itemId: line.itemId,
+        locationId: header.locationId,
+        storageUnitId: line.storageUnitId,
+        trackedEntityId: line.trackedEntityId,
+        companyId,
+        createdBy: userId
+      };
+      await trx
+        .insertInto("itemLedger")
+        .values([
+          buildItemLedgerRow({
+            ...ledgerBase,
+            quantity: -quantity,
+            projectId: fromProjectId
+          }),
+          buildItemLedgerRow({
+            ...ledgerBase,
+            quantity,
+            projectId: toProjectId
+          })
+        ])
+        .execute();
+
+      const layerBase = {
+        entryType: "Transfer" as const,
+        documentType: "Project Transfer" as const,
+        documentId: header.id,
+        itemId: line.itemId,
+        postingDate,
+        trackedEntityId: serialId,
+        companyId
+      };
+      // The relief row of the drawn layers (remaining 0).
+      await trx
+        .insertInto("costLedger")
+        .values(
+          buildCostLedgerRow({
+            ...layerBase,
+            quantity: -quantity,
+            cost: -cogs.totalCost,
+            projectId: fromProjectId
+          })
+        )
+        .execute();
+
+      if (header.type === "Transfer") {
+        await trx
+          .insertInto("costLedger")
+          .values(
+            buildCostLedgerRow({
+              ...layerBase,
+              quantity,
+              cost: cogs.totalCost,
+              projectId: toProjectId
+            })
+          )
+          .execute();
+      } else if (header.type === "Borrow") {
+        const borrow = await trx
+          .insertInto("projectBorrow")
+          .values({
+            borrowerProjectId: toProjectId!,
+            lenderProjectId: fromProjectId!,
+            itemId: line.itemId,
+            locationId: header.locationId,
+            quantity,
+            borrowedUnitCost: round(unitCost),
+            paybackDueDate: header.paybackDueDate!,
+            status: "Open",
+            projectStockTransferLineId: line.id,
+            companyId,
+            createdBy: userId
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("costLedger")
+          .values({
+            ...buildCostLedgerRow({
+              ...layerBase,
+              quantity,
+              cost: cogs.totalCost,
+              projectId: toProjectId
+            }),
+            projectBorrowId: borrow.id
+          })
+          .execute();
+      } else {
+        // Payback: the open borrows of this item between the two projects,
+        // the one the payback names first, then the oldest.
+        const openBorrows = await trx
+          .selectFrom("projectBorrow")
+          .select([
+            "id",
+            "quantity",
+            "quantityPaidBack",
+            "borrowedUnitCost",
+            "createdAt"
+          ])
+          .where("companyId", "=", companyId)
+          .where("borrowerProjectId", "=", fromProjectId!)
+          .where("lenderProjectId", "=", toProjectId!)
+          .where("itemId", "=", line.itemId)
+          .where("locationId", "=", header.locationId)
+          .where("status", "=", "Open")
+          .orderBy("createdAt")
+          .orderBy("id")
+          .forUpdate()
+          .execute();
+        const ordered = [
+          ...openBorrows.filter((b) => b.id === header.settlesBorrowId),
+          ...openBorrows.filter((b) => b.id !== header.settlesBorrowId)
+        ];
+        const settlements = planBorrowMatching(
+          ordered.map((b) => ({
+            id: b.id,
+            quantity: Number(b.quantity),
+            quantityPaidBack: Number(b.quantityPaidBack),
+            borrowedUnitCost: Number(b.borrowedUnitCost)
+          })),
+          quantity
+        );
+
+        let variance = 0;
+        for (const settlement of settlements) {
+          // The lender gets back the cost it lent.
+          await trx
+            .insertInto("costLedger")
+            .values({
+              ...buildCostLedgerRow({
+                ...layerBase,
+                quantity: settlement.quantity,
+                cost: settlement.quantity * settlement.borrowedUnitCost,
+                projectId: toProjectId
+              }),
+              projectBorrowId: settlement.borrowId
+            })
+            .execute();
+          const borrowed = ordered.find((b) => b.id === settlement.borrowId)!;
+          await trx
+            .updateTable("projectBorrow")
+            .set({
+              quantityPaidBack: round(
+                Number(borrowed.quantityPaidBack) + settlement.quantity
+              ),
+              status: settlement.paidBack ? "Paid Back" : "Open",
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("id", "=", settlement.borrowId)
+            .where("companyId", "=", companyId)
+            .execute();
+          variance += paybackVariance(
+            settlement.borrowedUnitCost,
+            unitCost,
+            settlement.quantity
+          );
+        }
+        variance = round(variance);
+
+        if (variance !== 0) {
+          // The borrower takes the difference: Dr variance / Cr inventory
+          // when it paid back dearer stock, the mirror when cheaper.
+          const journalLines = await trx
+            .insertInto("journalLine")
+            .values(
+              buildAdjustmentJournalLines({
+                journalId: await getJournalId(),
+                documentId: header.id,
+                documentType: "Project Transfer",
+                journalLineReference: nanoid(),
+                isGain: variance < 0,
+                cost: Math.abs(variance),
+                quantity,
+                replenishmentSystem: item.replenishmentSystem,
+                accountDefaults,
+                offsetDescription: "Payback Variance",
+                companyId
+              })
+            )
+            .returning("id")
+            .execute();
+          const journalLineId = journalLines[1]?.id ?? null;
+          const tags = buildJournalLineDimensions({
+            journalLineIds: journalLines.map((jl) => jl.id),
+            dimensions: dimensionMap,
+            itemId: line.itemId,
+            itemPostingGroupId: postingGroupByItem.get(line.itemId),
+            locationId: header.locationId,
+            extraDimensions: [
+              { entityType: "Project", valueId: fromProjectId! }
+            ],
+            companyId
+          });
+          if (tags.length > 0) {
+            await trx.insertInto("journalLineDimension").values(tags).execute();
+          }
+          await insertProjectLedgerRows(trx, {
+            companyId,
+            userId,
+            rows: [
+              buildProjectLedgerRow({
+                companyId,
+                projectId: fromProjectId!,
+                projectElementId: null,
+                postingDate,
+                costType: "Payback Variance",
+                documentType: "Project Transfer",
+                documentId: header.id,
+                documentLineId: line.id,
+                itemId: line.itemId,
+                quantity,
+                amount: variance,
+                journalLineId,
+                // A payback variance sits on the project root (no element)
+                // and posts to the inventory variance account, not to a
+                // project account: no allowability decides it.
+                unallowable: false,
+                createdBy: userId
+              })
+            ]
+          });
+        }
+      }
+
+      // 3. The line records the cost it moved at.
+      await trx
+        .updateTable("projectStockTransferLine")
+        .set({
+          unitCost: round(unitCost),
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", line.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    await trx
+      .updateTable("projectStockTransfer")
+      .set({
+        status: "Posted",
+        // A Payback keeps the owners it posted between.
+        fromProjectId,
+        toProjectId,
+        postedAt: datetime.timestamp(),
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", header.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return {
+      success: true,
+      journalId: journalId as string | null
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// reclass-project-coverage
+
+export const reclassProjectCoverageInput = z.object({
+  projectLedgerId: z.string(),
+  coverage: z.enum(Constants.public.Enums.serviceCoverage),
+  reason: z.string().trim().min(1)
+});
+
+export type ReclassProjectCoverageResult = {
+  success: true;
+  journalId: string | null;
+  /** The new projectLedger row, at the new coverage. */
+  projectLedgerId: string;
+};
+
+/** The source documents that carry a coverage, and their journal types. */
+const SOURCE_TYPES = {
+  Timesheet: "Timesheet",
+  "Project Issue": "Project Issue",
+  "Project Expense": "Project Expense"
+} as const;
+
+/** "Labor (Covered by warranty)" → "Labor". */
+function baseDescription(description: string): string {
+  return description.replace(/ \(Covered by (warranty|contract)\)$/, "");
+}
+
+export const reclassProjectCoveragePermission = {
+  update: "projects"
+} satisfies PermissionRule<z.output<typeof reclassProjectCoverageInput>>;
+
+/**
+ * Changes the coverage of a posted service charge without moving stock or
+ * time. In one transaction it:
+ * 1. refuses a charge whose billable item is Billed, or no change;
+ * 2. posts Dr the new coverage's account / Cr the account the charge debited;
+ * 3. writes a reversal projectLedger row and a new row at the new coverage
+ *    (the ledger stays append-only);
+ * 4. writes off (or credits) the old billable item and writes the new one;
+ * 5. stores the coverage and reason on the source timesheet or expense entry.
+ * An installed component follows its issue to the new ledger row.
+ */
+export async function reclassProjectCoverage(
+  ctx: ServiceContext,
+  raw: z.input<typeof reclassProjectCoverageInput>
+): Promise<ReclassProjectCoverageResult> {
+  const { projectLedgerId, coverage, reason } =
+    reclassProjectCoverageInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  const postingDate = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+
+  return db.transaction().execute(async (trx) => {
+    // Row lock: two reclasses of one charge must not both reverse it.
+    const source = await trx
+      .selectFrom("projectLedger")
+      .selectAll()
+      .where("id", "=", projectLedgerId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!source) throw new NotFoundError("Charge not found");
+
+    const sourceType =
+      SOURCE_TYPES[source.documentType as keyof typeof SOURCE_TYPES];
+    if (!source.coverage || !sourceType) {
+      throw new InvalidInputError("Only a service charge has a coverage");
+    }
+    if (source.reversalOfId) {
+      throw new InvalidInputError("A reversal cannot be reclassed");
+    }
+    const reversed = await trx
+      .selectFrom("projectLedger")
+      .select("id")
+      .where("reversalOfId", "=", source.id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (reversed) {
+      throw new ProjectChargeError(
+        "This charge is already reversed or reclassed"
+      );
+    }
+    if (source.coverage === coverage) {
+      throw new ProjectChargeError(`The charge is already ${coverage}`);
+    }
+    if (source.coverage === "Capitalized" || coverage === "Capitalized") {
+      throw new ProjectChargeError(
+        "Only a refurbishment charge is Capitalized, and it stays Capitalized"
+      );
+    }
+
+    const billable = await trx
+      .selectFrom("projectBillableItem")
+      .selectAll()
+      .where("projectLedgerId", "=", source.id)
+      .where("reversalOfId", "is", null)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (billable?.status === "Billed") {
+      throw new ProjectChargeError(
+        "The charge is already invoiced. Credit the invoice first."
+      );
+    }
+
+    const contexts = await loadProjectPostingContexts(trx, companyId, [
+      {
+        projectId: source.projectId,
+        projectElementId: source.projectElementId
+      }
+    ]);
+    const context = contexts.get(
+      projectPostingKey(source.projectId, source.projectElementId)
+    );
+    if (!context) throw new NotFoundError("Project element not found");
+    assertChargeable(context, "commitment");
+    const service = await loadServicePostingContext(trx, {
+      companyId,
+      projectId: source.projectId,
+      elementId: source.projectElementId
+    });
+    if (!service) {
+      throw new ProjectChargeError(
+        "No service order owns the project of this charge"
+      );
+    }
+
+    const amount = round(Number(source.amount));
+    let journalId: string | null = null;
+    let debitLineId: string | null = null;
+    let creditLineId: string | null = null;
+    // The account the replacement posts to; null for a zero charge. The
+    // journal is written for every company: Provisional before the
+    // accounting cutover, Posted after it (postProjectJournal).
+    let newAccount: string | null = null;
+    if (amount !== 0) {
+      newAccount = resolveProjectPostingAccount(
+        context,
+        postingDate,
+        coverage
+      ).accountId;
+      // Credit the account the charge debited.
+      const debited = source.journalLineId
+        ? await trx
+            .selectFrom("journalLine")
+            .select("accountId")
+            .where("id", "=", source.journalLineId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : undefined;
+      const oldAccount =
+        debited?.accountId ??
+        resolveProjectPostingAccount(
+          context,
+          source.postingDate,
+          source.coverage
+        ).accountId;
+      if (!newAccount || !oldAccount) {
+        throw new ProjectChargeError(
+          "The charge's coverage has no posting account"
+        );
+      }
+      if (newAccount !== oldAccount) {
+        const posted = await postProjectJournal(trx, {
+          companyId,
+          userId,
+          postingDate,
+          description: `Coverage ${source.coverage} to ${coverage}: ${reason}`,
+          sourceType,
+          documentType: sourceType,
+          documentId: source.documentId,
+          documentLineReference: journalReference.to.coverageReclass(source.id),
+          lines: [
+            {
+              accountId: newAccount,
+              description: `${coverage} Coverage`,
+              amount: debit("expense", amount)
+            },
+            {
+              accountId: oldAccount,
+              description: `${source.coverage} Coverage`,
+              amount: credit("expense", amount)
+            }
+          ],
+          dimensions: [
+            ["Project", source.projectId],
+            ["ProjectElement", source.projectElementId],
+            ["Employee", source.employeeId],
+            ["Customer", service.customerId]
+          ]
+        });
+        journalId = posted.journalId;
+        debitLineId = posted.lineIds[0] ?? null;
+        creditLineId = posted.lineIds[1] ?? null;
+      }
+    }
+
+    const shared = {
+      companyId,
+      projectId: source.projectId,
+      projectElementId: source.projectElementId,
+      postingDate,
+      costType: source.costType,
+      documentType: source.documentType,
+      documentId: source.documentId,
+      documentLineId: source.documentLineId,
+      jobId: source.jobId,
+      itemId: source.itemId,
+      employeeId: source.employeeId,
+      laborCategoryId: source.laborCategoryId,
+      supplierId: source.supplierId,
+      unitOfMeasureCode: source.unitOfMeasureCode,
+      createdBy: userId
+    };
+    const quantity = source.quantity === null ? null : Number(source.quantity);
+    const reversal = (
+      await insertProjectLedgerRows(trx, {
+        companyId,
+        userId,
+        rows: [
+          buildProjectLedgerRow({
+            ...shared,
+            quantity: quantity === null ? null : -quantity,
+            amount: -amount,
+            journalLineId: creditLineId,
+            reversalOfId: source.id,
+            coverage: source.coverage,
+            coverageReason: source.coverageReason,
+            unallowable: source.unallowable
+          })
+        ]
+      })
+    )[0]!;
+    const replacement = (
+      await insertProjectLedgerRows(trx, {
+        companyId,
+        userId,
+        rows: [
+          buildProjectLedgerRow({
+            ...shared,
+            quantity,
+            amount,
+            journalLineId: debitLineId,
+            coverage,
+            coverageReason: reason,
+            unallowable: isUnallowableCharge(context, newAccount)
+          })
+        ]
+      })
+    )[0]!;
+
+    const now = datetime.timestamp();
+    if (billable) {
+      const undo = reverseBillableItem(billable, {
+        projectLedgerId: reversal.id,
+        createdBy: userId
+      });
+      if (undo.update) {
+        await trx
+          .updateTable("projectBillableItem")
+          .set({ ...undo.update, updatedBy: userId, updatedAt: now })
+          .where("id", "=", billable.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+      if (undo.insert) {
+        await trx
+          .insertInto("projectBillableItem")
+          .values(undo.insert)
+          .execute();
+      }
+    }
+
+    const partPrice =
+      source.costType === "Material" && source.itemId
+        ? await trx
+            .selectFrom("itemUnitSalePrice")
+            .select("unitSalePrice")
+            .where("itemId", "=", source.itemId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+            .then((row) => (row ? Number(row.unitSalePrice) : null))
+        : null;
+    const item = buildBillableItem({
+      ledgerRow: {
+        id: replacement.id,
+        companyId,
+        projectId: source.projectId,
+        projectElementId: source.projectElementId,
+        costType: source.costType,
+        quantity,
+        amount,
+        itemId:
+          billable?.itemId ??
+          (source.costType === "Labor" ? service.laborItemId : source.itemId),
+        createdBy: userId
+      },
+      coverage,
+      laborPrice: service.laborPrice,
+      partPrice,
+      description: billable
+        ? baseDescription(billable.description)
+        : source.costType === "Labor"
+          ? "Labor"
+          : "Charge"
+    });
+    if (item) {
+      await trx.insertInto("projectBillableItem").values(item).execute();
+    }
+
+    // The source entry keeps the coverage its charge now posts at.
+    if (source.documentType === "Timesheet") {
+      await trx
+        .updateTable("timesheetEntry")
+        .set({
+          coverage,
+          coverageReason: reason,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", source.documentId)
+        .where("companyId", "=", companyId)
+        .execute();
+    } else if (source.documentType === "Project Expense") {
+      await trx
+        .updateTable("projectExpenseEntry")
+        .set({
+          coverage,
+          coverageReason: reason,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", source.documentId)
+        .where("companyId", "=", companyId)
+        .execute();
+    } else {
+      // An installed part follows its issue, so a return still finds it.
+      await trx
+        .updateTable("customerAssetComponent")
+        .set({
+          projectLedgerId: replacement.id,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("projectLedgerId", "=", source.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    return { success: true, journalId, projectLedgerId: replacement.id };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// post-project-burden
+
+export const postProjectBurdenInput = z.object({
+  indirectRateRunId: z.string(),
+  accountingPeriodId: z.string(),
+  /** YYYY-MM-DD, the period end. */
+  postingDate: z.string(),
+  postApplied: z.boolean(),
+  rows: z
+    .array(
+      z.object({
+        projectId: z.string(),
+        projectElementId: z.string().nullable(),
+        indirectPoolId: z.string(),
+        indirectRateType: z.enum(["Provisional", "Actual", "Final"]),
+        burdenFiscalYear: z.number().int(),
+        amount: z.number(),
+        unallowable: z.boolean()
+      })
+    )
+    .max(10000)
+});
+
+export type PostProjectBurdenInput = z.infer<typeof postProjectBurdenInput>;
+
+export const ACCOUNTING_PERIOD_CLOSED = "Accounting period is closed.";
+
+// Annotated, not `satisfies`: the literal would widen to `string` in
+// `postingPermissions`.
+export const postProjectBurdenPermission: PermissionRule<
+  z.output<typeof postProjectBurdenInput>
+> = "system";
+
+/**
+ * Writes the Burden rows an indirect rate run computed (one per project,
+ * element, pool and unallowable flag; each amount is the catch-up delta) in
+ * one transaction. The rows are memo rows unless `postApplied`: then the rows
+ * of Contract projects also post applied burden, Dr the project account /
+ * Cr the pool's applied account, in one journal with source type Burden. The
+ * journal is Provisional before the company's accounting cutover (no
+ * period) and Posted in `accountingPeriodId` after it. A Locked period
+ * accepts the call (an accounting adjustment); a Closed one refuses it.
+ * Called only by the commercial indirect rate runs, after their own checks.
+ */
+export async function postProjectBurden(
+  ctx: ServiceContext,
+  raw: z.input<typeof postProjectBurdenInput>
+): Promise<PostProjectBurdenResult> {
+  const input = postProjectBurdenInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const rows = input.rows.filter((row) => !equals(round(row.amount), 0));
+
+  return db.transaction().execute(async (trx) => {
+    const period = await trx
+      .selectFrom("accountingPeriod")
+      .select(["id", "closeStatus", "closedAt"])
+      .where("id", "=", input.accountingPeriodId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!period) throw new NotFoundError("Accounting period not found");
+    if (period.closeStatus === "Closed" || period.closedAt !== null) {
+      throw new ServerFnError(ACCOUNTING_PERIOD_CLOSED, 422);
+    }
+
+    const run = await trx
+      .selectFrom("indirectRateRun")
+      .select("id")
+      .where("id", "=", input.indirectRateRunId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!run) throw new NotFoundError("Indirect rate run not found");
+
+    if (rows.length === 0) {
+      return { success: true, journalId: null, projectLedgerIds: [] };
+    }
+
+    const poolIds = [...new Set(rows.map((row) => row.indirectPoolId))];
+    const [, pools] = await inOrder([
+      () =>
+        assertCompanyRecords(
+          trx,
+          "project",
+          rows.map((row) => row.projectId),
+          companyId,
+          "Project"
+        ),
+      () =>
+        trx
+          .selectFrom("indirectPool")
+          .select(["id", "name", "appliedAccountId"])
+          .where("id", "in", poolIds)
+          .where("companyId", "=", companyId)
+          .execute()
+    ]);
+    if (pools.length !== poolIds.length) {
+      throw new NotFoundError("Indirect pool not found");
+    }
+    const poolById = new Map(pools.map((pool) => [pool.id, pool]));
+
+    // Burden catch-up is system cost: it posts to a closed project too, so
+    // no assertChargeable.
+    const contexts = await loadProjectPostingContexts(trx, companyId, rows);
+    const contextOf = (row: (typeof rows)[number]) => {
+      const context = contexts.get(
+        projectPostingKey(row.projectId, row.projectElementId)
+      );
+      if (!context) throw new NotFoundError("Project element not found");
+      return context;
+    };
+
+    // Applied burden: only the rows of Contract projects carry a journal.
+    const applied = input.postApplied
+      ? rows.flatMap((row, index) => {
+          const context = contextOf(row);
+          if (
+            resolveProjectTreatment(context, input.postingDate) !== "Contract"
+          ) {
+            return [];
+          }
+          const debitAccountId = resolveProjectPostingAccount(
+            context,
+            input.postingDate
+          ).accountId;
+          const pool = poolById.get(row.indirectPoolId)!;
+          if (!pool.appliedAccountId) {
+            throw new ProjectChargeError(
+              `Set the applied account of pool ${pool.name}.`
+            );
+          }
+          if (!debitAccountId) return [];
+          return [
+            {
+              index,
+              row,
+              debitAccountId,
+              creditAccountId: pool.appliedAccountId
+            }
+          ];
+        })
+      : [];
+
+    const debitLineIdByIndex = new Map<number, string>();
+    let journalId: string | null = null;
+    if (applied.length > 0) {
+      journalId = await postAppliedBurdenJournal(trx, {
+        companyId,
+        userId,
+        accountingPeriodId: period.id,
+        postingDate: input.postingDate,
+        indirectRateRunId: input.indirectRateRunId,
+        applied,
+        debitLineIdByIndex
+      });
+    }
+
+    const inserted = await insertProjectLedgerRows(trx, {
+      companyId,
+      userId,
+      rows: rows.map((row, index) => ({
+        ...buildProjectLedgerRow({
+          companyId,
+          projectId: row.projectId,
+          projectElementId: row.projectElementId,
+          postingDate: input.postingDate,
+          costType: "Burden",
+          documentType: "Indirect Burden",
+          documentId: input.indirectRateRunId,
+          amount: row.amount,
+          journalLineId: debitLineIdByIndex.get(index) ?? null,
+          unallowable: row.unallowable,
+          createdBy: userId
+        }),
+        indirectPoolId: row.indirectPoolId,
+        indirectRateType: row.indirectRateType,
+        burdenFiscalYear: row.burdenFiscalYear
+      }))
+    });
+
+    return {
+      success: true,
+      journalId,
+      projectLedgerIds: inserted.map((row) => row.id)
+    };
+  });
+}
+
+/**
+ * One journal for the applied burden of a run: a debit line on the project
+ * account and a credit line on the pool's applied account per row, each
+ * signed by its account's class and tagged with the Project and
+ * ProjectElement dimensions. Writes each row's debit line id into
+ * `debitLineIdByIndex`. Returns the journal id.
+ */
+async function postAppliedBurdenJournal(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    accountingPeriodId: string;
+    postingDate: string;
+    indirectRateRunId: string;
+    applied: {
+      index: number;
+      row: PostProjectBurdenInput["rows"][number];
+      debitAccountId: string;
+      creditAccountId: string;
+    }[];
+    debitLineIdByIndex: Map<number, string>;
+  }
+): Promise<string> {
+  const { companyId, applied } = args;
+  // FOR SHARE holds the status until the transaction commits.
+  const status = await journalPostingStatus(trx, companyId);
+
+  const accountIds = [
+    ...new Set(
+      applied.flatMap((line) => [line.debitAccountId, line.creditAccountId])
+    )
+  ];
+  const [accounts, dimensions] = await inOrder([
+    () =>
+      trx
+        .selectFrom("account")
+        .innerJoin(
+          "company",
+          "company.companyGroupId",
+          "account.companyGroupId"
+        )
+        .select(["account.id", "account.class"])
+        .where("company.id", "=", companyId)
+        .where("account.id", "in", accountIds)
+        .execute(),
+    () =>
+      trx
+        .selectFrom("dimension")
+        .innerJoin(
+          "company",
+          "company.companyGroupId",
+          "dimension.companyGroupId"
+        )
+        .select(["dimension.id", "dimension.entityType"])
+        .where("company.id", "=", companyId)
+        .where("dimension.active", "=", true)
+        .where("dimension.entityType", "in", ["Project", "ProjectElement"])
+        .execute()
+  ]);
+  const classById = new Map(
+    accounts.map((account) => [account.id, account.class])
+  );
+  const accountType = (accountId: string) => {
+    const accountClass = classById.get(accountId);
+    if (!accountClass) throw new NotFoundError("Account not found");
+    return accountTypeFromClass(accountClass);
+  };
+
+  const journalId = await createAdjustmentJournal(trx, {
+    companyId,
+    // A Provisional journal has no period; a Posted one takes the run's.
+    accountingPeriodId: status === "Posted" ? args.accountingPeriodId : null,
+    status,
+    description: "Applied burden",
+    postingDate: args.postingDate,
+    userId: args.userId,
+    sourceType: "Burden"
+  });
+
+  const lines = applied.flatMap((line) => {
+    const amount = round(line.row.amount);
+    return [
+      {
+        accountId: line.debitAccountId,
+        description: "Applied burden",
+        amount: debit(accountType(line.debitAccountId), amount)
+      },
+      {
+        accountId: line.creditAccountId,
+        description: "Applied burden",
+        amount: credit(accountType(line.creditAccountId), amount)
+      }
+    ];
+  });
+  const lineIds = await allocateJournalLineIds(trx, lines.length);
+  const journalLineReference = nanoid();
+  await trx
+    .insertInto("journalLine")
+    .values(
+      lines.map((line, i) => ({
+        id: lineIds[i]!,
+        journalId,
+        accountId: line.accountId,
+        description: line.description,
+        amount: line.amount,
+        quantity: 1,
+        documentType: "Burden" as const,
+        documentId: args.indirectRateRunId,
+        documentLineReference: `burden:${args.indirectRateRunId}`,
+        journalLineReference,
+        companyId
+      }))
+    )
+    .execute();
+
+  applied.forEach((line, i) => {
+    args.debitLineIdByIndex.set(line.index, lineIds[i * 2]!);
+  });
+
+  const dimensionMap = new Map<string, string>();
+  for (const dimension of dimensions) {
+    if (dimension.entityType) {
+      dimensionMap.set(dimension.entityType, dimension.id);
+    }
+  }
+  const tags = buildJournalLineDimensionInserts({
+    journalLineIds: lineIds,
+    meta: applied.flatMap((line) => {
+      const meta = {
+        projectId: line.row.projectId,
+        projectElementId: line.row.projectElementId
+      };
+      return [meta, meta];
+    }),
+    dimensionMap,
+    companyId
+  });
+  if (tags.length > 0) {
+    await trx.insertInto("journalLineDimension").values(tags).execute();
+  }
+
+  return journalId;
 }

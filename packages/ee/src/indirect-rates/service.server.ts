@@ -12,9 +12,9 @@
 // Reached only through `@carbon/ee/indirect-rates.server` (`./server.ts`).
 // Plan: .ai/plans/2026-10-09-government-contracting-phase-5b.md (Task 7, B2, B12)
 
+import { posting } from "@carbon/api/postings.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { serverFns } from "@carbon/server-functions";
 import { datetime, formatPercent, formatQuantity } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
@@ -763,15 +763,18 @@ export async function computeProjectBurden(
     periodNumber: ratePeriod.periodNumber
   });
 
-  const fns = serverFns.system({ db, companyId, userId });
   for (let i = 0; i < rows.length; i += BURDEN_ROWS_PER_CALL) {
-    const result = await fns.invoke("post-project-burden", {
-      indirectRateRunId,
-      accountingPeriodId,
-      postingDate: ratePeriod.periodEnd,
-      postApplied: settings?.postAppliedBurden ?? false,
-      rows: rows.slice(i, i + BURDEN_ROWS_PER_CALL)
-    });
+    const result = await posting(
+      "post-project-burden",
+      { db, companyId, userId },
+      {
+        indirectRateRunId,
+        accountingPeriodId,
+        postingDate: ratePeriod.periodEnd,
+        postApplied: settings?.postAppliedBurden ?? false,
+        rows: rows.slice(i, i + BURDEN_ROWS_PER_CALL)
+      }
+    );
     if (result.error) {
       return refuse(result.error.message || "The burden could not be posted");
     }

@@ -179,7 +179,7 @@ export async function action({ request }: ActionFunctionArgs) {
           "The hours are invalid"
       };
     }
-    const result = await saveTimesheetEntry(getDatabaseClient(), {
+    const result = await saveTimesheetEntry({
       ...validation.data,
       companyId,
       employeeId: userId,
@@ -215,8 +215,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // week without it, or with a text that is no longer the current one.
     const certificationText = formData.get("certificationText");
 
-    const db = getDatabaseClient();
-    const submitted = await submitTimesheetWeek(db, {
+    const submitted = await submitTimesheetWeek({
       companyId,
       employeeId: userId,
       weekStart: weekStartOf(from),
@@ -264,7 +263,7 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
 
-    const posting = await postTimesheetEntries(db, {
+    const posting = await postTimesheetEntries({
       timesheetEntryIds: ids,
       companyId,
       userId

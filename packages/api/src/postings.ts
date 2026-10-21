@@ -6,7 +6,11 @@
 // and types, so MES can type its calls without importing the ERP; the ERP
 // validates with the same schemas.
 
-import { round } from "@carbon/utils";
+import {
+  type RdActivityRole,
+  round,
+  type TimesheetEntryStatus
+} from "@carbon/utils";
 import { z } from "zod";
 
 /** Each `type` adds its own fields (`newTrackedEntityId`, `readableId`, …). */
@@ -555,6 +559,82 @@ export type CreateResultFor<T extends CreateInput["type"]> =
 
 export type CreateResult = CreateResultFor<CreateInput["type"]>;
 
+// Timesheets: one write path for the ERP and MES (the DCAA timekeeping
+// controls live in `projects.service.ts`).
+
+export const saveTimesheetEntryInput = z.object({
+  employeeId: z.string().min(1),
+  entryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  projectId: z.string().min(1),
+  projectElementId: z.string().min(1).nullable(),
+  laborCategoryId: z.string().min(1),
+  hours: z.number().min(0).max(24),
+  note: z.string().optional(),
+  /** Required when the date is late in DCAA mode. */
+  lateReason: z.string().optional(),
+  /** Required to change a saved entry in DCAA mode. */
+  reason: z.string().optional(),
+  /**
+   * `cell` (the grid) edits the one entry of a cell. `add` (Log time,
+   * service time) always inserts a new entry, as Phase 1a did.
+   */
+  mode: z.enum(["cell", "add"]).default("cell"),
+  /** `add` only: the status of the new entry. Log time submits it in
+   *  Standard mode; DCAA mode saves the owner's entry as Draft. */
+  status: z.enum(["Draft", "Submitted"]).optional(),
+  /** `add` only: the service visit the time belongs to. */
+  serviceVisitId: z.string().min(1).nullable().optional(),
+  /**
+   * Where the work took place (R&D tax). Left out, it is the employee's job
+   * location; null means no location.
+   */
+  workLocationId: z.string().min(1).nullable().optional(),
+  /**
+   * The research role of the time (R&D tax). Left out, it is the labor
+   * category's role; null means no role.
+   */
+  rdActivityRole: z
+    .enum([
+      "Direct Research",
+      "Direct Supervision",
+      "Direct Support",
+      "Not Qualified"
+    ] satisfies [RdActivityRole, ...RdActivityRole[]])
+    .nullable()
+    .optional()
+});
+
+export type SaveTimesheetEntryResult = {
+  /** Null when nothing was saved (0 hours on an empty cell) or the entry was deleted. */
+  entryId: string | null;
+  status: TimesheetEntryStatus | null;
+};
+
+export const submitTimesheetWeekInput = z.object({
+  employeeId: z.string().min(1),
+  /** The week's Monday, `YYYY-MM-DD`. */
+  weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** The text the employee confirmed (DCAA mode). */
+  certificationText: z.string().optional()
+});
+
+export type SubmitTimesheetWeekResult = {
+  /** The entries it submitted. */
+  entryIds: string[];
+  /** Messages the caller shows; the week is submitted anyway. */
+  warnings: string[];
+};
+
+export const postTimesheetInput = z.object({
+  timesheetEntryIds: z.array(z.string()).min(1)
+});
+
+export type PostTimesheetResult = {
+  success: true;
+  postedEntryIds: string[];
+  journalIds: string[];
+};
+
 /**
  * What MES may call, with the `type` values it sends (null: the input has no
  * `type`). The ERP's internal endpoint refuses anything else.
@@ -592,7 +672,10 @@ export const MES_POSTINGS = {
   create: ["nonConformanceTasks"],
   "batch-operations": ["complete"],
   recalculate: ["jobRequirements"],
-  "trigger-rework": null
+  "trigger-rework": null,
+  "save-timesheet-entry": null,
+  "submit-timesheet-week": null,
+  "post-timesheet": null
 } as const satisfies Record<string, readonly string[] | null>;
 
 export type MesPostingName = keyof typeof MES_POSTINGS;

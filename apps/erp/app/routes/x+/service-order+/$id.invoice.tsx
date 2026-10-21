@@ -6,9 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
+import { createServiceOrderInvoice } from "~/modules/service/service.service";
+import { invokePosting } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -28,9 +29,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const result = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("create-service-order-invoice", { serviceOrderId: id });
+  const result = await invokePosting(
+    { db: getDatabaseClient(), companyId, userId },
+    "create-service-order-invoice",
+    { serviceOrderId: id },
+    createServiceOrderInvoice
+  );
   if (result.error || !result.data) {
     logger.error("Failed to invoice a service order", {
       companyId,

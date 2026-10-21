@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type {
+  SaveTimesheetEntryResult,
+  SubmitTimesheetWeekResult
+} from "@carbon/api/postings";
 import { error, hasPermission } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
@@ -20,9 +24,6 @@ import {
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { serverFns } from "@carbon/server-functions";
-import type { SaveTimesheetEntryResult } from "@carbon/server-functions/save-timesheet-entry";
-import type { SubmitTimesheetWeekResult } from "@carbon/server-functions/submit-timesheet-week";
 import {
   computeWbsCodes,
   datetime,
@@ -39,6 +40,7 @@ import { data } from "react-router";
 import type { z } from "zod";
 import { getMethodTree } from "~/modules/items/items.service";
 import { claimPlanningActions } from "~/modules/production/planning-action-claims";
+import { invokePosting } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type {
   BuildSourceNode,
@@ -109,6 +111,7 @@ import {
   type WbsLink,
   wbsTemplateElementType
 } from "./projects.models";
+import * as service from "./projects.service";
 import {
   getElementHistoryByItem,
   getItemNumericCustomFields,
@@ -4156,9 +4159,12 @@ export async function postTimesheetEntries(args: {
 }): Promise<string | null> {
   if (args.timesheetEntryIds.length === 0) return null;
   const { timesheetEntryIds, companyId, userId } = args;
-  const posting = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("post-timesheet", { timesheetEntryIds });
+  const posting = await invokePosting(
+    { db: getDatabaseClient(), companyId, userId },
+    "post-timesheet",
+    { timesheetEntryIds },
+    service.postTimesheet
+  );
   if (posting.error) {
     logger.error("Failed to post timesheet entries", {
       companyId,
@@ -4201,9 +4207,10 @@ export async function saveTimesheetEntry(args: {
   | { data: null; error: string }
 > {
   const { companyId, userId, ...input } = args;
-  const saved = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("save-timesheet-entry", {
+  const saved = await invokePosting(
+    { db: getDatabaseClient(), companyId, userId },
+    "save-timesheet-entry",
+    {
       ...input,
       projectElementId: input.projectElementId || null,
       workLocationId:
@@ -4214,7 +4221,9 @@ export async function saveTimesheetEntry(args: {
         input.rdActivityRole === undefined
           ? undefined
           : input.rdActivityRole || null
-    });
+    },
+    service.saveTimesheetEntry
+  );
   if (saved.error || !saved.data) {
     logger.error("Failed to save a timesheet entry", {
       companyId,
@@ -4246,9 +4255,12 @@ export async function submitTimesheetWeek(args: {
   | { data: null; error: string }
 > {
   const { companyId, userId, ...input } = args;
-  const submitted = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("submit-timesheet-week", input);
+  const submitted = await invokePosting(
+    { db: getDatabaseClient(), companyId, userId },
+    "submit-timesheet-week",
+    input,
+    service.submitTimesheetWeek
+  );
   if (submitted.error || !submitted.data) {
     logger.error("Failed to submit a timesheet week", {
       companyId,
@@ -4275,14 +4287,17 @@ export async function postProjectIssue(
   }
 ): Promise<string | null> {
   const { companyId, userId, ...input } = args;
-  const posting = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("post-project-issue", {
+  const posting = await invokePosting(
+    { db: getDatabaseClient(), companyId, userId },
+    "post-project-issue",
+    {
       ...input,
       projectElementId: input.projectElementId ?? null,
       storageUnitId: input.storageUnitId ?? null,
       trackedEntityId: input.trackedEntityId ?? null
-    });
+    },
+    service.postProjectIssue
+  );
   if (posting.error) {
     logger.error("Failed to post project issue", {
       companyId,
@@ -4324,9 +4339,12 @@ export async function addProjectExpense(
     .returning("id")
     .executeTakeFirstOrThrow();
 
-  const posting = await serverFns
-    .system({ db, companyId, userId })
-    .invoke("post-project-expense", { projectExpenseEntryId: entry.id });
+  const posting = await invokePosting(
+    { db, companyId, userId },
+    "post-project-expense",
+    { projectExpenseEntryId: entry.id },
+    service.postProjectExpense
+  );
   if (!posting.error) return null;
 
   logger.error("Failed to post a project expense", {
@@ -4405,9 +4423,12 @@ export async function postProjectStockTransfer(args: {
   userId: string;
 }): Promise<string | null> {
   const { projectStockTransferId, companyId, userId } = args;
-  const posting = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("post-project-stock-transfer", { projectStockTransferId });
+  const posting = await invokePosting(
+    { db: getDatabaseClient(), companyId, userId },
+    "post-project-stock-transfer",
+    { projectStockTransferId },
+    service.postProjectStockTransfer
+  );
   if (posting.error) {
     logger.error("Failed to post project stock transfer", {
       companyId,
