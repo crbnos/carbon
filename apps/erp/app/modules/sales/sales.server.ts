@@ -3711,8 +3711,8 @@ export const setContractTerm = defineServiceFn({
       return ctx.error("notFound", "Contract not found");
     }
     const contract = current.data;
-    // Notes are a plain textarea read back with `TiptapText(...).toString()`, so they are
-    // stored as typed: Markdown would not survive the round trip.
+    // Notes are a plain textarea read back with `TiptapText(…).toString()`,
+    // so they are stored as typed: Markdown would not survive the round trip.
     const notesDoc = value
       ? TiptapText(value, { format: "text" }).toDocument()
       : null;
