@@ -177,26 +177,50 @@ export async function getNextSerialNumbers(
   return result.rows[0]?.serials ?? [];
 }
 
+export const serialNumberTimings = [
+  "jobCreation",
+  "jobRelease",
+  "production"
+] as const;
+export type SerialNumberTiming = (typeof serialNumberTimings)[number];
+
+function asSerialNumberTiming(value: unknown): SerialNumberTiming | null {
+  return serialNumberTimings.find((timing) => timing === value) ?? null;
+}
+
 /**
  * When a produced unit draws its serial number: `jobCreation` (the default)
- * numbers every unit when the job is created; `production` leaves the job's
- * units unnumbered and numbers each one the first time it is touched (its first
- * production event, its first operation completion, its scrap, or the receipt
- * that completes the job). Read with a failure falling back to the default,
- * which is what every company had before the setting existed.
+ * numbers every unit when the job is created; `jobRelease` when the job is
+ * released to the shop floor; `production` leaves the job's units unnumbered
+ * and numbers each one the first time it is touched (its first production
+ * event, its first operation completion, its scrap, or the receipt that
+ * completes the job).
+ *
+ * With an item, its serial sequence's own timing wins and the company's is the
+ * default. Anything unreadable falls back to `jobCreation`, which is what every
+ * company had before the setting existed.
  */
 export async function getSerialNumberTiming(
   db: Transaction<KyselyDatabase> | Kysely<KyselyDatabase>,
-  companyId: string
-): Promise<"jobCreation" | "production"> {
+  companyId: string,
+  itemId?: string | null
+): Promise<SerialNumberTiming> {
+  if (itemId) {
+    const sequence = await db
+      .selectFrom("itemSerialSequence")
+      .select(["serialNumberTiming"])
+      .where("itemId", "=", itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    const itemTiming = asSerialNumberTiming(sequence?.serialNumberTiming);
+    if (itemTiming) return itemTiming;
+  }
   const settings = await db
     .selectFrom("companySettings")
     .select(["serialNumberTiming"])
     .where("id", "=", companyId)
     .executeTakeFirst();
-  return settings?.serialNumberTiming === "production"
-    ? "production"
-    : "jobCreation";
+  return asSerialNumberTiming(settings?.serialNumberTiming) ?? "jobCreation";
 }
 
 /**

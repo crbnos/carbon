@@ -11,14 +11,21 @@ import { createServiceContext } from "@carbon/api/service-fn.server";
 import {
   assignSerialNumberIfMissing,
   getNextSerialNumbers,
-  getSerialNumberTiming
+  getSerialNumberTiming,
+  type SerialNumberTiming
 } from "@carbon/database/sequence";
 import { now } from "@internationalized/date";
 import { sql } from "kysely";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { issueMaterial as issue } from "../../app/modules/inventory/inventory.service";
-import { completeJob } from "../../app/modules/production/production.server";
-import { numberSerialUnitsForCompletion } from "../../app/modules/production/production.service";
+import {
+  completeJob,
+  releaseCheckedJobs
+} from "../../app/modules/production/production.server";
+import {
+  assignJobSerialNumbers,
+  numberSerialUnitsForCompletion
+} from "../../app/modules/production/production.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
@@ -33,6 +40,16 @@ import {
 import { handlesOf } from "./fixtures/handles";
 import { hasLocalDatabase } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
+
+// Release recalculates the job and numbers it through postings, and the
+// posting gate tells the system by its key.
+vi.mock("@carbon/env", async (importOriginal) => {
+  const { localServiceRoleKey } = await import("./fixtures/local-supabase");
+  return {
+    ...(await importOriginal<object>()),
+    SUPABASE_SERVICE_ROLE_KEY: localServiceRoleKey() ?? "test"
+  };
+});
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
 
@@ -50,7 +67,7 @@ function contextFor(f: Fixture) {
 }
 
 /** A serial assembly with a sequence (SN-001, SN-002, ...) and the timing set. */
-async function serialSetup(f: Fixture, timing: "jobCreation" | "production") {
+async function serialSetup(f: Fixture, timing: SerialNumberTiming) {
   await seed(f, async (trx) => {
     await trx
       .updateTable("item")
@@ -125,6 +142,18 @@ async function untouchedSerialJob(f: Fixture, key: string, quantity: number) {
       .execute();
   });
   return { ...job, makeMethodId: makeMethod.id };
+}
+
+/** The item's own timing, overriding the company's (null follows it). */
+async function itemTiming(f: Fixture, timing: SerialNumberTiming | null) {
+  await seed(f, async (trx) => {
+    await trx
+      .updateTable("itemSerialSequence")
+      .set({ serialNumberTiming: timing })
+      .where("itemId", "=", f.assemblyId)
+      .where("companyId", "=", f.companyId)
+      .execute();
+  });
 }
 
 async function units(f: Fixture, makeMethodId: string) {
@@ -395,6 +424,108 @@ describe.skipIf(!client)("serial number timing", () => {
         { readableId: "SN-003", quantity: 1 }
       ]);
       expect(await units(f, job.makeMethodId)).toHaveLength(3);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("numbers every unit when the job is released under the release timing", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "jobRelease");
+      const job = await untouchedSerialJob(f, "8", 3);
+      await seed(f, async (trx) => {
+        await trx
+          .updateTable("job")
+          .set({ status: "Planned" })
+          .where("id", "=", job.jobId)
+          .execute();
+      });
+
+      // Creation leaves the job's units alone under this timing.
+      await assignJobSerialNumbers(client!, f.db, {
+        jobId: job.jobId,
+        itemId: f.assemblyId,
+        companyId: f.companyId,
+        userId: USER,
+        moment: "creation"
+      });
+      expect(await units(f, job.makeMethodId)).toEqual([
+        expect.objectContaining({ readableId: null, quantity: 3 })
+      ]);
+
+      const released = await releaseCheckedJobs(contextFor(f), {
+        jobIds: [job.jobId],
+        purchaseOrdersBySupplierId: {}
+      });
+      expect(released.error).toBeNull();
+      expect(released.data?.failure).toBeNull();
+
+      expect(
+        (await units(f, job.makeMethodId)).map((unit) => [
+          unit.readableId,
+          Number(unit.quantity)
+        ])
+      ).toEqual([
+        ["SN-001", 1],
+        ["SN-002", 1],
+        ["SN-003", 1]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }, 60_000);
+
+  it("follows an item's own timing before the company's", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      // The company numbers at creation; this item at production.
+      await serialSetup(f, "jobCreation");
+      await itemTiming(f, "production");
+      expect(
+        await getSerialNumberTiming(f.db, f.companyId, f.assemblyId)
+      ).toBe("production");
+      expect(await getSerialNumberTiming(f.db, f.companyId)).toBe(
+        "jobCreation"
+      );
+
+      const job = await untouchedSerialJob(f, "9", 2);
+      await assignJobSerialNumbers(client!, f.db, {
+        jobId: job.jobId,
+        itemId: f.assemblyId,
+        companyId: f.companyId,
+        userId: USER
+      });
+      expect(await units(f, job.makeMethodId)).toEqual([
+        expect.objectContaining({ readableId: null, quantity: 2 })
+      ]);
+      expect(
+        await numberSerialUnitsForCompletion(f.db, {
+          jobId: job.jobId,
+          quantityComplete: 2,
+          companyId: f.companyId
+        })
+      ).toEqual({ numbered: 2 });
+
+      // The company numbers at production; this item at creation, so the
+      // completion leaves its units to the creation path.
+      await seed(f, async (trx) => {
+        await trx
+          .updateTable("companySettings")
+          .set({ serialNumberTiming: "production" })
+          .where("id", "=", f.companyId)
+          .execute();
+      });
+      await itemTiming(f, "jobCreation");
+      const second = await untouchedSerialJob(f, "10", 2);
+      expect(
+        await numberSerialUnitsForCompletion(f.db, {
+          jobId: second.jobId,
+          quantityComplete: 2,
+          companyId: f.companyId
+        })
+      ).toEqual({ numbered: 0 });
     } finally {
       await f.cleanup();
     }

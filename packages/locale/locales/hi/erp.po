@@ -2702,6 +2702,9 @@ msgstr "किसी आइटम की पुनःपूर्ति प्�
 msgid "An item's revision status changes"
 msgstr "एक आइटम की रिवीजन स्थिति में परिवर्तन"
 
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
+
 msgid "An item's tracking type changes"
 msgstr "किसी आइटम का ट्रैकिंग प्रकार बदलता है"
 
@@ -5302,6 +5305,9 @@ msgstr "कंपनी"
 
 msgid "Company default"
 msgstr "कंपनी डिफ़ॉल्ट"
+
+msgid "Company default ({companyDefault})"
+msgstr ""
 
 msgid "Company default ({companyLabel})"
 msgstr "कंपनी डिफ़ॉल्ट ({companyLabel})"
@@ -9496,6 +9502,9 @@ msgid "Every unit has a rate."
 msgstr "प्रत्येक इकाई की एक दर है।"
 
 msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
 msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
@@ -20779,6 +20788,9 @@ msgstr ""
 msgid "Serial numbers are drawn when the job is created"
 msgstr ""
 
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
 msgid "Serial numbers are drawn when the units are received."
 msgstr ""
 
@@ -24494,6 +24506,9 @@ msgstr "टाइमर चल रहा है"
 msgid "Timezone"
 msgstr "समय क्षेत्र"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "अपनी ओर से दूर झुकाएँ"
 
@@ -26412,6 +26427,9 @@ msgstr "जब सामान वास्तव में आ गए; रस�
 msgid "When the job is created"
 msgstr ""
 
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "जब कानबान कार्ड को स्कैन किया जाता है, तो नौकरी स्वचालित रूप से ड्राफ्ट से बाहर चली जाती है और फर्श पर रिलीज के लिए जारी की जाती है।"
 
@@ -26441,6 +26459,9 @@ msgstr "जब यह गेज अंशांकन के लिए देय
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "जब यह गेज पिछली बार सफलतापूर्वक अंशांकित किया गया था; अगली-कैलिब्रेशन तारीख इस मूल्य और अंतराल से फिर से गणना की जाती है।"
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "जब यह सही लगे, तो इसे सहमत के रूप में चिह्नित करें। यह आपके कमांड सेंटर पर डिस्कवरी चरण को पूरा करता है।"

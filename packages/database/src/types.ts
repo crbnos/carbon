@@ -26584,6 +26584,7 @@ export type Database = {
           itemId: string
           next: number
           prefix: string | null
+          serialNumberTiming: string | null
           size: number
           step: number
           suffix: string | null
@@ -26598,6 +26599,7 @@ export type Database = {
           itemId: string
           next?: number
           prefix?: string | null
+          serialNumberTiming?: string | null
           size?: number
           step?: number
           suffix?: string | null
@@ -26612,6 +26614,7 @@ export type Database = {
           itemId?: string
           next?: number
           prefix?: string | null
+          serialNumberTiming?: string | null
           size?: number
           step?: number
           suffix?: string | null
@@ -78041,6 +78044,7 @@ export type Database = {
             | null
           next: number | null
           prefix: string | null
+          serialNumberTiming: string | null
           size: number | null
           step: number | null
           suffix: string | null

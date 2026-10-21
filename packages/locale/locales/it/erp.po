@@ -2702,6 +2702,9 @@ msgstr "Il sistema di approvvigionamento di un articolo cambia"
 msgid "An item's revision status changes"
 msgstr "Lo stato della revisione di un elemento cambia"
 
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
+
 msgid "An item's tracking type changes"
 msgstr "Il tipo di tracciabilità di un articolo cambia"
 
@@ -5302,6 +5305,9 @@ msgstr "Azienda"
 
 msgid "Company default"
 msgstr "Azienda predefinita"
+
+msgid "Company default ({companyDefault})"
+msgstr ""
 
 msgid "Company default ({companyLabel})"
 msgstr "Impostazione predefinita Azienda ({companyLabel})"
@@ -9496,6 +9502,9 @@ msgid "Every unit has a rate."
 msgstr "Ogni unità ha un tasso."
 
 msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
 msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
@@ -20779,6 +20788,9 @@ msgstr ""
 msgid "Serial numbers are drawn when the job is created"
 msgstr ""
 
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
 msgid "Serial numbers are drawn when the units are received."
 msgstr ""
 
@@ -24494,6 +24506,9 @@ msgstr "Timer in esecuzione"
 msgid "Timezone"
 msgstr "Fuso orario"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "Inclina lontano da te"
 
@@ -26412,6 +26427,9 @@ msgstr "Quando i beni sono effettivamente arrivati; registrato sulla ricevuta e 
 msgid "When the job is created"
 msgstr ""
 
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Quando la carta kanban viene scansionata, il lavoro viene automaticamente spostato dalla bozza e rilasciato al piano."
 
@@ -26441,6 +26459,9 @@ msgstr "Quando questo strumento di misura è scaduto per la taratura; una volta 
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Quando questo strumento di misura è stato tarato con successo per l'ultima volta; la data della prossima taratura viene ricalcolata da questo valore più l'intervallo."
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Quando sembra giusto, contrassegnalo come concordato. Questo completa il passaggio Discovery nel tuo centro di comando."

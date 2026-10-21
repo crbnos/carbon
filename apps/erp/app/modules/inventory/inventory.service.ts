@@ -23007,13 +23007,16 @@ export async function issueMaterial(
           // sequence was configured later), so it would otherwise be created with
           // a null readableId. Resolve the job's location for the %{location}
           // token; the reservation runs in this transaction, atomic with the spawn.
-          // Under serialNumberTiming = 'production' the spawned unit stays
-          // unnumbered until it is first touched.
+          // Under the item's serialNumberTiming = 'production' the spawned
+          // unit stays unnumbered until it is first touched.
           let spawnReadableId: string | null = null;
           if (
             trackedEntity.itemId &&
-            (await sequence.getSerialNumberTiming(trx, companyId)) !==
-              "production"
+            (await sequence.getSerialNumberTiming(
+              trx,
+              companyId,
+              trackedEntity.itemId
+            )) !== "production"
           ) {
             let locationCode: string | null = null;
             let locationName: string | null = null;
@@ -23366,8 +23369,11 @@ export async function issueMaterial(
             let spawnReadableId: string | null = null;
             if (
               makeMethod.itemId &&
-              (await sequence.getSerialNumberTiming(trx, companyId)) !==
-                "production"
+              (await sequence.getSerialNumberTiming(
+                trx,
+                companyId,
+                makeMethod.itemId
+              )) !== "production"
             ) {
               let locationCode: string | null = null;
               let locationName: string | null = null;
@@ -24366,8 +24372,11 @@ export async function issueMaterial(
               // Under serialNumberTiming = 'production' the replacement stays
               // unnumbered until it is first touched.
               const spawnSerials =
-                (await sequence.getSerialNumberTiming(trx, companyId)) ===
-                "production"
+                (await sequence.getSerialNumberTiming(
+                  trx,
+                  companyId,
+                  subMakeMethod.itemId
+                )) === "production"
                   ? []
                   : await sequence.getNextSerialNumbers(trx, {
                       itemId: subMakeMethod.itemId,

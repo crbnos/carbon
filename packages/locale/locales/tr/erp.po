@@ -2702,6 +2702,9 @@ msgstr "Bir stok kartının ikmal yöntemi değişir"
 msgid "An item's revision status changes"
 msgstr "Bir öğenin revizyon durumu değişir"
 
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
+
 msgid "An item's tracking type changes"
 msgstr "Bir stok kartının izleme türü değişir"
 
@@ -5302,6 +5305,9 @@ msgstr "Şirket"
 
 msgid "Company default"
 msgstr "Şirket varsayılanı"
+
+msgid "Company default ({companyDefault})"
+msgstr ""
 
 msgid "Company default ({companyLabel})"
 msgstr "Şirket varsayılanı ({companyLabel})"
@@ -9496,6 +9502,9 @@ msgid "Every unit has a rate."
 msgstr "Her adetin bir oranı vardır."
 
 msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
 msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
@@ -20779,6 +20788,9 @@ msgstr ""
 msgid "Serial numbers are drawn when the job is created"
 msgstr ""
 
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
 msgid "Serial numbers are drawn when the units are received."
 msgstr ""
 
@@ -24494,6 +24506,9 @@ msgstr "Zamanlayıcı çalışıyor"
 msgid "Timezone"
 msgstr "Saat Dilim"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "Sizden uzağa eğ"
 
@@ -26412,6 +26427,9 @@ msgstr "Mallar gerçekten geldiğinde; makbuzda kaydedilmiş ve tedarikçinin za
 msgid "When the job is created"
 msgstr ""
 
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Kanban kartı tarandığında, iş otomatik olarak taslaktan çıkarılır ve yere yayınlanır."
 
@@ -26441,6 +26459,9 @@ msgstr "Bu ölçü aleti kalibrasyonun yapılması gerektiğinde; vadesi geçtik
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Bu ölçü aletinin en son başarıyla kalibre edildiği zaman; sonraki kalibrasyonu tarihi bu değer artı aralığından yeniden hesaplanır."
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Bu doğru göründüğünde, kabul edildi olarak işaretleyin. Bu, komut merkezinizde Keşif adımını tamamlar."

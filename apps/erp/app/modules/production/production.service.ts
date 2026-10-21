@@ -3801,20 +3801,28 @@ export async function insertJob(
 }
 
 /**
- * Assign configured serial numbers to a freshly-created job's tracked entities.
- * Best-effort and cheap: it skips the operation entirely unless the item has
- * an `itemSerialSequence` configured. Shared by every job-creation path so serial
- * numbering is applied consistently (insertJob, sales-order conversion, ...).
+ * Assign configured serial numbers to a job's tracked entities, when the job is
+ * created or when it is released. Best-effort and cheap: it skips the operation
+ * entirely unless the item has an `itemSerialSequence` configured. Shared by
+ * every job-creation path (insertJob, sales-order conversion, ...) and by
+ * `releaseCheckedJobs`, so serial numbering is applied consistently.
  *
- * Skipped when `companySettings.serialNumberTiming = 'production'`: the job's
- * units then stay unnumbered and each draws its number the first time it is
+ * Runs only at the moment the item's timing names (`getSerialNumberTiming`):
+ * `jobCreation` at creation, `jobRelease` at release. Under `production` the
+ * job's units stay unnumbered and each draws its number the first time it is
  * touched (see `assignSerialNumberIfMissing` and
  * `numberSerialUnitsForCompletion`).
  */
-async function assignJobSerialNumbers(
+export async function assignJobSerialNumbers(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { jobId: string; itemId: string; companyId: string; userId: string }
+  args: {
+    jobId: string;
+    itemId: string;
+    companyId: string;
+    userId: string;
+    moment?: "creation" | "release";
+  }
 ) {
   const serialSequence = await client
     .from("itemSerialSequence")
@@ -3833,7 +3841,11 @@ async function assignJobSerialNumbers(
     return;
   }
   if (!serialSequence.data) return;
-  if ((await getSerialNumberTiming(db, args.companyId)) === "production") {
+  const timing = await getSerialNumberTiming(db, args.companyId, args.itemId);
+  if (
+    timing !==
+    ((args.moment ?? "creation") === "creation" ? "jobCreation" : "jobRelease")
+  ) {
     return;
   }
   const { error } = await invokePosting(
@@ -12735,7 +12747,8 @@ export async function assignSerialNumbers(
 }
 
 /**
- * Receipt as first touch (`companySettings.serialNumberTiming = 'production'`):
+ * Receipt as first touch (the item's serial number timing is `jobRelease` or
+ * `production`):
  * before `complete_job_to_inventory` takes `quantityComplete` units of a serial
  * job, split what it needs off the job's unsplit seed and number every unit it
  * takes. Without this an untouched job would be received as one unnumbered

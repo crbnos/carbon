@@ -34,7 +34,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import { LuFactory, LuMapPin, LuTicket } from "react-icons/lu";
+import { LuFactory, LuMapPin, LuSend, LuTicket } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { z } from "zod";
@@ -164,8 +164,11 @@ export default function ProductionSettingsRoute() {
         : t`Material pre-selection disabled`;
     }
     if (data.serialNumberTiming !== undefined) {
-      return data.serialNumberTiming === "production"
-        ? t`Serial numbers are drawn when a unit is produced`
+      if (data.serialNumberTiming === "production") {
+        return t`Serial numbers are drawn when a unit is produced`;
+      }
+      return data.serialNumberTiming === "jobRelease"
+        ? t`Serial numbers are drawn when the job is released`
         : t`Serial numbers are drawn when the job is created`;
     }
     if (data.locationStaffing) {
@@ -429,6 +432,9 @@ export default function ProductionSettingsRoute() {
                 <Trans>
                   Decide when a produced unit draws its number from the item's
                   serial sequence. Items without a sequence are unaffected.
+                </Trans>{" "}
+                <Trans>
+                  An item's serial number sequence can override this choice.
                 </Trans>
               </CardDescription>
             </CardHeader>
@@ -584,6 +590,12 @@ function SerialNumberTimingChoice() {
             title: t`When the job is created`,
             description: t`Every unit is numbered up front, so serials can be printed before work starts.`,
             icon: <LuTicket />
+          },
+          {
+            value: "jobRelease",
+            title: t`When the job is released`,
+            description: t`Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none.`,
+            icon: <LuSend />
           },
           {
             value: "production",

@@ -2702,6 +2702,9 @@ msgstr "An item's replenishment system changes"
 msgid "An item's revision status changes"
 msgstr "An item's revision status changes"
 
+msgid "An item's serial number sequence can override this choice."
+msgstr "An item's serial number sequence can override this choice."
+
 msgid "An item's tracking type changes"
 msgstr "An item's tracking type changes"
 
@@ -5302,6 +5305,9 @@ msgstr "Company"
 
 msgid "Company default"
 msgstr "Company default"
+
+msgid "Company default ({companyDefault})"
+msgstr "Company default ({companyDefault})"
 
 msgid "Company default ({companyLabel})"
 msgstr "Company default ({companyLabel})"
@@ -9497,6 +9503,9 @@ msgstr "Every unit has a rate."
 
 msgid "Every unit is numbered up front, so serials can be printed before work starts."
 msgstr "Every unit is numbered up front, so serials can be printed before work starts."
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
+msgstr "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Everyone must set up an authenticator app before opening this company."
@@ -20779,6 +20788,9 @@ msgstr "Serial numbers are drawn when a unit is produced"
 msgid "Serial numbers are drawn when the job is created"
 msgstr "Serial numbers are drawn when the job is created"
 
+msgid "Serial numbers are drawn when the job is released"
+msgstr "Serial numbers are drawn when the job is released"
+
 msgid "Serial numbers are drawn when the units are received."
 msgstr "Serial numbers are drawn when the units are received."
 
@@ -24494,6 +24506,9 @@ msgstr "Timer running"
 msgid "Timezone"
 msgstr "Timezone"
 
+msgid "Timing"
+msgstr "Timing"
+
 msgid "Tip away from you"
 msgstr "Tip away from you"
 
@@ -26412,6 +26427,9 @@ msgstr "When the goods actually arrived; recorded on the receipt and used for su
 msgid "When the job is created"
 msgstr "When the job is created"
 
+msgid "When the job is released"
+msgstr "When the job is released"
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 
@@ -26441,6 +26459,9 @@ msgstr "When this gauge becomes due for calibration; once past due it reads Out-
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "When this looks right, mark it agreed. That completes the Discovery step on your command center."

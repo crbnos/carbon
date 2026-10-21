@@ -2702,6 +2702,9 @@ msgstr "物料的补货方式更改"
 msgid "An item's revision status changes"
 msgstr "物料的修订版状态更改"
 
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
+
 msgid "An item's tracking type changes"
 msgstr "物料的追踪类型更改"
 
@@ -5302,6 +5305,9 @@ msgstr "公司"
 
 msgid "Company default"
 msgstr "公司默认值"
+
+msgid "Company default ({companyDefault})"
+msgstr ""
 
 msgid "Company default ({companyLabel})"
 msgstr "公司默认值 ({companyLabel})"
@@ -9496,6 +9502,9 @@ msgid "Every unit has a rate."
 msgstr "每件都有费率。"
 
 msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
 msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
@@ -20779,6 +20788,9 @@ msgstr ""
 msgid "Serial numbers are drawn when the job is created"
 msgstr ""
 
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
 msgid "Serial numbers are drawn when the units are received."
 msgstr ""
 
@@ -24494,6 +24506,9 @@ msgstr "计时器运行中"
 msgid "Timezone"
 msgstr "时区"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "向远离你的方向倾斜"
 
@@ -26412,6 +26427,9 @@ msgstr "货物实际到达时;在收据上记录,用于供应商准时交货评�
 msgid "When the job is created"
 msgstr ""
 
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "当扫描看板卡时，工单自动从草稿移出并已下达到工厂。"
 
@@ -26441,6 +26459,9 @@ msgstr "该量具何时需要校准；过期后读数显示为失准。"
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "此量具最后一次成功校准时；下一个校准日期从此值加上间隔重新计算。"
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "当这看起来正确时，将其标记为已同意。这将完成您的指挥中心上的发现步骤。"

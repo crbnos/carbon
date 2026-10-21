@@ -2702,6 +2702,9 @@ msgstr "Die Beschaffungsart eines Artikels ändert sich"
 msgid "An item's revision status changes"
 msgstr "Der Revisionsstatus eines Elements ändert sich"
 
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
+
 msgid "An item's tracking type changes"
 msgstr "Der Nachverfolgungstyp eines Elements ändert sich"
 
@@ -5302,6 +5305,9 @@ msgstr "Unternehmen"
 
 msgid "Company default"
 msgstr "Unternehmensstandard"
+
+msgid "Company default ({companyDefault})"
+msgstr ""
 
 msgid "Company default ({companyLabel})"
 msgstr "Unternehmensstandard ({companyLabel})"
@@ -9496,6 +9502,9 @@ msgid "Every unit has a rate."
 msgstr "Jede Einheit hat einen Satz."
 
 msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
 msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
@@ -20779,6 +20788,9 @@ msgstr ""
 msgid "Serial numbers are drawn when the job is created"
 msgstr ""
 
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
 msgid "Serial numbers are drawn when the units are received."
 msgstr ""
 
@@ -24494,6 +24506,9 @@ msgstr "Timer läuft"
 msgid "Timezone"
 msgstr "Zeitzone"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "Von sich weg kippen"
 
@@ -26412,6 +26427,9 @@ msgstr "Wenn die Waren tatsächlich ankamen; auf dem Beleg aufgezeichnet und zur
 msgid "When the job is created"
 msgstr ""
 
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Wenn die Kanban-Karte gescannt wird, wird der Job automatisch aus dem Entwurf entfernt und zur Freigabe auf den Boden freigegeben."
 
@@ -26441,6 +26459,9 @@ msgstr "Wenn dieses Prüfmittel zur Kalibrierung fällig wird; sobald es überf�
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Wann dieses Prüfmittel zuletzt erfolgreich kalibriert wurde; das nächste Kalibrierungsdatum wird aus diesem Wert plus dem Intervall neu berechnet."
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Wenn dies richtig aussieht, markieren Sie es als vereinbart. Dies schließt den Discovery-Schritt in Ihrem Command Center ab."

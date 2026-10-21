@@ -88,6 +88,7 @@ import {
 } from "~/hooks";
 import { useCompanySettings } from "~/hooks/useCompanySettings";
 import { usePullFromLocationIds } from "~/hooks/usePullFromLocationIds";
+import type { SerialNumberTiming } from "~/modules/settings/settings.models";
 import type { action as cancelAction } from "~/routes/x+/job+/$jobId.cancel";
 import type { action as completeAction } from "~/routes/x+/job+/$jobId.complete";
 import type { action as statusAction } from "~/routes/x+/job+/$jobId.status";
@@ -1414,10 +1415,12 @@ function JobCompleteModal({
 }) {
   const { carbon } = useCarbon();
   const { company } = useUser();
-  const serialNumberTiming =
-    useCompanySettings()?.serialNumberTiming === "production"
-      ? "production"
-      : "jobCreation";
+  // The company's serial number timing; an item's serial sequence can
+  // override it (read with the job's data below).
+  const companySerialNumberTiming =
+    (useCompanySettings()?.serialNumberTiming as
+      | SerialNumberTiming
+      | undefined) ?? "jobCreation";
   const [loading, setLoading] = useState(true);
   const { t } = useLingui();
   const [defaultStorageUnitId, setDefaultStorageUnitId] = useState<
@@ -1434,7 +1437,7 @@ function JobCompleteModal({
   const [receivableSerials, setReceivableSerials] = useState<string[] | null>(
     null
   );
-  // Under serialNumberTiming = 'production': how many units the completion can
+  // Under the jobRelease or production timing: how many units the completion can
   // still receive and number as it receives them. Null otherwise.
   const [unitsNumberedOnReceipt, setUnitsNumberedOnReceipt] = useState<
     number | null
@@ -1473,22 +1476,29 @@ function JobCompleteModal({
   const getJobData = async () => {
     if (!carbon) return;
 
-    const [pickMethod, makeMethod, receipts] = await Promise.all([
-      carbon
-        .from("pickMethod")
-        .select("*")
-        .eq("locationId", job?.locationId!)
-        .eq("itemId", job?.itemId!)
-        .single(),
-      carbon
-        .from("jobMakeMethod")
-        .select("*")
-        .eq("jobId", job?.id!)
-        .eq("companyId", company.id)
-        .is("parentMaterialId", null)
-        .single(),
-      getJobReceipts(job?.id!)
-    ]);
+    const [pickMethod, makeMethod, receipts, serialSequence] =
+      await Promise.all([
+        carbon
+          .from("pickMethod")
+          .select("*")
+          .eq("locationId", job?.locationId!)
+          .eq("itemId", job?.itemId!)
+          .single(),
+        carbon
+          .from("jobMakeMethod")
+          .select("*")
+          .eq("jobId", job?.id!)
+          .eq("companyId", company.id)
+          .is("parentMaterialId", null)
+          .single(),
+        getJobReceipts(job?.id!),
+        carbon
+          .from("itemSerialSequence")
+          .select("serialNumberTiming")
+          .eq("itemId", job?.itemId!)
+          .eq("companyId", company.id)
+          .maybeSingle()
+      ]);
 
     // Read now rather than from the job route: a receipt may have been made
     // since the page loaded. When the read fails, fall back to the route's job
@@ -1529,7 +1539,13 @@ function JobCompleteModal({
           ? getSerialCompleteChoice({
               trackedEntities: trackedEntities.data,
               receivedEntityIds: receipts ? receivedEntityIds : null,
-              serialNumberTiming,
+              // The item's own timing, else the company's, as
+              // getSerialNumberTiming resolves it on the server.
+              serialNumberTiming:
+                (serialSequence.data?.serialNumberTiming as
+                  | SerialNumberTiming
+                  | null
+                  | undefined) ?? companySerialNumberTiming,
               jobQuantity: job?.quantity ?? 0
             })
           : ({ mode: "locked" } as const);

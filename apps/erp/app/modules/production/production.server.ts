@@ -229,8 +229,9 @@ export const planDraftJob = defineServiceFn({
  *
  * @remarks
  * The step every release path shares (`releaseJobs`, `releaseBatchMemberJobs`).
- * Per job, in order: refresh requirements, run MRP, flip to Ready, put outside
- * operations on purchase orders, stamp releasedDate. Scheduling is the
+ * Per job, in order: refresh requirements, run MRP, flip to Ready, number the
+ * serial units when the item's timing is `jobRelease`, put outside operations
+ * on purchase orders, stamp releasedDate. Scheduling is the
  * caller's (one location run, or a notify, after all jobs are released).
  * Validation (`getJobReleaseReadiness`) is the caller's, BEFORE this runs.
  *
@@ -320,6 +321,28 @@ export const releaseCheckedJobs = defineServiceFn({
         );
       }
       releasedJobIds.push(id);
+
+      // Under the jobRelease serial number timing (the item's, else the
+      // company's) every unit is numbered now. Best-effort, as at creation.
+      const releasedJob = await ctx.asSystem.pg
+        .selectFrom("job")
+        .select(["itemId"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (releasedJob?.itemId) {
+        await service.assignJobSerialNumbers(
+          ctx.asSystem.supabase,
+          ctx.asSystem.pg,
+          {
+            jobId: id,
+            itemId: releasedJob.itemId,
+            companyId,
+            userId,
+            moment: "release"
+          }
+        );
+      }
 
       const purchaseOrder = await invokeCreate(
         { db: ctx.asSystem.pg, companyId, userId },
@@ -864,9 +887,10 @@ export const closeJob = defineServiceFn({
  * job's own), backflushes materials, rolls up cost and, for a Make to Asset
  * job, creates the fixed assets. It refuses a quantity of zero or below what
  * was received, a fractional quantity on a serial job, and the Make to Asset
- * rules; its message says what to fix (a `rule` error). When the company
- * numbers serials at production, the units the completion takes are split off
- * the job's seed and numbered first. Then the picked material the job did not
+ * rules; its message says what to fix (a `rule` error). When the item's serial
+ * number timing (its own, else the company's) is release or production, the
+ * units the completion takes are split off the job's seed, created when no
+ * record holds them yet, and numbered first. Then the picked material the job did not
  * consume is returned to the warehouse; a failure there leaves the job
  * completed and is returned as `warning`.
  *
@@ -885,9 +909,10 @@ export const completeJob = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
-    // Under serialNumberTiming = 'production' the units this completion takes
-    // may be unnumbered, or still one unsplit seed: the receipt is their first
-    // touch, so split and number them before the RPC receives them.
+    // Under the release or production serial number timing the units this
+    // completion takes may be unnumbered, or still one unsplit seed: the
+    // receipt is their first touch, so split and number them before the RPC
+    // receives them.
     try {
       await service.numberSerialUnitsForCompletion(ctx.asSystem.pg, {
         jobId,

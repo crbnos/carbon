@@ -10,9 +10,9 @@ const log = getLogger("mes", "serial-number");
 
 /**
  * Number a unit from its item's serial sequence when work first starts on it
- * (`companySettings.serialNumberTiming = 'production'`). A no-op for a unit
- * that already has a number, which is every unit under the default timing, so
- * it is safe on every start.
+ * (the `production` serial number timing, the item's own or else the
+ * company's). A no-op for a unit that already has a number, which is every unit
+ * under the `jobCreation` and `jobRelease` timings, so it is safe on every start.
  *
  * Best-effort: a failure never stops a timer from starting, and the ERP's
  * completion and scrap postings number the unit later if this was lost. It

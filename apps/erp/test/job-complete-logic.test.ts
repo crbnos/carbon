@@ -316,4 +316,32 @@ describe("getSerialCompleteChoice", () => {
       })
     ).toEqual({ mode: "numberOnReceipt", receivableCount: 3 });
   });
+
+  it("numbers on receipt under the release timing, as under production", () => {
+    // A job completed before it was released still holds its unsplit seed.
+    expect(
+      getSerialCompleteChoice({
+        trackedEntities: [seed],
+        receivedEntityIds: none,
+        serialNumberTiming: "jobRelease",
+        jobQuantity: 3
+      })
+    ).toEqual({ mode: "numberOnReceipt", receivableCount: 3 });
+  });
+
+  it("lists the serials of a released job whose units were numbered at release", () => {
+    const units = [
+      unit({ id: "a", readableId: "SN-0001" }),
+      unit({ id: "b", readableId: "SN-0002" }),
+      unit({ id: "c", readableId: "SN-0003" })
+    ];
+    expect(
+      getSerialCompleteChoice({
+        trackedEntities: units,
+        receivedEntityIds: none,
+        serialNumberTiming: "jobRelease",
+        jobQuantity: 3
+      })
+    ).toEqual({ mode: "serials", serials: ["SN-0001", "SN-0002", "SN-0003"] });
+  });
 });

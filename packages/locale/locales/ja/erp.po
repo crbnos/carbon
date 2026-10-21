@@ -2702,6 +2702,9 @@ msgstr "品目の調達方式が変更される"
 msgid "An item's revision status changes"
 msgstr "アイテムのリビジョンステータスが変更されます"
 
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
+
 msgid "An item's tracking type changes"
 msgstr "アイテムの追跡タイプが変更されます"
 
@@ -5302,6 +5305,9 @@ msgstr "会社"
 
 msgid "Company default"
 msgstr "会社のデフォルト"
+
+msgid "Company default ({companyDefault})"
+msgstr ""
 
 msgid "Company default ({companyLabel})"
 msgstr "会社のデフォルト（{companyLabel}）"
@@ -9496,6 +9502,9 @@ msgid "Every unit has a rate."
 msgstr "すべての個にレートが設定されています。"
 
 msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
 msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
@@ -20779,6 +20788,9 @@ msgstr ""
 msgid "Serial numbers are drawn when the job is created"
 msgstr ""
 
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
 msgid "Serial numbers are drawn when the units are received."
 msgstr ""
 
@@ -24494,6 +24506,9 @@ msgstr "タイマー実行中"
 msgid "Timezone"
 msgstr "タイムゾーン"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "奥に傾ける"
 
@@ -26412,6 +26427,9 @@ msgstr "商品が実際に到着した日時。入荷に記録され、仕入先
 msgid "When the job is created"
 msgstr ""
 
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "かんばんカードがスキャンされると、製造指図は自動的に下書きから移動され、フロアにリリース済となります。"
 
@@ -26441,6 +26459,9 @@ msgstr "この測定器が校正の対象日となる日時。期限を過ぎる
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "この測定器が最後に正常に校正された日時。次の校正日はこの値とインターバルの合計から再計算されます。"
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "これが正しく見えたら、同意済みとしてマークしてください。これでコマンドセンターの検出ステップが完了します。"

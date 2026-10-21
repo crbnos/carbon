@@ -24577,6 +24577,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemSerialSequences.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.serialNumberTiming"
+          },
+          {
             $ref: "#/parameters/rowFilter.itemSerialSequences.itemReadableId"
           },
           {
@@ -77461,6 +77464,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemSerialSequence.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.serialNumberTiming"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -77556,6 +77562,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemSerialSequence.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.serialNumberTiming"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -77603,6 +77612,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemSerialSequence.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.serialNumberTiming"
           },
           {
             $ref: "#/parameters/body.itemSerialSequence"
@@ -129696,6 +129708,10 @@ export default {
           format: "timestamp with time zone",
           type: "string"
         },
+        serialNumberTiming: {
+          format: "text",
+          type: "string"
+        },
         itemReadableId: {
           format: "text",
           type: "string"
@@ -154792,6 +154808,10 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        serialNumberTiming: {
+          format: "text",
           type: "string"
         }
       },
@@ -181001,6 +181021,12 @@ export default {
     },
     "rowFilter.itemSerialSequences.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.serialNumberTiming": {
+      name: "serialNumberTiming",
       required: false,
       in: "query",
       type: "string"
@@ -208940,6 +208966,12 @@ export default {
     },
     "rowFilter.itemSerialSequence.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequence.serialNumberTiming": {
+      name: "serialNumberTiming",
       required: false,
       in: "query",
       type: "string"

@@ -399,9 +399,15 @@ export const returnPickedMaterialTimingValidator = z.object({
 
 // When a produced unit's serial number is drawn from the item's serial sequence.
 // 'jobCreation' (default) reserves one number per unit as soon as the job exists;
-// 'production' waits until the unit is first touched on the floor — its first
-// production event, its first operation completion, or its scrap.
-export const serialNumberTimings = ["jobCreation", "production"] as const;
+// 'jobRelease' when the job is released to the shop floor; 'production' waits
+// until the unit is first touched on the floor — its first production event,
+// its first operation completion, its scrap, or its receipt. The company's
+// choice is the default; an item's serial sequence can override it.
+export const serialNumberTimings = [
+  "jobCreation",
+  "jobRelease",
+  "production"
+] as const;
 export type SerialNumberTiming = (typeof serialNumberTimings)[number];
 
 export const serialNumberTimingValidator = z.object({
@@ -517,7 +523,9 @@ export const itemSerialSequenceValidator = z.object({
   suffix: zfd.text(z.string().optional()),
   next: zfd.numeric(z.number().min(0)),
   step: zfd.numeric(z.number().min(1)),
-  size: zfd.numeric(z.number().min(1).max(20))
+  size: zfd.numeric(z.number().min(1).max(20)),
+  // Empty follows the company's serial number timing.
+  serialNumberTiming: zfd.text(z.enum(serialNumberTimings).optional())
 });
 
 export const themes = [

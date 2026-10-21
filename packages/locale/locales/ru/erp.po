@@ -2702,6 +2702,9 @@ msgstr "Способ пополнения номенклатуры измени�
 msgid "An item's revision status changes"
 msgstr "Статус ревизии номенклатуры изменился"
 
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
+
 msgid "An item's tracking type changes"
 msgstr "Тип отслеживания элемента изменяется"
 
@@ -5302,6 +5305,9 @@ msgstr "Организация"
 
 msgid "Company default"
 msgstr "По умолчанию организации"
+
+msgid "Company default ({companyDefault})"
+msgstr ""
 
 msgid "Company default ({companyLabel})"
 msgstr "Значение по умолчанию организации ({companyLabel})"
@@ -9496,6 +9502,9 @@ msgid "Every unit has a rate."
 msgstr "Каждая единица имеет ставку."
 
 msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
 msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
@@ -20779,6 +20788,9 @@ msgstr ""
 msgid "Serial numbers are drawn when the job is created"
 msgstr ""
 
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
 msgid "Serial numbers are drawn when the units are received."
 msgstr ""
 
@@ -24494,6 +24506,9 @@ msgstr "Таймер запущен"
 msgid "Timezone"
 msgstr "Часовой пояс"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "Наклонить от себя"
 
@@ -26412,6 +26427,9 @@ msgstr "Когда товары действительно прибыли; за�
 msgid "When the job is created"
 msgstr ""
 
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Когда карточка канбана сканируется, задание автоматически удаляется из черновика и выпускается на пол."
 
@@ -26441,6 +26459,9 @@ msgstr "Когда это Средство измерения подлежит �
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Когда это средство измерения последний раз успешно калибровалось; дата следующей калибровки пересчитывается из этого значения плюс интервал."
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Когда это выглядит правильно, отметьте это как согласованное. Это завершает шаг Открытия на вашем центре управления."

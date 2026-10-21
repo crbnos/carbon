@@ -2798,6 +2798,13 @@ export const createItemSerialSequence = defineServiceFn({
     next: z.number().min(0),
     step: z.number().min(1),
     size: z.number().min(1).max(20),
+    serialNumberTiming: z
+      .enum(serialNumberTimings)
+      .nullable()
+      .optional()
+      .describe(
+        "When this item's units draw their serial numbers. Omit or null to follow the company setting."
+      ),
     id: z
       .string()
       .describe("Send to update that record; omit to create a new one.")
@@ -2832,6 +2839,13 @@ export const updateItemSerialSequence = defineServiceFn({
       next: z.number().min(0),
       step: z.number().min(1),
       size: z.number().min(1).max(20),
+      serialNumberTiming: z
+        .enum(serialNumberTimings)
+        .nullable()
+        .optional()
+        .describe(
+          "When this item's units draw their serial numbers. Omit or null to follow the company setting."
+        ),
       id: z
         .string()
         .describe("Send to update that record; omit to create a new one.")
