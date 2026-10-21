@@ -336,6 +336,11 @@ export async function action({ request }: ActionFunctionArgs) {
   if (contract.invoiceAutomation) {
     merged.append("invoiceAutomation", contract.invoiceAutomation);
   }
+  // Not a term either, and never edited here: carried so the validator
+  // applies the rules of this contract's basis.
+  if (contract.billingBasis) {
+    merged.append("billingBasis", contract.billingBasis);
+  }
 
   if (field === "currencyCode" && value && value !== contract.currencyCode) {
     const exchangeRate = await getExchangeRate(client, companyId, value);

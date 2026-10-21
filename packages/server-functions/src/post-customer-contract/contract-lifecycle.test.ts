@@ -2042,6 +2042,8 @@ async function projectBillingFixture(
           customerContractId: `CON-${input.key}`,
           name: input.key,
           customerId,
+          // A Time & Materials line belongs on a project contract.
+          billingBasis: "Project",
           closeDate: "2026-01-01",
           startDate: "2026-01-01",
           endDate: "2026-12-31",

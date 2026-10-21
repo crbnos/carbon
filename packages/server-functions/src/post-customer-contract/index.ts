@@ -35,6 +35,8 @@ import {
 } from "@carbon/database/contract-revenue-schedule";
 import {
   amendmentEffectiveDate,
+  billingBasisMismatch,
+  billingBasisMismatchMessages,
   horizon,
   lastRecurringPeriodEnd,
   lineTotals,
@@ -581,6 +583,10 @@ async function confirm(
       }
       if (line.revenueType === "Recurring" && !line.rateUnit) {
         problems.push(`${label}: a recurring line needs a rate unit`);
+      }
+      const mismatch = billingBasisMismatch(contract.billingBasis, line);
+      if (mismatch) {
+        problems.push(`${label}: ${billingBasisMismatchMessages[mismatch]}`);
       }
     }
     problems.push(
@@ -1547,6 +1553,17 @@ async function amend(
           if (type !== "Service") {
             throw new InvalidInputError(
               "Only Service items can be on a contract"
+            );
+          }
+          // Added lines only: a change copies a stored line, and a contract
+          // that mixed both kinds before the billing basis keeps its lines.
+          const mismatch = billingBasisMismatch(contract.billingBasis, {
+            billingMethod: line.billingMethod ?? "Fixed",
+            revenueType: line.revenueType
+          });
+          if (mismatch) {
+            throw new InvalidInputError(
+              `${line.description || "The added line"}: ${billingBasisMismatchMessages[mismatch]}`
             );
           }
         }

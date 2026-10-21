@@ -1307,7 +1307,7 @@
     {"name":"sales_getContractLineFunding","classification":"READ","paramCount":2,"schema":"cff70a19c8a5","response":"b70ab10e5f2d","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getContractLines","classification":"READ","paramCount":1,"schema":"a18bd6ac2fe5","response":"2263bab56a46","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getContractProjectBillingInvoices","classification":"READ","paramCount":1,"schema":"a18bd6ac2fe5","response":"02c209242b10","injectAuth":"companyId","permission":"sales:view","paginates":false},
-    {"name":"sales_getContracts","classification":"READ","paramCount":3,"schema":"c61cae75d189","response":"80be36374730","injectAuth":"companyId","permission":"sales:view","paginates":true,"defaults":"always"},
+    {"name":"sales_getContracts","classification":"READ","paramCount":4,"schema":"be0e1ada27c9","response":"80be36374730","injectAuth":"companyId","permission":"sales:view","paginates":true,"defaults":"always"},
     {"name":"sales_getCreditableQuantities","classification":"READ","paramCount":1,"schema":"f41daa12b05a","response":"da2f02c5bdac","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getCustomer","classification":"READ","paramCount":1,"schema":"09e48c79fb16","response":"8642159293c2","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getCustomerBankAccounts","classification":"READ","paramCount":1,"schema":"09e48c79fb16","response":"d8173b9c2e54","injectAuth":"companyId","permission":"accounting:view","paginates":false},

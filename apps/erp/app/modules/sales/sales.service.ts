@@ -11,11 +11,14 @@ import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
 import type {
+  ContractBillingBasis,
   DefaultRentalRates,
   PickPartial,
   ScopedRentalRate
 } from "@carbon/utils";
 import {
+  billingBasisMismatch,
+  billingBasisMismatchMessages,
   datetime,
   defaultRentalRates,
   EPSILON,
@@ -9761,12 +9764,19 @@ export async function getContracts(
   companyId: string,
   args: GenericQueryFilters & {
     search: string | null;
+    /** `Schedule` lists service contracts, `Project` project contracts;
+     *  omitted lists both. */
+    billingBasis?: ContractBillingBasis;
   }
 ) {
   let query = client
     .from("customerContracts")
     .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
+
+  if (args.billingBasis) {
+    query = query.eq("billingBasis", args.billingBasis);
+  }
 
   if (args.search) {
     query = query.or(
@@ -9946,6 +9956,8 @@ function customerContractTerms(
     // NOT NULL with a default: an omitted type leaves the column alone
     // rather than writing the null `sanitize` turns undefined into.
     ...(terms.contractType ? { contractType: terms.contractType } : {}),
+    // The same: an omitted basis keeps the stored one (Schedule on create).
+    ...(terms.billingBasis ? { billingBasis: terms.billingBasis } : {}),
     customerId: terms.customerId,
     invoiceCustomerId: terms.invoiceCustomerId,
     invoiceCustomerContactId: terms.invoiceCustomerContactId,
@@ -10251,7 +10263,7 @@ export async function upsertContractLine(
 
   const contract = await client
     .from("customerContract")
-    .select("status")
+    .select("status, billingBasis")
     .eq("id", line.customerContractId)
     .eq("companyId", companyId)
     .single();
@@ -10260,6 +10272,25 @@ export async function upsertContractLine(
     return contractRefusal(
       "CONTRACT_NOT_DRAFT",
       "Lines can only be added or changed on a Draft contract — use Amend"
+    );
+  }
+
+  // A billing line has no schedule: quantity 1 at rate 0, One-time
+  // (`customerContractLine_billing_check`). Its price comes from the items.
+  // A Fixed Price line of a project contract is one price, billed on its
+  // billing events: quantity 1 at its rate, One-time.
+  const isBilling = isProjectBillingMethod(line.billingMethod);
+  const isProject = contract.data.billingBasis === "Project";
+  const revenueType = isBilling || isProject ? "One-time" : line.revenueType;
+
+  const mismatch = billingBasisMismatch(contract.data.billingBasis, {
+    billingMethod: line.billingMethod,
+    revenueType
+  });
+  if (mismatch) {
+    return contractRefusal(
+      "CONTRACT_BILLING_BASIS_MISMATCH",
+      billingBasisMismatchMessages[mismatch]
     );
   }
 
@@ -10286,11 +10317,6 @@ export async function upsertContractLine(
   });
   if (numbering) return numbering;
 
-  // A billing line has no schedule: quantity 1 at rate 0, One-time
-  // (`customerContractLine_billing_check`). Its price comes from the items.
-  const isBilling = isProjectBillingMethod(line.billingMethod);
-  const revenueType = isBilling ? "One-time" : line.revenueType;
-
   // Picked, not spread: amendment and sales-order provenance and the sort
   // order belong to the server functions.
   const values = {
@@ -10298,7 +10324,7 @@ export async function upsertContractLine(
     revenueType,
     itemId: line.itemId,
     description: line.description ?? null,
-    quantity: isBilling ? 1 : line.quantity,
+    quantity: isBilling || isProject ? 1 : line.quantity,
     rate: isBilling ? 0 : line.rate,
     rateUnit: revenueType === "Recurring" ? (line.rateUnit ?? null) : null,
     discountPercent: percentToFraction(line.discountPercent),
@@ -10916,7 +10942,7 @@ export async function insertContractLines(
 ) {
   const contract = await client
     .from("customerContract")
-    .select("status")
+    .select("status, billingBasis")
     .eq("id", args.customerContractId)
     .eq("companyId", args.companyId)
     .single();
@@ -10925,6 +10951,18 @@ export async function insertContractLines(
     return contractRefusal(
       "CONTRACT_NOT_DRAFT",
       "Lines can only be added or changed on a Draft contract — use Amend"
+    );
+  }
+
+  // Every line inserted here is Fixed.
+  const mismatch = billingBasisMismatch(contract.data.billingBasis, {
+    billingMethod: "Fixed",
+    revenueType: args.revenueType
+  });
+  if (mismatch) {
+    return contractRefusal(
+      "CONTRACT_BILLING_BASIS_MISMATCH",
+      billingBasisMismatchMessages[mismatch]
     );
   }
 

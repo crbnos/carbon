@@ -991,13 +991,29 @@ export function contractBillingBasisFor(
     : "Schedule";
 }
 
+export type BillingBasisMismatch =
+  | "billing-line-on-schedule"
+  | "recurring-line-on-project";
+
+/** What the ERP and `post-customer-contract` say when they refuse a line
+ *  `billingBasisMismatch` flags. */
+export const billingBasisMismatchMessages: Record<
+  BillingBasisMismatch,
+  string
+> = {
+  "billing-line-on-schedule":
+    "A service contract bills on its schedule. Create a project contract for Time & Materials or Cost Plus lines.",
+  "recurring-line-on-project":
+    "A project contract line is One-time. Create a service contract for recurring charges."
+};
+
 /** Why a line does not belong on a contract of `basis`, or null. A service
  *  contract bills on its schedule, so it takes only `Fixed` lines; a project
  *  contract line is always One-time. */
 export function billingBasisMismatch(
   basis: ContractBillingBasis,
   line: { billingMethod: string; revenueType: string }
-): "billing-line-on-schedule" | "recurring-line-on-project" | null {
+): BillingBasisMismatch | null {
   if (basis === "Schedule" && line.billingMethod !== "Fixed") {
     return "billing-line-on-schedule";
   }
