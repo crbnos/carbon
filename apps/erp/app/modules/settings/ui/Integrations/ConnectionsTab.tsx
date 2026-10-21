@@ -34,13 +34,7 @@ import { suggestConnectionName } from "./connectionName";
  * that changes type upstream fails here rather than rendering something else. */
 export type ConnectionRow = Pick<
   IntegrationConnection,
-  | "id"
-  | "pieceName"
-  | "name"
-  | "accountLabel"
-  | "status"
-  | "lastError"
-  | "metadata"
+  "id" | "pieceName" | "name" | "accountLabel" | "status" | "metadata"
 >;
 
 // Keyed by the SAME status the shared predicate reads, so the badge cannot say
@@ -265,11 +259,6 @@ function ConnectionItem({
             </Trans>
           </span>
         ) : null}
-        {connection.lastError && (
-          <span className="break-words text-xs text-destructive">
-            {connection.lastError}
-          </span>
-        )}
       </VStack>
       <VStack spacing={2} className="w-auto shrink-0 items-end">
         {(needsScopes || !usable) && (

@@ -29,6 +29,7 @@ export {
   walkPath
 } from "./definition/catalog";
 export {
+  type CardRefusal,
   cardsOf,
   DATA_OPERATIONS,
   type DataOperation,

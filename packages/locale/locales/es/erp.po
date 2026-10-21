@@ -2138,8 +2138,9 @@ msgstr "Agregar mes"
 msgid "Add Note"
 msgstr "Agregar Nota"
 
+msgctxt "workflow data step"
 msgid "Add operation"
-msgstr "Agregar operación"
+msgstr "Añadir operación"
 
 msgid "Add Operation"
 msgstr "Agregar Operación"
@@ -15059,6 +15060,9 @@ msgstr "Sin ruta de error: la ejecución se detiene aquí y se marca como fallid
 msgid "No fair value entered, counts as not met"
 msgstr "Sin valor razonable ingresado, se cuenta como no cumplido"
 
+msgid "No field was chosen to take."
+msgstr "No se eligió ningún campo para tomar."
+
 msgid "No fields found."
 msgstr "No se encontraron campos."
 
@@ -16237,6 +16241,10 @@ msgstr "Gasto por arrendamiento operativo"
 msgid "operation"
 msgstr "operación"
 
+msgid "Operation"
+msgstr "Operación"
+
+msgctxt "workflow data step"
 msgid "Operation"
 msgstr "Operación"
 
@@ -19088,6 +19096,7 @@ msgstr "Quitar los números de serie y de lote de producción recibidos de las e
 msgid "Remove this item"
 msgstr "Quitar este artículo"
 
+msgctxt "workflow data step"
 msgid "Remove this operation"
 msgstr "Quitar esta operación"
 
@@ -23026,6 +23035,9 @@ msgstr "Esa cuenta ya no existe"
 msgid "That connection name is already used"
 msgstr "Ese nombre de conexión ya se está usando"
 
+msgid "That field holds a list of its own. Turn on flattening to take it."
+msgstr "Ese campo contiene su propia lista. Activa el aplanado para tomarlo."
+
 msgid "That field holds several values, so they are combined into one list."
 msgstr "Ese campo contiene varios valores, por lo que se combinan en una lista."
 
@@ -23527,8 +23539,14 @@ msgstr "El artículo que cada orden de trabajo produce — requiere que coincida
 msgid "The item's rental rate"
 msgstr "La tarifa de renta del artículo"
 
+msgid "The items in that list have no field by that name."
+msgstr "Los elementos de esa lista no tienen ningún campo con ese nombre."
+
 msgid "The items in that list have no fields to take."
 msgstr "Los artículos de esa lista no tienen campos para tomar."
+
+msgid "The items in that list have no reading as text."
+msgstr "Los elementos de esa lista no se pueden leer como texto."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "las horas de Orden de trabajo vencidas ese día (una base de fecha de vencimiento, no el día que se ejecuta el trabajo), con trabajo Atrasado en Pasado vencido."
@@ -24576,6 +24594,9 @@ msgstr "Esta estación ejecuta trabajo protegido por habilidad — solo se ejecu
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "Esta estación ejecuta trabajo sin requisito de habilidad; los operarios asignados en el tablero de personal moldean la mano de obra disponible."
+
+msgid "This step expected a list."
+msgstr "Este paso esperaba una lista."
 
 msgid "This step is part of it"
 msgstr "Este paso es parte de él"
@@ -27215,6 +27236,9 @@ msgstr "Tú diriges"
 
 msgid "You name a project owner with decision authority"
 msgstr "Designa un propietario del proyecto con autoridad para tomar decisiones"
+
+msgid "You need permission to edit workflows to load these choices."
+msgstr "Necesitas permiso para editar flujos de trabajo para cargar estas opciones."
 
 msgid "You received this item"
 msgstr "Recibiste este artículo"

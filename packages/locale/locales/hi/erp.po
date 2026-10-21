@@ -2138,6 +2138,7 @@ msgstr "महीना जोड़ें"
 msgid "Add Note"
 msgstr "नोट जोड़ें"
 
+msgctxt "workflow data step"
 msgid "Add operation"
 msgstr "ऑपरेशन जोड़ें"
 
@@ -15059,6 +15060,9 @@ msgstr "कोई विफलता पथ नहीं — रन यहां
 msgid "No fair value entered, counts as not met"
 msgstr "कोई उचित मूल्य दर्ज नहीं किया गया, पूरा नहीं माना जाता है"
 
+msgid "No field was chosen to take."
+msgstr "लेने के लिए कोई फ़ील्ड नहीं चुना गया।"
+
 msgid "No fields found."
 msgstr "कोई फ़ील्ड नहीं मिला।"
 
@@ -16237,6 +16241,10 @@ msgstr "परिचालन पट्टा व्यय"
 msgid "operation"
 msgstr "ऑपरेशन"
 
+msgid "Operation"
+msgstr "ऑपरेशन"
+
+msgctxt "workflow data step"
 msgid "Operation"
 msgstr "ऑपरेशन"
 
@@ -19088,8 +19096,9 @@ msgstr "प्राप्त सीरियल और बैच नंबर �
 msgid "Remove this item"
 msgstr "इस आइटम को निकालें"
 
+msgctxt "workflow data step"
 msgid "Remove this operation"
-msgstr "इस ऑपरेशन को निकालें"
+msgstr "यह ऑपरेशन हटाएं"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "इस भंडारण प्रकार को सभी संदर्भित भंडारण इकाइयों से निकालें और इसे हटाएँ। यह पूर्ववत नहीं किया जा सकता।"
@@ -23026,6 +23035,9 @@ msgstr "वह खाता अब मौजूद नहीं है"
 msgid "That connection name is already used"
 msgstr "वह कनेक्शन नाम पहले से उपयोग किया जा रहा है"
 
+msgid "That field holds a list of its own. Turn on flattening to take it."
+msgstr "उस फ़ील्ड में अपनी एक सूची है। इसे लेने के लिए फ़्लैटनिंग चालू करें।"
+
 msgid "That field holds several values, so they are combined into one list."
 msgstr "उस फ़ील्ड में कई मान हैं, इसलिए उन्हें एक सूची में मिलाया जाता है।"
 
@@ -23527,8 +23539,14 @@ msgstr "प्रत्येक जॉब द्वारा उत्पाद
 msgid "The item's rental rate"
 msgstr "आइटम की किराये की दर"
 
+msgid "The items in that list have no field by that name."
+msgstr "उस सूची के आइटम में उस नाम का कोई फ़ील्ड नहीं है।"
+
 msgid "The items in that list have no fields to take."
 msgstr "उस सूची में आइटम्स के पास लेने के लिए कोई फ़ील्ड नहीं हैं।"
+
+msgid "The items in that list have no reading as text."
+msgstr "उस सूची के आइटम को टेक्स्ट के रूप में नहीं पढ़ा जा सकता।"
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "उस दिन देय नौकरी के घंटे (देय तारीख आधार पर, वह दिन नहीं जब काम चलता है), अतिदेय कार्य पिछली देय में।"
@@ -24576,6 +24594,9 @@ msgstr "यह स्टेशन कौशल-गेटेड कार्य �
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "यह स्टेशन कोई कौशल आवश्यकता के बिना काम चलाता है; मैनिंग बोर्ड पर असाइन किए गए ऑपरेटर उपलब्ध श्रम को आकार देते हैं।"
+
+msgid "This step expected a list."
+msgstr "इस चरण को एक सूची की अपेक्षा थी।"
 
 msgid "This step is part of it"
 msgstr "यह चरण इसका हिस्सा है"
@@ -27218,6 +27239,9 @@ msgstr "आप नेतृत्व करते हैं"
 
 msgid "You name a project owner with decision authority"
 msgstr "आप निर्णय लेने के अधिकार वाले परियोजना स्वामी का नाम देते हैं"
+
+msgid "You need permission to edit workflows to load these choices."
+msgstr "इन विकल्पों को लोड करने के लिए आपको वर्कफ़्लो संपादित करने की अनुमति चाहिए।"
 
 msgid "You received this item"
 msgstr "आपने यह आइटम प्राप्त किया"

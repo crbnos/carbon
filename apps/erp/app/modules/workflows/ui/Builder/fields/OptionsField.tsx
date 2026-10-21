@@ -122,6 +122,10 @@ export function OptionsField({
               <Trans>
                 That account is still being reconnected. Try again in a moment.
               </Trans>
+            ) : errorCode === "forbidden" ? (
+              <Trans>
+                You need permission to edit workflows to load these choices.
+              </Trans>
             ) : (
               <Trans>Couldn't load the choices for this field.</Trans>
             )}
@@ -136,15 +140,17 @@ export function OptionsField({
               <Trans>Fix this</Trans>
             </Link>
           ) : null}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={retry}
-            isDisabled={isReadOnly}
-            isLoading={isLoading}
-          >
-            <Trans>Try again</Trans>
-          </Button>
+          {errorCode === "forbidden" ? null : (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={retry}
+              isDisabled={isReadOnly}
+              isLoading={isLoading}
+            >
+              <Trans>Try again</Trans>
+            </Button>
+          )}
         </div>
       </Field>
     );

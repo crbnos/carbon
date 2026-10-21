@@ -17,8 +17,8 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { RunStatus } from "../../Runs/RunStatus";
 import { runOutcome } from "../../Runs/runOutcome";
+import { useNodeLabel } from "../../Runs/useNodeLabel";
 import { WorkflowRunSteps } from "../../Runs/WorkflowRunSteps";
-import { useWorkflowLabel } from "../catalog";
 import { useBuilderStore } from "../context";
 import { IssueList } from "../IssueList";
 import { useDefinition } from "../useDefinition";
@@ -28,7 +28,7 @@ import { useDefinition } from "../useDefinition";
  * run with real side effects: it is recorded as a `workflowRun` row with
  * `isTest = true`, so it stays in the run history after this drawer closes. */
 export function TestRunPanel() {
-  const label = useWorkflowLabel();
+  const nodeLabel = useNodeLabel();
   const definition = useDefinition();
   const status = useBuilderStore((s) => s.testRunStatus);
   const result = useBuilderStore((s) => s.testRunResult);
@@ -47,7 +47,7 @@ export function TestRunPanel() {
         { status: result.status, error: result.error, statusReason: null },
         result.steps,
         definition,
-        label
+        (node) => nodeLabel(node).title
       )
     : null;
 

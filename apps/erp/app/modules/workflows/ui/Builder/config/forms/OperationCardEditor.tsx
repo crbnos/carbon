@@ -135,11 +135,14 @@ export function OperationCardEditor({
       <div className="space-y-1">
         <div className="flex items-center justify-between">
           <Section>
-            <Trans>Operation</Trans>
+            <Trans context="workflow data step">Operation</Trans>
           </Section>
           {canRemove && (
             <IconButton
-              aria-label={t`Remove this operation`}
+              aria-label={t({
+                message: "Remove this operation",
+                context: "workflow data step"
+              })}
               icon={<LuTrash2 />}
               variant="ghost"
               size="sm"

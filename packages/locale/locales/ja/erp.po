@@ -2138,8 +2138,9 @@ msgstr "月を追加"
 msgid "Add Note"
 msgstr "メモを追加"
 
+msgctxt "workflow data step"
 msgid "Add operation"
-msgstr "工程を追加"
+msgstr "処理を追加"
 
 msgid "Add Operation"
 msgstr "操作を追加"
@@ -15059,6 +15060,9 @@ msgstr "失敗パスなし — 実行がここで停止し失敗とマークさ�
 msgid "No fair value entered, counts as not met"
 msgstr "公正価値が入力されていません。未達と見なされます。"
 
+msgid "No field was chosen to take."
+msgstr "取得するフィールドが選択されていません。"
+
 msgid "No fields found."
 msgstr "フィールドが見つかりません。"
 
@@ -16239,6 +16243,10 @@ msgstr "工程"
 
 msgid "Operation"
 msgstr "操作"
+
+msgctxt "workflow data step"
+msgid "Operation"
+msgstr "処理"
 
 msgid "Operation batch"
 msgstr "工程バッチ"
@@ -19088,8 +19096,9 @@ msgstr "受け入れたシリアル番号とバッチ番号を在庫から除去
 msgid "Remove this item"
 msgstr "このアイテムを除去"
 
+msgctxt "workflow data step"
 msgid "Remove this operation"
-msgstr "この工程を除去"
+msgstr "この処理を削除"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "この保管タイプをすべての参照する保管ユニットから除去して削除する。これは元に戻せません。"
@@ -23026,6 +23035,9 @@ msgstr "そのアカウントはもう存在しません"
 msgid "That connection name is already used"
 msgstr "その接続名はすでに使用されています"
 
+msgid "That field holds a list of its own. Turn on flattening to take it."
+msgstr "そのフィールド自体がリストです。取得するにはフラット化をオンにしてください。"
+
 msgid "That field holds several values, so they are combined into one list."
 msgstr "そのフィールドは複数の値を保持しているため、1 つのリストに結合されます。"
 
@@ -23527,8 +23539,14 @@ msgstr "各製造指図が生産する品目 — 出力ロットをマージす�
 msgid "The item's rental rate"
 msgstr "品目のレンタル料金"
 
+msgid "The items in that list have no field by that name."
+msgstr "そのリストの項目には、その名前のフィールドがありません。"
+
 msgid "The items in that list have no fields to take."
 msgstr "そのリストの品目には取得するフィールドがありません。"
+
+msgid "The items in that list have no reading as text."
+msgstr "そのリストの項目はテキストとして読み取れません。"
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "その日に期限切れになるジョブの時間（作業が実行される日ではなく、期限日ベース）、期限超過の作業は「期限超過」に表示されます。"
@@ -24576,6 +24594,9 @@ msgstr "このステーションはスキル制限のある作業を実行しま
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "このステーションはスキル要求事項がない作業を実行します。マニング ボード上に割り当てられた作業者は、利用可能な労務を形作ります。"
+
+msgid "This step expected a list."
+msgstr "このステップにはリストが必要です。"
 
 msgid "This step is part of it"
 msgstr "このステップはその一部です。"
@@ -27215,6 +27236,9 @@ msgstr "あなたがリード"
 
 msgid "You name a project owner with decision authority"
 msgstr "意思決定権を持つプロジェクト責任者を指名します"
+
+msgid "You need permission to edit workflows to load these choices."
+msgstr "これらの選択肢を読み込むには、ワークフローの編集権限が必要です。"
 
 msgid "You received this item"
 msgstr "あなたがこのアイテムを受け取りました"

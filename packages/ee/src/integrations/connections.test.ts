@@ -239,7 +239,7 @@ describe("connectionsHealthy", () => {
  * and disagreed: the card read `companyIntegration.active` (written once, at
  * install) while the node counted `integrationConnection` rows. Disconnecting the
  * last account left Settings saying Installed/Healthy and the node saying "isn't
- * connected yet" — the exact contradiction a customer reported.
+ * connected yet" at the same time.
  *
  * `connectionUsable` is now the single answer both derive from, so these pin the
  * one definition rather than each surface's copy of it.

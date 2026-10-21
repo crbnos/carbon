@@ -278,9 +278,19 @@ describe("runIntegrationAction", () => {
     );
     const outcome = await run();
     expect(outcome.ok).toBe(false);
-    expect(outcome.ok ? "" : outcome.error).toMatch(
-      /^Google Calendar rejected this:/
+    expect(outcome.ok ? "" : outcome.error).toBe(
+      "Google Calendar rejected this: Invalid To header"
     );
+  });
+
+  it("never stores the request body a vendor error carries", async () => {
+    pieceThatThrows(
+      httpError({ attendees: ["someone@example.com"] }, 502, "<html>")
+    );
+    const outcome = await run();
+    const error = outcome.ok ? "" : outcome.error;
+    expect(error).toBe("Google Calendar rejected this: HTTP 502");
+    expect(error).not.toContain("someone@example.com");
   });
 
   it("never stores the request a googleapis response carries", async () => {

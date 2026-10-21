@@ -2138,8 +2138,9 @@ msgstr "Monat hinzufügen"
 msgid "Add Note"
 msgstr "Notiz hinzufügen"
 
+msgctxt "workflow data step"
 msgid "Add operation"
-msgstr "Arbeitsgang hinzufügen"
+msgstr "Operation hinzufügen"
 
 msgid "Add Operation"
 msgstr "Operation hinzufügen"
@@ -15059,6 +15060,9 @@ msgstr "Kein Fehlerpfad — der Durchlauf stoppt hier und ist als fehlgeschlagen
 msgid "No fair value entered, counts as not met"
 msgstr "Kein beizulegender Zeitwert eingegeben, wird als nicht erfüllt gezählt"
 
+msgid "No field was chosen to take."
+msgstr "Es wurde kein Feld zum Nehmen ausgewählt."
+
 msgid "No fields found."
 msgstr "Keine Felder gefunden."
 
@@ -16239,6 +16243,10 @@ msgstr "Arbeitsgang"
 
 msgid "Operation"
 msgstr "Betrieb"
+
+msgctxt "workflow data step"
+msgid "Operation"
+msgstr "Operation"
 
 msgid "Operation batch"
 msgstr "Arbeitsgang-Los"
@@ -19088,8 +19096,9 @@ msgstr "Entfernen Sie die empfangenen Seriennummern und Chargennummern aus dem B
 msgid "Remove this item"
 msgstr "Diesen Artikel entfernen"
 
+msgctxt "workflow data step"
 msgid "Remove this operation"
-msgstr "Diesen Arbeitsgang entfernen"
+msgstr "Diese Operation entfernen"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Entfernen Sie diesen Speichertyp aus allen referenzierenden Lagereinheiten und löschen Sie ihn. Dies kann nicht rückgängig gemacht werden."
@@ -23026,6 +23035,9 @@ msgstr "Dieses Konto existiert nicht mehr"
 msgid "That connection name is already used"
 msgstr "Dieser Verbindungsname wird bereits verwendet"
 
+msgid "That field holds a list of its own. Turn on flattening to take it."
+msgstr "Dieses Feld enthält selbst eine Liste. Aktivieren Sie das Abflachen, um es zu nehmen."
+
 msgid "That field holds several values, so they are combined into one list."
 msgstr "Dieses Feld enthält mehrere Werte, daher werden sie zu einer Liste kombiniert."
 
@@ -23527,8 +23539,14 @@ msgstr "Der Artikel, den jeder Fertigungsauftrag produziert – erforderlich, um
 msgid "The item's rental rate"
 msgstr "Der Mietpreis des Artikels"
 
+msgid "The items in that list have no field by that name."
+msgstr "Die Elemente dieser Liste haben kein Feld mit diesem Namen."
+
 msgid "The items in that list have no fields to take."
 msgstr "Die Einträge in dieser Liste haben keine Felder zum Auswählen."
+
+msgid "The items in that list have no reading as text."
+msgstr "Die Elemente dieser Liste lassen sich nicht als Text lesen."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "die Arbeitsstunden fällig an diesem Tag (basierend auf dem Fälligkeitsdatum, nicht dem Tag der Ausführung), mit überfälligen Arbeiten unter Überfällig."
@@ -24576,6 +24594,9 @@ msgstr "Diese Arbeitsstation läuft befähigungsgesteuerte Arbeit – sie läuft
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "Diese Station führt Arbeiten ohne Qualifikationsanforderung durch; Werker, die auf der Besetzungstafel zugewiesen sind, bestimmen das verfügbare Personal."
+
+msgid "This step expected a list."
+msgstr "Dieser Schritt hat eine Liste erwartet."
 
 msgid "This step is part of it"
 msgstr "Dieser Schritt ist Teil davon"
@@ -27215,6 +27236,9 @@ msgstr "Du führst"
 
 msgid "You name a project owner with decision authority"
 msgstr "Sie benennen einen Projektverantwortlichen mit Entscheidungsbefugnis"
+
+msgid "You need permission to edit workflows to load these choices."
+msgstr "Sie benötigen die Berechtigung zum Bearbeiten von Workflows, um diese Auswahl zu laden."
 
 msgid "You received this item"
 msgstr "Sie haben diesen Artikel erhalten"

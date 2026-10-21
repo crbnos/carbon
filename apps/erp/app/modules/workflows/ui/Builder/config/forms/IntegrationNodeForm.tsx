@@ -126,17 +126,21 @@ export function IntegrationNodeForm({
     checked &&
     connectionsError !== undefined &&
     connectionsError !== "reconnect";
-  const canConfigure = connected || lookupFailed;
   const storedConnection = inputs[INTEGRATION_CONNECTION_INPUT];
   const storedConnectionId =
     storedConnection?.kind === "literal" &&
     typeof storedConnection.value === "string"
       ? storedConnection.value
       : undefined;
+  // An existing node keeps its configuration on screen even when its app has no
+  // usable account left: hiding it would read as the node having been emptied.
+  const canConfigure =
+    connected || lookupFailed || storedConnectionId !== undefined;
   // The node points at an account the list no longer offers (revoked, or left out
   // until it is reconnected). Never hide the field then — the author must see it.
   const storedNotOffered =
     checked &&
+    !lookupFailed &&
     storedConnectionId !== undefined &&
     !connections.some((option) => option.value === storedConnectionId);
   // One connection is not a choice — hide the field, but still STORE the id: a
@@ -297,26 +301,30 @@ export function IntegrationNodeForm({
       {/* Connected, but every account predates a scope this app now needs: the
           fix is a re-consent, and "Connect" would send the author to add a
           duplicate account instead. */}
-      {piece && checked && !connected && connectionsError === "reconnect" && (
-        <ConnectBanner
-          message={
-            <Trans>
-              {appName} is connected, but needs to be reconnected before
-              workflow steps can use it.
-            </Trans>
-          }
-          href={connectionsFixHref ?? path.to.integrationAccounts(piece)}
-          cta={<Trans>Reconnect {appName}</Trans>}
-          isDisabled={isReadOnly}
-        />
-      )}
+      {piece &&
+        checked &&
+        !connected &&
+        !storedNotOffered &&
+        connectionsError === "reconnect" && (
+          <ConnectBanner
+            message={
+              <Trans>
+                {appName} is connected, but needs to be reconnected before
+                workflow steps can use it.
+              </Trans>
+            }
+            href={connectionsFixHref ?? path.to.integrationAccounts(piece)}
+            cta={<Trans>Reconnect {appName}</Trans>}
+            isDisabled={isReadOnly}
+          />
+        )}
 
       {/* Some accounts are ready, one is not — or this node's stored account is the
           one left out. A non-blocking banner; the field below still works. */}
       {piece &&
         checked &&
-        connected &&
-        (connectionsNotice === "reconnect" || storedNotOffered) && (
+        (storedNotOffered ||
+          (connected && connectionsNotice === "reconnect")) && (
           <ConnectBanner
             message={
               storedNotOffered ? (
@@ -361,19 +369,23 @@ export function IntegrationNodeForm({
       )}
 
       {/* Land on the Accounts tab — where an account is added or reconnected. */}
-      {piece && checked && !connected && connectionsError === undefined && (
-        <ConnectBanner
-          message={
-            <Trans>
-              {appName} isn't connected yet. Connect an account before this step
-              can do anything.
-            </Trans>
-          }
-          href={path.to.integrationAccounts(piece)}
-          cta={<Trans>Connect {appName}</Trans>}
-          isDisabled={isReadOnly}
-        />
-      )}
+      {piece &&
+        checked &&
+        !connected &&
+        !storedNotOffered &&
+        connectionsError === undefined && (
+          <ConnectBanner
+            message={
+              <Trans>
+                {appName} isn't connected yet. Connect an account before this
+                step can do anything.
+              </Trans>
+            }
+            href={path.to.integrationAccounts(piece)}
+            cta={<Trans>Connect {appName}</Trans>}
+            isDisabled={isReadOnly}
+          />
+        )}
 
       {piece && canConfigure && (
         <div className="space-y-1">

@@ -99,7 +99,7 @@ async function runFilterCard(
  * not run — which skips the whole node, since everything after it is starved. */
 type CardOutcome =
   | { ok: true; value: RuntimeValue; summary: string; counts: CardCounts }
-  | { ok: false; reason: string };
+  | { ok: false; refusal: CardRefusal };
 
 type CardCounts = NonNullable<
   Extract<NodeDetail, { kind: "data" }>["cards"][number]["counts"]
@@ -124,7 +124,7 @@ async function runCard(
   ctx: RuntimeContext
 ): Promise<CardOutcome> {
   if (input.kind !== "list") {
-    return { ok: false, reason: REFUSAL_REASONS["not-a-list"] };
+    return { ok: false, refusal: "not-a-list" };
   }
   const items = input.items;
   const of = input.of;
@@ -133,7 +133,7 @@ async function runCard(
   // slip through as an empty list instead of the same refusal.
   const typed = cardResultType(card, { kind: "list", of }, ctx.catalog);
   if ("refusal" in typed) {
-    return { ok: false, reason: REFUSAL_REASONS[typed.refusal] };
+    return { ok: false, refusal: typed.refusal };
   }
 
   switch (card.operation) {
@@ -178,7 +178,7 @@ async function runCard(
           }
           // The data disagrees with the declared type: unflattened, this would
           // BE that unrepresentable `list<list<T>>`.
-          return { ok: false, reason: REFUSAL_REASONS["nested-list"] };
+          return { ok: false, refusal: "nested-list" };
         }
         picked.push(value);
       }
@@ -253,19 +253,21 @@ export const filterExecutor: NodeExecutor<FilterNode> = {
       const outcome = await runCard(card, current, ctx);
 
       if (!outcome.ok) {
+        const reason = REFUSAL_REASONS[outcome.refusal];
         rows.push({
           id: card.id,
           operation: card.operation,
-          summary: outcome.reason,
-          status: "Skipped"
+          summary: reason,
+          status: "Skipped",
+          refusal: outcome.refusal
         });
         return {
           status: "Skipped",
           // One card is the whole node — naming "Step 1" there is noise.
           reason:
             cards.length === 1
-              ? outcome.reason
-              : `Step ${index + 1} (${DATA_OPERATIONS[card.operation].label}): ${outcome.reason}`,
+              ? reason
+              : `Step ${index + 1} (${DATA_OPERATIONS[card.operation].label}): ${reason}`,
           detail: { kind: "data", cards: rows }
         };
       }

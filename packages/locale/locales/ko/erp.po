@@ -2138,8 +2138,9 @@ msgstr "월 추가"
 msgid "Add Note"
 msgstr "메모 추가"
 
+msgctxt "workflow data step"
 msgid "Add operation"
-msgstr "공정 추가"
+msgstr "작업 추가"
 
 msgid "Add Operation"
 msgstr "공정작업 추가"
@@ -15059,6 +15060,9 @@ msgstr "실패 경로 없음 — 실행이 여기서 중지되고 실패로 표�
 msgid "No fair value entered, counts as not met"
 msgstr "공정 가치를 입력하지 않음, 충족되지 않은 것으로 간주"
 
+msgid "No field was chosen to take."
+msgstr "가져올 필드가 선택되지 않았습니다."
+
 msgid "No fields found."
 msgstr "필드가 없습니다."
 
@@ -16239,6 +16243,10 @@ msgstr "공정"
 
 msgid "Operation"
 msgstr "공정작업"
+
+msgctxt "workflow data step"
+msgid "Operation"
+msgstr "작업"
 
 msgid "Operation batch"
 msgstr "공정 배치"
@@ -19088,8 +19096,9 @@ msgstr "수령한 일련번호 및 배치 번호를 재고에서 제거"
 msgid "Remove this item"
 msgstr "이 항목 제거"
 
+msgctxt "workflow data step"
 msgid "Remove this operation"
-msgstr "이 공정을 제거"
+msgstr "이 작업 제거"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "이 저장소 유형을 모든 참조 보관 단위에서 제거하고 삭제합니다. 이는 실행 취소할 수 없습니다."
@@ -23026,6 +23035,9 @@ msgstr "해당 계정이 더 이상 존재하지 않습니다"
 msgid "That connection name is already used"
 msgstr "해당 연결 이름은 이미 사용 중입니다"
 
+msgid "That field holds a list of its own. Turn on flattening to take it."
+msgstr "해당 필드에는 자체 목록이 있습니다. 가져오려면 평탄화를 켜세요."
+
 msgid "That field holds several values, so they are combined into one list."
 msgstr "해당 필드는 여러 값을 가지고 있으므로 하나의 목록으로 결합됩니다."
 
@@ -23527,8 +23539,14 @@ msgstr "각 작업 지시가 생산하는 품목 — 출력 로트를 병합하�
 msgid "The item's rental rate"
 msgstr "품목의 임차료"
 
+msgid "The items in that list have no field by that name."
+msgstr "해당 목록의 항목에는 그 이름의 필드가 없습니다."
+
 msgid "The items in that list have no fields to take."
 msgstr "해당 목록의 항목에는 가져올 필드가 없습니다."
+
+msgid "The items in that list have no reading as text."
+msgstr "해당 목록의 항목은 텍스트로 읽을 수 없습니다."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "그 날에 마감될 작업 지시 시간(작업이 실행되는 날이 아닌 마감일 기준)이며, 기한 초과 작업은 기한 초과 섹션에 표시됩니다."
@@ -24576,6 +24594,9 @@ msgstr "이 작업장은 역량 게이트 작업을 실행합니다 — 자격 �
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "이 스테이션은 역량 요구사항이 없는 작업을 실행합니다. 인력 배치 보드에서 할당된 작업자는 가용 노무를 형성합니다."
+
+msgid "This step expected a list."
+msgstr "이 단계에는 목록이 필요합니다."
 
 msgid "This step is part of it"
 msgstr "이 단계는 그것의 일부입니다"
@@ -27215,6 +27236,9 @@ msgstr "귀사가 주도"
 
 msgid "You name a project owner with decision authority"
 msgstr "의사결정 권한이 있는 프로젝트 책임자를 지정합니다"
+
+msgid "You need permission to edit workflows to load these choices."
+msgstr "이 선택 항목을 불러오려면 워크플로우 편집 권한이 필요합니다."
 
 msgid "You received this item"
 msgstr "이 품목을 입고받았습니다"

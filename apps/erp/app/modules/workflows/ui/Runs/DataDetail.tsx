@@ -2,17 +2,40 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { NodeDetail } from "@carbon/ee/workflows";
+import type { CardRefusal, NodeDetail } from "@carbon/ee/workflows";
 import { Plural, Trans } from "@lingui/react/macro";
 import { useDataOperationLabel } from "../Builder/dataOperationLabels";
 
 type DataCards = Extract<NodeDetail, { kind: "data" }>["cards"];
 type DataCard = DataCards[number];
 
-/** The card's outcome in the reader's language, from the numbers the engine
- * stored. A skipped card's reason, and any row written before `counts` existed,
- * shows the engine's own text. */
+function RefusalReason({ refusal }: { refusal: CardRefusal }) {
+  switch (refusal) {
+    case "not-a-list":
+      return <Trans>This step expected a list.</Trans>;
+    case "no-fields":
+      return <Trans>The items in that list have no fields to take.</Trans>;
+    case "no-field-chosen":
+      return <Trans>No field was chosen to take.</Trans>;
+    case "unknown-field":
+      return <Trans>The items in that list have no field by that name.</Trans>;
+    case "nested-list":
+      return (
+        <Trans>
+          That field holds a list of its own. Turn on flattening to take it.
+        </Trans>
+      );
+    case "not-text":
+      return <Trans>The items in that list have no reading as text.</Trans>;
+  }
+}
+
+/** The card's outcome in the reader's language, from the numbers or the refusal
+ * code the engine stored. Only a row with neither shows the engine's own text. */
 function CardSummary({ card }: { card: DataCard }) {
+  if (card.status === "Skipped" && card.refusal !== undefined) {
+    return <RefusalReason refusal={card.refusal} />;
+  }
   const counts = card.counts;
   if (card.status !== "Succeeded" || counts === undefined) {
     return <>{card.summary}</>;

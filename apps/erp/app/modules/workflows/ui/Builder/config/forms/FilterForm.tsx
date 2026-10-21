@@ -192,7 +192,7 @@ export function FilterForm({
               onClick={handleAddCard}
               isDisabled={isReadOnly || !canAdd}
             >
-              <Trans>Add operation</Trans>
+              <Trans context="workflow data step">Add operation</Trans>
             </Button>
           </span>
         </TooltipTrigger>

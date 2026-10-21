@@ -7,7 +7,7 @@ import type {
   RequiredPermission,
   WorkflowCatalog
 } from "../definition/catalog";
-import type { DataOperation } from "../definition/data-operations";
+import type { CardRefusal, DataOperation } from "../definition/data-operations";
 import type { WorkflowNode } from "../definition/schema";
 import type {
   Combinator,
@@ -131,9 +131,12 @@ export type NodeDetail =
       cards: Array<{
         id: string;
         operation: DataOperation;
-        /** English, for logs and for rows written before `counts` existed. */
+        /** English, for logs. The run history words a card from `counts` or
+         * `refusal` instead. */
         summary: string;
         status: "Succeeded" | "Skipped";
+        /** Why a Skipped card could not run, as a code the run history words. */
+        refusal?: CardRefusal;
         /** What a Succeeded card's summary says, as numbers, so the run history
          * can word it in the reader's language: items in, items out (filter,
          * pluck), items a filter could not check, and values a flattened pluck

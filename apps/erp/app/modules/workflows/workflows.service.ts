@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ServiceContext } from "@carbon/api/service-fn.server";
-import type { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
@@ -763,8 +762,9 @@ export type OptionsProviderResult = {
 
 export type OptionsProvider = {
   /** Checked before the provider runs, so a provider can never be a way around a
-   * permission the equivalent action carries. */
-  permission: Parameters<typeof requirePermissions>[1];
+   * permission the equivalent action carries. Module per action, e.g.
+   * `{ update: "workflows" }`. */
+  permission: Partial<Record<"view" | "create" | "update" | "delete", string>>;
   resolve: (context: OptionsProviderContext) => Promise<OptionsProviderResult>;
 };
 

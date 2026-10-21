@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
@@ -13,8 +14,9 @@ export const config = {
 
 const logger = getLogger("erp", "workflows", "options");
 
-/** A code, not a sentence — the builder owns the wording so it can translate it. */
+/** Codes, not sentences — the builder owns the wording so it can translate it. */
 const FAILED = "failed" as const;
+const FORBIDDEN = "forbidden" as const;
 
 /** A JSON query parameter of plain string values, or `{}` — a malformed one is an
  * empty bag rather than a failure, since a provider decides what it needs anyway. */
@@ -53,15 +55,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ? OPTIONS_PROVIDERS[providerId]
       : undefined;
 
+  // `workflows_view` is the weakest permission any provider uses, and anyone who
+  // can open the builder holds it. The provider's own permission is checked below
+  // rather than here: `requirePermissions` answers a denial with a redirect, and a
+  // fetcher follows it as a navigation — a viewer opening a node was sent home.
+  const { companyId, permissions } = await requirePermissions(request, {
+    view: "workflows"
+  });
+
   if (provider === undefined) {
-    // Still behind auth: an unknown provider must not be a way to probe the app
-    // unauthenticated. `workflows_view` is the weakest permission any provider uses.
-    await requirePermissions(request, { view: "workflows" });
     logger.error("Unknown workflow options provider", { provider: providerId });
     return { options: [], errorCode: FAILED };
   }
 
-  const { companyId } = await requirePermissions(request, provider.permission);
+  const allowed = (
+    Object.keys(provider.permission) as (keyof typeof provider.permission)[]
+  ).every((action) =>
+    hasPermission(permissions, provider.permission[action]!, action, companyId)
+  );
+  if (!allowed) return { options: [], errorCode: FORBIDDEN };
 
   try {
     return await provider.resolve({

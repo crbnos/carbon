@@ -2138,6 +2138,7 @@ msgstr "Dodaj miesiąc"
 msgid "Add Note"
 msgstr "Dodaj notatkę"
 
+msgctxt "workflow data step"
 msgid "Add operation"
 msgstr "Dodaj operację"
 
@@ -15059,6 +15060,9 @@ msgstr "Brak ścieżki niepowodzenia — przebieg zatrzymuje się tutaj i jest o
 msgid "No fair value entered, counts as not met"
 msgstr "Nie wprowadzono wartości godziwej, liczy się jako niespełnione"
 
+msgid "No field was chosen to take."
+msgstr "Nie wybrano pola do pobrania."
+
 msgid "No fields found."
 msgstr "Nie znaleziono pól."
 
@@ -16237,6 +16241,10 @@ msgstr "Wydatek z leasingu operacyjnego"
 msgid "operation"
 msgstr "operacja"
 
+msgid "Operation"
+msgstr "Operacja"
+
+msgctxt "workflow data step"
 msgid "Operation"
 msgstr "Operacja"
 
@@ -19088,6 +19096,7 @@ msgstr "Usuń z listy otrzymane numery seryjne i partie produktów ze zapasu"
 msgid "Remove this item"
 msgstr "Usuń ten artykuł"
 
+msgctxt "workflow data step"
 msgid "Remove this operation"
 msgstr "Usuń tę operację"
 
@@ -23026,6 +23035,9 @@ msgstr "To konto już nie istnieje"
 msgid "That connection name is already used"
 msgstr "Ta nazwa połączenia jest już używana"
 
+msgid "That field holds a list of its own. Turn on flattening to take it."
+msgstr "To pole zawiera własną listę. Włącz spłaszczanie, aby je pobrać."
+
 msgid "That field holds several values, so they are combined into one list."
 msgstr "To pole zawiera wiele wartości, dlatego są łączone w jedną listę."
 
@@ -23527,8 +23539,14 @@ msgstr "Artykuł, który każde zlecenie produkcyjne wytwarza — wymagaj jego d
 msgid "The item's rental rate"
 msgstr "Stawka wynajmu artykułu"
 
+msgid "The items in that list have no field by that name."
+msgstr "Elementy tej listy nie mają pola o tej nazwie."
+
 msgid "The items in that list have no fields to take."
 msgstr "Artykuły na tej liście nie mają pól do pobrania."
+
+msgid "The items in that list have no reading as text."
+msgstr "Elementów tej listy nie da się odczytać jako tekstu."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "godziny zadania należne tego dnia (na podstawie terminu, nie dnia wykonania), z zalegającymi pracami w Zalegające."
@@ -24576,6 +24594,9 @@ msgstr "To stanowisko robocze wykonuje pracę ograniczoną do uprawnień — dzi
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "To stanowisko wykonuje pracę bez wymagań umiejętności; operatorzy przypisani na tablicy obsady kształtują dostępną robociznę."
+
+msgid "This step expected a list."
+msgstr "Ten krok oczekiwał listy."
 
 msgid "This step is part of it"
 msgstr "Ten krok jest jego częścią"
@@ -27215,6 +27236,9 @@ msgstr "Ty prowadzisz"
 
 msgid "You name a project owner with decision authority"
 msgstr "Wyznaczasz właściciela projektu z uprawnieniami decyzyjnymi"
+
+msgid "You need permission to edit workflows to load these choices."
+msgstr "Aby wczytać te opcje, potrzebujesz uprawnienia do edycji przepływów pracy."
 
 msgid "You received this item"
 msgstr "Otrzymałeś ten przedmiot"

@@ -79,6 +79,39 @@ function isScopeError(cause: unknown): boolean {
   );
 }
 
+/** The vendor's own words for a failure, read from its RESPONSE: Slack's
+ * `data.error`, or the body's `error.message` / `error` / `message`. Never
+ * `cause.message` when the error carries a request — an Activepieces `HttpError`
+ * message is JSON of the response AND the request, so an email's recipients and
+ * body landed in run history. A plain error from our own code keeps its message. */
+function vendorMessage(cause: unknown): string {
+  if (!isRecord(cause)) return "The step did not complete.";
+  if (isRecord(cause.data) && typeof cause.data.error === "string") {
+    return cause.data.error;
+  }
+  const response = isRecord(cause.response) ? cause.response : undefined;
+  for (const raw of [cause.responseBody, response?.data]) {
+    const body = parsedBody(raw);
+    if (!isRecord(body)) continue;
+    const { error } = body;
+    if (isRecord(error) && typeof error.message === "string") {
+      return error.message;
+    }
+    if (typeof error === "string") {
+      return typeof body.error_description === "string"
+        ? `${error}: ${body.error_description}`
+        : error;
+    }
+    if (typeof body.message === "string") return body.message;
+  }
+  const status = cause.status ?? response?.status;
+  if (typeof status === "number") return `HTTP ${status}`;
+  const carriesRequest =
+    "request" in cause || "requestBody" in cause || "config" in cause;
+  if (cause instanceof Error && !carriesRequest) return cause.message;
+  return "The step did not complete.";
+}
+
 /** A googleapis response carries the request it was made with under `config`
  * (the base64 email body included) and `request`; neither is the result. */
 function dropTransport(key: string, value: unknown): unknown {
@@ -179,9 +212,10 @@ export async function runIntegrationAction(args: {
     if (isScopeError(cause)) {
       return { ok: false, error: reconnectCopy(label) };
     }
-    const message =
-      cause instanceof Error ? cause.message : "The step did not complete.";
-    return { ok: false, error: `${label} rejected this: ${truncate(message)}` };
+    return {
+      ok: false,
+      error: `${label} rejected this: ${truncate(vendorMessage(cause))}`
+    };
   }
 
   return {

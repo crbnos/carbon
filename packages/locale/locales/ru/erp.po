@@ -2138,6 +2138,7 @@ msgstr "Добавить месяц"
 msgid "Add Note"
 msgstr "Добавить примечание"
 
+msgctxt "workflow data step"
 msgid "Add operation"
 msgstr "Добавить операцию"
 
@@ -15059,6 +15060,9 @@ msgstr "Нет пути отказа — выполнение останавли
 msgid "No fair value entered, counts as not met"
 msgstr "Не введена справедливая стоимость, считается невыполненным"
 
+msgid "No field was chosen to take."
+msgstr "Не выбрано поле для извлечения."
+
 msgid "No fields found."
 msgstr "Поля не найдены."
 
@@ -16237,6 +16241,10 @@ msgstr "Расход на операционный лизинг"
 msgid "operation"
 msgstr "операция"
 
+msgid "Operation"
+msgstr "Операция"
+
+msgctxt "workflow data step"
 msgid "Operation"
 msgstr "Операция"
 
@@ -19088,8 +19096,9 @@ msgstr "Убрать полученные серийные номера и но�
 msgid "Remove this item"
 msgstr "Убрать этот элемент"
 
+msgctxt "workflow data step"
 msgid "Remove this operation"
-msgstr "Убрать эту операцию"
+msgstr "Удалить эту операцию"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Удалите этот тип хранения из всех ссылающихся единиц хранения и удалите его. Это невозможно отменить."
@@ -23026,6 +23035,9 @@ msgstr "Этот аккаунт больше не существует"
 msgid "That connection name is already used"
 msgstr "Это имя соединения уже используется"
 
+msgid "That field holds a list of its own. Turn on flattening to take it."
+msgstr "Это поле само содержит список. Включите выравнивание, чтобы извлечь его."
+
 msgid "That field holds several values, so they are combined into one list."
 msgstr "Это поле содержит несколько значений, поэтому они объединяются в один список."
 
@@ -23527,8 +23539,14 @@ msgstr "Номенклатура, которую производит кажды
 msgid "The item's rental rate"
 msgstr "Ставка аренды номенклатуры"
 
+msgid "The items in that list have no field by that name."
+msgstr "У элементов этого списка нет поля с таким именем."
+
 msgid "The items in that list have no fields to take."
 msgstr "Номенклатура в этом списке не имеет полей для выборки."
+
+msgid "The items in that list have no reading as text."
+msgstr "Элементы этого списка нельзя прочитать как текст."
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "рабочие часы, подлежащие в этот день (на основе даты срока, не дня выполнения работы), с просроченной работой в разделе «Просроченные»."
@@ -24576,6 +24594,9 @@ msgstr "Эта станция выполняет работу, требующу�
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "Эта станция выполняет работу без требований навыков; операторы, назначенные на таблицу назначений, формируют доступный труд."
+
+msgid "This step expected a list."
+msgstr "Этот шаг ожидал список."
 
 msgid "This step is part of it"
 msgstr "Этот шаг является его частью"
@@ -27215,6 +27236,9 @@ msgstr "Вы ведете"
 
 msgid "You name a project owner with decision authority"
 msgstr "Вы назначаете ответственного проекта с правом принятия решений"
+
+msgid "You need permission to edit workflows to load these choices."
+msgstr "Чтобы загрузить эти варианты, нужно разрешение на редактирование рабочих процессов."
 
 msgid "You received this item"
 msgstr "Вы получили этот товар"
