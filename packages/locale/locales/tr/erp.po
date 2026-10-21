@@ -6700,6 +6700,9 @@ msgstr "Sözleşme Satırları"
 msgid "Contract Loss Provision"
 msgstr "Sözleşme Kaybı Karşılığı"
 
+msgid "Contract Number"
+msgstr ""
+
 msgid "Contract price"
 msgstr "Sözleşme fiyatı"
 
@@ -16242,6 +16245,9 @@ msgstr "Yeni İlerleme Ödeme İsteği"
 msgid "New Project"
 msgstr "Yeni Proje"
 
+msgid "New Project Contract"
+msgstr ""
+
 msgid "New Project Stock Transfer"
 msgstr "Yeni Proje Stok Transferi"
 
@@ -19110,6 +19116,9 @@ msgstr "Dönem Sonu"
 
 msgid "Period lock policy"
 msgstr "Dönem kilit politikası"
+
+msgid "Period of Performance"
+msgstr ""
 
 msgid "Period Start"
 msgstr "Dönem Başlangıcı"
@@ -29413,6 +29422,9 @@ msgstr "Tedarikçi teslim etmeyi ne zaman taahhüt etti; planlama bu tarihi gele
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Tedarikçi fiyatlandırması artık kabul edilmediğinde; bu fiyatlandırmayı bu tarihten sonra bir PO'ya dönüştürmek yeniden fiyatlandırma gerektirebilir."
 
+msgid "When the work under the contract starts and ends."
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "Bu ölçü aleti kalibrasyonun yapılması gerektiğinde; vadesi geçtikten sonra Kalibrasyondan Çıktı olarak okunur."
 
@@ -29614,6 +29626,9 @@ msgstr "Bir tedarikçi teklifi gönderildiğinde kimler bildirim almalı?"
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Envanter işi tamamlandığında kimler bildirim almalı?"
 
+msgid "Who sold it, and when it closed."
+msgstr ""
+
 msgid "Who sold it, the currency it bills in, and any notes."
 msgstr "Satıcı, faturalandırılan para birimi ve notlar."
 
@@ -29625,6 +29640,9 @@ msgstr "Şirketin kiralamayı kim verenden aldığı, orada kimi arayacağı ve 
 
 msgid "Who the contract is with and what it is called."
 msgstr "Sözleşmenin karşı tarafı ve adı."
+
+msgid "Who the contract is with, what it is called, and the project it bills."
+msgstr ""
 
 msgid "Who you buy from."
 msgstr "Kimden satın aldığınız."

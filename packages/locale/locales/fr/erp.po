@@ -6700,6 +6700,9 @@ msgstr "Lignes de contrat"
 msgid "Contract Loss Provision"
 msgstr "Provision pour perte de contrat"
 
+msgid "Contract Number"
+msgstr ""
+
 msgid "Contract price"
 msgstr "Prix du contrat"
 
@@ -16242,6 +16245,9 @@ msgstr "Nouvelle demande de paiement d'avancement"
 msgid "New Project"
 msgstr "Nouveau projet"
 
+msgid "New Project Contract"
+msgstr ""
+
 msgid "New Project Stock Transfer"
 msgstr "Nouveau transfert de stock de projet"
 
@@ -19110,6 +19116,9 @@ msgstr "Fin de période"
 
 msgid "Period lock policy"
 msgstr "Politique de verrouillage des périodes"
+
+msgid "Period of Performance"
+msgstr ""
 
 msgid "Period Start"
 msgstr "Début de période"
@@ -29413,6 +29422,9 @@ msgstr "Quand le fournisseur s'est engagé à livrer ; la planification utilise 
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Quand la tarification du fournisseur cesse d'être honorée ; convertir cette cotisation à un bon de commande après cette date peut nécessiter une nouvelle soumission."
 
+msgid "When the work under the contract starts and ends."
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "Quand cet instrument de mesure doit être étalonné ; une fois en retard, il affiche Hors calibrage."
 
@@ -29614,6 +29626,9 @@ msgstr "Qui devrait recevoir des notifications lorsqu'un devis fournisseur est s
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Qui devrait recevoir des notifications lorsqu'une tâche d'inventaire est terminée ?"
 
+msgid "Who sold it, and when it closed."
+msgstr ""
+
 msgid "Who sold it, the currency it bills in, and any notes."
 msgstr "Qui l'a vendu, la devise dans laquelle elle facture, et toutes les notes."
 
@@ -29625,6 +29640,9 @@ msgstr "Qui la société loue, qui appeler là-bas, et où les actifs sont utili
 
 msgid "Who the contract is with and what it is called."
 msgstr "Avec qui le contrat est conclu et comment il s'appelle."
+
+msgid "Who the contract is with, what it is called, and the project it bills."
+msgstr ""
 
 msgid "Who you buy from."
 msgstr "Vos fournisseurs et vendeurs."

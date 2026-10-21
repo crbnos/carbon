@@ -24,7 +24,11 @@ import ContractRevenue from "./ContractRevenue";
 import ContractRevenueGrid, {
   ContractRecognitionGrid
 } from "./ContractRevenueGrid";
-import ContractSetupSteps, { contractSetupSteps } from "./ContractSetupSteps";
+import ContractSetupSteps, {
+  contractSetupSteps,
+  contractSetupStepsFor,
+  projectContractSetupSteps
+} from "./ContractSetupSteps";
 import ContractStatus from "./ContractStatus";
 import ContractSummary from "./ContractSummary";
 import ContractsTable from "./ContractsTable";
@@ -35,6 +39,7 @@ import {
   toContractTerms
 } from "./contractTerms";
 import FundingBar from "./FundingBar";
+import ProjectContractDetailsForm from "./ProjectContractDetailsForm";
 import { contractDurationOf, useContractLabels } from "./useContractLabels";
 
 export type { ContractSetupStep } from "./ContractSetupSteps";
@@ -72,6 +77,9 @@ export {
   contractDurationOf,
   contractLineName,
   contractSetupSteps,
+  contractSetupStepsFor,
+  ProjectContractDetailsForm,
+  projectContractSetupSteps,
   scheduleRows,
   toContractLineTerms,
   toContractTerms,

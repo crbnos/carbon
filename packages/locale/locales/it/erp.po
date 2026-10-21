@@ -6700,6 +6700,9 @@ msgstr "Righe del contratto"
 msgid "Contract Loss Provision"
 msgstr "Accantonamento per perdita del contratto"
 
+msgid "Contract Number"
+msgstr ""
+
 msgid "Contract price"
 msgstr "Prezzo del contratto"
 
@@ -16242,6 +16245,9 @@ msgstr "Nuova richiesta di pagamento di progresso"
 msgid "New Project"
 msgstr "Nuovo Progetto"
 
+msgid "New Project Contract"
+msgstr ""
+
 msgid "New Project Stock Transfer"
 msgstr "Nuovo trasferimento giacenza progetto"
 
@@ -19110,6 +19116,9 @@ msgstr "Fine Periodo"
 
 msgid "Period lock policy"
 msgstr "Politica di blocco del periodo"
+
+msgid "Period of Performance"
+msgstr ""
 
 msgid "Period Start"
 msgstr "Inizio del periodo"
@@ -29413,6 +29422,9 @@ msgstr "Quando il fornitore si è impegnato a consegnare; la pianificazione util
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Quando la determinazione dei prezzi del fornitore non è più onorata; la conversione di questa quotazione a un ordine di acquisto dopo questa data potrebbe richiedere una nuova quotazione."
 
+msgid "When the work under the contract starts and ends."
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "Quando questo strumento di misura è scaduto per la taratura; una volta scaduto, indica Non tarato."
 
@@ -29614,6 +29626,9 @@ msgstr "Chi dovrebbe ricevere notifiche quando un'offerta del fornitore viene pr
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Chi dovrebbe ricevere notifiche quando un lavoro di inventario è completato?"
 
+msgid "Who sold it, and when it closed."
+msgstr ""
+
 msgid "Who sold it, the currency it bills in, and any notes."
 msgstr "Chi l'ha venduto, la valuta in cui fattura e qualsiasi nota."
 
@@ -29625,6 +29640,9 @@ msgstr "Da chi l'azienda affitta, chi contattare e dove si trovano i cespiti."
 
 msgid "Who the contract is with and what it is called."
 msgstr "Con chi è il contratto e come si chiama."
+
+msgid "Who the contract is with, what it is called, and the project it bills."
+msgstr ""
 
 msgid "Who you buy from."
 msgstr "Chi acquisti."

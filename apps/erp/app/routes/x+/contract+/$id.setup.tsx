@@ -18,12 +18,14 @@ import type {
 import {
   ContractConfirmModal,
   ContractSetupSteps,
-  contractSetupSteps
+  contractSetupSteps,
+  contractSetupStepsFor
 } from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
 
 /** The setup wizard is for a Draft: once confirmed, a contract is worked on
- *  from its page and changed with Amend. */
+ *  from its page and changed with Amend. A project contract has no Revenue
+ *  step, so a link to it lands on Review. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     update: "sales"
@@ -34,12 +36,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const contract = await client
     .from("customerContract")
-    .select("status")
+    .select("status, billingBasis")
     .eq("id", id)
     .eq("companyId", companyId)
     .maybeSingle();
   if (contract.data?.status !== "Draft") {
     throw redirect(path.to.contractDetails(id));
+  }
+  if (
+    contract.data.billingBasis === "Project" &&
+    new URL(request.url).pathname
+      .replace(/\.data$/, "")
+      .endsWith("/setup/revenue")
+  ) {
+    throw redirect(path.to.contractSetup(id, "review"));
   }
   return null;
 }
@@ -72,12 +82,10 @@ export default function ContractSetupRoute() {
     routeData;
 
   const total = Object.values(lineTotals).reduce((sum, v) => sum + v, 0);
-  const index = contractSetupSteps.indexOf(step);
-  const previous = index > 0 ? contractSetupSteps[index - 1] : null;
-  const next =
-    index < contractSetupSteps.length - 1
-      ? contractSetupSteps[index + 1]
-      : null;
+  const steps = contractSetupStepsFor(contract.billingBasis);
+  const index = steps.indexOf(step);
+  const previous = index > 0 ? steps[index - 1] : null;
+  const next = index < steps.length - 1 ? steps[index + 1] : null;
   const hasLines = lines.length > 0;
   const isBalanced =
     Object.values(residuals).every((r) => equals(r, 0)) &&
@@ -90,7 +98,13 @@ export default function ContractSetupRoute() {
         .filter(Boolean)
         .join(" · ")}
       step={step}
-      steps={<ContractSetupSteps current={step} contractId={id} />}
+      steps={
+        <ContractSetupSteps
+          current={step}
+          contractId={id}
+          billingBasis={contract.billingBasis}
+        />
+      }
     >
       <RecordOutlet />
       {/* The Details step is a form and renders its own footer, with Next
@@ -119,7 +133,13 @@ export default function ContractSetupRoute() {
               {step === "review" ? (
                 <>
                   <Button variant="secondary" asChild>
-                    <Link to={path.to.contracts}>
+                    <Link
+                      to={
+                        contract.billingBasis === "Project"
+                          ? path.to.projectContracts
+                          : path.to.contracts
+                      }
+                    >
                       <Trans>Save as Draft</Trans>
                     </Link>
                   </Button>

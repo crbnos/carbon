@@ -6700,6 +6700,9 @@ msgstr "Строки контракта"
 msgid "Contract Loss Provision"
 msgstr "Резерв на убыток по контракту"
 
+msgid "Contract Number"
+msgstr ""
+
 msgid "Contract price"
 msgstr "Цена контракта"
 
@@ -16242,6 +16245,9 @@ msgstr "Новый запрос авансового платежа"
 msgid "New Project"
 msgstr "Новый проект"
 
+msgid "New Project Contract"
+msgstr ""
+
 msgid "New Project Stock Transfer"
 msgstr "Новое перемещение запасов проекта"
 
@@ -19110,6 +19116,9 @@ msgstr "Конец периода"
 
 msgid "Period lock policy"
 msgstr "Политика блокировки периода"
+
+msgid "Period of Performance"
+msgstr ""
 
 msgid "Period Start"
 msgstr "Начало периода"
@@ -29413,6 +29422,9 @@ msgstr "Когда поставщик обязался доставить; пл�
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Когда ценообразование поставщика перестает действовать; преобразование этого Коммерческого предложения в Заказ поставщику после этой даты может потребовать переквотирования."
 
+msgid "When the work under the contract starts and ends."
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "Когда это Средство измерения подлежит Калибровке; после истечения срока оно показывает « Вне калибровки »."
 
@@ -29614,6 +29626,9 @@ msgstr "Кто должен получать уведомления при от�
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Кто должен получать уведомления при завершении работы инвентаризации?"
 
+msgid "Who sold it, and when it closed."
+msgstr ""
+
 msgid "Who sold it, the currency it bills in, and any notes."
 msgstr "Кто его продал, валюта, в которой он выставляется счетом, и любые примечания."
 
@@ -29625,6 +29640,9 @@ msgstr "От кого организация арендует, с кем свя�
 
 msgid "Who the contract is with and what it is called."
 msgstr "С кем договор и как он называется."
+
+msgid "Who the contract is with, what it is called, and the project it bills."
+msgstr ""
 
 msgid "Who you buy from."
 msgstr "Кто вам поставляет."

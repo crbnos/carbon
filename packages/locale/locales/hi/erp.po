@@ -6700,6 +6700,9 @@ msgstr "अनुबंध पंक्तियाँ"
 msgid "Contract Loss Provision"
 msgstr "अनुबंध हानि प्रावधान"
 
+msgid "Contract Number"
+msgstr ""
+
 msgid "Contract price"
 msgstr "अनुबंध मूल्य"
 
@@ -16242,6 +16245,9 @@ msgstr "नया प्रगति भुगतान अनुरोध"
 msgid "New Project"
 msgstr "नई परियोजना"
 
+msgid "New Project Contract"
+msgstr ""
+
 msgid "New Project Stock Transfer"
 msgstr "नया परियोजना स्टॉक स्थानांतरण"
 
@@ -19110,6 +19116,9 @@ msgstr "अवधि का अंत"
 
 msgid "Period lock policy"
 msgstr "अवधि लॉक नीति"
+
+msgid "Period of Performance"
+msgstr ""
 
 msgid "Period Start"
 msgstr "अवधि शुरुआत"
@@ -29413,6 +29422,9 @@ msgstr "जब आपूर्तिकर्ता डिलीवरी के
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "जब आपूर्तिकर्ता की मूल्य निर्धारण सम्मानित नहीं रह जाती है; इस तारीख के बाद इस उद्धरण को एक पीओ में परिवर्तित करने के लिए पुनः-उद्धरण की आवश्यकता हो सकती है।"
 
+msgid "When the work under the contract starts and ends."
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "जब यह गेज अंशांकन के लिए देय हो जाता है; एक बार देय होने के बाद यह Out-of-Calibration पढ़ता है।"
 
@@ -29614,6 +29626,9 @@ msgstr "जब कोई आपूर्तिकर्ता कोटेशन
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "इन्वेंटरी जॉब पूरा होने पर कौन सूचनाएं प्राप्त करना चाहिए?"
 
+msgid "Who sold it, and when it closed."
+msgstr ""
+
 msgid "Who sold it, the currency it bills in, and any notes."
 msgstr "इसे किसने बेचा, यह किस मुद्रा में बिल करता है, और कोई भी नोट।"
 
@@ -29625,6 +29640,9 @@ msgstr "कंपनी किससे पट्टे पर लेती ह�
 
 msgid "Who the contract is with and what it is called."
 msgstr "यह अनुबंध किसके साथ है और इसे क्या कहा जाता है।"
+
+msgid "Who the contract is with, what it is called, and the project it bills."
+msgstr ""
 
 msgid "Who you buy from."
 msgstr "आप किससे खरीदते हैं।"

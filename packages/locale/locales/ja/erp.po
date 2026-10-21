@@ -6700,6 +6700,9 @@ msgstr "契約明細"
 msgid "Contract Loss Provision"
 msgstr "契約損失引当金"
 
+msgid "Contract Number"
+msgstr ""
+
 msgid "Contract price"
 msgstr "契約価格"
 
@@ -16242,6 +16245,9 @@ msgstr "新規進捗支払リクエスト"
 msgid "New Project"
 msgstr "新規プロジェクト"
 
+msgid "New Project Contract"
+msgstr ""
+
 msgid "New Project Stock Transfer"
 msgstr "新しいプロジェクト在庫転送"
 
@@ -19110,6 +19116,9 @@ msgstr "期間終了"
 
 msgid "Period lock policy"
 msgstr "期間ロックポリシー"
+
+msgid "Period of Performance"
+msgstr ""
 
 msgid "Period Start"
 msgstr "期間開始"
@@ -29413,6 +29422,9 @@ msgstr "仕入先が配達を約束した日時。計画はこの日付を使用
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "仕入先の価格設定が有効でなくなる日時。この日付以降にこの見積をPOに変換する場合、再見積が必要な場合があります。"
 
+msgid "When the work under the contract starts and ends."
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "この測定器が校正の対象日となる日時。期限を過ぎるとOut-of-Calibrationと表示されます。"
 
@@ -29614,6 +29626,9 @@ msgstr "仕入先見積が提出されたときに通知を受け取る必要が
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "在库存工作完成时，谁应该收到通知？"
 
+msgid "Who sold it, and when it closed."
+msgstr ""
+
 msgid "Who sold it, the currency it bills in, and any notes."
 msgstr "誰がそれを販売したか、請求する通貨、そしてメモ。"
 
@@ -29625,6 +29640,9 @@ msgstr "会社がリースする相手、その相手の連絡先、および資
 
 msgid "Who the contract is with and what it is called."
 msgstr "契約の相手先と名称"
+
+msgid "Who the contract is with, what it is called, and the project it bills."
+msgstr ""
 
 msgid "Who you buy from."
 msgstr "あなたが購入する相手。"

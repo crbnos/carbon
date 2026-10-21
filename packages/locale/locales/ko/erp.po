@@ -6700,6 +6700,9 @@ msgstr "계약 라인"
 msgid "Contract Loss Provision"
 msgstr "계약 손실 충당금"
 
+msgid "Contract Number"
+msgstr ""
+
 msgid "Contract price"
 msgstr "계약 가격"
 
@@ -16242,6 +16245,9 @@ msgstr "새 진행금 지불 요청"
 msgid "New Project"
 msgstr "새 프로젝트"
 
+msgid "New Project Contract"
+msgstr ""
+
 msgid "New Project Stock Transfer"
 msgstr "새 프로젝트 재고 이송"
 
@@ -19110,6 +19116,9 @@ msgstr "기간 종료"
 
 msgid "Period lock policy"
 msgstr "기간 잠금 정책"
+
+msgid "Period of Performance"
+msgstr ""
 
 msgid "Period Start"
 msgstr "기간 시작"
@@ -29413,6 +29422,9 @@ msgstr "공급업체가 납품을 약속한 시점으로, 계획에서는 이 �
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "공급업체의 가격이 더 이상 유효하지 않을 때; 이 날짜 이후에 이 견적서를 발주서로 전환하는 것은 다시 견적이 필요할 수 있습니다."
 
+msgid "When the work under the contract starts and ends."
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "이 계측기의 교정이 만료될 때; 만료되면 Out-of-Calibration으로 표시됩니다."
 
@@ -29614,6 +29626,9 @@ msgstr "공급업체 견적이 제출될 때 알림을 누가 받아야 합니�
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "재고 작업이 완료될 때 알림을 누가 받아야 합니까?"
 
+msgid "Who sold it, and when it closed."
+msgstr ""
+
 msgid "Who sold it, the currency it bills in, and any notes."
 msgstr "판매한 사람, 청구할 통화, 그리고 메모입니다."
 
@@ -29625,6 +29640,9 @@ msgstr "회사가 리스를 제공받는 대상, 연락처 및 자산이 사용�
 
 msgid "Who the contract is with and what it is called."
 msgstr "계약처, 계약명"
+
+msgid "Who the contract is with, what it is called, and the project it bills."
+msgstr ""
 
 msgid "Who you buy from."
 msgstr "누구에게서 구매하는지."

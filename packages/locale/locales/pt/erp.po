@@ -6700,6 +6700,9 @@ msgstr "Linhas do Contrato"
 msgid "Contract Loss Provision"
 msgstr "Provisão de Perda de Contrato"
 
+msgid "Contract Number"
+msgstr ""
+
 msgid "Contract price"
 msgstr "Preço do contrato"
 
@@ -16242,6 +16245,9 @@ msgstr "Nova Solicitação de Pagamento de Progresso"
 msgid "New Project"
 msgstr "Novo Projeto"
 
+msgid "New Project Contract"
+msgstr ""
+
 msgid "New Project Stock Transfer"
 msgstr "Nova transferência de estoque do projeto"
 
@@ -19110,6 +19116,9 @@ msgstr "Fim do Período"
 
 msgid "Period lock policy"
 msgstr "Política de bloqueio de período"
+
+msgid "Period of Performance"
+msgstr ""
 
 msgid "Period Start"
 msgstr "Início do período"
@@ -29413,6 +29422,9 @@ msgstr "Quando o fornecedor se comprometeu a entregar; o planejamento usa esta d
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Quando o preço do fornecedor deixa de ser honrado; converter este orçamento em Pedido de compra após esta data pode precisar de uma nova cotação."
 
+msgid "When the work under the contract starts and ends."
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "Quando este Instrumento de medição vence para calibração; uma vez vencido, mostra Fora de calibração."
 
@@ -29614,6 +29626,9 @@ msgstr "Quem deve receber notificações quando uma cotação de fornecedor é e
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "Quem deve receber notificações quando um trabalho de inventário é concluído?"
 
+msgid "Who sold it, and when it closed."
+msgstr ""
+
 msgid "Who sold it, the currency it bills in, and any notes."
 msgstr "Quem vendeu, a moeda em que fatura e qualquer observação."
 
@@ -29625,6 +29640,9 @@ msgstr "De quem a empresa aluga, com quem contatar lá e onde os ativos são uti
 
 msgid "Who the contract is with and what it is called."
 msgstr "Com quem é o contrato e qual é seu nome."
+
+msgid "Who the contract is with, what it is called, and the project it bills."
+msgstr ""
 
 msgid "Who you buy from."
 msgstr "De quem você compra."

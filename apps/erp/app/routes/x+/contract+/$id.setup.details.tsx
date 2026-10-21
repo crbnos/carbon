@@ -15,18 +15,21 @@ import { getExchangeRate } from "~/modules/accounting";
 import {
   customerContractValidator,
   getContract,
+  projectContractTermDefaults,
   updateContract
 } from "~/modules/sales";
 import { contractCustomerChange } from "~/modules/sales/sales.server";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
   ContractDetailsForm,
-  contractDurationOf
+  contractDurationOf,
+  ProjectContractDetailsForm
 } from "~/modules/sales/ui/Contracts";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-/** Saves a Draft's details from setup step 1 and moves on to Services. A
+/** Saves a Draft's details from setup step 1 and moves on to Services (Lines
+ *  on a project contract). A
  *  different customer brings its own invoicing defaults: the bill-to,
  *  contact, addresses and payment terms of the old one would be wrong. */
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -113,6 +116,50 @@ export default function ContractSetupDetailsRoute() {
   const routeData = useRouteData<ContractRouteData>(path.to.contract(id));
   if (!routeData) return null;
   const { contract } = routeData;
+
+  if (contract.billingBasis === "Project") {
+    return (
+      <ProjectContractDetailsForm
+        key={contract.updatedAt ?? id}
+        action={path.to.contractSetup(id, "details")}
+        initialValues={{
+          id,
+          customerContractId: contract.customerContractId ?? undefined,
+          name: contract.name ?? "",
+          customerId: contract.customerId ?? "",
+          invoiceCustomerId: contract.invoiceCustomerId ?? undefined,
+          invoiceCustomerContactId:
+            contract.invoiceCustomerContactId ?? undefined,
+          invoiceCustomerLocationId:
+            contract.invoiceCustomerLocationId ?? undefined,
+          shipToCustomerLocationId:
+            contract.shipToCustomerLocationId ?? undefined,
+          salesPersonId: contract.salesPersonId ?? undefined,
+          projectId: contract.projectId ?? undefined,
+          customerReference: contract.customerReference ?? undefined,
+          closeDate: contract.closeDate ?? "",
+          billingBasis: "Project",
+          startDate: contract.startDate ?? "",
+          endDate: contract.endDate ?? undefined,
+          renewalUplift: 0,
+          billingFrequency:
+            contract.billingFrequency ??
+            projectContractTermDefaults.billingFrequency,
+          firstInvoiceDate: contract.firstInvoiceDate ?? undefined,
+          billedThrough: contract.billedThrough ?? undefined,
+          recognizeRevenueFrom: contract.recognizeRevenueFrom ?? undefined,
+          invoiceAutomation: contract.invoiceAutomation ?? undefined,
+          paymentTermId: contract.paymentTermId ?? undefined,
+          currencyCode: contract.currencyCode,
+          notes:
+            tiptapToText(
+              (contract.notes ?? null) as Parameters<typeof tiptapToText>[0]
+            ) || undefined,
+          ...getCustomFields(contract.customFields)
+        }}
+      />
+    );
+  }
 
   return (
     <ContractDetailsForm

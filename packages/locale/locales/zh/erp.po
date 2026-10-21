@@ -6700,6 +6700,9 @@ msgstr "合同行"
 msgid "Contract Loss Provision"
 msgstr "合同亏损准备"
 
+msgid "Contract Number"
+msgstr ""
+
 msgid "Contract price"
 msgstr "合同价格"
 
@@ -16242,6 +16245,9 @@ msgstr "新进度付款请求"
 msgid "New Project"
 msgstr "新项目"
 
+msgid "New Project Contract"
+msgstr ""
+
 msgid "New Project Stock Transfer"
 msgstr "新项目库存调拨"
 
@@ -19110,6 +19116,9 @@ msgstr "期末"
 
 msgid "Period lock policy"
 msgstr "期间锁定政策"
+
+msgid "Period of Performance"
+msgstr ""
 
 msgid "Period Start"
 msgstr "期间开始"
@@ -29413,6 +29422,9 @@ msgstr "供应商何时承诺交货;计划使用该日期进行入库库存到�
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "供应商定价不再被遵守时;此日期之后将该报价转换为PO可能需要重新报价。"
 
+msgid "When the work under the contract starts and ends."
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "该量具何时需要校准；过期后读数显示为失准。"
 
@@ -29614,6 +29626,9 @@ msgstr "供应商报价提交时，谁应该收到通知？"
 msgid "Who should receive notifications when an inventory job is completed?"
 msgstr "当库存管理工单已完成时,谁应该接收通知?"
 
+msgid "Who sold it, and when it closed."
+msgstr ""
+
 msgid "Who sold it, the currency it bills in, and any notes."
 msgstr "谁出售的、以什么货币计费以及任何备注。"
 
@@ -29625,6 +29640,9 @@ msgstr "公司的租赁出租方、该出租方的联系方式以及资产的使
 
 msgid "Who the contract is with and what it is called."
 msgstr "合同对方及合同名称。"
+
+msgid "Who the contract is with, what it is called, and the project it bills."
+msgstr ""
 
 msgid "Who you buy from."
 msgstr "你从哪里采购。"
