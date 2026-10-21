@@ -117,7 +117,7 @@ export const GOOGLE_PLACES_API_KEY = getEnv("GOOGLE_PLACES_API_KEY");
 // Gmail). Optional: an unconfigured server lists the piece as unavailable rather
 // than failing to boot. The secret and redirect URL are read by name through
 // `resolveOAuthApp`, so only the browser-visible client id is exported here.
-export const GOOGLE_OAUTH_CLIENT_ID = getEnv("GOOGLE_OAUTH_CLIENT_ID");
+export const GOOGLE_CLIENT_ID = getEnv("GOOGLE_CLIENT_ID");
 
 const itarEnvironment = getEnv("CONTROLLED_ENVIRONMENT");
 
@@ -372,7 +372,7 @@ export function getBrowserEnv() {
     ERP_URL,
     // The integration card reads it to decide whether Google Calendar can be
     // connected at all; it is a public OAuth client id, never the secret.
-    GOOGLE_OAUTH_CLIENT_ID,
+    GOOGLE_CLIENT_ID,
     GOOGLE_PLACES_API_KEY,
     JIRA_CLIENT_ID,
     LOG_LEVEL,

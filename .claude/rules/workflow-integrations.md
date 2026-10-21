@@ -305,8 +305,8 @@ A piece is a NORMAL integration: `packages/ee/src/google-calendar/config.tsx` is
 `IntegrationCard` in the ordinary grid. There is no separate panel. Its `id` is deliberately
 the SAME string as the piece name, so nothing has to map between the two.
 
-- `active: !!GOOGLE_OAUTH_CLIENT_ID` — an unconfigured server shows "Coming soon", the same
-  as any other integration missing its credentials. (`GOOGLE_OAUTH_CLIENT_ID` is therefore in
+- `active: !!GOOGLE_CLIENT_ID` — an unconfigured server shows "Coming soon", the same
+  as any other integration missing its credentials. (`GOOGLE_CLIENT_ID` is therefore in
   `getBrowserEnv()`; it is a public client id, never the secret.)
 - `settings: []` and `schema: z.object({})`, so the drawer shows no settings form and no
   Submit. Install runs `onClientInstall` → the connect route → the consent popup, exactly

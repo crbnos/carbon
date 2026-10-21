@@ -2,7 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { GOOGLE_OAUTH_CLIENT_ID } from "@carbon/auth";
+import { GOOGLE_CLIENT_ID } from "@carbon/auth";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
 import { startIntegrationConnect } from "../integrations/connect";
@@ -24,7 +24,7 @@ export const Gmail = defineIntegration({
   category: "Email",
   // Unset OAuth credentials render the card "Coming soon" rather than offering an
   // Install that could only fail.
-  active: !!GOOGLE_OAUTH_CLIENT_ID,
+  active: !!GOOGLE_CLIENT_ID,
   logo: pieceLogo(PIECE),
   shortDescription:
     "Send email from your workflows using a connected Google account.",

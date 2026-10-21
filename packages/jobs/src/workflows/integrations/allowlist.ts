@@ -179,8 +179,8 @@ export const PIECE_ALLOWLIST: Record<ActivepiecesPiece, AllowlistEntry> = {
     label: "Google Calendar",
     actions: ["create_google_calendar_event", "google_calendar_get_events"],
     oauth: {
-      clientIdEnv: "GOOGLE_OAUTH_CLIENT_ID",
-      clientSecretEnv: "GOOGLE_OAUTH_CLIENT_SECRET",
+      clientIdEnv: "GOOGLE_CLIENT_ID",
+      clientSecretEnv: "GOOGLE_CLIENT_SECRET",
       redirectUrlEnv: "GOOGLE_OAUTH_REDIRECT_URL",
       // The piece's own list ends in the alias `email`. Google grants it as
       // `…/auth/userinfo.email`, so a connection made with the alias in the
@@ -298,8 +298,8 @@ export const PIECE_ALLOWLIST: Record<ActivepiecesPiece, AllowlistEntry> = {
     label: "Gmail",
     actions: ["gmail_send_email"],
     oauth: {
-      clientIdEnv: "GOOGLE_OAUTH_CLIENT_ID",
-      clientSecretEnv: "GOOGLE_OAUTH_CLIENT_SECRET",
+      clientIdEnv: "GOOGLE_CLIENT_ID",
+      clientSecretEnv: "GOOGLE_CLIENT_SECRET",
       redirectUrlEnv: "GOOGLE_OAUTH_REDIRECT_URL",
       // SEND-ONLY, deliberately. The piece also asks for gmail.readonly and
       // gmail.compose, which Google classes as RESTRICTED: an app holding them must

@@ -29,8 +29,8 @@ vi.mock("@carbon/auth/client.server", () => ({
 // The OAuth app is looked up by the env var NAMES on the allowlist row, so the
 // mock answers `getEnv` rather than exporting fixed constants.
 const ENV: Record<string, string> = {
-  GOOGLE_OAUTH_CLIENT_ID: "client-id",
-  GOOGLE_OAUTH_CLIENT_SECRET: "client-secret",
+  GOOGLE_CLIENT_ID: "client-id",
+  GOOGLE_CLIENT_SECRET: "client-secret",
   GOOGLE_OAUTH_REDIRECT_URL:
     "https://erp.test/api/integrations/connections/callback",
   SLACK_CLIENT_ID: "slack-client-id",

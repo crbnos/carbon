@@ -213,13 +213,13 @@ export const schema = define({
     description: "Google Places key for address autocomplete",
     browser: true
   },
-  GOOGLE_OAUTH_CLIENT_ID: {
+  GOOGLE_CLIENT_ID: {
     group: "google",
     description: "Google OAuth app client id for workflow integrations",
     browser: true,
     needed: true
   },
-  GOOGLE_OAUTH_CLIENT_SECRET: {
+  GOOGLE_CLIENT_SECRET: {
     group: "google",
     description: "Google OAuth app client secret for workflow integrations",
     secret: true,
