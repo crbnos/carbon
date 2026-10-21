@@ -94,6 +94,7 @@ import {
 } from "@carbon/database/supersession-pick";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
+import { TiptapText } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
 import type { JobSource } from "@carbon/lib/telemetry";
 import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
@@ -129,8 +130,6 @@ import {
   round,
   scrapAllowance,
   searchFilter,
-  textToTiptap,
-  tiptapToText,
   unchecked
 } from "@carbon/utils";
 import type {
@@ -8022,7 +8021,7 @@ function newAssemblyStepColumns(data: AssemblyStepFields) {
     description: data.description ?? {},
     instructionText:
       data.description !== undefined
-        ? tiptapToText(data.description as JSONContent) || null
+        ? TiptapText(data.description).toString() || null
         : null,
     required: data.required ?? false,
     unitOfMeasureCode:
@@ -8054,7 +8053,7 @@ export async function upsertAssemblyInstructionStep(
   const derivedInstructionText =
     data.description !== undefined
       ? {
-          instructionText: tiptapToText(data.description as JSONContent) || null
+          instructionText: TiptapText(data.description).toString() || null
         }
       : {};
 
@@ -12758,7 +12757,7 @@ const getMethodLogger = getLogger("erp", "get-method");
 function toTiptapDoc(value: unknown): Json {
   if (value && typeof value === "object") return value as Json;
   if (typeof value === "string" && value.length > 0) {
-    return textToTiptap(value) as Json;
+    return TiptapText(value, { format: "text" }).toDocument() as Json;
   }
   return {};
 }

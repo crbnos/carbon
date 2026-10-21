@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { storage } from "@carbon/files";
+import { TiptapText } from "@carbon/files/markdown";
 import {
   Combobox,
   DateTimePicker,
@@ -42,8 +43,7 @@ import {
 import {
   documentHasImages,
   parseMentionsFromDocument,
-  stripSpecialCharacters,
-  tiptapToText
+  stripSpecialCharacters
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -89,7 +89,7 @@ export function hasStepDescription(
 ): boolean {
   if (!description) return false;
   const doc = description as JSONContent;
-  const text = tiptapToText(doc).trim();
+  const text = TiptapText(doc).toString().trim();
   if (text.length > 0 && text !== "{}") return true;
   if (parseMentionsFromDocument(doc).length > 0) return true;
   // A step's reference imagery is frequently an image-only description (no text,

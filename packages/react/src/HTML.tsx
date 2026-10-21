@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { TiptapText } from "@carbon/files/markdown";
 import { Mention } from "@carbon/tiptap";
-import { textToTiptap } from "@carbon/utils";
 import TextStyle from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import type { JSONContent } from "@tiptap/react";
@@ -16,28 +16,10 @@ import { cn } from "./utils/cn";
 
 const { sanitize } = pkg;
 
-/**
- * Rows written before the API stored documents can hold a JSON string scalar
- * (plain text, or a document encoded as text). Read it as a document instead
- * of throwing: `"type" in "text"` is a TypeError that crashes the page.
- */
-const toRichTextDoc = (content: unknown): JSONContent | null => {
-  if (typeof content === "string") {
-    try {
-      const parsed = JSON.parse(content);
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        return parsed;
-      }
-    } catch {
-      // Not JSON: plain text, read below.
-    }
-    return content.trim() ? textToTiptap(content) : null;
-  }
-  if (content && typeof content === "object" && !Array.isArray(content)) {
-    return content as JSONContent;
-  }
-  return null;
-};
+// Rows written before the API stored documents can hold a JSON string scalar.
+// `"type" in "text"` throws and crashes the page, so read strings as documents.
+const toRichTextDoc = (content: unknown): JSONContent | null =>
+  content ? TiptapText(content).toDocument() : null;
 
 const generateHTML = (content: JSONContent) => {
   if (typeof window === "undefined") {

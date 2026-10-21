@@ -1089,7 +1089,7 @@ importers:
         version: 6.9.0
       '@lingui/vite-plugin':
         specifier: 'catalog:'
-        version: 6.9.0(@babel/core@7.29.6)(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.6))(babel-plugin-macros@3.1.0)(esbuild@0.27.7)(rolldown@1.2.12)(vite@8.3.1)
+        version: 6.9.0(@babel/core@7.29.6)(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.6))(babel-plugin-macros@3.1.0)(esbuild@0.28.2)(rolldown@1.2.12)(vite@8.3.1)
       '@react-aria/optimize-locales-plugin':
         specifier: 'catalog:'
         version: 2.0.2
@@ -1176,7 +1176,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: 'catalog:'
-        version: 8.3.1(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
+        version: 8.3.1(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(vite@8.3.1)
@@ -1275,7 +1275,7 @@ importers:
         version: 6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0)(react@18.3.1)
       '@lingui/vite-plugin':
         specifier: 'catalog:'
-        version: 6.9.0(@babel/core@7.29.6)(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.6))(babel-plugin-macros@3.1.0)(esbuild@0.28.2)(rolldown@1.2.12)(vite@8.3.1)
+        version: 6.9.0(@babel/core@7.29.6)(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.6))(babel-plugin-macros@3.1.0)(esbuild@0.27.7)(rolldown@1.2.12)(vite@8.3.1)
       '@react-aria/i18n':
         specifier: 'catalog:'
         version: 3.12.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1498,7 +1498,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: 'catalog:'
-        version: 8.3.1(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
+        version: 8.3.1(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(vite@8.3.1)
@@ -2729,6 +2729,9 @@ importers:
       '@supabase/supabase-js':
         specifier: 'catalog:'
         version: 2.117.2(@opentelemetry/api@1.9.0)
+      '@tiptap/pm':
+        specifier: 'catalog:'
+        version: 2.27.2
       libheif-js:
         specifier: 1.23.2
         version: 1.23.2
@@ -3463,6 +3466,9 @@ importers:
       '@carbon/env':
         specifier: workspace:*
         version: link:../env
+      '@carbon/files':
+        specifier: workspace:*
+        version: link:../files
       '@carbon/logger':
         specifier: workspace:*
         version: link:../logger
@@ -3970,9 +3976,6 @@ importers:
       react-icons:
         specifier: 'catalog:'
         version: 5.6.0(react@18.3.1)
-      react-markdown:
-        specifier: 9.1.0
-        version: 9.1.0(@types/react@18.3.28)(react@18.3.1)
       react-moveable:
         specifier: 0.56.0
         version: 0.56.0

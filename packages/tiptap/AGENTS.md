@@ -4,7 +4,7 @@ Rich text editor — TipTap extensions, editor components, image handling plugin
 
 ## Always
 
-- **Use the barrel export** (`@carbon/tiptap`) for all imports — components, extensions, plugins, and utils are all exported from `src/index.ts`. The one exception is server code that turns Markdown into a document: it imports `@carbon/tiptap/markdown`, because the barrel pulls in React.
+- **Use the barrel export** (`@carbon/tiptap`) for all imports — components, extensions, plugins, and utils are all exported from `src/index.ts`.
 - **Follow the component composition pattern**: `EditorRoot` > `EditorContent` with extensions array. Use `EditorBubble`/`EditorBubbleItem` for floating toolbars, `EditorCommand`/`EditorCommandItem` for slash commands.
 - **Extensions live in `src/extensions/`**, components in `src/components/`. Add new TipTap extensions to `src/extensions/index.ts` barrel.
 - **Image uploads use the plugin system** — `createImageUpload`, `handleImageDrop`, `handleImagePaste` from `src/plugins/`.
@@ -37,7 +37,7 @@ pnpm --filter @carbon/tiptap lint
 
 **Utils**: `getPrevText`, `getAllContent`, `isValidUrl`, `getUrlFromString`
 
-**`@carbon/tiptap/markdown`**: `markdownToTiptap` — Markdown to a TipTap document with no DOM (CommonMark through `@tiptap/pm/markdown`, raw HTML kept as text, the editor's node and mark names). Every API / MCP text input for a rich-text column goes through it (`toTiptapDoc` in the ERP's `shared.models.ts`).
+Converting a document to or from text (Markdown, plain text) is not here: it is `TiptapText` in `@carbon/files/markdown`, which runs with no DOM.
 
 ## Cross-References
 

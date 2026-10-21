@@ -9,8 +9,7 @@ import type {
   SupplierPriceBreak,
   SupplierPriceMap
 } from "@carbon/database/supplier-part-price";
-import { markdownToTiptap } from "@carbon/tiptap/markdown";
-import { textToTiptap } from "@carbon/utils";
+import { TiptapText } from "@carbon/files/markdown";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
@@ -230,8 +229,8 @@ export const oAuthCallbackSchema = z.object({
 /**
  * Coerces whatever a caller sent for a rich-text column into a tiptap document
  * object. Accepts Markdown text, a JSON-encoded document (a form post), or the
- * document itself (an MCP / API JSON body). `read` turns text into a document:
- * Markdown by default, `textToTiptap` for text stored as typed.
+ * document itself (an MCP / API JSON body). `format: "text"` stores text as
+ * typed instead of reading it as Markdown.
  *
  * Rich-text columns (`internalNotes`, `externalNotes`, step descriptions) are
  * `json`, and they MUST hold an object. A JSON string scalar stored there is
@@ -247,25 +246,9 @@ export const oAuthCallbackSchema = z.object({
  */
 export function toTiptapDoc(
   value: unknown,
-  read: (text: string) => object = markdownToTiptap
+  format: "markdown" | "text" = "markdown"
 ): any {
-  if (typeof value === "string") {
-    let parsed: unknown = value;
-    try {
-      parsed = JSON.parse(value);
-    } catch {
-      // raw text, not JSON
-    }
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed;
-    }
-    // Anything else the caller typed is text — including text that happens
-    // to parse as JSON (`"quoted"`, `123`, `[1,2]`). Read the ORIGINAL value
-    // so no characters are lost to the parse.
-    return read(value);
-  }
-  if (value && typeof value === "object" && !Array.isArray(value)) return value;
-  return read(String(value));
+  return TiptapText(value, { format }).toDocument();
 }
 
 /**
@@ -275,11 +258,11 @@ export function toTiptapDoc(
  * INPUT schema) tells a caller both shapes are accepted, instead of the bare
  * `{}` a `z.any()` produced.
  */
-const tiptapDocInput = (read?: (text: string) => object) =>
+const tiptapDocInput = (format?: "markdown" | "text") =>
   z
     .union([z.string(), z.record(z.string(), z.unknown())])
     .transform((value): any =>
-      value === "" ? undefined : toTiptapDoc(value, read)
+      value === "" ? undefined : toTiptapDoc(value, format)
     )
     // `.optional()` LAST so the inferred key is optional (`notes?:`) — placing
     // it before the transform makes zod infer a required key and every caller
@@ -291,10 +274,10 @@ export const optionalTiptapDoc = tiptapDocInput();
 
 /**
  * Text stored as typed, for a field edited in a plain textarea that reads it
- * back with `tiptapToText`: Markdown markers would not survive that round trip
- * (`1. Ship` would come back as `Ship`).
+ * back with `TiptapText(…).toString()`: Markdown markers would not survive that
+ * round trip (`1. Ship` would come back as `Ship`).
  */
-export const optionalPlainTextDoc = tiptapDocInput(textToTiptap);
+export const optionalPlainTextDoc = tiptapDocInput("text");
 
 export const operationStepValidator = z
   .object({

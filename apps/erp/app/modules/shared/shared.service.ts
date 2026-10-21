@@ -113,6 +113,7 @@ import {
   storage
 } from "@carbon/files";
 import { parseCsv } from "@carbon/files/csv";
+import { TiptapText } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -120,7 +121,6 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { Signals } from "@carbon/onboarding";
 import { detectImplementationSignals } from "@carbon/onboarding/server";
 import type { PrinterRoute } from "@carbon/printing";
-import { markdownToTiptap } from "@carbon/tiptap/markdown";
 import type { SalesPostingAccount } from "@carbon/utils";
 import {
   assertBalanced,
@@ -837,7 +837,7 @@ export async function setRecordNotes(
   return client
     .from(table as "job")
     .update({
-      [field]: text.trim() ? markdownToTiptap(text) : {},
+      [field]: text.trim() ? TiptapText(text).toDocument() : {},
       updatedBy: userId,
       updatedAt: datetime.timestamp()
     } as never)
@@ -851,7 +851,7 @@ export async function setRecordNotes(
  * editor stores it: the column is NOT NULL, so `null` refused every clear.
  */
 export function workInstructionFromText(text: string) {
-  return text.trim() ? markdownToTiptap(text) : {};
+  return text.trim() ? TiptapText(text).toDocument() : {};
 }
 
 /**

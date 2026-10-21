@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { tiptapToText } from "@carbon/utils";
+import { TiptapText } from "@carbon/files/markdown";
 import { describe, expect, it } from "vitest";
 import {
   normalizeOperationSourceIds,
@@ -132,11 +132,11 @@ describe("optionalTiptapDoc", () => {
 });
 
 describe("optionalPlainTextDoc", () => {
-  // Contract notes are a textarea read back with `tiptapToText`: a Markdown
+  // Contract notes are a textarea read back with `TiptapText(…).toString()`: a Markdown
   // list there came back without its numbers, and the next save kept that.
   it("stores text as typed, so it reads back unchanged", () => {
     const text = "1. Ship\n2. Install a*b*c";
-    expect(tiptapToText(optionalPlainTextDoc.parse(text))).toBe(text);
+    expect(TiptapText(optionalPlainTextDoc.parse(text)).toString()).toBe(text);
   });
 
   it("still accepts a document object", () => {

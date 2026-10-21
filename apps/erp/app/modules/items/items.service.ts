@@ -32,11 +32,11 @@ import {
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { TiptapText } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
 import { NotificationEvent } from "@carbon/notifications";
-import { markdownToTiptap } from "@carbon/tiptap/markdown";
 import {
   datetime,
   getReadableIdWithRevision,
@@ -10161,7 +10161,7 @@ export const isMakeMethodId = (id: string) => id.startsWith("make_");
 // non-empty text becomes a doc the detail page's editor can edit.
 export function toRichText(value: string | undefined): Json | undefined {
   if (!value) return undefined;
-  return markdownToTiptap(value) as unknown as Json;
+  return TiptapText(value).toDocument() as unknown as Json;
 }
 
 const onShapeDataValidator = z.object({

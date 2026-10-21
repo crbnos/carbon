@@ -9,6 +9,7 @@ import { getQuoteDisplayId } from "@carbon/documents/pdf";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { safeStorageFileName, storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { TiptapText } from "@carbon/files/markdown";
 import { validator } from "@carbon/form";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
@@ -23,7 +24,6 @@ import {
   getSalesOrderStatus,
   round,
   suggestContractType,
-  textToTiptap,
   unchecked
 } from "@carbon/utils";
 import { z } from "zod";
@@ -3711,9 +3711,11 @@ export const setContractTerm = defineServiceFn({
       return ctx.error("notFound", "Contract not found");
     }
     const contract = current.data;
-    // Notes are a plain textarea read back with `tiptapToText`, so they are
+    // Notes are a plain textarea read back with `TiptapText(...).toString()`, so they are
     // stored as typed: Markdown would not survive the round trip.
-    const notesDoc = value ? textToTiptap(value) : null;
+    const notesDoc = value
+      ? TiptapText(value, { format: "text" }).toDocument()
+      : null;
 
     if (contract.status !== "Draft") {
       if (field !== "notes") {
