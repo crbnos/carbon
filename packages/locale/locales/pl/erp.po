@@ -25639,6 +25639,10 @@ msgid "The billing element of {0} is not marked as a billing element."
 msgstr "Element rozliczeniowy {0} nie jest oznaczony jako element rozliczeniowy."
 
 #. placeholder {0}: nameOf(gap.lineId)
+msgid "The billing element of {0} is not on the line's project."
+msgstr "Element rozliczeniowy {0} nie należy do projektu pozycji."
+
+#. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing events of {0} have <0/> left to invoice."
 msgstr "Zdarzenia rozliczeniowe {0} mają <0/> pozostało do zafakturowania."
 

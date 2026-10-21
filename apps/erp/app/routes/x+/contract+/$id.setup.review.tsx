@@ -51,7 +51,7 @@ export async function loader({
   const [contract, lines] = await Promise.all([
     client
       .from("customerContract")
-      .select("billingBasis, projectId")
+      .select("billingBasis")
       .eq("id", id)
       .eq("companyId", companyId)
       .maybeSingle(),
@@ -71,12 +71,10 @@ export async function loader({
   }
 
   const contractLines = lines.data ?? [];
+  // A line bills its own project, as Confirm reads it.
   const projectIds = [
     ...new Set(
-      [
-        contract.data.projectId,
-        ...contractLines.map((line) => line.projectId)
-      ].filter((projectId): projectId is string => !!projectId)
+      contractLines.flatMap((line) => (line.projectId ? [line.projectId] : []))
     )
   ];
   const elementIds = [
@@ -107,7 +105,7 @@ export async function loader({
       elementIds.length > 0
         ? client
             .from("projectElement")
-            .select("id, isBilling")
+            .select("id, projectId, isBilling")
             .in("id", elementIds)
             .eq("companyId", companyId)
         : Promise.resolve({ data: [], error: null }),
@@ -158,7 +156,10 @@ export async function loader({
         (projects.data ?? []).map((p) => [p.id, p.costTreatment])
       ),
       billingElementById: Object.fromEntries(
-        (elements.data ?? []).map((e) => [e.id, e.isBilling])
+        (elements.data ?? []).map((e) => [
+          e.id,
+          { projectId: e.projectId, isBilling: e.isBilling }
+        ])
       ),
       // A failed rate read must not turn covered categories into a gap.
       laborCategoriesWithoutBillRate: lineRates.error
@@ -301,6 +302,7 @@ export default function ContractSetupReviewRoute() {
 function gapKey(gap: ProjectContractGap) {
   switch (gap.key) {
     case "noBillingElement":
+    case "elementNotOnProject":
     case "notBillingElement":
     case "billingEvents":
       return `${gap.key}-${gap.lineId}`;
@@ -336,6 +338,15 @@ function ProjectGap({
       return (
         <Gap to={path.to.contractLine(contractId, gap.lineId)}>
           <Trans>{nameOf(gap.lineId)} has no billing element.</Trans>
+        </Gap>
+      );
+    case "elementNotOnProject":
+      return (
+        <Gap to={path.to.contractLine(contractId, gap.lineId)}>
+          <Trans>
+            The billing element of {nameOf(gap.lineId)} is not on the line's
+            project.
+          </Trans>
         </Gap>
       );
     case "notBillingElement":

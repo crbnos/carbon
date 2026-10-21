@@ -25639,6 +25639,10 @@ msgid "The billing element of {0} is not marked as a billing element."
 msgstr "{0} का बिलिंग तत्व बिलिंग तत्व के रूप में चिह्नित नहीं है।"
 
 #. placeholder {0}: nameOf(gap.lineId)
+msgid "The billing element of {0} is not on the line's project."
+msgstr "{0} का बिलिंग तत्व पंक्ति की परियोजना में नहीं है।"
+
+#. placeholder {0}: nameOf(gap.lineId)
 msgid "The billing events of {0} have <0/> left to invoice."
 msgstr "{0} की बिलिंग घटनाओं के चालान के लिए <0/> बचा है।"
 

@@ -131,12 +131,17 @@ export async function loader({
   if (contract.data.companyId !== companyId) {
     throw redirect(path.to.contracts);
   }
+  // A failure past this point returns to the list of the contract's basis.
+  const contractsPath =
+    contract.data.billingBasis === "Project"
+      ? path.to.projectContracts
+      : path.to.contracts;
   // NOT NULL on the table; the view types it nullable.
   const { currencyCode } = contract.data;
   if (!currencyCode) {
     logger.error("Contract has no currency", { companyId, id });
     throw redirect(
-      path.to.contracts,
+      contractsPath,
       await flash(request, error(null, "Failed to load contract"))
     );
   }
@@ -148,7 +153,7 @@ export async function loader({
     storedRevenue.error
   ) {
     throw redirect(
-      path.to.contracts,
+      contractsPath,
       await flash(
         request,
         error(
@@ -248,7 +253,7 @@ export async function loader({
   ]);
   if (salesInvoices.error || memos.error) {
     throw redirect(
-      path.to.contracts,
+      contractsPath,
       await flash(
         request,
         error(salesInvoices.error ?? memos.error, "Failed to load contract")

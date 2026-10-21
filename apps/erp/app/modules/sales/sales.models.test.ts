@@ -389,7 +389,7 @@ describe("projectContractGaps", () => {
     id: "line_tm",
     billingMethod: "Time & Materials" as const,
     revenueMethod: "Right to Invoice" as const,
-    projectId: null,
+    projectId: "proj_1" as string | null,
     projectElementId: "el_1"
   };
   const fixed = {
@@ -401,11 +401,10 @@ describe("projectContractGaps", () => {
   };
   const clean: Input = {
     lines: [tm, fixed],
-    projectId: "proj_1",
     currencyCode: "USD",
     baseCurrencyCode: "USD",
     costTreatmentByProject: { proj_1: "Contract" },
-    billingElementById: { el_1: true },
+    billingElementById: { el_1: { projectId: "proj_1", isBilling: true } },
     residuals: { line_fixed: 0 },
     laborCategoriesWithoutBillRate: [],
     emptyAccountDefaults: []
@@ -430,9 +429,30 @@ describe("projectContractGaps", () => {
     ).toEqual([{ key: "noBillingElement", blocking: true, lineId: "line_tm" }]);
   });
 
+  it("blocks a billing line with no project of its own, as Confirm does", () => {
+    expect(
+      projectContractGaps({ ...clean, lines: [{ ...tm, projectId: null }] })
+    ).toEqual([{ key: "noBillingElement", blocking: true, lineId: "line_tm" }]);
+  });
+
+  it("blocks a billing element that is not on the line's project", () => {
+    expect(
+      projectContractGaps({
+        ...clean,
+        costTreatmentByProject: { proj_1: "Contract", proj_2: "Contract" },
+        billingElementById: { el_1: { projectId: "proj_2", isBilling: true } }
+      })
+    ).toEqual([
+      { key: "elementNotOnProject", blocking: true, lineId: "line_tm" }
+    ]);
+  });
+
   it("blocks an element that is not a billing element", () => {
     expect(
-      projectContractGaps({ ...clean, billingElementById: { el_1: false } })
+      projectContractGaps({
+        ...clean,
+        billingElementById: { el_1: { projectId: "proj_1", isBilling: false } }
+      })
     ).toEqual([
       {
         key: "notBillingElement",
@@ -456,7 +476,7 @@ describe("projectContractGaps", () => {
         ...clean,
         lines: [tm, { ...tm, id: "line_tm_2" }],
         costTreatmentByProject: { proj_1: "Expense" },
-        billingElementById: { el_1: false }
+        billingElementById: { el_1: { projectId: "proj_1", isBilling: false } }
       })
     ).toEqual([["costTreatment", true]]);
   });
@@ -579,19 +599,69 @@ describe("projectContractFunded", () => {
     expect(
       projectContractFunded([
         {
+          id: "line_tm",
+          amendsLineId: null,
           billingMethod: "Time & Materials",
           fundedAmount: 50000,
           quantity: 1,
           rate: 0
         },
         {
+          id: "line_cp",
+          amendsLineId: null,
           billingMethod: "Cost Plus",
           fundedAmount: null,
           quantity: 1,
           rate: 0
         },
-        { billingMethod: "Fixed", fundedAmount: null, quantity: 1, rate: 90000 }
+        {
+          id: "line_fixed",
+          amendsLineId: null,
+          billingMethod: "Fixed",
+          fundedAmount: null,
+          quantity: 1,
+          rate: 90000
+        }
       ])
     ).toBe(140000);
+  });
+
+  it("counts an amended line once, at its new terms", () => {
+    expect(
+      projectContractFunded([
+        {
+          id: "line_fixed",
+          amendsLineId: null,
+          billingMethod: "Fixed",
+          fundedAmount: null,
+          quantity: 1,
+          rate: 90000
+        },
+        {
+          id: "line_fixed_2",
+          amendsLineId: "line_fixed",
+          billingMethod: "Fixed",
+          fundedAmount: null,
+          quantity: 1,
+          rate: 120000
+        },
+        {
+          id: "line_tm",
+          amendsLineId: null,
+          billingMethod: "Time & Materials",
+          fundedAmount: 50000,
+          quantity: 1,
+          rate: 0
+        },
+        {
+          id: "line_tm_2",
+          amendsLineId: "line_tm",
+          billingMethod: "Time & Materials",
+          fundedAmount: 80000,
+          quantity: 1,
+          rate: 0
+        }
+      ])
+    ).toBe(200000);
   });
 });

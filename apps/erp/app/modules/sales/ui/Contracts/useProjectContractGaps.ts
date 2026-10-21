@@ -15,7 +15,7 @@ import type { ContractRouteData } from "./types";
  *  gap needs beyond the contract page's own data. */
 export type ProjectContractReviewFacts = Omit<
   ProjectContractGapInput,
-  "lines" | "projectId" | "currencyCode" | "residuals"
+  "lines" | "currencyCode" | "residuals"
 >;
 
 export type ProjectContractReviewData = {
@@ -37,7 +37,6 @@ export function useProjectContractGaps(
   return projectContractGaps({
     ...review.facts,
     lines,
-    projectId: contract.projectId,
     currencyCode: contract.currencyCode,
     residuals
   });

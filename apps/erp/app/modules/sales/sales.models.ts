@@ -2115,18 +2115,32 @@ export function isProjectBillingMethod(
   return billingMethod === "Time & Materials" || billingMethod === "Cost Plus";
 }
 
-/** What a project contract is funded for: each billing line's funded amount
- *  and each Fixed Price line's price (its rate, at quantity 1). A billing
- *  line with no funded amount adds nothing. */
+/** The lines no amendment replaced. Amend ends the old line and inserts a
+ *  copy that names it in `amendsLineId`; both stay on the contract. */
+export function currentContractLines<
+  T extends { id: string; amendsLineId: string | null }
+>(lines: T[]): T[] {
+  const replaced = new Set(
+    lines.flatMap((line) => (line.amendsLineId ? [line.amendsLineId] : []))
+  );
+  return lines.filter((line) => !replaced.has(line.id));
+}
+
+/** What a project contract is funded for: each current billing line's
+ *  funded amount and each current Fixed Price line's price (its rate, at
+ *  quantity 1). A billing line with no funded amount adds nothing; a line
+ *  an amendment replaced adds nothing, its copy counts instead. */
 export function projectContractFunded(
   lines: {
+    id: string;
+    amendsLineId: string | null;
     billingMethod: (typeof contractBillingMethods)[number];
     fundedAmount: number | null;
     quantity: number;
     rate: number;
   }[]
 ): number {
-  return lines.reduce(
+  return currentContractLines(lines).reduce(
     (sum, line) =>
       sum +
       (isProjectBillingMethod(line.billingMethod)
@@ -2158,13 +2172,12 @@ export type ProjectContractGapInput = {
     projectId: string | null;
     projectElementId: string | null;
   }[];
-  /** The contract's project; a line without its own project bills it. */
-  projectId: string | null;
   currencyCode: string;
   baseCurrencyCode: string | null;
   costTreatmentByProject: Record<string, Enums["projectCostTreatment"]>;
-  /** Per element a line names: whether it is a billing element. */
-  billingElementById: Record<string, boolean>;
+  /** Per element a line names: its project, and whether it is a billing
+   *  element. */
+  billingElementById: Record<string, { projectId: string; isBilling: boolean }>;
   /** Per line: its price less the sum of its billing events. */
   residuals: Record<string, number>;
   /** The labor categories a Time & Materials line cannot price. */
@@ -2175,6 +2188,7 @@ export type ProjectContractGapInput = {
 export type ProjectContractGap =
   | { key: "noLines"; blocking: true }
   | { key: "noBillingElement"; blocking: true; lineId: string }
+  | { key: "elementNotOnProject"; blocking: true; lineId: string }
   | {
       key: "notBillingElement";
       blocking: true;
@@ -2194,7 +2208,9 @@ export type ProjectContractGap =
 
 /** What stops a project contract's Confirm, and what it should fix first.
  *  The blocking gaps mirror `checkBillingLines` (post-customer-contract), so
- *  the Review step says it before the server refuses it. */
+ *  the Review step says it before the server refuses it. Like the server, a
+ *  billing line bills its OWN project: the contract's project is not a
+ *  fallback. */
 export function projectContractGaps(
   input: ProjectContractGapInput
 ): ProjectContractGap[] {
@@ -2223,7 +2239,7 @@ export function projectContractGaps(
   for (const line of lines.filter((l) =>
     isProjectBillingMethod(l.billingMethod)
   )) {
-    const projectId = line.projectId ?? input.projectId;
+    const { projectId } = line;
     if (!projectId || !line.projectElementId) {
       gaps.push({ key: "noBillingElement", blocking: true, lineId: line.id });
       continue;
@@ -2237,7 +2253,17 @@ export function projectContractGaps(
       }
       continue;
     }
-    if (input.billingElementById[line.projectElementId] === false) {
+    const element = input.billingElementById[line.projectElementId];
+    if (!element) continue;
+    if (element.projectId !== projectId) {
+      gaps.push({
+        key: "elementNotOnProject",
+        blocking: true,
+        lineId: line.id
+      });
+      continue;
+    }
+    if (!element.isBilling) {
       gaps.push({
         key: "notBillingElement",
         blocking: true,

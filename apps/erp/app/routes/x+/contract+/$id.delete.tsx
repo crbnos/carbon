@@ -60,7 +60,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.contracts,
+    contract.data.billingBasis === "Project"
+      ? path.to.projectContracts
+      : path.to.contracts,
     await flash(request, success("Deleted contract"))
   );
 }
