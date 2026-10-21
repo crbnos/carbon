@@ -19,7 +19,7 @@ Click **Add Service Order** on the list, **Service Order** in the Create menu, o
   <Field name="Service Location" type="reference" required>Your location that does the work.</Field>
   <Field name="Item" type="reference" required>Refurbishment only. The serial-tracked item to refurbish.</Field>
   <Field name="Serial" type="reference" required>Refurbishment only. A serial of the item that is Available or On Hold, with no open service order.</Field>
-  <Field name="Coverage Contract" type="reference">Field Visit only. A <Term>contract</Term> of the unit's customer that pays for work outside warranty. If you leave it empty and the customer has exactly one Active contract, Carbon uses that contract.</Field>
+  <Field name="Coverage Contract" type="reference">Field Visit only. A <Term>service contract</Term> of the unit's customer that pays for work outside warranty. If you leave it empty and the customer has exactly one Active service contract, Carbon uses that contract. A project contract never covers a service order.</Field>
   <Field name="Priority" type="enum">Low, Medium, High or Urgent.</Field>
   <Field name="Start Work From" type="enum">Where the first work tree comes from: **Empty**, **Service template**, **The unit's build history** or **The item's bill of materials**. See [the work tree](#the-work-tree).</Field>
 </FieldTable>

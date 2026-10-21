@@ -1,21 +1,50 @@
 ---
 title: Project billing
-description: "Bill a customer for project work from a contract line, time and materials or cost plus a fee, and recognize its revenue by progress."
+description: "Bill a customer for project work from a project contract, as time and materials, cost plus a fee or a fixed price, and recognize its revenue by progress."
 ---
 
-A contract line can bill the work charged to a project instead of a fixed schedule. Its **Billing Method** decides how:
+A <Term>project contract</Term> bills the work charged to a project. Its lines are contract line items (CLINs), and each line's **Billing Method** decides how it bills:
 
 | Billing method | What the invoice bills | Price |
 |---|---|---|
-| **Fixed** | The line's schedule, as on any [contract](/docs/reference/contracts) | The line's rate |
 | **Time & Materials** | Hours and costs charged to the line's billing element and the elements below it | Hours × a bill rate; material and other direct cost × (1 + handling %) |
 | **Cost Plus** | Every cost of the billing element and the elements below it | Cost × (1 + fee %) |
+| **Fixed Price** | The line's [billing events](#fixed-price-billing-events) | The line's price |
 
-Time & Materials is included in every plan. Cost Plus needs the Business plan.
+Time & Materials is included in every plan. Cost Plus needs the Business plan. The [project to cash guide](/guides/project-to-cash) walks one project from its contract to its revenue.
+
+## Project contracts
+
+**Sales → Agreements** has two lists. A [service contract](/docs/reference/contracts) bills Service items on an invoice schedule, and only a service contract covers a [service order](/docs/reference/service-orders). A project contract, under **Project Contracts**, bills one project over a period of performance. A service contract refuses a Time & Materials or Cost Plus line, and a project contract refuses a recurring line: every project contract line is one-time.
+
+Start one with **Add Project Contract** on the list, or with **New Project Contract** on the project's **Billing** page. The setup has four steps:
+
+<Steps>
+<Step>
+**Details.** The customer, the **Project** (required), the name, the customer's **Contract Number**, and the **Period of Performance**: **Start Date** and **End Date**. **Next** saves the contract as a draft.
+</Step>
+<Step>
+**Lines.** One row per CLIN: description, billing method, billing element, funded amount, ceiling, fee or handling, price (Fixed Price only) and revenue method. **Add Line** opens the [line form](#the-billing-line); click a cell to change it.
+</Step>
+<Step>
+**Invoicing.** The bill-to and payment terms, the **Billing Period** and the invoicing mode. Each calendar billing period is invoiced after it ends. With a Fixed Price line, the step also holds its billing events.
+</Step>
+<Step>
+**Review.** A summary and a list of gaps, each linked to its fix.
+</Step>
+</Steps>
+
+**"Confirm"** stays disabled while a gap blocks it: no line, a Time & Materials or Cost Plus line with no billing element or an element not marked as a billing element, a project whose cost treatment is not Contract, a contract currency other than the base currency, or billing events that do not add up to their line's price.
+
+A labor category with no bill rate and an empty Project WIP, Deferred Revenue, Contract Assets or Contract Loss Provision default account are warnings only.
+
+<Screenshot label="Project contract setup, Review step: the Before You Confirm list with a red gap for an element not marked as a billing element" caption="Each gap links to where it is fixed; a red one keeps Confirm disabled." />
+
+On the contract page, the properties show the period of performance and the billing period, the **Details** tab leads with the **Project Billing** card, and the summary shows **Funded** in place of the contract value.
 
 ## The billing line
 
-Open a contract line and set **Billing Method** to Time & Materials or Cost Plus. Quantity, rate and discount go away; the line bills its items instead.
+On a project contract, open a line and set **Billing Method** to Time & Materials or Cost Plus. The line has no quantity or rate; it bills its items instead.
 
 <FieldTable>
   <Field name="Project" type="reference" required>A [project](/docs/reference/projects) with cost treatment **Contract**.</Field>
@@ -27,10 +56,10 @@ Open a contract line and set **Billing Method** to Time & Materials or Cost Plus
   <Field name="Ceiling" type="number">Cost Plus: the most the line can be worth.</Field>
   <Field name="Notice At (%)" type="number">75 to 85, default 75. When cost reaches this share of the funded cost, a funding notice goes out.</Field>
   <Field name="Notice Window (Days)" type="number">30 to 90, default 60. The days of expected cost the notice adds to cost incurred.</Field>
-  <Field name="Revenue Method" type="enum">Time & Materials: **Right to Invoice**. Cost Plus: **Percent Complete** or **Right to Invoice**. A Fixed line may use **Percent Complete** when it names a billing element.</Field>
+  <Field name="Revenue Method" type="enum">Time & Materials: **Right to Invoice**. Cost Plus: **Percent Complete** or **Right to Invoice**. Fixed Price: **Daily** or **Percent Complete**; Percent Complete needs a billing element.</Field>
 </FieldTable>
 
-A billing line needs the contract to be in the company's base currency. On an Active contract you add or end a billing line with **Amend** (its **Billing Terms** row action sets the method and terms); its other terms do not change there. **Edit Funding**, in the **⋯** menu of the line's billing page, changes the funding at any time.
+The [Fixed Price](#fixed-price-billing-events) line takes a **Price** instead of a billing element and funding. A billing line needs the contract to be in the company's base currency. On an Active contract you add or end a billing line with **Amend** (its **Billing Terms** row action sets the method and terms); its other terms do not change there. **Edit Funding**, in the **⋯** menu of the line's billing page, changes the funding at any time.
 
 ## Bill rates
 
@@ -50,15 +79,23 @@ Each cost charged under the billing element becomes a **billable item**: Unbille
 - A Cost Plus item is made by the billing run.
 - **Generate Billable Items** on the line's billing page makes the missing items now, for work posted before the line existed or not picked up yet.
 
-Review items on the **Billing** tab of **Projects → Approvals**, or on a project's **Billing** page, under **Costs** in the project sidebar. The **Billable Items** card of the line's billing page links to that tab. Select items and choose **Hold** (with a reason), **Release**, **Write Off** (with a reason) or **Edit Price** (one item). Each change is recorded in the [audit log](/docs/reference/audit-log).
+Review items on the **Billing** tab of **Projects → Approvals**, or on a project's **Billing** page, under **Costs** in the project sidebar. Select items and choose **Hold** (with a reason), **Release**, **Write Off** (with a reason) or **Edit Price** (one item). Each change is recorded in the [audit log](/docs/reference/audit-log).
+
+**Approvals** shows while items wait as Unbilled or On Hold, for a user who can update projects and view sales, and its count includes them. The **Billable Items** card of the line's billing page and the project Overview's **Needs attention** card link to that tab.
 
 ## Invoicing
 
-The daily billing job drafts one invoice per contract for its billing lines, for the Unbilled items posted up to the latest billing period end (from the contract's billing frequency). It groups labor by labor category and rate, and other cost by cost type, then marks the items Billed. The invoice then follows the contract's invoicing mode, as any [invoice](/docs/reference/invoices) does.
+The daily billing job drafts one invoice per contract for its billing lines, for the Unbilled items posted up to the latest billing period end (from the contract's **Billing Period**). It groups labor by labor category and rate, and other cost by cost type, then marks the items Billed. The invoice then follows the contract's invoicing mode, as any [invoice](/docs/reference/invoices) does.
 
 - Billing stops at the funded amount. Items past it stay Unbilled with the reason "Funding limit".
 - Deleting the draft, or voiding the posted invoice, returns its items to Unbilled. An invoice that bills them again is held, so it is not posted without a review.
 - The contract's **Project Billing** card lists each billing line with its funding and every invoice that billed them. **Backup** on an invoice lists every item behind it, with the posting date, element, cost type, employee, labor category, hours and source document, and exports to CSV.
+
+## Fixed Price billing events
+
+A Fixed Price line bills its price on billing events: the invoices planned on the contract's **Invoicing** step. A new line starts with one event for its whole price. While the contract is a draft, add, split or move the rows of the **Billing Events** grid; each line's rows must add up to its price before **"Confirm"**.
+
+The daily billing job drafts each event on its date, and **Invoice** on the contract page drafts what is due now, with the project billing invoice. For Percent Complete, the line's price is the sum of its events.
 
 ## Funding notices
 
@@ -79,6 +116,37 @@ For Percent Complete, the estimate at completion is the billing element's **Esti
 
 - **Cost.** The same run moves the line's cost from Project WIP to cost of goods sold, so revenue and its cost land in the same month. It moves each cost once. A cost posted to an expense account, or with accounting off, stays where it is.
 - **Loss.** When the estimate is above the price, the run provides the whole forecast loss at once and adjusts it each month as the work progresses. It posts to the **Contract Loss Provision** account under **Accounting → Default Accounts**.
-- **Review.** A run's page lists each project line with its estimate, price, progress, earned to date, this month, cost relieved and loss provision change before you post. The project's **Billing** page shows each line's percent complete and revenue recognized, and the contract's **Project Billing** card shows revenue recognized.
+- **Review.** A run's page lists each project line with its estimate, price, progress, earned to date, this month, cost relieved and loss provision change before you post. A Draft run also shows a **Journal** card: what posting it will write, by account. The project's **Billing** page shows each line's **Progress** and **Revenue**, and the contract's **Project Billing** card shows **Revenue**.
+- **Project.** A Contract project with a confirmed project contract shows a **Contract** card on its Overview, under **Budget**: a funding bar and the **Funded**, **Cost**, **Billed**, **Unbilled** and **Revenue** figures.
 
 Percent Complete and the loss provision need the Business plan.
+
+## Related
+
+<Cards>
+  <Card title="From project to cash" href="/guides/project-to-cash">
+    One project from its contract to billed work and earned revenue.
+  </Card>
+  <Card title="Contracts" href="/docs/reference/contracts">
+    Service contracts, and the lifecycle a project contract shares with them.
+  </Card>
+  <Card title="Projects" href="/docs/reference/projects">
+    Cost treatment, elements, charge numbers and time.
+  </Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "A service contract bills on its schedule. Create a project contract for Time & Materials or Cost Plus lines."
+A Time & Materials or Cost Plus line on a contract with `billingBasis` `Schedule`. Refused by `upsertContractLine` and `insertContractLines` (code `CONTRACT_BILLING_BASIS_MISMATCH`), by Confirm, and by Amend for an added line (`post-customer-contract`). Create the line on a project contract (Sales → Agreements → Project Contracts).
+
+### "A project contract line is One-time. Create a service contract for recurring charges."
+A Recurring line on a contract with `billingBasis` `Project`. `upsertContractLine` saves every project contract line as One-time at quantity 1, so this comes from Confirm, Amend or `insertContractLines`.
+
+### "A project contract cannot cover a service order."
+A service order names a project contract as its coverage contract (`createServiceOrder`, `updateServiceOrderCoverageContract`). A project contract never covers a service order; the order form and the coverage picker list Active service contracts only.
+
+## Internals
+`customerContract.billingBasis` (enum `contractBillingBasis`: `Schedule` = service contract, `Project` = project contract; NOT NULL, default `Schedule`), on the `customerContracts` view too. Lists: `/x/sales/contracts` (Schedule) and `/x/sales/project-contracts` (Project). New: `/x/contract/new?basis=Project`, `&projectId=` picks the project. Setup steps: `details`, `products` (labelled Lines), `invoicing`, `review`; a project contract has no Revenue step. A project contract's header terms are fixed by the basis except the billing frequency: alignment Calendar, timing Arrears, renewal End. The Review step's gaps come from `projectContractGaps` (`sales.models.ts`). Fixed Price billing events are `customerContractInvoice` / `customerContractInvoiceLine` rows, drafted by `create-contract-invoices`; Time & Materials and Cost Plus invoices come from `create-project-billing-invoices`.
+</AgentContext>

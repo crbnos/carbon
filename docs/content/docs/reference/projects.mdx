@@ -5,7 +5,7 @@ description: Break engineering and contract work into elements, charge time, mat
 
 A **project** holds a tree of <Term id="element">elements</Term>: the systems, requirements, tasks and tests that make up the work. Jobs, purchase order lines, purchase invoice lines, timesheets and material issues charge their cost to a project or to one of its elements. The <Term>project ledger</Term> records each charge, so you can compare it with the plan.
 
-Open **Projects** in the sidebar. The module has **Projects**, **My Time**, **Approvals** and **Reports**, then a **Setup** group with **Labor Categories** and **Planning Groups**. **Approvals** shows when timesheet approval or DCAA mode is on, with the number of time entries that wait for you.
+Open **Projects** in the sidebar. The module has **Projects**, **My Time**, **Approvals** and **Reports**, then a **Setup** group with **Labor Categories** and **Planning Groups**. **Approvals** shows when timesheet approval or DCAA mode is on, or while contract [billable items](/docs/reference/project-billing#billable-items) wait for review, with the number of entries and items that wait for you.
 
 <Screenshot label="A project's Plan page in the List layout: the project sidebar with Overview, Plan and the element tree, Schedule, Costs, Time and Settings, and the elements grouped by state" caption="The Plan page lists a project's elements by state." />
 
@@ -43,7 +43,7 @@ The project sidebar has, from the top:
 - **Overview**: the owner, customer, dates and cost treatment on one line, the budget used, the next milestone, and **Needs attention**. That list names a stop-work order, borrows past their payback date, open change requests and time not posted yet.
 - **Plan**: the [elements](#the-plan-page). The element tree and its **Search elements** box show below the links on every project page.
 - **Schedule**: the [milestones](#milestones) on a timeline.
-- **Costs**: the [cost of each element](#costs-and-the-project-ledger). Below it, **Stock** shows once the project holds stock of its own, **Pegging** once it has a peg, and **Billing** when it is a Contract project that a contract line bills.
+- **Costs**: the [cost of each element](#costs-and-the-project-ledger). Below it, **Stock** shows once the project holds stock of its own, **Pegging** once it has a peg, and **Billing** on every Contract project. With no [project contract](/docs/reference/project-billing#project-contracts), the Billing page offers **New Project Contract**.
 - **Time**: the time not posted yet, then the costs posted to the project.
 - **Settings**, at the bottom: the project's fields, its [members](/docs/reference/government-contracting#charge-restrictions) and [budget control](#budget-control).
 

@@ -1,0 +1,105 @@
+---
+title: From project to cash
+description: A project contract bills the work charged to a Contract project, and the monthly revenue run earns it.
+label: "(I)"
+index: 0
+flow: project-to-cash
+flowName: Project to cash
+flowIndex: 5
+---
+
+This guide follows one engineering study from the signed award to recognized revenue. The customer funds the study's labor and material as a <Term>Time & Materials</Term> line of $250,000, and pays a <Term>Fixed Price</Term> of $90,000 for the final report, in three billing events of $30,000.
+
+## Two kinds of contract
+
+**Sales → Agreements** has two lists: **Service Contracts** and **Project Contracts**. Both hold the same contract record, with the same **"Draft"**, **"Active"** and **"Ended"** statuses, **Confirm** and **Amend**. What differs is what the contract bills from.
+
+- A <Term>service contract</Term> bills Service items on a planned invoice schedule: recurring and one-time lines over a term that can renew. Only a service contract covers a service order.
+- A <Term>project contract</Term> bills the work of one project over a period of performance. Each line is a contract line item number (CLIN) with a billing method: Time & Materials, <Term>Cost Plus</Term> or Fixed Price.
+
+<Callout tone="amber" badge="ONE BASIS PER CONTRACT" title="A contract never mixes the two kinds of line.">
+A service contract refuses a Time & Materials or Cost Plus line, and a project contract refuses a recurring line. The study's two CLINs are therefore one project contract. A subscription for the same customer is a second contract, a service contract.
+</Callout>
+
+## Set up the project
+
+A project contract bills a project whose <Term>cost treatment</Term> is **Contract**. Set it in the project's Overview, under **More → Accounting → Cost treatment**. Every charge to a Contract project then posts to the project's Cost Account, else to the **Project WIP** default account, until the revenue run moves it to cost of goods sold. The [projects reference](/docs/reference/projects#cost-treatment) covers the other treatments.
+
+Next, mark the <Term>billing element</Term>. Open the element that holds the study's work, and turn on **Billing element** in its **Work** properties. The switch shows only on a Contract project. A line bills the work charged to its billing element and to every element below it, so one switch covers the whole study.
+
+Last, give each <Term>labor category</Term> a **Bill Rate** in its **Rates** grid, at **Projects → Labor Categories**. A Time & Materials line prices an hour at the line's own rate for the employee, then its rate for the category, then the category's bill rate. An hour with no rate at all waits **"On Hold"** with the reason "No bill rate".
+
+<Callout tone="blue" badge="BILLING SHOWS FIRST" title="A Contract project shows its Billing page before any contract exists.">
+**Billing** shows under **Costs** in the sidebar of every Contract project. With no project contract, the page says "No project contract bills this project" and offers **New Project Contract**, with the project already picked. The Overview's **Needs attention** card shows the same row.
+</Callout>
+
+<Screenshot label="Project Billing page of a Contract project with no project contract: the empty state with a New Project Contract button" caption="Before a contract exists, the Billing page says what is missing and starts one." />
+
+## Create the project contract
+
+Start with **New Project Contract** on the project, or **Add Project Contract** on the **Project Contracts** list. The setup has four steps.
+
+1. **Details.** The **Customer**, the **Project** (required), a **Name**, the customer's **Contract Number** and the **Period of Performance**: **Start Date** and **End Date**. **Next** saves the contract as a draft.
+2. **Lines.** One line per CLIN. **Add Line** opens the line form: the **Billing Method**, the **Service** item the invoice names, the **Billing Element**, the **Funded Amount** and the **Ceiling**. A Time & Materials line also takes a **Handling (%)** on material, and a Cost Plus line a **Fee (%)**. A Fixed Price line takes a **Price** instead.
+3. **Invoicing.** **Bill To**, **Invoice Contact**, **Invoice Address**, **Ship To** and **Payment Terms**, then the **Billing Period** and the invoicing mode. Carbon invoices each calendar billing period after it ends.
+4. **Review.** A summary, and a list of what the setup still lacks.
+
+The study's Fixed Price line adds a **Billing Events** grid to the Invoicing step. Each row is one invoice of a Fixed Price line, and the rows must add up to its price. Split the $90,000 row into three rows of $30,000 and move each to the date the report reaches its milestone.
+
+<Screenshot label="Project contract setup, Lines step: a Time & Materials CLIN and a Fixed Price CLIN in the lines grid" caption="One row per CLIN: billing method, billing element, funded amount, ceiling and price." />
+
+Each line also earns its revenue by a <Term>revenue method</Term>. A Time & Materials line uses **Right to Invoice**. A Cost Plus line uses **Right to Invoice** or **Percent Complete**. A Fixed Price line uses **Daily** or **Percent Complete**, and Percent Complete needs a billing element. Time & Materials is in every plan; Cost Plus and Percent Complete need the Business plan.
+
+The Review step links each gap to where you fix it. A red gap keeps **Confirm** disabled, because the server would refuse the contract anyway:
+
+- no line;
+- a Time & Materials or Cost Plus line with no billing element, or with an element not marked as a billing element;
+- a project whose cost treatment is not Contract;
+- a contract currency other than the base currency;
+- billing events that do not add up to their line's price.
+
+An amber gap is only a warning: a labor category with no bill rate and no contract rate, or an empty Project WIP, Deferred Revenue, Contract Assets or Contract Loss Provision default account. The first posting that needs the account fails.
+
+<Callout tone="neutral" badge="DRAFT IS NOT BILLING" title="Nothing bills until you confirm.">
+A Draft project contract bills nothing, and the project's **Needs attention** card names it until it is confirmed. After **Confirm**, add or end a line with **Amend**. Change the funding at any time with **Edit Funding**, in the **⋯** menu of the line's billing page.
+</Callout>
+
+## Charge the work
+
+The contract bills only what the project records. Employees log hours on **My Time** against a <Term>charge number</Term>, the study or one of its elements, with a labor category. **Issue material** and **Charge cost** in an element's **⋯** menu charge stock and other costs. A job or a purchase order line with the study's charge number charges it too. The [projects reference](/docs/reference/projects#charge-numbers) lists every source.
+
+Each cost charged under the billing element becomes a <Term>billable item</Term>. A Time & Materials item is made when the cost posts. Cost from a job's completion or backflush gets its item at the next billing run. A Cost Plus item is made by the billing run. **Generate Billable Items** on the line's billing page makes the missing items at once.
+
+<Callout tone="amber" badge="WHAT AN HOUR BILLS" title="A Time & Materials line bills no machine, overhead or burden cost.">
+The bill rate prices the whole hour, so it already covers them. Material and other direct cost bill at cost plus the line's handling percentage.
+</Callout>
+
+## Review and bill
+
+Review the items on the **Billing** tab of **Projects → Approvals**. **Approvals** shows in the Projects menu while billable items wait as **"Unbilled"** or **"On Hold"**, for a user who can update projects and view sales, and its count includes them. The project's Overview links the same tab from **Needs attention**. Select items and choose **Hold**, **Release**, **Write Off** or **Edit Price**. The project's **Billing** page lists the same items for one project.
+
+The daily billing job then drafts one invoice per contract for its Time & Materials and Cost Plus lines. It takes the Unbilled items posted up to the end of the latest billing period, and stops at each line's funded amount. Items past it stay Unbilled with the reason "Funding limit". Each billing event of the Fixed Price line is drafted on its own date. **Invoice** on the contract page drafts whatever is due now, both kinds.
+
+<Callout tone="green" badge="FUNDED STOPS BILLING" title="Billing never passes what the customer funded.">
+When the Time & Materials line has billed $250,000 of items, the rest wait as Unbilled. Raise the funding with **Edit Funding**, and the next run bills it.
+</Callout>
+
+Each drafted invoice follows the contract's invoicing mode, then posts like any other [sales invoice](/docs/reference/invoices). On the contract page, the **Project Billing** card lists every invoice with its **Backup**: the items behind it, exportable to CSV.
+
+Once the contract is confirmed, the project's Overview shows a **Contract** card under **Budget**. A funding bar and five figures show where the study stands: **Funded**, **Cost**, **Billed**, **Unbilled** and **Revenue**.
+
+<Screenshot label="Project Overview with the Contract card under Budget: the funding bar and the Funded, Cost, Billed, Unbilled and Revenue figures" caption="The contract's money on the project's own page." />
+
+## Earn the revenue
+
+Revenue follows the work, not the invoice. The monthly revenue recognition run, at **Accounting → Revenue Recognition**, recognizes each line by its revenue method. A Right to Invoice line earns its billable items posted by the month end, less written-off items. A Percent Complete line earns its price times the cost to date over the estimate at completion.
+
+The same run moves the line's cost from Project WIP to cost of goods sold, so revenue and its cost land in the same month. Revenue billed in advance comes out of <Term>Deferred Revenue</Term>; revenue not billed yet goes into <Term id="contract-asset">Contract Assets</Term>.
+
+A Draft run shows a **Journal** card: what posting the run will write, by account, with its debits and credits totalled. Read it before you post. The [project billing reference](/docs/reference/project-billing#revenue) covers the loss provision and the Percent Complete estimate.
+
+<Screenshot label="Draft revenue recognition run with the Journal card: debit and credit per account and the total row" caption="What the run will post, account by account, before you post it." />
+
+<Divider />
+
+The study now runs one way each month: the team charges the work, a reviewer releases the items, the billing job drafts the invoice, and the run earns the revenue. The [project billing reference](/docs/reference/project-billing) has every field and rule.
