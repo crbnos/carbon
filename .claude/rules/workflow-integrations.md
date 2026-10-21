@@ -148,7 +148,7 @@ as `null` — pieces branch on `undefined`.
 company. A company may connect several Google accounts, so integration connections get
 their own table.
 
-`integrationConnection` (`20261021123101_workflow-integration-connections.sql`) —
+`integrationConnection` (`20261021123100_workflow-integration-connections.sql`) —
 `id('icn')`, `companyId`, `pieceName`, `name`, `authType`, `accountLabel`, `metadata`,
 `secretRef`, `expiresAt`, `refreshingAt`, `status`, `lastError` + audit columns. Unique on
 `(companyId, pieceName, name)`. RLS is `settings_view` to read and NO API-role writes
@@ -160,13 +160,15 @@ functions `renameIntegrationConnection` / `disconnectIntegrationConnection`
 `ctx.company.id` first, and Disconnect takes the piece from it to drop that card's health
 cache.
 `get_connection_secret` reads the vault by name (`connection:<companyId>:<id>`), never by
-`secretRef` (`20261021123103`).
+`secretRef`.
 
 **The existing vault RPCs could not be reused** — `upsert_integration_secret` and friends
-are hard-wired to `companyIntegration` and the `'integration:'` name prefix. The migration
-adds three parallel `*_connection_secret` RPCs with a `'connection:'` prefix, plus a delete
-trigger (vault does not cascade). `revoke_connections` (`20261021123105`) drops the
-secrets and marks the rows Revoked in one statement. All four are `service_role` only.
+are hard-wired to `companyIntegration` and the `'integration:'` name prefix. The same
+migration adds three parallel `*_connection_secret` RPCs with a `'connection:'` prefix, plus
+a delete trigger (vault does not cascade). Two RPCs keep the row and its secret in step:
+`save_connection` inserts or revives the row and writes the secret in one statement
+(`createConnection`), and `revoke_connections` drops the secrets and marks the rows Revoked
+in one statement. All of them are `service_role` only.
 
 `packages/ee/src/integrations/connections.ts` is the service. **Tokens live in the vault and
 never in `metadata`** — `connectionMetadataFrom` copies only the allowlist row's listed
@@ -460,7 +462,7 @@ in this path.
    NOTHING`): `companyIntegration.id` is an FK to `integration.id`, so without it
    `markIntegrationInstalled` fails the callback with a bare PostgREST error after the token
    is already in the vault. The `INSERT INTO "integration"` at the end of
-   `20261021123101_workflow-integration-connections.sql` is the shape (one row per piece).
+   `20261021123100_workflow-integration-connections.sql` is the shape (one row per piece).
 6. Check every action you expose ships an `outputSchema` — the generator refuses one
    that does not, and coverage is all-or-nothing per piece. Then run the generator and read
    its refusals: each unmappable prop is a decision — `omit` it (optional, or required with

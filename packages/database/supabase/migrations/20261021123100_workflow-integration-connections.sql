@@ -36,7 +36,7 @@ CREATE INDEX IF NOT EXISTS "integrationConnection_updatedBy_idx" ON "integration
 
 ALTER TABLE "public"."integrationConnection" ENABLE ROW LEVEL SECURITY;
 
--- Policies: authz manifest (`integrationConnection: company("settings", { read: "settings_view" })`).
+-- Policies: authz manifest (`integrationConnection`): settings_view reads, no API-role writes.
 
 -- Vault RPCs. The existing upsert/get/delete_integration_secret functions are
 -- hard-wired to "companyIntegration" and the 'integration:' name prefix, so these
@@ -65,10 +65,14 @@ BEGIN
 END;
 $$;
 
+-- Read a connection's secret by its vault NAME, never by the row's `secretRef`.
+-- `secretRef` is a column a row's writer controls; the name is built from the
+-- company and connection ids, so it can only ever resolve to this connection's own
+-- secret. Every connection secret is written by `upsert_connection_secret` under
+-- this name, and `delete_connection_secret` already deletes by it.
 CREATE OR REPLACE FUNCTION get_connection_secret(p_company_id text, p_connection_id text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, vault AS $$
 DECLARE
-  v_ref text;
   v_secret text;
 BEGIN
   IF current_setting('role', true) IN ('anon', 'authenticated') THEN
@@ -76,10 +80,17 @@ BEGIN
       USING ERRCODE = 'insufficient_privilege';
   END IF;
 
-  SELECT "secretRef" INTO v_ref FROM "integrationConnection"
-    WHERE "companyId" = p_company_id AND "id" = p_connection_id;
-  IF v_ref IS NULL THEN RETURN NULL; END IF;  -- caller fails closed
-  SELECT decrypted_secret INTO v_secret FROM vault.decrypted_secrets WHERE id = v_ref::uuid;
+  -- A disconnected row has no secretRef; keep failing closed for it.
+  IF NOT EXISTS (
+    SELECT 1 FROM "integrationConnection"
+      WHERE "companyId" = p_company_id AND "id" = p_connection_id
+        AND "secretRef" IS NOT NULL
+  ) THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT decrypted_secret INTO v_secret FROM vault.decrypted_secrets
+    WHERE name = 'connection:' || p_company_id || ':' || p_connection_id;
   IF v_secret IS NULL THEN RETURN NULL; END IF;
   RETURN v_secret::jsonb;
 END;
@@ -103,6 +114,117 @@ $$;
 -- Service-role only, enforced by each body's first statement: REVOKE EXECUTE on a
 -- public function segfaults this Postgres image when anon/authenticated call it
 -- (see 20260924192316_api-function-guards-not-revokes.sql).
+
+-- Revoke workflow integration connections in ONE statement: drop each one's vault
+-- secret and mark its row Revoked together. Two separate writes could fail between
+-- them and leave an Active row with no secret: an account every surface lists as
+-- usable and every use fails.
+--
+-- With `p_connection_id`, that one connection of the piece (Disconnect). Without
+-- it, every connection of the piece that is not already Revoked (Uninstall). The
+-- row survives either way: a saved workflow node references its id. The secret is
+-- deleted by its NAME, the way `upsert_connection_secret` stores it and
+-- `get_connection_secret` reads it, never by `secretRef`.
+CREATE OR REPLACE FUNCTION revoke_connections(
+  p_company_id text,
+  p_piece_name text,
+  p_updated_by text,
+  p_connection_id text DEFAULT NULL
+)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, vault AS $$
+BEGIN
+  IF current_setting('role', true) IN ('anon', 'authenticated') THEN
+    RAISE EXCEPTION 'revoke_connections is service role only'
+      USING ERRCODE = 'insufficient_privilege';
+  END IF;
+
+  WITH revoked AS (
+    UPDATE "integrationConnection"
+    SET "status" = 'Revoked',
+        "secretRef" = NULL,
+        "updatedBy" = p_updated_by,
+        "updatedAt" = NOW()
+    WHERE "companyId" = p_company_id
+      AND "pieceName" = p_piece_name
+      AND CASE
+        WHEN p_connection_id IS NULL THEN "status" <> 'Revoked'
+        ELSE "id" = p_connection_id
+      END
+    RETURNING "id"
+  )
+  DELETE FROM vault.secrets s
+    USING revoked r
+    WHERE s.name = 'connection:' || p_company_id || ':' || r."id";
+END;
+$$;
+
+-- Save a workflow integration connection and its vault secret in ONE statement.
+-- As two writes, a failed row update on Reconnect left a Revoked or Expired row
+-- holding a live secret, and a failed vault write left an Active row with none.
+--
+-- With `p_connection_id`, the consent revives that row: the caller has already
+-- checked that the same account signed in. Without it, a new row is inserted, and
+-- the unique `(companyId, pieceName, name)` index refuses a taken name with 23505.
+-- `p_metadata` NULL on a revive keeps the stored metadata.
+CREATE OR REPLACE FUNCTION save_connection(
+  p_company_id text,
+  p_piece_name text,
+  p_name text,
+  p_auth_type text,
+  p_secret jsonb,
+  p_user_id text,
+  p_account_label text DEFAULT NULL,
+  p_metadata jsonb DEFAULT NULL,
+  p_expires_at timestamptz DEFAULT NULL,
+  p_connection_id text DEFAULT NULL
+)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, vault AS $$
+DECLARE
+  v_id text;
+BEGIN
+  IF current_setting('role', true) IN ('anon', 'authenticated') THEN
+    RAISE EXCEPTION 'save_connection is service role only'
+      USING ERRCODE = 'insufficient_privilege';
+  END IF;
+
+  IF p_connection_id IS NULL THEN
+    INSERT INTO "integrationConnection" (
+      "companyId", "pieceName", "name", "authType", "accountLabel",
+      "metadata", "expiresAt", "status", "createdBy"
+    )
+    VALUES (
+      p_company_id, p_piece_name, p_name, p_auth_type, p_account_label,
+      COALESCE(p_metadata, '{}'::jsonb), p_expires_at, 'Active', p_user_id
+    )
+    RETURNING "id" INTO v_id;
+  ELSE
+    UPDATE "integrationConnection"
+    SET "authType" = p_auth_type,
+        "accountLabel" = p_account_label,
+        "metadata" = COALESCE(p_metadata, "metadata"),
+        "expiresAt" = p_expires_at,
+        "refreshingAt" = NULL,
+        "status" = 'Active',
+        "lastError" = NULL,
+        "updatedBy" = p_user_id,
+        "updatedAt" = NOW()
+    WHERE "companyId" = p_company_id
+      AND "pieceName" = p_piece_name
+      AND "id" = p_connection_id
+    RETURNING "id" INTO v_id;
+
+    IF v_id IS NULL THEN
+      RAISE EXCEPTION 'Connection % was not found.', p_connection_id
+        USING ERRCODE = 'no_data_found';
+    END IF;
+  END IF;
+
+  -- Same name and secretRef as every other connection secret: the vault write and
+  -- the row write above commit or roll back together.
+  PERFORM upsert_connection_secret(p_company_id, v_id, p_secret);
+  RETURN v_id;
+END;
+$$;
 
 -- Cascade: vault.secrets does not cascade on its own.
 CREATE OR REPLACE FUNCTION drop_connection_secret_on_delete()

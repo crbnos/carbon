@@ -94566,6 +94566,21 @@ export type Database = {
         Args: { p_company_id: string; p_webhook_id: string }
         Returns: string
       }
+      save_connection: {
+        Args: {
+          p_account_label?: string
+          p_auth_type: string
+          p_company_id: string
+          p_connection_id?: string
+          p_expires_at?: string
+          p_metadata?: Json
+          p_name: string
+          p_piece_name: string
+          p_secret: Json
+          p_user_id: string
+        }
+        Returns: string
+      }
       save_inspection_document_atomic: {
         Args: {
           p_balloons?: Json

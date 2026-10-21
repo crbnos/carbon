@@ -119,7 +119,7 @@ export interface AllowlistEntry {
  *     `integration` row FAILS the consent callback on its "installed" write — after
  *     the token is already in the vault. Every piece needs the one-row migration
  *     (the `INSERT INTO "integration"` at the end of
- *     `20261021123101_workflow-integration-connections.sql`). Gmail, 2026-09-01.
+ *     `20261021123100_workflow-integration-connections.sql`). Gmail, 2026-09-01.
  *  2. Google canonicalises scopes: request `email` and the token response's `scope`
  *     says `https://www.googleapis.com/auth/userinfo.email` (plus an unrequested
  *     `openid`). `missingScopes(granted, required)` then never matches, and the

@@ -107961,6 +107961,82 @@ export default {
         tags: ["(rpc) get_company_groups_for_employee"]
       }
     },
+    "/rpc/save_connection": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_account_label: {
+                  format: "text",
+                  type: "string"
+                },
+                p_auth_type: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_connection_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_expires_at: {
+                  format: "timestamp with time zone",
+                  type: "string"
+                },
+                p_metadata: {
+                  format: "jsonb"
+                },
+                p_name: {
+                  format: "text",
+                  type: "string"
+                },
+                p_piece_name: {
+                  format: "text",
+                  type: "string"
+                },
+                p_secret: {
+                  format: "jsonb"
+                },
+                p_user_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_id",
+                "p_piece_name",
+                "p_name",
+                "p_auth_type",
+                "p_secret",
+                "p_user_id"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) save_connection"]
+      }
+    },
     "/rpc/getIntercompanyBalance": {
       post: {
         parameters: [

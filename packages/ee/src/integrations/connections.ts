@@ -336,72 +336,37 @@ export async function createConnection(
     throw new Error(`Connection ${args.connectionId} was not found.`);
   }
 
-  if (existing.data !== null) {
-    const id = existing.data.id;
-    if (!sameAccount(existing.data, args)) {
-      if (args.connectionId !== undefined) {
-        throw new ConnectionAccountMismatchError(id);
-      }
-      throw new ConnectionNameTakenError(args.name);
+  if (existing.data !== null && !sameAccount(existing.data, args)) {
+    if (args.connectionId !== undefined) {
+      throw new ConnectionAccountMismatchError(existing.data.id);
     }
-    await writeTokens(serviceClient, args.companyId, id, args.tokens);
-    const { error: reviveError } = await serviceClient
-      .from("integrationConnection")
-      .update({
-        authType: args.authType ?? "OAUTH2",
-        accountLabel: args.accountLabel ?? null,
-        // A re-consent's token response is authoritative — its `scopes` is how a
-        // "reconnect needed" account clears.
-        ...(args.metadata === undefined
-          ? {}
-          : { metadata: args.metadata as never }),
-        expiresAt: args.expiresAt ?? null,
-        refreshingAt: null,
-        status: "Active",
-        lastError: null,
-        updatedBy: args.createdBy
-      })
-      .eq("companyId", args.companyId)
-      .eq("id", id);
-    if (reviveError) throw reviveError;
-    return { id };
+    throw new ConnectionNameTakenError(args.name);
   }
 
-  const { data, error } = await serviceClient
-    .from("integrationConnection")
-    .insert({
-      companyId: args.companyId,
-      pieceName: args.pieceName,
-      name: args.name,
-      authType: args.authType ?? "OAUTH2",
-      accountLabel: args.accountLabel ?? null,
-      // Non-secret configuration only — tokens go to the vault below.
-      metadata: (args.metadata ?? {}) as never,
-      expiresAt: args.expiresAt ?? null,
-      status: "Active",
-      createdBy: args.createdBy
-    })
-    .select("id")
-    .single();
+  // One RPC writes the row (revive or insert) and the vault secret together, so a
+  // failure can neither leave a Revoked row holding a live token nor an Active row
+  // with no token.
+  const { data, error } = await serviceClient.rpc("save_connection", {
+    p_company_id: args.companyId,
+    p_piece_name: args.pieceName,
+    p_name: args.name,
+    p_auth_type: args.authType ?? "OAUTH2",
+    p_secret: args.tokens as never,
+    p_user_id: args.createdBy,
+    p_account_label: args.accountLabel ?? undefined,
+    // A re-consent's token response is authoritative — its `scopes` is how a
+    // "reconnect needed" account clears. Omitted keeps the stored metadata.
+    p_metadata: args.metadata as never,
+    p_expires_at: args.expiresAt ?? undefined,
+    ...(existing.data === null ? {} : { p_connection_id: existing.data.id })
+  });
 
   // Two people adding the same name at once: the unique index decides.
   if (error?.code === "23505") throw new ConnectionNameTakenError(args.name);
-  if (error || data === null) throw error ?? new Error("Connection not saved.");
-
-  try {
-    await writeTokens(serviceClient, args.companyId, data.id, args.tokens);
-  } catch (cause) {
-    // An Active row with no vault secret reads as a usable account everywhere and
-    // reserves its unique name, so a fresh insert must not survive a vault failure.
-    // Best-effort: if the delete also fails, the vault error is still what matters.
-    await serviceClient
-      .from("integrationConnection")
-      .delete()
-      .eq("companyId", args.companyId)
-      .eq("id", data.id);
-    throw cause;
+  if (error || typeof data !== "string") {
+    throw error ?? new Error("Connection not saved.");
   }
-  return { id: data.id };
+  return { id: data };
 }
 
 export async function renameConnection(
