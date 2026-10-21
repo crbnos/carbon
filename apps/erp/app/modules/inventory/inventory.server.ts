@@ -2036,7 +2036,7 @@ export const assignShipmentLineEntity = defineServiceFn({
         .single(),
       client
         .from("shipment")
-        .select("sourceDocument, sourceDocumentId, status")
+        .select("sourceDocument, sourceDocumentId, status, supplierId")
         .eq("id", shipmentId)
         .eq("companyId", companyId)
         .single(),
@@ -2120,6 +2120,40 @@ export const assignShipmentLineEntity = defineServiceFn({
         "rule",
         `Tracked entity is not available. Current status: ${entity.data.status}`
       );
+    }
+
+    // Rejected alone is not provenance either: a rejected unit goes back only
+    // to the supplier it came from, i.e. it was received on a posted receipt
+    // from this return's supplier (the rule the return-line picker applies).
+    if (
+      shipment.data.sourceDocument === "Purchase Return Order" &&
+      entity.data.status === "Rejected"
+    ) {
+      const receiptId = attributes.Receipt;
+      const provenance =
+        typeof receiptId === "string" && shipment.data.supplierId
+          ? await client
+              .from("receipt")
+              .select("id")
+              .eq("id", receiptId)
+              .eq("supplierId", shipment.data.supplierId)
+              .eq("status", "Posted")
+              .eq("companyId", companyId)
+              .maybeSingle()
+          : { data: null, error: null };
+      if (provenance.error) {
+        return ctx.error(
+          "internal",
+          "Failed to verify the entity's provenance",
+          provenance.error
+        );
+      }
+      if (!provenance.data) {
+        return ctx.error(
+          "rule",
+          "Rejected tracked entity was not received from this supplier and cannot be returned to it"
+        );
+      }
     }
 
     // Rounded: a lot left holding 0.020000000000000018 by an earlier split
