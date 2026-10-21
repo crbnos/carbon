@@ -21,44 +21,13 @@ import {
   SelectValue,
   Switch
 } from "@carbon/react";
-import {
-  parseAbsolute,
-  parseDate,
-  toCalendarDateTime,
-  toZoned
-} from "@internationalized/date";
+import { toZoned } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import type { KeyboardEvent, ReactNode } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 import { useCompanyTimeZone } from "~/hooks";
-import { isWritableList } from "./control";
+import { asCalendarDate, asCalendarDateTime, isWritableList } from "./control";
 import { RECORD_PICKERS } from "./recordPickers";
-
-/** Stored dates are the `YYYY-MM-DD` the picker itself writes. Anything else is a
- * value from elsewhere, and an empty picker beats a crash. */
-function asCalendarDate(value: unknown) {
-  if (typeof value !== "string" || !value) return null;
-  try {
-    return parseDate(value.slice(0, 10));
-  } catch {
-    return null;
-  }
-}
-
-/** Stored datetimes are the full ISO instant the picker itself writes. A value
- * saved before datetime inputs existed is a bare `YYYY-MM-DD`, which
- * `parseAbsolute` rejects — read it as midnight on the company's calendar, the
- * moment it already effectively meant. Anything else leaves the picker empty
- * rather than crashing the node form. */
-function asCalendarDateTime(value: unknown, timeZone: string) {
-  if (typeof value !== "string" || !value) return null;
-  try {
-    return toCalendarDateTime(parseAbsolute(value, timeZone));
-  } catch {
-    const date = asCalendarDate(value);
-    return date ? toCalendarDateTime(date) : null;
-  }
-}
 
 type LiteralControlProps = {
   type: ValueType;

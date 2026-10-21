@@ -4,7 +4,7 @@
 
 import type { ValueType } from "@carbon/ee/workflows";
 import { describe, expect, it, vi } from "vitest";
-import { isWritableList, pickControl } from "./control";
+import { asCalendarDateTime, isWritableList, pickControl } from "./control";
 
 // `recordPickers` renders Lingui `msg` labels, which the test runner does not
 // transform; the picker table is not what these cases are about.
@@ -57,5 +57,23 @@ describe("pickControl", () => {
     expect(
       pickControl({ kind: "primitive", of: "string" }, undefined, undefined)
     ).toBe("inline");
+  });
+});
+
+describe("asCalendarDateTime", () => {
+  it("reads a stored instant on the company's calendar", () => {
+    expect(asCalendarDateTime("2026-08-01T14:30:00Z", "UTC")?.toString()).toBe(
+      "2026-08-01T14:30:00"
+    );
+  });
+
+  it("reads a legacy bare date as midnight", () => {
+    expect(asCalendarDateTime("2026-08-01", "UTC")?.toString()).toBe(
+      "2026-08-01T00:00:00"
+    );
+  });
+
+  it("leaves a near-miss empty rather than showing midnight", () => {
+    expect(asCalendarDateTime("2026-08-01junk", "UTC")).toBeNull();
   });
 });

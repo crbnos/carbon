@@ -4301,6 +4301,9 @@ msgstr "Text"
 msgid "Body for the email you want to send"
 msgstr "Text der E-Mail, die Sie senden möchten"
 
+msgid "Body Type"
+msgstr ""
+
 msgid "BoM"
 msgstr "BoM"
 
@@ -7073,7 +7076,7 @@ msgid "Date Acquired"
 msgstr "Erwerbungsdatum"
 
 msgid "Date and time"
-msgstr ""
+msgstr "Datum und Uhrzeit"
 
 msgid "Date Calibrated"
 msgstr "Kalibrierungsdatum"
@@ -9518,6 +9521,9 @@ msgstr ""
 msgid "Event Type"
 msgstr "Ereignistyp"
 
+msgid "Event types"
+msgstr ""
+
 msgid "Events"
 msgstr "Ereignisse"
 
@@ -9686,6 +9692,9 @@ msgstr "Position ausklappen"
 
 msgid "Expand Machine"
 msgstr "Maschine ausklappen"
+
+msgid "Expand Recurring Event?"
+msgstr ""
 
 msgid "Expand row"
 msgstr "Zeile ausklappen"
@@ -18649,7 +18658,7 @@ msgid "Reconnect needed"
 msgstr "Erneute Verbindung erforderlich"
 
 msgid "Reconnect with the account this connection already uses, or use Add account to connect the other one."
-msgstr ""
+msgstr "Verbinden Sie erneut mit dem Konto, das diese Verbindung bereits verwendet, oder verbinden Sie das andere über „Konto hinzufügen“."
 
 msgid "Record"
 msgstr "Aufnahme"
@@ -20736,6 +20745,9 @@ msgstr "Mitarbeiter auswählen"
 msgid "Select Employee Type"
 msgstr "Mitarbeitertyp auswählen"
 
+msgid "Select event types"
+msgstr ""
+
 msgid "Select field"
 msgstr "Feld auswählen"
 
@@ -20883,6 +20895,9 @@ msgstr "Einladung senden"
 
 msgid "Send Invites"
 msgstr "Einladungen senden"
+
+msgid "Send Notifications"
+msgstr ""
 
 msgid "Send RFQ to Suppliers"
 msgstr "RFQ an Lieferanten senden"
@@ -22979,7 +22994,7 @@ msgid "That name is already used by another step."
 msgstr "Dieser Name wird bereits von einem anderen Schritt verwendet."
 
 msgid "That's a different account"
-msgstr ""
+msgstr "Das ist ein anderes Konto"
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -26792,6 +26807,9 @@ msgstr "Ob diese Arbeit die Produktion blockiert (Ausfall), sie beeinträchtigt 
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "Ob die ausgewählten Berechtigungen zu den bestehenden Berechtigungen jedes Benutzers hinzufügen oder die Berechtigungssätze aller Benutzer durch die folgende Auswahl ersetzen."
+
+msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
+msgstr ""
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "Welches Dokument steuert den Prüfungsablauf für diesen Artikel?"

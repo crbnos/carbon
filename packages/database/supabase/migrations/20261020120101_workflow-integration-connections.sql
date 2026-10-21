@@ -1,7 +1,7 @@
 -- Named per-company connections to third-party integration pieces (Workflows).
 -- Separate from "companyIntegration": that table is one row per integration per
 -- company (composite PK), so it cannot hold several named accounts.
-CREATE TABLE "integrationConnection" (
+CREATE TABLE IF NOT EXISTS "integrationConnection" (
     "id" TEXT NOT NULL DEFAULT id('icn'),
     "companyId" TEXT NOT NULL,
     "pieceName" TEXT NOT NULL,
@@ -28,11 +28,11 @@ CREATE TABLE "integrationConnection" (
     CONSTRAINT "integrationConnection_name_unique" UNIQUE ("companyId", "pieceName", "name")
 );
 
-CREATE INDEX "integrationConnection_companyId_idx" ON "integrationConnection" ("companyId");
-CREATE INDEX "integrationConnection_companyId_pieceName_idx"
+CREATE INDEX IF NOT EXISTS "integrationConnection_companyId_idx" ON "integrationConnection" ("companyId");
+CREATE INDEX IF NOT EXISTS "integrationConnection_companyId_pieceName_idx"
   ON "integrationConnection" ("companyId", "pieceName");
-CREATE INDEX "integrationConnection_createdBy_idx" ON "integrationConnection" ("createdBy");
-CREATE INDEX "integrationConnection_updatedBy_idx" ON "integrationConnection" ("updatedBy");
+CREATE INDEX IF NOT EXISTS "integrationConnection_createdBy_idx" ON "integrationConnection" ("createdBy");
+CREATE INDEX IF NOT EXISTS "integrationConnection_updatedBy_idx" ON "integrationConnection" ("updatedBy");
 
 ALTER TABLE "public"."integrationConnection" ENABLE ROW LEVEL SECURITY;
 

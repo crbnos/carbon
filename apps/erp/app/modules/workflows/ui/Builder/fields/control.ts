@@ -3,6 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ValueOrRef, ValueType } from "@carbon/ee/workflows";
+import {
+  parseAbsolute,
+  parseDate,
+  toCalendarDateTime
+} from "@internationalized/date";
 import { hasRecordPicker } from "./recordPickers";
 
 /** Which control a value field renders. */
@@ -49,4 +54,35 @@ export function pickControl(
   if (value?.kind === "ref" || value?.kind === "item") return "chip";
   if (variableOnly(type)) return "pick";
   return "literal";
+}
+
+const BARE_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Stored dates are the `YYYY-MM-DD` the picker itself writes. Anything else is a
+ * value from elsewhere, and an empty picker beats a crash. */
+export function asCalendarDate(value: unknown) {
+  if (typeof value !== "string" || !value) return null;
+  try {
+    return parseDate(value.slice(0, 10));
+  } catch {
+    return null;
+  }
+}
+
+/** Stored datetimes are the full ISO instant the picker itself writes. A value
+ * saved before datetime inputs existed is a bare `YYYY-MM-DD`, which
+ * `parseAbsolute` rejects — read it as midnight on the company's calendar, the
+ * moment it already effectively meant. Anything else leaves the picker empty
+ * rather than crashing the node form. */
+export function asCalendarDateTime(value: unknown, timeZone: string) {
+  if (typeof value !== "string" || !value) return null;
+  try {
+    return toCalendarDateTime(parseAbsolute(value, timeZone));
+  } catch {
+    // Only a complete bare date: `2026-08-01junk` must not display as midnight
+    // while the run still sends the rejected text.
+    if (!BARE_DATE.test(value)) return null;
+    const date = asCalendarDate(value);
+    return date ? toCalendarDateTime(date) : null;
+  }
 }

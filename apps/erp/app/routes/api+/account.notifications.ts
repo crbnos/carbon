@@ -31,8 +31,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Service role: integrationConnection SELECT requires settings_view, which
     // regular employees don't have. Slack is "on" when the company has a usable
     // Slack connection — the same rows the Assistant and workflows read.
-    readConnections(getCarbonServiceRole(), companyId, "slack").then((rows) =>
-      rows.some(connectionUsable)
+    // A failed read reads as Slack off: it must not fail the whole pane.
+    readConnections(getCarbonServiceRole(), companyId, "slack").then(
+      (rows) => rows.some(connectionUsable),
+      () => false
     ),
     companyHasFeature(client, companyId, { feature: "EMAIL_NOTIFICATIONS" })
   ]);

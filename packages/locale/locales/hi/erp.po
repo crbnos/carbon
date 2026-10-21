@@ -4301,6 +4301,9 @@ msgstr "निकाय"
 msgid "Body for the email you want to send"
 msgstr "आप जो ईमेल भेजना चाहते हैं उसका निकाय"
 
+msgid "Body Type"
+msgstr ""
+
 msgid "BoM"
 msgstr "BoM"
 
@@ -7073,7 +7076,7 @@ msgid "Date Acquired"
 msgstr "अधिग्रहण की तारीख"
 
 msgid "Date and time"
-msgstr ""
+msgstr "दिनांक और समय"
 
 msgid "Date Calibrated"
 msgstr "अंशांकन की तारीख"
@@ -9518,6 +9521,9 @@ msgstr ""
 msgid "Event Type"
 msgstr "ईवेंट प्रकार"
 
+msgid "Event types"
+msgstr ""
+
 msgid "Events"
 msgstr "घटनाएं"
 
@@ -9686,6 +9692,9 @@ msgstr "पंक्ति को विस्तृत करें"
 
 msgid "Expand Machine"
 msgstr "मशीन का विस्तार करें"
+
+msgid "Expand Recurring Event?"
+msgstr ""
 
 msgid "Expand row"
 msgstr "पंक्ति का विस्तार करें"
@@ -18649,7 +18658,7 @@ msgid "Reconnect needed"
 msgstr "पुनः कनेक्ट करने की आवश्यकता है"
 
 msgid "Reconnect with the account this connection already uses, or use Add account to connect the other one."
-msgstr ""
+msgstr "इस कनेक्शन द्वारा पहले से उपयोग किए जा रहे खाते से फिर से कनेक्ट करें, या दूसरे खाते को कनेक्ट करने के लिए खाता जोड़ें का उपयोग करें।"
 
 msgid "Record"
 msgstr "रिकॉर्ड करें"
@@ -20736,6 +20745,9 @@ msgstr "कर्मचारी चुनें"
 msgid "Select Employee Type"
 msgstr "कर्मचारी प्रकार चुनें"
 
+msgid "Select event types"
+msgstr ""
+
 msgid "Select field"
 msgstr "फ़ील्ड चुनें"
 
@@ -20883,6 +20895,9 @@ msgstr "आमंत्रण भेजें"
 
 msgid "Send Invites"
 msgstr "आमंत्रण भेजें"
+
+msgid "Send Notifications"
+msgstr ""
 
 msgid "Send RFQ to Suppliers"
 msgstr "आपूर्तिकर्ताओं को RFQ भेजें"
@@ -22979,7 +22994,7 @@ msgid "That name is already used by another step."
 msgstr "वह नाम पहले से ही एक अन्य चरण द्वारा उपयोग किया जा रहा है।"
 
 msgid "That's a different account"
-msgstr ""
+msgstr "यह एक अलग खाता है"
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -26792,6 +26807,9 @@ msgstr "यह कार्य उत्पादन को अवरुद्�
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "क्या जोड़ें चयनित अनुमतियों को प्रत्येक उपयोगकर्ता के पास पहले से है उसके ऊपर, या अपडेट करें प्रत्येक उपयोगकर्ता की अनुमति सेट को नीचे चयन के साथ थोक में प्रतिस्थापित करके।"
+
+msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
+msgstr ""
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "कौन सा दस्तावेज़ इस आइटम के लिए प्रत्येक निरीक्षण प्रवाह को चलाता है।"

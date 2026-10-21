@@ -4301,6 +4301,9 @@ msgstr "Тело"
 msgid "Body for the email you want to send"
 msgstr "Текст письма, которое вы хотите отправить"
 
+msgid "Body Type"
+msgstr ""
+
 msgid "BoM"
 msgstr "BoM"
 
@@ -7073,7 +7076,7 @@ msgid "Date Acquired"
 msgstr "Дата приобретения"
 
 msgid "Date and time"
-msgstr ""
+msgstr "Дата и время"
 
 msgid "Date Calibrated"
 msgstr "Дата калибровки"
@@ -9518,6 +9521,9 @@ msgstr ""
 msgid "Event Type"
 msgstr "Тип события"
 
+msgid "Event types"
+msgstr ""
+
 msgid "Events"
 msgstr "События"
 
@@ -9686,6 +9692,9 @@ msgstr "Развернуть строку"
 
 msgid "Expand Machine"
 msgstr "Развернуть Станок"
+
+msgid "Expand Recurring Event?"
+msgstr ""
 
 msgid "Expand row"
 msgstr "Развернуть строку"
@@ -18649,7 +18658,7 @@ msgid "Reconnect needed"
 msgstr "Требуется переподключение"
 
 msgid "Reconnect with the account this connection already uses, or use Add account to connect the other one."
-msgstr ""
+msgstr "Переподключитесь с учетной записью, которую уже использует это подключение, или подключите другую через «Добавить учетную запись»."
 
 msgid "Record"
 msgstr "Записать"
@@ -20736,6 +20745,9 @@ msgstr "Выберите сотрудника"
 msgid "Select Employee Type"
 msgstr "Выберите тип сотрудника"
 
+msgid "Select event types"
+msgstr ""
+
 msgid "Select field"
 msgstr "Выберите поле"
 
@@ -20883,6 +20895,9 @@ msgstr "Отправить приглашение"
 
 msgid "Send Invites"
 msgstr "Отправить приглашения"
+
+msgid "Send Notifications"
+msgstr ""
 
 msgid "Send RFQ to Suppliers"
 msgstr "Отправить РФП поставщикам"
@@ -22979,7 +22994,7 @@ msgid "That name is already used by another step."
 msgstr "Это имя уже используется другим шагом."
 
 msgid "That's a different account"
-msgstr ""
+msgstr "Это другая учетная запись"
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -26792,6 +26807,9 @@ msgstr "Блокирует ли эта работа производство (В
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "Добавить выбранные права доступа поверх того, что уже имеет каждый пользователь, или Обновить, заменив набор прав доступа каждого пользователя полностью выбором ниже."
+
+msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
+msgstr ""
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "Какой документ определяет каждый процесс контроля для этого элемента."

@@ -4301,6 +4301,9 @@ msgstr "본문"
 msgid "Body for the email you want to send"
 msgstr "보낼 이메일의 본문"
 
+msgid "Body Type"
+msgstr ""
+
 msgid "BoM"
 msgstr "BOM"
 
@@ -7073,7 +7076,7 @@ msgid "Date Acquired"
 msgstr "취득일"
 
 msgid "Date and time"
-msgstr ""
+msgstr "날짜 및 시간"
 
 msgid "Date Calibrated"
 msgstr "교정일"
@@ -9518,6 +9521,9 @@ msgstr ""
 msgid "Event Type"
 msgstr "이벤트 유형"
 
+msgid "Event types"
+msgstr ""
+
 msgid "Events"
 msgstr "이벤트"
 
@@ -9686,6 +9692,9 @@ msgstr "라인 펼치기"
 
 msgid "Expand Machine"
 msgstr "기계 펼치기"
+
+msgid "Expand Recurring Event?"
+msgstr ""
 
 msgid "Expand row"
 msgstr "행 펼치기"
@@ -18649,7 +18658,7 @@ msgid "Reconnect needed"
 msgstr "재연결 필요"
 
 msgid "Reconnect with the account this connection already uses, or use Add account to connect the other one."
-msgstr ""
+msgstr "이 연결이 이미 사용하는 계정으로 다시 연결하거나, 계정 추가로 다른 계정을 연결하세요."
 
 msgid "Record"
 msgstr "기록"
@@ -20736,6 +20745,9 @@ msgstr "직원 선택"
 msgid "Select Employee Type"
 msgstr "직원 유형 선택"
 
+msgid "Select event types"
+msgstr ""
+
 msgid "Select field"
 msgstr "필드 선택"
 
@@ -20883,6 +20895,9 @@ msgstr "초대 보내기"
 
 msgid "Send Invites"
 msgstr "초대 보내기"
+
+msgid "Send Notifications"
+msgstr ""
 
 msgid "Send RFQ to Suppliers"
 msgstr "공급업체에 RFQ 전송"
@@ -22979,7 +22994,7 @@ msgid "That name is already used by another step."
 msgstr "해당 이름은 이미 다른 단계에서 사용 중입니다."
 
 msgid "That's a different account"
-msgstr ""
+msgstr "다른 계정입니다"
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -26792,6 +26807,9 @@ msgstr "이 작업이 생산을 차단(Down)하는지, 성능을 저하(영향)�
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "선택한 권한을 각 사용자가 이미 가진 권한에 추가할지(추가), 아래 선택 항목으로 각 사용자의 권한 세트를 완전히 교체할지(업데이트) 여부입니다."
+
+msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
+msgstr ""
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "이 항목에 대한 각 검사 흐름을 운영하는 문서입니다."

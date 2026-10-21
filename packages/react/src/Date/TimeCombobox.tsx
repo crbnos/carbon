@@ -203,12 +203,11 @@ export const TimeCombobox = ({
                     option.value === activeValue && "font-medium"
                   )}
                   onSelect={() => choose(option.time)}
-                  // The input's blur would otherwise fire first and commit the
-                  // half-typed draft instead of this choice.
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                    choose(option.time);
-                  }}
+                  // Keeps focus in the input, so its blur cannot commit the
+                  // half-typed draft before the click selects this option.
+                  // `onSelect` commits the choice: committing here too called
+                  // `onChange` twice for one click.
+                  onMouseDown={(event) => event.preventDefault()}
                 >
                   {option.label}
                 </CommandItem>

@@ -237,7 +237,7 @@ export function formatTimeOfDay(
       hour: "2-digit",
       minute: "2-digit",
       timeZone: "UTC",
-      ...(hour24 ? { hour12: false } : { hour: "numeric" })
+      ...(hour24 ? { hourCycle: "h23" } : { hour: "numeric" })
     }).format(anchor);
   } catch {
     return value;

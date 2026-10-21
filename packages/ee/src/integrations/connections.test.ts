@@ -404,13 +404,39 @@ describe("resolveConnectionAuth", () => {
       p_secret: { accessToken: "at-1", refreshToken: "rt-1" } as never
     });
 
-    vi.mocked(fetch).mockResolvedValue({ ok: false, status: 400 } as Response);
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: "invalid_grant" })
+    } as Response);
 
     await expect(
       resolveConnectionAuth(client, COMPANY, CONNECTION, OAUTH)
     ).rejects.toBeInstanceOf(ConnectionRevokedError);
     expect(rows.get(CONNECTION)!.status).toBe("Expired");
     expect(rows.get(CONNECTION)!.lastError).toContain("400");
+  });
+
+  // A wrong client secret on Carbon's side answers every refresh with
+  // `invalid_client`. That is ours to fix, not the customer's grant to revoke.
+  it("keeps the connection Active when the vendor refuses Carbon's OAuth app", async () => {
+    const { client, rows } = makeClient({ expiresAt: inMinutes(1) });
+    await client.rpc("upsert_connection_secret", {
+      p_company_id: COMPANY,
+      p_connection_id: CONNECTION,
+      p_secret: { accessToken: "at-1", refreshToken: "rt-1" } as never
+    });
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: "invalid_client" })
+    } as Response);
+
+    await expect(
+      resolveConnectionAuth(client, COMPANY, CONNECTION, OAUTH)
+    ).rejects.not.toBeInstanceOf(ConnectionRevokedError);
+    expect(rows.get(CONNECTION)!.status).toBe("Active");
   });
 
   // A wifi blip at the moment the access token expired flipped a working Google
@@ -422,24 +448,27 @@ describe("resolveConnectionAuth", () => {
       "the vendor returns a 5xx",
       () => Promise.resolve({ ok: false, status: 503 } as Response)
     ]
-  ])("keeps the connection Active when %s during a refresh", async (_, impl) => {
-    const { client, rows } = makeClient({ expiresAt: inMinutes(1) });
-    await client.rpc("upsert_connection_secret", {
-      p_company_id: COMPANY,
-      p_connection_id: CONNECTION,
-      p_secret: { accessToken: "at-1", refreshToken: "rt-1" } as never
-    });
+  ])(
+    "keeps the connection Active when %s during a refresh",
+    async (_, impl) => {
+      const { client, rows } = makeClient({ expiresAt: inMinutes(1) });
+      await client.rpc("upsert_connection_secret", {
+        p_company_id: COMPANY,
+        p_connection_id: CONNECTION,
+        p_secret: { accessToken: "at-1", refreshToken: "rt-1" } as never
+      });
 
-    vi.mocked(fetch).mockImplementation(impl as typeof fetch);
+      vi.mocked(fetch).mockImplementation(impl as typeof fetch);
 
-    await expect(
-      resolveConnectionAuth(client, COMPANY, CONNECTION, OAUTH)
-    ).rejects.not.toBeInstanceOf(ConnectionRevokedError);
-    expect(rows.get(CONNECTION)!.status).toBe("Active");
-    expect(rows.get(CONNECTION)!.lastError).toBeNull();
-    // The claim is released so the retry does not wait out a phantom refresh.
-    expect(rows.get(CONNECTION)!.refreshingAt).toBeNull();
-  });
+      await expect(
+        resolveConnectionAuth(client, COMPANY, CONNECTION, OAUTH)
+      ).rejects.not.toBeInstanceOf(ConnectionRevokedError);
+      expect(rows.get(CONNECTION)!.status).toBe("Active");
+      expect(rows.get(CONNECTION)!.lastError).toBeNull();
+      // The claim is released so the retry does not wait out a phantom refresh.
+      expect(rows.get(CONNECTION)!.refreshingAt).toBeNull();
+    }
+  );
 
   // Slack answers a bad refresh with HTTP 200 and `{ ok: false, error }`. That is not
   // a 4xx, so it is not a definitive rejection — but the error name must reach the log.

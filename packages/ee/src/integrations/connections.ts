@@ -58,10 +58,10 @@ export class ConnectionSecretUnavailableError extends Error {
 }
 
 /**
- * The vendor answered the token request with a definitive no (a 4xx that is not
- * rate limiting or a transient OAuth code — a revoked or invalid grant). Only this
- * condemns a connection; a network failure, a 429, or a vendor 5xx is transient
- * and must leave the row Active so the next use retries.
+ * The vendor answered the token request with `invalid_grant`: the grant itself is
+ * revoked or invalid. Only this condemns a connection. A network failure, a 429, a
+ * vendor 5xx, or an error about Carbon's own OAuth app (`invalid_client`) leaves
+ * the row Active so the next use retries.
  */
 export class ConnectionRejectedError extends Error {
   constructor(status: number) {
@@ -728,12 +728,6 @@ export interface ExchangedTokens {
  */
 const TOKEN_REQUEST_TIMEOUT_MS = 10_000;
 
-/** RFC 6749 codes that mean "try again", not "the grant is dead". */
-const TRANSIENT_OAUTH_ERRORS = new Set([
-  "temporarily_unavailable",
-  "slow_down"
-]);
-
 async function postTokenRequest(
   tokenUrl: string,
   body: Record<string, string>
@@ -749,19 +743,19 @@ async function postTokenRequest(
   });
 
   if (!response.ok) {
-    // Only a definitive grant rejection may condemn the connection. Rate limiting
-    // (429), a vendor 5xx, or a body naming a transient OAuth code must stay
-    // retryable — marking a valid connection Expired over a 429 strands it.
-    if (response.status === 429 || response.status >= 500) {
-      throw new Error(`The vendor token endpoint failed (${response.status}).`);
-    }
+    // Only `invalid_grant` says the grant itself is gone, so only it condemns the
+    // connection. Everything else stays retryable: a 429 or vendor 5xx, a
+    // transient OAuth code, and `invalid_client` / `unauthorized_client`, which
+    // arrive with the same 400/401 but mean Carbon's own OAuth app is
+    // misconfigured (a rotated secret) — condemning on those would mark every
+    // account Expired, and fixing the secret would not bring them back.
     const code = await oauthErrorCode(response);
-    if (code !== undefined && TRANSIENT_OAUTH_ERRORS.has(code)) {
-      throw new Error(
-        `The vendor token endpoint failed (${response.status}: ${code}).`
-      );
+    if (code === "invalid_grant") {
+      throw new ConnectionRejectedError(response.status);
     }
-    throw new ConnectionRejectedError(response.status);
+    throw new Error(
+      `The vendor token endpoint failed (${response.status}${code ? `: ${code}` : ""}).`
+    );
   }
   return readTokenResponse(await response.json());
 }

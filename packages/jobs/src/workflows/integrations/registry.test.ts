@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { PIECE_ALLOWLIST } from "./allowlist";
+import { allowlistEntry, PIECE_ALLOWLIST } from "./allowlist";
 import {
   getPieceAction,
   getPieceActions,
@@ -114,4 +114,17 @@ describe("gmail", () => {
       "https://www.googleapis.com/auth/gmail.readonly"
     );
   });
+});
+
+describe("allowlistEntry", () => {
+  it("finds an allowlisted piece", () => {
+    expect(allowlistEntry("google-calendar")?.label).toBe("Google Calendar");
+  });
+
+  it.each(["__proto__", "constructor", "toString", "not-a-piece"])(
+    "treats %s as an unknown piece",
+    (piece) => {
+      expect(allowlistEntry(piece)).toBeUndefined();
+    }
+  );
 });

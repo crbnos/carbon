@@ -19,13 +19,13 @@ import {
   resolveOAuthApp
 } from "@carbon/jobs/integrations";
 import { getLogger } from "@carbon/logger";
-import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
 import { integrationErrorSearch } from "~/modules/settings/integration-errors";
 import {
   invalidateIntegrationHealthCache,
   markIntegrationInstalled,
+  oauthPopupResponse,
   verifyConnectionState
 } from "~/modules/settings/settings.service";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
@@ -37,20 +37,23 @@ export const config = {
 
 const logger = getLogger("erp", "integrations", "connections");
 
-// A path on this origin: the vendor sent the browser to this callback, so the
-// integrations page is on the same host.
-function integrationsUrl() {
-  return path.to.integrations;
-}
-
-/** The vendor redirects the browser here, so a failure must render as something
- * actionable. Only a code crosses the URL; `integrationErrors` owns the copy. */
-function connectionFailed(
-  request: Request,
-  reason: IntegrationErrorCode<"connection">
+/**
+ * The consent screen runs in a popup the integrations page opened, so the answer
+ * is posted back to that page (which refreshes, or shows the error) and the popup
+ * closes. With no opener it lands on the integrations page like a redirect. Only a
+ * code crosses; `integrationErrors` owns the copy.
+ */
+function connectionReply(
+  integration: string,
+  reason?: IntegrationErrorCode<"connection">
 ) {
-  return redirect(
-    `${integrationsUrl()}${integrationErrorSearch("connection", reason)}`
+  return oauthPopupResponse(
+    reason === undefined
+      ? { integration, ok: true }
+      : { integration, ok: false, error: reason },
+    reason === undefined
+      ? path.to.integrations
+      : `${path.to.integrations}${integrationErrorSearch("connection", reason)}`
   );
 }
 
@@ -61,12 +64,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());
+  // Which card the reply is for. Read from the signed state even on a refusal,
+  // so the right card shows it; the checks below still gate the save.
+  const replyTo =
+    verifyConnectionState(searchParams.state)?.pieceName ?? "connection";
+  const connectionFailed = (reason: IntegrationErrorCode<"connection">) =>
+    connectionReply(replyTo, reason);
 
   if (searchParams.error) {
     logger.error("Integration authorization refused", {
       error: searchParams.error
     });
-    return connectionFailed(request, "denied");
+    return connectionFailed("denied");
   }
 
   const parsed = oAuthCallbackSchema.safeParse(searchParams);
@@ -75,7 +84,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     logger.error("Invalid integration auth response", {
       params: Object.keys(searchParams)
     });
-    return connectionFailed(request, "invalid-response");
+    return connectionFailed("invalid-response");
   }
 
   // The signature is what stops a token being planted into another company's
@@ -92,12 +101,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       companyMatched: state?.companyId === companyId,
       userMatched: state?.userId === userId
     });
-    return connectionFailed(request, "invalid-state");
+    return connectionFailed("invalid-state");
   }
 
   const entry = allowlistEntry(state.pieceName);
   if (entry === undefined) {
-    return connectionFailed(request, "invalid-state");
+    return connectionFailed("invalid-state");
   }
 
   let app: ReturnType<typeof resolveOAuthApp>;
@@ -106,7 +115,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     app = resolveOAuthApp(state.pieceName);
     auth = await getPieceOAuth2Auth(state.pieceName);
   } catch {
-    return connectionFailed(request, "not-configured");
+    return connectionFailed("not-configured");
   }
 
   // Each stage has its own try, so the error code is decided by WHERE it failed,
@@ -126,7 +135,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     logger.error("Integration token exchange failed: {detail}", {
       detail: describeError(err)
     });
-    return connectionFailed(request, "token-exchange");
+    return connectionFailed("token-exchange");
   }
 
   try {
@@ -150,15 +159,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   } catch (err) {
     if (err instanceof ConnectionAccountMismatchError) {
-      return connectionFailed(request, "account-mismatch");
+      return connectionFailed("account-mismatch");
     }
     if (err instanceof ConnectionNameTakenError) {
-      return connectionFailed(request, "duplicate-name");
+      return connectionFailed("duplicate-name");
     }
     logger.error("Integration connection save failed: {detail}", {
       detail: describeError(err)
     });
-    return connectionFailed(request, "save-failed");
+    return connectionFailed("save-failed");
   }
 
   // The piece is an ordinary integration card, so a connected account is what
@@ -174,11 +183,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     logger.error("Integration install mark failed: {detail}", {
       detail: describeError(installed.error)
     });
-    return connectionFailed(request, "save-failed");
+    return connectionFailed("save-failed");
   }
   await invalidateIntegrationHealthCache(state.pieceName, companyId);
 
-  return redirect(integrationsUrl());
+  return connectionReply(state.pieceName);
 }
 
 /** A PostgREST failure is a plain object, not an Error: its `message`, `code` and

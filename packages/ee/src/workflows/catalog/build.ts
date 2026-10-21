@@ -864,7 +864,17 @@ export function buildCatalog(
       permission: declaration.permission,
       piece: { name, action }
     };
-    labelDeclaration(id, declaration, labels, help);
+    // Advanced inputs need the same labels and tooltips: the builder lists them
+    // under Advanced, and without these it fell back to the raw prop names.
+    labelDeclaration(
+      id,
+      {
+        ...declaration,
+        inputs: { ...declaration.inputs, ...declaration.advancedInputs }
+      },
+      labels,
+      help
+    );
     // Written once per step of the app, to the same key — the builder needs the app's
     // own name to offer it before any step has been picked.
     const appKey = integrationAppLabelKey(name);

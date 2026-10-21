@@ -275,7 +275,8 @@ export async function getSlackWorkspaceByTeamId(
   serviceRole: SupabaseClient<Database>,
   teamId: string
 ): Promise<SlackWorkspace | null> {
-  const { data } = await serviceRole
+  // A failed read must not look like "no connection for this workspace".
+  const { data, error } = await serviceRole
     .from("integrationConnection")
     .select(
       "id, companyId, pieceName, name, authType, accountLabel, metadata, expiresAt, status, lastError"
@@ -284,6 +285,7 @@ export async function getSlackWorkspaceByTeamId(
     .eq("status", "Active")
     .eq("metadata->>team_id", teamId)
     .order("createdAt", { ascending: true });
+  if (error) throw error;
   const rows = (data ?? []) as unknown as IntegrationConnection[];
   const connection = rows[0];
   if (connection === undefined) return null;

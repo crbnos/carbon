@@ -140,7 +140,10 @@ export function IntegrationCard({
         return;
       }
 
-      const failure = getIntegrationError(integration.id, event.data.error);
+      // A workflow piece's callback answers with the shared `connection` codes.
+      const failure =
+        getIntegrationError(integration.id, event.data.error) ??
+        getIntegrationError("connection", event.data.error);
       if (failure) {
         toast.error(i18n._(failure.title), {
           id: `${integration.id}:${event.data.error}`,

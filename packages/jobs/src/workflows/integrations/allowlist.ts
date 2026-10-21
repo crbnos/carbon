@@ -349,7 +349,10 @@ export const PIECE_ALLOWLIST: Record<ActivepiecesPiece, AllowlistEntry> = {
  * an unknown name is `undefined` here rather than a compile error, because the
  * data it comes from cannot be compile-time checked. */
 export function allowlistEntry(piece: string): AllowlistEntry | undefined {
-  return (PIECE_ALLOWLIST as Record<string, AllowlistEntry>)[piece];
+  // Own keys only: `__proto__` or `toString` must read as an unknown piece.
+  return Object.hasOwn(PIECE_ALLOWLIST, piece)
+    ? (PIECE_ALLOWLIST as Record<string, AllowlistEntry>)[piece]
+    : undefined;
 }
 
 /**

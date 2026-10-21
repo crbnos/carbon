@@ -801,6 +801,11 @@ export type OptionsProvider = {
  * Only USABLE accounts are offered. A revoked account in a dropdown is a trap —
  * picking it builds a workflow that cannot run.
  */
+/** The app's Accounts tab, where a broken connection is reconnected. */
+function integrationAccountsHref(piece: string) {
+  return `${path.to.integration(piece)}?tab=connections`;
+}
+
 const connectionProvider: OptionsProvider = {
   permission: { view: "workflows" },
   resolve: async ({ companyId, params }) => {
@@ -812,7 +817,7 @@ const connectionProvider: OptionsProvider = {
     );
     const required = await requiredScopesFor(piece);
     const ready = usable.filter((row) => !needsReconnect(row, required));
-    const accountsHref = `${path.to.integration(piece)}?tab=connections`;
+    const accountsHref = integrationAccountsHref(piece);
 
     // Connected, but every account predates a scope this piece now needs: the fix
     // is a re-consent, not a new account — say so instead of offering nothing.
@@ -910,7 +915,7 @@ const propertyProvider: OptionsProvider = {
         return {
           options: [],
           errorCode: "reconnect",
-          errorHref: path.to.integrations
+          errorHref: integrationAccountsHref(piece)
         };
       }
       if (cause instanceof ConnectionRefreshTimeoutError) {

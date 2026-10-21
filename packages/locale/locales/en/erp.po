@@ -4301,6 +4301,9 @@ msgstr "Body"
 msgid "Body for the email you want to send"
 msgstr "Body for the email you want to send"
 
+msgid "Body Type"
+msgstr "Body Type"
+
 msgid "BoM"
 msgstr "BoM"
 
@@ -9518,6 +9521,9 @@ msgstr "Event stopped"
 msgid "Event Type"
 msgstr "Event Type"
 
+msgid "Event types"
+msgstr "Event types"
+
 msgid "Events"
 msgstr "Events"
 
@@ -9686,6 +9692,9 @@ msgstr "Expand line"
 
 msgid "Expand Machine"
 msgstr "Expand Machine"
+
+msgid "Expand Recurring Event?"
+msgstr "Expand Recurring Event?"
 
 msgid "Expand row"
 msgstr "Expand row"
@@ -20736,6 +20745,9 @@ msgstr "Select Employee"
 msgid "Select Employee Type"
 msgstr "Select Employee Type"
 
+msgid "Select event types"
+msgstr "Select event types"
+
 msgid "Select field"
 msgstr "Select field"
 
@@ -20883,6 +20895,9 @@ msgstr "Send Invite"
 
 msgid "Send Invites"
 msgstr "Send Invites"
+
+msgid "Send Notifications"
+msgstr "Send Notifications"
 
 msgid "Send RFQ to Suppliers"
 msgstr "Send RFQ to Suppliers"
@@ -26792,6 +26807,9 @@ msgstr "Whether this work blocks production (Down), degrades it (Impact), is on 
 
 msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
 msgstr "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
+
+msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
+msgstr "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "Which document drives each inspection flow for this item."
