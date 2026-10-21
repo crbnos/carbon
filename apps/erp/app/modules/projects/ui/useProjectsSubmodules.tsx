@@ -47,13 +47,22 @@ function isProjectsRoute(pathname: string) {
   );
 }
 
-/** The Approvals count from the projects layouts' loaders, when one is on screen. */
-function useApprovalCount() {
+/** The Approvals counts from the projects layouts' loaders, when one is on
+ *  screen: submitted time and contract billable items to review. */
+function useApprovalCounts() {
   const matches = useMatches();
   for (const match of matches) {
-    const data = match.data as { approvalCount?: unknown } | undefined;
+    const data = match.data as
+      | { approvalCount?: unknown; billingReviewCount?: unknown }
+      | undefined;
     if (data && typeof data.approvalCount === "number") {
-      return data.approvalCount;
+      return {
+        approvalCount: data.approvalCount,
+        billingReviewCount:
+          typeof data.billingReviewCount === "number"
+            ? data.billingReviewCount
+            : 0
+      };
     }
   }
   return undefined;
@@ -64,13 +73,16 @@ export default function useProjectsSubmodules() {
   const permissions = usePermissions();
   const settings = useSettings();
   const { addSavedViewsToRoutes } = useSavedViews();
-  const approvalCount = useApprovalCount();
+  const counts = useApprovalCounts();
+  const billingReviewCount = counts?.billingReviewCount ?? 0;
 
   // A DCAA labor transfer always waits for approval, so Approvals shows in
   // DCAA mode even when the company does not require approval of all time.
+  // Contract billable items that wait for review also show it.
   const showApprovals =
     settings.timesheetApprovalRequired === true ||
-    settings.timekeepingControls === "DCAA";
+    settings.timekeepingControls === "DCAA" ||
+    billingReviewCount > 0;
 
   const projectsRoutes: AuthenticatedRouteGroup[] = [
     {
@@ -95,7 +107,9 @@ export default function useProjectsSubmodules() {
                 name: t`Approvals`,
                 to: path.to.projectTimesheetApprovals,
                 icon: <LuClipboardCheck />,
-                count: approvalCount,
+                count: counts
+                  ? counts.approvalCount + counts.billingReviewCount
+                  : undefined,
                 // Billing review joins Approvals (it is a review queue too).
                 isActive: (pathname: string) =>
                   pathname.startsWith(path.to.projectTimesheetApprovals) ||

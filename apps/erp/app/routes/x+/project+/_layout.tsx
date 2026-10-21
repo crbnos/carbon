@@ -6,7 +6,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet } from "@carbon/react";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
-import { getApprovalCountForUser } from "~/modules/projects/projects.server";
+import {
+  getApprovalCountForUser,
+  getBillingReviewCountForUser
+} from "~/modules/projects/projects.server";
 import type { Handle } from "~/utils/handle";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
@@ -27,9 +30,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "projects"
   });
 
-  return {
-    approvalCount: await getApprovalCountForUser(client, { companyId, userId })
-  };
+  // Approvals counts submitted time and the contract billable items that
+  // wait for review.
+  const [approvalCount, billingReviewCount] = await Promise.all([
+    getApprovalCountForUser(client, { companyId, userId }),
+    getBillingReviewCountForUser(client, { companyId, userId })
+  ]);
+  return { approvalCount, billingReviewCount };
 }
 
 export default function ProjectRoute() {

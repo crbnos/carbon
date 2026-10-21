@@ -5326,6 +5326,39 @@ export async function getApprovalCountForUser(
   return result.count ?? 0;
 }
 
+/**
+ * The contract billable items that wait for review (Unbilled or On Hold), for
+ * a user who may review them (`update: projects` and `view: sales`, what the
+ * Billing tab of Approvals needs). The Projects sidebar shows Approvals while
+ * there are any, and adds them to its count. Any other user, or a failed
+ * read, gets 0.
+ */
+export async function getBillingReviewCountForUser(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; userId: string }
+): Promise<number> {
+  const permissions = (await getUserClaims(args.userId, args.companyId))
+    ?.permissions;
+  const canReview =
+    hasPermission(permissions, "projects", "update", args.companyId) &&
+    hasPermission(permissions, "sales", "view", args.companyId);
+  if (!canReview) return 0;
+  const result = await client
+    .from("projectBillableItem")
+    .select("id", { count: "exact", head: true })
+    .eq("companyId", args.companyId)
+    .not("customerContractLineId", "is", null)
+    .in("status", ["Unbilled", "On Hold"]);
+  if (result.error) {
+    logger.error("Failed to count the billable items waiting for review", {
+      companyId: args.companyId,
+      error: result.error
+    });
+    return 0;
+  }
+  return result.count ?? 0;
+}
+
 // --- Projects → Reports ---------------------------------------------------------
 
 /** A `YYYY-MM-DD` search param, or null when it is missing or not a date. */
