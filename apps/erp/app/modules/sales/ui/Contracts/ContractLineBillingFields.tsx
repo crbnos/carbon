@@ -10,19 +10,26 @@ import { LuSparkles } from "react-icons/lu";
 import { BillingElement, Number } from "~/components/Form";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { useCurrencyDecimals } from "~/hooks";
-import type { contractBillingMethods } from "../../sales.models";
+import type {
+  contractBillingBases,
+  contractBillingMethods
+} from "../../sales.models";
 
 type BillingMethod = (typeof contractBillingMethods)[number];
 
-export function useBillingMethodLabels() {
+/** The billing methods by name. A project contract calls its `Fixed` line
+ *  "Fixed Price"; a service contract's lines are all Fixed. */
+export function useBillingMethodLabels(
+  billingBasis?: (typeof contractBillingBases)[number] | null
+) {
   const { t } = useLingui();
   return useMemo<Record<BillingMethod, string>>(
     () => ({
-      Fixed: t`Fixed`,
+      Fixed: billingBasis === "Project" ? t`Fixed Price` : t`Fixed`,
       "Time & Materials": t`Time & Materials`,
       "Cost Plus": t`Cost Plus`
     }),
-    [t]
+    [t, billingBasis]
   );
 }
 
@@ -110,9 +117,7 @@ export function ContractLineBillingFields({
         isReadOnly={fundedByActions}
         {...money}
       />
-      {billingMethod === "Cost Plus" && (
-        <Number name="ceilingAmount" label={t`Ceiling`} {...money} />
-      )}
+      <Number name="ceilingAmount" label={t`Ceiling`} {...money} />
       <Number
         name="noticePercent"
         label={t`Notice At (%)`}

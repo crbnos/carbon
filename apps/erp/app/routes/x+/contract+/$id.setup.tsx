@@ -81,7 +81,16 @@ export default function ContractSetupRoute() {
   const { contract, lines, lineTotals, residuals, revenueResiduals } =
     routeData;
 
+  const isProject = contract.billingBasis === "Project";
   const total = Object.values(lineTotals).reduce((sum, v) => sum + v, 0);
+  // A project contract has no contract total: its Time & Materials and Cost
+  // Plus lines bill from project cost. Only its Fixed Price lines have a
+  // price (the rate, at quantity 1).
+  const fixedLines = lines.filter((line) => line.billingMethod === "Fixed");
+  const fixedPriceTotal = fixedLines.reduce(
+    (sum, line) => sum + Number(line.rate) * Number(line.quantity),
+    0
+  );
   const steps = contractSetupStepsFor(contract.billingBasis);
   const index = steps.indexOf(step);
   const previous = index > 0 ? steps[index - 1] : null;
@@ -112,14 +121,27 @@ export default function ContractSetupRoute() {
       {step !== "details" && (
         <SetupFooter
           summary={
-            <span className="flex items-baseline gap-2">
-              <span className="text-muted-foreground">
-                <Trans>Contract Total</Trans>
+            isProject ? (
+              fixedLines.length > 0 ? (
+                <span className="flex items-baseline gap-2">
+                  <span className="text-muted-foreground">
+                    <Trans>Fixed Price Total</Trans>
+                  </span>
+                  <span className="font-medium tabular-nums">
+                    {formatter.format(fixedPriceTotal)}
+                  </span>
+                </span>
+              ) : null
+            ) : (
+              <span className="flex items-baseline gap-2">
+                <span className="text-muted-foreground">
+                  <Trans>Contract Total</Trans>
+                </span>
+                <span className="font-medium tabular-nums">
+                  {formatter.format(total)}
+                </span>
               </span>
-              <span className="font-medium tabular-nums">
-                {formatter.format(total)}
-              </span>
-            </span>
+            )
           }
           actions={
             <>
@@ -135,9 +157,7 @@ export default function ContractSetupRoute() {
                   <Button variant="secondary" asChild>
                     <Link
                       to={
-                        contract.billingBasis === "Project"
-                          ? path.to.projectContracts
-                          : path.to.contracts
+                        isProject ? path.to.projectContracts : path.to.contracts
                       }
                     >
                       <Trans>Save as Draft</Trans>

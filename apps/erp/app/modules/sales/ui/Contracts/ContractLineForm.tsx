@@ -16,6 +16,7 @@ import {
   ModalCardTitle,
   VStack
 } from "@carbon/react";
+import type { ContractBillingBasis } from "@carbon/utils";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -40,9 +41,10 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import { path } from "~/utils/path";
 import {
   contractBillingMethods,
+  contractBillingMethodsFor,
   contractRateUnits,
   contractRevenueMethods,
-  contractRevenueMethodsByBillingMethod,
+  contractRevenueMethodsFor,
   contractRevenueTypes,
   customerContractLineValidator,
   isProjectBillingMethod
@@ -61,6 +63,10 @@ type ContractLineFormProps = {
   /** Discount and tax in percent points (10 = 10%), as the form posts them. */
   initialValues: ContractLineFormValues;
   currencyCode: string;
+  /** A service contract (`Schedule`) bills every line on its schedule, so it
+   *  has no billing method. A project contract's line is One-time: Time &
+   *  Materials, Cost Plus or Fixed Price. */
+  billingBasis?: ContractBillingBasis | null;
   /** The line's name when editing — its description, else its item. */
   title?: string;
   /** Only a Draft contract's lines change; an Active one changes through
@@ -76,6 +82,7 @@ type ContractLineFormProps = {
 const ContractLineForm = ({
   initialValues,
   currencyCode,
+  billingBasis,
   title,
   isLocked = false,
   type = "card",
@@ -164,13 +171,16 @@ const ContractLineForm = ({
     "Right to Invoice": t`Right to Invoice`,
     "Percent Complete": t`Percent Complete`
   };
-  const billingMethodLabels = useBillingMethodLabels();
+  const billingMethodLabels = useBillingMethodLabels(billingBasis);
 
   // A billing line bills project work: no quantity, rate or schedule. The
   // revenue methods follow the billing method (plan decision P6); Percent
-  // Complete on a Fixed line also needs a billing element.
+  // Complete on a Fixed line also needs a billing element. Every line of a
+  // project contract is One-time at quantity 1: a Fixed Price line is its
+  // price.
+  const isProject = billingBasis === "Project";
   const isBilling = isProjectBillingMethod(billingMethod);
-  const revenueMethods = contractRevenueMethodsByBillingMethod[billingMethod];
+  const revenueMethods = contractRevenueMethodsFor(billingBasis, billingMethod);
   const needsBillingElement = isBilling || revenueMethod === "Percent Complete";
   // Cost Plus and Percent Complete are commercial (`PROJECT_REVENUE`): kept
   // visible, with an upgrade notice and Save disabled. The route action is
@@ -183,10 +193,9 @@ const ContractLineForm = ({
     next: (typeof contractBillingMethods)[number]
   ) => {
     setBillingMethod(next);
-    const allowed: readonly string[] =
-      contractRevenueMethodsByBillingMethod[next];
+    const allowed = contractRevenueMethodsFor(billingBasis, next);
     if (!allowed.includes(revenueMethod)) {
-      setRevenueMethod(contractRevenueMethodsByBillingMethod[next][0]);
+      setRevenueMethod(allowed[0]);
     }
     if (isProjectBillingMethod(next)) setShowRevenue(true);
   };
@@ -240,21 +249,28 @@ const ContractLineForm = ({
               <Hidden name="customerContractId" />
               <VStack spacing={4}>
                 <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                  <Select
-                    name="billingMethod"
-                    label={t`Billing Method`}
-                    termId="billing-method"
-                    options={contractBillingMethods.map((value) => ({
-                      value,
-                      label: billingMethodLabels[value]
-                    }))}
-                    onChange={(option) => {
-                      const next = contractBillingMethods.find(
-                        (value) => value === option?.value
-                      );
-                      if (next) changeBillingMethod(next);
-                    }}
-                  />
+                  {isProject ? (
+                    <Select
+                      name="billingMethod"
+                      label={t`Billing Method`}
+                      termId="billing-method"
+                      options={contractBillingMethodsFor("Project").map(
+                        (value) => ({
+                          value,
+                          label: billingMethodLabels[value]
+                        })
+                      )}
+                      onChange={(option) => {
+                        const next = contractBillingMethods.find(
+                          (value) => value === option?.value
+                        );
+                        if (next) changeBillingMethod(next);
+                      }}
+                    />
+                  ) : (
+                    // A service contract bills every line on its schedule.
+                    <Hidden name="billingMethod" />
+                  )}
                   <Item
                     name="itemId"
                     label={t`Service`}
@@ -269,6 +285,14 @@ const ContractLineForm = ({
                       <Hidden name="revenueType" value="One-time" />
                       <Hidden name="quantity" value={1} />
                       <Hidden name="rate" value={0} />
+                      <Hidden name="discountPercent" value={0} />
+                    </>
+                  ) : isProject ? (
+                    // A Fixed Price line is One-time at quantity 1: its rate
+                    // is its price.
+                    <>
+                      <Hidden name="revenueType" value="One-time" />
+                      <Hidden name="quantity" value={1} />
                       <Hidden name="discountPercent" value={0} />
                     </>
                   ) : (
@@ -319,6 +343,28 @@ const ContractLineForm = ({
                       billingMethod={billingMethod}
                       projectId={projectId}
                       currencyCode={currencyCode}
+                    />
+                    <Number
+                      name="taxPercent"
+                      label={t`Tax (%)`}
+                      minValue={0}
+                      maxValue={100}
+                      step={INPUT_STEP.percent}
+                      formatOptions={INPUT_FORMAT.percentPoints}
+                    />
+                  </div>
+                ) : isProject ? (
+                  <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
+                    <Number
+                      name="rate"
+                      label={t`Price`}
+                      helperText={t`Billed on the line's billing events`}
+                      minValue={0}
+                      step={INPUT_STEP.money(currencyDecimals)}
+                      formatOptions={INPUT_FORMAT.money(
+                        currencyCode,
+                        currencyDecimals
+                      )}
                     />
                     <Number
                       name="taxPercent"
@@ -395,11 +441,15 @@ const ContractLineForm = ({
                     label={t`End Date`}
                     minValue={minDate}
                   />
-                  <DatePicker
-                    name="goLiveDate"
-                    label={t`Go-Live Date`}
-                    minValue={minDate}
-                  />
+                  {/* A project line is earned by its billing method, not
+                      from a go-live date. */}
+                  {!isProject && (
+                    <DatePicker
+                      name="goLiveDate"
+                      label={t`Go-Live Date`}
+                      minValue={minDate}
+                    />
+                  )}
                   <ContractProject
                     name="projectId"
                     label={t`Project`}

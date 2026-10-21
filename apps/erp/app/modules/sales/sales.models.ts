@@ -2057,6 +2057,19 @@ export const contractRevenueMethodsByBillingMethod = {
   readonly (typeof contractRevenueMethods)[number][]
 >;
 
+/** The revenue methods a line may use on a contract of this basis. A project
+ *  contract's Fixed Price line is earned by progress or by the day, never by
+ *  even period. */
+export function contractRevenueMethodsFor(
+  basis: (typeof contractBillingBases)[number] | null | undefined,
+  billingMethod: (typeof contractBillingMethods)[number]
+): readonly (typeof contractRevenueMethods)[number][] {
+  const methods = contractRevenueMethodsByBillingMethod[billingMethod];
+  return basis === "Project" && billingMethod === "Fixed"
+    ? methods.filter((method) => method !== "Even Period")
+    : methods;
+}
+
 /** The billing fields of a new line: Fixed, with the notice defaults. */
 export const newContractLineBillingValues = {
   billingMethod: "Fixed",

@@ -79,11 +79,12 @@ import {
   type contractAmendmentChangeValidator,
   contractAmendmentEffects,
   contractBillingMethods,
+  contractBillingMethodsFor,
   contractLineBillingFormValues,
   contractLineBillingTermsValidator,
   contractRateUnits,
   contractRevenueMethods,
-  contractRevenueMethodsByBillingMethod,
+  contractRevenueMethodsFor,
   contractRevenueTypes,
   customerContractAmendmentValidator,
   customerContractTypes,
@@ -399,7 +400,9 @@ const ContractAmendModal = ({
           row.billing.revenueMethod === "Percent Complete")
     );
   const [editingTerms, setEditingTerms] = useState<AmendRow | null>(null);
-  const billingLabels = useBillingMethodLabels();
+  // A service contract bills every line on its schedule: no billing method.
+  const isProject = contract.billingBasis === "Project";
+  const billingLabels = useBillingMethodLabels(contract.billingBasis);
   const hasChanges = changes.length > 0;
   const changesJson = JSON.stringify(changes);
 
@@ -578,11 +581,15 @@ const ContractAmendModal = ({
         header: t`Description`,
         cell: cell("description")
       },
-      {
-        id: "billingMethod",
-        header: t`Billing`,
-        cell: cell("billingMethod")
-      },
+      ...(isProject
+        ? [
+            {
+              id: "billingMethod",
+              header: t`Billing`,
+              cell: cell("billingMethod")
+            }
+          ]
+        : []),
       {
         accessorKey: "revenueType",
         header: t`Revenue Type`,
@@ -612,7 +619,7 @@ const ContractAmendModal = ({
         }
       }
     ];
-  }, [t, display, changedIds]);
+  }, [t, display, changedIds, isProject]);
 
   const editableComponents = useMemo(() => {
     // An ended line, and a type an existing line cannot change, read as they
@@ -963,6 +970,7 @@ const ContractAmendModal = ({
           name={editingTerms.description || editingTerms.name}
           terms={editingTerms.billing}
           currencyCode={currencyCode}
+          billingBasis={contract.billingBasis}
           isGated={projectRevenueGated}
           onSave={(billing) => {
             updateRow(editingTerms.id, { billing });
@@ -982,6 +990,7 @@ const BillingTermsModal = ({
   name,
   terms,
   currencyCode,
+  billingBasis,
   isGated,
   onSave,
   onClose
@@ -989,12 +998,13 @@ const BillingTermsModal = ({
   name: string;
   terms: BillingTerms;
   currencyCode: string;
+  billingBasis: Contract["billingBasis"];
   isGated: boolean;
   onSave: (terms: BillingTerms) => void;
   onClose: () => void;
 }) => {
   const { t } = useLingui();
-  const billingLabels = useBillingMethodLabels();
+  const billingLabels = useBillingMethodLabels(billingBasis);
   const [billingMethod, setBillingMethod] = useState(terms.billingMethod);
   const [revenueMethod, setRevenueMethod] = useState(terms.revenueMethod);
   const [projectId, setProjectId] = useState(terms.projectId ?? "");
@@ -1037,37 +1047,45 @@ const BillingTermsModal = ({
           <ModalBody>
             <VStack spacing={4}>
               <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
-                <Select
-                  name="billingMethod"
-                  label={t`Billing Method`}
-                  termId="billing-method"
-                  options={contractBillingMethods.map((value) => ({
-                    value,
-                    label: billingLabels[value]
-                  }))}
-                  onChange={(option) => {
-                    const next = contractBillingMethods.find(
-                      (value) => value === option?.value
-                    );
-                    if (!next) return;
-                    setBillingMethod(next);
-                    const allowed: readonly string[] =
-                      contractRevenueMethodsByBillingMethod[next];
-                    if (!allowed.includes(revenueMethod)) {
-                      setRevenueMethod(
-                        contractRevenueMethodsByBillingMethod[next][0]
+                {billingBasis === "Project" ? (
+                  <Select
+                    name="billingMethod"
+                    label={t`Billing Method`}
+                    termId="billing-method"
+                    options={contractBillingMethodsFor("Project").map(
+                      (value) => ({
+                        value,
+                        label: billingLabels[value]
+                      })
+                    )}
+                    onChange={(option) => {
+                      const next = contractBillingMethods.find(
+                        (value) => value === option?.value
                       );
-                    }
-                  }}
-                />
+                      if (!next) return;
+                      setBillingMethod(next);
+                      const allowed = contractRevenueMethodsFor(
+                        billingBasis,
+                        next
+                      );
+                      if (!allowed.includes(revenueMethod)) {
+                        setRevenueMethod(allowed[0]);
+                      }
+                    }}
+                  />
+                ) : (
+                  // A service contract bills every line on its schedule.
+                  <Hidden name="billingMethod" />
+                )}
                 <SelectControlled
                   name="revenueMethod"
                   label={t`Revenue Method`}
                   termId="revenue-method"
                   value={revenueMethod}
-                  options={contractRevenueMethodsByBillingMethod[
+                  options={contractRevenueMethodsFor(
+                    billingBasis,
                     billingMethod
-                  ].map((value) => ({
+                  ).map((value) => ({
                     value,
                     label: revenueMethodLabels[value]
                   }))}

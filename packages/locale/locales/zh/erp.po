@@ -2267,6 +2267,9 @@ msgstr "添加描述…"
 msgid "Add a domain"
 msgstr "添加一个域"
 
+msgid "Add a line for each CLIN: Time & Materials, Cost Plus or Fixed Price."
+msgstr ""
+
 msgid "Add a line to the document"
 msgstr "在文件中添加一行"
 
@@ -4734,6 +4737,9 @@ msgstr "已外部计费"
 
 msgid "Billed On"
 msgstr "开票日期"
+
+msgid "Billed on the line's billing events"
+msgstr ""
 
 msgid "Billed through"
 msgstr "已计费至"
@@ -11564,6 +11570,9 @@ msgstr "由...供给"
 msgid "Fee (%)"
 msgstr "费用 (%)"
 
+msgid "Fee / Handling"
+msgstr ""
+
 msgid "Fee on allowable cost"
 msgstr "可接受成本费用"
 
@@ -11826,6 +11835,12 @@ msgstr "一旦会计期间已过账或已关闭即被固定。删除所有未结
 
 msgid "Fixed price"
 msgstr "固定价格"
+
+msgid "Fixed Price"
+msgstr ""
+
+msgid "Fixed Price Total"
+msgstr ""
 
 msgid "Fixed Reorder"
 msgstr "固定重新订购"
@@ -17949,6 +17964,9 @@ msgid "One firing of a workflow, recorded step by step with the values each step
 msgstr "一次工作流执行，逐步记录每个步骤使用和产生的值，始终以工作流负责人的权限行动。"
 
 msgid "One item of a project's tree, typed System, Requirement, Function, Task, Test Case or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
+msgstr ""
+
+msgid "One line per CLIN. Time & Materials and Cost Plus lines bill from project cost; a Fixed Price line bills its price. Click a cell to change it."
 msgstr ""
 
 msgid "One or more quantities cannot meet this date"

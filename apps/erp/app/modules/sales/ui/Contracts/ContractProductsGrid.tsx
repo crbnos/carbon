@@ -47,7 +47,6 @@ import {
 import { useServices } from "~/stores";
 import { path } from "~/utils/path";
 import {
-  contractLineBillingFormValues,
   contractRateUnits,
   contractRevenueTypes,
   customerContractLinesAddValidator,
@@ -55,7 +54,7 @@ import {
 } from "../../sales.models";
 import ContractLineForm from "./ContractLineForm";
 import ContractMoney from "./ContractMoney";
-import { contractLineName } from "./contractGrid";
+import { contractLineFormValues, contractLineName } from "./contractGrid";
 import type { Contract, ContractLine } from "./types";
 
 type ProductRow = {
@@ -441,6 +440,7 @@ const ContractProductsGrid = ({
           key={editing.id}
           title={contractLineName(editing)}
           currencyCode={currencyCode}
+          billingBasis={contract.billingBasis}
           initialValues={contractLineFormValues(editing)}
           onClose={() => setEditing(null)}
         />
@@ -458,33 +458,6 @@ const ContractProductsGrid = ({
     </div>
   );
 };
-
-/** A line as the line form's values: discount and tax in percent points. */
-function contractLineFormValues(line: ContractLine) {
-  return {
-    id: line.id,
-    customerContractId: line.customerContractId,
-    revenueType: line.revenueType,
-    itemId: line.itemId,
-    description: line.description ?? undefined,
-    quantity: Number(line.quantity),
-    rate: Number(line.rate),
-    rateUnit: line.rateUnit ?? undefined,
-    discountPercent: round(Number(line.discountPercent) * 100),
-    discountEndsOn: line.discountEndsOn ?? undefined,
-    taxPercent: round(Number(line.taxPercent) * 100),
-    startDate: line.startDate,
-    endDate: line.endDate ?? undefined,
-    goLiveDate: line.goLiveDate ?? undefined,
-    revenueMethod: line.revenueMethod,
-    revenueStartDate: line.revenueStartDate ?? undefined,
-    revenueEndDate: line.revenueEndDate ?? undefined,
-    projectId: line.projectId ?? undefined,
-    lineItemNumber: line.lineItemNumber ?? undefined,
-    parentLineId: line.parentLineId ?? undefined,
-    ...contractLineBillingFormValues(line)
-  };
-}
 
 /** Pick several services at once; each becomes a line with a new line's
  *  defaults (Recurring, quantity 1, billed per the contract's frequency from

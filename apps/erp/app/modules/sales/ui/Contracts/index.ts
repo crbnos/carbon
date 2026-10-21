@@ -32,7 +32,11 @@ import ContractSetupSteps, {
 import ContractStatus from "./ContractStatus";
 import ContractSummary from "./ContractSummary";
 import ContractsTable from "./ContractsTable";
-import { contractLineName } from "./contractGrid";
+import {
+  contractLineFormValues,
+  contractLineName,
+  newContractLineFormValues
+} from "./contractGrid";
 import {
   scheduleRows,
   toContractLineTerms,
@@ -40,6 +44,7 @@ import {
 } from "./contractTerms";
 import FundingBar from "./FundingBar";
 import ProjectContractDetailsForm from "./ProjectContractDetailsForm";
+import ProjectContractLinesGrid from "./ProjectContractLinesGrid";
 import { contractDurationOf, useContractLabels } from "./useContractLabels";
 
 export type { ContractSetupStep } from "./ContractSetupSteps";
@@ -75,10 +80,13 @@ export {
   ContractsTable,
   FundingBar,
   contractDurationOf,
+  contractLineFormValues,
   contractLineName,
   contractSetupSteps,
   contractSetupStepsFor,
+  newContractLineFormValues,
   ProjectContractDetailsForm,
+  ProjectContractLinesGrid,
   projectContractSetupSteps,
   scheduleRows,
   toContractLineTerms,

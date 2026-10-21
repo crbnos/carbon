@@ -156,6 +156,7 @@ export default function ContractLineRoute() {
         ...contractLineBillingFormValues(line)
       }}
       currencyCode={contract.currencyCode}
+      billingBasis={contract.billingBasis}
     />
   );
 }

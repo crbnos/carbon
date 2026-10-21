@@ -10,17 +10,27 @@ import { round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
+  contractLineBillingFormValues,
   customerContractLineValidator,
   getContract,
   getContractLine,
   upsertContractLine
 } from "~/modules/sales";
+import { projectRevenueRefusal } from "~/modules/sales/sales.server";
 
 const logger = getLogger("erp", "contract-line-update");
 
 /** The line fields a setup grid edits one cell at a time, as
- *  `customerContractLineValidator` names them. */
+ *  `customerContractLineValidator` names them. The billing fields are the
+ *  project contract's Lines grid; percents in percent points. */
 const LINE_FIELDS = [
+  "description",
+  "lineItemNumber",
+  "projectElementId",
+  "fundedAmount",
+  "ceilingAmount",
+  "feePercent",
+  "materialHandlingPercent",
   "revenueType",
   "quantity",
   "rate",
@@ -97,7 +107,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     revenueMethod: line.revenueMethod,
     revenueStartDate: line.revenueStartDate,
     revenueEndDate: line.revenueEndDate,
-    projectId: line.projectId
+    projectId: line.projectId,
+    lineItemNumber: line.lineItemNumber,
+    parentLineId: line.parentLineId,
+    // The save writes every column: carry the billing terms and funding, or
+    // a cell edit would turn a billing line back into a Fixed one.
+    ...contractLineBillingFormValues(line)
   };
   merged[field] = value || null;
 
@@ -133,6 +148,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, ...values } = validation.data;
+
+  // Cost Plus and Percent Complete need the project revenue feature, as in
+  // the line form's route.
+  const upgrade = await projectRevenueRefusal(client, companyId, [values]);
+  if (upgrade) {
+    return data({ error: upgrade }, { status: 400 });
+  }
+
   // Refuses a contract that is not a Draft and an item that is not a Service.
   const update = await upsertContractLine(client, {
     ...values,

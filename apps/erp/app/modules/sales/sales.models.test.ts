@@ -20,6 +20,7 @@ vi.mock("@lingui/core/macro", () => ({
 
 const {
   contractBillingMethodsFor,
+  contractRevenueMethodsFor,
   contractTermFromServicePeriods,
   customerContractValidator,
   quoteLineValidator,
@@ -348,6 +349,33 @@ describe("contractBillingMethodsFor", () => {
       "Fixed",
       "Time & Materials",
       "Cost Plus"
+    ]);
+  });
+});
+
+describe("contractRevenueMethodsFor", () => {
+  it("keeps every Fixed method on a service contract", () => {
+    expect(contractRevenueMethodsFor("Schedule", "Fixed")).toEqual([
+      "Daily",
+      "Even Period",
+      "Percent Complete"
+    ]);
+  });
+
+  it("offers Daily and Percent Complete for a Fixed Price line", () => {
+    expect(contractRevenueMethodsFor("Project", "Fixed")).toEqual([
+      "Daily",
+      "Percent Complete"
+    ]);
+  });
+
+  it("follows the billing method for a billing line", () => {
+    expect(contractRevenueMethodsFor("Project", "Time & Materials")).toEqual([
+      "Right to Invoice"
+    ]);
+    expect(contractRevenueMethodsFor("Project", "Cost Plus")).toEqual([
+      "Percent Complete",
+      "Right to Invoice"
     ]);
   });
 });

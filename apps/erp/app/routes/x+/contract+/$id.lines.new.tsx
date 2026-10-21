@@ -13,12 +13,14 @@ import { useRouteData } from "~/hooks";
 import {
   customerContractLineValidator,
   getContract,
-  newContractLineBillingValues,
   upsertContractLine
 } from "~/modules/sales";
 import { projectRevenueRefusal } from "~/modules/sales/sales.server";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
-import { ContractLineForm } from "~/modules/sales/ui/Contracts";
+import {
+  ContractLineForm,
+  newContractLineFormValues
+} from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -95,23 +97,9 @@ export default function NewContractLineRoute() {
   return (
     <ContractLineForm
       key={id}
-      initialValues={{
-        customerContractId: id,
-        revenueType: "Recurring",
-        itemId: "",
-        description: "",
-        quantity: 1,
-        rate: 0,
-        // Every billing frequency is also a rate unit.
-        rateUnit: contract.billingFrequency ?? "Month",
-        discountPercent: 0,
-        taxPercent: 0,
-        startDate: contract.startDate ?? "",
-        revenueMethod: "Daily",
-        projectId: contract.projectId ?? undefined,
-        ...newContractLineBillingValues
-      }}
+      initialValues={newContractLineFormValues(contract)}
       currencyCode={contract.currencyCode}
+      billingBasis={contract.billingBasis}
       isLocked={contract.status !== "Draft"}
     />
   );
