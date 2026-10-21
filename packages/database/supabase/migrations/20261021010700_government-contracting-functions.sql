@@ -2,7 +2,7 @@
 --
 -- 1. get_project_cost_summary gains "actualUnallowable": the project ledger
 --    cost with unallowable = true, per element. Forked from
---    20261010161720_project-commitments-pegs.sql, the newest definition. The
+--    20261021005600_project-commitments-pegs.sql, the newest definition. The
 --    return type changes, so the function is dropped first.
 -- 2. get_missing_timesheet_days lists the scheduled work days that have no
 --    timesheet entry. The daily missing-time check and the missing-time report

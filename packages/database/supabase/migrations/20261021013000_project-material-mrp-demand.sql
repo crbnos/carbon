@@ -60,7 +60,7 @@ CREATE OR REPLACE FUNCTION purchase_order_line_consumed_by_project(
 $$;
 
 -- ============================================================
--- 3. Supply: recreated from 20261010145821_planning-group-segments.sql
+-- 3. Supply: recreated from 20261021005100_planning-group-segments.sql
 -- ============================================================
 CREATE OR REPLACE VIEW "openPurchaseOrderLines" WITH (security_invoker=true) AS (
   SELECT
@@ -100,7 +100,7 @@ CREATE OR REPLACE VIEW "openPurchaseOrderLines" WITH (security_invoker=true) AS 
 );
 
 -- ============================================================
--- 4. Demand: recreated from 20261010145821_planning-group-segments.sql.
+-- 4. Demand: recreated from 20261021005100_planning-group-segments.sql.
 --    Same columns; "quantity" and "requiredDate" change, and the method
 --    filter takes every method but Make to Order.
 --

@@ -1,5 +1,5 @@
 -- Projects Phase 3: soft-peg commitments in the project cost summary.
--- Forked from 20261009055331_projects-functions.sql, the only definition of
+-- Forked from 20261021000600_projects-functions.sql, the only definition of
 -- get_project_cost_summary (get_child_service_project_costs is a separate
 -- function and is unchanged). The direct PO lines' commitment is unchanged.
 -- "committed" adds, per element, the project's current Soft and Manual pegs on

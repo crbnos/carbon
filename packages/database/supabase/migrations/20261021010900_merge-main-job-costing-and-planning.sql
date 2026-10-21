@@ -3,7 +3,7 @@
 --
 -- 1. get_purchasing_planning. Main's 20261009181437_supplier-part-currency
 --    reports each supplier's price as quoted ("supplierUnitPrice" and
---    "currencyCode"). The branch's 20261010135634_planning-rpcs-segment
+--    "currencyCode"). The branch's 20261021004800_planning-rpcs-segment
 --    returns one row per (item, segment), with "planningSegmentId". The body
 --    is the branch's, with main's two supplier keys. The return type differs
 --    from main's, so the function is dropped and created. The grid wrapper
@@ -15,14 +15,14 @@
 --    each journal Provisional before the company's accounting cutover and
 --    Posted after it. A Provisional journal has no accounting period and
 --    creates none. The WIP sum reads Provisional, Posted and Reversed
---    journals. The branch's 20261010160658_complete-job-grouped adds the
+--    journals. The branch's 20261021005500_complete-job-grouped adds the
 --    project behavior (consume-to-project, capital jobs, project stock,
 --    grouped jobs). Each body is the branch's, with main's changes only.
 --    Each keeps its security mode: complete_job_to_inventory DEFINER,
 --    backflush_job_materials INVOKER. The 'Posted' status of a
 --    fixedAssetTransfer row is not a journal status and does not change.
 --
--- Local databases that applied 20261010135634 before 20261009181437 must
+-- Local databases that applied 20261021004800 before 20261009181437 must
 -- drop get_purchasing_planning before `pnpm db:migrate` (see .ai/lessons.md).
 
 -- ============================================================

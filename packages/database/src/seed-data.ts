@@ -2593,7 +2593,7 @@ export const periodCloseTaskDefinitions = [
 /**
  * The project states every company starts with (Settings → Projects). States
  * are company-wide: every project and service order uses the same set. The
- * migration `20261012164218_project-states-company-wide.sql` seeds the same
+ * migration `20261021012100_project-states-company-wide.sql` seeds the same
  * rows for companies that had none.
  */
 export const projectStates: {

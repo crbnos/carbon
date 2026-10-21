@@ -1,5 +1,5 @@
 -- Project stock (Projects Phase 2a): the SQL backflush draws stock by stripe.
--- Forked from 20261010012609_backflush-stamped-layer-children.sql; every
+-- Forked from 20261021003200_backflush-stamped-layer-children.sql; every
 -- other behavior (consume-to-project, capital jobs, stamped layer children) is
 -- kept.
 --

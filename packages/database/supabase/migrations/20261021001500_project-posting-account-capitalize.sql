@@ -5,7 +5,7 @@
 -- else the project's own asset. An Under Construction asset gives its CIP class account;
 -- an Active asset (a late cost) gives its in-service class account. Any other case raises.
 -- The explicit costAccountId is ignored for Capitalize, as in the TS resolver.
--- The other treatments are unchanged from 20261009100941.
+-- The other treatments are unchanged from 20261021000900.
 
 CREATE OR REPLACE FUNCTION project_posting_account(
   p_company_id TEXT, p_project_id TEXT, p_element_id TEXT, p_posting_date DATE

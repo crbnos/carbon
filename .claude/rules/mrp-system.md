@@ -265,21 +265,21 @@ a project with `projectStock`, or a planning group id (Phase 3, below). The sent
 project stock gets output identical to before, row for row.
 
 - **One segment rule.** SQL `project_planning_segment(projectId)` (migration
-  `20261010131217`) returns the project id when the project has project stock,
+  `20261021004600`) returns the project id when the project has project stock,
   else `''`. Its TS twin is `planningSegmentOf` (`plan-company.ts`). Every view,
   RPC and reader uses one of the two.
 - **Keys.** `makeKey`, `makeLocationItemKey` and `makeActualKey` take the
   segment as their last part (default `COMMON_SEGMENT`); the split helpers
   return it. `explodeBom` carries a parent's segment into every child key.
 - **Inputs.** The 4 open views carry `planningSegmentId`
-  (`20261010133214`). `openPurchaseOrderLines` leaves out a line the receipt
+  (`20261021004700`). `openPurchaseOrderLines` leaves out a line the receipt
   consumes to its project; `openProductionOrders` leaves out a
   `consumeToProject` job and segments a `receiveToProjectStock` job. New views:
   `openProjectMaterialLines` (plan-line materials of every method but Make to
   Order, of Unstarted / Started elements on a Released project) and
   `openProjectBorrows`.
 - **Plan-line demand** (`openProjectMaterialLines`, last defined in
-  `20261015150413`). The quantity is `quantity − quantityIssued − covered`.
+  `20261021013000`). The quantity is `quantity − quantityIssued − covered`.
   `covered` is what the line's own PO line (`purchaseOrderLineId`, from
   **Create PO line**) brings when the project consumes that line at receipt —
   such a line is not supply in `openPurchaseOrderLines`, so without it MRP would
@@ -319,7 +319,7 @@ project stock gets output identical to before, row for row.
   leaves the column out (`segmentColumn`) and takes the default. A Project
   Material contributor writes no `demandForecastSource` row (no column for it).
 - **Planning RPCs** (`get_production_planning`, `get_purchasing_planning` and
-  their grid wrappers, `20261010135634`) return one row per item and segment,
+  their grid wrappers, `20261021004800`) return one row per item and segment,
   ordered by `id` then `planningSegmentId`. On-hand stays the `itemLedger` sum,
   grouped by segment. A project segment row exists when the segment has demand
   at the location; it is lot-for-lot (`GREATEST(0, -MIN(projection))`), with no
@@ -363,7 +363,7 @@ check and the writer as `runMrp`'s `deps` (`planningGroupMrpDeps`). It is the
 one gate in this package (`packages/planning/AGENTS.md`). The posting side
 (receipt, completion, variance) is in `projects-system.md`.
 
-- **Segment rule.** `project_planning_segment` (`20261010145821`) returns the
+- **Segment rule.** `project_planning_segment` (`20261021005100`) returns the
   group id for a member of an active group. A grouped PO line or job sits in
   its group's segment (`COALESCE("planningGroupId", …)` in the views), also
   when the group is inactive. `planningSegmentOf` and `loadSegmentOnHand` take
@@ -433,7 +433,7 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 | `demandForecast` | `(itemId, locationId, periodId, planningSegmentId)` | `forecastQuantity`, `forecastMethod` | MRP writes `forecastMethod='mrp'` |
 | `demandActual` | `(itemId, locationId, periodId, sourceType, planningSegmentId)` | `actualQuantity`, `sourceType` | `sourceType` enum `demandSourceType` = `'Sales Order'\|'Job Material'\|'Project Material'\|'Project Borrow'` |
 | `supplyForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | written by **planning.update** routes (planned POs/jobs); MRP never inserts it but DELETES every row at the company's locations in Phase 7 |
-| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261006130000`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease / Release / Transfer / Borrow (Borrow is Phase 3); `status` = Open / Dismissed / Actioned. `planningSegmentId`, `fromProjectId` / `toProjectId` (a Transfer's owners, null = common) and `projectStockTransferId` (an applied Transfer) from `20261010131217`. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, segment, type, and the target order — or, for a new Order / Make / Transfer, its week — and the two owners) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, periodId)`. `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
+| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261006130000`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease / Release / Transfer / Borrow (Borrow is Phase 3); `status` = Open / Dismissed / Actioned. `planningSegmentId`, `fromProjectId` / `toProjectId` (a Transfer's owners, null = common) and `projectStockTransferId` (an applied Transfer) from `20261021004600`. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, segment, type, and the target order — or, for a new Order / Make / Transfer, its week — and the two owners) via a partial unique index on `COALESCE(purchaseOrderLineId, jobId, periodId)`. `naturalKey` matches rows the same way, with every week up to the current one as one "now" (`keyPeriodFor`), and the diff updates `periodId` in place — so a dismissal or a hand-set assignee survives the weekly roll of the first period |
 | `supplyActual` | `(itemId, locationId, periodId, sourceType, planningSegmentId)` | `actualQuantity`, `sourceType` | `sourceType` enum `supplySourceType` = `'Purchase Order'\|'Production Order'\|'Project Borrow'` |
 | `demandForecastSource` | surrogate `id` | `sourceType`, `jobId`/`salesOrderLineId`/`demandProjectionId`, `parentItemId`, `quantity` | MRP lineage; enum `demandForecastSourceType` = `'Job Material'\|'Sales Order'\|'Demand Projection'`; CHECK exactly one source id set |
 | `itemPostingGroupResponsibility` | `(id, companyId)` | `locationId`, `itemPostingGroupId`, `responsibleEmployee` | one rung of the action owner ladder (`20261006130000`): the owner of an item group AT a location; UNIQUE `(companyId, locationId, itemPostingGroupId)`; RLS employee read, `settings_update` writes (`20261006130100`). Written by `upsertItemPostingGroupResponsibility` (a null employee deletes the row) |

@@ -4,7 +4,7 @@
 -- Spec: .ai/specs/2026-10-03-projects.md (Phase 3: planning groups)
 --
 -- The views are recreated from their Phase 2b definitions
--- (20261010133214_mrp-segment-views.sql). New columns go LAST, so
+-- (20261021004700_mrp-segment-views.sql). New columns go LAST, so
 -- CREATE OR REPLACE keeps every existing column and filter:
 --   * "ownerProjectId"  — the row's own project (null for grouped supply);
 --   * "planningGroupId" — the group of grouped supply or of a grouped job;

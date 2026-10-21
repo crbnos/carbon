@@ -710,7 +710,7 @@ The plan's *Execution notes* record each deviation. These change the design abov
 - **Create and cancel.** A Refurbishment picks an item, then a serial in stock. The serial goes On Hold when the order is created, and back to Available when the order is cancelled.
 - **Build history.** A part issued to a Refurbishment node writes a `Service` activity from the part to the subject serial. It writes no installed component, because the unit has no customer asset.
 - **Demo datasets.** Satellite seeds one Draft Refurbishment on RW010-SN-0054, with the serial On Hold. A completed refurbishment is not seeded.
-- **SQL backflush.** The SQL backflush (`backflush_job_materials`, migration `20261010012609`) now relieves layers as `calculateCOGS` does. It takes unstamped layers first and a stamped layer last. It applies every open child of a stamped layer in full.
+- **SQL backflush.** The SQL backflush (`backflush_job_materials`, migration `20261021003200`) now relieves layers as `calculateCOGS` does. It takes unstamped layers first and a stamped layer last. It applies every open child of a stamped layer in full.
 
 ## Implementation notes (Phase D)
 

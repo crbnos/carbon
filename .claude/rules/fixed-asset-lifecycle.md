@@ -92,7 +92,7 @@ transfer enum values). Design:
 - **`fixedAssetCipCost`** — append-only cost ledger of an asset under
   construction: `sourceType` CHECK `IN ('Purchase Invoice','Receipt','Job',
   'Manual','Timesheet','Project Issue','Charge','Reimbursement')` (the last
-  four from capital projects, `20261009101725_projects-capital.sql`),
+  four from capital projects, `20261021001100_projects-capital.sql`),
   `sourceDocumentId`, `sourceDocumentLineId`, `jobId`, `amount`, `costDate`,
   `journalId`, plus `projectId` / `projectElementId` (composite FKs, `ON DELETE
   SET NULL` on the column) and `postCapitalization` (a late cost booked on the

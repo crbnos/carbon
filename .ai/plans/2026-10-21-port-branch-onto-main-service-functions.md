@@ -124,10 +124,10 @@ Rules, applied per conflict type:
       `20261020051356`. Re-fork `backflush_job_materials` from main's `20261015163040` (strict
       backflush: `requireBackflushStorageUnit`, `preventNegativeBackflush`) and add the branch's
       consume-to-project, stripes, stamped-layer children and grouped completion from
-      `20261011163015`. Re-fork `complete_job_to_inventory` from main's `20261015161847`
+      `20261021010900`. Re-fork `complete_job_to_inventory` from main's `20261015161847`
       (production-event lock, serial units issued before receipt) and add the branch's
       project, CIP, grouped and project-stock changes. Follow the header pattern of
-      `20261011163015`.
+      `20261021010900`.
 - [ ] Regenerate the `dispatch_event_batch` authz file with the authz generator. Don't hand-merge it.
 - [ ] `pnpm db:migrate` on the port stack, then `pnpm generate:types`.
 - [ ] Gates: `pnpm --filter @carbon/checks clobbers` passes, and

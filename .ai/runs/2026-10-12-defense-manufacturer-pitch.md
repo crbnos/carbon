@@ -8,7 +8,7 @@
 - Before phase 1: commit the ~70 uncommitted files already in the worktree as-is (user choice).
 
 ## Phase log
-- Pre-run: committed the earlier worktree changes. 2c7b7809f3 (Missing Time report, report pages, translations, migration 20261012193140), 631806743b (charge number on schedule cards). All gates pass. The translation fill added 217 enforced glossary violations (2023 were already in the catalogs). They are reported, not repaired: the repair is a separate runbook.
+- Pre-run: committed the earlier worktree changes. 2c7b7809f3 (Missing Time report, report pages, translations, migration 20261021012300), 631806743b (charge number on schedule cards). All gates pass. The translation fill added 217 enforced glossary violations (2023 were already in the catalogs). They are reported, not repaired: the repair is a separate runbook.
 - research: `.ai/research/wbs-interop-and-contract-financing.md` — 3 subagents (progress payments and PBP; MIL-STD-881F and WBS numbering; MSPDI and CSV exchange). STE-80 pass done.
 - spec: `.ai/specs/2026-10-12-wbs-interop-and-contract-financing.md` — 17 open questions resolved autonomously (see Decisions). STE-80 pass done.
 - plan: `.ai/plans/2026-10-12-wbs-interop-and-contract-financing.md` — 22 tasks in 3 phases. STE-80 pass done.

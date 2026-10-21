@@ -4,9 +4,9 @@
 --
 -- 1. "approvalRequests": main added the changeOrder document type
 --    (20261008164140_change-order-approvals.sql); this branch added
---    projectChangeRequest (20261009134833_projects-baselines.sql).
+--    projectChangeRequest (20261021002000_projects-baselines.sql).
 -- 2. get_available_tracked_entities: this branch added p_project_ids and the
---    "projectId" column (20261010024754_stock-pickers-project-stripe.sql);
+--    "projectId" column (20261021004000_stock-pickers-project-stripe.sql);
 --    main added the source-bin filter p_filter_storage_unit /
 --    p_storage_unit_id (20261012153000_available-tracked-entities-storage-unit.sql).
 --    Each side created its own 8- or 9-argument overload, so both are dropped
@@ -15,9 +15,9 @@
 --    20261013004600_planning-rpcs-include-open-supply plans an item with open
 --    supply in the window, and pins search_path on the purchasing RPC; it
 --    forked both from versions without this branch's planning segments
---    (20261010135634_planning-rpcs-segment, 20261011163015). Each body is the
+--    (20261021004800_planning-rpcs-segment, 20261021010900). Each body is the
 --    branch's, with main's supply clause matched on the segment.
---    20261013004559_drop-purchasing-planning-before-main drops the branch's
+--    20261021012700_drop-purchasing-planning-before-main drops the branch's
 --    purchasing function so main's CREATE OR REPLACE can apply on a new
 --    database; this migration creates the merged one again.
 

@@ -28,12 +28,12 @@ project logic moved into them.
 
 Main's `20261009181437_supplier-part-currency.sql` failed at statement 8 on
 this database: `cannot change return type of existing function`. The cause:
-the branch's `20261010135634` had already created `get_purchasing_planning`
+the branch's `20261021004800` had already created `get_purchasing_planning`
 with an extra output column, `planningSegmentId`. Main's file rolled back
 cleanly.
 
 Nothing depends on the function in `pg_depend`, so this one-off local step
-is safe. Run it once on a database that applied `20261010135634` first:
+is safe. Run it once on a database that applied `20261021004800` first:
 
 ```bash
 /tmp/kpsql -c "DROP FUNCTION public.get_purchasing_planning(text, text, text[]);"
@@ -46,14 +46,14 @@ creates the branch's version again. `.ai/lessons.md` records the same step
 
 ## Combined migrations
 
-`20261011163015_merge-main-job-costing-and-planning.sql` is dated after every
+`20261021010900_merge-main-job-costing-and-planning.sql` is dated after every
 migration on both sides.
 
 | Function | Body | Main's change | Security |
 |---|---|---|---|
-| `get_purchasing_planning` | Branch, from `20261010135634` | `supplierUnitPrice` and `currencyCode` in each supplier, from `20261009181437`. DROP and CREATE, because the return type differs. | DEFINER, `assert_company_access` |
-| `backflush_job_materials` | Branch, from `20261010160658` | Always-post, from `20261009010412` | INVOKER |
-| `complete_job_to_inventory` | Branch, from `20261010160658` | Always-post, from `20261009010412` | DEFINER |
+| `get_purchasing_planning` | Branch, from `20261021004800` | `supplierUnitPrice` and `currencyCode` in each supplier, from `20261009181437`. DROP and CREATE, because the return type differs. | DEFINER, `assert_company_access` |
+| `backflush_job_materials` | Branch, from `20261021005500` | Always-post, from `20261009010412` | INVOKER |
+| `complete_job_to_inventory` | Branch, from `20261021005500` | Always-post, from `20261009010412` | DEFINER |
 
 The always-post changes in each job function:
 
@@ -71,7 +71,7 @@ It does not change. A diff of each new body against main's body shows no
 posting-status difference. A diff against the branch's body shows only the
 hunks above.
 
-The branch's own `20261010135634` also changed (it has not shipped). On a new
+The branch's own `20261021004800` also changed (it has not shipped). On a new
 database it runs after main's column rename, and its `LANGUAGE sql` body is
 checked at creation. It now reads `supplierUnitPrice` and `currencyCode`.
 
@@ -208,7 +208,7 @@ below, each with its commit and its test. Question 5 was fixed before.
    (`getWorkInProgressItems`). Two kinds of project cost also post to it:
    - A Refurbishment charge with Capitalized coverage always posts to
      `workInProgressAccount`.
-   - The backfill (`20261009055122`) set `projectWorkInProgressAccount` to
+   - The backfill (`20261021000500`) set `projectWorkInProgressAccount` to
      `workInProgressAccount` for each existing company. So Contract
      project costs post there too.
 

@@ -144,7 +144,7 @@ move to Planned.
 `syncServiceOrderStatus` (`service.server.ts`) saves the roll-up and the project status
 (`projectStatusOfOrder`: Draft → Draft, On Hold → On Hold, Completed → Technically
 Complete, Closed / Cancelled → Closed, else Released). `insertServiceProject` inserts
-the project Draft, as its order. Migration `20261015150413` moved each existing Draft
+the project Draft, as its order. Migration `20261021013000` moved each existing Draft
 order with a `projectLedger` row to Planned and set the other Draft orders' projects to
 Draft. Call it after every visit change and every order
 status change, in the same transaction. `canMoveServiceOrder` and `canMoveVisit` are
@@ -194,7 +194,7 @@ Service project of every order it covers (`project.parentProjectId`).
   Complete still take it, as `assertChargeable`'s `commitment` mode does. The parent's
   status comes from `ctx.parent`, which `loadProjectPostingContexts` already loads.
 - **Roll-up**: `get_child_service_project_costs(p_project_id, p_company_id)` (plpgsql,
-  SECURITY INVOKER, migration `20261010013108`) returns one row per order whose Service
+  SECURITY INVOKER, migration `20261021003300`) returns one row per order whose Service
   project names the project as parent: actual (Σ `projectLedger.amount`), posted hours,
   billed and unbilled. It is separate from `get_project_cost_summary`, so Projects Phase 3
   can redefine that one alone. `getChildServiceProjectCosts` (`projects.service.ts`) adds

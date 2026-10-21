@@ -38,7 +38,7 @@ small business, maximum PBP share, `nextRequestNumber`),
 `customerContractFinancingRate` (rate history, unique per effective date),
 `contractFinancingRequest`, `performanceBasedPaymentEvent`,
 `contractFinancingRequestEvent`. RLS `company("sales", { read: "sales_view" })`.
-Migration `20261013001522_contract-financing.sql`.
+Migration `20261021012500_contract-financing.sql`.
 
 ## The request
 

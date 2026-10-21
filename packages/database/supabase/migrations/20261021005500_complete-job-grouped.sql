@@ -1,45 +1,20 @@
--- Projects Phase 1b: jobs of a capital project.
--- Spec: .ai/specs/2026-10-03-projects.md (Capital projects)
+-- Projects Phase 3: distribution of a grouped job's output at completion, and
+-- its backflush from the members' stripes.
 --
--- A job charged to a Capitalize charge number builds the asset under
--- construction through job.fixedAssetId (Make to Asset). Its costs stay on WIP
--- and completion sweeps WIP onto the asset, as for any asset-target job. On top
--- of that, a capital job:
---   * writes a projectLedger row (and the Project / ProjectElement tags) for each
---     catch-up labor, machine and overhead cost and each backflushed material,
---     on the WIP line, as issue and post-production-event do;
---   * names its project and element on the sweep's fixedAssetCipCost row.
--- project_cost_treatment mirrors resolveProjectTreatment
--- (packages/server-functions/src/lib/project-posting.ts): the treatment in effect
--- on a date, with no account checks.
--- Both functions are copied from 20261009071629; every other job posts as before.
-
-CREATE OR REPLACE FUNCTION project_cost_treatment(
-  p_company_id TEXT, p_project_id TEXT, p_element_id TEXT, p_posting_date DATE
-) RETURNS "projectCostTreatment" LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path = public AS $$
-DECLARE
-  v_treatment "projectCostTreatment";
-BEGIN
-  WITH RECURSIVE chain AS (
-    SELECT e."id", e."parentId", e."costTreatment", e."costTreatmentEffectiveFrom", 0 AS depth
-    FROM "projectElement" e WHERE e."id" = p_element_id AND e."companyId" = p_company_id
-    UNION ALL
-    SELECT p."id", p."parentId", p."costTreatment", p."costTreatmentEffectiveFrom", c.depth + 1
-    FROM "projectElement" p JOIN chain c ON p."id" = c."parentId" AND p."companyId" = p_company_id
-  )
-  SELECT c."costTreatment" INTO v_treatment
-  FROM chain c
-  WHERE c."costTreatment" IS NOT NULL
-    AND (c."costTreatmentEffectiveFrom" IS NULL OR c."costTreatmentEffectiveFrom" <= p_posting_date)
-  ORDER BY c.depth LIMIT 1;
-
-  IF v_treatment IS NULL THEN
-    SELECT "costTreatment" INTO v_treatment
-    FROM "project" WHERE "id" = p_project_id AND "companyId" = p_company_id;
-  END IF;
-  RETURN v_treatment;
-END;
-$$;
+-- complete_job_to_inventory is forked from 20261021004100_complete-job-project-stock.sql,
+-- the newest definition; every other behavior (Make to Asset, consume-to-project,
+-- capital jobs, Receive to project stock, the guards) is kept. A job with
+-- "planningGroupId" calls harden_pegs_for_supply('Job', job, delta) once and
+-- writes its Assembly Output item ledger rows (untracked, batch, serial) and its
+-- Output cost layers per returned row, with the row's "projectId". Each Hard peg
+-- gets "itemLedgerId". Every other job has one stripe (the output project or
+-- common stock) with the whole delta: the same rows as before.
+--
+-- backflush_job_materials is forked from 20261021003900_backflush-project-stripe.sql,
+-- the newest definition; every other behavior (consume-to-project, capital
+-- jobs, stamped layer children, project stripes) is kept. A grouped job draws
+-- its components from the member stripes in the order of the job's current
+-- pegs, then from common stock.
 
 CREATE OR REPLACE FUNCTION complete_job_to_inventory(
   p_job_id TEXT,
@@ -133,6 +108,20 @@ DECLARE
   v_dimension_project TEXT;
   v_dimension_project_element TEXT;
   v_capital_job BOOLEAN := FALSE;
+  v_receive_to_project_stock BOOLEAN;
+  v_output_project_id TEXT;
+  v_planning_group_id TEXT;
+  -- The stripes this completion receives into, in order: one stripe (the
+  -- output project, or common stock) for every job but a grouped one.
+  v_stripe_project_ids TEXT[];
+  v_stripe_quantities NUMERIC[];
+  v_stripe_peg_ids TEXT[];
+  v_stripe_index INTEGER;
+  v_unit_offset INTEGER;
+  v_stripe_units INTEGER;
+  v_ledger_id TEXT;
+  v_layer_cost NUMERIC;
+  v_layer_cost_left NUMERIC;
 BEGIN
   PERFORM assert_company_access(p_company_id);
 
@@ -143,12 +132,25 @@ BEGIN
   -- read this completion's cumulative quantity, so both cannot compute the same
   -- receipt delta.
   SELECT "itemId", "quantityReceivedToInventory", "jobId", "locationId", "salesOrderLineId", "companyId",
-         "fixedAssetClassId", "fixedAssetId", "consumeToProject", "projectId", "projectElementId"
+         "fixedAssetClassId", "fixedAssetId", "consumeToProject", "projectId", "projectElementId",
+         "receiveToProjectStock", "planningGroupId"
   INTO STRICT v_item_id, v_prior_quantity_received, v_job_id_readable, v_job_location_id, v_sales_order_line_id, v_job_company_id,
-              v_job_asset_class_id, v_job_asset_id, v_consume_to_project, v_project_id, v_project_element_id
+              v_job_asset_class_id, v_job_asset_id, v_consume_to_project, v_project_id, v_project_element_id,
+              v_receive_to_project_stock, v_planning_group_id
   FROM "job"
   WHERE id = p_job_id
   FOR UPDATE;
+
+  -- Receive to project stock: the output enters the stock stripe of the job's
+  -- project, when that project has project stock. Every other job receives
+  -- into common stock (NULL).
+  IF COALESCE(v_receive_to_project_stock, FALSE) AND v_project_id IS NOT NULL THEN
+    SELECT CASE WHEN "projectStock" THEN v_project_id END
+    INTO v_output_project_id
+    FROM "project"
+    WHERE id = v_project_id
+      AND "companyId" = p_company_id;
+  END IF;
 
   -- SECURITY DEFINER bypasses RLS: bind the call to the job's own company so a
   -- caller can never complete another tenant's job or post into a mismatched
@@ -455,6 +457,26 @@ BEGIN
      AND v_asset_target IS NULL
      AND NOT v_consume_to_project
      AND v_quantity_received_to_inventory > 0 THEN
+  -- One stripe for every job but a grouped one: the output project (Receive
+  -- to project stock) or common stock, with the whole delta.
+  v_stripe_project_ids := ARRAY[v_output_project_id]::TEXT[];
+  v_stripe_quantities := ARRAY[v_quantity_received_to_inventory]::NUMERIC[];
+  v_stripe_peg_ids := ARRAY[NULL]::TEXT[];
+
+  -- A job made for a planning group (Projects Phase 3) receives into its
+  -- members' stripes by its pegs: harden_pegs_for_supply, the one peg split
+  -- rule, turns the pegs it covers Hard and returns one row per stripe; the
+  -- last row is the excess under the group's excess rule.
+  IF v_planning_group_id IS NOT NULL THEN
+    SELECT array_agg(h."projectId" ORDER BY h.ord),
+           array_agg(h."quantity" ORDER BY h.ord),
+           array_agg(h."pegId" ORDER BY h.ord)
+    INTO v_stripe_project_ids, v_stripe_quantities, v_stripe_peg_ids
+    FROM harden_pegs_for_supply(
+      p_company_id, p_user_id, 'Job', p_job_id, v_quantity_received_to_inventory
+    ) WITH ORDINALITY AS h("projectId", "quantity", "pegId", ord);
+  END IF;
+
   IF v_job_make_method."requiresBatchTracking" THEN
     SELECT *
     INTO v_tracked_entity
@@ -503,15 +525,24 @@ BEGIN
       RAISE EXCEPTION 'Tracked entity not found';
     END IF;
 
-    INSERT INTO "itemLedger" (
-      "entryType", "documentType", "documentId", "companyId",
-      "itemId", quantity, "locationId", "storageUnitId",
-      "trackedEntityId", "createdBy"
-    ) VALUES (
-      'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
-      v_item_id, v_quantity_received_to_inventory, p_location_id, p_storage_unit_id,
-      v_tracked_entity.id, p_user_id
-    );
+    -- A lot that spans 2 stripes gets 2 rows with the same tracked entity.
+    FOR v_stripe_index IN 1..array_length(v_stripe_project_ids, 1) LOOP
+      INSERT INTO "itemLedger" (
+        "entryType", "documentType", "documentId", "companyId",
+        "itemId", quantity, "locationId", "storageUnitId",
+        "trackedEntityId", "projectId", "createdBy"
+      ) VALUES (
+        'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
+        v_item_id, v_stripe_quantities[v_stripe_index], p_location_id, p_storage_unit_id,
+        v_tracked_entity.id, v_stripe_project_ids[v_stripe_index], p_user_id
+      )
+      RETURNING id INTO v_ledger_id;
+
+      IF v_stripe_peg_ids[v_stripe_index] IS NOT NULL THEN
+        UPDATE "projectPeg" SET "itemLedgerId" = v_ledger_id
+        WHERE id = v_stripe_peg_ids[v_stripe_index] AND "companyId" = p_company_id;
+      END IF;
+    END LOOP;
 
   ELSIF v_job_make_method."requiresSerialTracking" THEN
     -- Receive exactly the newly completed units: units finished on the shop floor
@@ -542,16 +573,34 @@ BEGIN
     );
 
     IF COALESCE(array_length(v_serial_unit_ids, 1), 0) >= v_quantity_received_to_inventory THEN
-      INSERT INTO "itemLedger" (
-        "entryType", "documentType", "documentId", "companyId",
-        "itemId", quantity, "locationId", "storageUnitId",
-        "trackedEntityId", "createdBy"
-      )
-      SELECT
-        'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
-        v_item_id, 1, p_location_id, p_storage_unit_id,
-        unit_id, p_user_id
-      FROM unnest(v_serial_unit_ids[1:v_quantity_received_to_inventory::INTEGER]) AS unit_id;
+      -- The units take the stripes in order.
+      v_unit_offset := 0;
+      FOR v_stripe_index IN 1..array_length(v_stripe_project_ids, 1) LOOP
+        v_stripe_units := v_stripe_quantities[v_stripe_index]::INTEGER;
+        CONTINUE WHEN v_stripe_units <= 0;
+
+        WITH inserted AS (
+          INSERT INTO "itemLedger" (
+            "entryType", "documentType", "documentId", "companyId",
+            "itemId", quantity, "locationId", "storageUnitId",
+            "trackedEntityId", "projectId", "createdBy"
+          )
+          SELECT
+            'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
+            v_item_id, 1, p_location_id, p_storage_unit_id,
+            unit_id, v_stripe_project_ids[v_stripe_index], p_user_id
+          FROM unnest(v_serial_unit_ids[v_unit_offset + 1:v_unit_offset + v_stripe_units]) AS unit_id
+          RETURNING id
+        )
+        SELECT id INTO v_ledger_id FROM inserted LIMIT 1;
+
+        IF v_stripe_peg_ids[v_stripe_index] IS NOT NULL THEN
+          UPDATE "projectPeg" SET "itemLedgerId" = v_ledger_id
+          WHERE id = v_stripe_peg_ids[v_stripe_index] AND "companyId" = p_company_id;
+        END IF;
+
+        v_unit_offset := v_unit_offset + v_stripe_units;
+      END LOOP;
 
       UPDATE "trackedEntity"
       SET status = 'Available'
@@ -583,15 +632,23 @@ BEGIN
           v_job_id_readable, COALESCE(array_length(v_serial_unit_ids, 1), 0), v_quantity_received_to_inventory;
       END IF;
 
-      INSERT INTO "itemLedger" (
-        "entryType", "documentType", "documentId", "companyId",
-        "itemId", quantity, "locationId", "storageUnitId",
-        "trackedEntityId", "createdBy"
-      ) VALUES (
-        'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
-        v_item_id, v_quantity_received_to_inventory, p_location_id, p_storage_unit_id,
-        v_tracked_entity.id, p_user_id
-      );
+      FOR v_stripe_index IN 1..array_length(v_stripe_project_ids, 1) LOOP
+        INSERT INTO "itemLedger" (
+          "entryType", "documentType", "documentId", "companyId",
+          "itemId", quantity, "locationId", "storageUnitId",
+          "trackedEntityId", "projectId", "createdBy"
+        ) VALUES (
+          'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
+          v_item_id, v_stripe_quantities[v_stripe_index], p_location_id, p_storage_unit_id,
+          v_tracked_entity.id, v_stripe_project_ids[v_stripe_index], p_user_id
+        )
+        RETURNING id INTO v_ledger_id;
+
+        IF v_stripe_peg_ids[v_stripe_index] IS NOT NULL THEN
+          UPDATE "projectPeg" SET "itemLedgerId" = v_ledger_id
+          WHERE id = v_stripe_peg_ids[v_stripe_index] AND "companyId" = p_company_id;
+        END IF;
+      END LOOP;
 
       UPDATE "trackedEntity"
       SET status = 'Available'
@@ -599,14 +656,22 @@ BEGIN
     END IF;
 
   ELSE
-    INSERT INTO "itemLedger" (
-      "entryType", "documentType", "documentId", "companyId",
-      "itemId", quantity, "locationId", "storageUnitId", "createdBy"
-    ) VALUES (
-      'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
-      v_item_id, v_quantity_received_to_inventory, p_location_id, p_storage_unit_id,
-      p_user_id
-    );
+    FOR v_stripe_index IN 1..array_length(v_stripe_project_ids, 1) LOOP
+      INSERT INTO "itemLedger" (
+        "entryType", "documentType", "documentId", "companyId",
+        "itemId", quantity, "locationId", "storageUnitId", "projectId", "createdBy"
+      ) VALUES (
+        'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
+        v_item_id, v_stripe_quantities[v_stripe_index], p_location_id, p_storage_unit_id,
+        v_stripe_project_ids[v_stripe_index], p_user_id
+      )
+      RETURNING id INTO v_ledger_id;
+
+      IF v_stripe_peg_ids[v_stripe_index] IS NOT NULL THEN
+        UPDATE "projectPeg" SET "itemLedgerId" = v_ledger_id
+        WHERE id = v_stripe_peg_ids[v_stripe_index] AND "companyId" = p_company_id;
+      END IF;
+    END LOOP;
   END IF;
   END IF;
 
@@ -1125,17 +1190,29 @@ BEGIN
 
   -- Write costLedger entry for finished good (skipped for Non-Inventory: no
   -- output layer exists for a service — its cost went straight to COGS above)
+  -- One Output layer per stripe of the receipt rows above, each at the job's
+  -- unit cost; the last stripe takes the rounding rest. The unit cost already
+  -- carries the scrap cost, so scrap spreads over the stripes by quantity.
   IF v_item_tracking_type IS DISTINCT FROM 'Non-Inventory' AND v_asset_target IS NULL THEN
-    INSERT INTO "costLedger" (
-      "itemLedgerType", "costLedgerType", adjustment,
-      "documentType", "documentId", "itemId",
-      quantity, cost, "remainingQuantity", "companyId"
-    ) VALUES (
-      'Output', 'Direct Cost', false,
-      'Job Receipt', p_job_id, v_item_id,
-      v_quantity_received_to_inventory, v_accumulated_wip_cost,
-      v_quantity_received_to_inventory, p_company_id
-    );
+    v_layer_cost_left := v_accumulated_wip_cost;
+    FOR v_stripe_index IN 1..array_length(v_stripe_project_ids, 1) LOOP
+      v_layer_cost := CASE
+        WHEN v_stripe_index = array_length(v_stripe_project_ids, 1) THEN v_layer_cost_left
+        ELSE ROUND(v_accumulated_wip_cost * v_stripe_quantities[v_stripe_index] / v_quantity_received_to_inventory, 5)
+      END;
+      v_layer_cost_left := v_layer_cost_left - v_layer_cost;
+
+      INSERT INTO "costLedger" (
+        "itemLedgerType", "costLedgerType", adjustment,
+        "documentType", "documentId", "itemId",
+        quantity, cost, "remainingQuantity", "projectId", "companyId"
+      ) VALUES (
+        'Output', 'Direct Cost', false,
+        'Job Receipt', p_job_id, v_item_id,
+        v_stripe_quantities[v_stripe_index], v_layer_cost,
+        v_stripe_quantities[v_stripe_index], v_stripe_project_ids[v_stripe_index], p_company_id
+      );
+    END LOOP;
   END IF;
 
   -- Update item cost
@@ -1277,6 +1354,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.backflush_job_materials(p_job_id text, p_quantity_complete numeric, p_company_id text, p_user_id text)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY INVOKER
  SET search_path TO 'public'
 AS $$
 DECLARE
@@ -1333,14 +1411,26 @@ DECLARE
   v_dimension_project_element TEXT;
   v_capital_job BOOLEAN := FALSE;
   v_job_asset_id TEXT;
+  v_project_stock BOOLEAN := FALSE;
+  v_stripes TEXT[] := ARRAY[NULL]::TEXT[];
+  v_stripe_keys TEXT[] := ARRAY['']::TEXT[];
+  v_stripe TEXT;
+  v_stripe_on_hand NUMERIC;
+  v_stripe_draw NUMERIC;
+  v_left_to_draw NUMERIC;
+  v_bf_project_ids TEXT[] := '{}';
+  v_planning_group_id TEXT;
+  v_member_stripes TEXT[];
 BEGIN
   -- Never let a NULL user reach NOT NULL audit columns; fall back to the job creator
   p_user_id := COALESCE(p_user_id, (SELECT "createdBy" FROM "job" WHERE id = p_job_id));
 
   -- Fetch job details
-  SELECT quantity, "locationId", "jobId", "consumeToProject", "projectId", "projectElementId", "fixedAssetId"
+  SELECT quantity, "locationId", "jobId", "consumeToProject", "projectId", "projectElementId", "fixedAssetId",
+         "planningGroupId"
   INTO STRICT v_job_quantity, v_job_location_id, v_job_id_readable,
-              v_consume_to_project, v_project_id, v_project_element_id, v_job_asset_id
+              v_consume_to_project, v_project_id, v_project_element_id, v_job_asset_id,
+              v_planning_group_id
   FROM "job"
   WHERE id = p_job_id;
 
@@ -1349,6 +1439,50 @@ BEGIN
   END IF;
 
   v_ratio := p_quantity_complete / v_job_quantity;
+
+  -- The stripes this job's demand may draw, in order: its project's stock
+  -- (when the project has project stock), then common stock (NULL).
+  -- v_stripe_keys holds the same set with '' for common, for ANY() filters.
+  IF v_project_id IS NOT NULL THEN
+    SELECT COALESCE("projectStock", FALSE) INTO v_project_stock
+    FROM "project"
+    WHERE id = v_project_id AND "companyId" = p_company_id;
+
+    IF COALESCE(v_project_stock, FALSE) THEN
+      v_stripes := ARRAY[v_project_id, NULL]::TEXT[];
+      v_stripe_keys := ARRAY[v_project_id, '']::TEXT[];
+    END IF;
+  END IF;
+
+  -- A job made for a planning group (Projects Phase 3) has no project. It
+  -- draws its members' stock in the order of its current pegs (the order
+  -- harden_pegs_for_supply walks), then common stock.
+  IF v_planning_group_id IS NOT NULL THEN
+    SELECT array_agg(m."projectId" ORDER BY m.first_rank)
+    INTO v_member_stripes
+    FROM (
+      SELECT ranked."projectId", MIN(ranked.rank) AS first_rank
+      FROM (
+        SELECT pp."projectId",
+               ROW_NUMBER() OVER (
+                 ORDER BY pp."needDate" NULLS LAST, p."planningPriority", pp."demandSourceId", pp."id"
+               ) AS rank
+        FROM "projectPeg" pp
+        LEFT JOIN "project" p
+          ON p."id" = pp."projectId" AND p."companyId" = pp."companyId"
+        WHERE pp."companyId" = p_company_id
+          AND pp."supplyType" = 'Job'
+          AND pp."supplyId" = p_job_id
+          AND pp."supersededAt" IS NULL
+      ) ranked
+      GROUP BY ranked."projectId"
+    ) m;
+
+    IF array_length(v_member_stripes, 1) > 0 THEN
+      v_stripes := v_member_stripes || ARRAY[NULL]::TEXT[];
+      v_stripe_keys := v_member_stripes || ARRAY['']::TEXT[];
+    END IF;
+  END IF;
 
   -- Backflush non-tracked materials
   FOR v_material IN
@@ -1387,6 +1521,7 @@ BEGIN
       WHERE "itemId" = v_material."itemId"
         AND "locationId" = v_job_location_id
         AND "storageUnitId" IS NOT NULL
+        AND COALESCE("projectId", '') = ANY(v_stripe_keys)
       GROUP BY "storageUnitId"
       HAVING SUM(quantity) > 0
       ORDER BY SUM(quantity) DESC
@@ -1411,7 +1546,8 @@ BEGIN
           AND "storageUnitId" = v_material_storage_unit_id
           AND "locationId" = v_job_location_id
           AND "companyId" = p_company_id
-          AND "trackedEntityId" IS NULL;
+          AND "trackedEntityId" IS NULL
+          AND COALESCE("projectId", '') = ANY(v_stripe_keys);
 
         v_material_qty_to_issue := LEAST(v_material_qty_to_issue, GREATEST(v_bin_on_hand, 0));
 
@@ -1421,22 +1557,51 @@ BEGIN
       END IF;
     END IF;
 
-    INSERT INTO "itemLedger" (
-      "entryType", "documentType", "documentId", "companyId",
-      "itemId", quantity, "locationId", "storageUnitId", "createdBy"
-    ) VALUES (
-      'Consumption', 'Job Consumption', p_job_id, p_company_id,
-      v_material."itemId", -v_material_qty_to_issue,
-      v_job_location_id, v_material_storage_unit_id, p_user_id
-    );
+    -- One Consumption row per stripe drawn. A stripe before the last takes
+    -- at most its untracked on-hand at the bin; the last stripe takes the rest.
+    v_left_to_draw := v_material_qty_to_issue;
+    FOR v_stripe_index IN 1..array_length(v_stripes, 1)
+    LOOP
+      EXIT WHEN v_left_to_draw <= 0;
+      v_stripe := v_stripes[v_stripe_index];
+
+      IF v_stripe_index < array_length(v_stripes, 1) THEN
+        SELECT COALESCE(SUM(quantity), 0) INTO v_stripe_on_hand
+        FROM "itemLedger"
+        WHERE "itemId" = v_material."itemId"
+          AND "locationId" = v_job_location_id
+          AND "companyId" = p_company_id
+          AND "storageUnitId" IS NOT DISTINCT FROM v_material_storage_unit_id
+          AND "trackedEntityId" IS NULL
+          AND "projectId" IS NOT DISTINCT FROM v_stripe;
+
+        v_stripe_draw := LEAST(v_left_to_draw, GREATEST(v_stripe_on_hand, 0));
+      ELSE
+        v_stripe_draw := v_left_to_draw;
+      END IF;
+
+      CONTINUE WHEN v_stripe_draw <= 0;
+
+      INSERT INTO "itemLedger" (
+        "entryType", "documentType", "documentId", "companyId",
+        "itemId", quantity, "locationId", "storageUnitId", "projectId", "createdBy"
+      ) VALUES (
+        'Consumption', 'Job Consumption', p_job_id, p_company_id,
+        v_material."itemId", -v_stripe_draw,
+        v_job_location_id, v_material_storage_unit_id, v_stripe, p_user_id
+      );
+
+      v_bf_item_ids := v_bf_item_ids || v_material."itemId";
+      v_bf_quantities := v_bf_quantities || v_stripe_draw;
+      v_bf_storage_unit_ids := v_bf_storage_unit_ids || COALESCE(v_material_storage_unit_id, '');
+      v_bf_project_ids := array_append(v_bf_project_ids, v_stripe);
+
+      v_left_to_draw := v_left_to_draw - v_stripe_draw;
+    END LOOP;
 
     UPDATE "jobMaterial"
     SET "quantityIssued" = COALESCE("quantityIssued", 0) + v_material_qty_to_issue
     WHERE id = v_material.id;
-
-    v_bf_item_ids := v_bf_item_ids || v_material."itemId";
-    v_bf_quantities := v_bf_quantities || v_material_qty_to_issue;
-    v_bf_storage_unit_ids := v_bf_storage_unit_ids || COALESCE(v_material_storage_unit_id, '');
   END LOOP;
 
   -- Check if accounting is enabled
@@ -1577,7 +1742,7 @@ BEGIN
       v_remaining_to_consume := v_bf_quantities[i];
 
       FOR v_cost_layer IN
-        SELECT id, quantity, cost, "remainingQuantity"
+        SELECT id, quantity, cost, "remainingQuantity", "trackedEntityId"
         FROM "costLedger"
         WHERE "itemId" = v_bf_item_ids[i]
           AND "companyId" = p_company_id
@@ -1587,7 +1752,12 @@ BEGIN
           AND "appliesToCostLedgerId" IS NULL
           -- 'Purchase Order' rows are planning/cost-history artifacts, not layers
           AND ("documentType" IS NULL OR "documentType" <> 'Purchase Order')
+          -- only the stripe this row drew (calculateCOGS projectId)
+          AND "projectId" IS NOT DISTINCT FROM v_bf_project_ids[i]
         ORDER BY
+          -- Unstamped layers first; a layer stamped for a serial unit is the
+          -- last resort (orderLayersForConsumption, no leaving units).
+          ("trackedEntityId" IS NOT NULL) ASC,
           CASE WHEN v_material_costing_method = 'FIFO' THEN "postingDate" END ASC,
           CASE WHEN v_material_costing_method = 'LIFO' THEN "postingDate" END DESC,
           CASE WHEN v_material_costing_method = 'FIFO' THEN "createdAt" END ASC,
@@ -1608,15 +1778,19 @@ BEGIN
         SET "remainingQuantity" = "remainingQuantity" - v_quantity_from_layer
         WHERE id = v_cost_layer.id;
 
-        -- Consume the layer's cost-adjustment children (invoice-vs-receipt
-        -- price corrections linked via "appliesToCostLedgerId") alongside the
-        -- parent: each adjusted unit carries a bump of child.cost/child.quantity.
-        -- Mirrors shared/calculate-cogs.ts.
+        -- Consume the layer's cost-adjustment children (linked via
+        -- "appliesToCostLedgerId") alongside the parent: each adjusted unit
+        -- carries a bump of child.cost/child.quantity. On an unstamped layer
+        -- the children cover its units in turn, so they share one budget. On a
+        -- layer stamped for one serial unit every child belongs to that unit,
+        -- so each applies in full, up to the quantity taken.
+        -- Mirrors packages/server-functions/src/lib/calculate-cogs.ts.
         v_child_budget := v_quantity_from_layer;
         FOR v_adjustment_child IN
           SELECT id, quantity, cost, "remainingQuantity"
           FROM "costLedger"
           WHERE "appliesToCostLedgerId" = v_cost_layer.id
+            AND "companyId" = p_company_id
             AND "remainingQuantity" > 0
           ORDER BY "createdAt" ASC
         LOOP
@@ -1630,7 +1804,9 @@ BEGIN
 
           v_child_apply := LEAST(v_adjustment_child."remainingQuantity", v_child_budget);
           v_material_cogs_total := v_material_cogs_total + v_child_apply * v_child_per_unit;
-          v_child_budget := v_child_budget - v_child_apply;
+          IF v_cost_layer."trackedEntityId" IS NULL THEN
+            v_child_budget := v_child_budget - v_child_apply;
+          END IF;
 
           UPDATE "costLedger"
           SET "remainingQuantity" = "remainingQuantity" - v_child_apply
@@ -1728,12 +1904,12 @@ BEGIN
     INSERT INTO "costLedger" (
       "itemLedgerType", "costLedgerType", adjustment,
       "documentType", "documentId", "itemId",
-      quantity, cost, "remainingQuantity", "companyId"
+      quantity, cost, "remainingQuantity", "projectId", "companyId"
     ) VALUES (
       'Consumption', 'Direct Cost', false,
       'Job Consumption', p_job_id, v_bf_item_ids[i],
       -v_bf_quantities[i], -v_material_cogs_total,
-      0, p_company_id
+      0, v_bf_project_ids[i], p_company_id
     );
   END LOOP;
 

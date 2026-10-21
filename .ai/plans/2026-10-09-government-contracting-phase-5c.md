@@ -1099,17 +1099,17 @@ ls .ai/playbooks/government-contracting-phase-5c.md
 ## Execution notes
 
 - Prerequisites: every check prints a line. Neither enum type exists in the database before Task 1, and `project` has no `budgetControl`, `budgetTolerancePercent` or `stopWorkDate` column.
-- Task 1: the migration is `20261011224853_government-contracting-5c-enums.sql`. It is applied in Task 3.
+- Task 1: the migration is `20261021011500_government-contracting-5c-enums.sql`. It is applied in Task 3.
 - Tasks 1 and 2: the pre-commit backup check skips both commits, because the migrations are not applied yet. Tasks 1 and 2 ran together in a `BEGIN … ROLLBACK` dry run before the Task 2 commit. The dry run inserted the close task for 29 companies.
 - Task 2:
-  1. The migration is `20261011225048_project-control.sql`.
+  1. The migration is `20261021011600_project-control.sql`.
   2. `earnedValuePeriod` also has `updatedBy` and `updatedAt`. The migration rules require `updatedBy` on every table with `createdBy`.
   3. Indexes: `companyId`, the control account FK, `accountingPeriodId`, `baselineId` (partial) and `createdBy`. The unique key covers `projectElementId`, and `earnedValuePeriod_project_idx` covers `projectId`. `projectElement` also gets partial indexes on the 2 new FK columns, `controlAccountManagerId` and `apportionedToElementId`.
   4. Each `ADD CONSTRAINT` sits in one `DO` block per table with the `pg_constraint` guard.
   5. Risk, not changed: a delete of an Apportioned element's base element fails on `projectElement_apportioned_check`, because the FK sets `apportionedToElementId` to null. A project delete fails while a snapshot of a Closed period exists, because the freeze trigger refuses the cascade delete.
   6. 🛑 Until Task 14 ships the `earned-value-closed` evaluator, the close checklist shows "Close earned value for the period" as an open required task on this branch's database. A user can skip it.
 - Task 3:
-  1. The generated RLS migration is `20261011225309_project-control-rls.sql`. `pnpm db:migrate` ran a second time to record it. `authz check` reports no drift. The SELECT policy lets any employee of the company read, the default of `company("projects", …)`.
+  1. The generated RLS migration is `20261021011700_project-control-rls.sql`. `pnpm db:migrate` ran a second time to record it. `authz check` reports no drift. The SELECT policy lets any employee of the company read, the default of `company("projects", …)`.
   2. The freeze proof ran in a rolled-back transaction on an Open period of a test company: set it Locked, insert a row, update it (allowed), set the period Closed, update again. The last update failed with "Earned value of a closed period cannot change".
   3. The regenerated types change the MCP digest (`tool-manifest.digest.json`); the commit carries it. `check:workflow-catalog` passes with no catalog change.
   4. `pnpm --filter @carbon/database test -- migration` runs the whole suite: 518 pass.
@@ -1120,7 +1120,7 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   4. `parsePlanSnapshot` also returns a stored `schedule`, so Task 13 can read it from a baseline. A version 1 baseline has none.
   5. A restore into another company does not rewrite the ids in `schedule`, the same open gap as the rest of the snapshot (run log follow-up, Phase 1c).
 - Task 5:
-  1. `BUDGET_COMMITMENT_STATUSES` equals the status list of the live `get_project_cost_summary` (last defined in `20261011151313_government-contracting-functions.sql`).
+  1. `BUDGET_COMMITMENT_STATUSES` equals the status list of the live `get_project_cost_summary` (last defined in `20261021010700_government-contracting-functions.sql`).
   2. `models.ts` also exports the enum value lists `budgetControls` and `earnedValueTechniques` (from `Constants`) and `MATERIAL_MEASUREMENT_POINTS` with its type. The validators use them. The validators follow `indirect-rates/models.ts` (`zfd` for form fields).
   3. `budgetTolerancePercent` is optional in `projectControlSettingsValidator`, because null reads as 0.
   4. `server.ts` holds `export {};` until Task 8, so the empty module is valid TypeScript.
@@ -1148,7 +1148,7 @@ ls .ai/playbooks/government-contracting-phase-5c.md
 - Brad's decisions on the Task 2 and Task 8 risks (fix commit before Task 9):
   1. **Planning groups.** `checkBudgetAvailability` reads a fifth query: the current Soft and Manual `projectPeg` rows on open PO lines, valued at `quantity / conversionFactor × unitPrice`. It copies the `peg_commitments` CTE of `get_project_cost_summary`, because no shared TS reader exists and C2 forbids one RPC call per project. The brief said "Soft/Hard"; the cost summary counts Soft and Manual (a Hard peg is already received), so the check follows the cost summary. A peg with no element is the project root and is outside every element budget. Test: "counts open planning group supply pegged to the project as committed".
   2. **The base of an Apportioned element.** The pure `apportionedBaseRefusal` (`projects.models.ts`) returns "<readableId> <name> is the base of apportioned element <readableId> <name>. Change that element first." `deleteProjectElement` returns it as a refusal, which the delete route flashes. The change request apply refuses with it before the charge check. An Apportioned element inside the deleted subtree goes with the subtree: a rolled-back psql run proved that this delete passes. Tests: 3 cases in `projects-element-tree.test.ts`.
-  3. **A project with a Closed-period snapshot.** No app path hard-deletes a project (`deleteProject` sets `active = false`). Migration `20261011231328_earned-value-delete-refusal.sql` changes the freeze trigger only: when the project row is gone in a cascade delete, it raises "This project has earned value in a closed accounting period, so it cannot be deleted. Deactivate it instead." A rolled-back psql run on a copied project proved the message.
+  3. **A project with a Closed-period snapshot.** No app path hard-deletes a project (`deleteProject` sets `active = false`). Migration `20261021011800_earned-value-delete-refusal.sql` changes the freeze trigger only: when the project row is gone in a cascade delete, it raises "This project has earned value in a closed accounting period, so it cannot be deleted. Deactivate it instead." A rolled-back psql run on a copied project proved the message.
   4. Risk, not changed: an element delete with `earnedValuePeriod` rows fails on the snapshot FK (no ON DELETE action). Task 13 writes snapshots only for work packages, so the delete of a work package with a snapshot shows a raw FK error.
 - Task 9:
   1. `checkProjectBudget(db, client, input)` (`projects.server.ts`) wraps `checkBudgetAvailability` and formats the overruns in the base currency (`formatMoney`, locale `en-US`, as `contract-funding.ts` does). No route formatted money in a flash before, so the 6 routes of Tasks 9–11 share this helper.

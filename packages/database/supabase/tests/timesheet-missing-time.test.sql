@@ -1,8 +1,8 @@
 -- The daily missing-time check (Government Contracting 5a,
--- 20261011194847_timesheet-missing-time-sweep.sql): which scheduled work days
+-- 20261021011000_timesheet-missing-time-sweep.sql): which scheduled work days
 -- `get_missing_timesheet_days` lists, and when the sweep wakes the job. The
 -- population rules (`timesheetRequired`, the start date, no day after
--- yesterday) are 20261012193140_missing-time-population.sql.
+-- yesterday) are 20261021012300_missing-time-population.sql.
 -- Run from the repository root against an existing local database that has an
 -- active employee in a company with a location:
 -- pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/timesheet-missing-time.test.sql

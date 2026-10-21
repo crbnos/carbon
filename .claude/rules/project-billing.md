@@ -27,7 +27,7 @@ invoices to Deferred Revenue, and nothing recognizes them.
 schedule, as before), `Time & Materials` or `Cost Plus`. A billing line (T&M or
 Cost Plus) has no schedule (`planInvoiceSchedule` and the schedule writers skip
 it, `isProgressRevenueMethod` keeps it out of the revenue plan) and these columns
-(migration `20261011122931_project-billing.sql`):
+(migration `20261021005900_project-billing.sql`):
 
 - `projectElementId`: the **billing element**; the line bills its whole subtree.
   FK `(projectElementId, projectId, companyId)`.
@@ -46,7 +46,7 @@ to Invoice); Percent Complete needs a billing element. The ERP mirrors them in
 and `upsertContractLine` forces quantity 1, rate 0 and One-time for a billing line.
 
 A billing line lives on a **project contract** (`customerContract.billingBasis =
-'Project'`, migration `20261021045959_contract-billing-basis.sql`; spec
+'Project'`, migration `20261021013300_contract-billing-basis.sql`; spec
 `.ai/specs/2026-10-21-project-contracts.md`). A service contract (`Schedule`) takes only
 `Fixed` lines, and every project contract line is One-time; a project contract's `Fixed`
 line is labelled "Fixed Price", has quantity 1 and its `rate` as the price, and bills on
@@ -129,7 +129,7 @@ Written Off items are refused.
 
 Every change reaches the audit log ("Billable Item"): the table is in `auditConfig`
 AND has `events: true` in `event-system/attachments.ts` (migration
-`20261011132157_project-billable-item-audit-events.sql`). The config alone attaches
+`20261021010100_project-billable-item-audit-events.sql`). The config alone attaches
 no trigger.
 
 ## Invoicing

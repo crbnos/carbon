@@ -155,7 +155,7 @@ pnpm --filter @carbon/utils exec vitest run src/wbs-templates.test.ts
 **Depends on:** none
 **Files:**
 - Create: `packages/database/supabase/migrations/<timestamp>_project-element-wbs-code.sql` (from `pnpm db:migrate:new project-element-wbs-code`)
-- Copy from (precedent): `packages/database/supabase/migrations/20261011225048_project-control.sql` (guarded `ALTER TABLE`)
+- Copy from (precedent): `packages/database/supabase/migrations/20261021011600_project-control.sql` (guarded `ALTER TABLE`)
 
 **Steps:**
 1. Run `pnpm db:migrate:new project-element-wbs-code`.
@@ -438,7 +438,7 @@ pnpm exec turbo run typecheck --filter=erp
 - Create: `packages/database/supabase/migrations/<timestamp>_contract-financing.sql` (from `pnpm db:migrate:new contract-financing`)
 - Modify: `packages/database/src/authz/manifest.ts` — 5 new tables
 - Create: the generated RLS migration (`pnpm --filter @carbon/database authz migration contract-financing-rls`)
-- Copy from (precedent): `20261011225048_project-control.sql` (tables, indexes, guarded constraints); `manifest.ts` entry `customerContractFunding`
+- Copy from (precedent): `20261021011600_project-control.sql` (tables, indexes, guarded constraints); `manifest.ts` entry `customerContractFunding`
 
 **Steps:**
 1. Run `pnpm db:migrate:new contract-financing`.

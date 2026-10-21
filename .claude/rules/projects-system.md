@@ -129,11 +129,11 @@ one context per line.
 ### The SQL mirror
 
 `project_posting_account(company, project, element, date)` (migration
-`20261009055331_projects-functions.sql`, redefined by
-`20261009100941_project-posting-account-missing-default.sql` and, for Capitalize,
-`20261009103835_project-posting-account-capitalize.sql`) mirrors the TS resolver for
+`20261021000600_projects-functions.sql`, redefined by
+`20261021000900_project-posting-account-missing-default.sql` and, for Capitalize,
+`20261021001500_project-posting-account-capitalize.sql`) mirrors the TS resolver for
 the SQL posting paths: `complete_job_to_inventory` and `backflush_job_materials`
-(migration `20261009071629_complete-job-consume-to-project.sql`). Change both together.
+(migration `20261021000800_complete-job-consume-to-project.sql`). Change both together.
 
 The SQL returns NULL for Statistical only. A missing account default raises the TS
 resolver's message ("Set Project Expense in Account Defaults …"), and a missing project
@@ -346,7 +346,7 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
 - **Jobs.** `job.receiveToProjectStock` (needs a charge number; refused with Consume to
   project, Make to Asset or a sales order line; `chargeNumberError` refuses it on a project
   without project stock) receives the output into the project's stripe
-  (`complete_job_to_inventory`, `20261010030228`). A job of a project with project stock
+  (`complete_job_to_inventory`, `20261021004100`). A job of a project with project stock
   draws that project's stock, then unassigned stock, in `issue`, the backflush and picking.
 - **The accounting cutover.** The enable's inventory reset opens one layer per item and
   stripe at the item's unit cost (`splitOpeningLayersByStripe`), and the re-cost replays
@@ -457,12 +457,12 @@ without groups.
   | Manual | **Override** on the Pegging page, with a reason (`createManualPeg`) | no; a gone demand sets `exception` |
 
 - **One way, one rule.** Only `harden_pegs_for_supply(supplyType, supplyId, quantity)`
-  (`20261010155314`) turns Soft pegs Hard. It locks the supply's current pegs in need date,
+  (`20261021005400`) turns Soft pegs Hard. It locks the supply's current pegs in need date,
   project priority and demand source order, supersedes each peg it covers, and inserts a Hard row
   with `hardenedAt`. The uncovered part keeps the peg's state. It returns one row per member
   stripe plus an excess row: the exception project, else unassigned stock. `post-receipt` and
   `complete_job_to_inventory` both call it. The reverse for a negative receipt is
-  `soften_pegs_for_return` (`20261010162300`): the excess first, then the Hard pegs, latest
+  `soften_pegs_for_return` (`20261021005700`): the excess first, then the Hard pegs, latest
   first.
 - **Distribution at receipt.** `post-receipt` (`post-receipt/grouped-receipt.ts`) calls
   `hardenPegsForSupply` per receipt line of a grouped PO line in the posting transaction, then
@@ -471,7 +471,7 @@ without groups.
   layer takes the rounding rest. The journal does not change: one inventory debit per line.
   `linkPegsToItemLedger` sets each Hard peg's `itemLedgerId`. A void softens the Hard pegs of
   the receipt's rows (`softenPegsOfItemLedger`).
-- **Distribution at completion.** `complete_job_to_inventory` (`20261010160658`) loops over a
+- **Distribution at completion.** `complete_job_to_inventory` (`20261021005500`) loops over a
   stripe list: one stripe for an ungrouped job, the harden rows for a grouped job. The Output
   layer is written per stripe at the job's unit cost, so scrap spreads through the unit cost
   with no separate posting. The backflush of a grouped job draws the members' stock in the
@@ -481,7 +481,7 @@ without groups.
   to each member's project account as a `Material Variance` `projectLedger` row
   (`stripeVarianceCharge`, `post-purchase-invoice/project-charges.ts`). A Statistical member's
   share stays in purchase price variance.
-- **Commitments.** `get_project_cost_summary` (`20261010161720`) adds each Soft and Manual peg on
+- **Commitments.** `get_project_cost_summary` (`20261021005600`) adds each Soft and Manual peg on
   an open PO line to the project's committed cost, valued at
   `quantity / conversionFactor × unitPrice`, by the peg's element (none is the project root).
 - **Member moves.** MRP proposes a **Transfer** from a sibling's permanent excess and a
@@ -574,7 +574,7 @@ form reads CIP classes with `getCipFixedAssetClasses`, because
 - A capital job (`loadJobProjectCharge` returns `keepsWip: true`) keeps its WIP lines
   and builds `job.fixedAssetId` through the job-to-CIP sweep; SQL
   `project_cost_treatment` mirrors `resolveProjectTreatment`
-  (`20261009105739_complete-job-cip-project.sql`). `chargeNumberError` refuses
+  (`20261021001600_complete-job-cip-project.sql`). `chargeNumberError` refuses
   `consumeToProject` on a Capitalize project.
 - **Place in service** (`$projectId.place-in-service.tsx`, `PlaceInServiceModal`)
   runs `capitalizeCip` once per asset (needs `update: projects` and
@@ -640,7 +640,7 @@ each through its picker (`StatePill` / `OwnerPill` / `DatePill`); labels are rea
 a click anywhere else opens the element's page. A hover row menu has Open, Add child,
 Move to…, Copy id and Delete.
 
-States and labels are company-wide (`20261012164218_project-states-company-wide.sql`):
+States and labels are company-wide (`20261021012100_project-states-company-wide.sql`):
 `projectState` and `projectLabel` have no `projectId`, a name is unique per company, and each
 state group has at most one default per company. Settings → Projects edits them in two grids
 (`ProjectStatesGrid`, `ProjectLabelsGrid`, posting to `settings+/projects.tsx`); the project

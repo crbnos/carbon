@@ -1314,7 +1314,7 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   1. `customerContractRateCeiling` reads with `sales_view`, not with any employee. Every other contract table reads that way (`customerContractLine`, `customerContractFunding`), so a ceiling is not visible to an employee who cannot see its line.
   2. `ID_REF_COLUMNS` also lists `indirectExpenseStatement.dimensionValueId`. It holds the same polymorphic dimension value id with no FK as `indirectPoolAccount.dimensionValueId`.
   3. The new journal source type `Burden` joins `POSTING_POLICY` with `defaultEnabled: false` (Brad's rule for journal types added after the returns types), `journalEntrySourceTypes` in `accounting.models.ts` and `JournalEntrySourceTypeIcon` (the project icon). Without them `@carbon/ee` and `erp` fail the typecheck. The posting-policy test comment names `Burden` with the other off-by-default types.
-  4. The generated RLS migration is `20261011204730_indirect-rates-rls.sql`. `pnpm db:migrate` ran a second time to record it. `authz check` reports no drift.
+  4. The generated RLS migration is `20261021011400_indirect-rates-rls.sql`. `pnpm db:migrate` ran a second time to record it. `authz check` reports no drift.
   5. The regenerated types change the MCP digest (`tool-manifest.digest.json`); the commit carries it.
 - Task 4:
   1. `packages/ee/src/rules/sales/models.ts` does not exist. The validators follow `packages/ee/src/approvals/models.ts`, the one ee models file that uses `zfd`.

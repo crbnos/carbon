@@ -95,7 +95,7 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
 
 ### Ask First
 - Changing `projectStates` (`seed-data.ts`) — tier 09 `PROJECT_STATES` and the
-  `20261012164218_project-states-company-wide.sql` backfill copy it.
+  `20261021012100_project-states-company-wide.sql` backfill copy it.
 - Adding a cost treatment — `resolveProjectPostingAccount` and SQL `project_posting_account`
   must change together.
 - Turning `CONSTRUCTION_IN_PROGRESS_ENABLED` on — project screens read CIP classes with

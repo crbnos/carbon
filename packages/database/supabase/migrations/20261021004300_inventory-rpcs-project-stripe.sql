@@ -8,7 +8,7 @@
 --    a last parameter project_id: NULL is every stripe (as before), '' common
 --    stock, an id that project's stock. It filters the snapshot arm, both live
 --    arms and the storage-unit arms. It still returns one row per item.
--- 3. get_inventory_valuation (forked from 20261010002941, which keeps the
+-- 3. get_inventory_valuation (forked from 20261021003000, which keeps the
 --    adjustment-child fix of Field Service Phase C) returns "projectId" and one
 --    row per (location, item, stripe). FIFO / LIFO carrying cost averages the
 --    open base layers of the row's stripe. A signature change, so it is dropped

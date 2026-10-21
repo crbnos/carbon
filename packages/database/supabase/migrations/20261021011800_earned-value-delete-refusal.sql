@@ -1,7 +1,7 @@
 -- Government Contracting Phase 5c: a clear refusal when a project with earned
 -- value in a Closed period is deleted.
 --
--- Forked from 20261011225048_project-control.sql, the only definition of
+-- Forked from 20261021011600_project-control.sql, the only definition of
 -- check_earned_value_period_open. The freeze is unchanged: a Closed period's
 -- earned value rows never change. A project delete cascades to its
 -- earnedValuePeriod rows, and the freeze refused that cascade with "Earned value

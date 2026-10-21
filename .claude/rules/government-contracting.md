@@ -191,7 +191,7 @@ each company's calendar through `get_missing_timesheet_days` (shift days of acti
 employees, minus holidays, absences and days with any entry) in one query, and sends
 `NotificationEvent.TimesheetMissing` to the employee and one notice per manager.
 
-`get_missing_timesheet_days` (redefined in `20261012193140_missing-time-population.sql`)
+`get_missing_timesheet_days` (redefined in `20261021012300_missing-time-population.sql`)
 is the one definition of the population, so the daily notice, the report and the close
 check agree. It lists a shift day of an active employee only when:
 `employeeJob.timesheetRequired` is on (default true; no job row counts as on), the day
@@ -245,7 +245,7 @@ imported" when there is none).
 ## R&D tax (Phase 5d)
 
 Community code, no feature gate. The tags are columns
-(`20261012005354_rd-tax-enums.sql`, `20261012005458_rd-tax-columns.sql`):
+(`20261021011900_rd-tax-enums.sql`, `20261021012000_rd-tax-columns.sql`):
 
 | Column | Meaning |
 |---|---|

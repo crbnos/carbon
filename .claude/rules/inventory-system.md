@@ -56,7 +56,7 @@ Key service functions (verified):
   write-down) are applied with their parent. On an unstamped layer the children cover
   its units in turn (`createdAt` order, each only up to the quantity taken). On a layer
   stamped for one serial every child belongs to that unit and is applied in full. The SQL
-  backflush (`backflush_job_materials`, migration `20261010012609`) follows the same rules:
+  backflush (`backflush_job_materials`, migration `20261021003200`) follows the same rules:
   it issues only untracked material, so it takes unstamped layers first and a stamped
   layer last, and it applies every open child of a stamped layer in full. Pinned by
   `supabase/tests/backflush-layer-children.test.sql`.
@@ -67,7 +67,7 @@ Key service functions (verified):
   open children moves with it (`planRefurbishmentCompletion`,
   `complete-service-order/plan.ts`). No value changes and no journal posts; the WIP then
   lands as a `Revaluation` child. **`get_inventory_valuation`** (migration
-  `20261010002941_valuation-child-rows.sql`) counts only parent rows as layers and adds each
+  `20261021003000_valuation-child-rows.sql`) counts only parent rows as layers and adds each
   open child's remaining cost to its parent; it counted an open child as a layer of its
   own before.
   **Serial unit cost and Recost.** `preview-serial-unit-costs` (`{ itemId,
@@ -192,7 +192,7 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
 - **`enforcementRule`** + assignment tables — ONE table for storage and sales rules, discriminated by `family` (`20260817143022`/`20260817143512`). Storage-family reads must filter `family = 'storage'`. Lineage: `itemRule` → `customRule` → `storageRule` → merged into `enforcementRule`.
 
 `get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL, project_id TEXT DEFAULT NULL)` — the central
-read. Newest definition is `20261010035358_inventory-rpcs-project-stripe.sql`, which adds
+read. Newest definition is `20261021004300_inventory-rpcs-project-stripe.sql`, which adds
 `project_id` (NULL: every stripe; `''`: unassigned stock; an id: that project's stock — see
 *Project stock* below) to the body of `20261006130001_demand-forecast-consumption.sql` (the
 `20260713235406_item-ledger-snapshot.sql` body — snapshot + delta via `itemLedgerSnapshot`,
@@ -232,24 +232,24 @@ two stripes, and a lot's stripe is the stripe of its rows with the most net on-h
   `loadDemandStripes`, `splitAcrossStripes` / `drawFromStripes` (one row per stripe drawn),
   `itemLedgerInStripes`, `stripeKey` (`''` for unassigned stock), `assertEntitiesInStripes`,
   `assertEntitiesInCommonStock`, `loadProjectStock`, `withStripe`.
-- **Handler and key order.** `20261010021027_item-stock-quantities-project.sql` changes the
+- **Handler and key order.** `20261021003600_item-stock-quantities-project.sql` changes the
   primary key and `reconcile_item_stock_quantities`. The generated authz migration
-  `20261010021110_item-stock-quantities-project-handler.sql` changes the
+  `20261021003700_item-stock-quantities-project-handler.sql` changes the
   `apply_item_stock_quantities` ON CONFLICT to the new key. Between the two every
   `itemLedger` insert fails, so they always apply together.
 - **Costing.** `calculateCOGS` takes `projectId` and relieves only that stripe's layers; the SQL
-  backflush (`20261010023707`) and job completion (`20261010030228`) follow it.
+  backflush (`20261021003900`) and job completion (`20261021004100`) follow it.
   `bookAdjustment`, `buildItemLedgerRow` and `buildCostLedgerRow` take `projectId`.
 - **Pickers.** `get_available_tracked_entities` takes `p_project_ids`;
   `get_item_quantities_by_tracking_id` returns `projectId`; the picking-list RPCs and
-  `get_picking_schedule` read the line's or job's stripes (`20261010024754`,
-  `20261010032726`). `pickingListLine.projectId` and `inventoryCountLine.projectId` carry the
+  `get_picking_schedule` read the line's or job's stripes (`20261021004000`,
+  `20261021004200`). `pickingListLine.projectId` and `inventoryCountLine.projectId` carry the
   stripe.
 - **Unassigned stock only.** Sales shipments, direct sales invoices, return-to-customer shipments,
   warehouse transfers and maintenance draw unassigned stock. A purchase return draws the stripe
   its stock came in on.
 - **Counts** give one line per (item, bin, lot, stripe). The `inventoryCountLines` view
-  (`20261010124108`) carries `projectId`, `projectIdentifier` and `projectName`, and the count
+  (`20261021004400`) carries `projectId`, `projectIdentifier` and `projectName`, and the count
   table shows a **Stock Owner** column.
 - **Reads.** `itemLedgerSnapshot` is grouped by `COALESCE("projectId", '')` and its unique
   index includes it. `get_inventory_valuation` returns one row per (location, item, stripe)
@@ -280,7 +280,7 @@ two stripes, and a lot's stripe is the stripe of its rows with the most net on-h
   `pol."receivedComplete" = false` (`20260708204214`). A line short-closed via
   `shortClosePurchaseOrderLine` ("Stop Receiving") keeps `quantityToReceive > 0` but is excluded from
   `quantityOnPurchaseOrder`.
-- **`get_inventory_quantities` has many revisions.** Always read the newest (`20261010035358`), not the
+- **`get_inventory_quantities` has many revisions.** Always read the newest (`20261021004300`), not the
   first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
   rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.
 - **The auto-generated MCP reference (`.claude/rules/mcp-tools-reference.md`) is stale** for storage units —

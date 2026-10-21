@@ -4,7 +4,7 @@
 -- Every view gains "planningSegmentId" as its LAST column, so CREATE OR REPLACE
 -- keeps every existing column and filter. '' is the common segment; a project
 -- id is a project with project stock (project_planning_segment,
--- 20261010131217). A company with no project stock sees '' on every row.
+-- 20261021004600). A company with no project stock sees '' on every row.
 --
 -- Two supply rows leave the views, because they never put stock on hand:
 --   * a job that consumes its output to its project (consumeToProject);

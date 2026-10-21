@@ -141,7 +141,7 @@ export async function checkBudgetAvailability(
       .groupBy("pol.projectElementId")
       .execute(),
     // The project's share of open grouped supply, as `get_project_cost_summary`
-    // counts it (peg_commitments, 20261010161720): each current Soft or Manual
+    // counts it (peg_commitments, 20261021005600): each current Soft or Manual
     // peg on a planning group PO line commits the pegged quantity (inventory
     // units) at the line's unit price (per purchase unit). A grouped line has
     // no `projectId`, so the query above cannot see it.

@@ -14,7 +14,7 @@ Carbon's Missing Time report breaks 4 of these 5 points today, so it is noisy.
 
 ## Carbon today
 
-`get_missing_timesheet_days` (migration `20261011151313`) feeds 3 consumers:
+`get_missing_timesheet_days` (migration `20261021010700`) feeds 3 consumers:
 
 | Consumer | Use |
 |---|---|
